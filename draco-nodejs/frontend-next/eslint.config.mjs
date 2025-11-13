@@ -20,8 +20,6 @@ const eslintConfig = [{
   rules: {
     '@next/next/no-img-element': 'off',
   },
-}, {
-  ignores: ['app/social-hub-test/**/*'],
 }];
 
 export default eslintConfig;

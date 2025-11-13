@@ -50,6 +50,63 @@ export type dbLeagueFaq = Prisma.leaguefaqGetPayload<{
   };
 }>;
 
+export type dbSocialFeedItem = Prisma.socialfeeditemsGetPayload<{
+  include: {
+    teamsseason: {
+      select: {
+        id: true;
+        name: true;
+        leagueseasonid: true;
+      };
+    };
+    teams: {
+      select: {
+        id: true;
+        accountid: true;
+        webaddress: true;
+      };
+    };
+  };
+}>;
+
+export type dbSocialVideo = Prisma.socialvideosGetPayload<{
+  include: {
+    teamsseason: {
+      select: {
+        id: true;
+        name: true;
+        leagueseasonid: true;
+      };
+    };
+    teams: {
+      select: {
+        id: true;
+        accountid: true;
+        webaddress: true;
+      };
+    };
+  };
+}>;
+
+export type dbDiscordMessagePreview = Prisma.discordmessagesGetPayload<{
+  include: {
+    teamsseason: {
+      select: {
+        id: true;
+        name: true;
+        leagueseasonid: true;
+      };
+    };
+    teams: {
+      select: {
+        id: true;
+        accountid: true;
+        webaddress: true;
+      };
+    };
+  };
+}>;
+
 export type dbBattingStatisticsRow = {
   playerId: bigint;
   playerName: string;
@@ -855,6 +912,41 @@ export type dbLeagueSeasonWithCounts = Prisma.leagueseasonGetPayload<{
         leagueschedule: true;
         playoffsetup: true;
         teamsseason: true;
+      };
+    };
+  };
+}>;
+
+export type dbLiveEvent = Prisma.socialliveeventsGetPayload<{
+  include: {
+    leagueevents: {
+      select: {
+        id: true;
+        eventdate: true;
+        description: true;
+        leagueseasonid: true;
+        leagueseason: {
+          select: {
+            id: true;
+            seasonid: true;
+            leagueid: true;
+            league: {
+              select: {
+                id: true;
+                accountid: true;
+                name: true;
+              };
+            };
+          };
+        };
+      };
+    };
+    teamsseason: {
+      select: {
+        id: true;
+        name: true;
+        leagueseasonid: true;
+        teamid: true;
       };
     };
   };

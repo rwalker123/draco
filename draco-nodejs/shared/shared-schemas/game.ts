@@ -12,6 +12,7 @@ import {
   PaginationSchema,
   PaginationWithTotalSchema,
 } from './index.js';
+import { isoDateTimeSchema } from './date.js';
 
 extendZodWithOpenApi(z);
 
@@ -34,7 +35,7 @@ export const GameTypeEnumSchema = z.enum(['Regular', 'Playoff', 'Exhibition']);
 
 export const GameSchema = z.object({
   id: bigintToStringSchema,
-  gameDate: z.iso.datetime(),
+  gameDate: isoDateTimeSchema,
   homeTeam: TeamSeasonNameSchema,
   visitorTeam: TeamSeasonNameSchema,
   league: LeagueNameSchema,

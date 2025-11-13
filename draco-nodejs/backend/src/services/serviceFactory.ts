@@ -61,6 +61,13 @@ import { StatsEntryService } from './statsEntryService.js';
 import { PlayerSurveyService } from './playerSurveyService.js';
 import { AnnouncementService } from './announcementService.js';
 import { AccountSettingsService } from './accountSettingsService.js';
+import { SocialHubService } from './socialHubService.js';
+import { socialIngestionConfig } from '../config/socialIngestion.js';
+import { SocialIngestionService } from './socialIngestion/socialIngestionService.js';
+import { TwitterConnector } from './socialIngestion/connectors/twitterConnector.js';
+import { YouTubeConnector } from './socialIngestion/connectors/youtubeConnector.js';
+import { DiscordConnector } from './socialIngestion/connectors/discordConnector.js';
+import { DiscordIntegrationService } from './discordIntegrationService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -119,6 +126,9 @@ export class ServiceFactory {
   private static playerSurveyService: PlayerSurveyService;
   private static announcementService: AnnouncementService;
   private static accountSettingsService: AccountSettingsService;
+  private static socialHubService: SocialHubService;
+  private static socialIngestionService: SocialIngestionService;
+  private static discordIntegrationService: DiscordIntegrationService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -412,6 +422,83 @@ export class ServiceFactory {
     }
 
     return this.accountSettingsService;
+  }
+
+  static getDiscordIntegrationService(): DiscordIntegrationService {
+    if (!this.discordIntegrationService) {
+      this.discordIntegrationService = new DiscordIntegrationService();
+    }
+
+    return this.discordIntegrationService;
+  }
+
+  static getSocialHubService(): SocialHubService {
+    if (!this.socialHubService) {
+      this.socialHubService = new SocialHubService(
+        undefined,
+        undefined,
+        this.getDiscordIntegrationService(),
+      );
+    }
+
+    return this.socialHubService;
+  }
+
+  static getSocialIngestionService(): SocialIngestionService {
+    if (!this.socialIngestionService) {
+      const connectors = [];
+      const socialContentRepository = RepositoryFactory.getSocialContentRepository();
+      const discordIntegrationService = this.getDiscordIntegrationService();
+
+      if (socialIngestionConfig.twitter.enabled && socialIngestionConfig.twitter.targets.length) {
+        connectors.push(
+          new TwitterConnector(socialContentRepository, {
+            bearerToken: socialIngestionConfig.twitter.bearerToken,
+            maxResults: socialIngestionConfig.twitter.maxResults,
+            targets: socialIngestionConfig.twitter.targets,
+            intervalMs: socialIngestionConfig.twitter.intervalMs,
+            enabled:
+              socialIngestionConfig.twitter.enabled &&
+              Boolean(socialIngestionConfig.twitter.bearerToken),
+          }),
+        );
+      }
+
+      if (socialIngestionConfig.youtube.enabled && socialIngestionConfig.youtube.targets.length) {
+        connectors.push(
+          new YouTubeConnector(socialContentRepository, {
+            apiKey: socialIngestionConfig.youtube.apiKey,
+            targets: socialIngestionConfig.youtube.targets,
+            intervalMs: socialIngestionConfig.youtube.intervalMs,
+            enabled:
+              socialIngestionConfig.youtube.enabled &&
+              Boolean(socialIngestionConfig.youtube.apiKey),
+          }),
+        );
+      }
+
+      if (socialIngestionConfig.discord.enabled) {
+        const targetsProvider = async () => {
+          const dbTargets = await discordIntegrationService.getChannelIngestionTargets();
+          return [...dbTargets, ...socialIngestionConfig.discord.targets];
+        };
+        connectors.push(
+          new DiscordConnector(socialContentRepository, {
+            botToken: socialIngestionConfig.discord.botToken,
+            limit: socialIngestionConfig.discord.limit,
+            targetsProvider,
+            intervalMs: socialIngestionConfig.discord.intervalMs,
+            enabled:
+              socialIngestionConfig.discord.enabled &&
+              Boolean(socialIngestionConfig.discord.botToken),
+          }),
+        );
+      }
+
+      this.socialIngestionService = new SocialIngestionService(connectors);
+    }
+
+    return this.socialIngestionService;
   }
 
   static getPhotoGalleryAssetService(): PhotoGalleryAssetService {

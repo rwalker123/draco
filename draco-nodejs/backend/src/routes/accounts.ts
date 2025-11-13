@@ -20,6 +20,8 @@ import accountsMemberBusinessRouter from './accounts-member-businesses.js';
 import accountsHallOfFameRouter from './accounts-hall-of-fame.js';
 import accountsLeagueFaqRouter from './accounts-league-faq.js';
 import accountsAnnouncementsRouter from './accounts-announcements.js';
+import accountsSocialRouter from './accounts-social.js';
+import accountsDiscordRouter from './accounts-discord.js';
 
 const router = Router({ mergeParams: true });
 
@@ -44,6 +46,9 @@ router.use('/', accountsResourcesRouter);
 
 // Settings endpoints (URLs, Twitter, types, affiliations)
 router.use('/', accountsSettingsRouter);
+
+// Discord integration endpoints
+router.use('/', accountsDiscordRouter);
 
 // Assets endpoints (logo management)
 router.use('/', accountsAssetsRouter);
@@ -78,5 +83,8 @@ router.use('/', accountsHandoutsRouter);
 
 // Announcement endpoints
 router.use('/', accountsAnnouncementsRouter);
+
+// Social feed endpoints
+router.use('/', accountsSocialRouter);
 
 export default router;

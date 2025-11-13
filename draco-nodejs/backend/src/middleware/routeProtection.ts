@@ -219,6 +219,45 @@ export class RouteProtection {
   };
 
   /**
+   * Middleware to enforce account boundary only when a user is authenticated.
+   * Public requests are allowed to proceed but still require a valid account id.
+   */
+  enforceAccountBoundaryIfAuthenticated = () => {
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+      const accountId = this.extractAccountId(req);
+      if (!accountId) {
+        throw new ValidationError('Account ID required');
+      }
+
+      if (!req.user?.id) {
+        req.accountBoundary = { contactId: BigInt(0), accountId, enforced: false };
+        next();
+        return;
+      }
+
+      const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+
+      if (userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ADMINISTRATOR])) {
+        req.userRoles = userRoles;
+        req.accountBoundary = { contactId: BigInt(0), accountId, enforced: true };
+        next();
+        return;
+      }
+
+      const userContactId = await this.checkUserAccount(req.user.id, accountId);
+
+      if (!userContactId) {
+        throw new AuthorizationError('Access denied to this account');
+      }
+
+      req.userRoles = userRoles;
+      req.accountBoundary = { contactId: userContactId, accountId, enforced: true };
+
+      next();
+    });
+  };
+
+  /**
    * Middleware to enforce account owner
    * @returns Middleware to enforce account owner
    */

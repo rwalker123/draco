@@ -192,7 +192,7 @@ const SurveySpotlightWidget: React.FC<SurveySpotlightWidgetProps> = ({
 
   React.useEffect(() => {
     void loadSpotlight();
-  }, [loadSpotlight]);
+  }, [accountId, teamSeasonId, loadSpotlight]);
 
   const renderSpotlightContent = () => {
     const isLoading = status === 'loading';

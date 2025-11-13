@@ -214,6 +214,22 @@ import {
   PhotoGalleryQuerySchema,
   UpdatePhotoGalleryAlbumSchema,
   UpdatePhotoGalleryPhotoSchema,
+  SocialFeedItemSchema,
+  SocialFeedListSchema,
+  SocialFeedQuerySchema,
+  SocialVideoSchema,
+  SocialVideoListSchema,
+  SocialVideoQuerySchema,
+  CommunityMessagePreviewSchema,
+  CommunityMessageListSchema,
+  CommunityMessageQuerySchema,
+  CommunityChannelSchema,
+  CommunityChannelListSchema,
+  LiveEventSchema,
+  LiveEventListSchema,
+  LiveEventQuerySchema,
+  LiveEventCreateSchema,
+  LiveEventUpdateSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -781,6 +797,34 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'PhotoGalleryQuery',
     PhotoGalleryQuerySchema,
   );
+  const SocialFeedItemSchemaRef = registry.register('SocialFeedItem', SocialFeedItemSchema);
+  const SocialFeedListSchemaRef = registry.register('SocialFeedList', SocialFeedListSchema);
+  const SocialFeedQuerySchemaRef = registry.register('SocialFeedQuery', SocialFeedQuerySchema);
+  const SocialVideoSchemaRef = registry.register('SocialVideo', SocialVideoSchema);
+  const SocialVideoListSchemaRef = registry.register('SocialVideoList', SocialVideoListSchema);
+  const SocialVideoQuerySchemaRef = registry.register('SocialVideoQuery', SocialVideoQuerySchema);
+  const CommunityMessagePreviewSchemaRef = registry.register(
+    'CommunityMessagePreview',
+    CommunityMessagePreviewSchema,
+  );
+  const CommunityMessageListSchemaRef = registry.register(
+    'CommunityMessageList',
+    CommunityMessageListSchema,
+  );
+  const CommunityMessageQuerySchemaRef = registry.register(
+    'CommunityMessageQuery',
+    CommunityMessageQuerySchema,
+  );
+  const CommunityChannelSchemaRef = registry.register('CommunityChannel', CommunityChannelSchema);
+  const CommunityChannelListSchemaRef = registry.register(
+    'CommunityChannelList',
+    CommunityChannelListSchema,
+  );
+  const LiveEventSchemaRef = registry.register('LiveEvent', LiveEventSchema);
+  const LiveEventListSchemaRef = registry.register('LiveEventList', LiveEventListSchema);
+  const LiveEventQuerySchemaRef = registry.register('LiveEventQuery', LiveEventQuerySchema);
+  const LiveEventCreateSchemaRef = registry.register('LiveEventCreate', LiveEventCreateSchema);
+  const LiveEventUpdateSchemaRef = registry.register('LiveEventUpdate', LiveEventUpdateSchema);
   const PhotoSubmissionSchemaRef = registry.register(
     'PhotoSubmission',
     PhotoSubmissionRecordSchema,
@@ -1015,6 +1059,22 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     PhotoGalleryAdminAlbumListSchemaRef,
     PhotoGalleryListSchemaRef,
     PhotoGalleryQuerySchemaRef,
+    SocialFeedItemSchemaRef,
+    SocialFeedListSchemaRef,
+    SocialFeedQuerySchemaRef,
+    SocialVideoSchemaRef,
+    SocialVideoListSchemaRef,
+    SocialVideoQuerySchemaRef,
+    CommunityMessagePreviewSchemaRef,
+    CommunityMessageListSchemaRef,
+    CommunityMessageQuerySchemaRef,
+    CommunityChannelSchemaRef,
+    CommunityChannelListSchemaRef,
+    LiveEventSchemaRef,
+    LiveEventListSchemaRef,
+    LiveEventQuerySchemaRef,
+    LiveEventCreateSchemaRef,
+    LiveEventUpdateSchemaRef,
     UpdateGameResultsSchemaRef,
     UpsertGameSchemaRef,
     UpsertGameRecapSchemaRef,

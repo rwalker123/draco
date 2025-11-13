@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { bigintToStringSchema } from './standardSchema.js';
+import { isoDateTimeSchema } from './date.js';
 
 extendZodWithOpenApi(z);
 
@@ -11,12 +12,6 @@ const numericStringSchema = z
   .string()
   .trim()
   .regex(/^\d+$/, { message: 'Value must be a numeric string' });
-
-const isoDateTimeStringSchema = z
-  .string()
-  .trim()
-  .datetime({ offset: true })
-  .openapi({ format: 'date-time', description: 'ISO 8601 timestamp string' });
 
 export const AnnouncementVisibilitySchema = z
   .enum(['account', 'team'])
@@ -40,7 +35,7 @@ export const UpsertAnnouncementSchema = z
         ANNOUNCEMENT_BODY_MAX_LENGTH,
         `Body must be ${ANNOUNCEMENT_BODY_MAX_LENGTH} characters or fewer`,
       ),
-    publishedAt: isoDateTimeStringSchema,
+    publishedAt: isoDateTimeSchema,
     isSpecial: z.boolean().default(false),
   })
   .openapi({

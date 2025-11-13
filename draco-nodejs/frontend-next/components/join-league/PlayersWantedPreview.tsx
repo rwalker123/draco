@@ -67,7 +67,7 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
 
   useEffect(() => {
     loadPlayersWanted();
-  }, [loadPlayersWanted]);
+  }, [accountId, loadPlayersWanted]);
 
   const handleViewAll = () => {
     router.push(`/account/${accountId}/player-classifieds`);

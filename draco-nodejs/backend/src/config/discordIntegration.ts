@@ -1,0 +1,73 @@
+export interface DiscordOAuthConfig {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  scope: string;
+  authorizeUrl: string;
+  tokenUrl: string;
+  apiBaseUrl: string;
+  stateTtlMs: number;
+  installRedirectUri: string;
+  botPermissions: string;
+}
+
+const DEFAULT_SCOPE = 'identify email guilds.join guilds.members.read';
+const DEFAULT_AUTHORIZE_URL = 'https://discord.com/oauth2/authorize';
+const DEFAULT_TOKEN_URL = 'https://discord.com/api/oauth2/token';
+const DEFAULT_API_BASE_URL = 'https://discord.com/api';
+const DEFAULT_STATE_TTL_MS = 10 * 60 * 1000;
+const DEFAULT_INSTALL_REDIRECT_PATH = '/api/discord/install/callback';
+const DEFAULT_INSTALL_PERMISSIONS = '268435456';
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  if (!value) {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+let cachedConfig: DiscordOAuthConfig | null = null;
+
+export function getDiscordOAuthConfig(): DiscordOAuthConfig {
+  if (cachedConfig) {
+    return cachedConfig;
+  }
+
+  const clientId = process.env.DISCORD_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.DISCORD_OAUTH_CLIENT_SECRET;
+  const redirectUri = process.env.DISCORD_OAUTH_REDIRECT_URI;
+
+  if (!clientId || !clientSecret || !redirectUri) {
+    throw new Error(
+      'Discord OAuth environment variables (DISCORD_OAUTH_CLIENT_ID, DISCORD_OAUTH_CLIENT_SECRET, DISCORD_OAUTH_REDIRECT_URI) are required.',
+    );
+  }
+
+  const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, '');
+  const installRedirectUri =
+    process.env.DISCORD_BOT_INSTALL_REDIRECT_URI ??
+    (backendUrl ? `${backendUrl}${DEFAULT_INSTALL_REDIRECT_PATH}` : undefined);
+
+  if (!installRedirectUri) {
+    throw new Error(
+      'Discord install redirect URI is required. Set DISCORD_BOT_INSTALL_REDIRECT_URI or BACKEND_URL.',
+    );
+  }
+
+  cachedConfig = {
+    clientId,
+    clientSecret,
+    redirectUri,
+    scope: process.env.DISCORD_OAUTH_SCOPE ?? DEFAULT_SCOPE,
+    authorizeUrl: process.env.DISCORD_OAUTH_AUTHORIZE_URL ?? DEFAULT_AUTHORIZE_URL,
+    tokenUrl: process.env.DISCORD_OAUTH_TOKEN_URL ?? DEFAULT_TOKEN_URL,
+    apiBaseUrl: process.env.DISCORD_API_BASE_URL ?? DEFAULT_API_BASE_URL,
+    stateTtlMs: parsePositiveInt(process.env.DISCORD_OAUTH_STATE_TTL_MS, DEFAULT_STATE_TTL_MS),
+    installRedirectUri,
+    botPermissions: process.env.DISCORD_BOT_PERMISSIONS ?? DEFAULT_INSTALL_PERMISSIONS,
+  };
+
+  return cachedConfig;
+}

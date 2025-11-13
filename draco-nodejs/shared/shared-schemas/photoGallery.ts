@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { bigintToStringSchema } from './standardSchema.js';
+import { isoDateTimeSchema } from './date.js';
 
 const optionalBigintQueryParam = z.preprocess((value) => {
   if (value === undefined || value === null || value === '') {
@@ -63,9 +64,7 @@ export const PhotoGalleryPhotoSchema = z
       .max(255)
       .nullable()
       .openapi({ description: 'Optional caption describing the gallery photo' }),
-    submittedAt: z
-      .string()
-      .datetime({ offset: true })
+    submittedAt: isoDateTimeSchema
       .nullable()
       .openapi({ description: 'Timestamp when the source submission was created' }),
     originalUrl: z

@@ -17,6 +17,7 @@ import { useAccount } from '@/context/AccountContext';
 import { useAccountSettings } from '@/hooks/useAccountSettings';
 import ContactInfoCard from '@/components/profile/ContactInfoCard';
 import MemberBusinessCard from '@/components/profile/MemberBusinessCard';
+import DiscordIntegrationCard from '@/components/profile/DiscordIntegrationCard';
 import OrganizationsWidget from '@/components/OrganizationsWidget';
 import MyTeams, { UserTeam } from '@/components/MyTeams';
 import EditContactInfoDialog from '@/components/profile/EditContactInfoDialog';
@@ -473,6 +474,7 @@ const ProfilePageClient: React.FC = () => {
                 contactId={contact?.id ?? null}
               />
             </AccountOptional>
+            <DiscordIntegrationCard accountId={currentAccountId} />
           </Stack>
         </Grid>
         <Grid size={{ xs: 12, md: 8 }}>
