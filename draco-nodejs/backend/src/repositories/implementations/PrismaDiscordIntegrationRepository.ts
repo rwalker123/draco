@@ -60,6 +60,12 @@ export class PrismaDiscordIntegrationRepository implements IDiscordIntegrationRe
     });
   }
 
+  async deleteAccountConfig(accountId: bigint): Promise<void> {
+    await this.prisma.accountdiscordsettings.deleteMany({
+      where: { accountid: accountId },
+    });
+  }
+
   async listRoleMappings(accountId: bigint): Promise<accountdiscordrolemapping[]> {
     return this.prisma.accountdiscordrolemapping.findMany({
       where: { accountid: accountId },
@@ -123,6 +129,12 @@ export class PrismaDiscordIntegrationRepository implements IDiscordIntegrationRe
     await this.prisma.accountdiscordrolemapping.delete({ where: { id: roleMappingId } });
   }
 
+  async deleteRoleMappingsByAccount(accountId: bigint): Promise<void> {
+    await this.prisma.accountdiscordrolemapping.deleteMany({
+      where: { accountid: accountId },
+    });
+  }
+
   async listLinkedAccounts(accountId: bigint): Promise<userdiscordaccounts[]> {
     return this.prisma.userdiscordaccounts.findMany({
       where: { accountid: accountId },
@@ -183,6 +195,12 @@ export class PrismaDiscordIntegrationRepository implements IDiscordIntegrationRe
     });
   }
 
+  async deleteLinkedAccounts(accountId: bigint): Promise<void> {
+    await this.prisma.userdiscordaccounts.deleteMany({
+      where: { accountid: accountId },
+    });
+  }
+
   async listChannelMappings(accountId: bigint): Promise<accountdiscordchannels[]> {
     return this.prisma.accountdiscordchannels.findMany({
       where: { accountid: accountId },
@@ -231,6 +249,12 @@ export class PrismaDiscordIntegrationRepository implements IDiscordIntegrationRe
         id: mappingId,
         accountid: accountId,
       },
+    });
+  }
+
+  async deleteChannelMappingsByAccount(accountId: bigint): Promise<void> {
+    await this.prisma.accountdiscordchannels.deleteMany({
+      where: { accountid: accountId },
     });
   }
 }

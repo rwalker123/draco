@@ -94,6 +94,15 @@ export const useAccountDiscordAdmin = () => {
     [request],
   );
 
+  const disconnectGuild = useCallback(
+    (accountId: string) =>
+      request<DiscordAccountConfigType>(accountId, 'config', {
+        method: 'DELETE',
+        errorMessage: 'Unable to remove Discord configuration.',
+      }),
+    [request],
+  );
+
   const fetchRoleMappings = useCallback(
     (accountId: string) =>
       request<DiscordRoleMappingListType>(accountId, 'role-mappings', {
@@ -182,6 +191,7 @@ export const useAccountDiscordAdmin = () => {
   return {
     fetchConfig,
     updateConfig,
+    disconnectGuild,
     fetchRoleMappings,
     createRoleMapping,
     updateRoleMapping,
