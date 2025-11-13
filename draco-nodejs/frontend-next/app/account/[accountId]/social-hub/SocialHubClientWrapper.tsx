@@ -1,12 +1,11 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import SocialHubContainer from '../../../../components/social/SocialHubContainer';
 
-export default function SocialHubClientWrapper() {
-  const params = useParams();
-  const accountIdParam = params?.accountId;
-  const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
+interface SocialHubClientWrapperProps {
+  accountId: string;
+}
 
-  return <SocialHubContainer accountId={accountId ?? ''} />;
+export default function SocialHubClientWrapper({ accountId }: SocialHubClientWrapperProps) {
+  return <SocialHubContainer accountId={accountId} />;
 }

@@ -7,7 +7,7 @@ import {
   SocialFeedQuerySchema,
   SocialVideoQuerySchema,
 } from '@draco/shared-schemas';
-import { authenticateToken } from '../middleware/authMiddleware.js';
+import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractSeasonParams, extractBigIntParams } from '../utils/paramExtraction.js';
@@ -18,8 +18,8 @@ const socialHubService = ServiceFactory.getSocialHubService();
 
 router.get(
   '/:accountId/seasons/:seasonId/social/feed',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
+  optionalAuth,
+  routeProtection.enforceAccountBoundaryIfAuthenticated(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
     const query = SocialFeedQuerySchema.parse(req.query);
@@ -30,8 +30,8 @@ router.get(
 
 router.get(
   '/:accountId/seasons/:seasonId/social/videos',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
+  optionalAuth,
+  routeProtection.enforceAccountBoundaryIfAuthenticated(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
     const query = SocialVideoQuerySchema.parse(req.query);
@@ -42,8 +42,8 @@ router.get(
 
 router.get(
   '/:accountId/seasons/:seasonId/social/community-messages',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
+  optionalAuth,
+  routeProtection.enforceAccountBoundaryIfAuthenticated(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
     const query = CommunityMessageQuerySchema.parse(req.query);
@@ -54,8 +54,8 @@ router.get(
 
 router.get(
   '/:accountId/seasons/:seasonId/social/community-channels',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
+  optionalAuth,
+  routeProtection.enforceAccountBoundaryIfAuthenticated(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
     const channels = await socialHubService.listCommunityChannels(accountId, seasonId);

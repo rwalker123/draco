@@ -470,10 +470,6 @@ export default function SocialHubExperience({
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Typography variant="h3" gutterBottom>
-        Social Hub Concept{accountId ? ` · Account ${accountId}` : ''}
-      </Typography>
-
       {/* Search and Filter Bar */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
