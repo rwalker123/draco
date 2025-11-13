@@ -12,6 +12,7 @@ import {
 } from '../responseFormatters/index.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { DateUtils } from '../utils/dateUtils.js';
+import { DiscordIntegrationService } from './discordIntegrationService.js';
 
 interface NormalizedAnnouncementPayload {
   title: string;
@@ -28,11 +29,13 @@ interface AnnouncementSummaryOptions {
 export class AnnouncementService {
   private readonly announcementRepository: IAnnouncementRepository;
   private readonly teamRepository: ITeamRepository;
+  private readonly discordIntegrationService: DiscordIntegrationService;
 
   constructor(announcementRepository?: IAnnouncementRepository, teamRepository?: ITeamRepository) {
     this.announcementRepository =
       announcementRepository ?? RepositoryFactory.getAnnouncementRepository();
     this.teamRepository = teamRepository ?? RepositoryFactory.getTeamRepository();
+    this.discordIntegrationService = new DiscordIntegrationService();
   }
 
   async listAccountAnnouncements(accountId: bigint): Promise<AnnouncementType[]> {
@@ -72,7 +75,9 @@ export class AnnouncementService {
     });
 
     const record = await this.requireAccountAnnouncement(accountId, created.id);
-    return AnnouncementResponseFormatter.formatAccountAnnouncement(record);
+    const announcement = AnnouncementResponseFormatter.formatAccountAnnouncement(record);
+    void this.syncAnnouncementToDiscord(accountId, announcement);
+    return announcement;
   }
 
   async updateAccountAnnouncement(
@@ -254,5 +259,17 @@ export class AnnouncementService {
     }
 
     return filtered.slice(0, limit);
+  }
+
+  private async syncAnnouncementToDiscord(accountId: bigint, announcement: AnnouncementType) {
+    try {
+      await this.discordIntegrationService.publishAnnouncement(accountId, announcement);
+    } catch (error) {
+      console.error('[discord] Failed to sync announcement to Discord', {
+        accountId: accountId.toString(),
+        announcementId: announcement.id,
+        error,
+      });
+    }
   }
 }

@@ -1,10 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Box, Container, Typography } from '@mui/material';
+import { Box, Container, Stack, Typography } from '@mui/material';
 import { useParams } from 'next/navigation';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
 import AnnouncementsManager from '../../../../../components/announcements/AnnouncementsManager';
+import AnnouncementsDiscordSyncCard from '../../../../../components/announcements/AnnouncementsDiscordSyncCard';
 
 const AccountAnnouncementsManagementPage: React.FC = () => {
   const params = useParams();
@@ -38,13 +39,16 @@ const AccountAnnouncementsManagementPage: React.FC = () => {
       </AccountPageHeader>
 
       <Container maxWidth="md" sx={{ py: 4 }}>
-        <AnnouncementsManager
-          scope={{ type: 'account', accountId }}
-          title="Account Announcements"
-          description="Create announcements for your entire organization."
-          accent="success"
-          emptyMessage="No announcements have been created yet."
-        />
+        <Stack spacing={3}>
+          <AnnouncementsDiscordSyncCard accountId={accountId} />
+          <AnnouncementsManager
+            scope={{ type: 'account', accountId }}
+            title="Account Announcements"
+            description="Create announcements for your entire organization."
+            accent="success"
+            emptyMessage="No announcements have been created yet."
+          />
+        </Stack>
       </Container>
     </main>
   );

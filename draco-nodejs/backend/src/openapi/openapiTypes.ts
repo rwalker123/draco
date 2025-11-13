@@ -158,6 +158,20 @@ import {
   WorkoutRegistrationsSchema,
   WorkoutSchema,
   WorkoutSourceOptionPayloadSchema,
+  DiscordAccountConfigSchema,
+  DiscordAccountConfigUpdateSchema,
+  DiscordChannelMappingSchema,
+  DiscordChannelMappingListSchema,
+  DiscordChannelMappingCreateSchema,
+  DiscordGuildChannelSchema,
+  DiscordLinkStatusSchema,
+  DiscordOAuthStartResponseSchema,
+  DiscordRoleMappingSchema,
+  DiscordRoleMappingListSchema,
+  DiscordRoleMappingUpdateSchema,
+  DiscordFeatureSyncStatusSchema,
+  DiscordFeatureSyncUpdateSchema,
+  DiscordFeatureSyncFeatureEnum,
   WorkoutSourcesSchema,
   WorkoutSummarySchema,
   ContactSearchParamsSchema,
@@ -406,6 +420,62 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const MemberBusinessQueryParamsSchemaRef = registry.register(
     'MemberBusinessQueryParams',
     MemberBusinessQueryParamsSchema,
+  );
+  const DiscordAccountConfigSchemaRef = registry.register(
+    'DiscordAccountConfig',
+    DiscordAccountConfigSchema,
+  );
+  const DiscordAccountConfigUpdateSchemaRef = registry.register(
+    'DiscordAccountConfigUpdate',
+    DiscordAccountConfigUpdateSchema,
+  );
+  const DiscordRoleMappingSchemaRef = registry.register(
+    'DiscordRoleMapping',
+    DiscordRoleMappingSchema,
+  );
+  const DiscordRoleMappingListSchemaRef = registry.register(
+    'DiscordRoleMappingList',
+    DiscordRoleMappingListSchema,
+  );
+  const DiscordRoleMappingUpdateSchemaRef = registry.register(
+    'DiscordRoleMappingUpdate',
+    DiscordRoleMappingUpdateSchema,
+  );
+  const DiscordChannelMappingSchemaRef = registry.register(
+    'DiscordChannelMapping',
+    DiscordChannelMappingSchema,
+  );
+  const DiscordChannelMappingListSchemaRef = registry.register(
+    'DiscordChannelMappingList',
+    DiscordChannelMappingListSchema,
+  );
+  const DiscordChannelMappingCreateSchemaRef = registry.register(
+    'DiscordChannelMappingCreate',
+    DiscordChannelMappingCreateSchema,
+  );
+  const DiscordGuildChannelSchemaRef = registry.register(
+    'DiscordGuildChannel',
+    DiscordGuildChannelSchema,
+  );
+  const DiscordOAuthStartResponseSchemaRef = registry.register(
+    'DiscordOAuthStartResponse',
+    DiscordOAuthStartResponseSchema,
+  );
+  const DiscordLinkStatusSchemaRef = registry.register(
+    'DiscordLinkStatus',
+    DiscordLinkStatusSchema,
+  );
+  const DiscordFeatureSyncStatusSchemaRef = registry.register(
+    'DiscordFeatureSyncStatus',
+    DiscordFeatureSyncStatusSchema,
+  );
+  const DiscordFeatureSyncUpdateSchemaRef = registry.register(
+    'DiscordFeatureSyncUpdate',
+    DiscordFeatureSyncUpdateSchema,
+  );
+  const DiscordFeatureSyncFeatureSchemaRef = registry.register(
+    'DiscordFeatureSyncFeature',
+    DiscordFeatureSyncFeatureEnum,
   );
   const PlayersWantedClassifiedSchemaRef = registry.register(
     'PlayersWantedClassified',
@@ -965,6 +1035,20 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     MemberBusinessListSchemaRef,
     CreateMemberBusinessSchemaRef,
     MemberBusinessQueryParamsSchemaRef,
+    DiscordAccountConfigSchemaRef,
+    DiscordAccountConfigUpdateSchemaRef,
+    DiscordRoleMappingSchemaRef,
+    DiscordRoleMappingListSchemaRef,
+    DiscordRoleMappingUpdateSchemaRef,
+    DiscordChannelMappingSchemaRef,
+    DiscordChannelMappingListSchemaRef,
+    DiscordChannelMappingCreateSchemaRef,
+    DiscordGuildChannelSchemaRef,
+    DiscordOAuthStartResponseSchemaRef,
+    DiscordLinkStatusSchemaRef,
+    DiscordFeatureSyncStatusSchemaRef,
+    DiscordFeatureSyncUpdateSchemaRef,
+    DiscordFeatureSyncFeatureSchemaRef,
     PlayersWantedClassifiedSchemaRef,
     PlayersWantedClassifiedPagedSchemaRef,
     UpsertPlayersWantedClassifiedSchemaRef,

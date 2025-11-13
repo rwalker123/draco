@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import type { accountdiscordsettings } from '@prisma/client';
 import { z } from 'zod';
 import {
+  AnnouncementType,
   DiscordAccountConfigType,
   DiscordAccountConfigUpdateType,
   DiscordLinkStatusType,
@@ -14,6 +15,10 @@ import {
   DiscordChannelMappingListType,
   DiscordGuildChannelType,
   DiscordChannelCreateTypeEnum,
+  DiscordFeatureSyncStatusType,
+  DiscordFeatureSyncUpdateType,
+  DiscordFeatureSyncFeatureType,
+  DiscordFeatureSyncChannelType,
   CommunityChannelType,
 } from '@draco/shared-schemas';
 import { RepositoryFactory } from '../repositories/index.js';
@@ -74,6 +79,8 @@ interface CreatedDiscordChannel {
 }
 
 type DiscordChannelCreateType = z.infer<typeof DiscordChannelCreateTypeEnum>;
+
+const SUPPORTED_FEATURES: readonly DiscordFeatureSyncFeatureType[] = ['announcements'] as const;
 
 export class DiscordIntegrationService {
   private readonly discordRepository = RepositoryFactory.getDiscordIntegrationRepository();
@@ -306,6 +313,76 @@ export class DiscordIntegrationService {
     return targets;
   }
 
+  async getFeatureSyncStatus(
+    accountId: bigint,
+    feature: DiscordFeatureSyncFeatureType,
+  ): Promise<DiscordFeatureSyncStatusType> {
+    await this.ensureAccountExists(accountId);
+    this.ensureFeatureSupported(feature);
+    const config = await this.getOrCreateAccountConfigRecord(accountId);
+    const record = await this.discordRepository.getFeatureSync(accountId, feature);
+    return DiscordIntegrationResponseFormatter.formatFeatureSync(
+      feature,
+      record,
+      Boolean(config.guildid),
+    );
+  }
+
+  async updateFeatureSync(
+    accountId: bigint,
+    feature: DiscordFeatureSyncFeatureType,
+    payload: DiscordFeatureSyncUpdateType,
+  ): Promise<DiscordFeatureSyncStatusType> {
+    await this.ensureAccountExists(accountId);
+    this.ensureFeatureSupported(feature);
+    const config = await this.getOrCreateAccountConfigRecord(accountId);
+
+    if (!payload.enabled) {
+      const updated = await this.discordRepository.upsertFeatureSync(accountId, {
+        feature,
+        enabled: false,
+        discordChannelId: null,
+        discordChannelName: null,
+        channelType: null,
+        autoCreated: false,
+        lastSyncedAt: null,
+      });
+
+      return DiscordIntegrationResponseFormatter.formatFeatureSync(
+        feature,
+        updated,
+        Boolean(config.guildid),
+      );
+    }
+
+    this.ensureGuildConfigured(config);
+
+    if (!payload.channel) {
+      throw new ValidationError('Channel configuration is required when enabling sync.');
+    }
+
+    const { channelId, channelName, channelType, autoCreated } = await this.resolveFeatureChannel(
+      config,
+      payload.channel,
+    );
+
+    const updated = await this.discordRepository.upsertFeatureSync(accountId, {
+      feature,
+      enabled: true,
+      discordChannelId: channelId,
+      discordChannelName: channelName,
+      channelType,
+      autoCreated,
+      lastSyncedAt: null,
+    });
+
+    return DiscordIntegrationResponseFormatter.formatFeatureSync(
+      feature,
+      updated,
+      Boolean(config.guildid),
+    );
+  }
+
   private async resolveChannelDetails(
     config: accountdiscordsettings,
     payload: DiscordChannelMappingCreateType,
@@ -317,7 +394,7 @@ export class DiscordIntegrationService {
       }
       const createdChannel = await this.createDiscordChannel(
         guildId,
-        payload.newChannelName,
+        this.sanitizeChannelName(payload.newChannelName),
         payload.newChannelType,
       );
       return {
@@ -331,6 +408,37 @@ export class DiscordIntegrationService {
       channelId: payload.discordChannelId,
       channelName: payload.discordChannelName,
       channelType: payload.channelType ?? null,
+    };
+  }
+
+  private async resolveFeatureChannel(
+    config: accountdiscordsettings,
+    channel: DiscordFeatureSyncChannelType,
+  ): Promise<{
+    channelId: string;
+    channelName: string;
+    channelType?: string | null;
+    autoCreated: boolean;
+  }> {
+    if (channel.mode === 'autoCreate') {
+      const createdChannel = await this.createDiscordChannel(
+        config.guildid as string,
+        this.sanitizeChannelName(channel.newChannelName),
+        channel.newChannelType,
+      );
+      return {
+        channelId: createdChannel.id,
+        channelName: createdChannel.name,
+        channelType: createdChannel.type ?? null,
+        autoCreated: true,
+      };
+    }
+
+    return {
+      channelId: channel.discordChannelId,
+      channelName: channel.discordChannelName,
+      channelType: channel.channelType ?? null,
+      autoCreated: false,
     };
   }
 
@@ -805,7 +913,7 @@ export class DiscordIntegrationService {
       };
     } catch (error) {
       console.error('Unable to create Discord channel', error);
-      throw new ValidationError('Unable to create the Discord channel. Please try again.');
+      throw new ValidationError(this.formatDiscordChannelError(error));
     }
   }
 
@@ -827,5 +935,109 @@ export class DiscordIntegrationService {
       default:
         return String(type);
     }
+  }
+
+  private sanitizeChannelName(name: string): string {
+    const trimmed = name.trim().toLowerCase();
+    const slug = trimmed.replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '');
+    const normalized = slug || 'draco-channel';
+    return normalized.slice(0, 100);
+  }
+
+  private ensureFeatureSupported(
+    feature: string,
+  ): asserts feature is DiscordFeatureSyncFeatureType {
+    if (!SUPPORTED_FEATURES.includes(feature as DiscordFeatureSyncFeatureType)) {
+      throw new ValidationError(`Unsupported Discord feature sync: ${feature}`);
+    }
+  }
+
+  async publishAnnouncement(accountId: bigint, announcement: AnnouncementType): Promise<void> {
+    try {
+      await this.ensureAccountExists(accountId);
+      const featureRecord = await this.discordRepository.getFeatureSync(accountId, 'announcements');
+      if (!featureRecord || !featureRecord.enabled || !featureRecord.discordchannelid) {
+        return;
+      }
+
+      const content = this.composeAnnouncementMessage(announcement);
+      if (!content) {
+        return;
+      }
+
+      await this.postDiscordMessage(featureRecord.discordchannelid, content);
+      await this.discordRepository.upsertFeatureSync(accountId, {
+        feature: 'announcements',
+        enabled: true,
+        discordChannelId: featureRecord.discordchannelid,
+        discordChannelName: featureRecord.discordchannelname ?? null,
+        channelType: featureRecord.channeltype ?? null,
+        autoCreated: featureRecord.autocreated ?? false,
+        lastSyncedAt: new Date(),
+      });
+    } catch (error) {
+      console.error('[discord] Failed to publish announcement', {
+        accountId: accountId.toString(),
+        announcementId: announcement.id,
+        error,
+      });
+    }
+  }
+
+  private composeAnnouncementMessage(announcement: AnnouncementType): string | null {
+    const title = announcement.title?.trim();
+    const body = announcement.body ? this.stripHtml(announcement.body).trim() : '';
+
+    const segments = [title ? `**${title}**` : null, body || null].filter(
+      (segment): segment is string => Boolean(segment),
+    );
+
+    if (!segments.length) {
+      return null;
+    }
+
+    const message = segments.join('\n\n').slice(0, 1900);
+    return message || null;
+  }
+
+  private async postDiscordMessage(channelId: string, content: string): Promise<void> {
+    const botToken = this.getBotToken();
+    try {
+      await fetchJson(`${getDiscordOAuthConfig().apiBaseUrl}/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bot ${botToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+          allowed_mentions: { parse: [] },
+        }),
+        timeoutMs: 10000,
+      });
+    } catch (error) {
+      console.error('Unable to post Discord message', error);
+      throw error;
+    }
+  }
+
+  private stripHtml(value: string): string {
+    return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+  }
+
+  private formatDiscordChannelError(error: unknown): string {
+    if (error instanceof Error) {
+      const message = error.message || '';
+      if (message.includes('50013') || /Missing Permissions/gi.test(message)) {
+        return 'Draco needs the "Manage Channels" permission in your Discord guild to auto-create channels. Update the bot permissions and try again.';
+      }
+      if (message.includes('401') || /Unauthorized/gi.test(message)) {
+        return 'Discord rejected the request. Verify the DISCORD_BOT_TOKEN and reinstall the bot.';
+      }
+      if (message.includes('404')) {
+        return 'Discord could not find the guild when creating the channel. Confirm the guild ID is correct.';
+      }
+    }
+    return 'Unable to create the Discord channel. Please try again.';
   }
 }

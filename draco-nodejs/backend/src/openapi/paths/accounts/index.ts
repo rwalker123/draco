@@ -46,6 +46,19 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     PhotoGalleryAdminAlbumSchemaRef,
     PhotoGalleryListSchemaRef,
     PhotoGalleryQuerySchemaRef,
+    DiscordAccountConfigSchemaRef,
+    DiscordAccountConfigUpdateSchemaRef,
+    DiscordRoleMappingSchemaRef,
+    DiscordRoleMappingListSchemaRef,
+    DiscordRoleMappingUpdateSchemaRef,
+    DiscordChannelMappingSchemaRef,
+    DiscordChannelMappingListSchemaRef,
+    DiscordChannelMappingCreateSchemaRef,
+    DiscordGuildChannelSchemaRef,
+    DiscordOAuthStartResponseSchemaRef,
+    DiscordLinkStatusSchemaRef,
+    DiscordFeatureSyncStatusSchemaRef,
+    DiscordFeatureSyncUpdateSchemaRef,
   } = schemaRefs;
 
   // GET /api/accounts/search
@@ -2561,6 +2574,611 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
         content: {
           'application/json': { schema: InternalServerErrorSchemaRef },
         },
+      },
+    },
+  });
+
+  // Discord integration endpoints
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/discord/config',
+    operationId: 'getAccountDiscordConfig',
+    summary: 'Get Discord configuration for an account',
+    description: 'Returns the saved Discord guild configuration for the specified account.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Discord configuration for the account.',
+        content: { 'application/json': { schema: DiscordAccountConfigSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/discord/config',
+    operationId: 'updateAccountDiscordConfig',
+    summary: 'Update Discord configuration for an account',
+    description: 'Creates or updates the Discord guild metadata for the specified account.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': { schema: DiscordAccountConfigUpdateSchemaRef },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated Discord configuration.',
+        content: { 'application/json': { schema: DiscordAccountConfigSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/discord/config',
+    operationId: 'deleteAccountDiscordConfig',
+    summary: 'Remove Discord configuration for an account',
+    description: 'Disconnects the configured Discord guild and clears related mappings.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Updated Discord configuration after removal.',
+        content: { 'application/json': { schema: DiscordAccountConfigSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/discord/link-status',
+    operationId: 'getAccountDiscordLinkStatus',
+    summary: 'Get the authenticated contact’s Discord link status',
+    description: 'Returns whether the current user has linked their Discord identity.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Link status for the authenticated user.',
+        content: { 'application/json': { schema: DiscordLinkStatusSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Account access denied.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/discord/link/start',
+    operationId: 'startAccountDiscordLink',
+    summary: 'Begin the Discord user linking flow',
+    description: 'Starts the OAuth flow for the current user to link their Discord account.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      201: {
+        description: 'OAuth start payload for the linking flow.',
+        content: { 'application/json': { schema: DiscordOAuthStartResponseSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Account access denied.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/discord/link',
+    operationId: 'deleteAccountDiscordLink',
+    summary: 'Unlink the authenticated contact’s Discord account',
+    description: 'Removes the stored Discord tokens for the current user.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Updated link status after unlinking.',
+        content: { 'application/json': { schema: DiscordLinkStatusSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Account access denied.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/discord/install/start',
+    operationId: 'startAccountDiscordInstall',
+    summary: 'Begin the Discord bot installation flow',
+    description: 'Starts the OAuth flow to install the Draco Discord bot for an account.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      201: {
+        description: 'OAuth start payload for installing the Discord bot.',
+        content: { 'application/json': { schema: DiscordOAuthStartResponseSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/discord/role-mappings',
+    operationId: 'listAccountDiscordRoleMappings',
+    summary: 'List Discord role mappings for an account',
+    description: 'Returns the configured Discord role-to-permission mappings for the account.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Discord role mappings.',
+        content: { 'application/json': { schema: DiscordRoleMappingListSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/discord/role-mappings',
+    operationId: 'createAccountDiscordRoleMapping',
+    summary: 'Create a Discord role mapping',
+    description: 'Adds a new Discord role mapping for the specified account.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: DiscordRoleMappingUpdateSchemaRef } },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Created Discord role mapping.',
+        content: { 'application/json': { schema: DiscordRoleMappingSchemaRef } },
+      },
+      400: {
+        description: 'Validation error.',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      409: {
+        description: 'Conflict error.',
+        content: { 'application/json': { schema: ConflictErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/discord/role-mappings/{roleMappingId}',
+    operationId: 'updateAccountDiscordRoleMapping',
+    summary: 'Update a Discord role mapping',
+    description: 'Updates an existing Discord role mapping for the specified account.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'roleMappingId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: DiscordRoleMappingUpdateSchemaRef } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated Discord role mapping.',
+        content: { 'application/json': { schema: DiscordRoleMappingSchemaRef } },
+      },
+      400: {
+        description: 'Validation error.',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account or role mapping not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      409: {
+        description: 'Conflict error.',
+        content: { 'application/json': { schema: ConflictErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/discord/role-mappings/{roleMappingId}',
+    operationId: 'deleteAccountDiscordRoleMapping',
+    summary: 'Delete a Discord role mapping',
+    description: 'Removes a Discord role mapping from the specified account.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'roleMappingId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      204: { description: 'Role mapping deleted.' },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account or role mapping not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/discord/channel-mappings',
+    operationId: 'listAccountDiscordChannelMappings',
+    summary: 'List Discord channel mappings for an account',
+    description: 'Returns the Discord channel ingestion mappings configured for the account.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Discord channel mappings.',
+        content: { 'application/json': { schema: DiscordChannelMappingListSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/discord/channel-mappings',
+    operationId: 'createAccountDiscordChannelMapping',
+    summary: 'Create a Discord channel mapping',
+    description: 'Creates a new Discord channel ingestion mapping.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: DiscordChannelMappingCreateSchemaRef } },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Created Discord channel mapping.',
+        content: { 'application/json': { schema: DiscordChannelMappingSchemaRef } },
+      },
+      400: {
+        description: 'Validation error.',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      409: {
+        description: 'Conflict error.',
+        content: { 'application/json': { schema: ConflictErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/discord/channel-mappings/{mappingId}',
+    operationId: 'deleteAccountDiscordChannelMapping',
+    summary: 'Delete a Discord channel mapping',
+    description: 'Removes a Discord channel ingestion mapping.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'mappingId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      204: { description: 'Channel mapping deleted.' },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account or channel mapping not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/discord/available-channels',
+    operationId: 'listAccountDiscordAvailableChannels',
+    summary: 'List channels available within the configured Discord guild',
+    description: 'Returns text and announcement channels exposed by the Draco bot.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Discord channels in the guild.',
+        content: { 'application/json': { schema: DiscordGuildChannelSchemaRef.array() } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Account access denied.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/discord/feature-sync/{feature}',
+    operationId: 'getAccountDiscordFeatureSync',
+    summary: 'Get Discord sync settings for a feature',
+    description: 'Returns the sync status for a feature such as announcements.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'feature',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          enum: ['announcements'],
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Discord sync status for the feature.',
+        content: { 'application/json': { schema: DiscordFeatureSyncStatusSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord communications.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/discord/feature-sync/{feature}',
+    operationId: 'updateAccountDiscordFeatureSync',
+    summary: 'Update Discord sync settings for a feature',
+    description: 'Enables or disables Discord syncing for a supported feature.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'feature',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          enum: ['announcements'],
+        },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: DiscordFeatureSyncUpdateSchemaRef } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated Discord sync status.',
+        content: { 'application/json': { schema: DiscordFeatureSyncStatusSchemaRef } },
+      },
+      400: {
+        description: 'Validation error.',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord communications.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
       },
     },
   });

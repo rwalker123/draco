@@ -132,6 +132,47 @@ export class RouteProtection {
     });
   };
 
+  requireAnyPermission = (permissions: string[], context?: Partial<RoleContextData>) => {
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        throw new AuthenticationError('Authentication required');
+      }
+
+      if (!permissions.length) {
+        throw new ValidationError('At least one permission must be provided.');
+      }
+
+      const seasonId = context?.seasonId || this.extractSeasonId(req);
+      const accountId = context?.accountId || this.extractAccountId(req) || BigInt(0);
+      const teamId = context?.teamId || (await this.getTeamSeasonId(accountId, seasonId, req));
+
+      const roleContext: RoleContextData = {
+        accountId,
+        teamId,
+        leagueId: context?.leagueId || this.extractLeagueId(req),
+        seasonId,
+      };
+
+      for (const permission of permissions) {
+        const hasPermission = await this.roleService.hasPermission(
+          req.user.id,
+          permission,
+          roleContext,
+        );
+
+        if (hasPermission) {
+          req.userRoles = await this.roleService.getUserRoles(req.user.id, roleContext.accountId);
+          next();
+          return;
+        }
+      }
+
+      throw new AuthorizationError(
+        `One of the permissions ${permissions.map((perm) => `'${perm}'`).join(', ')} is required`,
+      );
+    });
+  };
+
   requirePollManagerAccess = () => {
     return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
       if (!req.user?.id) {

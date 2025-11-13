@@ -2,6 +2,7 @@ import {
   accountdiscordsettings,
   accountdiscordrolemapping,
   accountdiscordchannels,
+  accountdiscordfeaturesync,
   userdiscordaccounts,
   PrismaClient,
   Prisma,
@@ -11,6 +12,7 @@ import {
   DiscordLinkUpsertInput,
   DiscordRoleMappingUpsertInput,
   DiscordChannelMappingCreateInput,
+  DiscordFeatureSyncUpsertInput,
   IDiscordIntegrationRepository,
 } from '../interfaces/IDiscordIntegrationRepository.js';
 
@@ -255,6 +257,59 @@ export class PrismaDiscordIntegrationRepository implements IDiscordIntegrationRe
   async deleteChannelMappingsByAccount(accountId: bigint): Promise<void> {
     await this.prisma.accountdiscordchannels.deleteMany({
       where: { accountid: accountId },
+    });
+  }
+
+  async getFeatureSync(
+    accountId: bigint,
+    feature: string,
+  ): Promise<accountdiscordfeaturesync | null> {
+    return this.prisma.accountdiscordfeaturesync.findFirst({
+      where: {
+        accountid: accountId,
+        feature,
+      },
+    });
+  }
+
+  async upsertFeatureSync(
+    accountId: bigint,
+    data: DiscordFeatureSyncUpsertInput,
+  ): Promise<accountdiscordfeaturesync> {
+    return this.prisma.accountdiscordfeaturesync.upsert({
+      where: {
+        accountid_feature: {
+          accountid: accountId,
+          feature: data.feature,
+        },
+      },
+      create: {
+        accountid: accountId,
+        feature: data.feature,
+        enabled: data.enabled,
+        discordchannelid: data.discordChannelId ?? null,
+        discordchannelname: data.discordChannelName ?? null,
+        channeltype: data.channelType ?? null,
+        autocreated: data.autoCreated ?? false,
+        lastsyncedat: data.lastSyncedAt ?? null,
+      },
+      update: {
+        enabled: data.enabled,
+        discordchannelid: data.discordChannelId ?? null,
+        discordchannelname: data.discordChannelName ?? null,
+        channeltype: data.channelType ?? null,
+        autocreated: data.autoCreated ?? false,
+        lastsyncedat: data.lastSyncedAt ?? null,
+      },
+    });
+  }
+
+  async deleteFeatureSync(accountId: bigint, feature: string): Promise<void> {
+    await this.prisma.accountdiscordfeaturesync.deleteMany({
+      where: {
+        accountid: accountId,
+        feature,
+      },
     });
   }
 }

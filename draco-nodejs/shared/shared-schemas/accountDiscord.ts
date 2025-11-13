@@ -187,3 +187,67 @@ export const DiscordOAuthCallbackSchema = z.object({
 });
 
 export type DiscordOAuthCallbackType = z.infer<typeof DiscordOAuthCallbackSchema>;
+
+export const DiscordFeatureSyncFeatureEnum = z.enum(['announcements']);
+
+export type DiscordFeatureSyncFeatureType = z.infer<typeof DiscordFeatureSyncFeatureEnum>;
+
+export const DiscordFeatureSyncChannelExistingSchema = z.object({
+  mode: z.literal('existing'),
+  discordChannelId: DiscordChannelIdSchema,
+  discordChannelName: z.string().trim().min(1, 'Channel name is required'),
+  channelType: z.string().trim().optional(),
+});
+
+export const DiscordFeatureSyncChannelAutoCreateSchema = z.object({
+  mode: z.literal('autoCreate'),
+  newChannelName: z.string().trim().min(1, 'Channel name is required').max(100),
+  newChannelType: DiscordChannelCreateTypeEnum.default('text'),
+});
+
+export const DiscordFeatureSyncChannelSchema = z.discriminatedUnion('mode', [
+  DiscordFeatureSyncChannelExistingSchema,
+  DiscordFeatureSyncChannelAutoCreateSchema,
+]);
+
+export type DiscordFeatureSyncChannelType = z.infer<typeof DiscordFeatureSyncChannelSchema>;
+
+export const DiscordFeatureSyncUpdateSchema = z
+  .object({
+    enabled: z.boolean(),
+    channel: DiscordFeatureSyncChannelSchema.nullable().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.enabled && !value.channel) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['channel'],
+        message: 'Channel configuration is required when enabling sync.',
+      });
+    }
+  });
+
+export type DiscordFeatureSyncUpdateType = z.infer<typeof DiscordFeatureSyncUpdateSchema>;
+
+export const DiscordFeatureSyncChannelStatusSchema = z
+  .object({
+    discordChannelId: DiscordChannelIdSchema,
+    discordChannelName: z.string().trim().min(1),
+    channelType: z.string().trim().nullable(),
+    autoCreated: z.boolean().optional(),
+    lastSyncedAt: isoDateTimeSchema.nullable().optional(),
+  })
+  .partial({ channelType: true, autoCreated: true, lastSyncedAt: true });
+
+export type DiscordFeatureSyncChannelStatusType = z.infer<
+  typeof DiscordFeatureSyncChannelStatusSchema
+>;
+
+export const DiscordFeatureSyncStatusSchema = z.object({
+  feature: DiscordFeatureSyncFeatureEnum,
+  enabled: z.boolean(),
+  guildConfigured: z.boolean(),
+  channel: DiscordFeatureSyncChannelStatusSchema.nullable(),
+});
+
+export type DiscordFeatureSyncStatusType = z.infer<typeof DiscordFeatureSyncStatusSchema>;
