@@ -46,6 +46,7 @@ import SpecialAnnouncementsWidget, {
 import AccountOptional from '@/components/account/AccountOptional';
 import TeamRosterWidget from '@/components/roster/TeamRosterWidget';
 import TeamManagersWidget from '@/components/team/TeamManagersWidget';
+import TeamFeaturedVideosWidget from '../../../../../../../components/social/TeamFeaturedVideosWidget';
 import InformationWidget from '@/components/information/InformationWidget';
 
 interface TeamPageProps {
@@ -68,6 +69,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     record?: { wins: number; losses: number; ties: number };
     teamId?: string;
     leagueId?: string;
+    youtubeUserId?: string | null;
   } | null>(null);
   const [teamSponsors, setTeamSponsors] = React.useState<SponsorType[]>([]);
   const [teamSponsorError, setTeamSponsorError] = React.useState<string | null>(null);
@@ -445,6 +447,14 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
 
+  const canManageTeamSocials = React.useMemo(() => {
+    return (
+      hasRole('Administrator') ||
+      hasRoleInAccount('AccountAdmin', accountId) ||
+      hasRoleInTeam('TeamAdmin', teamSeasonId)
+    );
+  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+
   const canManageInformationMessages = React.useMemo(() => {
     return (
       hasRole('Administrator') ||
@@ -472,6 +482,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     () => [{ title: 'Completed Games', games: completedGames }],
     [completedGames],
   );
+
+  const youtubeManagementHref =
+    canManageTeamSocials && teamData?.teamId
+      ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/youtube/manage`
+      : undefined;
 
   const handleOpenPlayersWantedDialog = React.useCallback(() => {
     const parts = [teamData?.leagueName, teamData?.teamName]
@@ -578,6 +593,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           canEnterStatistics={canEnterStatistics}
           canManageInformationMessages={canManageInformationMessages}
           informationMessagesHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/information-messages/manage`}
+          youtubeHref={youtubeManagementHref}
         />
       )}
 
@@ -663,6 +679,20 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 </Box>
               </Box>
             )}
+          </Box>
+        ) : null}
+
+        {teamData?.teamId && teamData?.youtubeUserId ? (
+          <Box sx={{ flex: '2 1 640px', minWidth: 320 }}>
+            <TeamFeaturedVideosWidget
+              accountId={accountId}
+              seasonId={seasonId}
+              teamSeasonId={teamSeasonId}
+              youtubeChannelId={teamData?.youtubeUserId ?? null}
+              teamName={teamData?.teamName ?? null}
+              viewAllHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/videos`}
+              channelUrl={`https://www.youtube.com/channel/${teamData.youtubeUserId}`}
+            />
           </Box>
         ) : null}
 

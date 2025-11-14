@@ -10,6 +10,7 @@ import CampaignIcon from '@mui/icons-material/Campaign';
 import PrintIcon from '@mui/icons-material/Print';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import YouTubeIcon from '@mui/icons-material/YouTube';
 import WidgetShell from '../ui/WidgetShell';
 import AccountOptional from '../account/AccountOptional';
 
@@ -27,6 +28,7 @@ interface TeamAdminPanelProps {
   canEnterStatistics?: boolean;
   informationMessagesHref?: string;
   canManageInformationMessages?: boolean;
+  youtubeHref?: string;
 }
 
 const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
@@ -43,6 +45,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   canEnterStatistics = false,
   informationMessagesHref,
   canManageInformationMessages = false,
+  youtubeHref,
 }) => {
   const shouldShowClassifiedsLink =
     showPlayerClassifiedsLink && (!!playerClassifiedsHref || !!onPostPlayersWanted);
@@ -52,6 +55,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   const shouldShowInformationMessagesLink = Boolean(
     canManageInformationMessages && informationMessagesHref,
   );
+  const shouldShowYouTubeLink = Boolean(youtubeHref);
 
   return (
     <WidgetShell
@@ -125,6 +129,17 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               href={informationMessagesHref!}
             >
               Manage Information Messages
+            </Button>
+          )}
+          {shouldShowYouTubeLink && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<YouTubeIcon />}
+              component={Link}
+              href={youtubeHref!}
+            >
+              Manage YouTube Channel
             </Button>
           )}
           {shouldShowHandoutsLink && (

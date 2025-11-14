@@ -38,7 +38,6 @@ import {
   ThumbUp,
   Comment,
   Share,
-  PlayCircleOutline,
   Forum,
   Image as ImageIcon,
   Movie,
@@ -46,62 +45,17 @@ import {
 } from '@mui/icons-material';
 import type {
   SocialFeedItemType,
-  SocialVideoType,
   CommunityMessagePreviewType,
   CommunityChannelType,
   CommunityMessageAttachmentType,
 } from '@draco/shared-schemas';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
+import { formatRelativeTime } from './utils';
+import FeaturedVideosWidget from './FeaturedVideosWidget';
 import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
 import PlayersWantedPreview from '@/components/join-league/PlayersWantedPreview';
 import WidgetShell from '../ui/WidgetShell';
-
-const formatRelativeTime = (isoString: string): string => {
-  const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-
-  const diffMs = Date.now() - date.getTime();
-  const minutes = Math.max(Math.floor(diffMs / 60000), 0);
-
-  if (minutes < 1) {
-    return 'Just now';
-  }
-  if (minutes < 60) {
-    return `${minutes}m ago`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) {
-    return `${hours}h ago`;
-  }
-
-  const days = Math.floor(hours / 24);
-  if (days < 7) {
-    return `${days}d ago`;
-  }
-
-  return date.toLocaleDateString();
-};
-
-const formatDuration = (seconds?: number | null): string | null => {
-  if (!seconds || seconds <= 0) {
-    return null;
-  }
-
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-
-  if (minutes >= 60) {
-    const hours = Math.floor(minutes / 60);
-    const minutesPart = minutes % 60;
-    return `${hours}h ${minutesPart}m`;
-  }
-
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-};
 
 const AttachmentIcon = ({ type }: { type: CommunityMessageAttachmentType['type'] }) => {
   switch (type) {
@@ -202,72 +156,6 @@ const SocialFeedCard = ({ item }: { item: SocialFeedItemType }) => {
   );
 };
 
-const SocialVideoCard = ({ video }: { video: SocialVideoType }) => {
-  const publishedLabel = formatRelativeTime(video.publishedAt);
-  const durationLabel = video.isLive ? 'LIVE' : formatDuration(video.durationSeconds);
-
-  return (
-    <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box sx={{ position: 'relative' }}>
-        <CardMedia
-          component="img"
-          height="160"
-          image={video.thumbnailUrl}
-          alt={video.title}
-          sx={{ borderRadius: 1 }}
-        />
-        {durationLabel && (
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: 8,
-              right: 8,
-              bgcolor: video.isLive ? 'error.main' : 'rgba(0,0,0,0.75)',
-              color: 'white',
-              px: 1,
-              py: 0.25,
-              borderRadius: 1,
-              fontWeight: 600,
-            }}
-          >
-            <Typography variant="caption">{durationLabel}</Typography>
-          </Box>
-        )}
-        <PlayCircleOutline
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            fontSize: 48,
-            color: 'white',
-            opacity: 0.85,
-          }}
-        />
-      </Box>
-      <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Typography variant="subtitle2">{video.title}</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
-          {video.description ?? 'Watch the latest highlight.'}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {publishedLabel}
-        </Typography>
-        <Button
-          variant="contained"
-          size="small"
-          component="a"
-          href={video.videoUrl}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Watch
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
-
 interface SocialHubExperienceProps {
   accountId?: string;
   seasonId?: string;
@@ -279,18 +167,12 @@ export default function SocialHubExperience({
   seasonId,
   isAccountMember,
 }: SocialHubExperienceProps) {
-  const { fetchFeed, fetchVideos, fetchCommunityMessages, fetchCommunityChannels } =
-    useSocialHubService({
-      accountId,
-      seasonId,
-    });
+  const { fetchFeed, fetchCommunityMessages, fetchCommunityChannels } = useSocialHubService({
+    accountId,
+    seasonId,
+  });
   const [feedState, setFeedState] = useState<{
     items: SocialFeedItemType[];
-    loading: boolean;
-    error: string | null;
-  }>({ items: [], loading: false, error: null });
-  const [videoState, setVideoState] = useState<{
-    items: SocialVideoType[];
     loading: boolean;
     error: string | null;
   }>({ items: [], loading: false, error: null });
@@ -337,36 +219,6 @@ export default function SocialHubExperience({
       cancelled = true;
     };
   }, [accountId, seasonId, fetchFeed]);
-
-  useEffect(() => {
-    if (!accountId || !seasonId) {
-      setVideoState({ items: [], loading: false, error: null });
-      return;
-    }
-
-    let cancelled = false;
-    setVideoState((prev) => ({ ...prev, loading: true, error: null }));
-
-    fetchVideos({ limit: 4 })
-      .then((items) => {
-        if (!cancelled) {
-          setVideoState({ items, loading: false, error: null });
-        }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          setVideoState({
-            items: [],
-            loading: false,
-            error: error instanceof Error ? error.message : 'Unable to load social videos.',
-          });
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [accountId, seasonId, fetchVideos]);
 
   useEffect(() => {
     if (!accountId || !seasonId) {
@@ -453,8 +305,6 @@ export default function SocialHubExperience({
   );
 
   const displayedFeedItems = feedState.items.slice(0, 4);
-  const displayedVideos = videoState.items.slice(0, 2);
-
   const renderCardSkeletons = (count: number) => (
     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
       {Array.from({ length: count }).map((_, index) => (
@@ -527,38 +377,11 @@ export default function SocialHubExperience({
             )}
           </Paper>
 
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-              <YouTube sx={{ mr: 1, color: '#FF0000' }} /> Featured Videos
-            </Typography>
-            {!accountId || !seasonId ? (
-              <Alert severity="info">Select an account and season to load social videos.</Alert>
-            ) : (
-              <>
-                {videoState.error ? (
-                  <Alert severity="error" sx={{ mb: 2 }}>
-                    {videoState.error}
-                  </Alert>
-                ) : null}
-                {videoState.loading && videoState.items.length === 0 ? (
-                  renderCardSkeletons(2)
-                ) : displayedVideos.length > 0 ? (
-                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    {displayedVideos.map((video) => (
-                      <Box
-                        key={video.id}
-                        sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}
-                      >
-                        <SocialVideoCard video={video} />
-                      </Box>
-                    ))}
-                  </Box>
-                ) : (
-                  <Alert severity="info">No connected video streams yet.</Alert>
-                )}
-              </>
-            )}
-          </Paper>
+          <FeaturedVideosWidget
+            accountId={accountId}
+            seasonId={seasonId}
+            viewAllHref={accountId ? `/account/${accountId}/social-hub/videos` : undefined}
+          />
 
           <WidgetShell
             title={

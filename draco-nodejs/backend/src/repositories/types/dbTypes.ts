@@ -749,6 +749,23 @@ export type dbTeamSeasonWithTeam = Prisma.teamsseasonGetPayload<{
   };
 }>;
 
+export type dbTeamSeasonWithTeamAndSeason = Prisma.teamsseasonGetPayload<{
+  include: {
+    teams: {
+      select: {
+        id: true;
+        accountid: true;
+        youtubeuserid: true;
+      };
+    };
+    leagueseason: {
+      select: {
+        seasonid: true;
+      };
+    };
+  };
+}>;
+
 export type dbUser = aspnetusers;
 
 export type dbPasswordResetToken = Prisma.passwordresettokensGetPayload<{
