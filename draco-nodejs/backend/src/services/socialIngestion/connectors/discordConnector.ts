@@ -2,8 +2,9 @@ import { Prisma } from '@prisma/client';
 import { BaseSocialIngestionConnector } from './baseConnector.js';
 import { DiscordConnectorOptions, DiscordMessageIngestionRecord } from '../ingestionTypes.js';
 import { ISocialContentRepository } from '../../../repositories/interfaces/ISocialContentRepository.js';
-import { fetchJson } from '../../../utils/fetchJson.js';
+import { fetchJson, HttpError } from '../../../utils/fetchJson.js';
 import { normalizeDiscordMessage } from '../transformers/discordMessageTransformer.js';
+import type { DiscordIngestionTarget } from '../../../config/socialIngestion.js';
 
 export interface DiscordMessage {
   id: string;
@@ -62,7 +63,16 @@ export interface DiscordMessage {
   }>;
 }
 
+interface CachedDiscordMessage {
+  postedAtMs: number;
+  signature: string;
+}
+
 export class DiscordConnector extends BaseSocialIngestionConnector {
+  private readonly messageCache = new Map<string, CachedDiscordMessage>();
+  private nextAllowedRun = 0;
+  private globalCooldownUntil = 0;
+
   constructor(
     private readonly repository: ISocialContentRepository,
     private readonly options: DiscordConnectorOptions,
@@ -76,6 +86,10 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
       return;
     }
 
+    if (Date.now() < this.nextAllowedRun || Date.now() < this.globalCooldownUntil) {
+      return;
+    }
+
     const targets = await this.options.targetsProvider();
     if (!targets.length) {
       console.info('[discord] No Discord channel mappings configured. Skipping run.');
@@ -84,13 +98,15 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
 
     for (const target of targets) {
       const messages = await this.fetchChannelMessages(target.channelId);
-      if (!messages.length) {
-        continue;
-      }
+      let ingestedCount = 0;
 
       for (const message of messages) {
+        if (this.isMessageCached(target, message)) {
+          continue;
+        }
+
         await this.repository.upsertCommunityMessage({
-          id: `${target.accountId.toString()}-${message.messageId}`,
+          id: this.buildCommunityMessageId(target.accountId, message.messageId),
           accountid: target.accountId,
           seasonid: target.seasonId,
           teamid: target.teamId ?? null,
@@ -110,11 +126,24 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
           postedat: message.postedAt,
           permalink: message.permalink ?? '',
         });
+
+        this.cacheMessage(target, message);
+        ingestedCount += 1;
       }
 
-      console.info(
-        `[discord] Ingested ${messages.length} messages for channel ${target.channelId}`,
-      );
+      const deletedCount = await this.removeDeletedMessages(target, messages);
+
+      if (ingestedCount > 0) {
+        console.info(
+          `[discord] Ingested ${ingestedCount} messages for channel ${target.channelId}`,
+        );
+      } else if (deletedCount > 0) {
+        console.info(
+          `[discord] Removed ${deletedCount} deleted messages for channel ${target.channelId}`,
+        );
+      } else {
+        console.info(`[discord] No changes for channel ${target.channelId}`);
+      }
     }
   }
 
@@ -152,8 +181,32 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
         permalink: '',
       }));
     } catch (error) {
-      console.error(`[discord] Failed to fetch messages for channel ${channelId}`, error);
+      if (error instanceof HttpError && error.status === 429) {
+        const retryAfterMs = this.extractRetryAfterMs(error.body);
+        console.warn(
+          `[discord] Rate limit hit for channel ${channelId}. Pausing for ${retryAfterMs}ms`,
+        );
+        this.nextAllowedRun = Date.now() + retryAfterMs;
+      } else if (error instanceof HttpError && error.status >= 500) {
+        console.error(`[discord] Discord API error ${error.status} for channel ${channelId}`);
+      } else {
+        console.error(`[discord] Failed to fetch messages for channel ${channelId}`, error);
+      }
       return [];
+    }
+  }
+
+  private extractRetryAfterMs(body: string): number {
+    try {
+      const parsed = JSON.parse(body);
+      const retrySeconds = typeof parsed?.retry_after === 'number' ? parsed.retry_after : 1;
+      const isGlobal = Boolean(parsed?.global);
+      if (isGlobal) {
+        this.globalCooldownUntil = Date.now() + retrySeconds * 1000;
+      }
+      return Math.max(1000, retrySeconds * 1000);
+    } catch {
+      return 5000;
     }
   }
 
@@ -164,5 +217,82 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
 
     const extension = avatarHash.startsWith('a_') ? 'gif' : 'png';
     return `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.${extension}?size=64`;
+  }
+
+  private isMessageCached(
+    target: DiscordIngestionTarget,
+    message: DiscordMessageIngestionRecord,
+  ): boolean {
+    const key = this.getMessageCacheKey(target, message.messageId);
+    const cached = this.messageCache.get(key);
+    if (!cached) {
+      return false;
+    }
+
+    const signature = this.buildMessageSignature(message);
+    const postedAtMs = message.postedAt.getTime();
+    return cached.postedAtMs === postedAtMs && cached.signature === signature;
+  }
+
+  private cacheMessage(
+    target: DiscordIngestionTarget,
+    message: DiscordMessageIngestionRecord,
+  ): void {
+    const key = this.getMessageCacheKey(target, message.messageId);
+    this.messageCache.set(key, {
+      postedAtMs: message.postedAt.getTime(),
+      signature: this.buildMessageSignature(message),
+    });
+  }
+
+  private getMessageCacheKey(target: DiscordIngestionTarget, messageId: string): string {
+    return `${this.getCachePrefix(target)}${messageId}`;
+  }
+
+  private getCachePrefix(target: DiscordIngestionTarget): string {
+    return `${target.accountId.toString()}:${target.channelId}:`;
+  }
+
+  private buildMessageSignature(message: DiscordMessageIngestionRecord): string {
+    return JSON.stringify({
+      content: message.content,
+      attachments: message.attachments ?? [],
+      permalink: message.permalink ?? '',
+    });
+  }
+
+  private buildCommunityMessageId(accountId: bigint, messageId: string): string {
+    return `${accountId.toString()}-${messageId}`;
+  }
+
+  private async removeDeletedMessages(
+    target: DiscordIngestionTarget,
+    messages: DiscordMessageIngestionRecord[],
+  ): Promise<number> {
+    const prefix = this.getCachePrefix(target);
+    const activeMessageIds = new Set(messages.map((message) => message.messageId));
+    const keysToRemove: string[] = [];
+
+    for (const key of this.messageCache.keys()) {
+      if (!key.startsWith(prefix)) {
+        continue;
+      }
+
+      const cachedMessageId = key.slice(prefix.length);
+      if (!activeMessageIds.has(cachedMessageId)) {
+        keysToRemove.push(key);
+      }
+    }
+
+    if (!keysToRemove.length) {
+      return 0;
+    }
+
+    const idsToDelete = keysToRemove.map((key) =>
+      this.buildCommunityMessageId(target.accountId, key.slice(prefix.length)),
+    );
+    await this.repository.deleteCommunityMessages(idsToDelete);
+    keysToRemove.forEach((key) => this.messageCache.delete(key));
+    return idsToDelete.length;
   }
 }

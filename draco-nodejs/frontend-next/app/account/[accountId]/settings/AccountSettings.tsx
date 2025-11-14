@@ -217,7 +217,7 @@ const AccountSettings: React.FC = () => {
           {/* Social Media Tab */}
           <TabPanel value={tabValue} index={2}>
             <Stack spacing={3}>
-              <SocialMediaWidget account={account} />
+              <SocialMediaWidget account={account} onAccountUpdate={setAccount} />
               <DiscordIntegrationAdminWidget accountId={accountIdStr || null} />
             </Stack>
           </TabPanel>

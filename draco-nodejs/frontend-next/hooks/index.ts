@@ -34,6 +34,7 @@ export { usePasswordResetService } from './usePasswordResetService';
 export { useHallOfFameService } from './useHallOfFameService';
 export { usePlayerCareerStatistics } from './usePlayerCareerStatistics';
 export { useDiscordFeatureSync } from './useDiscordFeatureSync';
+export { useYouTubeChannelAdmin } from './useYouTubeChannelAdmin';
 
 // Player Classifieds hooks
 export { usePlayerClassifieds } from './usePlayerClassifieds';

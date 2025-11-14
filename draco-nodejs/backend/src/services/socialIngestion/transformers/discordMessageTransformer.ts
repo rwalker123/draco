@@ -8,7 +8,10 @@ interface NormalizedDiscordMessage {
 
 const TOKEN_REGEX = /<(a?):([^:>]+):([0-9]+)>|<@!?([0-9]+)>|<@&([0-9]+)>|<#([0-9]+)>/g;
 
-const STICKER_EXTENSION: Record<number, { extension: string; type: CommunityMessageAttachmentType['type'] }> = {
+const STICKER_EXTENSION: Record<
+  number,
+  { extension: string; type: CommunityMessageAttachmentType['type'] }
+> = {
   1: { extension: 'png', type: 'image' },
   2: { extension: 'png', type: 'image' },
   3: { extension: 'json', type: 'file' },
@@ -64,7 +67,7 @@ const addAttachment = (
 };
 
 const normalizeFileAttachment = (
-  attachment: DiscordMessage['attachments'][number],
+  attachment: NonNullable<DiscordMessage['attachments']>[number],
 ): CommunityMessageAttachmentType | null => {
   if (!attachment?.url) {
     return null;
@@ -73,7 +76,8 @@ const normalizeFileAttachment = (
   const contentType = attachment.content_type?.toLowerCase() ?? '';
   const isGifContent =
     contentType === 'image/gif' ||
-    (contentType === 'video/mp4' && (attachment.url.includes('.gif') || attachment.filename?.includes('.gif')));
+    (contentType === 'video/mp4' &&
+      (attachment.url.includes('.gif') || attachment.filename?.includes('.gif')));
 
   let type: CommunityMessageAttachmentType['type'] = 'file';
   if (contentType.startsWith('video') && !isGifContent) {
@@ -99,7 +103,8 @@ const normalizeEmbedAttachment = (
   }
 
   const embedType = embed.type?.toLowerCase();
-  const possibleUrl = embed.video?.url ?? embed.url ?? embed.thumbnail?.url ?? embed.video?.proxy_url;
+  const possibleUrl =
+    embed.video?.url ?? embed.url ?? embed.thumbnail?.url ?? embed.video?.proxy_url;
 
   if (!possibleUrl) {
     return null;
@@ -220,4 +225,3 @@ export const normalizeDiscordMessage = (message: DiscordMessage): NormalizedDisc
     richContent,
   };
 };
-

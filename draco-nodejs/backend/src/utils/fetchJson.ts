@@ -5,6 +5,16 @@ export interface FetchJsonOptions {
   timeoutMs?: number;
 }
 
+export class HttpError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly body: string,
+  ) {
+    super(message);
+  }
+}
+
 export async function fetchJson<T>(input: string | URL, options?: FetchJsonOptions): Promise<T> {
   const controller = new AbortController();
   const timeout =
@@ -22,10 +32,12 @@ export async function fetchJson<T>(input: string | URL, options?: FetchJsonOptio
 
     if (!response.ok) {
       const message = await response.text().catch(() => response.statusText);
-      throw new Error(
+      throw new HttpError(
         `Request to ${typeof input === 'string' ? input : input.toString()} failed with status ${
           response.status
         }: ${message}`,
+        response.status,
+        message,
       );
     }
 

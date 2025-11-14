@@ -17177,6 +17177,93 @@
               "title": "CommunityMessageAttachment"
             }
           },
+          "richContent": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "text"
+                      ]
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "text"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "emoji"
+                      ]
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "animated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "name",
+                    "url"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "mention"
+                      ]
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "mentionType": {
+                      "type": "string",
+                      "enum": [
+                        "user",
+                        "channel",
+                        "role"
+                      ]
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "raw": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "id",
+                    "mentionType"
+                  ]
+                }
+              ]
+            }
+          },
           "postedAt": {
             "type": "string",
             "format": "date-time",
@@ -17291,6 +17378,93 @@
                       "url"
                     ],
                     "title": "CommunityMessageAttachment"
+                  }
+                },
+                "richContent": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "text"
+                            ]
+                          },
+                          "text": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "text"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "emoji"
+                            ]
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "animated": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "name",
+                          "url"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "mention"
+                            ]
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "mentionType": {
+                            "type": "string",
+                            "enum": [
+                              "user",
+                              "channel",
+                              "role"
+                            ]
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "raw": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "id",
+                          "mentionType"
+                        ]
+                      }
+                    ]
                   }
                 },
                 "postedAt": {
