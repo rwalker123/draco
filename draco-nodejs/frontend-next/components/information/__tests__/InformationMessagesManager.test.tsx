@@ -2,9 +2,14 @@ import React from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import InformationMessagesManager from '../InformationMessagesManager';
 import { dracoTheme } from '../../../theme';
 import type { InformationMessageTeamOption } from '../InformationMessageFormDialog';
+vi.mock('../../../context/AuthContext', () => ({
+  AuthContext: {
+    Provider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  },
+  useAuth: () => ({ token: 'token-123', user: { id: 'user-1' } }),
+}));
 
 const listMessagesMock = vi.fn();
 const createMessageMock = vi.fn();
@@ -14,7 +19,7 @@ const clearErrorMock = vi.fn();
 
 const useWelcomeMessageOperationsMock = vi.fn();
 
-vi.mock('../../hooks/useWelcomeMessageOperations', () => ({
+vi.mock('../../../hooks/useWelcomeMessageOperations', () => ({
   useWelcomeMessageOperations: (scope: unknown) => useWelcomeMessageOperationsMock(scope),
 }));
 
@@ -80,7 +85,10 @@ vi.mock('../../common/ConfirmationDialog', () => ({
   },
 }));
 
-const renderManager = (props: React.ComponentProps<typeof InformationMessagesManager>) =>
+const { default: InformationMessagesManager } = await import('../InformationMessagesManager');
+type InformationMessagesManagerProps = React.ComponentProps<typeof InformationMessagesManager>;
+
+const renderManager = (props: InformationMessagesManagerProps) =>
   render(
     <ThemeProvider theme={dracoTheme}>
       <InformationMessagesManager {...props} />
@@ -132,50 +140,32 @@ describe('InformationMessagesManager', () => {
     expect(container.innerHTML).not.toContain('<script>');
   });
 
-  it('switches to team scope and reloads messages', async () => {
-    listMessagesMock
-      .mockResolvedValueOnce([
-        {
-          id: '1',
-          accountId: '10',
-          caption: 'Account Message',
-          order: 1,
-          bodyHtml: '<p>Account</p>',
-          isTeamScoped: false,
-          scope: 'account',
-        },
-      ])
-      .mockResolvedValueOnce([
-        {
-          id: '2',
-          accountId: '10',
-          teamId: '7',
-          caption: 'Team Message',
-          order: 1,
-          bodyHtml: '<p>Team</p>',
-          isTeamScoped: true,
-          scope: 'team',
-        },
-      ]);
+  it('renders team scoped manager and loads team messages', async () => {
+    listMessagesMock.mockResolvedValueOnce([
+      {
+        id: '2',
+        accountId: '10',
+        teamId: '7',
+        caption: 'Team Message',
+        order: 1,
+        bodyHtml: '<p>Team</p>',
+        isTeamScoped: true,
+        scope: 'team',
+      },
+    ]);
 
     renderManager({
       scope: {
-        type: 'account',
+        type: 'team',
         accountId: '10',
-        teamOptions: [
-          { teamSeasonId: 'team-season-1', teamId: 'team-1', label: 'Team 1' },
-          { teamSeasonId: 'team-season-2', teamId: 'team-2', label: 'Team 2' },
-        ],
-        defaultTeamSeasonId: 'team-season-1',
+        teamSeasonId: 'team-season-1',
+        teamId: 'team-2',
+        teamLabel: 'Team 2',
       },
     });
 
-    await waitFor(() => expect(screen.getByText('Account Message')).toBeInTheDocument());
-
-    fireEvent.click(screen.getByRole('button', { name: 'Team' }));
-
     await waitFor(() => expect(screen.getByText('Team Message')).toBeInTheDocument());
-    expect(listMessagesMock).toHaveBeenCalledTimes(2);
+    expect(listMessagesMock).toHaveBeenCalledTimes(1);
   });
 
   it('deletes a team scoped message with the resolved scope', async () => {
@@ -197,13 +187,11 @@ describe('InformationMessagesManager', () => {
 
     renderManager({
       scope: {
-        type: 'account',
+        type: 'team',
         accountId: '10',
-        teamOptions: [
-          { teamSeasonId: 'team-season-1', teamId: 'team-1', label: 'Team 1' },
-          { teamSeasonId: 'team-season-2', teamId: 'team-2', label: 'Team 2' },
-        ],
-        defaultTeamSeasonId: 'team-season-1',
+        teamSeasonId: 'team-season-2',
+        teamId: 'team-2',
+        teamLabel: 'Team 2',
       },
     });
 
@@ -235,20 +223,17 @@ describe('InformationMessagesManager', () => {
 
     renderManager({
       scope: {
-        type: 'account',
+        type: 'team',
         accountId: '10',
-        teamOptions: [
-          { teamSeasonId: 'team-season-1', teamId: 'team-1', label: 'Team 1' },
-          { teamSeasonId: 'team-season-2', teamId: 'team-2', label: 'Team 2' },
-        ],
-        defaultTeamSeasonId: 'team-season-1',
+        teamSeasonId: 'team-season-2',
+        teamId: 'team-2',
+        teamLabel: 'Team 2',
       },
     });
 
     await waitFor(() => expect(listMessagesMock).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Team' }));
-    fireEvent.click(screen.getByRole('button', { name: 'New Message' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add information message' }));
     fireEvent.click(screen.getByText('submit-team'));
 
     await waitFor(() => expect(createMessageMock).toHaveBeenCalled());

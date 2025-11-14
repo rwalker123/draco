@@ -75,9 +75,9 @@ export function useWelcomeMessageOperations(scope: WelcomeMessageScope): Operati
   const createMessage = useCallback(
     async (payload: UpsertWelcomeMessageType, overrideScope?: WelcomeMessageScope) => {
       setLoading(true);
-      setError(null);
 
       try {
+        setError(null);
         const effectiveScope = resolveScope(overrideScope);
         if (effectiveScope.type === 'team') {
           return await service.createTeamMessage(effectiveScope.accountId, effectiveScope, payload);
@@ -102,9 +102,9 @@ export function useWelcomeMessageOperations(scope: WelcomeMessageScope): Operati
       overrideScope?: WelcomeMessageScope,
     ) => {
       setLoading(true);
-      setError(null);
 
       try {
+        setError(null);
         const effectiveScope = resolveScope(overrideScope);
         if (effectiveScope.type === 'team') {
           return await service.updateTeamMessage(
@@ -130,9 +130,9 @@ export function useWelcomeMessageOperations(scope: WelcomeMessageScope): Operati
   const deleteMessage = useCallback(
     async (messageId: string, overrideScope?: WelcomeMessageScope) => {
       setLoading(true);
-      setError(null);
 
       try {
+        setError(null);
         const effectiveScope = resolveScope(overrideScope);
         if (effectiveScope.type === 'team') {
           await service.deleteTeamMessage(effectiveScope.accountId, effectiveScope, messageId);

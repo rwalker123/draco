@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWelcomeMessageOperations } from '../useWelcomeMessageOperations';
 
@@ -31,7 +31,7 @@ vi.mock('../useApiClient', () => ({
 }));
 
 vi.mock('../../services/welcomeMessageService', () => ({
-  WelcomeMessageService: WelcomeMessageServiceMock,
+  WelcomeMessageService: vi.fn((...args) => new WelcomeMessageServiceMock(...args)),
 }));
 
 describe('useWelcomeMessageOperations', () => {
@@ -90,13 +90,13 @@ describe('useWelcomeMessageOperations', () => {
       useWelcomeMessageOperations({ type: 'account', accountId: 'acc-3' }),
     );
 
-    await expect(
-      act(async () => {
-        await result.current.createMessage({ caption: 'Bad', order: 1, bodyHtml: '<p>x</p>' });
-      }),
-    ).rejects.toThrow('Unable to create');
+    await act(async () => {
+      await expect(
+        result.current.createMessage({ caption: 'Bad', order: 1, bodyHtml: '<p>x</p>' }),
+      ).rejects.toThrow('Unable to create');
+    });
 
-    expect(result.current.error).toBe('Unable to create');
+    await waitFor(() => expect(result.current.error).toBe('Unable to create'));
     expect(result.current.loading).toBe(false);
   });
 
@@ -117,7 +117,7 @@ describe('useWelcomeMessageOperations', () => {
 
     expect(deleteTeamMessage).toHaveBeenCalledWith(
       'acc-4',
-      { teamSeasonId: 'team-season-9' },
+      { type: 'team', accountId: 'acc-4', teamSeasonId: 'team-season-9' },
       'msg-7',
     );
   });
@@ -130,13 +130,11 @@ describe('useWelcomeMessageOperations', () => {
       useWelcomeMessageOperations({ type: 'account', accountId: 'acc-5' }),
     );
 
-    await expect(
-      act(async () => {
-        await result.current.deleteMessage('msg-8');
-      }),
-    ).rejects.toThrow('Boom');
+    await act(async () => {
+      await expect(result.current.deleteMessage('msg-8')).rejects.toThrow('Boom');
+    });
 
-    expect(result.current.error).toBe('Boom');
+    await waitFor(() => expect(result.current.error).toBe('Boom'));
 
     act(() => {
       result.current.clearError();
