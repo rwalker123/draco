@@ -32,7 +32,7 @@ const renderNode = (node: DiscordRichContentNodeType, index: number) => {
     case 'text':
       return renderTextSegments(node.text, `text-${index}`);
     case 'emoji':
-      return [
+      return (
         <Box
           key={`emoji-${index}`}
           component="img"
@@ -44,13 +44,13 @@ const renderNode = (node: DiscordRichContentNodeType, index: number) => {
             verticalAlign: 'middle',
             mr: 0.5,
           }}
-        />,
-      ];
+        />
+      );
     case 'mention': {
       const prefix = node.mentionType === 'channel' ? '#' : '@';
       const label = node.label ?? `${prefix}${node.id}`;
 
-      return [
+      return (
         <Typography
           key={`mention-${index}`}
           component="span"
@@ -67,8 +67,8 @@ const renderNode = (node: DiscordRichContentNodeType, index: number) => {
           }}
         >
           {label.startsWith('@') || label.startsWith('#') ? label : `${prefix}${label}`}
-        </Typography>,
-      ];
+        </Typography>
+      );
     }
     default:
       return [];

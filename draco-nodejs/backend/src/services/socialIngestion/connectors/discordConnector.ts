@@ -163,23 +163,21 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
         return [];
       }
 
-      return response.map((message) => ({
-        messageId: message.id,
-        content: message.content,
-        authorDisplayName:
-          message.author.display_name ?? message.author.global_name ?? message.author.username,
-        authorId: message.author.id,
-        authorAvatarUrl: this.buildAvatarUrl(message.author.id, message.author.avatar),
-        postedAt: new Date(message.timestamp),
-        ...(() => {
-          const normalized = normalizeDiscordMessage(message);
-          return {
-            attachments: normalized.attachments.length ? normalized.attachments : undefined,
-            richContent: normalized.richContent.length ? normalized.richContent : undefined,
-          };
-        })(),
-        permalink: '',
-      }));
+      return response.map((message) => {
+        const normalized = normalizeDiscordMessage(message);
+        return {
+          messageId: message.id,
+          content: message.content,
+          authorDisplayName:
+            message.author.display_name ?? message.author.global_name ?? message.author.username,
+          authorId: message.author.id,
+          authorAvatarUrl: this.buildAvatarUrl(message.author.id, message.author.avatar),
+          postedAt: new Date(message.timestamp),
+          attachments: normalized.attachments.length ? normalized.attachments : undefined,
+          richContent: normalized.richContent.length ? normalized.richContent : undefined,
+          permalink: '',
+        };
+      });
     } catch (error) {
       if (error instanceof HttpError && error.status === 429) {
         const retryAfterMs = this.extractRetryAfterMs(error.body);

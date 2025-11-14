@@ -1,8 +1,10 @@
 import React from 'react';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { ThemeProvider } from '@mui/material/styles';
 import SocialHubExperience from '../SocialHubExperience';
 import type { CommunityMessagePreviewType, CommunityChannelType } from '@draco/shared-schemas';
+import { dracoTheme } from '../../../theme';
 
 const fetchFeedMock = vi.fn();
 const fetchVideosMock = vi.fn();
@@ -17,6 +19,26 @@ vi.mock('@/hooks/useSocialHubService', () => ({
     fetchCommunityChannels: fetchCommunityChannelsMock,
   }),
 }));
+
+vi.mock('@/components/surveys/SurveySpotlightWidget', () => ({
+  default: () => <div data-testid="survey-widget" />,
+}));
+
+vi.mock('@/components/hall-of-fame/HofSpotlightWidget', () => ({
+  default: () => <div data-testid="hof-widget" />,
+}));
+
+vi.mock('@/components/join-league/PlayersWantedPreview', () => ({
+  default: () => <div data-testid="players-widget" />,
+}));
+
+vi.mock('../FeaturedVideosWidget', () => ({
+  default: () => <div data-testid="featured-videos" />,
+}));
+
+const renderWithTheme = (component: React.ReactElement) => {
+  return render(<ThemeProvider theme={dracoTheme}>{component}</ThemeProvider>);
+};
 
 describe('SocialHubExperience', () => {
   beforeEach(() => {
@@ -75,7 +97,7 @@ describe('SocialHubExperience', () => {
   });
 
   it('renders discord rich content with emoji and gif attachments', async () => {
-    render(<SocialHubExperience accountId="1" seasonId="1" isAccountMember />);
+    renderWithTheme(<SocialHubExperience accountId="1" seasonId="1" isAccountMember />);
 
     await waitFor(() => {
       expect(fetchCommunityMessagesMock).toHaveBeenCalled();

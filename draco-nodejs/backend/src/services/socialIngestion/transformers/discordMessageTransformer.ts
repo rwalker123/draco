@@ -37,7 +37,7 @@ const createEmojiNode = (
   id,
   name,
   url: buildEmojiCdnUrl(id, animated),
-  animated: animated || undefined,
+  ...(animated ? { animated: true } : {}),
 });
 
 const createMentionNode = (
@@ -169,9 +169,12 @@ export const normalizeDiscordMessage = (message: DiscordMessage): NormalizedDisc
     ]),
   );
 
-  const mentionChannelLabels = new Map(
-    (message.mention_channels ?? []).map((channel) => [channel.id, channel.name ?? channel.id]),
-  );
+  const mentionChannelLabels = new Map<string, string>();
+  for (const channel of message.mention_channels ?? []) {
+    if (channel.name) {
+      mentionChannelLabels.set(channel.id, channel.name);
+    }
+  }
 
   const richContent: DiscordRichContentNodeType[] = [];
   const content = message.content ?? '';
