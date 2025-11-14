@@ -8,6 +8,7 @@ import {
   dbTeamSeasonRecord,
   dbTeamSeasonWithLeague,
   dbTeamSeasonWithLeaguesAndTeams,
+  dbTeamSeasonWithTeamAndSeason,
   dbTeamsWithLeaguesAndDivisions,
   dbUserManagerTeams,
   dbUserTeams,
@@ -65,6 +66,32 @@ export class PrismaTeamRepository implements ITeamRepository {
           seasonid: seasonId,
           season: {
             accountid: accountId,
+          },
+        },
+      },
+    });
+  }
+
+  async findTeamSeasonsWithYouTube(): Promise<dbTeamSeasonWithTeamAndSeason[]> {
+    return this.prisma.teamsseason.findMany({
+      where: {
+        teams: {
+          youtubeuserid: {
+            not: null,
+          },
+        },
+      },
+      include: {
+        teams: {
+          select: {
+            id: true,
+            accountid: true,
+            youtubeuserid: true,
+          },
+        },
+        leagueseason: {
+          select: {
+            seasonid: true,
           },
         },
       },

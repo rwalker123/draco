@@ -24,6 +24,7 @@ interface TeamInfoCardProps {
     record?: { wins: number; losses: number; ties: number };
     teamId?: string;
     leagueId?: string;
+    youtubeUserId?: string | null;
   }) => void;
 }
 
@@ -136,6 +137,7 @@ export default function TeamInfoCard({
         record: record || undefined,
         teamId: team.teamId,
         leagueId: leagueId || undefined,
+        youtubeUserId: team.youtubeUserId ?? null,
       });
     }
   }, [team, accountName, seasonName, leagueName, record, leagueId, onTeamDataLoaded]);

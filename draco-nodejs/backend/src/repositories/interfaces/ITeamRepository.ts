@@ -8,6 +8,7 @@ import {
   dbTeamSeasonRecord,
   dbTeamSeasonWithLeague,
   dbTeamSeasonWithLeaguesAndTeams,
+  dbTeamSeasonWithTeamAndSeason,
   dbTeamsWithLeaguesAndDivisions,
   dbUserManagerTeams,
   dbUserTeams,
@@ -108,4 +109,6 @@ export interface ITeamRepository extends IBaseRepository<teamsseason> {
     seasonId: bigint,
     accountId: bigint,
   ): Promise<dbTeamSeason | null>;
+
+  findTeamSeasonsWithYouTube(): Promise<dbTeamSeasonWithTeamAndSeason[]>;
 }

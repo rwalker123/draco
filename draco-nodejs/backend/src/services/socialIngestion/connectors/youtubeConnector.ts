@@ -23,12 +23,16 @@ interface YouTubeSearchResponse {
   }>;
 }
 
+const RECENT_VIDEO_CACHE_LIMIT = 50;
+
 export class YouTubeConnector extends BaseSocialIngestionConnector {
+  private readonly recentVideoCache = new Map<string, string[]>();
+
   constructor(
     private readonly repository: ISocialContentRepository,
     private readonly options: YouTubeConnectorOptions,
   ) {
-    super('youtube', options.enabled && options.targets.length > 0, options.intervalMs);
+    super('youtube', options.enabled, options.intervalMs);
   }
 
   protected async runIngestion(): Promise<void> {
@@ -37,13 +41,29 @@ export class YouTubeConnector extends BaseSocialIngestionConnector {
       return;
     }
 
-    for (const target of this.options.targets) {
+    const targets = await this.resolveTargets();
+
+    if (!targets.length) {
+      console.info('[youtube] No ingestion targets configured.');
+      return;
+    }
+
+    for (const target of targets) {
       const videos = await this.fetchChannelVideos(target.channelId);
       if (!videos.length) {
         continue;
       }
 
-      for (const video of videos) {
+      const { newVideos, updatedCache } = this.filterNewVideos(target.channelId, videos);
+
+      if (!newVideos.length) {
+        if (updatedCache && !this.recentVideoCache.has(target.channelId)) {
+          this.recentVideoCache.set(target.channelId, updatedCache);
+        }
+        continue;
+      }
+
+      for (const video of newVideos) {
         await this.repository.upsertVideo({
           id: deterministicUuid(`youtube:${target.accountId.toString()}:${video.externalId}`),
           accountid: target.accountId,
@@ -65,8 +85,11 @@ export class YouTubeConnector extends BaseSocialIngestionConnector {
             : undefined,
         });
       }
+      console.info(`[youtube] Ingested ${newVideos.length} videos for channel ${target.channelId}`);
 
-      console.info(`[youtube] Ingested ${videos.length} videos for channel ${target.channelId}`);
+      if (updatedCache) {
+        this.recentVideoCache.set(target.channelId, updatedCache);
+      }
     }
   }
 
@@ -121,5 +144,87 @@ export class YouTubeConnector extends BaseSocialIngestionConnector {
       console.error(`[youtube] Failed to fetch videos for channel ${channelId}`, error);
       return [];
     }
+  }
+
+  private async resolveTargets(): Promise<YouTubeConnectorOptions['targets']> {
+    const staticTargets = this.options.targets ?? [];
+    let dynamicTargets: YouTubeConnectorOptions['targets'] = [];
+
+    if (this.options.targetsProvider) {
+      try {
+        dynamicTargets = await this.options.targetsProvider();
+      } catch (error) {
+        console.error('[youtube] Failed to load dynamic ingestion targets', error);
+      }
+    }
+
+    const combined = [...staticTargets, ...dynamicTargets];
+    const deduped: YouTubeConnectorOptions['targets'] = [];
+    const seen = new Set<string>();
+
+    for (const target of combined) {
+      const channelId = target.channelId?.trim();
+      if (!channelId) {
+        continue;
+      }
+
+      if (target.teamId && !target.teamSeasonId) {
+        console.warn('[youtube] Skipping team ingestion target without team season id', {
+          accountId: target.accountId.toString(),
+          teamId: target.teamId.toString(),
+        });
+        continue;
+      }
+
+      const key = [
+        target.accountId.toString(),
+        target.seasonId.toString(),
+        target.teamId ? target.teamId.toString() : '',
+        target.teamSeasonId ? target.teamSeasonId.toString() : '',
+        channelId,
+      ].join(':');
+
+      if (seen.has(key)) {
+        continue;
+      }
+
+      seen.add(key);
+      deduped.push({ ...target, channelId });
+    }
+
+    return deduped;
+  }
+
+  private filterNewVideos(
+    channelId: string,
+    videos: SocialVideoIngestionRecord[],
+  ): { newVideos: SocialVideoIngestionRecord[]; updatedCache: string[] | null } {
+    if (!videos.length) {
+      return { newVideos: [], updatedCache: null };
+    }
+
+    const cached = this.recentVideoCache.get(channelId);
+
+    if (!cached) {
+      const videoIds = videos.map((video) => video.externalId);
+      return {
+        newVideos: videos,
+        updatedCache: videoIds.slice(0, RECENT_VIDEO_CACHE_LIMIT),
+      };
+    }
+
+    const knownIds = new Set(cached);
+    const newVideos = videos.filter((video) => !knownIds.has(video.externalId));
+
+    if (!newVideos.length) {
+      return { newVideos, updatedCache: cached };
+    }
+
+    const updatedCache = [...newVideos.map((video) => video.externalId), ...cached].slice(
+      0,
+      RECENT_VIDEO_CACHE_LIMIT,
+    );
+
+    return { newVideos, updatedCache };
   }
 }

@@ -62,6 +62,7 @@ export interface TwitterConnectorOptions {
 export interface YouTubeConnectorOptions {
   apiKey?: string;
   targets: YouTubeIngestionTarget[];
+  targetsProvider?: () => Promise<YouTubeIngestionTarget[]>;
   intervalMs: number;
   enabled: boolean;
 }

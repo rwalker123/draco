@@ -68,6 +68,7 @@ import { TwitterConnector } from './socialIngestion/connectors/twitterConnector.
 import { YouTubeConnector } from './socialIngestion/connectors/youtubeConnector.js';
 import { DiscordConnector } from './socialIngestion/connectors/discordConnector.js';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
+import { YouTubeIntegrationService } from './youtubeIntegrationService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -129,6 +130,7 @@ export class ServiceFactory {
   private static socialHubService: SocialHubService;
   private static socialIngestionService: SocialIngestionService;
   private static discordIntegrationService: DiscordIntegrationService;
+  private static youtubeIntegrationService: YouTubeIntegrationService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -432,6 +434,14 @@ export class ServiceFactory {
     return this.discordIntegrationService;
   }
 
+  static getYouTubeIntegrationService(): YouTubeIntegrationService {
+    if (!this.youtubeIntegrationService) {
+      this.youtubeIntegrationService = new YouTubeIntegrationService();
+    }
+
+    return this.youtubeIntegrationService;
+  }
+
   static getSocialHubService(): SocialHubService {
     if (!this.socialHubService) {
       this.socialHubService = new SocialHubService(
@@ -464,11 +474,18 @@ export class ServiceFactory {
         );
       }
 
-      if (socialIngestionConfig.youtube.enabled && socialIngestionConfig.youtube.targets.length) {
+      if (socialIngestionConfig.youtube.enabled) {
+        const youtubeIntegrationService = this.getYouTubeIntegrationService();
+        const targetsProvider = async () => {
+          const dbTargets = await youtubeIntegrationService.listIngestionTargets();
+          return dbTargets;
+        };
+
         connectors.push(
           new YouTubeConnector(socialContentRepository, {
             apiKey: socialIngestionConfig.youtube.apiKey,
             targets: socialIngestionConfig.youtube.targets,
+            targetsProvider,
             intervalMs: socialIngestionConfig.youtube.intervalMs,
             enabled:
               socialIngestionConfig.youtube.enabled &&

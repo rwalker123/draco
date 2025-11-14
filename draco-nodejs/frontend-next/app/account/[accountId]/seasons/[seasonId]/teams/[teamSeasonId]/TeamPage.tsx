@@ -46,6 +46,8 @@ import SpecialAnnouncementsWidget, {
 import AccountOptional from '@/components/account/AccountOptional';
 import TeamRosterWidget from '@/components/roster/TeamRosterWidget';
 import TeamManagersWidget from '@/components/team/TeamManagersWidget';
+import YouTubeChannelAdminPanel from '../../../../../../../components/social/YouTubeChannelAdminPanel';
+import TeamFeaturedVideosWidget from '../../../../../../../components/social/TeamFeaturedVideosWidget';
 
 interface TeamPageProps {
   accountId: string;
@@ -67,6 +69,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     record?: { wins: number; losses: number; ties: number };
     teamId?: string;
     leagueId?: string;
+    youtubeUserId?: string | null;
   } | null>(null);
   const [teamSponsors, setTeamSponsors] = React.useState<SponsorType[]>([]);
   const [teamSponsorError, setTeamSponsorError] = React.useState<string | null>(null);
@@ -441,6 +444,14 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
 
+  const canManageTeamSocials = React.useMemo(() => {
+    return (
+      hasRole('Administrator') ||
+      hasRoleInAccount('AccountAdmin', accountId) ||
+      hasRoleInTeam('TeamAdmin', teamSeasonId)
+    );
+  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+
   const canViewManagerContacts = React.useMemo(() => {
     return (
       hasRole('Administrator') ||
@@ -566,6 +577,29 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         />
       )}
 
+      {canManageTeamSocials && teamData?.teamId ? (
+        <YouTubeChannelAdminPanel
+          context="team"
+          accountId={accountId}
+          seasonId={seasonId}
+          teamSeasonId={teamSeasonId}
+          currentChannelId={teamData.youtubeUserId ?? null}
+          title="Team YouTube Channel"
+          subtitle="Showcase highlights across the Social Hub and team page."
+          description={`Connect the ${teamData.teamName ?? 'team'} channel to feature new uploads automatically.`}
+          onTeamSeasonUpdated={(updated) =>
+            setTeamData((previous) =>
+              previous
+                ? {
+                    ...previous,
+                    youtubeUserId: updated.team.youtubeUserId ?? null,
+                  }
+                : previous,
+            )
+          }
+        />
+      ) : null}
+
       <Box
         sx={{
           mt: 4,
@@ -630,6 +664,16 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             )}
           </Box>
         ) : null}
+
+        <Box sx={{ flex: '2 1 640px', minWidth: 320 }}>
+          <TeamFeaturedVideosWidget
+            accountId={accountId}
+            seasonId={seasonId}
+            teamSeasonId={teamSeasonId}
+            youtubeChannelId={teamData?.youtubeUserId ?? null}
+            teamName={teamData?.teamName ?? null}
+          />
+        </Box>
 
         {teamData?.leagueId ? (
           <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
