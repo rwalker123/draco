@@ -1,16 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
-
-// Type definitions for Prisma query results
-interface Account {
-  id: bigint;
-  name: string;
-  accounttypeid: bigint;
-  accounttypes: {
-    id: bigint;
-    name: string;
-  };
-}
+import type { AccountContext } from '../types/requestContext.js';
 
 /**
  * Domain routing middleware
@@ -53,7 +43,7 @@ export const domainRouting = async (
       return;
     }
 
-    const account = accountUrl.accounts;
+    const account = accountUrl.accounts as AccountContext;
     const accountId = account.id.toString();
 
     // Check if this is a request for common pages that should not be redirected
@@ -91,11 +81,3 @@ export const domainRouting = async (
     next();
   }
 };
-
-// Extend Express Request interface to include account context
-declare module 'express-serve-static-core' {
-  interface Request {
-    accountId?: string;
-    account?: Account;
-  }
-}

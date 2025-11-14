@@ -8,6 +8,7 @@ import { WelcomeMessageResponseFormatter } from '../responseFormatters/index.js'
 import { dbTeamSeasonAccount } from '../repositories/types/dbTypes.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { sanitizeRichHtml } from '../utils/htmlSanitizer.js';
+import type { TeamRequestContext } from '../types/requestContext.js';
 
 interface NormalizedWelcomeMessagePayload {
   caption: string;
@@ -15,10 +16,7 @@ interface NormalizedWelcomeMessagePayload {
   bodyHtml: string;
 }
 
-interface TeamContext {
-  teamId: bigint;
-  seasonId: bigint;
-}
+type TeamContext = TeamRequestContext;
 
 export class WelcomeMessageService {
   private readonly welcomeMessageRepository: IWelcomeMessageRepository;

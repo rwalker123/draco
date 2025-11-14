@@ -1,4 +1,5 @@
 import './config/loadEnv.js';
+import './types/requestContext.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
