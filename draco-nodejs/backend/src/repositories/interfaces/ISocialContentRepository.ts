@@ -41,4 +41,5 @@ export interface ISocialContentRepository {
   upsertVideo(data: UpsertSocialVideoInput): Promise<dbSocialVideo>;
   listCommunityMessages(query: CommunityMessageQuery): Promise<dbDiscordMessagePreview[]>;
   upsertCommunityMessage(data: UpsertCommunityMessageInput): Promise<void>;
+  deleteCommunityMessages(ids: string[]): Promise<void>;
 }

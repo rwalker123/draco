@@ -98,6 +98,20 @@ export class PrismaSocialContentRepository implements ISocialContentRepository {
     });
   }
 
+  async deleteCommunityMessages(ids: string[]): Promise<void> {
+    if (!ids.length) {
+      return;
+    }
+
+    await this.prisma.discordmessages.deleteMany({
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+    });
+  }
+
   private readonly feedInclude = {
     teams: {
       select: {

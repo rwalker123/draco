@@ -12,8 +12,11 @@ import {
 } from '../repositories/index.js';
 import { SeasonResponseFormatter } from '../responseFormatters/index.js';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 export class SeasonService {
+  private readonly discordIntegrationService = ServiceFactory.getDiscordIntegrationService();
+
   constructor(
     private readonly seasonsRepository: ISeasonsRepository = RepositoryFactory.getSeasonsRepository(),
   ) {}
@@ -187,6 +190,7 @@ export class SeasonService {
     }
 
     await this.seasonsRepository.upsertCurrentSeason(accountId, seasonId);
+    this.discordIntegrationService.clearChannelIngestionTargetsCacheForAccount(accountId);
 
     return SeasonResponseFormatter.formatSeason(season, { isCurrent: true });
   }
