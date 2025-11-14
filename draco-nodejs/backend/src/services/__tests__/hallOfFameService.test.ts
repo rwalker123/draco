@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi, Mocked } from 'vitest';
-import validator from 'validator';
+import { sanitizeRichHtml } from '../../utils/htmlSanitizer.js';
 import { HallOfFameService } from '../hallOfFameService.js';
 import { RepositoryFactory } from '../../repositories/repositoryFactory.js';
 import { IHallOfFameRepository } from '../../repositories/interfaces/IHallOfFameRepository.js';
@@ -88,7 +88,7 @@ describe('HallOfFameService', () => {
       yearInducted: 2024,
       biographyHtml: rawBiography,
     });
-    expect(result.biographyHtml).toBe(validator.escape(rawBiography));
+    expect(result.biographyHtml).toBe(sanitizeRichHtml(rawBiography));
   });
 
   it('throws when contact is already inducted', async () => {

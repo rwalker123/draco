@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, FormHelperText } from '@mui/material';
-import RichTextEditor from '../../email/RichTextEditor';
+import RichTextEditor, { type RichTextEditorHandle } from '../../email/RichTextEditor';
 import { TEMPLATE_HELPER_TEXT } from '../../../utils/templateUtils';
 
 interface TemplateRichTextEditorProps {
@@ -13,8 +13,9 @@ interface TemplateRichTextEditorProps {
   onVariableInsert?: (variable: string) => void;
 }
 
-interface TemplateRichTextEditorRef {
+export interface TemplateRichTextEditorRef {
   getCurrentContent: () => string;
+  getSanitizedContent: () => string;
   insertText: (text: string) => void;
   insertVariable: (variable: string) => void;
 }
@@ -34,11 +35,7 @@ const TemplateRichTextEditor = React.forwardRef<
     },
     ref,
   ) => {
-    const editorRef = React.useRef<{
-      getCurrentContent: () => string;
-      getTextContent: () => string;
-      insertText: (text: string) => void;
-    }>(null);
+    const editorRef = React.useRef<RichTextEditorHandle | null>(null);
 
     // Function to insert a template variable
     const insertVariable = React.useCallback(
@@ -59,7 +56,8 @@ const TemplateRichTextEditor = React.forwardRef<
     React.useImperativeHandle(
       ref,
       () => ({
-        getCurrentContent: () => editorRef.current?.getCurrentContent() || '',
+        getCurrentContent: () => editorRef.current?.getSanitizedContent() || '',
+        getSanitizedContent: () => editorRef.current?.getSanitizedContent() || '',
         getTextContent: () => editorRef.current?.getTextContent() || '',
         insertText: (text: string) => editorRef.current?.insertText(text),
         insertVariable,

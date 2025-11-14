@@ -41,3 +41,4 @@ export * from './IAccountSettingsRepository.js';
 export * from './ISocialContentRepository.js';
 export * from './ILiveEventRepository.js';
 export * from './IDiscordIntegrationRepository.js';
+export * from './IWelcomeMessageRepository.js';

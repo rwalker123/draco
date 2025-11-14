@@ -4,6 +4,7 @@ import React from 'react';
 import NextLink from 'next/link';
 import { Alert, Box, Button, Card, CardContent, CircularProgress, Typography } from '@mui/material';
 import WidgetShell from '../ui/WidgetShell';
+import RichTextContent from '../common/RichTextContent';
 import { formatDateTime } from '../../utils/dateUtils';
 import { sanitizeRichContent } from '../../utils/sanitization';
 
@@ -100,16 +101,7 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
                   >
                     {formatDateTime(announcement.publishedAt)}
                   </Typography>
-                  {safeBody ? (
-                    <Box
-                      sx={{
-                        '& p': { mb: 1 },
-                        '&:last-child p:last-of-type': { mb: 0 },
-                        color: 'text.primary',
-                      }}
-                      dangerouslySetInnerHTML={{ __html: safeBody }}
-                    />
-                  ) : null}
+                  {safeBody ? <RichTextContent html={safeBody} sanitize={false} /> : null}
                 </CardContent>
               </Card>
             );

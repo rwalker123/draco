@@ -27,7 +27,7 @@ import {
   ANNOUNCEMENT_TITLE_MAX_LENGTH,
   ANNOUNCEMENT_BODY_MAX_LENGTH,
 } from '@draco/shared-schemas';
-import RichTextEditor from '../email/RichTextEditor';
+import RichTextEditor, { type RichTextEditorHandle } from '../email/RichTextEditor';
 import { sanitizeDisplayText, sanitizeRichContent } from '../../utils/sanitization';
 
 const AnnouncementFormSchema = z.object({
@@ -93,11 +93,7 @@ const AnnouncementFormDialog: React.FC<AnnouncementFormDialogProps> = ({
     ),
     defaultValues: createDefaultValues(),
   });
-  const editorRef = React.useRef<{
-    getCurrentContent: () => string;
-    getTextContent: () => string;
-    insertText: (text: string) => void;
-  } | null>(null);
+  const editorRef = React.useRef<RichTextEditorHandle | null>(null);
   const [editorInitialValue, setEditorInitialValue] = React.useState<string>('');
   const [plainTextLength, setPlainTextLength] = React.useState<number>(0);
   const [editorKey, setEditorKey] = React.useState<number>(0);
@@ -151,7 +147,7 @@ const AnnouncementFormDialog: React.FC<AnnouncementFormDialogProps> = ({
     if (!editorRef.current) {
       return;
     }
-    const sanitizedHtml = sanitizeRichContent(editorRef.current.getCurrentContent());
+    const sanitizedHtml = editorRef.current.getSanitizedContent();
     setValue('body', sanitizedHtml, {
       shouldDirty: true,
       shouldTouch: true,
@@ -223,8 +219,7 @@ const AnnouncementFormDialog: React.FC<AnnouncementFormDialogProps> = ({
                 key={editorKey}
                 ref={editorRef}
                 initialValue={editorInitialValue}
-                onChange={(html) => {
-                  const sanitizedHtml = sanitizeRichContent(html);
+                onChange={(sanitizedHtml) => {
                   setPlainTextLength(computePlainTextLength(sanitizedHtml));
                 }}
                 minHeight={200}

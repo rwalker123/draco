@@ -47,6 +47,7 @@ import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 import SpecialAnnouncementsWidget, {
   type SpecialAnnouncementCard,
 } from '@/components/announcements/SpecialAnnouncementsWidget';
+import InformationWidget from '@/components/information/InformationWidget';
 import AccountOptional from '@/components/account/AccountOptional';
 
 interface TeamAnnouncementSection {
@@ -147,6 +148,8 @@ const BaseballAccountHome: React.FC = () => {
   }, [accountAnnouncements, teamAnnouncements, account]);
 
   const shouldShowPendingPanel = Boolean(token && canModerateAccountPhotos && accountIdStr);
+
+  const showInformationWidget = true;
   const {
     submissions: pendingSubmissions,
     loading: pendingLoading,
@@ -879,6 +882,17 @@ const BaseballAccountHome: React.FC = () => {
           token={token || undefined}
           isAccountMember={isAccountMember}
         />
+
+        {showInformationWidget && accountIdStr ? (
+          <Box sx={{ mt: 3 }}>
+            <InformationWidget
+              accountId={accountIdStr}
+              showAccountMessages
+              showTeamMessages={false}
+              title="Information Center"
+            />
+          </Box>
+        ) : null}
 
         {isAccountMember ? (
           <Box sx={{ mt: 3 }}>

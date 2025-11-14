@@ -22,6 +22,7 @@ import AddIcon from '@mui/icons-material/Add';
 import type { AnnouncementType, UpsertAnnouncementType } from '@draco/shared-schemas';
 import type { WidgetAccent } from '../ui/WidgetShell';
 import WidgetShell from '../ui/WidgetShell';
+import RichTextContent from '../common/RichTextContent';
 import AnnouncementFormDialog from './AnnouncementFormDialog';
 import {
   AnnouncementScope,
@@ -234,16 +235,10 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
                           <Typography variant="body2" color="text.secondary" component="span">
                             Published {publishedLabel}
                           </Typography>
-                          <Box
-                            sx={{
-                              '& p': { margin: 0, marginBottom: 1.5 },
-                              '& p:last-of-type': { marginBottom: 0 },
-                              wordBreak: 'break-word',
-                            }}
-                            component="div"
-                            dangerouslySetInnerHTML={{
-                              __html: sanitizedBody,
-                            }}
+                          <RichTextContent
+                            html={sanitizedBody}
+                            sanitize={false}
+                            sx={{ '& p': { mb: 1.5 } }}
                           />
                         </Stack>
                       }

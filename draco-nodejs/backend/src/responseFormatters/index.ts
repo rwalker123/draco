@@ -31,3 +31,4 @@ export * from './accountSettingsResponseFormatter.js';
 export * from './SocialFeedResponseFormatter.js';
 export * from './LiveEventResponseFormatter.js';
 export * from './DiscordIntegrationResponseFormatter.js';
+export * from './welcomeMessageResponseFormatter.js';

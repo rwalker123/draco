@@ -46,6 +46,7 @@ import SpecialAnnouncementsWidget, {
 import AccountOptional from '@/components/account/AccountOptional';
 import TeamRosterWidget from '@/components/roster/TeamRosterWidget';
 import TeamManagersWidget from '@/components/team/TeamManagersWidget';
+import InformationWidget from '@/components/information/InformationWidget';
 
 interface TeamPageProps {
   accountId: string;
@@ -73,6 +74,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const [teamAnnouncements, setTeamAnnouncements] = React.useState<AnnouncementType[]>([]);
   const [teamAnnouncementsLoading, setTeamAnnouncementsLoading] = React.useState(false);
   const [teamAnnouncementsError, setTeamAnnouncementsError] = React.useState<string | null>(null);
+  const [informationWidgetVisible, setInformationWidgetVisible] = React.useState(true);
   const [playersWantedDialogOpen, setPlayersWantedDialogOpen] = React.useState(false);
   const [playersWantedInitialData, setPlayersWantedInitialData] = React.useState<
     UpsertPlayersWantedClassifiedType | undefined
@@ -211,6 +213,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     token && canModerateTeamSubmissions && teamModerationTeamId,
   );
   const showTeamSubmissionPanel = Boolean(teamData?.teamId);
+  const resolvedTeamId = teamData?.teamId ?? teamSeason?.team?.id ?? null;
+  const showInformationWidget = Boolean(accountId && teamSeasonId);
 
   const {
     submissions: teamPendingSubmissions,
@@ -441,6 +445,15 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
 
+  const canManageInformationMessages = React.useMemo(() => {
+    return (
+      hasRole('Administrator') ||
+      hasRoleInAccount('AccountAdmin', accountId) ||
+      hasRoleInAccount('LeagueAdmin', accountId) ||
+      hasRoleInTeam('TeamAdmin', teamSeasonId)
+    );
+  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+
   const canViewManagerContacts = React.useMemo(() => {
     return (
       hasRole('Administrator') ||
@@ -563,8 +576,30 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               : undefined
           }
           canEnterStatistics={canEnterStatistics}
+          canManageInformationMessages={canManageInformationMessages}
+          informationMessagesHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/information-messages/manage`}
         />
       )}
+
+      {showInformationWidget ? (
+        <Box
+          sx={{
+            mt: informationWidgetVisible ? 4 : 0,
+            display: informationWidgetVisible ? 'block' : 'none',
+          }}
+        >
+          <InformationWidget
+            accountId={accountId}
+            teamId={resolvedTeamId ?? undefined}
+            teamSeasonId={teamSeasonId}
+            showAccountMessages={false}
+            showTeamMessages={Boolean(resolvedTeamId)}
+            hideWhenEmpty
+            onVisibilityChange={setInformationWidgetVisible}
+            title="Information Center"
+          />
+        </Box>
+      ) : null}
 
       <Box
         sx={{

@@ -34,6 +34,7 @@ import {
 
 import { useEmailCompose } from './EmailComposeProvider';
 import { validateComposeData } from '../../../types/emails/compose';
+import type { RichTextEditorHandle } from '../../email/RichTextEditor';
 
 interface ComposeActionsProps {
   onScheduleClick?: () => void;
@@ -42,11 +43,7 @@ interface ComposeActionsProps {
   compact?: boolean;
   onBeforeSend?: () => void;
   onBeforeSave?: () => void;
-  editorRef?: React.RefObject<{
-    getCurrentContent: () => string;
-    getTextContent: () => string;
-    insertText: (text: string) => void;
-  } | null>;
+  editorRef?: React.RefObject<RichTextEditorHandle | null>;
 }
 
 /**
@@ -75,7 +72,7 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
       }
 
       // Check for empty content directly from editor to avoid React state batching race condition
-      const currentContent = editorRef?.current?.getCurrentContent?.() || '';
+      const currentContent = editorRef?.current?.getSanitizedContent?.() || '';
       if (!currentContent || !currentContent.trim()) {
         setShowEmptyContentWarning(true);
         return;

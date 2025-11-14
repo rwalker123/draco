@@ -744,7 +744,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
             onlyManagers,
           },
           subject: state.subject,
-          body: editorRef?.current?.getCurrentContent?.() || state.content,
+          body: editorRef?.current?.getSanitizedContent?.() || state.content,
           templateId: state.selectedTemplate?.id,
           attachments: state.attachments.filter((a) => a.status === 'uploaded').map((a) => a.url!),
           scheduledSend: state.isScheduled ? state.scheduledDate : undefined,

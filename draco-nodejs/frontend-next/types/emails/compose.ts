@@ -10,6 +10,7 @@ import type {
 } from './recipients';
 import type { EmailAttachment } from './attachments';
 import type { EmailTemplate, EmailComposeRequest } from './email';
+import type { RichTextEditorHandle } from '../../components/email/RichTextEditor';
 
 /**
  * Email compose state - central state for entire composition
@@ -158,11 +159,7 @@ export interface EmailComposeProviderProps {
   onSendComplete?: (emailId: string) => void;
   onDraftSaved?: (draftId: string) => void;
   onError?: (error: Error) => void;
-  editorRef?: React.RefObject<{
-    getCurrentContent: () => string;
-    getTextContent: () => string;
-    insertText: (text: string) => void;
-  } | null>;
+  editorRef?: React.RefObject<RichTextEditorHandle | null>;
 }
 
 /**

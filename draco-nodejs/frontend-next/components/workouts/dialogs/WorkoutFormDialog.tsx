@@ -30,7 +30,7 @@ import type { WorkoutType, UpsertWorkoutType } from '@draco/shared-schemas';
 import { useAuth } from '../../../context/AuthContext';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../utils/apiResult';
-import RichTextEditor from '../../email/RichTextEditor';
+import RichTextEditor, { type RichTextEditorHandle } from '../../email/RichTextEditor';
 import { createWorkout, getWorkout, updateWorkout } from '../../../services/workoutService';
 
 interface WorkoutFormDialogProps {
@@ -122,11 +122,7 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
     defaultValues: getDefaultValues(),
   });
 
-  const editorRef = React.useRef<{
-    getCurrentContent: () => string;
-    getTextContent: () => string;
-    insertText: (text: string) => void;
-  } | null>(null);
+  const editorRef = React.useRef<RichTextEditorHandle | null>(null);
 
   const dialogTitle = useMemo(
     () => (mode === 'create' ? 'Create Workout' : 'Edit Workout'),
@@ -210,7 +206,7 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
     if (!editorRef.current) {
       return;
     }
-    const html = editorRef.current.getCurrentContent();
+    const html = editorRef.current.getSanitizedContent();
     setValue('comments', html, {
       shouldDirty: true,
       shouldTouch: true,

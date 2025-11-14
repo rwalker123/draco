@@ -18,6 +18,7 @@ import { UpsertGameRecapSchema, UpsertGameRecapType } from '@draco/shared-schema
 import { useGameRecap } from '../hooks/useGameRecap';
 import RichTextEditor from './email/RichTextEditor';
 import { sanitizeRichContent } from '../utils/sanitization';
+import RichTextContent from './common/RichTextContent';
 
 interface EnterGameRecapDialogProps {
   open: boolean;
@@ -239,10 +240,11 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
               ? sanitizedContent
               : '<span style="color:#888;">(No recap provided)</span>';
             return (
-              <Box
+              <RichTextContent
+                html={displayContent}
+                sanitize={false}
+                data-testid="game-summary-readonly"
                 sx={{
-                  color: 'inherit',
-                  fontSize: '1rem',
                   padding: '12px 16px',
                   minHeight: 200,
                   borderRadius: 1,
@@ -250,30 +252,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
                     theme.palette.mode === 'dark'
                       ? alpha(theme.palette.background.default, 0.4)
                       : alpha(theme.palette.background.default, 0.35),
-                  '& p': { margin: '0 0 8px' },
-                  '& ul, & ol': { margin: '0 0 8px 20px' },
-                  '& li': { marginBottom: '4px' },
-                  '& .editor-text-bold, & strong, & b': { fontWeight: 700 },
-                  '& .editor-text-italic, & em, & i': { fontStyle: 'italic' },
-                  '& .editor-text-underline, & u': { textDecoration: 'underline' },
-                  '& .editor-heading-h1, & h1': {
-                    fontSize: '1.5rem',
-                    fontWeight: 700,
-                    margin: '16px 0 8px',
-                  },
-                  '& .editor-heading-h2, & h2': {
-                    fontSize: '1.3rem',
-                    fontWeight: 700,
-                    margin: '14px 0 6px',
-                  },
-                  '& .editor-heading-h3, & h3': {
-                    fontSize: '1.15rem',
-                    fontWeight: 600,
-                    margin: '12px 0 6px',
-                  },
                 }}
-                data-testid="game-summary-readonly"
-                dangerouslySetInnerHTML={{ __html: displayContent }}
               />
             );
           })()

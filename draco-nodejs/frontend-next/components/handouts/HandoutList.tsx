@@ -22,6 +22,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
 import type { HandoutType } from '@draco/shared-schemas';
 import { sanitizeHandoutContent } from '../../utils/sanitization';
+import RichTextContent from '../common/RichTextContent';
 
 export type HandoutListVariant = 'card' | 'panel';
 
@@ -139,24 +140,14 @@ const HandoutList: React.FC<HandoutListProps> = ({
               <ListItemText
                 primary={
                   hasDescription ? (
-                    <Box
-                      component="div"
+                    <RichTextContent
+                      html={sanitizedDescription}
+                      sanitize={false}
                       sx={{
                         fontSize: '1rem',
-                        color: 'text.primary',
-                        wordBreak: 'break-word',
-                        '& p': { margin: '0 0 4px', fontSize: 'inherit' },
-                        '& p:last-of-type': { marginBottom: 0 },
-                        '& ul, & ol': { margin: '4px 0 0 18px', padding: 0 },
-                        '& li': { marginBottom: '4px' },
-                        '& strong, & b': { fontWeight: 700 },
-                        '& em, & i': { fontStyle: 'italic' },
-                        '& h1': { fontSize: '1.25rem', fontWeight: 600, margin: '4px 0' },
-                        '& h2': { fontSize: '1.15rem', fontWeight: 600, margin: '4px 0' },
-                        '& h3': { fontSize: '1.05rem', fontWeight: 600, margin: '4px 0' },
+                        '& p': { fontSize: 'inherit', marginBottom: '4px' },
                         '& a': { color: 'primary.main', textDecoration: 'underline' },
                       }}
-                      dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
                     />
                   ) : (
                     <Typography

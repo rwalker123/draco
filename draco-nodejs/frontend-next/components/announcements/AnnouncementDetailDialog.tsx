@@ -16,6 +16,7 @@ import {
 import type { AnnouncementType } from '@draco/shared-schemas';
 import { formatDateTime } from '../../utils/dateUtils';
 import { sanitizeRichContent } from '../../utils/sanitization';
+import RichTextContent from '../common/RichTextContent';
 
 interface AnnouncementDetailDialogProps {
   open: boolean;
@@ -80,14 +81,7 @@ const AnnouncementDetailDialog: React.FC<AnnouncementDetailDialogProps> = ({
               </Typography>
             ) : null}
             {bodyContent ? (
-              <Box
-                sx={{
-                  '& p': { mb: 1.5 },
-                  '& ul': { pl: 3, mb: 1.5 },
-                  '& ol': { pl: 3, mb: 1.5 },
-                }}
-                dangerouslySetInnerHTML={{ __html: bodyContent }}
-              />
+              <RichTextContent html={bodyContent} sanitize={false} />
             ) : (
               <Typography variant="body1" color="text.secondary">
                 No additional content provided.
