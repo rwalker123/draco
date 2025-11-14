@@ -163,6 +163,33 @@ export const SocialVideoQuerySchema = z
     title: 'SocialVideoQuery',
   });
 
+const DiscordRichContentTextNodeSchema = z.object({
+  type: z.literal('text'),
+  text: z.string(),
+});
+
+const DiscordRichContentEmojiNodeSchema = z.object({
+  type: z.literal('emoji'),
+  id: z.string().optional(),
+  name: z.string(),
+  url: z.string().url(),
+  animated: z.boolean().optional(),
+});
+
+const DiscordRichContentMentionNodeSchema = z.object({
+  type: z.literal('mention'),
+  id: z.string(),
+  mentionType: z.enum(['user', 'channel', 'role']),
+  label: z.string().optional(),
+  raw: z.string().optional(),
+});
+
+export const DiscordRichContentNodeSchema = z.discriminatedUnion('type', [
+  DiscordRichContentTextNodeSchema,
+  DiscordRichContentEmojiNodeSchema,
+  DiscordRichContentMentionNodeSchema,
+]);
+
 export const CommunityMessageAttachmentSchema = SocialMediaAttachmentSchema.openapi({
   title: 'CommunityMessageAttachment',
 });
@@ -181,6 +208,7 @@ export const CommunityMessagePreviewSchema = z
     avatarUrl: z.string().url().nullable().optional(),
     content: z.string().trim(),
     attachments: CommunityMessageAttachmentSchema.array().optional(),
+    richContent: DiscordRichContentNodeSchema.array().optional(),
     postedAt: isoDateTimeSchema,
     permalink: z.string().trim().url().nullable().optional(),
   })
@@ -335,6 +363,7 @@ export type CommunityMessageListType = z.infer<typeof CommunityMessageListSchema
 export type CommunityMessageQueryType = z.infer<typeof CommunityMessageQuerySchema>;
 export type CommunityChannelType = z.infer<typeof CommunityChannelSchema>;
 export type CommunityChannelListType = z.infer<typeof CommunityChannelListSchema>;
+export type DiscordRichContentNodeType = z.infer<typeof DiscordRichContentNodeSchema>;
 export type LiveEventStatusType = z.infer<typeof LiveEventStatusSchema>;
 export type LiveEventType = z.infer<typeof LiveEventSchema>;
 export type LiveEventListType = z.infer<typeof LiveEventListSchema>;

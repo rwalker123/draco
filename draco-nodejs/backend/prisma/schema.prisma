@@ -873,6 +873,7 @@ model discordmessages {
   avatarurl    String?      @db.VarChar(512)
   content      String
   attachments  Json?
+  richcontent  Json?
   postedat     DateTime     @db.Timestamptz(6)
   permalink    String       @db.VarChar(512)
   createdat    DateTime     @default(now()) @db.Timestamptz(6)

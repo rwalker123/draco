@@ -56,6 +56,7 @@ import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
 import PlayersWantedPreview from '@/components/join-league/PlayersWantedPreview';
 import WidgetShell from '../ui/WidgetShell';
+import DiscordRichContent from './DiscordRichContent';
 
 const AttachmentIcon = ({ type }: { type: CommunityMessageAttachmentType['type'] }) => {
   switch (type) {
@@ -377,182 +378,197 @@ export default function SocialHubExperience({
             )}
           </Paper>
 
-          <FeaturedVideosWidget
-            accountId={accountId}
-            seasonId={seasonId}
-            viewAllHref={accountId ? `/account/${accountId}/social-hub/videos` : undefined}
-          />
+          <Stack spacing={3}>
+            <FeaturedVideosWidget
+              accountId={accountId}
+              seasonId={seasonId}
+              viewAllHref={accountId ? `/account/${accountId}/social-hub/videos` : undefined}
+            />
 
-          <WidgetShell
-            title={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Forum sx={{ color: 'primary.main' }} /> Community Chats
-              </Box>
-            }
-            accent="primary"
-          >
-            {!accountId || !seasonId ? (
-              <Alert severity="info">
-                Select an account and season to load community messages.
-              </Alert>
-            ) : (
-              <>
-                <Box sx={{ mb: 2 }}>
-                  {channelState.error ? (
-                    <Alert severity="warning" sx={{ mb: 2 }}>
-                      {channelState.error}
+            <WidgetShell
+              title={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Forum sx={{ color: 'primary.main' }} /> Community Chats
+                </Box>
+              }
+              accent="primary"
+            >
+              {!accountId || !seasonId ? (
+                <Alert severity="info">
+                  Select an account and season to load community messages.
+                </Alert>
+              ) : (
+                <>
+                  <Box sx={{ mb: 2 }}>
+                    {channelState.error ? (
+                      <Alert severity="warning" sx={{ mb: 2 }}>
+                        {channelState.error}
+                      </Alert>
+                    ) : null}
+                    {channelState.channels.length > 0 ? (
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        useFlexGap
+                        flexWrap="wrap"
+                        alignItems="center"
+                      >
+                        <ToggleButtonGroup
+                          exclusive
+                          size="small"
+                          value={selectedChannelId ?? 'all'}
+                          onChange={(
+                            event: React.SyntheticEvent<Element, Event>,
+                            value: string | null,
+                          ) => {
+                            event.preventDefault();
+                            if (value === null) {
+                              return;
+                            }
+                            const nextId = value === 'all' ? null : value;
+                            setSelectedChannelId(nextId);
+                          }}
+                          sx={{ flexWrap: 'wrap' }}
+                        >
+                          <ToggleButton value="all">All Channels</ToggleButton>
+                          {channelState.channels.map((channel) => (
+                            <ToggleButton key={channel.id} value={channel.id} sx={{ gap: 0.5 }}>
+                              <Forum fontSize="small" /> {channel.label ?? `#${channel.name}`}
+                            </ToggleButton>
+                          ))}
+                        </ToggleButtonGroup>
+                        <Button
+                          size="small"
+                          variant="text"
+                          startIcon={<OpenInNew fontSize="inherit" />}
+                          onClick={handleOpenDiscord}
+                          disabled={!channelState.channels.some((channel) => channel.url)}
+                        >
+                          Open Discord
+                        </Button>
+                      </Stack>
+                    ) : null}
+                  </Box>
+                  {communityState.error ? (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      {communityState.error}
                     </Alert>
                   ) : null}
-                  {channelState.channels.length > 0 ? (
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      useFlexGap
-                      flexWrap="wrap"
-                      alignItems="center"
-                    >
-                      <ToggleButtonGroup
-                        exclusive
-                        size="small"
-                        value={selectedChannelId ?? 'all'}
-                        onChange={(
-                          event: React.SyntheticEvent<Element, Event>,
-                          value: string | null,
-                        ) => {
-                          event.preventDefault();
-                          if (value === null) {
-                            return;
-                          }
-                          const nextId = value === 'all' ? null : value;
-                          setSelectedChannelId(nextId);
-                        }}
-                        sx={{ flexWrap: 'wrap' }}
-                      >
-                        <ToggleButton value="all">All Channels</ToggleButton>
-                        {channelState.channels.map((channel) => (
-                          <ToggleButton key={channel.id} value={channel.id} sx={{ gap: 0.5 }}>
-                            <Forum fontSize="small" /> {channel.label ?? `#${channel.name}`}
-                          </ToggleButton>
-                        ))}
-                      </ToggleButtonGroup>
-                      <Button
-                        size="small"
-                        variant="text"
-                        startIcon={<OpenInNew fontSize="inherit" />}
-                        onClick={handleOpenDiscord}
-                        disabled={!channelState.channels.some((channel) => channel.url)}
-                      >
-                        Open Discord
-                      </Button>
-                    </Stack>
-                  ) : (
-                    <Alert severity="info">
-                      Discord channels will appear here once an admin connects them to the Social
-                      Hub.
-                    </Alert>
-                  )}
-                </Box>
-                {communityState.error ? (
-                  <Alert severity="error" sx={{ mb: 2 }}>
-                    {communityState.error}
-                  </Alert>
-                ) : null}
-                {communityState.items.length > 0 ? (
-                  <List>
-                    {communityState.items.map((message, index) => (
-                      <React.Fragment key={message.id}>
-                        {index > 0 && <Divider />}
-                        <ListItem alignItems="flex-start" disableGutters>
-                          <ListItemAvatar>
-                            <Avatar src={message.avatarUrl ?? undefined}>
-                              {(message.authorDisplayName ?? 'C').charAt(0)}
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={
-                              <Typography component="div" variant="body2">
-                                <Box
-                                  component="div"
-                                  sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1,
-                                    flexWrap: 'wrap',
-                                  }}
-                                >
-                                  <Typography variant="subtitle2" component="span">
-                                    {message.authorDisplayName}
-                                  </Typography>
-                                  <Chip
-                                    label={`#${message.channelName}`}
-                                    size="small"
-                                    variant="outlined"
-                                  />
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    component="span"
-                                  >
-                                    {formatRelativeTime(message.postedAt)}
-                                  </Typography>
-                                  {message.permalink ? (
-                                    <Button
-                                      size="small"
-                                      startIcon={<OpenInNew fontSize="inherit" />}
-                                      component="a"
-                                      href={message.permalink}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                    >
-                                      Reply in Discord
-                                    </Button>
-                                  ) : null}
-                                </Box>
-                              </Typography>
-                            }
-                            secondary={
-                              <Stack spacing={1} sx={{ mt: 1 }} component="div">
-                                <Typography variant="body2" color="text.primary" component="div">
-                                  {message.content}
-                                </Typography>
-                                {message.attachments && message.attachments.length > 0 ? (
-                                  <Stack
-                                    direction="row"
-                                    spacing={1}
-                                    useFlexGap
-                                    flexWrap="wrap"
+                  {communityState.items.length > 0 ? (
+                    <List>
+                      {communityState.items.map((message, index) => (
+                        <React.Fragment key={message.id}>
+                          {index > 0 && <Divider />}
+                          <ListItem alignItems="flex-start" disableGutters>
+                            <ListItemAvatar>
+                              <Avatar src={message.avatarUrl ?? undefined}>
+                                {(message.authorDisplayName ?? 'C').charAt(0)}
+                              </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={
+                                <Typography component="div" variant="body2">
+                                  <Box
                                     component="div"
+                                    sx={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 1,
+                                      flexWrap: 'wrap',
+                                    }}
                                   >
-                                    {message.attachments.map((attachment) => (
-                                      <Chip
-                                        key={`${message.id}-${attachment.url}`}
-                                        icon={<AttachmentIcon type={attachment.type} />}
-                                        label={attachment.type}
+                                    <Typography variant="subtitle2" component="span">
+                                      {message.authorDisplayName}
+                                    </Typography>
+                                    <Chip
+                                      label={`#${message.channelName}`}
+                                      size="small"
+                                      variant="outlined"
+                                    />
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      component="span"
+                                    >
+                                      {formatRelativeTime(message.postedAt)}
+                                    </Typography>
+                                    {message.permalink ? (
+                                      <Button
+                                        size="small"
+                                        startIcon={<OpenInNew fontSize="inherit" />}
                                         component="a"
-                                        href={attachment.url}
+                                        href={message.permalink}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        clickable
-                                        variant="outlined"
-                                      />
-                                    ))}
-                                  </Stack>
-                                ) : null}
-                              </Stack>
-                            }
-                            primaryTypographyProps={{ component: 'div' }}
-                            secondaryTypographyProps={{ component: 'div' }}
-                          />
-                        </ListItem>
-                      </React.Fragment>
-                    ))}
-                  </List>
-                ) : (
-                  <Alert severity="info">No recent Discord activity yet.</Alert>
-                )}
-              </>
-            )}
-          </WidgetShell>
+                                      >
+                                        Reply in Discord
+                                      </Button>
+                                    ) : null}
+                                  </Box>
+                                </Typography>
+                              }
+                              secondary={
+                                <Stack spacing={1} sx={{ mt: 1 }} component="div">
+                                  <Typography variant="body2" color="text.primary" component="div">
+                                    <DiscordRichContent
+                                      nodes={message.richContent}
+                                      fallback={message.content}
+                                    />
+                                  </Typography>
+                                  {message.attachments && message.attachments.length > 0 ? (
+                                    <Stack
+                                      direction="row"
+                                      spacing={1}
+                                      useFlexGap
+                                      flexWrap="wrap"
+                                      component="div"
+                                    >
+                                      {message.attachments.map((attachment, attachmentIndex) =>
+                                        attachment.type === 'image' ? (
+                                          <Box
+                                            key={`${message.id}-${attachment.url}`}
+                                            component="img"
+                                            src={attachment.thumbnailUrl ?? attachment.url}
+                                            alt={`Attachment image ${attachmentIndex + 1}`}
+                                            sx={{
+                                              maxWidth: 160,
+                                              maxHeight: 160,
+                                              borderRadius: 1,
+                                              objectFit: 'cover',
+                                            }}
+                                          />
+                                        ) : (
+                                          <Chip
+                                            key={`${message.id}-${attachment.url}`}
+                                            icon={<AttachmentIcon type={attachment.type} />}
+                                            label={attachment.type}
+                                            component="a"
+                                            href={attachment.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            clickable
+                                            variant="outlined"
+                                          />
+                                        ),
+                                      )}
+                                    </Stack>
+                                  ) : null}
+                                </Stack>
+                              }
+                              primaryTypographyProps={{ component: 'div' }}
+                              secondaryTypographyProps={{ component: 'div' }}
+                            />
+                          </ListItem>
+                        </React.Fragment>
+                      ))}
+                    </List>
+                  ) : (
+                    <Alert severity="info">No recent Discord activity yet.</Alert>
+                  )}
+                </>
+              )}
+            </WidgetShell>
+          </Stack>
         </Box>
 
         {/* Sidebar */}

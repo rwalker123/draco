@@ -2,6 +2,7 @@ import {
   SocialFeedItemMetadataType,
   SocialMediaAttachmentType,
   CommunityMessageAttachmentType,
+  DiscordRichContentNodeType,
 } from '@draco/shared-schemas';
 import {
   TwitterIngestionTarget,
@@ -41,6 +42,7 @@ export interface DiscordMessageIngestionRecord {
   authorAvatarUrl?: string | null;
   postedAt: Date;
   attachments?: CommunityMessageAttachmentType[];
+  richContent?: DiscordRichContentNodeType[];
   permalink?: string | null;
 }
 
