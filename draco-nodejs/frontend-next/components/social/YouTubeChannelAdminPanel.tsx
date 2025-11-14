@@ -30,6 +30,8 @@ interface BasePanelProps {
 
 interface AccountPanelProps extends BasePanelProps {
   context: 'account';
+  accountName: string;
+  accountLogoUrl: string;
   onAccountUpdated?: (account: AccountType) => void;
 }
 
@@ -86,7 +88,7 @@ const YouTubeChannelAdminPanel: React.FC<YouTubeChannelAdminPanelProps> = (props
 
   const hookOptions =
     context === 'account'
-      ? { context, accountId }
+      ? { context, accountId, accountName: props.accountName, accountLogoUrl: props.accountLogoUrl }
       : { context, accountId, seasonId: props.seasonId, teamSeasonId: props.teamSeasonId };
 
   const { saveChannel, loading, error, clearError } = useYouTubeChannelAdmin(hookOptions);
@@ -259,7 +261,9 @@ const YouTubeChannelAdminPanel: React.FC<YouTubeChannelAdminPanelProps> = (props
               ) : null}
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Paste the 24-character channel ID (starts with <code>UC</code>) or a full YouTube
-                channel URL that includes it. We currently support standard channel IDs.
+                channel URL that includes it. To find the channel ID, open YouTube Studio, go to
+                Settings &gt; Channel &gt; Advanced settings, and copy the YouTube channel ID from
+                that page.
               </Typography>
               <TextField
                 fullWidth

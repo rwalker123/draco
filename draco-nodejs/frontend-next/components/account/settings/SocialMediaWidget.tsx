@@ -40,6 +40,8 @@ export const SocialMediaWidget: React.FC<SocialMediaWidgetProps> = ({
         <YouTubeChannelAdminPanel
           context="account"
           accountId={account.id}
+          accountName={account.name}
+          accountLogoUrl={account.accountLogoUrl}
           currentChannelId={account.socials?.youtubeUserId ?? null}
           title="YouTube Channel"
           subtitle="Featured videos in the Social Hub"

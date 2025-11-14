@@ -18,6 +18,7 @@ export interface TeamHandoutHeaderData {
   teamId: string;
   teamSeasonId?: string | null;
   seasonId?: string | null;
+  youtubeUserId?: string | null;
 }
 
 interface UseTeamHandoutHeaderOptions {
@@ -151,6 +152,7 @@ export function useTeamHandoutHeader({
           teamId: data.team.id,
           teamSeasonId: teamSeasonIdValue,
           seasonId: seasonIdValue,
+          youtubeUserId: data.team.youtubeUserId ?? null,
         });
       } catch (err) {
         if (ignore) {
@@ -208,6 +210,7 @@ export function useTeamHandoutHeader({
         let resolvedLeagueName = match.league?.name ?? undefined;
         let resolvedLogoUrl = match.team?.logoUrl ?? undefined;
         let resolvedSeasonId = match.season?.id ?? null;
+        let resolvedYoutube = match.team?.youtubeUserId ?? null;
 
         if (!resolvedSeasonId && match.id) {
           const resolvedDetails = await resolveTeamSeasonDetails(accountIdValue, match.id);
@@ -221,6 +224,7 @@ export function useTeamHandoutHeader({
             resolvedLeagueName = resolvedDetails.league?.name ?? resolvedLeagueName;
             resolvedLogoUrl = resolvedDetails.team.logoUrl ?? resolvedLogoUrl;
             resolvedSeasonId = resolvedDetails.season?.id ?? resolvedSeasonId;
+            resolvedYoutube = resolvedDetails.team.youtubeUserId ?? resolvedYoutube;
           }
         }
 
@@ -231,6 +235,7 @@ export function useTeamHandoutHeader({
           teamId: match.team?.id ?? teamIdValue,
           teamSeasonId: match.id ?? null,
           seasonId: resolvedSeasonId,
+          youtubeUserId: resolvedYoutube,
         });
         setNotMember(false);
       } catch (err) {

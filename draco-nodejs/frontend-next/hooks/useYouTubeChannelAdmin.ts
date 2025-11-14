@@ -2,13 +2,20 @@
 
 import { useCallback, useState } from 'react';
 import { updateAccount, updateTeamSeason } from '@draco/shared-api-client';
-import type { AccountType, TeamSeasonType } from '@draco/shared-schemas';
+import {
+  AccountSchema,
+  TeamSeasonSchema,
+  type AccountType,
+  type TeamSeasonType,
+} from '@draco/shared-schemas';
 import { useApiClient } from './useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 
 interface AccountContextOptions {
   context: 'account';
   accountId: string;
+  accountName: string;
+  accountLogoUrl: string;
 }
 
 interface TeamContextOptions {
@@ -50,19 +57,18 @@ export function useYouTubeChannelAdmin(
           const result = await updateAccount({
             client: apiClient,
             path: { accountId: options.accountId },
-            body: { socials: { youtubeUserId: channelId } },
+            body: {
+              name: options.accountName,
+              accountLogoUrl: options.accountLogoUrl,
+              socials: { youtubeUserId: channelId },
+            },
             throwOnError: false,
           });
 
-          const account = unwrapApiResult(
-            result,
-            'Failed to update YouTube channel',
-          ) as AccountType;
+          const account = AccountSchema.parse(
+            unwrapApiResult(result, 'Failed to update YouTube channel'),
+          );
           return { context: 'account' as const, account };
-        }
-
-        if (!options.seasonId || !options.teamSeasonId) {
-          throw new Error('Team season context is required to update the YouTube channel.');
         }
 
         const result = await updateTeamSeason({
@@ -76,15 +82,17 @@ export function useYouTubeChannelAdmin(
           throwOnError: false,
         });
 
-        const teamSeason = unwrapApiResult(
-          result,
-          'Failed to update team YouTube channel',
-        ) as TeamSeasonType;
+        const teamSeason = TeamSeasonSchema.parse(
+          unwrapApiResult(result, 'Failed to update team YouTube channel'),
+        );
 
         return { context: 'team' as const, teamSeason };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unable to save the YouTube channel.';
         setError(message);
+        if (err instanceof Error) {
+          throw err;
+        }
         throw new Error(message);
       } finally {
         setLoading(false);

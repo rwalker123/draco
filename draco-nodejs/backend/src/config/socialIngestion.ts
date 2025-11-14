@@ -119,23 +119,38 @@ const twitterTargets = parseTwitterTargets(process.env.SOCIAL_INGESTION_TWITTER_
 const youtubeTargets = parseYouTubeTargets(process.env.SOCIAL_INGESTION_YOUTUBE_TARGETS);
 const discordTargets = parseDiscordTargets(process.env.SOCIAL_INGESTION_DISCORD_CHANNELS);
 
+const twitterEnabled = parseBoolean(
+  process.env.SOCIAL_INGESTION_TWITTER_ENABLED,
+  twitterTargets.length > 0,
+);
+const youtubeEnabled = parseBoolean(
+  process.env.SOCIAL_INGESTION_YOUTUBE_ENABLED,
+  youtubeTargets.length > 0 || Boolean(process.env.SOCIAL_INGESTION_YOUTUBE_API_KEY),
+);
+const discordEnabled = parseBoolean(
+  process.env.SOCIAL_INGESTION_DISCORD_ENABLED,
+  discordTargets.length > 0,
+);
+
+const connectorsEnabledByDefault = twitterEnabled || youtubeEnabled || discordEnabled;
+
 export const socialIngestionConfig = {
-  enabled: parseBoolean(process.env.SOCIAL_INGESTION_ENABLED, false),
+  enabled: parseBoolean(process.env.SOCIAL_INGESTION_ENABLED, connectorsEnabledByDefault),
   twitter: {
-    enabled: parseBoolean(process.env.SOCIAL_INGESTION_TWITTER_ENABLED, twitterTargets.length > 0),
+    enabled: twitterEnabled,
     bearerToken: process.env.SOCIAL_INGESTION_TWITTER_BEARER_TOKEN,
     intervalMs: parseInterval(process.env.SOCIAL_INGESTION_TWITTER_INTERVAL_MS, 5 * 60 * 1000),
     maxResults: parseInterval(process.env.SOCIAL_INGESTION_TWITTER_MAX_RESULTS, 20),
     targets: twitterTargets,
   },
   youtube: {
-    enabled: parseBoolean(process.env.SOCIAL_INGESTION_YOUTUBE_ENABLED, youtubeTargets.length > 0),
+    enabled: youtubeEnabled,
     apiKey: process.env.SOCIAL_INGESTION_YOUTUBE_API_KEY,
     intervalMs: parseInterval(process.env.SOCIAL_INGESTION_YOUTUBE_INTERVAL_MS, 10 * 60 * 1000),
     targets: youtubeTargets,
   },
   discord: {
-    enabled: parseBoolean(process.env.SOCIAL_INGESTION_DISCORD_ENABLED, discordTargets.length > 0),
+    enabled: discordEnabled,
     botToken: process.env.SOCIAL_INGESTION_DISCORD_BOT_TOKEN,
     intervalMs: parseInterval(process.env.SOCIAL_INGESTION_DISCORD_INTERVAL_MS, 60 * 1000),
     limit: parseInterval(process.env.SOCIAL_INGESTION_DISCORD_LIMIT, 25),

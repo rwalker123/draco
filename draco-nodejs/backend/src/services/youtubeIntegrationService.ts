@@ -1,13 +1,21 @@
 import { YouTubeIngestionTarget } from '../config/socialIngestion.js';
 import { RepositoryFactory } from '../repositories/index.js';
 
+/**
+ * Resolves YouTube ingestion targets for both account-wide and team-specific channels.
+ * It queries the repositories directly each time (no caching) so the results reflect
+ * the latest channel configuration and current-season selections.
+ */
 export class YouTubeIntegrationService {
   private readonly accountRepository = RepositoryFactory.getAccountRepository();
   private readonly teamRepository = RepositoryFactory.getTeamRepository();
   private readonly seasonsRepository = RepositoryFactory.getSeasonsRepository();
-  private readonly currentSeasonCache = new Map<string, bigint | null>();
-  private readonly fallbackSeasonCache = new Map<string, bigint | null>();
 
+  /**
+   * Combines account-scoped and team-scoped YouTube ingestion targets,
+   * filters out entries without valid channel IDs, and deduplicates the result
+   * by account, season, team, teamSeason, and channel ID.
+   */
   async listIngestionTargets(): Promise<YouTubeIngestionTarget[]> {
     const [accountTargets, teamTargets] = await Promise.all([
       this.listAccountTargets(),
@@ -88,32 +96,18 @@ export class YouTubeIntegrationService {
       return [];
     }
 
-    const accountIds = Array.from(
-      new Set(
-        teamSeasons
-          .map((record) => record.teams?.accountid)
-          .filter((value): value is bigint => value !== undefined && value !== null),
-      ),
-    );
+    const targets: YouTubeIngestionTarget[] = [];
 
-    const currentSeasonPairs = await Promise.all(
-      accountIds.map(
-        async (accountId) => [accountId, await this.getCurrentSeasonId(accountId)] as const,
-      ),
-    );
-
-    const currentSeasonMap = new Map(currentSeasonPairs);
-
-    return teamSeasons.reduce<YouTubeIngestionTarget[]>((acc, record) => {
+    for (const record of teamSeasons) {
       const channelId = this.normalizeChannelId(record.teams?.youtubeuserid ?? null);
       const accountId = record.teams?.accountid;
       const seasonId = record.leagueseason?.seasonid ?? null;
 
       if (!channelId || !accountId || !seasonId) {
-        return acc;
+        continue;
       }
 
-      const currentSeasonId = currentSeasonMap.get(accountId);
+      const currentSeasonId = await this.getCurrentSeasonId(accountId);
 
       if (!currentSeasonId) {
         console.warn(
@@ -123,7 +117,7 @@ export class YouTubeIntegrationService {
             teamSeasonId: record.id.toString(),
           },
         );
-        return acc;
+        continue;
       }
 
       if (seasonId !== currentSeasonId) {
@@ -133,24 +127,24 @@ export class YouTubeIntegrationService {
           targetSeasonId: seasonId.toString(),
           currentSeasonId: currentSeasonId.toString(),
         });
-        return acc;
+        continue;
       }
 
       const teamId = record.teams?.id;
       if (!teamId) {
-        return acc;
+        continue;
       }
 
-      acc.push({
+      targets.push({
         accountId,
         seasonId,
         teamId,
         teamSeasonId: record.id,
         channelId,
       });
+    }
 
-      return acc;
-    }, []);
+    return targets;
   }
 
   private normalizeChannelId(channelId: string | null | undefined): string | null {
@@ -159,18 +153,42 @@ export class YouTubeIntegrationService {
     }
 
     const trimmed = channelId.trim();
-    return trimmed.length > 0 ? trimmed : null;
+    if (!trimmed) {
+      return null;
+    }
+
+    const ucIdMatch = trimmed.match(/^UC[0-9A-Za-z_-]{22}$/);
+    if (ucIdMatch) {
+      return ucIdMatch[0];
+    }
+
+    try {
+      const parsed = new URL(trimmed);
+      const segments = parsed.pathname.split('/').filter(Boolean);
+      const channelIndex = segments.findIndex((segment) => segment.toLowerCase() === 'channel');
+      if (channelIndex >= 0 && channelIndex + 1 < segments.length) {
+        const candidate = segments[channelIndex + 1];
+        if (/^UC[0-9A-Za-z_-]{22}$/.test(candidate)) {
+          return candidate;
+        }
+      }
+
+      const queryChannelId = parsed.searchParams.get('channelId');
+      if (queryChannelId && /^UC[0-9A-Za-z_-]{22}$/.test(queryChannelId)) {
+        return queryChannelId;
+      }
+    } catch {
+      // Not a full URL, fall through to generic matching
+    }
+
+    const fallback = trimmed.match(/UC[0-9A-Za-z_-]{22}/);
+    return fallback ? fallback[0] : null;
   }
 
   private async resolveAccountSeasonId(accountId: bigint): Promise<bigint | null> {
     const currentSeasonId = await this.getCurrentSeasonId(accountId);
     if (currentSeasonId) {
       return currentSeasonId;
-    }
-
-    const cacheKey = accountId.toString();
-    if (this.fallbackSeasonCache.has(cacheKey)) {
-      return this.fallbackSeasonCache.get(cacheKey) ?? null;
     }
 
     const seasons = await this.seasonsRepository.findAccountSeasons(accountId, false);
@@ -182,19 +200,11 @@ export class YouTubeIntegrationService {
       }
     }
 
-    this.fallbackSeasonCache.set(cacheKey, fallbackId);
     return fallbackId;
   }
 
   private async getCurrentSeasonId(accountId: bigint): Promise<bigint | null> {
-    const cacheKey = accountId.toString();
-    if (this.currentSeasonCache.has(cacheKey)) {
-      return this.currentSeasonCache.get(cacheKey) ?? null;
-    }
-
     const currentSeason = await this.seasonsRepository.findCurrentSeason(accountId);
-    const currentSeasonId = currentSeason?.id ?? null;
-    this.currentSeasonCache.set(cacheKey, currentSeasonId);
-    return currentSeasonId;
+    return currentSeason?.id ?? null;
   }
 }

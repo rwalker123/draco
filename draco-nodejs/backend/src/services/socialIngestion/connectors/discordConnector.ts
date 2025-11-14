@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import { BaseSocialIngestionConnector } from './baseConnector.js';
 import { DiscordConnectorOptions, DiscordMessageIngestionRecord } from '../ingestionTypes.js';
 import { ISocialContentRepository } from '../../../repositories/interfaces/ISocialContentRepository.js';
-import { fetchJson } from '../../../utils/fetchJson.js';
+import { fetchJson, HttpError } from '../../../utils/fetchJson.js';
 import type { DiscordIngestionTarget } from '../../../config/socialIngestion.js';
 
 interface DiscordMessage {
@@ -32,6 +32,8 @@ interface CachedDiscordMessage {
 
 export class DiscordConnector extends BaseSocialIngestionConnector {
   private readonly messageCache = new Map<string, CachedDiscordMessage>();
+  private nextAllowedRun = 0;
+  private globalCooldownUntil = 0;
 
   constructor(
     private readonly repository: ISocialContentRepository,
@@ -43,6 +45,10 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
   protected async runIngestion(): Promise<void> {
     if (!this.options.botToken) {
       console.warn('[discord] Skipping ingestion because bot token is not configured.');
+      return;
+    }
+
+    if (Date.now() < this.nextAllowedRun || Date.now() < this.globalCooldownUntil) {
       return;
     }
 
@@ -136,8 +142,32 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
         permalink: '',
       }));
     } catch (error) {
-      console.error(`[discord] Failed to fetch messages for channel ${channelId}`, error);
+      if (error instanceof HttpError && error.status === 429) {
+        const retryAfterMs = this.extractRetryAfterMs(error.body);
+        console.warn(
+          `[discord] Rate limit hit for channel ${channelId}. Pausing for ${retryAfterMs}ms`,
+        );
+        this.nextAllowedRun = Date.now() + retryAfterMs;
+      } else if (error instanceof HttpError && error.status >= 500) {
+        console.error(`[discord] Discord API error ${error.status} for channel ${channelId}`);
+      } else {
+        console.error(`[discord] Failed to fetch messages for channel ${channelId}`, error);
+      }
       return [];
+    }
+  }
+
+  private extractRetryAfterMs(body: string): number {
+    try {
+      const parsed = JSON.parse(body);
+      const retrySeconds = typeof parsed?.retry_after === 'number' ? parsed.retry_after : 1;
+      const isGlobal = Boolean(parsed?.global);
+      if (isGlobal) {
+        this.globalCooldownUntil = Date.now() + retrySeconds * 1000;
+      }
+      return Math.max(1000, retrySeconds * 1000);
+    } catch {
+      return 5000;
     }
   }
 

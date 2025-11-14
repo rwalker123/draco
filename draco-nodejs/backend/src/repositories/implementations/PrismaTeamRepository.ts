@@ -74,11 +74,31 @@ export class PrismaTeamRepository implements ITeamRepository {
   }
 
   async findTeamSeasonsWithYouTube(): Promise<dbTeamSeasonWithTeamAndSeason[]> {
+    const currentSeasons = await this.prisma.currentseason.findMany({
+      select: { seasonid: true },
+    });
+
+    if (!currentSeasons.length) {
+      return [];
+    }
+
+    const seasonIds = currentSeasons.map((record) => record.seasonid);
+
     return this.prisma.teamsseason.findMany({
       where: {
         teams: {
           youtubeuserid: {
             not: null,
+          },
+        },
+        NOT: {
+          teams: {
+            youtubeuserid: '',
+          },
+        },
+        leagueseason: {
+          seasonid: {
+            in: seasonIds,
           },
         },
       },
