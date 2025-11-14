@@ -56,6 +56,7 @@ import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
 import PlayersWantedPreview from '@/components/join-league/PlayersWantedPreview';
 import WidgetShell from '../ui/WidgetShell';
+import DiscordRichContent from './DiscordRichContent';
 
 const formatRelativeTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -690,7 +691,10 @@ export default function SocialHubExperience({
                             secondary={
                               <Stack spacing={1} sx={{ mt: 1 }} component="div">
                                 <Typography variant="body2" color="text.primary" component="div">
-                                  {message.content}
+                                  <DiscordRichContent
+                                    nodes={message.richContent}
+                                    fallback={message.content}
+                                  />
                                 </Typography>
                                 {message.attachments && message.attachments.length > 0 ? (
                                   <Stack
@@ -700,19 +704,34 @@ export default function SocialHubExperience({
                                     flexWrap="wrap"
                                     component="div"
                                   >
-                                    {message.attachments.map((attachment) => (
-                                      <Chip
-                                        key={`${message.id}-${attachment.url}`}
-                                        icon={<AttachmentIcon type={attachment.type} />}
-                                        label={attachment.type}
-                                        component="a"
-                                        href={attachment.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        clickable
-                                        variant="outlined"
-                                      />
-                                    ))}
+                                    {message.attachments.map((attachment, attachmentIndex) =>
+                                      attachment.type === 'image' ? (
+                                        <Box
+                                          key={`${message.id}-${attachment.url}`}
+                                          component="img"
+                                          src={attachment.thumbnailUrl ?? attachment.url}
+                                          alt={`Attachment image ${attachmentIndex + 1}`}
+                                          sx={{
+                                            maxWidth: 160,
+                                            maxHeight: 160,
+                                            borderRadius: 1,
+                                            objectFit: 'cover',
+                                          }}
+                                        />
+                                      ) : (
+                                        <Chip
+                                          key={`${message.id}-${attachment.url}`}
+                                          icon={<AttachmentIcon type={attachment.type} />}
+                                          label={attachment.type}
+                                          component="a"
+                                          href={attachment.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          clickable
+                                          variant="outlined"
+                                        />
+                                      ),
+                                    )}
                                   </Stack>
                                 ) : null}
                               </Stack>

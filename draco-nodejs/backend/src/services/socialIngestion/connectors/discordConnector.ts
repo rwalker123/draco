@@ -3,8 +3,9 @@ import { BaseSocialIngestionConnector } from './baseConnector.js';
 import { DiscordConnectorOptions, DiscordMessageIngestionRecord } from '../ingestionTypes.js';
 import { ISocialContentRepository } from '../../../repositories/interfaces/ISocialContentRepository.js';
 import { fetchJson } from '../../../utils/fetchJson.js';
+import { normalizeDiscordMessage } from '../transformers/discordMessageTransformer.js';
 
-interface DiscordMessage {
+export interface DiscordMessage {
   id: string;
   content: string;
   timestamp: string;
@@ -21,6 +22,43 @@ interface DiscordMessage {
     url: string;
     proxy_url?: string;
     content_type?: string;
+    size?: number;
+  }>;
+  embeds?: Array<{
+    type?: string;
+    url?: string;
+    thumbnail?: {
+      url?: string;
+    };
+    video?: {
+      url?: string;
+      proxy_url?: string;
+    };
+  }>;
+  reactions?: Array<{
+    count: number;
+    me: boolean;
+    emoji: {
+      id?: string;
+      name?: string;
+      animated?: boolean;
+    };
+  }>;
+  sticker_items?: Array<{
+    id: string;
+    name: string;
+    format_type: number;
+  }>;
+  mentions?: Array<{
+    id: string;
+    username: string;
+    global_name?: string;
+    display_name?: string;
+  }>;
+  mention_roles?: string[];
+  mention_channels?: Array<{
+    id: string;
+    name?: string;
   }>;
 }
 
@@ -66,6 +104,9 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
           attachments: message.attachments?.length
             ? (JSON.parse(JSON.stringify(message.attachments)) as Prisma.InputJsonValue)
             : undefined,
+          richcontent: message.richContent?.length
+            ? (JSON.parse(JSON.stringify(message.richContent)) as Prisma.InputJsonValue)
+            : undefined,
           postedat: message.postedAt,
           permalink: message.permalink ?? '',
         });
@@ -101,15 +142,13 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
         authorId: message.author.id,
         authorAvatarUrl: this.buildAvatarUrl(message.author.id, message.author.avatar),
         postedAt: new Date(message.timestamp),
-        attachments: message.attachments?.map((attachment) => ({
-          type: attachment.content_type?.startsWith('video')
-            ? 'video'
-            : attachment.content_type?.startsWith('image')
-              ? 'image'
-              : 'file',
-          url: attachment.url,
-          thumbnailUrl: attachment.proxy_url ?? null,
-        })),
+        ...(() => {
+          const normalized = normalizeDiscordMessage(message);
+          return {
+            attachments: normalized.attachments.length ? normalized.attachments : undefined,
+            richContent: normalized.richContent.length ? normalized.richContent : undefined,
+          };
+        })(),
         permalink: '',
       }));
     } catch (error) {

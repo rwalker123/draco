@@ -7,6 +7,7 @@ import {
 import {
   CommunityMessageAttachmentType,
   CommunityMessagePreviewType,
+  DiscordRichContentNodeType,
   SocialFeedItemMetadataType,
   SocialFeedItemType,
   SocialMediaAttachmentType,
@@ -67,6 +68,7 @@ export class SocialFeedResponseFormatter {
       avatarUrl: record.avatarurl,
       content: record.content,
       attachments: this.parseCommunityAttachments(record.attachments),
+      richContent: this.parseRichContent(record.richcontent),
       postedAt: record.postedat.toISOString(),
       permalink: record.permalink ?? null,
     }));
@@ -159,5 +161,73 @@ export class SocialFeedResponseFormatter {
     }
 
     return Object.keys(parsed).length ? parsed : undefined;
+  }
+
+  private static parseRichContent(
+    payload: Prisma.JsonValue | null,
+  ): DiscordRichContentNodeType[] | undefined {
+    if (!payload || !Array.isArray(payload)) {
+      return undefined;
+    }
+
+    const nodes: DiscordRichContentNodeType[] = [];
+
+    for (const item of payload) {
+      if (typeof item !== 'object' || item === null) {
+        continue;
+      }
+
+      const record = item as Record<string, unknown>;
+      const type = record.type;
+
+      if (type === 'text' && typeof record.text === 'string') {
+        nodes.push({ type: 'text', text: record.text });
+        continue;
+      }
+
+      if (
+        type === 'emoji' &&
+        typeof record.name === 'string' &&
+        typeof record.url === 'string'
+      ) {
+        const node: DiscordRichContentNodeType = {
+          type: 'emoji',
+          name: record.name,
+          url: record.url,
+        };
+
+        if (typeof record.id === 'string') {
+          node.id = record.id;
+        }
+        if (typeof record.animated === 'boolean') {
+          node.animated = record.animated;
+        }
+
+        nodes.push(node);
+        continue;
+      }
+
+      if (type === 'mention' && typeof record.id === 'string' && typeof record.mentionType === 'string') {
+        const mentionType = record.mentionType;
+        if (mentionType === 'user' || mentionType === 'channel' || mentionType === 'role') {
+          const node: DiscordRichContentNodeType = {
+            type: 'mention',
+            id: record.id,
+            mentionType,
+          };
+
+          if (typeof record.label === 'string') {
+            node.label = record.label;
+          }
+          if (typeof record.raw === 'string') {
+            node.raw = record.raw;
+          }
+
+          nodes.push(node);
+        }
+      }
+    }
+
+    return nodes.length ? nodes : undefined;
   }
 }
