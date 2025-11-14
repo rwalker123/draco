@@ -9,16 +9,6 @@ export interface JWTPayload {
   exp: number;
 }
 
-// Extend Express Request interface to include user
-declare module 'express-serve-static-core' {
-  interface Request {
-    user?: {
-      id: string;
-      username: string;
-    };
-  }
-}
-
 /**
  * Middleware to verify JWT token and attach user to request
  */

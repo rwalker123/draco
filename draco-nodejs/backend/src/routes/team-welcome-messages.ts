@@ -4,26 +4,27 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import { UpsertWelcomeMessageSchema } from '@draco/shared-schemas';
-import type { WelcomeMessageService } from '../services/welcomeMessageService.js';
-
-type TeamContext = Awaited<ReturnType<WelcomeMessageService['resolveTeamContext']>>;
-
-declare module 'express-serve-static-core' {
-  interface Request {
-    welcomeMessageTeamContext?: TeamContext;
-  }
-}
+import type { TeamRequestContext } from '../types/requestContext.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const welcomeMessageService = ServiceFactory.getWelcomeMessageService();
+
+const setTeamContext = (req: Request, context: TeamRequestContext): void => {
+  if (!req.draco) {
+    req.draco = {};
+  }
+  req.draco.teamContext = context;
+};
+
+const getTeamContext = (req: Request): TeamRequestContext | undefined => req.draco?.teamContext;
 
 const attachTeamContext = asyncHandler(
   async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
     const context = await welcomeMessageService.resolveTeamContext(accountId, teamSeasonId);
-    req.welcomeMessageTeamContext = context;
+    setTeamContext(req, context);
     req.params.seasonId = context.seasonId.toString();
     req.params.teamId = context.teamId.toString();
     next();
@@ -36,7 +37,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
-    const context = req.welcomeMessageTeamContext;
+    const context = getTeamContext(req);
     const welcomeMessages = await welcomeMessageService.listTeamMessages(
       accountId,
       teamSeasonId,
@@ -56,7 +57,7 @@ router.get(
       'teamSeasonId',
       'messageId',
     );
-    const context = req.welcomeMessageTeamContext;
+    const context = getTeamContext(req);
     const welcomeMessage = await welcomeMessageService.getTeamMessage(
       accountId,
       teamSeasonId,
@@ -80,7 +81,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
-    const context = req.welcomeMessageTeamContext;
+    const context = getTeamContext(req);
     const payload = UpsertWelcomeMessageSchema.parse(req.body);
     const welcomeMessage = await welcomeMessageService.createTeamMessage(
       accountId,
@@ -109,7 +110,7 @@ router.put(
       'teamSeasonId',
       'messageId',
     );
-    const context = req.welcomeMessageTeamContext;
+    const context = getTeamContext(req);
     const payload = UpsertWelcomeMessageSchema.parse(req.body);
     const welcomeMessage = await welcomeMessageService.updateTeamMessage(
       accountId,
@@ -139,7 +140,7 @@ router.delete(
       'teamSeasonId',
       'messageId',
     );
-    const context = req.welcomeMessageTeamContext;
+    const context = getTeamContext(req);
     await welcomeMessageService.deleteTeamMessage(accountId, teamSeasonId, messageId, context);
     res.status(204).send();
   }),

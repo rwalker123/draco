@@ -6,7 +6,6 @@ import { IRoleMiddleware } from '../services/interfaces/roleInterfaces.js';
 import { ROLE_IDS } from '../config/roles.js';
 import { RoleContextData } from '../services/interfaces/roleInterfaces.js';
 import { RoleNamesType } from '../types/roles.js';
-import { UserRolesType } from '@draco/shared-schemas';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import {
   AuthenticationError,
@@ -18,25 +17,6 @@ import { ContactService } from '../services/contactService.js';
 import { UserService } from '../services/userService.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { TeamService } from '@/services/teamService.js';
-
-// Extend the Request interface to include user and role information
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        username: string;
-      };
-      userRoles?: UserRolesType;
-      accountBoundary?: {
-        accountId: bigint;
-        contactId: bigint;
-        enforced: boolean;
-      };
-      hasAccountRoleAccess?: boolean;
-    }
-  }
-}
 
 export class RouteProtection {
   private roleService: IRoleMiddleware;
