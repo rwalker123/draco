@@ -111,26 +111,6 @@ const InformationWidget: React.FC<InformationWidgetProps> = ({
     void fetchMessages();
   }, [fetchMessages]);
 
-  React.useEffect(() => {
-    const handleFocus = () => {
-      void fetchMessages();
-    };
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        void fetchMessages();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibility);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
-  }, [fetchMessages]);
-
   const hasMessages = messages.length > 0;
   const shouldRender = hasMessages || loading || Boolean(error);
 
