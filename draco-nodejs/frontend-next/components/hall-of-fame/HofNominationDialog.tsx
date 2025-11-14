@@ -25,6 +25,7 @@ import { assertNoApiError } from '@/utils/apiResult';
 import TurnstileChallenge from '@/components/security/TurnstileChallenge';
 import { sanitizeRichContent } from '@/utils/sanitization';
 import { formatPhoneInput, formatPhoneNumber } from '@/utils/phoneNumber';
+import RichTextContent from '../common/RichTextContent';
 
 const NOMINATION_REASON_LIMIT = 1000;
 
@@ -218,15 +219,11 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
             </Typography>
 
             {sanitizedCriteria ? (
-              <Alert severity="info" sx={{ '& p': { mb: 1, '&:last-of-type': { mb: 0 } } }}>
+              <Alert severity="info">
                 <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                   Nomination Criteria
                 </Typography>
-                <Typography
-                  component="div"
-                  variant="body2"
-                  dangerouslySetInnerHTML={{ __html: sanitizedCriteria }}
-                />
+                <RichTextContent html={sanitizedCriteria} sanitize={false} />
               </Alert>
             ) : null}
 

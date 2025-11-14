@@ -69,7 +69,7 @@ const extractChannelId = (rawValue: string): string => {
     if (queryChannelId && isChannelId(queryChannelId)) {
       return queryChannelId;
     }
-  } catch (error) {
+  } catch {
     // Not a valid URL, fall through to general matching
   }
 
@@ -138,9 +138,11 @@ const YouTubeChannelAdminPanel: React.FC<YouTubeChannelAdminPanelProps> = (props
       try {
         const result = await saveChannel(normalized);
         if (result.context === 'account') {
-          props.context === 'account' && props.onAccountUpdated?.(result.account);
-        } else {
-          props.context === 'team' && props.onTeamSeasonUpdated?.(result.teamSeason);
+          if (props.context === 'account') {
+            props.onAccountUpdated?.(result.account);
+          }
+        } else if (props.context === 'team') {
+          props.onTeamSeasonUpdated?.(result.teamSeason);
         }
 
         setSuccessMessage(
@@ -161,9 +163,11 @@ const YouTubeChannelAdminPanel: React.FC<YouTubeChannelAdminPanelProps> = (props
     try {
       const result = await saveChannel(null);
       if (result.context === 'account') {
-        props.context === 'account' && props.onAccountUpdated?.(result.account);
-      } else {
-        props.context === 'team' && props.onTeamSeasonUpdated?.(result.teamSeason);
+        if (props.context === 'account') {
+          props.onAccountUpdated?.(result.account);
+        }
+      } else if (props.context === 'team') {
+        props.onTeamSeasonUpdated?.(result.teamSeason);
       }
 
       setSuccessMessage('The YouTube channel has been disconnected.');

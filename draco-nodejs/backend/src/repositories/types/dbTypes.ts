@@ -20,6 +20,40 @@ export interface dbPlayerTeamAssignment {
   teamName?: string | null;
 }
 
+export type dbWelcomeMessage = Prisma.accountwelcomeGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    orderno: true;
+    captionmenu: true;
+    welcometext: true;
+    teamid: true;
+  };
+}>;
+
+export type dbTeamSeasonAccount = Prisma.teamsseasonGetPayload<{
+  select: {
+    id: true;
+    teamid: true;
+    leagueseason: {
+      select: {
+        seasonid: true;
+        league: {
+          select: {
+            accountid: true;
+          };
+        };
+      };
+    };
+    teams: {
+      select: {
+        id: true;
+        accountid: true;
+      };
+    };
+  };
+}>;
+
 export type dbMemberBusiness = Prisma.memberbusinessGetPayload<{
   select: {
     id: true;

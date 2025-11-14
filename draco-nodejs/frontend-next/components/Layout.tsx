@@ -32,6 +32,7 @@ import {
   EmojiEvents as EmojiEventsIcon,
   HelpOutline as HelpOutlineIcon,
   Campaign as CampaignIcon,
+  InfoOutlined as InfoOutlinedIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -562,6 +563,30 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <DescriptionIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Handout Management</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
+                  handleNavigation(
+                    `/account/${String(currentAccount.id)}/information-messages/manage`,
+                  )
+                }
+                key="account-information-messages"
+              >
+                <ListItemIcon>
+                  <InfoOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Information Messages</ListItemText>
               </MenuItem>
             );
           }

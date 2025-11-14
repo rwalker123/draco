@@ -26,16 +26,10 @@ import { createEmailService } from '../../../../../../services/emailService';
 import { useAuth } from '../../../../../../context/AuthContext';
 import { useApiClient } from '../../../../../../hooks/useApiClient';
 import { EmailTemplate } from '../../../../../../types/emails/email';
-import TemplateRichTextEditor from '../../../../../../components/emails/templates/TemplateRichTextEditor';
+import TemplateRichTextEditor, {
+  type TemplateRichTextEditorRef,
+} from '../../../../../../components/emails/templates/TemplateRichTextEditor';
 import { sanitizeRichContent } from '../../../../../../utils/sanitization';
-
-// Define the ref interface for TemplateRichTextEditor
-interface TemplateRichTextEditorRef {
-  getCurrentContent: () => string;
-  getTextContent: () => string;
-  insertText: (text: string) => void;
-  insertVariable: (variable: string) => void;
-}
 import VariableInsertionHelper from '../../../../../../components/emails/templates/VariableInsertionHelper';
 
 interface TabPanelProps {
@@ -134,7 +128,7 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
     // Sync content from rich text editor before switching tabs
     // This ensures content is preserved when switching between Subject and Content tabs
     if (editorRef.current) {
-      const currentContent = editorRef.current.getCurrentContent();
+      const currentContent = editorRef.current.getSanitizedContent();
       if (currentContent !== formData.bodyTemplate) {
         setFormData((prev) => ({
           ...prev,
@@ -204,7 +198,7 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
 
         // Sync form state after insertion using a slight delay to ensure editor has updated
         setTimeout(() => {
-          const currentContent = editorRef.current?.getCurrentContent() || '';
+          const currentContent = editorRef.current?.getSanitizedContent() || '';
           setFormData((prev) => ({
             ...prev,
             bodyTemplate: currentContent,
@@ -218,7 +212,7 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
     // Sync content from editor before validation as a safety net
     let currentBodyContent = formData.bodyTemplate;
     if (editorRef.current) {
-      const editorContent = editorRef.current.getCurrentContent();
+      const editorContent = editorRef.current.getSanitizedContent();
       if (editorContent !== formData.bodyTemplate) {
         currentBodyContent = editorContent;
         setFormData((prev) => ({
@@ -250,7 +244,7 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
 
     try {
       // Get current content directly from editor to avoid race condition with async state updates
-      const currentBodyContent = editorRef.current?.getCurrentContent() || formData.bodyTemplate;
+      const currentBodyContent = editorRef.current?.getSanitizedContent() || formData.bodyTemplate;
 
       const templateData = {
         name: formData.name.trim(),

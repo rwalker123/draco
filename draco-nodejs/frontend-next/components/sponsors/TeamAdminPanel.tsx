@@ -9,6 +9,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import PrintIcon from '@mui/icons-material/Print';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import WidgetShell from '../ui/WidgetShell';
 import AccountOptional from '../account/AccountOptional';
 
@@ -24,6 +25,8 @@ interface TeamAdminPanelProps {
   handoutsHref?: string;
   announcementsHref?: string;
   canEnterStatistics?: boolean;
+  informationMessagesHref?: string;
+  canManageInformationMessages?: boolean;
 }
 
 const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
@@ -38,12 +41,17 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   handoutsHref,
   announcementsHref,
   canEnterStatistics = false,
+  informationMessagesHref,
+  canManageInformationMessages = false,
 }) => {
   const shouldShowClassifiedsLink =
     showPlayerClassifiedsLink && (!!playerClassifiedsHref || !!onPostPlayersWanted);
   const shouldShowHandoutsLink = Boolean(handoutsHref);
   const shouldShowAnnouncementsLink = canManageAnnouncements && Boolean(announcementsHref);
   const shouldShowStatEntryLink = Boolean(canEnterStatistics);
+  const shouldShowInformationMessagesLink = Boolean(
+    canManageInformationMessages && informationMessagesHref,
+  );
 
   return (
     <WidgetShell
@@ -106,6 +114,17 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               href={announcementsHref!}
             >
               Manage Announcements
+            </Button>
+          )}
+          {shouldShowInformationMessagesLink && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<InfoOutlinedIcon />}
+              component={Link}
+              href={informationMessagesHref!}
+            >
+              Manage Information Messages
             </Button>
           )}
           {shouldShowHandoutsLink && (

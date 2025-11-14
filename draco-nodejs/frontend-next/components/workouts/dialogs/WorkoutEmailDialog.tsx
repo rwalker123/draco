@@ -23,7 +23,7 @@ import {
   Paper,
 } from '@mui/material';
 import { useAuth } from '../../../context/AuthContext';
-import RichTextEditor from '../../email/RichTextEditor';
+import RichTextEditor, { type RichTextEditorHandle } from '../../email/RichTextEditor';
 import type {
   WorkoutRegistrationType,
   WorkoutRegistrationsEmailRequestType,
@@ -53,12 +53,6 @@ const hasContent = (value: string): boolean => {
     .replace(/&nbsp;/g, ' ')
     .trim();
   return text.length > 0;
-};
-
-type RichTextEditorHandle = {
-  getCurrentContent: () => string;
-  getTextContent: () => string;
-  insertText: (text: string) => void;
 };
 
 export const WorkoutEmailDialog: React.FC<WorkoutEmailDialogProps> = ({
@@ -155,7 +149,7 @@ export const WorkoutEmailDialog: React.FC<WorkoutEmailDialogProps> = ({
       return;
     }
 
-    const editorHtml = editorRef.current?.getCurrentContent() ?? '';
+    const editorHtml = editorRef.current?.getSanitizedContent() ?? '';
     const editorText = editorRef.current?.getTextContent() ?? '';
 
     if (!hasContent(editorHtml) && !editorText.trim()) {

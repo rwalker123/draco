@@ -40,6 +40,7 @@ import { useHallOfFameService } from '@/hooks/useHallOfFameService';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import WidgetShell from '@/components/ui/WidgetShell';
+import RichTextContent from '@/components/common/RichTextContent';
 
 interface MembersWidgetProps {
   accountId: string;
@@ -366,16 +367,7 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
                         Inducted: {member.yearInducted}
                       </Typography>
                       {member.biographyHtml ? (
-                        <Typography
-                          component="div"
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            '& p': { m: 0 },
-                            '& strong': { fontWeight: 600 },
-                          }}
-                          dangerouslySetInnerHTML={{ __html: member.biographyHtml }}
-                        />
+                        <RichTextContent html={member.biographyHtml} />
                       ) : (
                         <Typography component="span" variant="body2" color="text.secondary">
                           No biography provided yet.

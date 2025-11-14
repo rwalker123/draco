@@ -14,6 +14,7 @@ import {
   dbUserTeams,
   dbTeamSeasonValidationResult,
   dbTeam,
+  dbTeamSeasonAccount,
 } from '../types/dbTypes.js';
 
 export interface ITeamRepository extends IBaseRepository<teamsseason> {
@@ -111,4 +112,5 @@ export interface ITeamRepository extends IBaseRepository<teamsseason> {
   ): Promise<dbTeamSeason | null>;
 
   findTeamSeasonsWithYouTube(): Promise<dbTeamSeasonWithTeamAndSeason[]>;
+  findTeamSeasonWithAccount(teamSeasonId: bigint): Promise<dbTeamSeasonAccount | null>;
 }

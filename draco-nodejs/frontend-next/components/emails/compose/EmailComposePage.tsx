@@ -34,7 +34,7 @@ import ComposeSidebar from './ComposeSidebar';
 import { ScheduleDialog } from './ScheduleDialog';
 import AdvancedRecipientDialog from '../recipients/AdvancedRecipientDialog';
 import { FileUploadComponent } from '../attachments/FileUploadComponent';
-import RichTextEditor from '../../email/RichTextEditor';
+import RichTextEditor, { type RichTextEditorHandle } from '../../email/RichTextEditor';
 import ConfirmationDialog from '../../common/ConfirmationDialog';
 
 import { RecipientContact, RecipientSelectionState } from '../../../types/emails/recipients';
@@ -79,11 +79,7 @@ interface ComponentState {
 const EmailComposePageInternal: React.FC<
   Omit<EmailComposePageProps, 'initialData' | 'onSendComplete' | 'onCancel'> & {
     onSendComplete?: (emailId: string) => void;
-    editorRef?: React.RefObject<{
-      getCurrentContent: () => string;
-      getTextContent: () => string;
-      insertText: (text: string) => void;
-    } | null>;
+    editorRef?: React.RefObject<RichTextEditorHandle | null>;
   }
 > = React.memo(
   function EmailComposePageInternal({
@@ -250,7 +246,7 @@ const EmailComposePageInternal: React.FC<
     // Sync editor content to state before operations that need current content
     const syncEditorContent = useCallback(() => {
       if (editorRef?.current) {
-        const currentContent = editorRef.current.getCurrentContent();
+        const currentContent = editorRef.current.getSanitizedContent();
         if (currentContent !== state.content) {
           actions.setContent(currentContent);
         }
@@ -681,11 +677,7 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
   onRetry,
 }) => {
   // Editor ref to access content - shared between provider and internal component
-  const editorRef = useRef<{
-    getCurrentContent: () => string;
-    getTextContent: () => string;
-    insertText: (text: string) => void;
-  } | null>(null);
+  const editorRef = useRef<RichTextEditorHandle | null>(null);
 
   // Provider callback handlers for notifications
   const handleProviderSendComplete = useCallback(

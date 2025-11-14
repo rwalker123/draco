@@ -20,13 +20,9 @@ import {
   LEAGUE_FAQ_QUESTION_MAX_LENGTH,
 } from '@draco/shared-schemas';
 import type { LeagueFaqServiceResult } from '../../../hooks/useLeagueFaqService';
-import RichTextEditor from '../../../components/email/RichTextEditor';
-
-type RichTextEditorHandle = {
-  getCurrentContent: () => string;
-  getTextContent: () => string;
-  insertText: (text: string) => void;
-};
+import RichTextEditor, {
+  type RichTextEditorHandle,
+} from '../../../components/email/RichTextEditor';
 
 interface LeagueFaqFormDialogProps {
   open: boolean;
@@ -115,7 +111,7 @@ export const LeagueFaqFormDialog: React.FC<LeagueFaqFormDialogProps> = ({
     setSubmitError(null);
     setAnswerError(null);
 
-    const answerHtml = editorRef.current?.getCurrentContent() ?? '';
+    const sanitizedAnswer = editorRef.current?.getSanitizedContent().trim() ?? '';
     const answerText = editorRef.current?.getTextContent().trim() ?? '';
 
     if (answerText.length === 0) {
@@ -125,7 +121,6 @@ export const LeagueFaqFormDialog: React.FC<LeagueFaqFormDialogProps> = ({
       return;
     }
 
-    const sanitizedAnswer = answerHtml.trim();
     const answerCheck = AnswerSchema.safeParse({ answer: sanitizedAnswer });
     if (!answerCheck.success) {
       const flattened = answerCheck.error.flatten();

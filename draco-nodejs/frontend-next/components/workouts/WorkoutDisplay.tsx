@@ -24,6 +24,7 @@ import { useApiClient } from '../../hooks/useApiClient';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { FieldDetailsCard, type FieldDetails } from '../fields/FieldDetailsCard';
 import ButtonBase from '@mui/material/ButtonBase';
+import RichTextContent from '../common/RichTextContent';
 
 interface WorkoutDisplayProps {
   accountId: string;
@@ -334,51 +335,7 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
         {/* Workout Description */}
         {workout.comments && (
           <Box sx={{ mb: 3 }}>
-            <Box
-              sx={{
-                '& .editor-text-bold': { fontWeight: 'bold' },
-                '& .editor-text-italic': { fontStyle: 'italic' },
-                '& .editor-text-underline': { textDecoration: 'underline' },
-                '& .editor-list-ul': { listStyleType: 'disc', margin: 0, paddingLeft: '20px' },
-                '& .editor-list-ol': {
-                  listStyleType: 'decimal',
-                  margin: 0,
-                  paddingLeft: '20px',
-                },
-                '& .editor-list-item': { margin: '4px 0' },
-                '& .editor-heading-h1': {
-                  fontSize: '2em',
-                  fontWeight: 'bold',
-                  margin: '16px 0 8px 0',
-                },
-                '& .editor-heading-h2': {
-                  fontSize: '1.5em',
-                  fontWeight: 'bold',
-                  margin: '14px 0 6px 0',
-                },
-                '& .editor-heading-h3': {
-                  fontSize: '1.2em',
-                  fontWeight: 'bold',
-                  margin: '12px 0 6px 0',
-                },
-                '& .editor-heading-h4': {
-                  fontSize: '1.1em',
-                  fontWeight: 'bold',
-                  margin: '10px 0 4px 0',
-                },
-                '& .editor-heading-h5': {
-                  fontSize: '1em',
-                  fontWeight: 'bold',
-                  margin: '8px 0 4px 0',
-                },
-                '& .editor-heading-h6': {
-                  fontSize: '0.9em',
-                  fontWeight: 'bold',
-                  margin: '8px 0 4px 0',
-                },
-              }}
-              dangerouslySetInnerHTML={{ __html: workout.comments }}
-            />
+            <RichTextContent html={workout.comments} />
           </Box>
         )}
 

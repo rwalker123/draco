@@ -15,6 +15,7 @@ import { Close as CloseIcon } from '@mui/icons-material';
 import { EmailTemplate } from '../../../types/emails/email';
 import { sanitizeRichContent } from '../../../utils/sanitization';
 import { extractVariables } from '../../../utils/templateUtils';
+import RichTextContent from '../../common/RichTextContent';
 
 interface TemplatePreviewDialogProps {
   open: boolean;
@@ -52,13 +53,16 @@ function SubjectPreview({ template, sampleVariables }: PreviewComponentProps) {
 
 function BodyPreview({ template, sampleVariables }: PreviewComponentProps) {
   const renderedBody = replaceVariables(template.bodyTemplate, sampleVariables);
+  const safeBody = sanitizeRichContent(renderedBody);
 
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="caption" color="text.secondary" gutterBottom>
         Email Content:
       </Typography>
-      <Box
+      <RichTextContent
+        html={safeBody}
+        sanitize={false}
         sx={{
           mt: 1,
           p: 2,
@@ -70,7 +74,6 @@ function BodyPreview({ template, sampleVariables }: PreviewComponentProps) {
           maxHeight: 400,
           overflow: 'auto',
         }}
-        dangerouslySetInnerHTML={{ __html: sanitizeRichContent(renderedBody) }}
       />
     </Paper>
   );

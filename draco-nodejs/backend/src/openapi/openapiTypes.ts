@@ -244,6 +244,9 @@ import {
   LiveEventQuerySchema,
   LiveEventCreateSchema,
   LiveEventUpdateSchema,
+  WelcomeMessageSchema,
+  WelcomeMessageListSchema,
+  UpsertWelcomeMessageSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -830,6 +833,15 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'UpsertAnnouncement',
     UpsertAnnouncementSchema,
   );
+  const WelcomeMessageSchemaRef = registry.register('WelcomeMessage', WelcomeMessageSchema);
+  const WelcomeMessageListSchemaRef = registry.register(
+    'WelcomeMessageList',
+    WelcomeMessageListSchema,
+  );
+  const UpsertWelcomeMessageSchemaRef = registry.register(
+    'UpsertWelcomeMessage',
+    UpsertWelcomeMessageSchema,
+  );
   const CreatePhotoGalleryPhotoSchemaRef = registry.register(
     'CreatePhotoGalleryPhoto',
     CreatePhotoGalleryPhotoSchema,
@@ -1133,6 +1145,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     AnnouncementSummarySchemaRef,
     AnnouncementSummaryListSchemaRef,
     UpsertAnnouncementSchemaRef,
+    WelcomeMessageSchemaRef,
+    WelcomeMessageListSchemaRef,
+    UpsertWelcomeMessageSchemaRef,
     CreatePhotoGalleryPhotoSchemaRef,
     UpdatePhotoGalleryPhotoSchemaRef,
     PhotoGalleryPhotoSchemaRef,
