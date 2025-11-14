@@ -10,6 +10,7 @@ import { unwrapApiResult } from '@/utils/apiResult';
 import { sanitizeRichContent } from '@/utils/sanitization';
 import HofNominationDialog from './HofNominationDialog';
 import WidgetShell from '../ui/WidgetShell';
+import RichTextContent from '../common/RichTextContent';
 
 const NOMINATION_SUCCESS_MESSAGE =
   'Thanks for the nomination! Our administrators will review it shortly.';
@@ -119,16 +120,8 @@ const HofNominationWidget: React.FC<HofNominationWidgetProps> = ({ accountId }) 
                   <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                     Nomination Criteria
                   </Typography>
-                  <Alert
-                    severity="info"
-                    icon={false}
-                    sx={{ '& p': { mb: 0.5, '&:last-of-type': { mb: 0 } } }}
-                  >
-                    <Typography
-                      component="div"
-                      variant="body2"
-                      dangerouslySetInnerHTML={{ __html: sanitizedCriteria }}
-                    />
+                  <Alert severity="info" icon={false}>
+                    <RichTextContent html={sanitizedCriteria} sanitize={false} />
                   </Alert>
                 </Stack>
               ) : null}

@@ -16,6 +16,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import type { HofMemberType } from '@draco/shared-schemas';
 import { sanitizeRichContent } from '@/utils/sanitization';
+import RichTextContent from '../common/RichTextContent';
 
 export interface HofMemberCardProps {
   member: HofMemberType;
@@ -102,19 +103,7 @@ const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx
         </Stack>
 
         {sanitizedBio ? (
-          <Typography
-            component="div"
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              mt: 0.5,
-              '& p': { mb: 1.2, '&:last-of-type': { mb: 0 } },
-              '& ul, & ol': {
-                pl: 3,
-              },
-            }}
-            dangerouslySetInnerHTML={{ __html: sanitizedBio }}
-          />
+          <RichTextContent html={sanitizedBio} sanitize={false} sx={{ mt: 0.5 }} />
         ) : null}
       </CardContent>
     </Card>

@@ -68,6 +68,7 @@ import { TwitterConnector } from './socialIngestion/connectors/twitterConnector.
 import { YouTubeConnector } from './socialIngestion/connectors/youtubeConnector.js';
 import { DiscordConnector } from './socialIngestion/connectors/discordConnector.js';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
+import { WelcomeMessageService } from './welcomeMessageService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -129,6 +130,7 @@ export class ServiceFactory {
   private static socialHubService: SocialHubService;
   private static socialIngestionService: SocialIngestionService;
   private static discordIntegrationService: DiscordIntegrationService;
+  private static welcomeMessageService: WelcomeMessageService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -430,6 +432,19 @@ export class ServiceFactory {
     }
 
     return this.discordIntegrationService;
+  }
+
+  static getWelcomeMessageService(): WelcomeMessageService {
+    if (!this.welcomeMessageService) {
+      const welcomeMessageRepository = RepositoryFactory.getWelcomeMessageRepository();
+      const teamRepository = RepositoryFactory.getTeamRepository();
+      this.welcomeMessageService = new WelcomeMessageService(
+        welcomeMessageRepository,
+        teamRepository,
+      );
+    }
+
+    return this.welcomeMessageService;
   }
 
   static getSocialHubService(): SocialHubService {

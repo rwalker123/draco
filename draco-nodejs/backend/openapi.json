@@ -15808,6 +15808,156 @@
         "title": "UpsertAnnouncement",
         "description": "Payload to create or update an announcement for an account or team"
       },
+      "WelcomeMessage": {
+        "type": "object",
+        "properties": {
+          "caption": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bodyHtml": {
+            "type": "string",
+            "minLength": 1
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "teamId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "isTeamScoped": {
+            "type": "boolean",
+            "description": "Indicates whether the welcome message is scoped to a specific team."
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "account",
+              "team"
+            ],
+            "description": "Scope where the welcome message is visible."
+          }
+        },
+        "required": [
+          "caption",
+          "order",
+          "bodyHtml",
+          "id",
+          "accountId",
+          "isTeamScoped",
+          "scope"
+        ],
+        "title": "WelcomeMessage",
+        "description": "Welcome information card for an account or team."
+      },
+      "WelcomeMessageList": {
+        "type": "object",
+        "properties": {
+          "welcomeMessages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "caption": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50
+                },
+                "order": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "bodyHtml": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "id": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "accountId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "teamId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "isTeamScoped": {
+                  "type": "boolean",
+                  "description": "Indicates whether the welcome message is scoped to a specific team."
+                },
+                "scope": {
+                  "type": "string",
+                  "enum": [
+                    "account",
+                    "team"
+                  ],
+                  "description": "Scope where the welcome message is visible."
+                }
+              },
+              "required": [
+                "caption",
+                "order",
+                "bodyHtml",
+                "id",
+                "accountId",
+                "isTeamScoped",
+                "scope"
+              ],
+              "title": "WelcomeMessage",
+              "description": "Welcome information card for an account or team."
+            }
+          }
+        },
+        "required": [
+          "welcomeMessages"
+        ],
+        "title": "WelcomeMessageList",
+        "description": "Collection wrapper for welcome information cards."
+      },
+      "UpsertWelcomeMessage": {
+        "type": "object",
+        "properties": {
+          "caption": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bodyHtml": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "caption",
+          "order",
+          "bodyHtml"
+        ],
+        "title": "UpsertWelcomeMessage",
+        "description": "Payload to create or update a welcome information card."
+      },
       "CreatePhotoGalleryPhoto": {
         "type": "object",
         "properties": {
@@ -46029,6 +46179,718 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/welcome-messages": {
+      "get": {
+        "operationId": "listAccountWelcomeMessages",
+        "summary": "List account welcome messages",
+        "description": "Returns all welcome information cards configured at the account level.",
+        "tags": [
+          "Accounts"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Welcome messages retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomeMessageList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error."
+          }
+        }
+      },
+      "post": {
+        "operationId": "createAccountWelcomeMessage",
+        "summary": "Create account welcome message",
+        "description": "Creates a new account-level welcome information card.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertWelcomeMessage"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Welcome message created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomeMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account communications permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/welcome-messages/{messageId}": {
+      "get": {
+        "operationId": "getAccountWelcomeMessage",
+        "summary": "Get account welcome message",
+        "description": "Retrieves a single account-level welcome message card.",
+        "tags": [
+          "Accounts"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Welcome message retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomeMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Welcome message not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateAccountWelcomeMessage",
+        "summary": "Update account welcome message",
+        "description": "Updates an existing account-level welcome information card.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertWelcomeMessage"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Welcome message updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomeMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account communications permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Welcome message not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAccountWelcomeMessage",
+        "summary": "Delete account welcome message",
+        "description": "Deletes an account-level welcome information card.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Welcome message deleted successfully."
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account communications permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Welcome message not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamSeasonId}/welcome-messages": {
+      "get": {
+        "operationId": "listTeamWelcomeMessages",
+        "summary": "List team welcome messages",
+        "description": "Returns team-scoped welcome information cards for the specified team season.",
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team welcome messages retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomeMessageList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team season not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTeamWelcomeMessage",
+        "summary": "Create team welcome message",
+        "description": "Creates a new team-scoped welcome information card.",
+        "tags": [
+          "Teams"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertWelcomeMessage"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Team welcome message created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomeMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team or league administration permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team season not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamSeasonId}/welcome-messages/{messageId}": {
+      "get": {
+        "operationId": "getTeamWelcomeMessage",
+        "summary": "Get team welcome message",
+        "description": "Retrieves a single team-scoped welcome information card.",
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team welcome message retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomeMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Welcome message not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateTeamWelcomeMessage",
+        "summary": "Update team welcome message",
+        "description": "Updates an existing team-scoped welcome information card.",
+        "tags": [
+          "Teams"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertWelcomeMessage"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Team welcome message updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomeMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team or league administration permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Welcome message not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTeamWelcomeMessage",
+        "summary": "Delete team welcome message",
+        "description": "Deletes a team-scoped welcome information card.",
+        "tags": [
+          "Teams"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Team welcome message deleted successfully."
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team or league administration permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Welcome message not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
                 }
               }
             }

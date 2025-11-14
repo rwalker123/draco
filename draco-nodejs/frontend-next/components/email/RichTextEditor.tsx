@@ -38,6 +38,7 @@ import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html';
 import { HeadingNode, $createHeadingNode, $isHeadingNode } from '@lexical/rich-text';
 import { ListNode, ListItemNode, $insertList } from '@lexical/list';
 import { LinkNode, AutoLinkNode } from '@lexical/link';
+import { sanitizeRichContent } from '../../utils/sanitization';
 import { $setBlocksType } from '@lexical/selection';
 
 interface RichTextEditorProps {
@@ -387,7 +388,7 @@ function ContentChangePlugin({ onChange }: { onChange?: (html: string) => void }
     const unregister = editor.registerUpdateListener(({ editorState }) => {
       editorState.read(() => {
         const htmlContent = $generateHtmlFromNodes(editor);
-        onChange(htmlContent);
+        onChange(sanitizeRichContent(htmlContent));
       });
     });
 
@@ -437,14 +438,14 @@ const editorConfig = {
   },
 };
 
-const RichTextEditor = React.forwardRef<
-  {
-    getCurrentContent: () => string;
-    getTextContent: () => string;
-    insertText: (text: string) => void;
-  },
-  RichTextEditorProps
->(
+export interface RichTextEditorHandle {
+  getCurrentContent: () => string;
+  getSanitizedContent: () => string;
+  getTextContent: () => string;
+  insertText: (text: string) => void;
+}
+
+const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEditorProps>(
   (
     {
       initialValue,
@@ -469,6 +470,10 @@ const RichTextEditor = React.forwardRef<
       }
       return '';
     }, []);
+
+    const getSanitizedContent = useCallback(() => {
+      return sanitizeRichContent(getCurrentContent());
+    }, [getCurrentContent]);
 
     // Function to get plain text content (for content detection without HTML markup)
     const getTextContent = useCallback(() => {
@@ -510,10 +515,11 @@ const RichTextEditor = React.forwardRef<
       ref,
       () => ({
         getCurrentContent,
+        getSanitizedContent,
         getTextContent,
         insertText,
       }),
-      [getCurrentContent, getTextContent, insertText],
+      [getCurrentContent, getSanitizedContent, getTextContent, insertText],
     );
 
     // Content changes are now handled by ContentChangePlugin using registerTextContentListener

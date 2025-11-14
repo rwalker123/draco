@@ -13,6 +13,7 @@ import {
   dbUserTeams,
   dbTeamSeasonValidationResult,
   dbTeam,
+  dbTeamSeasonAccount,
 } from '../types/dbTypes.js';
 import { ConflictError, NotFoundError } from '../../utils/customErrors.js';
 import { BatchQueryHelper } from './batchQueries.js';
@@ -237,6 +238,32 @@ export class PrismaTeamRepository implements ITeamRepository {
       where: {
         id: teamSeasonId,
         leagueseason: { seasonid: seasonId, league: { accountid: accountId } },
+      },
+    });
+  }
+
+  async findTeamSeasonWithAccount(teamSeasonId: bigint): Promise<dbTeamSeasonAccount | null> {
+    return this.prisma.teamsseason.findFirst({
+      where: { id: teamSeasonId },
+      select: {
+        id: true,
+        teamid: true,
+        leagueseason: {
+          select: {
+            seasonid: true,
+            league: {
+              select: {
+                accountid: true,
+              },
+            },
+          },
+        },
+        teams: {
+          select: {
+            id: true,
+            accountid: true,
+          },
+        },
       },
     });
   }

@@ -21,6 +21,7 @@ import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 import { sanitizeRichContent } from '../utils/sanitization';
 import WidgetShell from './ui/WidgetShell';
+import RichTextContent from './common/RichTextContent';
 
 interface GameRecapFlat {
   id: string; // game id
@@ -341,35 +342,7 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
               >
                 {recapItem.teamName}
               </Typography>
-              <Typography
-                variant="body2"
-                component="div"
-                sx={{
-                  mb: 2,
-                  '& p': { margin: '0 0 8px' },
-                  '& ul, & ol': { margin: '0 0 8px 20px' },
-                  '& li': { marginBottom: '4px' },
-                  '& .editor-text-bold, & strong, & b': { fontWeight: 700 },
-                  '& .editor-text-italic, & em, & i': { fontStyle: 'italic' },
-                  '& .editor-text-underline, & u': { textDecoration: 'underline' },
-                  '& .editor-heading-h1, & h1': {
-                    fontSize: '1.5rem',
-                    fontWeight: 700,
-                    margin: '16px 0 8px',
-                  },
-                  '& .editor-heading-h2, & h2': {
-                    fontSize: '1.3rem',
-                    fontWeight: 700,
-                    margin: '14px 0 6px',
-                  },
-                  '& .editor-heading-h3, & h3': {
-                    fontSize: '1.15rem',
-                    fontWeight: 600,
-                    margin: '12px 0 6px',
-                  },
-                }}
-                dangerouslySetInnerHTML={{ __html: sanitizedRecapHtml }}
-              />
+              <RichTextContent html={sanitizedRecapHtml} sanitize={false} sx={{ mb: 2 }} />
               {recapList.length > 1 && (
                 <Box
                   sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}

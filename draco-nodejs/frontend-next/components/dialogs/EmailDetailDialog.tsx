@@ -40,6 +40,7 @@ import {
   StatusChip,
   formatRate,
 } from '../emails/history/EmailHistoryShared';
+import RichTextContent from '../common/RichTextContent';
 
 interface EmailDetailDialogProps {
   open: boolean;
@@ -247,7 +248,8 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Message preview
                 </Typography>
-                <Box
+                <RichTextContent
+                  html={bodyPreview}
                   sx={{
                     borderRadius: 1,
                     border: '1px solid',
@@ -255,10 +257,7 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
                     p: 2,
                     maxHeight: 320,
                     overflowY: 'auto',
-                    '& h1, & h2, & h3, & h4, & h5, & h6': { fontSize: '1rem' },
-                    '& p': { mb: 1.5 },
                   }}
-                  dangerouslySetInnerHTML={{ __html: bodyPreview }}
                 />
               </CardContent>
             </Card>

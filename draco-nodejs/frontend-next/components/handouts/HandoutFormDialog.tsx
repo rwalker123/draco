@@ -23,7 +23,7 @@ import {
 } from '@draco/shared-schemas';
 import { HandoutInput } from '../../services/handoutService';
 import { HandoutScope, useHandoutOperations } from '../../hooks/useHandoutOperations';
-import RichTextEditor from '../email/RichTextEditor';
+import RichTextEditor, { type RichTextEditorHandle } from '../email/RichTextEditor';
 import { sanitizeDisplayText, sanitizeHandoutContent } from '../../utils/sanitization';
 
 const HandoutFormSchema = UpsertHandoutSchema.extend({
@@ -80,11 +80,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
     defaultValues,
   });
 
-  const editorRef = React.useRef<{
-    getCurrentContent: () => string;
-    getTextContent: () => string;
-    insertText: (text: string) => void;
-  } | null>(null);
+  const editorRef = React.useRef<RichTextEditorHandle | null>(null);
 
   const fileValue = watch('file');
   const [editorInitialValue, setEditorInitialValue] = React.useState<string>('');
@@ -137,7 +133,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
       return;
     }
 
-    const sanitizedHtml = sanitizeHandoutContent(editorRef.current.getCurrentContent());
+    const sanitizedHtml = editorRef.current.getSanitizedContent();
     setValue('description', sanitizedHtml, {
       shouldDirty: true,
       shouldTouch: true,
@@ -221,8 +217,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
                 key={editorKey}
                 ref={editorRef}
                 initialValue={editorInitialValue}
-                onChange={(html) => {
-                  const sanitizedHtml = sanitizeHandoutContent(html);
+                onChange={(sanitizedHtml) => {
                   setPlainTextLength(computePlainTextLength(sanitizedHtml));
                 }}
                 minHeight={180}

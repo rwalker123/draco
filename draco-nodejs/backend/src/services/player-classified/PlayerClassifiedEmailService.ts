@@ -1,7 +1,7 @@
 // PlayerClassifiedEmailService for Draco Sports Manager
 // Single responsibility: Handles all email operations for player classifieds
 
-import validator from 'validator';
+import { sanitizePlainText, sanitizeRichHtml } from '../../utils/htmlSanitizer.js';
 import { logSecurely } from '../../utils/auditLogger.js';
 import { InternalServerError } from '../../utils/customErrors.js';
 import { EMAIL_STYLES, EMAIL_CONTENT } from '../../config/playerClassifiedConstants.js';
@@ -483,14 +483,7 @@ For support, contact: ${sanitizedReplyTo}
    * ```
    */
   sanitizeHtmlContent(content: string): string {
-    if (!content || typeof content !== 'string') {
-      return '';
-    }
-
-    // Use validator's battle-tested HTML escaping
-    // This properly escapes <, >, &, ", ' for safe HTML display
-    // while preserving all user content exactly as entered
-    return validator.escape(content.trim());
+    return sanitizeRichHtml(content);
   }
 
   /**
@@ -513,21 +506,6 @@ For support, contact: ${sanitizedReplyTo}
    * ```
    */
   sanitizeTextContent(content: string): string {
-    if (!content || typeof content !== 'string') {
-      return '';
-    }
-
-    let sanitized = content;
-
-    // Replace newlines with spaces
-    sanitized = sanitized.replace(/[\r\n]/g, ' ');
-
-    // Remove HTML tags (complete tags)
-    sanitized = sanitized.replace(/<[^>]*>/g, '');
-
-    // Clean up multiple spaces and trim
-    sanitized = sanitized.replace(/\s+/g, ' ');
-
-    return sanitized.trim();
+    return sanitizePlainText(content);
   }
 }

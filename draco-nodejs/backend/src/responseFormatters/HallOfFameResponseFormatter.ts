@@ -16,7 +16,7 @@ import {
   dbHofNomination,
   dbHofNominationSetup,
 } from '../repositories/types/dbTypes.js';
-import validator from 'validator';
+import { sanitizePlainText, sanitizeRichHtml } from '../utils/htmlSanitizer.js';
 
 interface PaginationInfo {
   page: number;
@@ -27,34 +27,12 @@ interface PaginationInfo {
 
 export class HallOfFameResponseFormatter {
   private static sanitizeForHtml(value: string | null | undefined): string | undefined {
-    if (!value) {
-      return undefined;
-    }
-
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return undefined;
-    }
-
-    if (trimmed.includes('<') || trimmed.includes('>')) {
-      return validator.escape(trimmed);
-    }
-
-    return trimmed;
+    const sanitized = sanitizeRichHtml(value);
+    return sanitized || undefined;
   }
 
   private static sanitizeForText(value: string | null | undefined): string {
-    if (!value) {
-      return '';
-    }
-
-    const trimmed = value.trim();
-
-    if (trimmed.includes('<') || trimmed.includes('>')) {
-      return validator.escape(trimmed);
-    }
-
-    return trimmed;
+    return sanitizePlainText(value);
   }
 
   private static buildDisplayName(contact: dbHofEligibleContact): string {
