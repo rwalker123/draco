@@ -334,6 +334,10 @@ export class DiscordIntegrationService {
     this.channelIngestionTargetsCache = null;
   }
 
+  clearChannelIngestionTargetsCacheForAccount(_accountId: bigint): void {
+    this.invalidateChannelIngestionTargetsCache();
+  }
+
   async getFeatureSyncStatus(
     accountId: bigint,
     feature: DiscordFeatureSyncFeatureType,

@@ -22,7 +22,6 @@ function createChannelMapping(
     teamid: overrides.teamid ?? null,
     createdat: overrides.createdat ?? new Date(),
     updatedat: overrides.updatedat ?? new Date(),
-    accounts: overrides.accounts ?? ({} as unknown as accountdiscordchannels['accounts']),
   };
 }
 
