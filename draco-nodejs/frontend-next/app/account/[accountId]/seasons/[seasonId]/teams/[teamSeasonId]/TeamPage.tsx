@@ -11,6 +11,7 @@ import AccountPageHeader from '../../../../../../../components/AccountPageHeader
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
+import Container from '@mui/material/Container';
 import TeamAvatar from '../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
 import SponsorCard from '../../../../../../../components/sponsors/SponsorCard';
@@ -570,104 +571,184 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         />
       </div>
 
-      {(canManageTeamSponsors || isAccountMember) && (
-        <TeamAdminPanel
-          accountId={accountId}
-          seasonId={seasonId}
-          teamSeasonId={teamSeasonId}
-          canManageSponsors={canManageTeamSponsors}
-          canManageAnnouncements={Boolean(teamData?.teamId)}
-          showPlayerClassifiedsLink={isAccountMember}
-          playerClassifiedsHref={`/account/${accountId}/player-classifieds?tab=players-wanted`}
-          onPostPlayersWanted={handleOpenPlayersWantedDialog}
-          handoutsHref={
-            teamData?.teamId
-              ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/handouts/manage`
-              : undefined
-          }
-          announcementsHref={
-            teamData?.teamId
-              ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/announcements/manage`
-              : undefined
-          }
-          canEnterStatistics={canEnterStatistics}
-          canManageInformationMessages={canManageInformationMessages}
-          informationMessagesHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/information-messages/manage`}
-          youtubeHref={youtubeManagementHref}
-        />
-      )}
-
-      {showInformationWidget ? (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box
           sx={{
-            mt: informationWidgetVisible ? 4 : 0,
-            display: informationWidgetVisible ? 'block' : 'none',
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 2.2fr) minmax(0, 1fr)' },
+            gap: { xs: 4, lg: 6 },
+            alignItems: 'start',
           }}
         >
-          <InformationWidget
-            accountId={accountId}
-            teamId={resolvedTeamId ?? undefined}
-            teamSeasonId={teamSeasonId}
-            showAccountMessages={false}
-            showTeamMessages={Boolean(resolvedTeamId)}
-            hideWhenEmpty
-            onVisibilityChange={setInformationWidgetVisible}
-            title="Information Center"
-          />
-        </Box>
-      ) : null}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {(canManageTeamSponsors || isAccountMember) && (
+              <TeamAdminPanel
+                accountId={accountId}
+                seasonId={seasonId}
+                teamSeasonId={teamSeasonId}
+                canManageSponsors={canManageTeamSponsors}
+                canManageAnnouncements={Boolean(teamData?.teamId)}
+                showPlayerClassifiedsLink={isAccountMember}
+                playerClassifiedsHref={`/account/${accountId}/player-classifieds?tab=players-wanted`}
+                onPostPlayersWanted={handleOpenPlayersWantedDialog}
+                handoutsHref={
+                  teamData?.teamId
+                    ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/handouts/manage`
+                    : undefined
+                }
+                announcementsHref={
+                  teamData?.teamId
+                    ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/announcements/manage`
+                    : undefined
+                }
+                canEnterStatistics={canEnterStatistics}
+                canManageInformationMessages={canManageInformationMessages}
+                informationMessagesHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/information-messages/manage`}
+                youtubeHref={youtubeManagementHref}
+              />
+            )}
 
-      <Box
-        sx={{
-          mt: 4,
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 3,
-          alignItems: 'stretch',
-        }}
-      >
-        {teamData?.teamId ? (
-          <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
-            <SpecialAnnouncementsWidget
-              announcements={specialTeamAnnouncements}
-              loading={teamAnnouncementsLoading}
-              error={teamAnnouncementsError}
-              title="Team Announcements"
-              subtitle={
-                teamData?.teamName
-                  ? `Special announcements from the ${teamData.teamName}`
-                  : undefined
-              }
-              viewAllHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/announcements`}
-              showSourceLabels={false}
+            <TeamManagersWidget
+              accountId={accountId}
+              seasonId={seasonId}
+              teamSeasonId={teamSeasonId}
+              teamName={teamData?.teamName ?? null}
+              canViewContactInfo={canViewManagerContacts}
             />
-          </Box>
-        ) : null}
 
-        {!loading ? (
-          <Box sx={{ flex: '2 1 640px', minWidth: 320 }}>
-            {error ? (
-              <Alert severity="error" sx={{ height: '100%' }}>
-                {error}
-              </Alert>
-            ) : (
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', md: 'row' },
-                  gap: 3,
-                }}
-              >
-                {hasUpcomingGames ? (
-                  <Box sx={{ flex: '1 1 320px', minWidth: 280 }}>
+            {showInformationWidget ? (
+              <Box sx={{ display: informationWidgetVisible ? 'block' : 'none' }}>
+                <InformationWidget
+                  accountId={accountId}
+                  teamId={resolvedTeamId ?? undefined}
+                  teamSeasonId={teamSeasonId}
+                  showAccountMessages={false}
+                  showTeamMessages={Boolean(resolvedTeamId)}
+                  hideWhenEmpty
+                  onVisibilityChange={setInformationWidgetVisible}
+                  title="Information Center"
+                />
+              </Box>
+            ) : null}
+
+            {teamData?.teamId ? (
+              <SpecialAnnouncementsWidget
+                announcements={specialTeamAnnouncements}
+                loading={teamAnnouncementsLoading}
+                error={teamAnnouncementsError}
+                title="Team Announcements"
+                subtitle={
+                  teamData?.teamName
+                    ? `Special announcements from the ${teamData.teamName}`
+                    : undefined
+                }
+                viewAllHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/announcements`}
+                showSourceLabels={false}
+              />
+            ) : null}
+
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: teamData?.teamId && showTeamSubmissionPanel
+                  ? {
+                      xs: '1fr',
+                      lg: 'minmax(0, 2fr) minmax(0, 1fr)',
+                    }
+                  : '1fr',
+                alignItems: 'stretch',
+              }}
+            >
+              {teamData?.teamId ? (
+                <PhotoGallerySection
+                  title="Team Photo Gallery"
+                  description={`Highlights from the ${teamData?.seasonName ?? 'current'} season.`}
+                  photos={teamGalleryPhotos}
+                  loading={teamGalleryLoading}
+                  error={teamGalleryError}
+                  onRefresh={refreshTeamGallery}
+                  emptyMessage="No team photos have been published yet."
+                  accent="team"
+                  totalCountOverride={teamGalleryPhotos.length}
+                  sx={{ height: '100%' }}
+                />
+              ) : null}
+              {teamData?.teamId && showTeamSubmissionPanel ? (
+                <PhotoSubmissionPanel
+                  variant="team"
+                  enabled={showTeamSubmissionPanel}
+                  isLoading={teamMembershipLoading}
+                  error={teamMembershipError}
+                  canSubmit={isTeamMember}
+                  accountId={accountId}
+                  contextName={teamData.teamName ?? teamSeason?.name ?? 'this team'}
+                  teamId={teamData.teamId}
+                  onSubmitted={() => {
+                    void refreshTeamPending();
+                  }}
+                />
+              ) : null}
+            </Box>
+
+            {shouldShowTeamPendingPanel ? (
+              <PendingPhotoSubmissionsPanel
+                contextLabel={teamData?.teamName ?? 'this team'}
+                submissions={teamPendingSubmissions}
+                loading={teamPendingLoading}
+                error={teamPendingError}
+                successMessage={teamPendingSuccess}
+                processingIds={teamPendingProcessing}
+                onRefresh={refreshTeamPending}
+                onApprove={handleApproveTeamPhoto}
+                onDeny={denyTeamSubmission}
+                onClearStatus={clearTeamPendingStatus}
+                emptyMessage="No pending photo submissions for this team."
+                containerSx={{ mb: 0 }}
+              />
+            ) : null}
+
+            <TeamRosterWidget
+              accountId={accountId}
+              seasonId={seasonId}
+              teamSeasonId={teamSeasonId}
+              canViewSensitiveDetails={canViewRosterDetails}
+            />
+
+            {shouldShowTeamSponsors ? (
+              <SponsorCard
+                sponsors={teamSponsors}
+                title="Team Sponsors"
+                emptyMessage={teamSponsorError ?? undefined}
+              />
+            ) : null}
+
+            {teamData?.teamId && teamData?.youtubeUserId ? (
+              <TeamFeaturedVideosWidget
+                accountId={accountId}
+                seasonId={seasonId}
+                teamSeasonId={teamSeasonId}
+                youtubeChannelId={teamData?.youtubeUserId ?? null}
+                teamName={teamData?.teamName ?? null}
+                viewAllHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/videos`}
+                channelUrl={`https://www.youtube.com/channel/${teamData.youtubeUserId}`}
+              />
+            ) : null}
+          </Box>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {!loading ? (
+              error ? (
+                <Alert severity="error">{error}</Alert>
+              ) : (
+                <>
+                  {hasUpcomingGames ? (
                     <GameListDisplay
                       sections={upcomingSections}
                       emptyMessage="No upcoming games."
                       timeZone={timeZone}
                     />
-                  </Box>
-                ) : null}
-                <Box sx={{ flex: '1 1 320px', minWidth: 280 }}>
+                  ) : null}
                   <GameListDisplay
                     sections={completedSections}
                     emptyMessage="No completed games."
@@ -676,144 +757,42 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                     onViewRecap={handleOpenViewRecap}
                     timeZone={timeZone}
                   />
-                </Box>
-              </Box>
-            )}
-          </Box>
-        ) : null}
+                </>
+              )
+            ) : null}
 
-        {teamData?.teamId && teamData?.youtubeUserId ? (
-          <Box sx={{ flex: '2 1 640px', minWidth: 320 }}>
-            <TeamFeaturedVideosWidget
-              accountId={accountId}
-              seasonId={seasonId}
-              teamSeasonId={teamSeasonId}
-              youtubeChannelId={teamData?.youtubeUserId ?? null}
-              teamName={teamData?.teamName ?? null}
-              viewAllHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/videos`}
-              channelUrl={`https://www.youtube.com/channel/${teamData.youtubeUserId}`}
-            />
-          </Box>
-        ) : null}
+            {teamData?.leagueId ? (
+              <LeadersWidget
+                variant="team"
+                accountId={accountId}
+                seasonId={seasonId}
+                teamSeasonId={teamSeasonId}
+                leagueId={teamData.leagueId}
+                leagueName={teamData.leagueName}
+                leagues=[
+                  {
+                    id: teamData.leagueId,
+                    name: teamData.leagueName ?? 'League',
+                  },
+                ]
+                teamId={teamSeasonId}
+                randomize
+              />
+            ) : null}
 
-        {teamData?.leagueId ? (
-          <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
-            <LeadersWidget
-              variant="team"
-              accountId={accountId}
-              seasonId={seasonId}
-              teamSeasonId={teamSeasonId}
-              leagueId={teamData.leagueId}
-              leagueName={teamData.leagueName}
-              leagues={[
-                {
-                  id: teamData.leagueId,
-                  name: teamData.leagueName ?? 'League',
-                },
-              ]}
-              teamId={teamSeasonId}
-              randomize
-            />
+            <AccountOptional accountId={accountId} componentId="team.playerInterview.widget">
+              <SurveySpotlightWidget
+                accountId={accountId}
+                teamSeasonId={teamSeasonId}
+                variant="card"
+                icon={<Target className="h-5 w-5" />}
+                title="Player Survey Spotlight"
+                canAnswerSurvey={isAccountMember}
+              />
+            </AccountOptional>
           </Box>
-        ) : null}
-
-        <Box sx={{ flex: '2 1 640px', minWidth: 320 }}>
-          <TeamRosterWidget
-            accountId={accountId}
-            seasonId={seasonId}
-            teamSeasonId={teamSeasonId}
-            canViewSensitiveDetails={canViewRosterDetails}
-          />
         </Box>
-
-        <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
-          <TeamManagersWidget
-            accountId={accountId}
-            seasonId={seasonId}
-            teamSeasonId={teamSeasonId}
-            teamName={teamData?.teamName ?? null}
-            canViewContactInfo={canViewManagerContacts}
-          />
-        </Box>
-
-        <AccountOptional accountId={accountId} componentId="team.playerInterview.widget">
-          <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
-            <SurveySpotlightWidget
-              accountId={accountId}
-              teamSeasonId={teamSeasonId}
-              variant="card"
-              icon={<Target className="h-5 w-5" />}
-              title="Player Survey Spotlight"
-              canAnswerSurvey={isAccountMember}
-            />
-          </Box>
-        </AccountOptional>
-
-        {shouldShowTeamPendingPanel ? (
-          <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
-            <PendingPhotoSubmissionsPanel
-              contextLabel={teamData?.teamName ?? 'this team'}
-              submissions={teamPendingSubmissions}
-              loading={teamPendingLoading}
-              error={teamPendingError}
-              successMessage={teamPendingSuccess}
-              processingIds={teamPendingProcessing}
-              onRefresh={refreshTeamPending}
-              onApprove={handleApproveTeamPhoto}
-              onDeny={denyTeamSubmission}
-              onClearStatus={clearTeamPendingStatus}
-              emptyMessage="No pending photo submissions for this team."
-              containerSx={{ mb: 0 }}
-            />
-          </Box>
-        ) : null}
-
-        {teamData?.teamId ? (
-          <Box sx={{ flex: '2 1 640px', minWidth: 320 }}>
-            <PhotoGallerySection
-              title="Team Photo Gallery"
-              description={`Highlights from the ${teamData?.seasonName ?? 'current'} season.`}
-              photos={teamGalleryPhotos}
-              loading={teamGalleryLoading}
-              error={teamGalleryError}
-              onRefresh={refreshTeamGallery}
-              emptyMessage="No team photos have been published yet."
-              accent="team"
-              totalCountOverride={teamGalleryPhotos.length}
-              sx={{ height: '100%' }}
-            />
-          </Box>
-        ) : null}
-
-        {teamData?.teamId && showTeamSubmissionPanel ? (
-          <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
-            <PhotoSubmissionPanel
-              variant="team"
-              enabled={showTeamSubmissionPanel}
-              isLoading={teamMembershipLoading}
-              error={teamMembershipError}
-              canSubmit={isTeamMember}
-              accountId={accountId}
-              contextName={teamData.teamName ?? teamSeason?.name ?? 'this team'}
-              teamId={teamData.teamId}
-              onSubmitted={() => {
-                void refreshTeamPending();
-              }}
-            />
-          </Box>
-        ) : null}
-
-        {shouldShowTeamSponsors ? (
-          <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
-            <SponsorCard
-              sponsors={teamSponsors}
-              title="Team Sponsors"
-              emptyMessage={teamSponsorError ?? undefined}
-            />
-          </Box>
-        ) : null}
-      </Box>
-
+      </Container>
       {recapError && (
         <Alert
           severity="error"
