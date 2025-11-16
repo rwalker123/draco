@@ -746,7 +746,7 @@ const BaseballAccountHome: React.FC = () => {
   // Early return if accountId is missing - must be after all hooks
   if (!accountIdStr) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="xl" disableGutters sx={{ py: 4, px: { xs: 1, sm: 1.5 } }}>
         <Alert severity="error" sx={{ mb: 2 }}>
           Account ID not found
         </Alert>
@@ -774,7 +774,7 @@ const BaseballAccountHome: React.FC = () => {
 
   if (error) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="xl" disableGutters sx={{ py: 4, px: { xs: 1, sm: 1.5 } }}>
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
@@ -787,7 +787,7 @@ const BaseballAccountHome: React.FC = () => {
 
   if (!account) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="xl" disableGutters sx={{ py: 4, px: { xs: 1, sm: 1.5 } }}>
         <Alert severity="error" sx={{ mb: 2 }}>
           Account not found
         </Alert>
@@ -873,7 +873,7 @@ const BaseballAccountHome: React.FC = () => {
         </AccountPageHeader>
       </Box>
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="xl" disableGutters sx={{ py: 4, px: { xs: 1, sm: 1.5 } }}>
         <Box
           sx={{
             display: 'grid',

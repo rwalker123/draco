@@ -326,8 +326,22 @@ export default function Standings({
     return renderStandingsContent();
   };
 
+  const headerContent = showHeader ? (
+    <Box
+      sx={{
+        px: { xs: 2, md: 3 },
+        pt: { xs: 2, md: 3 },
+        pb: { xs: 1, md: 1.5 },
+      }}
+    >
+      <Typography variant="h6" fontWeight={700} color={(theme) => theme.palette.widget.headerText}>
+        {title}
+      </Typography>
+    </Box>
+  ) : undefined;
+
   return (
-    <WidgetShell title={showHeader ? title : undefined} accent="info" disablePadding>
+    <WidgetShell accent="info" disablePadding headerContent={headerContent}>
       <Box sx={{ px: { xs: 2, md: 3 }, py: { xs: 2, md: 3 } }}>{renderBody()}</Box>
     </WidgetShell>
   );
