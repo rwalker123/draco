@@ -51,9 +51,9 @@ export class PrismaMemberBusinessRepository implements IMemberBusinessRepository
 
   async listByAccount(
     accountId: bigint,
-    options: { contactId?: bigint; seasonId?: bigint } = {},
+    options: { contactId?: bigint; seasonId?: bigint; limit?: number } = {},
   ): Promise<dbMemberBusiness[]> {
-    const { contactId, seasonId } = options;
+    const { contactId, seasonId, limit } = options;
 
     return this.prisma.memberbusiness.findMany({
       where: {
@@ -88,6 +88,7 @@ export class PrismaMemberBusinessRepository implements IMemberBusinessRepository
       orderBy: {
         name: 'asc',
       },
+      ...(limit ? { take: limit } : {}),
     });
   }
 

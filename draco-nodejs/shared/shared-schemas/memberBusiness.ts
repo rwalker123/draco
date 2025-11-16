@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { PublicContactSummarySchema } from './contact.js';
+import { booleanQueryParam, numberQueryParam } from './queryParams.js';
 import { bigintToStringSchema } from './standardSchema.js';
 
 extendZodWithOpenApi(z);
@@ -75,6 +76,12 @@ export const MemberBusinessQueryParamsSchema = z
   .object({
     contactId: z.string().trim().optional(),
     seasonId: z.string().trim().optional(),
+    limit: numberQueryParam({ min: 1, max: 50 })
+      .refine((value) => Number.isInteger(value), {
+        message: 'limit must be an integer',
+      })
+      .optional(),
+    randomize: booleanQueryParam.optional(),
   })
   .openapi({
     title: 'MemberBusinessQueryParams',

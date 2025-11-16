@@ -5,7 +5,7 @@ import { dbMemberBusiness } from '../types/index.js';
 export interface IMemberBusinessRepository extends IBaseRepository<memberbusiness> {
   listByAccount(
     accountId: bigint,
-    options?: { contactId?: bigint; seasonId?: bigint },
+    options?: { contactId?: bigint; seasonId?: bigint; limit?: number },
   ): Promise<dbMemberBusiness[]>;
   findByIdForAccount(memberBusinessId: bigint, accountId: bigint): Promise<dbMemberBusiness | null>;
 }

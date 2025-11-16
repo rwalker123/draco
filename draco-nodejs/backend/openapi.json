@@ -6071,6 +6071,14 @@
           },
           "seasonId": {
             "type": "string"
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "randomize": {
+            "type": "boolean"
           }
         },
         "title": "MemberBusinessQueryParams",
@@ -35428,6 +35436,24 @@
             },
             "required": false,
             "name": "seasonId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "required": false,
+            "name": "randomize",
             "in": "query"
           }
         ],

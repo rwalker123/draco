@@ -18,6 +18,8 @@ interface MemberBusinessSpotlightWidgetProps {
   viewAllHref?: string;
 }
 
+const BUSINESSES_TO_DISPLAY = 3;
+
 const MemberBusinessSpotlightWidget: React.FC<MemberBusinessSpotlightWidgetProps> = ({
   accountId,
   seasonId,
@@ -45,15 +47,13 @@ const MemberBusinessSpotlightWidget: React.FC<MemberBusinessSpotlightWidgetProps
         const result = await listMemberBusinesses({
           client: apiClient,
           path: { accountId },
-          query: { seasonId },
+          query: { seasonId, limit: BUSINESSES_TO_DISPLAY, randomize: true },
           security: [{ type: 'http', scheme: 'bearer' }],
           throwOnError: false,
         });
         const payload = unwrapApiResult(result, 'Unable to load member businesses.');
-        const pool = payload?.memberBusinesses ?? [];
-        const randomized = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
         if (!ignore) {
-          setBusinesses(randomized);
+          setBusinesses(payload?.memberBusinesses ?? []);
         }
       } catch (err) {
         if (ignore) {
@@ -108,7 +108,7 @@ const MemberBusinessSpotlightWidget: React.FC<MemberBusinessSpotlightWidgetProps
     if (loading) {
       return (
         <Stack spacing={2}>
-          {Array.from({ length: 3 }).map((_, index) => (
+          {Array.from({ length: BUSINESSES_TO_DISPLAY }).map((_, index) => (
             <Skeleton key={`business-skeleton-${index}`} variant="rectangular" height={72} />
           ))}
         </Stack>

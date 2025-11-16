@@ -145,10 +145,14 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const query = MemberBusinessQueryParamsSchema.parse(req.query);
+    const limit = typeof query.limit === 'number' ? Math.floor(query.limit) : undefined;
+    const randomize = query.randomize ?? false;
 
     const memberBusinesses = await memberBusinessService.listMemberBusinesses(accountId, {
       contactId: parseOptionalContactId(query.contactId),
       seasonId: parseOptionalSeasonId(query.seasonId),
+      limit,
+      randomize,
     });
 
     res.json({ memberBusinesses });
