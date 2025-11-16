@@ -1,8 +1,18 @@
 'use client';
 
 import React from 'react';
-import { Alert, Box, Card, CardContent, CircularProgress, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Box,
+  CircularProgress,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { type WelcomeMessageType } from '@draco/shared-schemas';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import WidgetShell from '../ui/WidgetShell';
 import RichTextContent from '../common/RichTextContent';
@@ -69,6 +79,7 @@ const InformationWidget: React.FC<InformationWidgetProps> = ({
   const [messages, setMessages] = React.useState<DisplayMessage[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
   const serviceRef = React.useRef(new WelcomeMessageService(token, apiClient));
 
@@ -98,6 +109,7 @@ const InformationWidget: React.FC<InformationWidgetProps> = ({
       ]);
 
       setMessages(combined);
+      setExpandedId((current) => current ?? combined[0]?.id ?? null);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load information messages';
       setError(message);
@@ -138,18 +150,30 @@ const InformationWidget: React.FC<InformationWidgetProps> = ({
         <Alert severity="info">{emptyMessage}</Alert>
       ) : (
         <Stack spacing={2}>
-          {messages.map((message) => {
-            return (
-              <Card key={message.id} variant="outlined">
-                <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  <Typography variant="h6" component="h3">
-                    {message.caption}
-                  </Typography>
-                  <RichTextContent html={message.sanitizedBody} sanitize={false} />
-                </CardContent>
-              </Card>
-            );
-          })}
+          {messages.map((message) => (
+            <Accordion
+              key={message.id}
+              expanded={expandedId === message.id}
+              onChange={(_event, isExpanded) => setExpandedId(isExpanded ? message.id : null)}
+              disableGutters
+              elevation={0}
+              sx={{
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
+                '&:before': { display: 'none' },
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" component="h3">
+                  {message.caption}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <RichTextContent html={message.sanitizedBody} sanitize={false} />
+              </AccordionDetails>
+            </Accordion>
+          ))}
         </Stack>
       )}
     </WidgetShell>

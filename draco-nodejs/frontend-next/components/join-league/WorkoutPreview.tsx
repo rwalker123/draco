@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Skeleton, Alert } from '@mui/material';
+import { Box, Alert } from '@mui/material';
 import { FitnessCenter } from '@mui/icons-material';
 import SectionHeader from './SectionHeader';
 import SectionCard from '../common/SectionCard';
@@ -23,7 +23,6 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({
   maxDisplay = 3,
 }) => {
   const [workouts, setWorkouts] = useState<WorkoutSummaryType[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,7 +30,6 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({
 
     const fetchUpcomingWorkouts = async () => {
       try {
-        setLoading(true);
         setError(null);
 
         const upcomingWorkouts = await listWorkouts(accountId, false, token, 'upcoming');
@@ -51,10 +49,6 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({
         console.error('Failed to fetch upcoming workouts:', err);
         setError('Failed to load workouts');
         setWorkouts([]);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
       }
     };
 
@@ -65,70 +59,44 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({
     };
   }, [accountId, token, maxDisplay]);
 
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          gridColumn: {
-            xs: '1',
-            md: 'span 2',
-            lg: '1',
-          },
-        }}
-      >
-        <SectionCard hover={false}>
-          <SectionHeader
-            icon={<FitnessCenter />}
-            title="Training & Tryouts"
-            description="Register for upcoming workouts and training sessions"
-          />
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                md: 'repeat(auto-fit, minmax(300px, 1fr))',
-              },
-              gap: 3,
-            }}
-          >
-            {Array.from({ length: maxDisplay }).map((_, index) => (
-              <Skeleton key={index} variant="rectangular" height={180} sx={{ borderRadius: 2 }} />
-            ))}
-          </Box>
-        </SectionCard>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box
-        sx={{
-          gridColumn: {
-            xs: '1',
-            md: 'span 2',
-            lg: '1',
-          },
-        }}
-      >
-        <SectionCard hover={false}>
-          <SectionHeader
-            icon={<FitnessCenter />}
-            title="Training & Tryouts"
-            description="Register for upcoming workouts and training sessions"
-          />
-          <Alert severity="error" sx={{ mt: 2 }}>
-            {error}
-          </Alert>
-        </SectionCard>
-      </Box>
-    );
-  }
-
-  if (workouts.length === 0) {
+  if (!error && workouts.length === 0) {
     return null;
   }
+
+  const actionButton =
+    showViewAllWorkoutsButton && onViewAllWorkouts
+      ? { label: 'View All Workouts', onClick: onViewAllWorkouts }
+      : undefined;
+
+  const content = error ? (
+    <Alert severity="error" sx={{ mt: 2 }}>
+      {error}
+    </Alert>
+  ) : (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: {
+          xs: '1fr',
+          md: 'repeat(auto-fit, minmax(300px, 1fr))',
+        },
+        gap: 3,
+        flex: 1,
+      }}
+    >
+      {workouts.map((workout) => (
+        <Box key={workout.id}>
+          <WorkoutDisplay
+            accountId={accountId}
+            workoutId={workout.id}
+            token={token}
+            showRegistrationButton
+            compact
+          />
+        </Box>
+      ))}
+    </Box>
+  );
 
   return (
     <Box
@@ -140,40 +108,14 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({
         },
       }}
     >
-      <SectionCard>
+      <SectionCard hover={!error}>
         <SectionHeader
           icon={<FitnessCenter />}
-          title="Training & Tryouts"
-          description="Register for upcoming workouts and training sessions"
-          actionButton={
-            showViewAllWorkoutsButton && onViewAllWorkouts
-              ? { label: 'View All Workouts', onClick: onViewAllWorkouts }
-              : undefined
-          }
+          title="Upcoming Workouts"
+          description="Enhance your chances to get on a team by registering for upcoming workouts."
+          actionButton={actionButton}
         />
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              md: 'repeat(auto-fit, minmax(300px, 1fr))',
-            },
-            gap: 3,
-            flex: 1,
-          }}
-        >
-          {workouts.map((workout) => (
-            <Box key={workout.id}>
-              <WorkoutDisplay
-                accountId={accountId}
-                workoutId={workout.id}
-                token={token}
-                showRegistrationButton
-                compact
-              />
-            </Box>
-          ))}
-        </Box>
+        {content}
       </SectionCard>
     </Box>
   );

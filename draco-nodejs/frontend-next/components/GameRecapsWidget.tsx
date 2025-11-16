@@ -415,11 +415,9 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
       }
       accent="secondary"
       sx={{
-        display: 'inline-flex',
+        display: 'flex',
         flexDirection: 'column',
-        alignSelf: 'flex-start',
-        width: 'auto',
-        maxWidth: '100%',
+        width: '100%',
       }}
     >
       {content}

@@ -909,51 +909,38 @@ const BaseballAccountHome: React.FC = () => {
               />
             ) : null}
 
-            <Box
-              sx={{
-                display: 'grid',
-                gap: 2,
-                gridTemplateColumns: showSubmissionPanel
-                  ? {
-                      xs: '1fr',
-                      lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
-                    }
-                  : '1fr',
-                alignItems: 'stretch',
-              }}
-            >
-              <PhotoGallerySection
-                title="Photo Gallery"
-                description={`Relive the highlights from ${accountDisplayName}.`}
-                photos={filteredGalleryPhotos}
-                albums={seasonFilteredAlbums}
-                loading={galleryLoading}
-                error={galleryError}
-                onRefresh={refreshGallery}
-                emptyMessage="No photos have been published yet."
-                enableAlbumTabs
-                selectedAlbumKey={selectedAlbumKey}
-                onAlbumChange={handleAlbumTabChange}
-                totalCountOverride={seasonFilteredPhotos.length}
-                teamAlbumHierarchy={teamAlbumHierarchy}
-                sx={{ height: '100%' }}
+            <PhotoGallerySection
+              title="Photo Gallery"
+              description={`Relive the highlights from ${accountDisplayName}.`}
+              photos={filteredGalleryPhotos}
+              albums={seasonFilteredAlbums}
+              loading={galleryLoading}
+              error={galleryError}
+              onRefresh={refreshGallery}
+              emptyMessage="No photos have been published yet."
+              enableAlbumTabs
+              selectedAlbumKey={selectedAlbumKey}
+              onAlbumChange={handleAlbumTabChange}
+              totalCountOverride={seasonFilteredPhotos.length}
+              teamAlbumHierarchy={teamAlbumHierarchy}
+              sx={{ height: '100%' }}
+            />
+            {showSubmissionPanel ? (
+              <PhotoSubmissionPanel
+                variant="account"
+                enabled={showSubmissionPanel}
+                isLoading={membershipLoading}
+                error={membershipError}
+                canSubmit={canSubmitPhotos}
+                accountId={accountIdStr ?? ''}
+                contextName={accountDisplayName}
+                albumOptions={submissionAlbumOptions}
+                onSubmitted={() => {
+                  void refreshPendingSubmissions();
+                }}
               />
-              {showSubmissionPanel ? (
-                <PhotoSubmissionPanel
-                  variant="account"
-                  enabled={showSubmissionPanel}
-                  isLoading={membershipLoading}
-                  error={membershipError}
-                  canSubmit={canSubmitPhotos}
-                  accountId={accountIdStr ?? ''}
-                  contextName={accountDisplayName}
-                  albumOptions={submissionAlbumOptions}
-                  onSubmitted={() => {
-                    void refreshPendingSubmissions();
-                  }}
-                />
-              ) : null}
-            </Box>
+            ) : null}
+
             {shouldShowPendingPanel ? (
               <PendingPhotoSubmissionsPanel
                 containerSx={{ p: 3, mb: 2 }}
