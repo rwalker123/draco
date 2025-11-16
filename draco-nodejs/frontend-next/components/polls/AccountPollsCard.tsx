@@ -43,9 +43,9 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({
   const widgetSx = useMemo(
     () => [
       {
-        alignSelf: 'flex-start',
         width: '100%',
-        maxWidth: { xs: '100%', sm: 420 },
+        display: 'flex',
+        flexDirection: 'column',
       },
     ],
     [],

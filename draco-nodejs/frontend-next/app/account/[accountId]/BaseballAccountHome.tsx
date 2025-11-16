@@ -165,20 +165,6 @@ const BaseballAccountHome: React.FC = () => {
     enabled: shouldShowPendingPanel,
   });
 
-  const submissionAlbumOptions: PhotoAlbumOption[] = useMemo(() => {
-    const options = new Map<string | null, string>();
-    options.set(null, 'Main Account Album (Default)');
-
-    pendingSubmissions.forEach((submission) => {
-      const album = submission.album;
-      if (album?.id && album.title) {
-        options.set(album.id, album.title);
-      }
-    });
-
-    return Array.from(options.entries()).map(([id, title]) => ({ id, title }));
-  }, [pendingSubmissions]);
-
   const {
     photos: galleryPhotos,
     albums: galleryAlbums,
@@ -186,6 +172,38 @@ const BaseballAccountHome: React.FC = () => {
     error: galleryError,
     refresh: refreshGallery,
   } = usePhotoGallery({ accountId: accountIdStr ?? null });
+
+  const submissionAlbumOptions: PhotoAlbumOption[] = useMemo(() => {
+    const options = new Map<string, PhotoAlbumOption>();
+    options.set('__default__', {
+      id: null,
+      title: 'Main Account Album (Default)',
+      teamId: null,
+    });
+
+    galleryAlbums.forEach((album) => {
+      if (album.id) {
+        options.set(album.id, {
+          id: album.id,
+          title: album.title,
+          teamId: album.teamId ?? null,
+        });
+      }
+    });
+
+    pendingSubmissions.forEach((submission) => {
+      const album = submission.album;
+      if (album?.id && album.title) {
+        options.set(album.id, {
+          id: album.id,
+          title: album.title,
+          teamId: album.teamId ?? null,
+        });
+      }
+    });
+
+    return Array.from(options.values());
+  }, [galleryAlbums, pendingSubmissions]);
 
   const [selectedAlbumKey, setSelectedAlbumKey] = useState<string>('all');
   const [seasonTeamIds, setSeasonTeamIds] = useState<string[] | null>(null);
@@ -399,8 +417,8 @@ const BaseballAccountHome: React.FC = () => {
   }, []);
 
   const handleApprovePendingSubmission = useCallback(
-    async (submissionId: string) => {
-      const success = await approvePendingSubmission(submissionId);
+    async (submissionId: string, albumId: string | null) => {
+      const success = await approvePendingSubmission(submissionId, albumId);
       if (success) {
         await refreshGallery();
       }
@@ -746,7 +764,7 @@ const BaseballAccountHome: React.FC = () => {
   // Early return if accountId is missing - must be after all hooks
   if (!accountIdStr) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="xl" disableGutters sx={{ py: 4, px: { xs: 1, sm: 1.5 } }}>
         <Alert severity="error" sx={{ mb: 2 }}>
           Account ID not found
         </Alert>
@@ -774,7 +792,7 @@ const BaseballAccountHome: React.FC = () => {
 
   if (error) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="xl" disableGutters sx={{ py: 4, px: { xs: 1, sm: 1.5 } }}>
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
@@ -787,7 +805,7 @@ const BaseballAccountHome: React.FC = () => {
 
   if (!account) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="xl" disableGutters sx={{ py: 4, px: { xs: 1, sm: 1.5 } }}>
         <Alert severity="error" sx={{ mb: 2 }}>
           Account not found
         </Alert>
@@ -873,77 +891,151 @@ const BaseballAccountHome: React.FC = () => {
         </AccountPageHeader>
       </Box>
 
-      {/* Main Content - Single Column Layout */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {/* Ways to Join the League Dashboard */}
-        <JoinLeagueDashboard
-          accountId={accountIdStr}
-          account={account}
-          token={token || undefined}
-          isAccountMember={isAccountMember}
-        />
-
-        {showInformationWidget && accountIdStr ? (
-          <Box sx={{ mt: 3 }}>
-            <InformationWidget
-              accountId={accountIdStr}
-              showAccountMessages
-              showTeamMessages={false}
-              title="Information Center"
-            />
-          </Box>
-        ) : null}
-
-        {isAccountMember ? (
-          <Box sx={{ mt: 3 }}>
-            <SpecialAnnouncementsWidget
-              announcements={specialAnnouncements}
-              loading={accountAnnouncementsLoading || teamAnnouncementsLoading}
-              error={accountAnnouncementsError ?? teamAnnouncementsError}
-              viewAllHref={`/account/${accountIdStr}/announcements`}
-              showSourceLabels={false}
-            />
-          </Box>
-        ) : null}
-
-        {/* Scoreboard Widgets */}
-        {currentSeason && (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                lg: 'repeat(3, minmax(0, 1fr))',
-              },
-              gap: 3,
-              alignItems: 'stretch',
-            }}
-          >
-            <TodayScoreboard
-              accountId={accountIdStr}
-              layout="vertical"
-              currentSeasonId={currentSeason.id}
-            />
-            <YesterdayScoreboard
-              accountId={accountIdStr}
-              layout="vertical"
-              currentSeasonId={currentSeason.id}
-            />
-            <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />
-          </Box>
-        )}
-
+      <Container maxWidth="xl" disableGutters sx={{ py: 4, px: { xs: 1, sm: 1.5 } }}>
         <Box
           sx={{
-            mt: 3,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 2,
-            alignItems: 'flex-start',
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 2.2fr) minmax(0, 1fr)' },
+            gap: { xs: 4, lg: 6 },
+            alignItems: 'start',
           }}
         >
-          {leaderLeagues.length > 0 && accountIdStr ? (
-            <Box sx={{ flex: { xs: '1 1 100%', lg: '0 1 420px' } }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <JoinLeagueDashboard
+              accountId={accountIdStr}
+              account={account}
+              token={token || undefined}
+              isAccountMember={isAccountMember}
+            />
+
+            {showInformationWidget && accountIdStr ? (
+              <InformationWidget
+                accountId={accountIdStr}
+                showAccountMessages
+                showTeamMessages={false}
+                title="Information Center"
+              />
+            ) : null}
+
+            {isAccountMember ? (
+              <SpecialAnnouncementsWidget
+                announcements={specialAnnouncements}
+                loading={accountAnnouncementsLoading || teamAnnouncementsLoading}
+                error={accountAnnouncementsError ?? teamAnnouncementsError}
+                viewAllHref={`/account/${accountIdStr}/announcements`}
+                showSourceLabels={false}
+              />
+            ) : null}
+
+            <PhotoGallerySection
+              title="Photo Gallery"
+              description={`Relive the highlights from ${accountDisplayName}.`}
+              photos={filteredGalleryPhotos}
+              albums={seasonFilteredAlbums}
+              loading={galleryLoading}
+              error={galleryError}
+              onRefresh={refreshGallery}
+              emptyMessage="No photos have been published yet."
+              enableAlbumTabs
+              selectedAlbumKey={selectedAlbumKey}
+              onAlbumChange={handleAlbumTabChange}
+              totalCountOverride={seasonFilteredPhotos.length}
+              teamAlbumHierarchy={teamAlbumHierarchy}
+              sx={{ height: '100%' }}
+            />
+            {showSubmissionPanel ? (
+              <PhotoSubmissionPanel
+                variant="account"
+                enabled={showSubmissionPanel}
+                isLoading={membershipLoading}
+                error={membershipError}
+                canSubmit={canSubmitPhotos}
+                accountId={accountIdStr ?? ''}
+                contextName={accountDisplayName}
+                albumOptions={submissionAlbumOptions}
+                onSubmitted={() => {
+                  void refreshPendingSubmissions();
+                }}
+              />
+            ) : null}
+
+            {shouldShowPendingPanel ? (
+              <PendingPhotoSubmissionsPanel
+                containerSx={{ p: 3, mb: 2 }}
+                contextLabel={accountDisplayName}
+                submissions={pendingSubmissions}
+                loading={pendingLoading}
+                error={pendingError}
+                successMessage={pendingSuccess}
+                processingIds={pendingProcessingIds}
+                onRefresh={refreshPendingSubmissions}
+                onApprove={handleApprovePendingSubmission}
+                onDeny={denyPendingSubmission}
+                onClearStatus={clearPendingStatus}
+                emptyMessage="No pending photo submissions for this account."
+                albumOptions={submissionAlbumOptions}
+              />
+            ) : null}
+
+            {shouldShowAccountSponsors ? (
+              <SponsorCard
+                sponsors={accountSponsors}
+                title="Account Sponsors"
+                emptyMessage={sponsorError ?? undefined}
+              />
+            ) : null}
+
+            {user ? (
+              <Box sx={{ display: showOrganizationsWidget ? 'block' : 'none' }}>
+                <OrganizationsWidget
+                  title="Your Other Organizations"
+                  showSearch={false}
+                  maxDisplay={3}
+                  sx={{ mb: 0 }}
+                  excludeAccountId={accountIdStr}
+                  onOrganizationsLoaded={(organizations) => {
+                    setShowOrganizationsWidget(organizations.length > 0);
+                  }}
+                />
+              </Box>
+            ) : null}
+          </Box>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {user && userTeams.length > 0 ? (
+              <MyTeams
+                userTeams={userTeams}
+                onViewTeam={handleViewTeam}
+                title="Your Teams"
+                sx={{ width: '100%' }}
+              />
+            ) : null}
+
+            {hasAccountContact ? (
+              <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />
+            ) : null}
+
+            {currentSeason ? (
+              <TodayScoreboard
+                accountId={accountIdStr}
+                layout="vertical"
+                currentSeasonId={currentSeason.id}
+              />
+            ) : null}
+
+            {currentSeason ? (
+              <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />
+            ) : null}
+
+            {currentSeason ? (
+              <YesterdayScoreboard
+                accountId={accountIdStr}
+                layout="vertical"
+                currentSeasonId={currentSeason.id}
+              />
+            ) : null}
+
+            {leaderLeagues.length > 0 && accountIdStr ? (
               <LeadersWidget
                 accountId={accountIdStr}
                 seasonId={currentSeasonId}
@@ -951,142 +1043,36 @@ const BaseballAccountHome: React.FC = () => {
                 divisionId="0"
                 randomize
               />
-            </Box>
-          ) : null}
-          {accountIdStr ? (
-            <AccountOptional accountId={accountIdStr} componentId="account.home.hallOfFame">
-              <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
-                <HofSpotlightWidget accountId={accountIdStr} />
-              </Box>
-            </AccountOptional>
-          ) : null}
-          {accountIdStr ? (
-            <AccountOptional accountId={accountIdStr} componentId="account.playerSurvey.widget">
-              <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
+            ) : null}
+
+            {accountIdStr ? (
+              <AccountOptional accountId={accountIdStr} componentId="account.playerSurvey.widget">
                 <SurveySpotlightWidget
                   accountId={accountIdStr}
                   canAnswerSurvey={hasAccountContact}
                 />
-              </Box>
-            </AccountOptional>
-          ) : null}
-          <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
+              </AccountOptional>
+            ) : null}
+
             <TodaysBirthdaysCard
               accountId={accountIdStr}
               hasActiveSeason={Boolean(currentSeason)}
             />
+
+            {accountIdStr ? (
+              <AccountOptional accountId={accountIdStr} componentId="account.home.hallOfFame">
+                <HofSpotlightWidget accountId={accountIdStr} />
+              </AccountOptional>
+            ) : null}
+
+            {accountIdStr ? (
+              <AccountOptional accountId={accountIdStr} componentId="account.home.hallOfFame">
+                <HofNominationWidget accountId={accountIdStr} />
+              </AccountOptional>
+            ) : null}
           </Box>
         </Box>
-
-        <Box
-          sx={{
-            display: 'grid',
-            gap: 2,
-            gridTemplateColumns: showSubmissionPanel
-              ? {
-                  xs: '1fr',
-                  lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
-                }
-              : '1fr',
-            alignItems: 'stretch',
-          }}
-        >
-          <PhotoGallerySection
-            title="Photo Gallery"
-            description={`Relive the highlights from ${accountDisplayName}.`}
-            photos={filteredGalleryPhotos}
-            albums={seasonFilteredAlbums}
-            loading={galleryLoading}
-            error={galleryError}
-            onRefresh={refreshGallery}
-            emptyMessage="No photos have been published yet."
-            enableAlbumTabs
-            selectedAlbumKey={selectedAlbumKey}
-            onAlbumChange={handleAlbumTabChange}
-            totalCountOverride={seasonFilteredPhotos.length}
-            teamAlbumHierarchy={teamAlbumHierarchy}
-            sx={{ height: '100%' }}
-          />
-          <PhotoSubmissionPanel
-            variant="account"
-            enabled={showSubmissionPanel}
-            isLoading={membershipLoading}
-            error={membershipError}
-            canSubmit={canSubmitPhotos}
-            accountId={accountIdStr ?? ''}
-            contextName={accountDisplayName}
-            albumOptions={submissionAlbumOptions}
-            onSubmitted={() => {
-              void refreshPendingSubmissions();
-            }}
-          />
-          {shouldShowPendingPanel ? (
-            <PendingPhotoSubmissionsPanel
-              containerSx={{ p: 3, mb: 2 }}
-              contextLabel={accountDisplayName}
-              submissions={pendingSubmissions}
-              loading={pendingLoading}
-              error={pendingError}
-              successMessage={pendingSuccess}
-              processingIds={pendingProcessingIds}
-              onRefresh={refreshPendingSubmissions}
-              onApprove={handleApprovePendingSubmission}
-              onDeny={denyPendingSubmission}
-              onClearStatus={clearPendingStatus}
-              emptyMessage="No pending photo submissions for this account."
-            />
-          ) : null}
-        </Box>
-
-        {accountIdStr ? (
-          <AccountOptional accountId={accountIdStr} componentId="account.home.hallOfFame">
-            <Box
-              sx={{
-                mt: 2,
-                display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
-                gap: 2,
-                alignItems: 'flex-start',
-                justifyContent: 'flex-start',
-                flexWrap: 'wrap',
-              }}
-            >
-              <HofNominationWidget accountId={accountIdStr} />
-            </Box>
-          </AccountOptional>
-        ) : null}
-
-        {hasAccountContact && <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />}
-
-        {shouldShowAccountSponsors && (
-          <SponsorCard
-            sponsors={accountSponsors}
-            title="Account Sponsors"
-            emptyMessage={sponsorError ?? undefined}
-          />
-        )}
-
-        {/* User Teams Section */}
-        {user && userTeams.length > 0 && (
-          <MyTeams userTeams={userTeams} onViewTeam={handleViewTeam} title="Your Teams" />
-        )}
-
-        {/* User Organizations Widget */}
-        {user && (
-          <Box sx={{ display: showOrganizationsWidget ? 'block' : 'none' }}>
-            <OrganizationsWidget
-              title="Your Other Organizations"
-              showSearch={false}
-              maxDisplay={3}
-              sx={{ mb: 0 }}
-              excludeAccountId={accountIdStr}
-              onOrganizationsLoaded={(organizations) => {
-                setShowOrganizationsWidget(organizations.length > 0);
-              }}
-            />
-          </Box>
-        )}
-      </Box>
+      </Container>
     </main>
   );
 };

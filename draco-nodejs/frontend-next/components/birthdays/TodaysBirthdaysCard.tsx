@@ -99,6 +99,11 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
   }, [accountId, apiClient]);
 
   const shouldHideCard = hasActiveSeason && !loading && !error && birthdays.length === 0;
+  const shouldSkipInitialRender = hasActiveSeason && loading && !error && birthdays.length === 0;
+
+  if (shouldSkipInitialRender) {
+    return null;
+  }
 
   if (shouldHideCard) {
     return null;

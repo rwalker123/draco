@@ -86,7 +86,14 @@ const MyTeams: React.FC<MyTeamsProps> = ({
   return (
     <WidgetShell title={widgetTitle} accent="primary" sx={widgetSx}>
       {hasTeams ? (
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 3,
+            alignItems: 'flex-start',
+          }}
+        >
           {userTeams.map((team) => (
             <Paper
               key={team.teamId || team.id}
@@ -103,9 +110,8 @@ const MyTeams: React.FC<MyTeamsProps> = ({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 1.5,
-                flex: '0 0 auto',
-                width: 'auto',
-                maxWidth: { xs: '100%', sm: 360 },
+                flex: '1 1 320px',
+                minWidth: 260,
               }}
             >
               <Box

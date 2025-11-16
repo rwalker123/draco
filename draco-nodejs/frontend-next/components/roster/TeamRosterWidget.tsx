@@ -335,10 +335,9 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
         </Box>
       }
       sx={{
-        display: 'inline-flex',
+        display: 'flex',
         flexDirection: 'column',
-        width: 'fit-content',
-        maxWidth: '100%',
+        width: '100%',
       }}
     >
       <Box sx={{ p: 3 }}>{renderContent()}</Box>
