@@ -17,6 +17,7 @@ import type {
   SocialVideoType,
   CommunityMessagePreviewType,
   CommunityChannelType,
+  CommunityChannelQueryType,
   LiveEventType,
   LiveEventStatusType,
   LiveEventCreateType,
@@ -97,23 +98,62 @@ export class SocialHubService {
     seasonId: bigint,
     query?: CommunityMessageQueryType,
   ): Promise<CommunityMessagePreviewType[]> {
+    const allowedChannels = await this.discordIntegrationService.listCommunityChannels(
+      accountId,
+      seasonId,
+      query?.teamSeasonId ? { teamSeasonId: query.teamSeasonId } : undefined,
+    );
+
+    if (!allowedChannels.length) {
+      return [];
+    }
+
+    const allowedChannelIds = new Set(
+      allowedChannels.map((channel) => channel.discordChannelId).filter(Boolean),
+    );
+    const requestedChannelIds = query?.channelIds?.length
+      ? query.channelIds.filter((channelId) => allowedChannelIds.has(channelId))
+      : undefined;
+
+    if (requestedChannelIds && requestedChannelIds.length === 0) {
+      return [];
+    }
+
+    const resolvedChannelIds = requestedChannelIds
+      ? requestedChannelIds
+      : Array.from(allowedChannelIds);
+
+    if (!resolvedChannelIds.length) {
+      return [];
+    }
+
     const repositoryQuery: CommunityMessageQuery = {
       accountId,
       seasonId,
       teamSeasonId: toOptionalBigInt(query?.teamSeasonId),
-      channelIds: query?.channelIds,
+      channelIds: resolvedChannelIds,
       limit: query?.limit,
     };
 
-    const records = await this.socialContentRepository.listCommunityMessages(repositoryQuery);
+    let records = await this.socialContentRepository.listCommunityMessages(repositoryQuery);
+
+    if (records.length === 0 && query?.teamSeasonId) {
+      const fallbackQuery: CommunityMessageQuery = {
+        ...repositoryQuery,
+        teamSeasonId: undefined,
+      };
+      records = await this.socialContentRepository.listCommunityMessages(fallbackQuery);
+    }
+
     return SocialFeedResponseFormatter.formatCommunityMessages(records);
   }
 
   async listCommunityChannels(
     accountId: bigint,
     seasonId: bigint,
+    query?: CommunityChannelQueryType,
   ): Promise<CommunityChannelType[]> {
-    return this.discordIntegrationService.listCommunityChannels(accountId, seasonId);
+    return this.discordIntegrationService.listCommunityChannels(accountId, seasonId, query);
   }
 
   async listLiveEvents(

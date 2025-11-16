@@ -3,7 +3,6 @@ import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { ThemeProvider } from '@mui/material/styles';
 import SocialHubExperience from '../SocialHubExperience';
-import type { CommunityMessagePreviewType, CommunityChannelType } from '@draco/shared-schemas';
 import { dracoTheme } from '../../../theme';
 
 const fetchFeedMock = vi.fn();
@@ -48,7 +47,7 @@ describe('SocialHubExperience', () => {
     fetchCommunityMessagesMock.mockReset();
     fetchFeedMock.mockResolvedValue([]);
     fetchVideosMock.mockResolvedValue([]);
-    fetchCommunityChannelsMock.mockResolvedValue<CommunityChannelType[]>([
+    fetchCommunityChannelsMock.mockResolvedValue([
       {
         id: 'chan-1',
         accountId: '1',
@@ -61,7 +60,7 @@ describe('SocialHubExperience', () => {
         url: 'https://discord.com/channels/999/chan-1',
       },
     ]);
-    fetchCommunityMessagesMock.mockResolvedValue<CommunityMessagePreviewType[]>([
+    fetchCommunityMessagesMock.mockResolvedValue([
       {
         id: 'msg-1',
         accountId: '1',

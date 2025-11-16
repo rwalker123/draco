@@ -90,7 +90,7 @@ describe('normalizeDiscordMessage', () => {
         thumbnailUrl: 'https://cdn.discordapp.com/attachments/celebrate.gif',
       },
       {
-        type: 'image',
+        type: 'video',
         url: 'https://media.giphy.com/media/party/giphy.mp4',
         thumbnailUrl: 'https://media.giphy.com/media/party/giphy.gif',
       },
@@ -100,5 +100,51 @@ describe('normalizeDiscordMessage', () => {
         thumbnailUrl: 'https://cdn.discordapp.com/stickers/9988.gif?size=160',
       },
     ]);
+  });
+
+  it('generates system message text for guild member joins', () => {
+    const message: DiscordMessage = {
+      ...baseMessage,
+      id: '987654321',
+      type: 7,
+      author: {
+        id: '256',
+        username: 'ezRecSports',
+      },
+    };
+
+    const result = normalizeDiscordMessage(message);
+    expect(result.richContent.length).toBeGreaterThan(0);
+    const textNode = result.richContent[0];
+    expect(textNode.type).toBe('text');
+    expect(textNode).toEqual(
+      expect.objectContaining({
+        text: expect.stringContaining('ezRecSports'),
+      }),
+    );
+  });
+
+  it('appends component labels to rich content', () => {
+    const message: DiscordMessage = {
+      ...baseMessage,
+      components: [
+        {
+          type: 1,
+          components: [
+            {
+              type: 2,
+              label: 'Wave to say hi!',
+            },
+          ],
+        },
+      ],
+    };
+
+    const result = normalizeDiscordMessage(message);
+    const lastNode = result.richContent[result.richContent.length - 1];
+    expect(lastNode).toEqual({
+      type: 'text',
+      text: 'Wave to say hi!',
+    });
   });
 });

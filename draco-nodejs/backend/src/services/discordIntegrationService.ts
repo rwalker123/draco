@@ -1,5 +1,9 @@
 import { randomBytes } from 'node:crypto';
-import type { accountdiscordsettings } from '@prisma/client';
+import type {
+  accountdiscordsettings,
+  accountdiscordchannels,
+  accountdiscordteamforums,
+} from '@prisma/client';
 import { z } from 'zod';
 import {
   AnnouncementType,
@@ -20,13 +24,20 @@ import {
   DiscordFeatureSyncFeatureType,
   DiscordFeatureSyncChannelType,
   CommunityChannelType,
+  CommunityChannelQueryType,
+  DiscordTeamForumListType,
+  DiscordTeamForumQueryType,
+  DiscordTeamForumRepairResultType,
+  DiscordTeamForumCleanupModeEnum,
 } from '@draco/shared-schemas';
 import { RepositoryFactory } from '../repositories/index.js';
+import type { DiscordAccountConfigUpsertInput } from '../repositories/interfaces/IDiscordIntegrationRepository.js';
 import { DiscordIntegrationResponseFormatter } from '../responseFormatters/index.js';
 import { encryptSecret, decryptSecret } from '../utils/secretEncryption.js';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { getDiscordOAuthConfig, type DiscordOAuthConfig } from '../config/discordIntegration.js';
 import { fetchJson } from '../utils/fetchJson.js';
+import type { dbTeamSeasonWithLeaguesAndTeams } from '../repositories/types/dbTypes.js';
 import type { DiscordIngestionTarget } from '../config/socialIngestion.js';
 
 type DiscordLinkStatePayload =
@@ -78,7 +89,8 @@ interface CreatedDiscordChannel {
   type?: string;
 }
 
-type DiscordChannelCreateType = z.infer<typeof DiscordChannelCreateTypeEnum>;
+type DiscordChannelCreateType = z.infer<typeof DiscordChannelCreateTypeEnum> | 'category';
+type TeamForumCleanupMode = z.infer<typeof DiscordTeamForumCleanupModeEnum>;
 
 const SUPPORTED_FEATURES: readonly DiscordFeatureSyncFeatureType[] = ['announcements'] as const;
 
@@ -86,6 +98,7 @@ export class DiscordIntegrationService {
   private readonly discordRepository = RepositoryFactory.getDiscordIntegrationRepository();
   private readonly accountRepository = RepositoryFactory.getAccountRepository();
   private readonly seasonsRepository = RepositoryFactory.getSeasonsRepository();
+  private readonly teamRepository = RepositoryFactory.getTeamRepository();
   private channelIngestionTargetsCache: DiscordIngestionTarget[] | null = null;
   private getBotToken(): string {
     const token = process.env.DISCORD_BOT_TOKEN;
@@ -106,17 +119,35 @@ export class DiscordIntegrationService {
     payload: DiscordAccountConfigUpdateType,
   ): Promise<DiscordAccountConfigType> {
     await this.ensureAccountExists(accountId);
+    const existingConfig = await this.getOrCreateAccountConfigRecord(accountId);
 
-    const updateData = {
-      guildId: payload.guildId ?? null,
-      guildName: null as string | null,
-      botUserId: null as string | null,
-      botUserName: null as string | null,
+    const updateData: DiscordAccountConfigUpsertInput = {
       roleSyncEnabled:
         typeof payload.roleSyncEnabled === 'boolean' ? payload.roleSyncEnabled : undefined,
+      teamForumEnabled:
+        typeof payload.teamForumEnabled === 'boolean' ? payload.teamForumEnabled : undefined,
     };
 
+    if (payload.guildId !== undefined) {
+      updateData.guildId = payload.guildId;
+      updateData.guildName = null;
+    }
+
     const updated = await this.discordRepository.updateAccountConfig(accountId, updateData);
+
+    const enablingTeamForums =
+      payload.teamForumEnabled === true && !existingConfig.teamforumenabled;
+    const disablingTeamForums =
+      payload.teamForumEnabled === false && Boolean(existingConfig.teamforumenabled);
+
+    if (enablingTeamForums) {
+      await this.syncTeamForums(accountId);
+    } else if (disablingTeamForums) {
+      const cleanupMode: TeamForumCleanupMode =
+        (payload.teamForumCleanupMode as TeamForumCleanupMode | undefined) ?? 'retain';
+      await this.disableTeamForums(accountId, cleanupMode);
+    }
+
     return DiscordIntegrationResponseFormatter.formatAccountConfig(updated);
   }
 
@@ -127,6 +158,7 @@ export class DiscordIntegrationService {
       this.discordRepository.deleteRoleMappingsByAccount(accountId),
       this.discordRepository.deleteLinkedAccounts(accountId),
       this.discordRepository.deleteFeatureSyncsByAccount(accountId),
+      this.discordRepository.deleteTeamForumsByAccount(accountId),
     ]);
     this.invalidateChannelIngestionTargetsCache();
     await this.discordRepository.deleteAccountConfig(accountId);
@@ -166,9 +198,37 @@ export class DiscordIntegrationService {
     return DiscordIntegrationResponseFormatter.formatChannelMappingList(mappings);
   }
 
+  async listTeamForums(
+    accountId: bigint,
+    query?: DiscordTeamForumQueryType,
+  ): Promise<DiscordTeamForumListType> {
+    await this.ensureAccountExists(accountId);
+    const seasonFilter = this.parseOptionalBigInt(query?.seasonId);
+    const teamSeasonFilter = this.parseOptionalBigInt(query?.teamSeasonId);
+
+    const records = await this.discordRepository.listTeamForums(accountId);
+    const filtered = records.filter((record) => {
+      if (teamSeasonFilter && record.teamseasonid !== teamSeasonFilter) {
+        return false;
+      }
+      if (seasonFilter && record.seasonid !== seasonFilter) {
+        return false;
+      }
+      return true;
+    });
+
+    return DiscordIntegrationResponseFormatter.formatTeamForumList(filtered);
+  }
+
+  async repairTeamForums(accountId: bigint): Promise<DiscordTeamForumRepairResultType> {
+    await this.ensureAccountExists(accountId);
+    return this.syncTeamForums(accountId);
+  }
+
   async listCommunityChannels(
     accountId: bigint,
     seasonId: bigint,
+    query?: CommunityChannelQueryType,
   ): Promise<CommunityChannelType[]> {
     await this.ensureAccountExists(accountId);
     const config = await this.getOrCreateAccountConfigRecord(accountId);
@@ -177,13 +237,16 @@ export class DiscordIntegrationService {
     }
 
     const mappings = await this.discordRepository.listChannelMappings(accountId);
+    const teamSeasonFilter = this.parseOptionalBigInt(query?.teamSeasonId);
+
     const filtered = mappings.filter((mapping) => {
       switch (mapping.scope) {
         case 'account':
-          return true;
+          return !teamSeasonFilter;
         case 'season':
-          return mapping.seasonid === seasonId;
+          return !teamSeasonFilter && mapping.seasonid === seasonId;
         case 'teamSeason':
+          return Boolean(teamSeasonFilter && mapping.teamseasonid === teamSeasonFilter);
         default:
           return false;
       }
@@ -194,13 +257,15 @@ export class DiscordIntegrationService {
     return filtered.map((mapping) => ({
       id: mapping.id.toString(),
       accountId: mapping.accountid.toString(),
-      seasonId: seasonId.toString(),
+      seasonId: (mapping.seasonid ?? seasonId).toString(),
       discordChannelId: mapping.channelid,
       name: mapping.channelname,
       label: mapping.label ?? null,
       scope: mapping.scope as CommunityChannelType['scope'],
       channelType: mapping.channeltype ?? null,
       url: `${guildBaseUrl}/${mapping.channelid}`,
+      teamId: mapping.teamid ? mapping.teamid.toString() : undefined,
+      teamSeasonId: mapping.teamseasonid ? mapping.teamseasonid.toString() : undefined,
     }));
   }
 
@@ -275,8 +340,26 @@ export class DiscordIntegrationService {
     const mappings = await this.discordRepository.listAllChannelMappings();
     const targets: DiscordIngestionTarget[] = [];
     const accountSeasonCache = new Map<bigint, bigint>();
+    const accountConfigCache = new Map<bigint, accountdiscordsettings>();
+
+    const getAccountConfig = async (accountId: bigint): Promise<accountdiscordsettings> => {
+      const cached = accountConfigCache.get(accountId);
+      if (cached) {
+        return cached;
+      }
+      const config = await this.getOrCreateAccountConfigRecord(accountId);
+      accountConfigCache.set(accountId, config);
+      return config;
+    };
 
     for (const mapping of mappings) {
+      const config = await getAccountConfig(mapping.accountid);
+      const guildId = config.guildid ?? undefined;
+
+      if (mapping.scope === 'teamSeason' && !config.teamforumenabled) {
+        continue;
+      }
+
       if (mapping.scope === 'account') {
         let seasonId = accountSeasonCache.get(mapping.accountid);
         if (!seasonId) {
@@ -303,6 +386,7 @@ export class DiscordIntegrationService {
           teamId: undefined,
           channelId: mapping.channelid,
           label: mapping.label ?? undefined,
+          guildId,
         });
         continue;
       }
@@ -323,6 +407,7 @@ export class DiscordIntegrationService {
         teamId: mapping.teamid ?? undefined,
         channelId: mapping.channelid,
         label: mapping.label ?? undefined,
+        guildId,
       });
     }
 
@@ -406,6 +491,432 @@ export class DiscordIntegrationService {
       updated,
       Boolean(config.guildid),
     );
+  }
+
+  private async syncTeamForums(accountId: bigint): Promise<DiscordTeamForumRepairResultType> {
+    const config = await this.getOrCreateAccountConfigRecord(accountId);
+    if (!config.teamforumenabled) {
+      return {
+        created: 0,
+        repaired: 0,
+        skipped: 0,
+        message: 'Team forums are currently disabled.',
+      };
+    }
+
+    this.ensureGuildConfigured(config);
+
+    const currentSeason = await this.seasonsRepository.findCurrentSeason(accountId);
+    if (!currentSeason) {
+      throw new ValidationError('Set a current season before enabling Discord team forums.');
+    }
+
+    const teamSeasons = await this.teamRepository.findBySeasonId(currentSeason.id, accountId);
+    const assignedTeams = teamSeasons.filter(
+      (teamSeason) => Boolean(teamSeason.divisionseasonid) && Boolean(teamSeason.leagueseason),
+    );
+
+    if (!assignedTeams.length) {
+      return {
+        created: 0,
+        repaired: 0,
+        skipped: 0,
+        message: 'No assigned teams found for the current season.',
+      };
+    }
+
+    const [existingForums, channelMappings] = await Promise.all([
+      this.discordRepository.listTeamForums(accountId),
+      this.discordRepository.listChannelMappings(accountId),
+    ]);
+
+    const mappingByTeamSeason = new Map(
+      channelMappings
+        .filter((mapping) => mapping.teamseasonid)
+        .map((mapping) => [mapping.teamseasonid!.toString(), mapping]),
+    );
+    const forumsByTeamSeason = new Map(
+      existingForums.map((forum) => [forum.teamseasonid.toString(), forum]),
+    );
+
+    const guildChannels = await this.fetchGuildChannels(config.guildid as string);
+    const guildChannelById = new Map(guildChannels.map((channel) => [channel.id, channel]));
+    const leagueCategoryCache = new Map<string, string | null>();
+
+    let created = 0;
+    let repaired = 0;
+    let skipped = 0;
+
+    for (const teamSeason of assignedTeams) {
+      const key = teamSeason.id.toString();
+      const existingForum = forumsByTeamSeason.get(key);
+      try {
+        const categoryId = await this.resolveLeagueCategoryId({
+          guildId: config.guildid as string,
+          seasonName: currentSeason.name,
+          leagueName: teamSeason.leagueseason?.league?.name ?? null,
+          leagueKey: `${currentSeason.id}-${teamSeason.leagueseason?.league?.id?.toString() ?? 'general'}`,
+          existingChannels: guildChannels,
+          categoryCache: leagueCategoryCache,
+        });
+
+        if (!existingForum) {
+          const createdForum = await this.createTeamForumChannelRecord({
+            accountId,
+            config,
+            seasonId: currentSeason.id,
+            seasonName: currentSeason.name,
+            teamSeason,
+            categoryId,
+            mappingByTeamSeason,
+          });
+          forumsByTeamSeason.set(key, createdForum);
+          created += 1;
+        } else {
+          const channelExists = guildChannelById.has(existingForum.discordchannelid);
+          let updatedForum = existingForum;
+          if (!channelExists || existingForum.status !== 'provisioned') {
+            updatedForum = await this.rebuildTeamForumChannel({
+              accountId,
+              config,
+              seasonId: currentSeason.id,
+              seasonName: currentSeason.name,
+              teamSeason,
+              forum: existingForum,
+              categoryId,
+              mappingByTeamSeason,
+            });
+            forumsByTeamSeason.set(key, updatedForum);
+            repaired += 1;
+          } else {
+            const label = this.buildTeamForumLabel(teamSeason.name, currentSeason.name);
+            await this.ensureTeamChannelMapping(
+              accountId,
+              existingForum,
+              label,
+              mappingByTeamSeason,
+            );
+            skipped += 1;
+          }
+        }
+      } catch (error) {
+        console.error('[discord] Failed to synchronize team forum', {
+          accountId: accountId.toString(),
+          teamSeasonId: teamSeason.id.toString(),
+          error,
+        });
+        if (existingForum) {
+          await this.discordRepository
+            .updateTeamForum(existingForum.id, {
+              status: 'needsRepair',
+              lastSyncedAt: new Date(),
+            })
+            .catch(() => undefined);
+        }
+      }
+    }
+
+    await this.discordRepository.updateAccountConfig(accountId, {
+      teamForumLastSyncedAt: new Date(),
+    });
+
+    return {
+      created,
+      repaired,
+      skipped,
+      message: 'Team forums synchronized.',
+    };
+  }
+
+  private async createTeamForumChannelRecord({
+    accountId,
+    config,
+    seasonId,
+    seasonName,
+    teamSeason,
+    categoryId,
+    mappingByTeamSeason,
+  }: {
+    accountId: bigint;
+    config: accountdiscordsettings;
+    seasonId: bigint;
+    seasonName?: string | null;
+    teamSeason: dbTeamSeasonWithLeaguesAndTeams;
+    categoryId: string | null;
+    mappingByTeamSeason: Map<string, accountdiscordchannels>;
+  }): Promise<accountdiscordteamforums> {
+    if (!teamSeason.teamid) {
+      throw new ValidationError('Team season is missing a team identifier.');
+    }
+    const channelName = this.buildTeamForumChannelName(
+      teamSeason.name ?? null,
+      teamSeason.leagueseason?.league?.name ?? null,
+    );
+    const createdChannel = await this.createDiscordChannel(
+      config.guildid as string,
+      channelName,
+      'text',
+      categoryId ? { parentId: categoryId } : undefined,
+    );
+    const record = await this.discordRepository.createTeamForum(accountId, {
+      seasonId,
+      teamSeasonId: teamSeason.id,
+      teamId: teamSeason.teamid,
+      discordChannelId: createdChannel.id,
+      discordChannelName: createdChannel.name,
+      channelType: createdChannel.type ?? 'forum',
+      status: 'provisioned',
+      autoCreated: true,
+      lastSyncedAt: new Date(),
+    });
+    const label = this.buildTeamForumLabel(
+      teamSeason.name ?? null,
+      seasonName ?? null,
+      teamSeason.leagueseason?.league?.name ?? null,
+    );
+    await this.ensureTeamChannelMapping(accountId, record, label, mappingByTeamSeason);
+    return record;
+  }
+
+  private async rebuildTeamForumChannel({
+    accountId,
+    config,
+    seasonName,
+    teamSeason,
+    forum,
+    categoryId,
+    mappingByTeamSeason,
+  }: {
+    accountId: bigint;
+    config: accountdiscordsettings;
+    seasonId: bigint;
+    seasonName?: string | null;
+    teamSeason: dbTeamSeasonWithLeaguesAndTeams;
+    forum: accountdiscordteamforums;
+    categoryId: string | null;
+    mappingByTeamSeason: Map<string, accountdiscordchannels>;
+  }): Promise<accountdiscordteamforums> {
+    if (!teamSeason.teamid) {
+      throw new ValidationError('Team season is missing a team identifier.');
+    }
+    await this.deleteDiscordChannel(config.guildid as string, forum.discordchannelid);
+    const channelName = this.buildTeamForumChannelName(
+      teamSeason.name ?? null,
+      teamSeason.leagueseason?.league?.name ?? null,
+    );
+    const createdChannel = await this.createDiscordChannel(
+      config.guildid as string,
+      channelName,
+      'text',
+      categoryId ? { parentId: categoryId } : undefined,
+    );
+    const updated = await this.discordRepository.updateTeamForum(forum.id, {
+      discordChannelId: createdChannel.id,
+      discordChannelName: createdChannel.name,
+      channelType: createdChannel.type ?? 'forum',
+      status: 'provisioned',
+      autoCreated: true,
+      lastSyncedAt: new Date(),
+    });
+    const label = this.buildTeamForumLabel(
+      teamSeason.name ?? teamSeason.leagueseason?.league?.name ?? null,
+      seasonName ?? null,
+      teamSeason.leagueseason?.league?.name ?? null,
+    );
+    await this.ensureTeamChannelMapping(accountId, updated, label, mappingByTeamSeason);
+    return updated;
+  }
+
+  private async ensureTeamChannelMapping(
+    accountId: bigint,
+    forum: accountdiscordteamforums,
+    label: string,
+    mappingByTeamSeason: Map<string, accountdiscordchannels>,
+  ): Promise<void> {
+    const key = forum.teamseasonid.toString();
+    const existingMapping = mappingByTeamSeason.get(key);
+    if (existingMapping) {
+      if (existingMapping.channelid === forum.discordchannelid) {
+        return;
+      }
+      await this.discordRepository.deleteChannelMapping(accountId, existingMapping.id);
+      this.invalidateChannelIngestionTargetsCache();
+      mappingByTeamSeason.delete(key);
+    }
+    const createdMapping = await this.discordRepository.createChannelMapping(accountId, {
+      discordChannelId: forum.discordchannelid,
+      discordChannelName: forum.discordchannelname,
+      channelType: forum.channeltype ?? 'forum',
+      label,
+      scope: 'teamSeason',
+      seasonId: forum.seasonid,
+      teamSeasonId: forum.teamseasonid,
+      teamId: forum.teamid,
+    });
+    mappingByTeamSeason.set(key, createdMapping);
+    this.invalidateChannelIngestionTargetsCache();
+  }
+
+  private async disableTeamForums(accountId: bigint, mode: TeamForumCleanupMode): Promise<void> {
+    const forums = await this.discordRepository.listTeamForums(accountId);
+    if (!forums.length) {
+      await this.discordRepository.updateAccountConfig(accountId, {
+        teamForumLastSyncedAt: null,
+      });
+      return;
+    }
+
+    if (mode === 'remove') {
+      const config = await this.getOrCreateAccountConfigRecord(accountId);
+      const channelMappings = await this.discordRepository.listChannelMappings(accountId);
+      const mappingByTeamSeason = new Map(
+        channelMappings
+          .filter((mapping) => mapping.teamseasonid)
+          .map((mapping) => [mapping.teamseasonid!.toString(), mapping]),
+      );
+      let channelMappingsChanged = false;
+
+      for (const forum of forums) {
+        if (config.guildid) {
+          await this.deleteDiscordChannel(config.guildid, forum.discordchannelid);
+        }
+        await this.discordRepository.deleteTeamForum(forum.id);
+        const mapping = mappingByTeamSeason.get(forum.teamseasonid.toString());
+        if (mapping) {
+          await this.discordRepository.deleteChannelMapping(accountId, mapping.id);
+          channelMappingsChanged = true;
+        }
+      }
+
+      if (channelMappingsChanged) {
+        this.invalidateChannelIngestionTargetsCache();
+      }
+    } else {
+      for (const forum of forums) {
+        await this.discordRepository.updateTeamForum(forum.id, {
+          status: 'disabled',
+          lastSyncedAt: new Date(),
+        });
+      }
+    }
+
+    await this.discordRepository.updateAccountConfig(accountId, {
+      teamForumLastSyncedAt: null,
+    });
+  }
+
+  private buildTeamForumChannelName(teamName?: string | null, leagueName?: string | null): string {
+    const trimmedTeam = teamName?.trim();
+    const trimmedLeague = leagueName?.trim();
+    const raw = trimmedTeam || trimmedLeague || 'team-forum';
+    return this.sanitizeChannelName(raw);
+  }
+
+  private buildSeasonLeagueCategoryName(
+    seasonName?: string | null,
+    leagueName?: string | null,
+  ): string {
+    const seasonLabel = seasonName?.trim() || 'Season';
+    const leagueLabel = leagueName?.trim() || 'General';
+    const combined = `${seasonLabel} - ${leagueLabel}`;
+    return combined.slice(0, 100);
+  }
+
+  private buildTeamForumLabel(
+    teamName?: string | null,
+    seasonName?: string | null,
+    leagueName?: string | null,
+  ): string {
+    const trimmedTeam = teamName?.trim();
+    const trimmedSeason = seasonName?.trim();
+    const trimmedLeague = leagueName?.trim();
+    const base = trimmedLeague
+      ? `${trimmedLeague} - ${trimmedTeam || 'Team Forum'}`
+      : trimmedTeam || 'Team Forum';
+    if (trimmedSeason) {
+      return `${base} (${trimmedSeason})`;
+    }
+    return base;
+  }
+
+  private async resolveLeagueCategoryId({
+    guildId,
+    seasonName,
+    leagueName,
+    leagueKey,
+    existingChannels,
+    categoryCache,
+  }: {
+    guildId: string;
+    seasonName?: string | null;
+    leagueName?: string | null;
+    leagueKey: string;
+    existingChannels?: DiscordGuildChannelResponse[];
+    categoryCache: Map<string, string | null>;
+  }): Promise<string | null> {
+    if (categoryCache.has(leagueKey)) {
+      return categoryCache.get(leagueKey) ?? null;
+    }
+    const categoryId = await this.ensureSeasonLeagueCategory(
+      guildId,
+      seasonName,
+      leagueName,
+      existingChannels,
+    );
+    categoryCache.set(leagueKey, categoryId ?? null);
+    return categoryId;
+  }
+
+  private async ensureSeasonLeagueCategory(
+    guildId: string,
+    seasonName?: string | null,
+    leagueName?: string | null,
+    existingChannels?: DiscordGuildChannelResponse[],
+  ): Promise<string | null> {
+    const desiredName = this.buildSeasonLeagueCategoryName(seasonName, leagueName);
+    const existing = existingChannels?.find(
+      (channel) => channel.type === 4 && channel.name === desiredName,
+    );
+    if (existing) {
+      return existing.id;
+    }
+    const created = await this.createDiscordChannel(guildId, desiredName, 'category');
+    existingChannels?.push({ id: created.id, name: desiredName, type: 4 });
+    return created.id;
+  }
+
+  private async deleteDiscordChannel(guildId: string, channelId: string): Promise<void> {
+    const botToken = this.getBotToken();
+    try {
+      const response = await fetch(`${getDiscordOAuthConfig().apiBaseUrl}/channels/${channelId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bot ${botToken}`,
+        },
+      });
+      if (!response.ok && response.status !== 404) {
+        const body = await response.text().catch(() => response.statusText);
+        console.warn('Unable to delete Discord channel', {
+          guildId,
+          channelId,
+          status: response.status,
+          body,
+        });
+      }
+    } catch (error) {
+      console.error('Unable to delete Discord channel', { guildId, channelId, error });
+    }
+  }
+
+  private parseOptionalBigInt(value?: string | null): bigint | null {
+    if (value === undefined || value === null || value === '') {
+      return null;
+    }
+    try {
+      return BigInt(value);
+    } catch {
+      throw new ValidationError('Invalid identifier provided.');
+    }
   }
 
   private async resolveChannelDetails(
@@ -911,9 +1422,24 @@ export class DiscordIntegrationService {
     guildId: string,
     channelName: string,
     channelType: DiscordChannelCreateType,
+    options?: { parentId?: string },
   ): Promise<CreatedDiscordChannel> {
     const botToken = this.getBotToken();
-    const typeValue = channelType === 'announcement' ? 5 : 0;
+    let typeValue: number;
+    switch (channelType) {
+      case 'announcement':
+        typeValue = 5;
+        break;
+      case 'forum':
+        typeValue = 15;
+        break;
+      case 'category':
+        typeValue = 4;
+        break;
+      default:
+        typeValue = 0;
+        break;
+    }
     try {
       const channel = await fetchJson<DiscordGuildChannelResponse>(
         `${getDiscordOAuthConfig().apiBaseUrl}/guilds/${guildId}/channels`,
@@ -926,6 +1452,7 @@ export class DiscordIntegrationService {
           body: JSON.stringify({
             name: channelName,
             type: typeValue,
+            parent_id: options?.parentId ?? undefined,
           }),
           timeoutMs: 10000,
         },

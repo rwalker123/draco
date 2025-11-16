@@ -9,6 +9,7 @@ import {
   DiscordChannelMappingCreateSchema,
   DiscordFeatureSyncFeatureEnum,
   DiscordFeatureSyncUpdateSchema,
+  DiscordTeamForumQuerySchema,
 } from '@draco/shared-schemas';
 import { AuthenticationError, ValidationError } from '../utils/customErrors.js';
 
@@ -196,6 +197,31 @@ router.post(
     const payload = DiscordChannelMappingCreateSchema.parse(req.body);
     const mapping = await discordIntegrationService.createChannelMapping(accountId, payload);
     res.status(201).json(mapping);
+  }),
+);
+
+router.get(
+  '/:accountId/discord/team-forums',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.settings.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const query = DiscordTeamForumQuerySchema.parse(req.query);
+    const forums = await discordIntegrationService.listTeamForums(accountId, query);
+    res.json(forums);
+  }),
+);
+
+router.post(
+  '/:accountId/discord/team-forums/repair',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.settings.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const result = await discordIntegrationService.repairTeamForums(accountId);
+    res.json(result);
   }),
 );
 

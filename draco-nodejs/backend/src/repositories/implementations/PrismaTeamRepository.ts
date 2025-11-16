@@ -119,7 +119,10 @@ export class PrismaTeamRepository implements ITeamRepository {
     });
   }
 
-  async findBySeasonId(seasonId: bigint, accountId: bigint): Promise<teamsseason[]> {
+  async findBySeasonId(
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbTeamSeasonWithLeaguesAndTeams[]> {
     return this.prisma.teamsseason.findMany({
       where: {
         leagueseason: {
@@ -134,7 +137,7 @@ export class PrismaTeamRepository implements ITeamRepository {
         leagueseason: {
           include: {
             league: true,
-            divisionseason: true,
+            season: true,
           },
         },
       },

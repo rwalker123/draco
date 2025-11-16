@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Alert, Box, Stack, Typography } from '@mui/material';
+import { Alert, Stack } from '@mui/material';
 import type { AccountType } from '@draco/shared-schemas';
 import WidgetShell from '../../ui/WidgetShell';
 import YouTubeChannelAdminPanel from '@/components/social/YouTubeChannelAdminPanel';
@@ -21,9 +21,6 @@ export const SocialMediaWidget: React.FC<SocialMediaWidgetProps> = ({
     },
     [onAccountUpdate],
   );
-
-  const twitterHandle = account.socials?.twitterAccountName || 'Not configured';
-  const facebookPage = account.socials?.facebookFanPage || 'Not configured';
 
   return (
     <WidgetShell
@@ -48,17 +45,6 @@ export const SocialMediaWidget: React.FC<SocialMediaWidgetProps> = ({
           description="Use your official channel to highlight recaps, interviews, and livestreams."
           onAccountUpdated={handleAccountUpdated}
         />
-
-        <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Other Social Accounts
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            <strong>Twitter Account:</strong> {twitterHandle}
-            <br />
-            <strong>Facebook Fan Page:</strong> {facebookPage}
-          </Typography>
-        </Box>
       </Stack>
     </WidgetShell>
   );

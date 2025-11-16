@@ -1,5 +1,5 @@
 import { describe, beforeEach, afterEach, expect, it, vi } from 'vitest';
-import type { accountdiscordchannels } from '@prisma/client';
+import type { accountdiscordchannels, accountdiscordsettings } from '@prisma/client';
 import { DiscordIntegrationService } from '../discordIntegrationService.js';
 import { RepositoryFactory } from '../../repositories/index.js';
 import type { IDiscordIntegrationRepository } from '../../repositories/interfaces/IDiscordIntegrationRepository.js';
@@ -25,17 +25,37 @@ function createChannelMapping(
   };
 }
 
+function createAccountConfig(
+  overrides: Partial<accountdiscordsettings> = {},
+): accountdiscordsettings {
+  return {
+    id: overrides.id ?? BigInt(1),
+    accountid: overrides.accountid ?? BigInt(1),
+    guildid: overrides.guildid ?? null,
+    guildname: overrides.guildname ?? null,
+    rolesyncenabled: overrides.rolesyncenabled ?? false,
+    teamforumenabled: overrides.teamforumenabled ?? true,
+    teamforumlastsynced: overrides.teamforumlastsynced ?? null,
+    createdat: overrides.createdat ?? new Date(),
+    updatedat: overrides.updatedat ?? new Date(),
+  };
+}
+
 describe('DiscordIntegrationService', () => {
   let listAllChannelMappingsMock: ReturnType<typeof vi.fn>;
   let findChannelMappingByIdMock: ReturnType<typeof vi.fn>;
   let findCurrentSeasonMock: ReturnType<typeof vi.fn>;
   let findAccountByIdMock: ReturnType<typeof vi.fn>;
+  let getAccountConfigMock: ReturnType<typeof vi.fn>;
+  let createAccountConfigMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     listAllChannelMappingsMock = vi.fn();
     findChannelMappingByIdMock = vi.fn();
     findCurrentSeasonMock = vi.fn();
     findAccountByIdMock = vi.fn();
+    getAccountConfigMock = vi.fn();
+    createAccountConfigMock = vi.fn();
 
     const seasonsRepository = {
       findCurrentSeason:
@@ -54,6 +74,10 @@ describe('DiscordIntegrationService', () => {
       deleteFeatureSyncsByAccount: vi.fn(),
       listChannelMappings: vi.fn(),
       createChannelMapping: vi.fn(),
+      getAccountConfig:
+        getAccountConfigMock as unknown as IDiscordIntegrationRepository['getAccountConfig'],
+      createAccountConfig:
+        createAccountConfigMock as unknown as IDiscordIntegrationRepository['createAccountConfig'],
     };
 
     const accountRepository = {
@@ -69,6 +93,8 @@ describe('DiscordIntegrationService', () => {
     vi.spyOn(RepositoryFactory, 'getAccountRepository').mockReturnValue(
       accountRepository as unknown as IAccountRepository,
     );
+    getAccountConfigMock.mockResolvedValue(createAccountConfig());
+    createAccountConfigMock.mockResolvedValue(createAccountConfig());
   });
 
   afterEach(() => {
@@ -130,5 +156,23 @@ describe('DiscordIntegrationService', () => {
         label: updatedMapping.label ?? undefined,
       },
     ]);
+  });
+
+  it('skips team forum mappings when feature is disabled', async () => {
+    const teamMapping = createChannelMapping({
+      scope: 'teamSeason',
+      seasonid: BigInt(303),
+      teamseasonid: BigInt(404),
+    });
+    listAllChannelMappingsMock.mockResolvedValue([teamMapping]);
+    getAccountConfigMock.mockResolvedValue(
+      createAccountConfig({ accountid: teamMapping.accountid, teamforumenabled: false }),
+    );
+
+    const service = new DiscordIntegrationService();
+    const targets = await service.getChannelIngestionTargets();
+
+    expect(targets).toEqual([]);
+    expect(getAccountConfigMock).toHaveBeenCalledWith(teamMapping.accountid);
   });
 });

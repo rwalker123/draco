@@ -3,6 +3,7 @@ import {
   accountdiscordrolemapping,
   accountdiscordchannels,
   accountdiscordfeaturesync,
+  accountdiscordteamforums,
   userdiscordaccounts,
 } from '@prisma/client';
 
@@ -10,6 +11,8 @@ export interface DiscordAccountConfigUpsertInput {
   guildId?: string | null;
   guildName?: string | null;
   roleSyncEnabled?: boolean;
+  teamForumEnabled?: boolean;
+  teamForumLastSyncedAt?: Date | null;
 }
 
 export interface DiscordRoleMappingUpsertInput {
@@ -49,6 +52,29 @@ export interface DiscordFeatureSyncUpsertInput {
   discordChannelId?: string | null;
   discordChannelName?: string | null;
   channelType?: string | null;
+  autoCreated?: boolean;
+  lastSyncedAt?: Date | null;
+}
+
+export interface DiscordTeamForumCreateInput {
+  seasonId: bigint;
+  teamSeasonId: bigint;
+  teamId: bigint;
+  discordChannelId: string;
+  discordChannelName: string;
+  channelType?: string | null;
+  discordRoleId?: string | null;
+  status: string;
+  autoCreated?: boolean;
+  lastSyncedAt?: Date | null;
+}
+
+export interface DiscordTeamForumUpdateInput {
+  discordChannelId?: string;
+  discordChannelName?: string;
+  channelType?: string | null;
+  discordRoleId?: string | null;
+  status?: string;
   autoCreated?: boolean;
   lastSyncedAt?: Date | null;
 }
@@ -108,4 +134,20 @@ export interface IDiscordIntegrationRepository {
   ): Promise<accountdiscordfeaturesync>;
   deleteFeatureSync(accountId: bigint, feature: string): Promise<void>;
   deleteFeatureSyncsByAccount(accountId: bigint): Promise<void>;
+
+  listTeamForums(accountId: bigint): Promise<accountdiscordteamforums[]>;
+  findTeamForumByTeamSeasonId(
+    accountId: bigint,
+    teamSeasonId: bigint,
+  ): Promise<accountdiscordteamforums | null>;
+  createTeamForum(
+    accountId: bigint,
+    data: DiscordTeamForumCreateInput,
+  ): Promise<accountdiscordteamforums>;
+  updateTeamForum(
+    forumId: bigint,
+    data: DiscordTeamForumUpdateInput,
+  ): Promise<accountdiscordteamforums>;
+  deleteTeamForum(forumId: bigint): Promise<void>;
+  deleteTeamForumsByAccount(accountId: bigint): Promise<void>;
 }
