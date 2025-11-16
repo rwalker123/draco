@@ -125,7 +125,7 @@ const InformationWidget: React.FC<InformationWidgetProps> = ({
   }
 
   return (
-    <WidgetShell title={title} accent="info">
+    <WidgetShell title={title} accent="info" sx={{ pb: 2 }}>
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
           <CircularProgress size={24} />

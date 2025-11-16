@@ -629,7 +629,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             ) : null}
 
             {showInformationWidget ? (
-              <Box sx={{ display: informationWidgetVisible ? 'block' : 'none' }}>
+              <Box sx={{ display: informationWidgetVisible ? 'contents' : 'none' }}>
                 <InformationWidget
                   accountId={accountId}
                   teamId={resolvedTeamId ?? undefined}
@@ -659,50 +659,35 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               />
             ) : null}
 
-            <Box
-              sx={{
-                display: 'grid',
-                gap: 2,
-                gridTemplateColumns:
-                  teamData?.teamId && showTeamSubmissionPanel
-                    ? {
-                        xs: '1fr',
-                        lg: 'minmax(0, 2fr) minmax(0, 1fr)',
-                      }
-                    : '1fr',
-                alignItems: 'stretch',
-              }}
-            >
-              {teamData?.teamId ? (
-                <PhotoGallerySection
-                  title="Team Photo Gallery"
-                  description={`Highlights from the ${teamData?.seasonName ?? 'current'} season.`}
-                  photos={teamGalleryPhotos}
-                  loading={teamGalleryLoading}
-                  error={teamGalleryError}
-                  onRefresh={refreshTeamGallery}
-                  emptyMessage="No team photos have been published yet."
-                  accent="team"
-                  totalCountOverride={teamGalleryPhotos.length}
-                  sx={{ height: '100%' }}
-                />
-              ) : null}
-              {teamData?.teamId && showTeamSubmissionPanel ? (
-                <PhotoSubmissionPanel
-                  variant="team"
-                  enabled={showTeamSubmissionPanel}
-                  isLoading={teamMembershipLoading}
-                  error={teamMembershipError}
-                  canSubmit={isTeamMember}
-                  accountId={accountId}
-                  contextName={teamData.teamName ?? teamSeason?.name ?? 'this team'}
-                  teamId={teamData.teamId}
-                  onSubmitted={() => {
-                    void refreshTeamPending();
-                  }}
-                />
-              ) : null}
-            </Box>
+            {teamData?.teamId ? (
+              <PhotoGallerySection
+                title="Team Photo Gallery"
+                description={`Highlights from the ${teamData?.seasonName ?? 'current'} season.`}
+                photos={teamGalleryPhotos}
+                loading={teamGalleryLoading}
+                error={teamGalleryError}
+                onRefresh={refreshTeamGallery}
+                emptyMessage="No team photos have been published yet."
+                accent="team"
+                totalCountOverride={teamGalleryPhotos.length}
+                sx={{ height: '100%' }}
+              />
+            ) : null}
+            {teamData?.teamId && showTeamSubmissionPanel ? (
+              <PhotoSubmissionPanel
+                variant="team"
+                enabled={showTeamSubmissionPanel}
+                isLoading={teamMembershipLoading}
+                error={teamMembershipError}
+                canSubmit={isTeamMember}
+                accountId={accountId}
+                contextName={teamData.teamName ?? teamSeason?.name ?? 'this team'}
+                teamId={teamData.teamId}
+                onSubmitted={() => {
+                  void refreshTeamPending();
+                }}
+              />
+            ) : null}
 
             {shouldShowTeamPendingPanel ? (
               <PendingPhotoSubmissionsPanel
