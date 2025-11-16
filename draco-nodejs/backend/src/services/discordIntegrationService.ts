@@ -133,22 +133,30 @@ export class DiscordIntegrationService {
       updateData.guildName = null;
     }
 
-    const updated = await this.discordRepository.updateAccountConfig(accountId, updateData);
-
     const enablingTeamForums =
       payload.teamForumEnabled === true && !existingConfig.teamforumenabled;
     const disablingTeamForums =
       payload.teamForumEnabled === false && Boolean(existingConfig.teamforumenabled);
 
-    if (enablingTeamForums) {
-      await this.syncTeamForums(accountId);
-    } else if (disablingTeamForums) {
-      const cleanupMode: TeamForumCleanupMode =
-        (payload.teamForumCleanupMode as TeamForumCleanupMode | undefined) ?? 'retain';
-      await this.disableTeamForums(accountId, cleanupMode);
+    try {
+      if (enablingTeamForums) {
+        await this.syncTeamForums(accountId);
+      } else if (disablingTeamForums) {
+        const cleanupMode: TeamForumCleanupMode =
+          (payload.teamForumCleanupMode as TeamForumCleanupMode | undefined) ?? 'retain';
+        await this.disableTeamForums(accountId, cleanupMode);
+      }
+    } catch (error) {
+      if (enablingTeamForums || disablingTeamForums) {
+        await this.discordRepository.updateAccountConfig(accountId, {
+          teamForumEnabled: existingConfig.teamforumenabled,
+        });
+      }
+      throw error;
     }
 
-    return DiscordIntegrationResponseFormatter.formatAccountConfig(updated);
+    const refreshed = await this.getOrCreateAccountConfigRecord(accountId);
+    return DiscordIntegrationResponseFormatter.formatAccountConfig(refreshed);
   }
 
   async disconnectAccountGuild(accountId: bigint): Promise<DiscordAccountConfigType> {
@@ -574,9 +582,8 @@ export class DiscordIntegrationService {
           created += 1;
         } else {
           const channelExists = guildChannelById.has(existingForum.discordchannelid);
-          let updatedForum = existingForum;
           if (!channelExists || existingForum.status !== 'provisioned') {
-            updatedForum = await this.rebuildTeamForumChannel({
+            const updatedForum = await this.rebuildTeamForumChannel({
               accountId,
               config,
               seasonId: currentSeason.id,
