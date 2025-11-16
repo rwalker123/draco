@@ -381,6 +381,11 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
     );
   };
 
+  const shouldSkipInitialRender = loading && !error && recapList.length === 0;
+  if (shouldSkipInitialRender) {
+    return null;
+  }
+
   if (!loading && !error && recapList.length === 0) {
     return null;
   }

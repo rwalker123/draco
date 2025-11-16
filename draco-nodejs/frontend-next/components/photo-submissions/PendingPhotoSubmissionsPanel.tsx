@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   AlertColor,
@@ -7,7 +7,10 @@ import {
   Chip,
   CircularProgress,
   Divider,
-  Grid,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
   Typography,
   type SxProps,
@@ -18,6 +21,7 @@ import type { PhotoSubmissionDetailType } from '@draco/shared-schemas';
 import DenyPhotoSubmissionDialog from './DenyPhotoSubmissionDialog';
 import WidgetShell from '../ui/WidgetShell';
 import { alpha, useTheme } from '@mui/material/styles';
+import type { PhotoAlbumOption } from './PhotoSubmissionForm';
 
 const THUMBNAIL_MAX_WIDTH = 320;
 
@@ -30,10 +34,12 @@ export interface PendingPhotoSubmissionsPanelProps {
   processingIds?: ReadonlySet<string>;
   emptyMessage?: string;
   onRefresh: () => Promise<void> | void;
-  onApprove: (submissionId: string) => Promise<boolean> | boolean;
+  onApprove: (submissionId: string, albumId: string | null) => Promise<boolean> | boolean;
   onDeny: (submissionId: string, reason: string) => Promise<boolean> | boolean;
   onClearStatus?: () => void;
   containerSx?: SxProps<Theme>;
+  albumOptions?: PhotoAlbumOption[];
+  isTeamContext?: boolean;
 }
 
 // Match common permission-denied phrases (US/UK spellings and variations like authorize/authorise).
@@ -84,10 +90,14 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
   onDeny,
   onClearStatus,
   containerSx,
+  albumOptions,
+  isTeamContext = false,
 }) => {
   const theme = useTheme();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogSubmission, setDialogSubmission] = useState<PhotoSubmissionDetailType | null>(null);
+  const [albumSelections, setAlbumSelections] = useState<Record<string, string | null>>({});
+  const NO_ALBUM_VALUE = '__none__';
 
   const tileStyles = useMemo(() => {
     const baseColor = theme.palette.primary.main;
@@ -117,8 +127,8 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
   );
 
   const handleApprove = useCallback(
-    async (submissionId: string) => {
-      const result = await onApprove(submissionId);
+    async (submissionId: string, albumId: string | null) => {
+      const result = await onApprove(submissionId, albumId);
       if (result) {
         setDialogSubmission((current) => (current?.id === submissionId ? null : current));
       }
@@ -157,6 +167,93 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
 
   const hasSubmissions = submissions.length > 0;
 
+  const resolvedAlbumOptions = useMemo<PhotoAlbumOption[]>(() => {
+    if (!albumOptions || albumOptions.length === 0) {
+      return [];
+    }
+
+    const entries = new Map<string, PhotoAlbumOption>();
+    albumOptions.forEach((option) => {
+      const key = option.id ?? '__default__';
+      entries.set(key, {
+        id: option.id ?? null,
+        title: option.title,
+        teamId: option.teamId ?? null,
+      });
+    });
+
+    return Array.from(entries.values());
+  }, [albumOptions]);
+
+  const contextAlbumOptions = useMemo<PhotoAlbumOption[]>(() => {
+    if (resolvedAlbumOptions.length === 0) {
+      return [];
+    }
+
+    if (isTeamContext) {
+      const teamAlbums = resolvedAlbumOptions.filter((option) => option.teamId);
+      return teamAlbums.length > 0 ? teamAlbums : resolvedAlbumOptions;
+    }
+
+    return resolvedAlbumOptions.filter((option) => !option.teamId);
+  }, [resolvedAlbumOptions, isTeamContext]);
+
+  const nullAlbumLabel = useMemo(() => {
+    const option = contextAlbumOptions.find((item) => item.id === null);
+    return option?.title ?? 'No Album (Main Gallery)';
+  }, [contextAlbumOptions]);
+
+  const fallbackAlbumId = contextAlbumOptions[0]?.id ?? null;
+
+  const allowedAlbumIds = useMemo(
+    () => new Set(contextAlbumOptions.map((option) => option.id ?? null)),
+    [contextAlbumOptions],
+  );
+
+  useEffect(() => {
+    setAlbumSelections((previous) => {
+      const next = { ...previous };
+      const submissionIds = new Set(submissions.map((submission) => submission.id));
+
+      submissions.forEach((submission) => {
+        if (!(submission.id in next)) {
+          const submissionAlbumId = submission.album?.id ?? null;
+          next[submission.id] = allowedAlbumIds.has(submissionAlbumId ?? null)
+            ? submissionAlbumId
+            : fallbackAlbumId;
+        }
+      });
+
+      Object.keys(next).forEach((submissionId) => {
+        if (!submissionIds.has(submissionId)) {
+          delete next[submissionId];
+        }
+      });
+
+      return next;
+    });
+  }, [submissions, allowedAlbumIds, fallbackAlbumId]);
+
+  const getSelectedAlbumId = (submission: PhotoSubmissionDetailType): string | null => {
+    const storedSelection =
+      submission.id in albumSelections
+        ? albumSelections[submission.id]
+        : (submission.album?.id ?? null);
+
+    if (allowedAlbumIds.has(storedSelection ?? null)) {
+      return storedSelection ?? null;
+    }
+
+    return fallbackAlbumId ?? null;
+  };
+
+  const handleAlbumSelectionChange = (submissionId: string, value: string) => {
+    setAlbumSelections((previous) => ({
+      ...previous,
+      [submissionId]: value === NO_ALBUM_VALUE ? null : value,
+    }));
+  };
+
   const alertSeverity: AlertColor = useMemo(() => {
     if (error) {
       return 'error';
@@ -189,14 +286,14 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
 
   const widgetSx: SxProps<Theme> = [
     {
-      display: 'inline-flex',
+      display: 'flex',
       flexDirection: 'column',
-      alignSelf: 'flex-start',
-      width: 'auto',
-      maxWidth: '100%',
+      width: '100%',
     },
     ...(Array.isArray(containerSx) ? containerSx : containerSx ? [containerSx] : []),
   ];
+
+  const showAlbumSelect = !isTeamContext && contextAlbumOptions.length > 1;
 
   const shellTitle = (
     <Typography variant="h6" fontWeight={700} color="text.primary">
@@ -234,7 +331,13 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
           <CircularProgress role="progressbar" />
         </Box>
       ) : hasSubmissions ? (
-        <Grid container spacing={3} justifyContent="center">
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+            gap: 3,
+          }}
+        >
           {submissions.map((submission) => {
             const thumbnailUrl = buildAssetUrl(submission.thumbnailImagePath);
             const submitterName = [submission.submitter?.firstName, submission.submitter?.lastName]
@@ -243,13 +346,10 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
             const albumTitle = submission.album?.title ?? 'Unassigned Album';
             const submittedAt = formatDateTime(submission.submittedAt);
             const processing = isProcessing(submission.id);
-
+            const selectedAlbumId = getSelectedAlbumId(submission);
+            const selectValue = selectedAlbumId ?? NO_ALBUM_VALUE;
             return (
-              <Grid
-                size={{ xs: 12, md: 6 }}
-                key={submission.id}
-                sx={{ display: 'flex', justifyContent: 'center' }}
-              >
+              <Box key={submission.id} sx={{ display: 'flex', justifyContent: 'center' }}>
                 <Paper
                   variant="outlined"
                   sx={{
@@ -326,8 +426,36 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
                         )}
                       </Box>
 
-                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                        <Chip label={albumTitle} color="primary" variant="outlined" />
+                      <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={1}
+                        alignItems={{ xs: 'stretch', sm: 'center' }}
+                        flexWrap="wrap"
+                      >
+                        {showAlbumSelect ? (
+                          <FormControl size="small" sx={{ minWidth: 200 }}>
+                            <InputLabel id={`album-select-${submission.id}`}>Album</InputLabel>
+                            <Select
+                              labelId={`album-select-${submission.id}`}
+                              label="Album"
+                              value={selectValue}
+                              onChange={(event) =>
+                                handleAlbumSelectionChange(submission.id, event.target.value)
+                              }
+                            >
+                              {contextAlbumOptions.map((option) => (
+                                <MenuItem
+                                  key={option.id ?? '__default__'}
+                                  value={option.id ?? NO_ALBUM_VALUE}
+                                >
+                                  {option.id === null ? nullAlbumLabel : option.title}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        ) : (
+                          <Chip label={albumTitle} color="primary" variant="outlined" />
+                        )}
                         {submitterName && (
                           <Chip label={`Submitted by ${submitterName}`} variant="outlined" />
                         )}
@@ -358,7 +486,7 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
                       <Button
                         variant="contained"
                         onClick={() => {
-                          void handleApprove(submission.id);
+                          void handleApprove(submission.id, selectedAlbumId ?? null);
                         }}
                         disabled={processing}
                         startIcon={processing ? <CircularProgress size={18} /> : undefined}
@@ -368,10 +496,10 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
                     </Box>
                   </Box>
                 </Paper>
-              </Grid>
+              </Box>
             );
           })}
-        </Grid>
+        </Box>
       ) : (
         <Box py={4} textAlign="center">
           <Typography color="text.secondary">{emptyMessage}</Typography>

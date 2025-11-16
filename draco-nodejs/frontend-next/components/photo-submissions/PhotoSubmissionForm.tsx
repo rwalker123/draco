@@ -29,6 +29,7 @@ import type { PhotoSubmissionRecordType } from '@draco/shared-schemas';
 export interface PhotoAlbumOption {
   id: string | null;
   title: string;
+  teamId?: string | null;
 }
 
 interface AccountPhotoSubmissionProps {
@@ -82,6 +83,7 @@ const buildDefaultAlbumOptions = (options?: PhotoAlbumOption[]): PhotoAlbumOptio
     {
       id: null,
       title: 'Main Account Album (Default)',
+      teamId: null,
     },
   ];
 };

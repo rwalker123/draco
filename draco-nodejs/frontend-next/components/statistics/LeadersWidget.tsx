@@ -429,6 +429,12 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     resetTabsScrollLeft(categoryTabsRef.current);
   }, [resetTabsScrollLeft, tabCategoryKey, activeCategories.length]);
 
+  const hasConfiguredCategories = battingCategories.length > 0 || pitchingCategories.length > 0;
+  const shouldHideWidget = !error && !hasConfiguredCategories;
+  if (shouldHideWidget) {
+    return null;
+  }
+
   return (
     <WidgetShell
       title={
@@ -492,7 +498,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
             ))}
           </Tabs>
         </Box>
-      ) : resolvedLeagues[0] ? (
+      ) : !isTeamVariant && resolvedLeagues[0] ? (
         <Typography variant="subtitle1" color="text.secondary">
           {resolvedLeagues[0].name}
         </Typography>

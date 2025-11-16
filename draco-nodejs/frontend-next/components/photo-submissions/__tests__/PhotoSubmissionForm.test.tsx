@@ -62,8 +62,8 @@ vi.mock('@draco/shared-api-client', () => ({
 }));
 
 const albumOptions: PhotoAlbumOption[] = [
-  { id: null, title: 'Main Account Album (Default)' },
-  { id: '10', title: 'Highlights' },
+  { id: null, title: 'Main Account Album (Default)', teamId: null },
+  { id: '10', title: 'Highlights', teamId: null },
 ];
 
 const createSubmission = (

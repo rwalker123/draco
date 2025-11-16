@@ -274,6 +274,11 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
       return content;
     });
 
+  const shouldSkipInitialRender = loading && games.length === 0 && !error;
+  if (shouldSkipInitialRender) {
+    return null;
+  }
+
   if (loading) {
     return applyWrapper(
       <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>

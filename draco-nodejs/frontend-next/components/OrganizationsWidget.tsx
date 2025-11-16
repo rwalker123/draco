@@ -316,8 +316,8 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       display: showSearch ? 'flex' : 'inline-flex',
       flexDirection: 'column',
       alignSelf: showSearch ? 'stretch' : 'flex-start',
-      width: showSearch ? '100%' : 'auto',
-      minWidth: showSearch ? '100%' : undefined,
+      width: '100%',
+      minWidth: '100%',
       maxWidth: '100%',
     },
     ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
@@ -467,10 +467,20 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
             <Box
               sx={{
                 display: 'flex',
+                flexWrap: 'nowrap',
                 gap: 2,
-                flexWrap: 'wrap',
-                alignItems: 'flex-start',
+                alignItems: 'stretch',
                 py: 1,
+                overflowX: 'auto',
+                px: 0.5,
+                scrollSnapType: 'x proximity',
+                '&::-webkit-scrollbar': {
+                  height: 6,
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: alpha(theme.palette.text.primary, 0.2),
+                  borderRadius: 999,
+                },
               }}
             >
               {limitedAccounts.map(renderOrganizationCard)}

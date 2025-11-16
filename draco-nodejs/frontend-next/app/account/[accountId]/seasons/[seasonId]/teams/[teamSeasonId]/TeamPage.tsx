@@ -34,6 +34,7 @@ import {
 import CreatePlayersWantedDialog from '@/components/player-classifieds/CreatePlayersWantedDialog';
 import PendingPhotoSubmissionsPanel from '../../../../../../../components/photo-submissions/PendingPhotoSubmissionsPanel';
 import PhotoSubmissionPanel from '../../../../../../../components/photo-submissions/PhotoSubmissionPanel';
+import type { PhotoAlbumOption } from '@/components/photo-submissions/PhotoSubmissionForm';
 import { usePendingPhotoSubmissions } from '../../../../../../../hooks/usePendingPhotoSubmissions';
 import { usePhotoGallery } from '../../../../../../../hooks/usePhotoGallery';
 import PhotoGallerySection from '@/components/photo-gallery/PhotoGallerySection';
@@ -238,6 +239,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
 
   const {
     photos: teamGalleryPhotos,
+    albums: teamGalleryAlbums,
     loading: teamGalleryLoading,
     error: teamGalleryError,
     refresh: refreshTeamGallery,
@@ -247,9 +249,36 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     enabled: Boolean(teamData?.teamId),
   });
 
+  const teamPendingAlbumOptions = React.useMemo<PhotoAlbumOption[]>(() => {
+    const options = new Map<string, PhotoAlbumOption>();
+
+    teamGalleryAlbums.forEach((album) => {
+      if (album.id) {
+        options.set(album.id, {
+          id: album.id,
+          title: album.title,
+          teamId: album.teamId ?? teamData?.teamId ?? null,
+        });
+      }
+    });
+
+    teamPendingSubmissions.forEach((submission) => {
+      const album = submission.album;
+      if (album?.id && album.title) {
+        options.set(album.id, {
+          id: album.id,
+          title: album.title,
+          teamId: album.teamId ?? teamData?.teamId ?? null,
+        });
+      }
+    });
+
+    return Array.from(options.values());
+  }, [teamData?.teamId, teamGalleryAlbums, teamPendingSubmissions]);
+
   const handleApproveTeamPhoto = React.useCallback(
-    async (submissionId: string) => {
-      const success = await approveTeamSubmission(submissionId);
+    async (submissionId: string, albumId: string | null) => {
+      const success = await approveTeamSubmission(submissionId, albumId);
       if (success) {
         await refreshTeamGallery();
       }
@@ -703,6 +732,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 onClearStatus={clearTeamPendingStatus}
                 emptyMessage="No pending photo submissions for this team."
                 containerSx={{ mb: 0 }}
+                albumOptions={teamPendingAlbumOptions}
+                isTeamContext
               />
             ) : null}
 

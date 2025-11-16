@@ -165,20 +165,6 @@ const BaseballAccountHome: React.FC = () => {
     enabled: shouldShowPendingPanel,
   });
 
-  const submissionAlbumOptions: PhotoAlbumOption[] = useMemo(() => {
-    const options = new Map<string | null, string>();
-    options.set(null, 'Main Account Album (Default)');
-
-    pendingSubmissions.forEach((submission) => {
-      const album = submission.album;
-      if (album?.id && album.title) {
-        options.set(album.id, album.title);
-      }
-    });
-
-    return Array.from(options.entries()).map(([id, title]) => ({ id, title }));
-  }, [pendingSubmissions]);
-
   const {
     photos: galleryPhotos,
     albums: galleryAlbums,
@@ -186,6 +172,38 @@ const BaseballAccountHome: React.FC = () => {
     error: galleryError,
     refresh: refreshGallery,
   } = usePhotoGallery({ accountId: accountIdStr ?? null });
+
+  const submissionAlbumOptions: PhotoAlbumOption[] = useMemo(() => {
+    const options = new Map<string, PhotoAlbumOption>();
+    options.set('__default__', {
+      id: null,
+      title: 'Main Account Album (Default)',
+      teamId: null,
+    });
+
+    galleryAlbums.forEach((album) => {
+      if (album.id) {
+        options.set(album.id, {
+          id: album.id,
+          title: album.title,
+          teamId: album.teamId ?? null,
+        });
+      }
+    });
+
+    pendingSubmissions.forEach((submission) => {
+      const album = submission.album;
+      if (album?.id && album.title) {
+        options.set(album.id, {
+          id: album.id,
+          title: album.title,
+          teamId: album.teamId ?? null,
+        });
+      }
+    });
+
+    return Array.from(options.values());
+  }, [galleryAlbums, pendingSubmissions]);
 
   const [selectedAlbumKey, setSelectedAlbumKey] = useState<string>('all');
   const [seasonTeamIds, setSeasonTeamIds] = useState<string[] | null>(null);
@@ -399,8 +417,8 @@ const BaseballAccountHome: React.FC = () => {
   }, []);
 
   const handleApprovePendingSubmission = useCallback(
-    async (submissionId: string) => {
-      const success = await approvePendingSubmission(submissionId);
+    async (submissionId: string, albumId: string | null) => {
+      const success = await approvePendingSubmission(submissionId, albumId);
       if (success) {
         await refreshGallery();
       }
@@ -955,6 +973,7 @@ const BaseballAccountHome: React.FC = () => {
                 onDeny={denyPendingSubmission}
                 onClearStatus={clearPendingStatus}
                 emptyMessage="No pending photo submissions for this account."
+                albumOptions={submissionAlbumOptions}
               />
             ) : null}
 
@@ -964,10 +983,6 @@ const BaseballAccountHome: React.FC = () => {
                 title="Account Sponsors"
                 emptyMessage={sponsorError ?? undefined}
               />
-            ) : null}
-
-            {user && userTeams.length > 0 ? (
-              <MyTeams userTeams={userTeams} onViewTeam={handleViewTeam} title="Your Teams" />
             ) : null}
 
             {user ? (
@@ -987,6 +1002,15 @@ const BaseballAccountHome: React.FC = () => {
           </Box>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {user && userTeams.length > 0 ? (
+              <MyTeams
+                userTeams={userTeams}
+                onViewTeam={handleViewTeam}
+                title="Your Teams"
+                sx={{ width: '100%' }}
+              />
+            ) : null}
+
             {hasAccountContact ? (
               <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />
             ) : null}
