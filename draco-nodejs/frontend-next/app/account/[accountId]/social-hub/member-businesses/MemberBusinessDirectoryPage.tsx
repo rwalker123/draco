@@ -17,12 +17,13 @@ import NextLink from 'next/link';
 import { useParams } from 'next/navigation';
 import { listMemberBusinesses } from '@draco/shared-api-client';
 import type { MemberBusinessType } from '@draco/shared-schemas';
-import { useApiClient } from '@/hooks/useApiClient';
-import { useCurrentSeason } from '@/hooks/useCurrentSeason';
+import AccountPageHeader from '@/components/AccountPageHeader';
+import MemberBusinessSummary from '@/components/profile/MemberBusinessSummary';
 import { useAccount } from '@/context/AccountContext';
 import { useAuth } from '@/context/AuthContext';
+import { useApiClient } from '@/hooks/useApiClient';
+import { useCurrentSeason } from '@/hooks/useCurrentSeason';
 import { unwrapApiResult, ApiClientError } from '@/utils/apiResult';
-import MemberBusinessSummary from '@/components/profile/MemberBusinessSummary';
 
 const MemberBusinessDirectoryPage: React.FC = () => {
   const params = useParams();
@@ -165,34 +166,45 @@ const MemberBusinessDirectoryPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-        <Link
-          component={NextLink}
-          href={`/account/${accountId}/social-hub`}
-          underline="hover"
-          color="inherit"
-        >
-          Social Hub
-        </Link>
-        <Typography color="text.primary">Member Businesses</Typography>
-      </Breadcrumbs>
+    <main className="min-h-screen bg-background">
+      <AccountPageHeader accountId={accountId}>
+        <div className="text-center">
+          <h1 className="text-3xl font-semibold text-foreground mb-2">Member Businesses</h1>
+          <p className="text-base text-muted-foreground">
+            Support and promote the companies operated by your rostered members.
+          </p>
+        </div>
+      </AccountPageHeader>
 
-      <Typography variant="h4" component="h1" gutterBottom>
-        Member Businesses
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Discover businesses owned by active members of {accountName} for the {seasonLabel}.
-      </Typography>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+          <Link
+            component={NextLink}
+            href={`/account/${accountId}/social-hub`}
+            underline="hover"
+            color="inherit"
+          >
+            Social Hub
+          </Link>
+          <Typography color="text.primary">Member Businesses</Typography>
+        </Breadcrumbs>
 
-      {seasonError ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {seasonError}
-        </Alert>
-      ) : null}
+        <Typography variant="h4" component="h1" gutterBottom>
+          Member Businesses
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          Discover businesses owned by active members of {accountName} for the {seasonLabel}.
+        </Typography>
 
-      {renderDirectory()}
-    </Container>
+        {seasonError ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {seasonError}
+          </Alert>
+        ) : null}
+
+        {renderDirectory()}
+      </Container>
+    </main>
   );
 };
 
