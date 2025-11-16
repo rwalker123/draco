@@ -651,12 +651,13 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               sx={{
                 display: 'grid',
                 gap: 2,
-                gridTemplateColumns: teamData?.teamId && showTeamSubmissionPanel
-                  ? {
-                      xs: '1fr',
-                      lg: 'minmax(0, 2fr) minmax(0, 1fr)',
-                    }
-                  : '1fr',
+                gridTemplateColumns:
+                  teamData?.teamId && showTeamSubmissionPanel
+                    ? {
+                        xs: '1fr',
+                        lg: 'minmax(0, 2fr) minmax(0, 1fr)',
+                      }
+                    : '1fr',
                 alignItems: 'stretch',
               }}
             >
@@ -769,12 +770,12 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 teamSeasonId={teamSeasonId}
                 leagueId={teamData.leagueId}
                 leagueName={teamData.leagueName}
-                leagues=[
+                leagues={[
                   {
                     id: teamData.leagueId,
                     name: teamData.leagueName ?? 'League',
                   },
-                ]
+                ]}
                 teamId={teamSeasonId}
                 randomize
               />

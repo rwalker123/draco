@@ -938,36 +938,38 @@ const BaseballAccountHome: React.FC = () => {
                 teamAlbumHierarchy={teamAlbumHierarchy}
                 sx={{ height: '100%' }}
               />
-              <PhotoSubmissionPanel
-                variant="account"
-                enabled={showSubmissionPanel}
-                isLoading={membershipLoading}
-                error={membershipError}
-                canSubmit={canSubmitPhotos}
-                accountId={accountIdStr ?? ''}
-                contextName={accountDisplayName}
-                albumOptions={submissionAlbumOptions}
-                onSubmitted={() => {
-                  void refreshPendingSubmissions();
-                }}
-              />
-              {shouldShowPendingPanel ? (
-                <PendingPhotoSubmissionsPanel
-                  containerSx={{ p: 3, mb: 2 }}
-                  contextLabel={accountDisplayName}
-                  submissions={pendingSubmissions}
-                  loading={pendingLoading}
-                  error={pendingError}
-                  successMessage={pendingSuccess}
-                  processingIds={pendingProcessingIds}
-                  onRefresh={refreshPendingSubmissions}
-                  onApprove={handleApprovePendingSubmission}
-                  onDeny={denyPendingSubmission}
-                  onClearStatus={clearPendingStatus}
-                  emptyMessage="No pending photo submissions for this account."
+              {showSubmissionPanel ? (
+                <PhotoSubmissionPanel
+                  variant="account"
+                  enabled={showSubmissionPanel}
+                  isLoading={membershipLoading}
+                  error={membershipError}
+                  canSubmit={canSubmitPhotos}
+                  accountId={accountIdStr ?? ''}
+                  contextName={accountDisplayName}
+                  albumOptions={submissionAlbumOptions}
+                  onSubmitted={() => {
+                    void refreshPendingSubmissions();
+                  }}
                 />
               ) : null}
             </Box>
+            {shouldShowPendingPanel ? (
+              <PendingPhotoSubmissionsPanel
+                containerSx={{ p: 3, mb: 2 }}
+                contextLabel={accountDisplayName}
+                submissions={pendingSubmissions}
+                loading={pendingLoading}
+                error={pendingError}
+                successMessage={pendingSuccess}
+                processingIds={pendingProcessingIds}
+                onRefresh={refreshPendingSubmissions}
+                onApprove={handleApprovePendingSubmission}
+                onDeny={denyPendingSubmission}
+                onClearStatus={clearPendingStatus}
+                emptyMessage="No pending photo submissions for this account."
+              />
+            ) : null}
 
             {shouldShowAccountSponsors ? (
               <SponsorCard
