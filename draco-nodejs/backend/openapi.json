@@ -5836,9 +5836,6 @@
       "MemberBusiness": {
         "type": "object",
         "properties": {
-          "contactId": {
-            "type": "string"
-          },
           "name": {
             "type": "string",
             "minLength": 1,
@@ -5873,17 +5870,49 @@
             "maxLength": 100
           },
           "id": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "accountId": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "contact": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "photoUrl": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ]
           }
         },
         "required": [
-          "contactId",
           "name",
           "id",
-          "accountId"
+          "accountId",
+          "contact"
         ],
         "title": "MemberBusiness",
         "description": "Member business record associated with a contact"
@@ -5896,9 +5925,6 @@
             "items": {
               "type": "object",
               "properties": {
-                "contactId": {
-                  "type": "string"
-                },
                 "name": {
                   "type": "string",
                   "minLength": 1,
@@ -5933,17 +5959,49 @@
                   "maxLength": 100
                 },
                 "id": {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "accountId": {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "contact": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^\\d+$",
+                      "example": "12345"
+                    },
+                    "firstName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "lastName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "photoUrl": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "firstName",
+                    "lastName"
+                  ]
                 }
               },
               "required": [
-                "contactId",
                 "name",
                 "id",
-                "accountId"
+                "accountId",
+                "contact"
               ],
               "title": "MemberBusiness",
               "description": "Member business record associated with a contact"
@@ -5959,11 +6017,6 @@
       "CreateMemberBusiness": {
         "type": "object",
         "properties": {
-          "contactId": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Contact ID associated with the business"
-          },
           "name": {
             "type": "string",
             "minLength": 1,
@@ -5996,11 +6049,16 @@
           "website": {
             "type": "string",
             "maxLength": 100
+          },
+          "contactId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Contact ID associated with the business"
           }
         },
         "required": [
-          "contactId",
-          "name"
+          "name",
+          "contactId"
         ],
         "title": "CreateMemberBusiness",
         "description": "Payload to create or update a member business entry"

@@ -47,7 +47,7 @@ const buildDefaultValues = (
   contactId: string | null,
   business?: MemberBusinessType | null,
 ): MemberBusinessFormValues => ({
-  contactId: business?.contactId ?? contactId ?? '',
+  contactId: business?.contact.id ?? contactId ?? '',
   name: business?.name ?? '',
   streetAddress: business?.streetAddress ?? '',
   cityStateZip: business?.cityStateZip ?? '',

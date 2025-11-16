@@ -18,6 +18,8 @@ export class PrismaMemberBusinessRepository implements IMemberBusinessRepository
       select: {
         id: true,
         creatoraccountid: true,
+        firstname: true,
+        lastname: true,
       },
     },
   } as const;

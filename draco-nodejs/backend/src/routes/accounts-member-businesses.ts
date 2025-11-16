@@ -112,13 +112,13 @@ const requireSelfManagedOrPermission =
           const memberBusinessId = parseMemberBusinessId(req);
           const record = await memberBusinessService.getMemberBusiness(accountId, memberBusinessId);
 
-          return BigInt(record.contactId) === currentContactId;
+          return BigInt(record.contact.id) === currentContactId;
         }
         case 'delete': {
           const memberBusinessId = parseMemberBusinessId(req);
           const record = await memberBusinessService.getMemberBusiness(accountId, memberBusinessId);
 
-          return BigInt(record.contactId) === currentContactId;
+          return BigInt(record.contact.id) === currentContactId;
         }
         default:
           return false;

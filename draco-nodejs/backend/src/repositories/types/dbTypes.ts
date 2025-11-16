@@ -70,6 +70,8 @@ export type dbMemberBusiness = Prisma.memberbusinessGetPayload<{
       select: {
         id: true;
         creatoraccountid: true;
+        firstname: true;
+        lastname: true;
       };
     };
   };

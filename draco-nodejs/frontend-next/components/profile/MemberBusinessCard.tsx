@@ -16,6 +16,7 @@ import { listMemberBusinesses } from '@draco/shared-api-client';
 import type { MemberBusinessType } from '@draco/shared-schemas';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useAuth } from '@/context/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MemberBusinessFormDialog, {
   type MemberBusinessDialogResult,
 } from './MemberBusinessFormDialog';
@@ -165,6 +166,16 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
     void loadMemberBusinesses();
   };
 
+  const ownerContact = memberBusinesses[0]?.contact;
+  const ownerName = ownerContact
+    ? `${ownerContact.firstName} ${ownerContact.lastName}`.trim()
+    : null;
+  const ownerInitials = ownerContact
+    ? `${ownerContact.firstName?.[0] ?? ''}${ownerContact.lastName?.[0] ?? ''}`
+        .trim()
+        .toUpperCase() || null
+    : null;
+
   const showEmptyState = !loading && memberBusinesses.length === 0 && !infoMessage;
   const widgetShellSx = { p: 4 };
   const actionsContent =
@@ -186,6 +197,29 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
         {error && <Alert severity="error">{error}</Alert>}
         {infoMessage && <Alert severity="info">{infoMessage}</Alert>}
         {success && <Alert severity="success">{success}</Alert>}
+        {contactId ? (
+          loading ? (
+            <Stack alignItems="center" spacing={1}>
+              <Skeleton variant="circular" width={64} height={64} />
+              <Skeleton variant="text" width={140} />
+            </Stack>
+          ) : ownerContact ? (
+            <Stack spacing={1} alignItems="center">
+              <Avatar className="h-16 w-16 border border-border">
+                {ownerContact.photoUrl ? (
+                  <AvatarImage src={ownerContact.photoUrl} alt={`${ownerName} avatar`} />
+                ) : (
+                  <AvatarFallback className="text-base font-medium">
+                    {ownerInitials || '?'}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                {ownerName ?? 'Member'}
+              </Typography>
+            </Stack>
+          ) : null
+        ) : null}
 
         {loading ? (
           <Stack spacing={1.5}>
