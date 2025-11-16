@@ -4274,8 +4274,6 @@ components:
     MemberBusiness:
       type: object
       properties:
-        contactId:
-          type: string
         name:
           type: string
           minLength: 1
@@ -4303,13 +4301,38 @@ components:
           maxLength: 100
         id:
           type: string
+          pattern: ^\d+$
+          example: "12345"
         accountId:
           type: string
+          pattern: ^\d+$
+          example: "12345"
+        contact:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            firstName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            lastName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            photoUrl:
+              type: string
+          required:
+            - id
+            - firstName
+            - lastName
       required:
-        - contactId
         - name
         - id
         - accountId
+        - contact
       title: MemberBusiness
       description: Member business record associated with a contact
     MemberBusinessList:
@@ -4320,8 +4343,6 @@ components:
           items:
             type: object
             properties:
-              contactId:
-                type: string
               name:
                 type: string
                 minLength: 1
@@ -4349,13 +4370,38 @@ components:
                 maxLength: 100
               id:
                 type: string
+                pattern: ^\d+$
+                example: "12345"
               accountId:
                 type: string
+                pattern: ^\d+$
+                example: "12345"
+              contact:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  firstName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  lastName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  photoUrl:
+                    type: string
+                required:
+                  - id
+                  - firstName
+                  - lastName
             required:
-              - contactId
               - name
               - id
               - accountId
+              - contact
             title: MemberBusiness
             description: Member business record associated with a contact
       required:
@@ -4365,10 +4411,6 @@ components:
     CreateMemberBusiness:
       type: object
       properties:
-        contactId:
-          type: string
-          minLength: 1
-          description: Contact ID associated with the business
         name:
           type: string
           minLength: 1
@@ -4394,9 +4436,13 @@ components:
         website:
           type: string
           maxLength: 100
+        contactId:
+          type: string
+          minLength: 1
+          description: Contact ID associated with the business
       required:
-        - contactId
         - name
+        - contactId
       title: CreateMemberBusiness
       description: Payload to create or update a member business entry
     MemberBusinessQueryParams:
@@ -4404,6 +4450,14 @@ components:
       properties:
         contactId:
           type: string
+        seasonId:
+          type: string
+        limit:
+          type: number
+          minimum: 1
+          maximum: 50
+        randomize:
+          type: boolean
       title: MemberBusinessQueryParams
       description: Optional filters for member business listings
     DiscordAccountConfig:
@@ -24481,6 +24535,23 @@ paths:
             type: string
           required: false
           name: contactId
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: seasonId
+          in: query
+        - schema:
+            type: number
+            minimum: 1
+            maximum: 50
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: boolean
+          required: false
+          name: randomize
           in: query
       responses:
         "200":

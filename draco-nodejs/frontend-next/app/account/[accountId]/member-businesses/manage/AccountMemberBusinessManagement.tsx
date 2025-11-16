@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -24,8 +24,8 @@ import {
   Delete as DeleteIcon,
   Business as BusinessIcon,
 } from '@mui/icons-material';
-import { listMemberBusinesses, getContact } from '@draco/shared-api-client';
-import type { MemberBusinessType, NamedContactType } from '@draco/shared-schemas';
+import { listMemberBusinesses } from '@draco/shared-api-client';
+import type { MemberBusinessType } from '@draco/shared-schemas';
 import AccountPageHeader from '@/components/AccountPageHeader';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
@@ -64,8 +64,6 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
     updateSetting,
   } = useAccountSettings(accountId, { requireManage: true });
   const [memberBusinesses, setMemberBusinesses] = useState<MemberBusinessType[]>([]);
-  const [contactNames, setContactNames] = useState<Record<string, string>>({});
-  const contactNamesRef = useRef<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -76,59 +74,6 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
     setError(null);
     setSuccess(null);
   };
-
-  const fetchContactNames = useCallback(
-    async (businesses: MemberBusinessType[]) => {
-      const existing = contactNamesRef.current;
-      const missingContactIds = businesses
-        .map((business) => business.contactId)
-        .filter((contactId) => contactId && !existing[contactId]);
-
-      if (missingContactIds.length === 0) {
-        return;
-      }
-
-      const uniqueIds = Array.from(new Set(missingContactIds));
-      const results = await Promise.all(
-        uniqueIds.map(async (contactId) => {
-          try {
-            const result = await getContact({
-              client: apiClient,
-              path: { accountId, contactId },
-              security: [{ type: 'http', scheme: 'bearer' }],
-              throwOnError: false,
-            });
-
-            const data = unwrapApiResult(result, 'Failed to load contact information');
-            return { contactId, contact: data };
-          } catch (err) {
-            console.error('Failed to fetch contact', err);
-            return { contactId, contact: null };
-          }
-        }),
-      );
-
-      if (results.length > 0) {
-        setContactNames((prev) => {
-          const next = { ...prev };
-          results.forEach(({ contactId, contact }) => {
-            if (!contactId || next[contactId]) {
-              return;
-            }
-            if (contact) {
-              const named = contact as NamedContactType;
-              next[contactId] = `${named.firstName} ${named.lastName}`.trim();
-            } else {
-              next[contactId] = contactId;
-            }
-          });
-          contactNamesRef.current = next;
-          return next;
-        });
-      }
-    },
-    [accountId, apiClient],
-  );
 
   const loadMemberBusinesses = useCallback(async () => {
     try {
@@ -145,7 +90,6 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
       const data = unwrapApiResult(result, 'Unable to load member businesses');
       const businesses = data?.memberBusinesses ?? [];
       setMemberBusinesses(businesses);
-      await fetchContactNames(businesses);
     } catch (err) {
       console.error('Failed to load member businesses', err);
       const message = err instanceof Error ? err.message : 'Unable to load member businesses';
@@ -154,13 +98,11 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
     } finally {
       setLoading(false);
     }
-  }, [accountId, apiClient, fetchContactNames]);
+  }, [accountId, apiClient]);
 
   useEffect(() => {
     void loadMemberBusinesses();
   }, [loadMemberBusinesses]);
-
-  const contactDisplay = useMemo(() => contactNames, [contactNames]);
 
   const handleEdit = (business: MemberBusinessType) => {
     setFormState({ open: true, business });
@@ -307,7 +249,9 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
                             {business.name}
                           </TableCell>
                           <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                            {contactDisplay[business.contactId] ?? business.contactId}
+                            {business.contact
+                              ? `${business.contact.firstName} ${business.contact.lastName}`.trim()
+                              : '—'}
                           </TableCell>
                           <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
                             {business.email || '—'}
@@ -358,7 +302,7 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
         open={formState.open}
         mode="edit"
         accountId={accountId}
-        contactId={formState.business?.contactId ?? null}
+        contactId={formState.business?.contact.id ?? null}
         memberBusiness={formState.business}
         onClose={handleFormClose}
         onSuccess={handleFormSuccess}

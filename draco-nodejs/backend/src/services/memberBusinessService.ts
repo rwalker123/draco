@@ -20,6 +20,9 @@ import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 
 type ListMemberBusinessOptions = {
   contactId?: bigint;
+  seasonId?: bigint;
+  limit?: number;
+  randomize?: boolean;
 };
 
 export class MemberBusinessService {
@@ -39,12 +42,15 @@ export class MemberBusinessService {
       await this.ensureContact(accountId, options.contactId);
     }
 
-    const memberBusinesses = await this.memberBusinessRepository.listByAccount(
-      accountId,
-      options.contactId,
-    );
+    const memberBusinesses = await this.memberBusinessRepository.listByAccount(accountId, {
+      contactId: options.contactId,
+      seasonId: options.seasonId,
+      limit: options.randomize ? undefined : options.limit,
+    });
 
-    return MemberBusinessResponseFormatter.formatMany(memberBusinesses);
+    const selectedMembers = this.applyLimitAndRandomization(memberBusinesses, options);
+
+    return MemberBusinessResponseFormatter.formatMany(selectedMembers);
   }
 
   async getMemberBusiness(
@@ -209,5 +215,30 @@ export class MemberBusinessService {
     }
 
     return trimmed;
+  }
+
+  private applyLimitAndRandomization(
+    records: dbMemberBusiness[],
+    options: Pick<ListMemberBusinessOptions, 'limit' | 'randomize'>,
+  ): dbMemberBusiness[] {
+    const { limit, randomize } = options;
+    if (!limit || limit <= 0) {
+      return records;
+    }
+
+    if (randomize) {
+      return this.shuffle(records).slice(0, limit);
+    }
+
+    return records.slice(0, limit);
+  }
+
+  private shuffle<T>(items: T[]): T[] {
+    const result = [...items];
+    for (let i = result.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
   }
 }

@@ -18,6 +18,8 @@ export class PrismaMemberBusinessRepository implements IMemberBusinessRepository
       select: {
         id: true,
         creatoraccountid: true,
+        firstname: true,
+        lastname: true,
       },
     },
   } as const;
@@ -47,18 +49,46 @@ export class PrismaMemberBusinessRepository implements IMemberBusinessRepository
     return this.prisma.memberbusiness.findMany({ where });
   }
 
-  async listByAccount(accountId: bigint, contactId?: bigint): Promise<dbMemberBusiness[]> {
+  async listByAccount(
+    accountId: bigint,
+    options: { contactId?: bigint; seasonId?: bigint; limit?: number } = {},
+  ): Promise<dbMemberBusiness[]> {
+    const { contactId, seasonId, limit } = options;
+
     return this.prisma.memberbusiness.findMany({
       where: {
         ...(contactId ? { contactid: contactId } : {}),
         contacts: {
           creatoraccountid: accountId,
+          ...(seasonId
+            ? {
+                roster: {
+                  is: {
+                    rosterseason: {
+                      some: {
+                        inactive: false,
+                        teamsseason: {
+                          divisionseasonid: { not: null },
+                          leagueseason: {
+                            seasonid: seasonId,
+                            league: {
+                              accountid: accountId,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              }
+            : {}),
         },
       },
       select: this.select,
       orderBy: {
         name: 'asc',
       },
+      ...(limit ? { take: limit } : {}),
     });
   }
 

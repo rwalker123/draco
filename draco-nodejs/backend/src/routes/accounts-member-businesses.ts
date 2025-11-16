@@ -44,6 +44,18 @@ const parseOptionalContactId = (contactId?: string) => {
   }
 };
 
+const parseOptionalSeasonId = (seasonId?: string) => {
+  if (!seasonId) {
+    return undefined;
+  }
+
+  try {
+    return BigInt(seasonId);
+  } catch (_error) {
+    throw new ValidationError('seasonId must be a valid identifier');
+  }
+};
+
 type MemberBusinessAction = 'create' | 'update' | 'delete';
 
 // Allows account members to manage their own member business records while
@@ -100,13 +112,13 @@ const requireSelfManagedOrPermission =
           const memberBusinessId = parseMemberBusinessId(req);
           const record = await memberBusinessService.getMemberBusiness(accountId, memberBusinessId);
 
-          return BigInt(record.contactId) === currentContactId;
+          return BigInt(record.contact.id) === currentContactId;
         }
         case 'delete': {
           const memberBusinessId = parseMemberBusinessId(req);
           const record = await memberBusinessService.getMemberBusiness(accountId, memberBusinessId);
 
-          return BigInt(record.contactId) === currentContactId;
+          return BigInt(record.contact.id) === currentContactId;
         }
         default:
           return false;
@@ -133,9 +145,14 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const query = MemberBusinessQueryParamsSchema.parse(req.query);
+    const limit = typeof query.limit === 'number' ? Math.floor(query.limit) : undefined;
+    const randomize = query.randomize ?? false;
 
     const memberBusinesses = await memberBusinessService.listMemberBusinesses(accountId, {
       contactId: parseOptionalContactId(query.contactId),
+      seasonId: parseOptionalSeasonId(query.seasonId),
+      limit,
+      randomize,
     });
 
     res.json({ memberBusinesses });

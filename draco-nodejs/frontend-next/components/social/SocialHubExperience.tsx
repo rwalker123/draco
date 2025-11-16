@@ -13,8 +13,6 @@ import {
   IconButton,
   Button,
   Stack,
-  TextField,
-  InputAdornment,
   Alert,
   Skeleton,
   ToggleButton,
@@ -25,9 +23,6 @@ import {
   Facebook,
   YouTube,
   Instagram,
-  Search,
-  FilterList,
-  Refresh,
   OpenInNew,
   ThumbUp,
   Comment,
@@ -48,6 +43,7 @@ import PlayersWantedPreview from '@/components/join-league/PlayersWantedPreview'
 import WidgetShell from '../ui/WidgetShell';
 import CommunityMessageList from './CommunityMessageList';
 import NextLink from 'next/link';
+import MemberBusinessSpotlightWidget from '@/components/social/MemberBusinessSpotlightWidget';
 
 const getSourceIcon = (source: string) => {
   switch (source) {
@@ -307,27 +303,6 @@ export default function SocialHubExperience({
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Search and Filter Bar */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-          <TextField
-            placeholder="Search all social content..."
-            variant="outlined"
-            size="small"
-            sx={{ flex: 1, minWidth: 300 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Button startIcon={<FilterList />}>Filters</Button>
-          <Button startIcon={<Refresh />}>Refresh</Button>
-        </Box>
-      </Paper>
-
       <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
         {/* Social Media Section */}
         <Box sx={{ flex: { xs: 1, md: '2 1 0' } }}>
@@ -493,6 +468,21 @@ export default function SocialHubExperience({
               renderAccountRequiredNotice(
                 'Looking for Players/Teams',
                 'Choose an account to browse the latest classifieds.',
+              )
+            )}
+          </Box>
+
+          <Box sx={{ mb: 3 }}>
+            {accountId ? (
+              <MemberBusinessSpotlightWidget
+                accountId={accountId}
+                seasonId={seasonId}
+                viewAllHref={`/account/${accountId}/social-hub/member-businesses`}
+              />
+            ) : (
+              renderAccountRequiredNotice(
+                'Member Businesses',
+                'Select an account to highlight member-owned businesses.',
               )
             )}
           </Box>

@@ -1,5 +1,8 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { PublicContactSummarySchema } from './contact.js';
+import { booleanQueryParam, numberQueryParam } from './queryParams.js';
+import { bigintToStringSchema } from './standardSchema.js';
 
 extendZodWithOpenApi(z);
 
@@ -22,38 +25,39 @@ const optionalWebsiteString = (maxLength: number) =>
       message: 'Website must start with http:// or https://',
     });
 
-export const CreateMemberBusinessSchema = z
-  .object({
-    contactId: z
-      .string()
-      .trim()
-      .min(1)
-      .openapi({ description: 'Contact ID associated with the business' }),
-    name: z.string().trim().min(1).max(MEMBER_BUSINESS_NAME_MAX_LENGTH),
-    streetAddress: optionalTrimmedString(MEMBER_BUSINESS_ADDRESS_MAX_LENGTH),
-    cityStateZip: optionalTrimmedString(MEMBER_BUSINESS_ADDRESS_MAX_LENGTH),
-    description: optionalTrimmedString(MEMBER_BUSINESS_DESCRIPTION_MAX_LENGTH),
-    email: z
-      .string()
-      .trim()
-      .max(MEMBER_BUSINESS_EMAIL_MAX_LENGTH)
-      .optional()
-      .refine((value) => !value || /^\S+@\S+\.\S+$/.test(value), {
-        message: 'Email must be a valid email address',
-      }),
-    phone: optionalTrimmedString(MEMBER_BUSINESS_PHONE_MAX_LENGTH),
-    fax: optionalTrimmedString(MEMBER_BUSINESS_PHONE_MAX_LENGTH),
-    website: optionalWebsiteString(MEMBER_BUSINESS_WEBSITE_MAX_LENGTH),
-  })
-  .openapi({
-    title: 'CreateMemberBusiness',
-    description: 'Payload to create or update a member business entry',
-  });
+export const MemberBusinessInfoSchema = z.object({
+  name: z.string().trim().min(1).max(MEMBER_BUSINESS_NAME_MAX_LENGTH),
+  streetAddress: optionalTrimmedString(MEMBER_BUSINESS_ADDRESS_MAX_LENGTH),
+  cityStateZip: optionalTrimmedString(MEMBER_BUSINESS_ADDRESS_MAX_LENGTH),
+  description: optionalTrimmedString(MEMBER_BUSINESS_DESCRIPTION_MAX_LENGTH),
+  email: z
+    .string()
+    .trim()
+    .max(MEMBER_BUSINESS_EMAIL_MAX_LENGTH)
+    .optional()
+    .refine((value) => !value || /^\S+@\S+\.\S+$/.test(value), {
+      message: 'Email must be a valid email address',
+    }),
+  phone: optionalTrimmedString(MEMBER_BUSINESS_PHONE_MAX_LENGTH),
+  fax: optionalTrimmedString(MEMBER_BUSINESS_PHONE_MAX_LENGTH),
+  website: optionalWebsiteString(MEMBER_BUSINESS_WEBSITE_MAX_LENGTH),
+});
 
-export const MemberBusinessSchema = CreateMemberBusinessSchema.extend({
-  id: z.string(),
-  accountId: z.string(),
-  contactId: z.string(),
+export const CreateMemberBusinessSchema = MemberBusinessInfoSchema.extend({
+  contactId: z
+    .string()
+    .trim()
+    .min(1)
+    .openapi({ description: 'Contact ID associated with the business' }),
+}).openapi({
+  title: 'CreateMemberBusiness',
+  description: 'Payload to create or update a member business entry',
+});
+
+export const MemberBusinessSchema = MemberBusinessInfoSchema.extend({
+  id: bigintToStringSchema,
+  accountId: bigintToStringSchema,
+  contact: PublicContactSummarySchema,
 }).openapi({
   title: 'MemberBusiness',
   description: 'Member business record associated with a contact',
@@ -71,6 +75,13 @@ export const MemberBusinessListSchema = z
 export const MemberBusinessQueryParamsSchema = z
   .object({
     contactId: z.string().trim().optional(),
+    seasonId: z.string().trim().optional(),
+    limit: numberQueryParam({ min: 1, max: 50 })
+      .refine((value) => Number.isInteger(value), {
+        message: 'limit must be an integer',
+      })
+      .optional(),
+    randomize: booleanQueryParam.optional(),
   })
   .openapi({
     title: 'MemberBusinessQueryParams',
