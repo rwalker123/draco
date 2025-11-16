@@ -114,3 +114,6 @@ describe('SocialHubExperience', () => {
     );
   });
 });
+vi.mock('lottie-react', () => ({
+  default: () => null,
+}));
