@@ -96,7 +96,7 @@ const MemberBusinessSummary: React.FC<MemberBusinessSummaryProps> = ({
         <MuiLink
           href={business.website}
           target="_blank"
-          rel="noreferrer noopener"
+          rel="noopener noreferrer"
           variant={compact ? 'caption' : 'body2'}
           underline="hover"
         >
