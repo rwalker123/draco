@@ -35,6 +35,10 @@ vi.mock('../FeaturedVideosWidget', () => ({
   default: () => <div data-testid="featured-videos" />,
 }));
 
+vi.mock('@/components/social/MemberBusinessSpotlightWidget', () => ({
+  default: () => <div data-testid="member-business-widget" />,
+}));
+
 const renderWithTheme = (component: React.ReactElement) => {
   return render(<ThemeProvider theme={dracoTheme}>{component}</ThemeProvider>);
 };
