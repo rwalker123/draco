@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Alert, Box, Button, Tab, Tabs, Typography, useTheme, type Theme } from '@mui/material';
+import { Alert, Box, Button, Tab, Tabs, Typography, type Theme } from '@mui/material';
 import LeaderCategoryPanel from './LeaderCategoryPanel';
 import { useLeaderCategories } from '../../hooks/useLeaderCategories';
 import { useStatisticalLeaders } from '../../hooks/useStatisticalLeaders';
@@ -64,7 +64,6 @@ const isTeamVariantProps = (props: LeadersWidgetProps): props is TeamLeadersWidg
 };
 
 export default function LeadersWidget(props: LeadersWidgetProps) {
-  const theme = useTheme();
   const leaderLimit = props.leaderLimit ?? 5;
   const accountId = props.accountId;
   const randomize = props.randomize === true;
@@ -310,7 +309,6 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
 
   const requestedCacheKey = buildCacheKey(requestedCategoryKey ?? null);
   const displayedLeaders = renderState?.leaders ?? [];
-  const [panelWidth, setPanelWidth] = useState<number>();
   const resetTabsScrollLeft = useCallback((node: HTMLDivElement | null) => {
     if (!node) {
       return;
@@ -320,25 +318,6 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
       scroller.scrollLeft = 0;
     }
   }, []);
-
-  const handlePanelWidthChange = useCallback((width?: number) => {
-    if (typeof width !== 'number') {
-      return;
-    }
-
-    setPanelWidth((previous) => {
-      if (previous === undefined) {
-        return width;
-      }
-
-      return Math.abs(previous - width) > 1 ? width : previous;
-    });
-  }, []);
-
-  const horizontalPadding = theme.spacing(6);
-  const contentWidthForPaper = panelWidth
-    ? `calc(${panelWidth}px + ${horizontalPadding})`
-    : undefined;
 
   const handleLeagueChange = (_: React.SyntheticEvent, value: string) => {
     setSelectedLeagueId(value);
@@ -467,7 +446,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
-        width: { xs: '100%', md: contentWidthForPaper ?? 'fit-content' },
+        width: '100%',
         minWidth: { md: 360 },
         maxWidth: '100%',
       }}
@@ -591,7 +570,6 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
             leaders={displayedLeaders}
             loading={false}
             emptyMessage={`No additional ${displayedCategory.label.toLowerCase()} data available`}
-            onWidthChange={handlePanelWidthChange}
             hideTeamInfo={!showTeamInfo}
             hideHeaderWhenCard
             accountId={accountId}
