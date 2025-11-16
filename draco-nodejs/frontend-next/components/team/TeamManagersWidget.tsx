@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Alert, Box, CircularProgress, Divider, Link as MuiLink, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Link as MuiLink, Typography } from '@mui/material';
 import EmailIcon from '@mui/icons-material/EmailOutlined';
 import PhoneIcon from '@mui/icons-material/Phone';
 import type { TeamManagerType } from '@draco/shared-schemas';
@@ -139,9 +139,8 @@ const TeamManagersWidget: React.FC<TeamManagersWidgetProps> = ({
       lastName: contact.lastName?.trim() || '',
       photoUrl: contact.photoUrl ?? undefined,
     };
-
     return (
-      <Box key={manager.id}>
+      <Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <UserAvatar user={user} size={40} />
           <Box>
@@ -210,12 +209,29 @@ const TeamManagersWidget: React.FC<TeamManagersWidgetProps> = ({
     }
 
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {managers.map((manager, index) => (
-          <React.Fragment key={manager.id}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+        }}
+      >
+        {managers.map((manager) => (
+          <Box
+            key={manager.id}
+            sx={{
+              flex: '1 1 280px',
+              minWidth: { xs: '100%', sm: 260 },
+              maxWidth: '100%',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+              p: 2,
+              backgroundColor: (theme) => theme.palette.background.paper,
+            }}
+          >
             {renderManager(manager)}
-            {index < managers.length - 1 ? <Divider flexItem /> : null}
-          </React.Fragment>
+          </Box>
         ))}
       </Box>
     );

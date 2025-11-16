@@ -7,6 +7,7 @@ import {
   denyTeamPhotoSubmission,
   listPendingAccountPhotoSubmissions,
   listPendingTeamPhotoSubmissions,
+  updateAccountGalleryPhoto,
 } from '@draco/shared-api-client';
 import type { PhotoSubmissionDetailType } from '@draco/shared-schemas';
 import { ApiClientError, unwrapApiResult } from '../utils/apiResult';
@@ -25,13 +26,26 @@ export interface PendingPhotoSubmissionsState {
   successMessage: string | null;
   processingIds: ReadonlySet<string>;
   refresh: () => Promise<void>;
-  approve: (submissionId: string) => Promise<boolean>;
+  approve: (submissionId: string, albumId?: string | null) => Promise<boolean>;
   deny: (submissionId: string, reason: string) => Promise<boolean>;
   clearStatus: () => void;
 }
 
 const normalizeId = (value?: string | null): string | null => {
   if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const normalizeAlbumSelection = (value?: string | null): string | null | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null) {
     return null;
   }
 
@@ -111,7 +125,7 @@ export const usePendingPhotoSubmissions = ({
   }, []);
 
   const approve = useCallback(
-    async (submissionId: string): Promise<boolean> => {
+    async (submissionId: string, albumId?: string | null): Promise<boolean> => {
       if (!canQuery || !normalizedAccountId) {
         setError('Account information is required to approve submissions.');
         return false;
@@ -121,9 +135,10 @@ export const usePendingPhotoSubmissions = ({
       setError(null);
 
       const submission = submissions.find((item) => item.id === submissionId);
+      const normalizedAlbumSelection = normalizeAlbumSelection(albumId);
 
       try {
-        const result = normalizedTeamId
+        const apiResult = normalizedTeamId
           ? await approveTeamPhotoSubmission({
               client: apiClient,
               path: { accountId: normalizedAccountId, teamId: normalizedTeamId, submissionId },
@@ -135,19 +150,51 @@ export const usePendingPhotoSubmissions = ({
               throwOnError: false,
             });
 
-        unwrapApiResult(result, 'Failed to approve photo submission');
+        const detail = unwrapApiResult(apiResult, 'Failed to approve photo submission');
         const warningMessage = getPhotoEmailWarningMessage(
-          result.response?.headers.get('x-photo-email-warning') ?? null,
+          apiResult.response?.headers.get('x-photo-email-warning') ?? null,
         );
+
+        let albumAssignmentError: string | null = null;
+        if (normalizedAlbumSelection !== undefined && detail?.approvedPhoto?.id) {
+          try {
+            const updateResult = await updateAccountGalleryPhoto({
+              client: apiClient,
+              path: {
+                accountId: normalizedAccountId,
+                photoId: detail.approvedPhoto.id,
+              },
+              body: {
+                albumId: normalizedAlbumSelection,
+              },
+              throwOnError: false,
+            });
+
+            unwrapApiResult(updateResult, 'Failed to assign approved photo to the album.');
+          } catch (assignmentError) {
+            albumAssignmentError =
+              assignmentError instanceof ApiClientError
+                ? assignmentError.message
+                : 'Approved photo but failed to assign it to the selected album.';
+          }
+        }
 
         await fetchSubmissions();
         if (warningMessage) {
           setError(warningMessage);
           setSuccessMessage(null);
+        } else if (albumAssignmentError) {
+          setError(
+            albumAssignmentError ??
+              'Approved submission, but failed to assign it to the selected album.',
+          );
+          setSuccessMessage(null);
         } else if (submission) {
           setSuccessMessage(`Approved “${submission.title}”.`);
+          setError(null);
         } else {
           setSuccessMessage('Submission approved.');
+          setError(null);
         }
         return true;
       } catch (err: unknown) {

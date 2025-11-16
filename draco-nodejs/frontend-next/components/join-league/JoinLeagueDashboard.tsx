@@ -39,34 +39,37 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
       accent="primary"
       sx={{
         mb: 3,
-        display: 'inline-flex',
+        display: 'flex',
         flexDirection: 'column',
-        alignSelf: 'flex-start',
-        width: 'auto',
-        maxWidth: '100%',
+        width: '100%',
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 4,
-        }}
-      >
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <WorkoutPreview
           accountId={accountId}
           token={token}
           showViewAllWorkoutsButton={showViewAllWorkoutsButton}
           onViewAllWorkouts={onViewAllWorkouts}
         />
-        <AccountOptional accountId={accountId} componentId="home.playerClassified.widget">
-          <PlayersWantedPreview
-            accountId={accountId}
-            maxDisplay={3}
-            isAccountMember={isAccountMember}
-          />
-        </AccountOptional>
-        <ContactLeagueSection account={account} />
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 4,
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: 'repeat(2, minmax(0, 1fr))',
+            },
+          }}
+        >
+          <AccountOptional accountId={accountId} componentId="home.playerClassified.widget">
+            <PlayersWantedPreview
+              accountId={accountId}
+              maxDisplay={3}
+              isAccountMember={isAccountMember}
+            />
+          </AccountOptional>
+          <ContactLeagueSection account={account} />
+        </Box>
       </Box>
     </WidgetShell>
   );

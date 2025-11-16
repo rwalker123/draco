@@ -381,6 +381,11 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
     );
   };
 
+  const shouldSkipInitialRender = loading && !error && recapList.length === 0;
+  if (shouldSkipInitialRender) {
+    return null;
+  }
+
   if (!loading && !error && recapList.length === 0) {
     return null;
   }
@@ -415,11 +420,9 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
       }
       accent="secondary"
       sx={{
-        display: 'inline-flex',
+        display: 'flex',
         flexDirection: 'column',
-        alignSelf: 'flex-start',
-        width: 'auto',
-        maxWidth: '100%',
+        width: '100%',
       }}
     >
       {content}
