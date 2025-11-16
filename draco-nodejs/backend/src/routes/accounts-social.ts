@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import {
   CommunityMessageQuerySchema,
+  CommunityChannelQuerySchema,
   LiveEventCreateSchema,
   LiveEventQuerySchema,
   LiveEventUpdateSchema,
@@ -58,7 +59,8 @@ router.get(
   routeProtection.enforceAccountBoundaryIfAuthenticated(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
-    const channels = await socialHubService.listCommunityChannels(accountId, seasonId);
+    const query = CommunityChannelQuerySchema.parse(req.query);
+    const channels = await socialHubService.listCommunityChannels(accountId, seasonId, query);
     res.json({ channels });
   }),
 );

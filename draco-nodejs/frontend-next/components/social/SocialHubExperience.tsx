@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Avatar,
   Box,
   Typography,
   Container,
@@ -9,16 +10,9 @@ import {
   Card,
   CardContent,
   CardMedia,
-  Avatar,
-  Chip,
   IconButton,
   Button,
   Stack,
-  Divider,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
   TextField,
   InputAdornment,
   Alert,
@@ -39,15 +33,11 @@ import {
   Comment,
   Share,
   Forum,
-  Image as ImageIcon,
-  Movie,
-  AttachFile,
 } from '@mui/icons-material';
 import type {
   SocialFeedItemType,
   CommunityMessagePreviewType,
   CommunityChannelType,
-  CommunityMessageAttachmentType,
 } from '@draco/shared-schemas';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
 import { formatRelativeTime } from './utils';
@@ -56,18 +46,8 @@ import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
 import PlayersWantedPreview from '@/components/join-league/PlayersWantedPreview';
 import WidgetShell from '../ui/WidgetShell';
-import DiscordRichContent from './DiscordRichContent';
-
-const AttachmentIcon = ({ type }: { type: CommunityMessageAttachmentType['type'] }) => {
-  switch (type) {
-    case 'image':
-      return <ImageIcon fontSize="small" />;
-    case 'video':
-      return <Movie fontSize="small" />;
-    default:
-      return <AttachFile fontSize="small" />;
-  }
-};
+import CommunityMessageList from './CommunityMessageList';
+import NextLink from 'next/link';
 
 const getSourceIcon = (source: string) => {
   switch (source) {
@@ -190,6 +170,12 @@ export default function SocialHubExperience({
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const selectedChannel = channelState.channels.find((channel) => channel.id === selectedChannelId);
   const selectedDiscordChannelId = selectedChannel?.discordChannelId;
+  const handleOpenMessagePermalink = useCallback((permalink?: string) => {
+    if (!permalink) {
+      return;
+    }
+    window.open(permalink, '_blank', 'noopener,noreferrer');
+  }, []);
 
   useEffect(() => {
     if (!accountId || !seasonId) {
@@ -446,6 +432,17 @@ export default function SocialHubExperience({
                         >
                           Open Discord
                         </Button>
+                        {accountId ? (
+                          <Button
+                            size="small"
+                            variant="text"
+                            component={NextLink}
+                            href={`/account/${accountId}/social-hub/community`}
+                            startIcon={<Forum fontSize="inherit" />}
+                          >
+                            View all messages
+                          </Button>
+                        ) : null}
                       </Stack>
                     ) : null}
                   </Box>
@@ -455,113 +452,11 @@ export default function SocialHubExperience({
                     </Alert>
                   ) : null}
                   {communityState.items.length > 0 ? (
-                    <List>
-                      {communityState.items.map((message, index) => (
-                        <React.Fragment key={message.id}>
-                          {index > 0 && <Divider />}
-                          <ListItem alignItems="flex-start" disableGutters>
-                            <ListItemAvatar>
-                              <Avatar src={message.avatarUrl ?? undefined}>
-                                {(message.authorDisplayName ?? 'C').charAt(0)}
-                              </Avatar>
-                            </ListItemAvatar>
-                            <ListItemText
-                              primary={
-                                <Typography component="div" variant="body2">
-                                  <Box
-                                    component="div"
-                                    sx={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 1,
-                                      flexWrap: 'wrap',
-                                    }}
-                                  >
-                                    <Typography variant="subtitle2" component="span">
-                                      {message.authorDisplayName}
-                                    </Typography>
-                                    <Chip
-                                      label={`#${message.channelName}`}
-                                      size="small"
-                                      variant="outlined"
-                                    />
-                                    <Typography
-                                      variant="caption"
-                                      color="text.secondary"
-                                      component="span"
-                                    >
-                                      {formatRelativeTime(message.postedAt)}
-                                    </Typography>
-                                    {message.permalink ? (
-                                      <Button
-                                        size="small"
-                                        startIcon={<OpenInNew fontSize="inherit" />}
-                                        component="a"
-                                        href={message.permalink}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        Reply in Discord
-                                      </Button>
-                                    ) : null}
-                                  </Box>
-                                </Typography>
-                              }
-                              secondary={
-                                <Stack spacing={1} sx={{ mt: 1 }} component="div">
-                                  <Typography variant="body2" color="text.primary" component="div">
-                                    <DiscordRichContent
-                                      nodes={message.richContent}
-                                      fallback={message.content}
-                                    />
-                                  </Typography>
-                                  {message.attachments && message.attachments.length > 0 ? (
-                                    <Stack
-                                      direction="row"
-                                      spacing={1}
-                                      useFlexGap
-                                      flexWrap="wrap"
-                                      component="div"
-                                    >
-                                      {message.attachments.map((attachment, attachmentIndex) =>
-                                        attachment.type === 'image' ? (
-                                          <Box
-                                            key={`${message.id}-${attachment.url}`}
-                                            component="img"
-                                            src={attachment.thumbnailUrl ?? attachment.url}
-                                            alt={`Attachment image ${attachmentIndex + 1}`}
-                                            sx={{
-                                              maxWidth: 160,
-                                              maxHeight: 160,
-                                              borderRadius: 1,
-                                              objectFit: 'cover',
-                                            }}
-                                          />
-                                        ) : (
-                                          <Chip
-                                            key={`${message.id}-${attachment.url}`}
-                                            icon={<AttachmentIcon type={attachment.type} />}
-                                            label={attachment.type}
-                                            component="a"
-                                            href={attachment.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            clickable
-                                            variant="outlined"
-                                          />
-                                        ),
-                                      )}
-                                    </Stack>
-                                  ) : null}
-                                </Stack>
-                              }
-                              primaryTypographyProps={{ component: 'div' }}
-                              secondaryTypographyProps={{ component: 'div' }}
-                            />
-                          </ListItem>
-                        </React.Fragment>
-                      ))}
-                    </List>
+                    <CommunityMessageList
+                      messages={communityState.items}
+                      formatTimestamp={formatRelativeTime}
+                      onPermalinkClick={handleOpenMessagePermalink}
+                    />
                   ) : (
                     <Alert severity="info">No recent Discord activity yet.</Alert>
                   )}

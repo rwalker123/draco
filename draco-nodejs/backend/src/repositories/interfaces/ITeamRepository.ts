@@ -18,7 +18,7 @@ import {
 } from '../types/dbTypes.js';
 
 export interface ITeamRepository extends IBaseRepository<teamsseason> {
-  findBySeasonId(seasonId: bigint, accountId: bigint): Promise<teamsseason[]>;
+  findBySeasonId(seasonId: bigint, accountId: bigint): Promise<dbTeamSeasonWithLeaguesAndTeams[]>;
   findTeamSeasonWithLeague(
     teamSeasonId: bigint,
     seasonId: bigint,

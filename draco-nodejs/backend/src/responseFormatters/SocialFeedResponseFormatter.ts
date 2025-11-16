@@ -124,10 +124,19 @@ export class SocialFeedResponseFormatter {
       }
 
       const typed = item as Record<string, unknown>;
+      let metadata: Record<string, unknown> | undefined;
+      if (typed.metadata && typeof typed.metadata === 'object' && typed.metadata !== null) {
+        metadata = typed.metadata as Record<string, unknown>;
+      }
+
       attachments.push({
         type: typed.type as CommunityMessageAttachmentType['type'],
         url: typed.url as string,
         thumbnailUrl: typeof typed.thumbnailUrl === 'string' ? typed.thumbnailUrl : null,
+        metadata:
+          metadata && typeof metadata.lottieJson === 'string'
+            ? { lottieJson: metadata.lottieJson }
+            : undefined,
       });
     }
 
@@ -185,11 +194,7 @@ export class SocialFeedResponseFormatter {
         continue;
       }
 
-      if (
-        type === 'emoji' &&
-        typeof record.name === 'string' &&
-        typeof record.url === 'string'
-      ) {
+      if (type === 'emoji' && typeof record.name === 'string' && typeof record.url === 'string') {
         const node: DiscordRichContentNodeType = {
           type: 'emoji',
           name: record.name,
@@ -207,7 +212,11 @@ export class SocialFeedResponseFormatter {
         continue;
       }
 
-      if (type === 'mention' && typeof record.id === 'string' && typeof record.mentionType === 'string') {
+      if (
+        type === 'mention' &&
+        typeof record.id === 'string' &&
+        typeof record.mentionType === 'string'
+      ) {
         const mentionType = record.mentionType;
         if (mentionType === 'user' || mentionType === 'channel' || mentionType === 'role') {
           const node: DiscordRichContentNodeType = {

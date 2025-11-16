@@ -4,6 +4,7 @@ import type {
   accountdiscordchannels,
   accountdiscordfeaturesync,
   userdiscordaccounts,
+  accountdiscordteamforums,
 } from '@prisma/client';
 import {
   DiscordAccountConfigType,
@@ -15,6 +16,8 @@ import {
   DiscordGuildChannelType,
   DiscordFeatureSyncStatusType,
   DiscordFeatureSyncFeatureType,
+  DiscordTeamForumType,
+  DiscordTeamForumListType,
 } from '@draco/shared-schemas';
 
 export class DiscordIntegrationResponseFormatter {
@@ -25,6 +28,7 @@ export class DiscordIntegrationResponseFormatter {
       guildId: record.guildid ?? null,
       guildName: record.guildname ?? null,
       roleSyncEnabled: Boolean(record.rolesyncenabled),
+      teamForumEnabled: Boolean(record.teamforumenabled),
       createdAt: record.createdat.toISOString(),
       updatedAt: record.updatedat.toISOString(),
     };
@@ -122,6 +126,31 @@ export class DiscordIntegrationResponseFormatter {
             lastSyncedAt: record.lastsyncedat ? record.lastsyncedat.toISOString() : null,
           }
         : null,
+    };
+  }
+
+  static formatTeamForum(record: accountdiscordteamforums): DiscordTeamForumType {
+    return {
+      id: record.id.toString(),
+      accountId: record.accountid.toString(),
+      seasonId: record.seasonid.toString(),
+      teamSeasonId: record.teamseasonid.toString(),
+      teamId: record.teamid.toString(),
+      discordChannelId: record.discordchannelid,
+      discordChannelName: record.discordchannelname,
+      channelType: record.channeltype ?? null,
+      discordRoleId: record.discordroleid ?? null,
+      status: record.status as DiscordTeamForumType['status'],
+      autoCreated: Boolean(record.autocreated),
+      lastSyncedAt: record.lastsyncedat ? record.lastsyncedat.toISOString() : null,
+      createdAt: record.createdat.toISOString(),
+      updatedAt: record.updatedat.toISOString(),
+    };
+  }
+
+  static formatTeamForumList(records: accountdiscordteamforums[]): DiscordTeamForumListType {
+    return {
+      forums: records.map((record) => this.formatTeamForum(record)),
     };
   }
 }

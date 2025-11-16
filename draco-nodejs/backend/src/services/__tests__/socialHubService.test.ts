@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SocialHubService } from '../socialHubService.js';
 import { ISocialContentRepository, ILiveEventRepository } from '../../repositories/index.js';
 import type { dbLiveEvent } from '../../repositories/types/dbTypes.js';
+import { DiscordIntegrationService } from '../discordIntegrationService.js';
+import type { CommunityChannelType } from '@draco/shared-schemas';
 
 const makeLiveEventRecord = (overrides: Partial<dbLiveEvent> = {}): dbLiveEvent => {
   const base: dbLiveEvent = {
@@ -65,10 +67,26 @@ const makeLiveEventRecord = (overrides: Partial<dbLiveEvent> = {}): dbLiveEvent 
 describe('SocialHubService', () => {
   let socialContentRepository: ISocialContentRepository;
   let liveEventRepository: ILiveEventRepository;
+  let listCommunityChannelsMock: ReturnType<typeof vi.fn>;
   let service: SocialHubService;
 
   const accountId = 1n;
   const seasonId = 2n;
+  const makeCommunityChannel = (
+    overrides: Partial<CommunityChannelType> = {},
+  ): CommunityChannelType => ({
+    id: overrides.id ?? 'channel-1',
+    accountId: overrides.accountId ?? accountId.toString(),
+    seasonId: overrides.seasonId ?? seasonId.toString(),
+    discordChannelId: overrides.discordChannelId ?? '123',
+    name: overrides.name ?? 'general',
+    label: overrides.label ?? 'General',
+    scope: overrides.scope ?? 'account',
+    channelType: overrides.channelType ?? 'text',
+    url: overrides.url ?? 'https://discord.com/channels/1/123',
+    teamId: overrides.teamId ?? undefined,
+    teamSeasonId: overrides.teamSeasonId ?? undefined,
+  });
 
   beforeEach(() => {
     socialContentRepository = {
@@ -96,7 +114,16 @@ describe('SocialHubService', () => {
       findLiveEventByLeagueEventId: vi.fn().mockResolvedValue(null),
     };
 
-    service = new SocialHubService(socialContentRepository, liveEventRepository);
+    listCommunityChannelsMock = vi.fn().mockResolvedValue([]);
+    const discordIntegrationService = {
+      listCommunityChannels: listCommunityChannelsMock,
+    } as unknown as DiscordIntegrationService;
+
+    service = new SocialHubService(
+      socialContentRepository,
+      liveEventRepository,
+      discordIntegrationService,
+    );
   });
 
   it('lists live events with filters', async () => {
@@ -220,5 +247,73 @@ describe('SocialHubService', () => {
 
     await service.deleteLiveEvent(accountId, seasonId, 10n);
     expect(liveEventRepository.deleteLiveEventDetails).toHaveBeenCalledWith(10n);
+  });
+
+  it('returns empty community messages when no channels are available', async () => {
+    listCommunityChannelsMock.mockResolvedValue([]);
+
+    const result = await service.listCommunityMessages(accountId, seasonId);
+
+    expect(result).toEqual([]);
+    expect(socialContentRepository.listCommunityMessages).not.toHaveBeenCalled();
+  });
+
+  it('filters community messages to allowed channels', async () => {
+    listCommunityChannelsMock.mockResolvedValue([
+      makeCommunityChannel({ discordChannelId: 'abc123' }),
+    ]);
+
+    await service.listCommunityMessages(accountId, seasonId, { limit: 5 });
+
+    expect(listCommunityChannelsMock).toHaveBeenCalledWith(accountId, seasonId, undefined);
+    expect(socialContentRepository.listCommunityMessages).toHaveBeenCalledWith({
+      accountId,
+      seasonId,
+      teamSeasonId: undefined,
+      channelIds: ['abc123'],
+      limit: 5,
+    });
+  });
+
+  it('returns no messages when requested channel ids are not allowed', async () => {
+    listCommunityChannelsMock.mockResolvedValue([
+      makeCommunityChannel({ discordChannelId: 'abc' }),
+    ]);
+
+    const result = await service.listCommunityMessages(accountId, seasonId, {
+      channelIds: ['other'],
+      limit: 5,
+    });
+
+    expect(result).toEqual([]);
+    expect(socialContentRepository.listCommunityMessages).not.toHaveBeenCalled();
+  });
+
+  it('falls back to channel-only filtering when team messages are missing metadata', async () => {
+    listCommunityChannelsMock.mockResolvedValue([
+      makeCommunityChannel({
+        discordChannelId: 'team-chan',
+        teamSeasonId: '30',
+        scope: 'teamSeason',
+      }),
+    ]);
+    const repoMock = socialContentRepository.listCommunityMessages as ReturnType<typeof vi.fn>;
+    repoMock.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+    await service.listCommunityMessages(accountId, seasonId, { teamSeasonId: '30', limit: 5 });
+
+    expect(repoMock).toHaveBeenNthCalledWith(1, {
+      accountId,
+      seasonId,
+      teamSeasonId: 30n,
+      channelIds: ['team-chan'],
+      limit: 5,
+    });
+    expect(repoMock).toHaveBeenNthCalledWith(2, {
+      accountId,
+      seasonId,
+      channelIds: ['team-chan'],
+      limit: 5,
+    });
   });
 });

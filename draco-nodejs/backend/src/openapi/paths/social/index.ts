@@ -17,6 +17,7 @@ export default ({ registry, schemaRefs }: RegisterContext) => {
     CommunityMessageListSchemaRef,
     CommunityMessageQuerySchemaRef,
     CommunityChannelListSchemaRef,
+    CommunityChannelQuerySchemaRef,
     LiveEventListSchemaRef,
     LiveEventSchemaRef,
     LiveEventQuerySchemaRef,
@@ -162,6 +163,9 @@ export default ({ registry, schemaRefs }: RegisterContext) => {
     tags: ['Social'],
     security: [{ bearerAuth: [] }],
     parameters: [accountIdParameter, seasonIdParameter],
+    request: {
+      query: CommunityChannelQuerySchemaRef,
+    },
     responses: {
       200: {
         description: 'Mapped community channels.',

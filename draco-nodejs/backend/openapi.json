@@ -6042,6 +6042,9 @@
           "roleSyncEnabled": {
             "type": "boolean"
           },
+          "teamForumEnabled": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -6061,6 +6064,7 @@
           "guildId",
           "guildName",
           "roleSyncEnabled",
+          "teamForumEnabled",
           "createdAt",
           "updatedAt"
         ]
@@ -6077,6 +6081,16 @@
           },
           "roleSyncEnabled": {
             "type": "boolean"
+          },
+          "teamForumEnabled": {
+            "type": "boolean"
+          },
+          "teamForumCleanupMode": {
+            "type": "string",
+            "enum": [
+              "retain",
+              "remove"
+            ]
           }
         }
       },
@@ -6559,7 +6573,8 @@
                 "type": "string",
                 "enum": [
                   "text",
-                  "announcement"
+                  "announcement",
+                  "forum"
                 ],
                 "default": "text"
               }
@@ -6763,7 +6778,8 @@
                     "type": "string",
                     "enum": [
                       "text",
-                      "announcement"
+                      "announcement",
+                      "forum"
                     ],
                     "default": "text"
                   }
@@ -6787,6 +6803,173 @@
         "type": "string",
         "enum": [
           "announcements"
+        ]
+      },
+      "DiscordTeamForumList": {
+        "type": "object",
+        "properties": {
+          "forums": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "accountId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "seasonId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "teamSeasonId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "teamId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "discordChannelId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32,
+                  "pattern": "^\\d+$"
+                },
+                "discordChannelName": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "channelType": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "discordRoleId": {
+                  "type": "string",
+                  "nullable": true,
+                  "minLength": 1,
+                  "maxLength": 32,
+                  "pattern": "^\\d+$"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "provisioned",
+                    "needsRepair",
+                    "disabled"
+                  ]
+                },
+                "autoCreated": {
+                  "type": "boolean"
+                },
+                "lastSyncedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                }
+              },
+              "required": [
+                "id",
+                "accountId",
+                "seasonId",
+                "teamSeasonId",
+                "teamId",
+                "discordChannelId",
+                "discordChannelName",
+                "discordRoleId",
+                "status",
+                "autoCreated",
+                "lastSyncedAt",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "forums"
+        ]
+      },
+      "DiscordTeamForumQuery": {
+        "type": "object",
+        "properties": {
+          "seasonId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              }
+            ]
+          },
+          "teamSeasonId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "DiscordTeamForumRepairResult": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "repaired": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "skipped": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "created",
+          "repaired",
+          "skipped",
+          "message"
         ]
       },
       "PlayersWantedClassified": {
@@ -16615,7 +16798,9 @@
                   "enum": [
                     "image",
                     "video",
-                    "file"
+                    "audio",
+                    "file",
+                    "lottie"
                   ],
                   "description": "Attachment media type.",
                   "example": "image"
@@ -16629,6 +16814,14 @@
                   "type": "string",
                   "nullable": true,
                   "format": "uri"
+                },
+                "metadata": {
+                  "type": "object",
+                  "properties": {
+                    "lottieJson": {
+                      "type": "string"
+                    }
+                  }
                 }
               },
               "required": [
@@ -16756,7 +16949,9 @@
                         "enum": [
                           "image",
                           "video",
-                          "file"
+                          "audio",
+                          "file",
+                          "lottie"
                         ],
                         "description": "Attachment media type.",
                         "example": "image"
@@ -16770,6 +16965,14 @@
                         "type": "string",
                         "nullable": true,
                         "format": "uri"
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "properties": {
+                          "lottieJson": {
+                            "type": "string"
+                          }
+                        }
                       }
                     },
                     "required": [
@@ -17154,7 +17357,9 @@
                   "enum": [
                     "image",
                     "video",
-                    "file"
+                    "audio",
+                    "file",
+                    "lottie"
                   ],
                   "description": "Attachment media type.",
                   "example": "image"
@@ -17168,6 +17373,14 @@
                   "type": "string",
                   "nullable": true,
                   "format": "uri"
+                },
+                "metadata": {
+                  "type": "object",
+                  "properties": {
+                    "lottieJson": {
+                      "type": "string"
+                    }
+                  }
                 }
               },
               "required": [
@@ -17357,7 +17570,9 @@
                         "enum": [
                           "image",
                           "video",
-                          "file"
+                          "audio",
+                          "file",
+                          "lottie"
                         ],
                         "description": "Attachment media type.",
                         "example": "image"
@@ -17371,6 +17586,14 @@
                         "type": "string",
                         "nullable": true,
                         "format": "uri"
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "properties": {
+                          "lottieJson": {
+                            "type": "string"
+                          }
+                        }
                       }
                     },
                     "required": [
@@ -17568,6 +17791,16 @@
             "type": "string",
             "nullable": true,
             "format": "uri"
+          },
+          "teamId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "teamSeasonId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
           }
         },
         "required": [
@@ -17630,6 +17863,16 @@
                   "type": "string",
                   "nullable": true,
                   "format": "uri"
+                },
+                "teamId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "teamSeasonId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 }
               },
               "required": [
@@ -17648,6 +17891,18 @@
           "channels"
         ],
         "title": "CommunityChannelList"
+      },
+      "CommunityChannelQuery": {
+        "type": "object",
+        "properties": {
+          "teamSeasonId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^\\d+$",
+            "example": "12345"
+          }
+        },
+        "title": "CommunityChannelQuery"
       },
       "LiveEvent": {
         "type": "object",
@@ -23743,6 +23998,154 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/team-forums": {
+      "get": {
+        "operationId": "listAccountDiscordTeamForums",
+        "summary": "List Discord team forums for the current season",
+        "description": "Returns metadata about the Discord forums provisioned for each team season.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    ""
+                  ]
+                }
+              ]
+            },
+            "required": false,
+            "name": "seasonId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    ""
+                  ]
+                }
+              ]
+            },
+            "required": false,
+            "name": "teamSeasonId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discord team forums.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordTeamForumList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/team-forums/repair": {
+      "post": {
+        "operationId": "repairAccountDiscordTeamForums",
+        "summary": "Repair Discord team forums",
+        "description": "Triggers synchronization of Discord forums for every team season, recreating missing channels or mappings as needed.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repair summary.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordTeamForumRepairResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
                 }
               }
             }
@@ -40587,6 +40990,17 @@
               "type": "string",
               "format": "number"
             }
+          },
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "pattern": "^\\d+$",
+              "example": "12345"
+            },
+            "required": false,
+            "name": "teamSeasonId",
+            "in": "query"
           }
         ],
         "responses": {

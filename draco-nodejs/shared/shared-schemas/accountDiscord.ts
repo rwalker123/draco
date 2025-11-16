@@ -29,16 +29,31 @@ export const DiscordAccountConfigSchema = z.object({
   guildId: DiscordGuildIdSchema.nullable(),
   guildName: z.string().nullable(),
   roleSyncEnabled: z.boolean(),
+  teamForumEnabled: z.boolean(),
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
 });
 
 export type DiscordAccountConfigType = z.infer<typeof DiscordAccountConfigSchema>;
 
-export const DiscordAccountConfigUpdateSchema = z.object({
-  guildId: DiscordGuildIdSchema.nullable().optional(),
-  roleSyncEnabled: z.boolean().optional(),
-});
+export const DiscordTeamForumCleanupModeEnum = z.enum(['retain', 'remove']);
+
+export const DiscordAccountConfigUpdateSchema = z
+  .object({
+    guildId: DiscordGuildIdSchema.nullable().optional(),
+    roleSyncEnabled: z.boolean().optional(),
+    teamForumEnabled: z.boolean().optional(),
+    teamForumCleanupMode: DiscordTeamForumCleanupModeEnum.optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.teamForumCleanupMode && value.teamForumEnabled !== false) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['teamForumCleanupMode'],
+        message: 'Cleanup mode is only valid when disabling team forums.',
+      });
+    }
+  });
 
 export type DiscordAccountConfigUpdateType = z.infer<typeof DiscordAccountConfigUpdateSchema>;
 
@@ -101,7 +116,7 @@ export const DiscordChannelMappingListSchema = z.object({
 
 export type DiscordChannelMappingListType = z.infer<typeof DiscordChannelMappingListSchema>;
 
-export const DiscordChannelCreateTypeEnum = z.enum(['text', 'announcement']);
+export const DiscordChannelCreateTypeEnum = z.enum(['text', 'announcement', 'forum']);
 
 const optionalIdSchema = z
   .union([bigintToStringSchema, z.literal('')])
@@ -161,6 +176,49 @@ export const DiscordChannelMappingCreateSchema = z
   });
 
 export type DiscordChannelMappingCreateType = z.infer<typeof DiscordChannelMappingCreateSchema>;
+
+export const DiscordTeamForumStatusEnum = z.enum(['provisioned', 'needsRepair', 'disabled']);
+
+export const DiscordTeamForumSchema = z.object({
+  id: bigintToStringSchema,
+  accountId: bigintToStringSchema,
+  seasonId: bigintToStringSchema,
+  teamSeasonId: bigintToStringSchema,
+  teamId: bigintToStringSchema,
+  discordChannelId: DiscordChannelIdSchema,
+  discordChannelName: z.string().trim().min(1),
+  channelType: z.string().trim().nullable().optional(),
+  discordRoleId: DiscordRoleIdSchema.nullable(),
+  status: DiscordTeamForumStatusEnum,
+  autoCreated: z.boolean(),
+  lastSyncedAt: isoDateTimeSchema.nullable(),
+  createdAt: isoDateTimeSchema,
+  updatedAt: isoDateTimeSchema,
+});
+
+export type DiscordTeamForumType = z.infer<typeof DiscordTeamForumSchema>;
+
+export const DiscordTeamForumListSchema = z.object({
+  forums: DiscordTeamForumSchema.array(),
+});
+
+export type DiscordTeamForumListType = z.infer<typeof DiscordTeamForumListSchema>;
+
+export const DiscordTeamForumQuerySchema = z.object({
+  seasonId: optionalIdSchema.optional(),
+  teamSeasonId: optionalIdSchema.optional(),
+});
+
+export type DiscordTeamForumQueryType = z.infer<typeof DiscordTeamForumQuerySchema>;
+
+export const DiscordTeamForumRepairResultSchema = z.object({
+  created: z.number().int().nonnegative(),
+  repaired: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative(),
+  message: z.string(),
+});
+
+export type DiscordTeamForumRepairResultType = z.infer<typeof DiscordTeamForumRepairResultSchema>;
 
 export const DiscordLinkStatusSchema = z.object({
   linkingEnabled: z.boolean(),

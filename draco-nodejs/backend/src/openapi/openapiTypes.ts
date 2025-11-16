@@ -171,6 +171,9 @@ import {
   DiscordRoleMappingUpdateSchema,
   DiscordFeatureSyncStatusSchema,
   DiscordFeatureSyncUpdateSchema,
+  DiscordTeamForumListSchema,
+  DiscordTeamForumQuerySchema,
+  DiscordTeamForumRepairResultSchema,
   DiscordFeatureSyncFeatureEnum,
   WorkoutSourcesSchema,
   WorkoutSummarySchema,
@@ -237,6 +240,7 @@ import {
   CommunityMessagePreviewSchema,
   CommunityMessageListSchema,
   CommunityMessageQuerySchema,
+  CommunityChannelQuerySchema,
   CommunityChannelSchema,
   CommunityChannelListSchema,
   LiveEventSchema,
@@ -479,6 +483,18 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const DiscordFeatureSyncFeatureSchemaRef = registry.register(
     'DiscordFeatureSyncFeature',
     DiscordFeatureSyncFeatureEnum,
+  );
+  const DiscordTeamForumListSchemaRef = registry.register(
+    'DiscordTeamForumList',
+    DiscordTeamForumListSchema,
+  );
+  const DiscordTeamForumQuerySchemaRef = registry.register(
+    'DiscordTeamForumQuery',
+    DiscordTeamForumQuerySchema,
+  );
+  const DiscordTeamForumRepairResultSchemaRef = registry.register(
+    'DiscordTeamForumRepairResult',
+    DiscordTeamForumRepairResultSchema,
   );
   const PlayersWantedClassifiedSchemaRef = registry.register(
     'PlayersWantedClassified',
@@ -902,6 +918,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'CommunityChannelList',
     CommunityChannelListSchema,
   );
+  const CommunityChannelQuerySchemaRef = registry.register(
+    'CommunityChannelQuery',
+    CommunityChannelQuerySchema,
+  );
   const LiveEventSchemaRef = registry.register('LiveEvent', LiveEventSchema);
   const LiveEventListSchemaRef = registry.register('LiveEventList', LiveEventListSchema);
   const LiveEventQuerySchemaRef = registry.register('LiveEventQuery', LiveEventQuerySchema);
@@ -1061,6 +1081,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     DiscordFeatureSyncStatusSchemaRef,
     DiscordFeatureSyncUpdateSchemaRef,
     DiscordFeatureSyncFeatureSchemaRef,
+    DiscordTeamForumListSchemaRef,
+    DiscordTeamForumQuerySchemaRef,
+    DiscordTeamForumRepairResultSchemaRef,
     PlayersWantedClassifiedSchemaRef,
     PlayersWantedClassifiedPagedSchemaRef,
     UpsertPlayersWantedClassifiedSchemaRef,
@@ -1169,6 +1192,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     CommunityMessageQuerySchemaRef,
     CommunityChannelSchemaRef,
     CommunityChannelListSchemaRef,
+    CommunityChannelQuerySchemaRef,
     LiveEventSchemaRef,
     LiveEventListSchemaRef,
     LiveEventQuerySchemaRef,

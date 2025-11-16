@@ -72,6 +72,7 @@ model accounts {
   accountdiscordrolemapping accountdiscordrolemapping[]
   accountdiscordchannels    accountdiscordchannels[]
   accountdiscordfeaturesync accountdiscordfeaturesync[]
+  accountdiscordteamforums  accountdiscordteamforums[]
   userdiscordaccounts       userdiscordaccounts[]
 }
 
@@ -155,14 +156,16 @@ model aspnetusers {
 }
 
 model accountdiscordsettings {
-  id              BigInt   @id @default(autoincrement())
-  accountid       BigInt
-  guildid         String?  @db.VarChar(32)
-  guildname       String?  @db.VarChar(100)
-  rolesyncenabled Boolean  @default(false)
-  createdat       DateTime @default(now()) @db.Timestamptz(6)
-  updatedat       DateTime @updatedAt @db.Timestamptz(6)
-  accounts        accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordsettings_accounts")
+  id                  BigInt   @id @default(autoincrement())
+  accountid           BigInt
+  guildid             String?  @db.VarChar(32)
+  guildname           String?  @db.VarChar(100)
+  rolesyncenabled     Boolean  @default(false)
+  teamforumenabled    Boolean  @default(false)
+  teamforumlastsynced DateTime? @db.Timestamptz(6)
+  createdat           DateTime @default(now()) @db.Timestamptz(6)
+  updatedat           DateTime @updatedAt @db.Timestamptz(6)
+  accounts            accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordsettings_accounts")
 
   @@unique([accountid], map: "uq_accountdiscordsettings_accountid")
 }
@@ -183,6 +186,27 @@ model accountdiscordchannels {
   accounts     accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordchannels_accounts")
 
   @@index([accountid], map: "idx_accountdiscordchannels_accountid")
+}
+
+model accountdiscordteamforums {
+  id                BigInt   @id @default(autoincrement())
+  accountid         BigInt
+  seasonid          BigInt
+  teamseasonid      BigInt
+  teamid            BigInt
+  discordchannelid  String   @db.VarChar(32)
+  discordchannelname String   @db.VarChar(100)
+  channeltype       String?  @db.VarChar(32)
+  discordroleid     String?  @db.VarChar(32)
+  status            String   @db.VarChar(32)
+  autocreated       Boolean  @default(false)
+  lastsyncedat      DateTime? @db.Timestamptz(6)
+  createdat         DateTime @default(now()) @db.Timestamptz(6)
+  updatedat         DateTime @updatedAt @db.Timestamptz(6)
+  accounts          accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordteamforums_accounts")
+
+  @@index([accountid], map: "idx_accountdiscordteamforums_accountid")
+  @@unique([teamseasonid], map: "uq_accountdiscordteamforums_teamseason")
 }
 
 model accountdiscordfeaturesync {

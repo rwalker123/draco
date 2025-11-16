@@ -16,6 +16,7 @@ import type {
   CommunityMessagePreviewType,
   CommunityMessageQueryType,
   CommunityChannelType,
+  CommunityChannelQueryType,
 } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../utils/apiResult';
 
@@ -94,17 +95,25 @@ export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceCon
     [apiClient, ensureContext],
   );
 
-  const fetchCommunityChannels = useCallback(async (): Promise<CommunityChannelType[]> => {
-    const context = ensureContext();
-    const result = await listSocialCommunityChannels({
-      client: apiClient,
-      path: { accountId: context.accountId, seasonId: context.seasonId },
-      throwOnError: false,
-    });
+  const fetchCommunityChannels = useCallback(
+    async (query?: Partial<CommunityChannelQueryType>): Promise<CommunityChannelType[]> => {
+      const context = ensureContext();
+      const queryParams =
+        query?.teamSeasonId && `${query.teamSeasonId}`.trim().length > 0
+          ? { teamSeasonId: query.teamSeasonId }
+          : undefined;
+      const result = await listSocialCommunityChannels({
+        client: apiClient,
+        path: { accountId: context.accountId, seasonId: context.seasonId },
+        ...(queryParams ? { query: queryParams } : {}),
+        throwOnError: false,
+      });
 
-    const payload = unwrapApiResult(result, 'Failed to load community channels');
-    return payload.channels;
-  }, [apiClient, ensureContext]);
+      const payload = unwrapApiResult(result, 'Failed to load community channels');
+      return payload.channels;
+    },
+    [apiClient, ensureContext],
+  );
 
   return {
     fetchFeed,
