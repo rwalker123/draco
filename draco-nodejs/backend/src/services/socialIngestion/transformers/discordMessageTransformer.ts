@@ -8,14 +8,14 @@ interface NormalizedDiscordMessage {
 
 const TOKEN_REGEX = /<(a?):([^:>]+):([0-9]+)>|<@!?([0-9]+)>|<@&([0-9]+)>|<#([0-9]+)>/g;
 
-const STICKER_EXTENSION: Record<
+const STICKER_FORMAT_MAP: Record<
   number,
-  { extension: string; type: CommunityMessageAttachmentType['type'] }
+  { extension: string; renderType: CommunityMessageAttachmentType['type'] | 'lottie' }
 > = {
-  1: { extension: 'png', type: 'image' },
-  2: { extension: 'png', type: 'image' },
-  3: { extension: 'json', type: 'file' },
-  4: { extension: 'gif', type: 'image' },
+  1: { extension: 'png', renderType: 'image' },
+  2: { extension: 'png', renderType: 'image' },
+  3: { extension: 'json', renderType: 'lottie' },
+  4: { extension: 'gif', renderType: 'image' },
 };
 
 const buildEmojiCdnUrl = (id: string, animated: boolean) =>
@@ -80,8 +80,19 @@ const normalizeFileAttachment = (
       (attachment.url.includes('.gif') || attachment.filename?.includes('.gif')));
 
   let type: CommunityMessageAttachmentType['type'] = 'file';
+  const fileName = attachment.filename?.toLowerCase() ?? '';
+  const normalizedUrl = attachment.url.toLowerCase();
+  const looksLikeAudio =
+    contentType.startsWith('audio') ||
+    fileName.endsWith('.ogg') ||
+    fileName.endsWith('.mp3') ||
+    normalizedUrl.endsWith('.ogg') ||
+    normalizedUrl.endsWith('.mp3');
+
   if (contentType.startsWith('video') && !isGifContent) {
     type = 'video';
+  } else if (looksLikeAudio) {
+    type = 'audio';
   } else if (contentType.startsWith('image') || isGifContent) {
     type = 'image';
   }
@@ -102,31 +113,27 @@ const normalizeEmbedAttachment = (
     return null;
   }
 
-  const embedType = embed.type?.toLowerCase();
-  const possibleUrl =
-    embed.video?.url ?? embed.url ?? embed.thumbnail?.url ?? embed.video?.proxy_url;
+  const videoUrl = embed.video?.url ?? embed.video?.proxy_url ?? null;
+  const thumbnail = embed.thumbnail?.url ?? embed.image?.url ?? embed.url ?? null;
+  const rawUrl = embed.url ?? embed.thumbnail?.url ?? null;
 
-  if (!possibleUrl) {
-    return null;
+  if (videoUrl) {
+    return {
+      type: 'video',
+      url: videoUrl,
+      thumbnailUrl: thumbnail ?? rawUrl ?? null,
+    };
   }
 
-  const looksLikeGif =
-    embedType === 'gifv' ||
-    possibleUrl.includes('.gif') ||
-    embed.thumbnail?.url?.includes('.gif') ||
-    embed.video?.url?.includes('.gif');
-
-  if (!looksLikeGif) {
-    return null;
+  if (thumbnail) {
+    return {
+      type: 'image',
+      url: thumbnail,
+      thumbnailUrl: thumbnail,
+    };
   }
 
-  const thumbnail = embed.thumbnail?.url ?? embed.video?.proxy_url ?? possibleUrl;
-
-  return {
-    type: 'image',
-    url: possibleUrl,
-    thumbnailUrl: thumbnail ?? null,
-  };
+  return null;
 };
 
 const normalizeStickerAttachment = (
@@ -136,14 +143,74 @@ const normalizeStickerAttachment = (
     return null;
   }
 
-  const format = STICKER_EXTENSION[sticker.format_type ?? 1] ?? STICKER_EXTENSION[1];
+  const format = STICKER_FORMAT_MAP[sticker.format_type ?? 1] ?? STICKER_FORMAT_MAP[1];
   const url = buildStickerCdnUrl(sticker.id, format.extension);
 
+  if (format.renderType === 'lottie') {
+    return {
+      type: 'lottie',
+      url,
+      thumbnailUrl: null,
+    } as CommunityMessageAttachmentType;
+  }
+
   return {
-    type: format.type,
+    type: format.renderType as CommunityMessageAttachmentType['type'],
     url,
-    thumbnailUrl: format.type === 'image' ? url : null,
+    thumbnailUrl: format.renderType === 'image' ? url : null,
   };
+};
+
+const getSystemUserLabel = (message: DiscordMessage): string => {
+  return (
+    message.author?.global_name ??
+    message.author?.display_name ??
+    message.author?.username ??
+    'A new member'
+  );
+};
+
+const SYSTEM_JOIN_TEMPLATES = [
+  'A wild {user} appeared.',
+  '{user} joined the party.',
+  '{user} is here.',
+  'Everyone welcome {user}!',
+  "Glad you're here, {user}.",
+];
+
+const buildSystemMessageText = (message: DiscordMessage): string | null => {
+  switch (message.type) {
+    case 7: {
+      const user = getSystemUserLabel(message);
+      if (!message.id) {
+        return SYSTEM_JOIN_TEMPLATES[0].replace('{user}', user);
+      }
+      const templateIndex = Number(BigInt(message.id) % BigInt(SYSTEM_JOIN_TEMPLATES.length));
+      const template = SYSTEM_JOIN_TEMPLATES[templateIndex] ?? SYSTEM_JOIN_TEMPLATES[0];
+      return template.replace('{user}', user);
+    }
+    default:
+      return null;
+  }
+};
+
+const extractComponentLabels = (components?: DiscordMessage['components']): string[] => {
+  if (!components || !components.length) {
+    return [];
+  }
+
+  const labels: string[] = [];
+  for (const component of components) {
+    if (component.label) {
+      labels.push(component.label);
+    }
+    for (const nested of component.components ?? []) {
+      if (nested.label) {
+        labels.push(nested.label);
+      }
+    }
+  }
+  return labels;
 };
 
 export const normalizeDiscordMessage = (message: DiscordMessage): NormalizedDiscordMessage => {
@@ -221,6 +288,19 @@ export const normalizeDiscordMessage = (message: DiscordMessage): NormalizedDisc
 
   if (richContent.length === 0 && content) {
     richContent.push(createTextNode(content));
+  }
+
+  if (richContent.length === 0) {
+    const systemText = buildSystemMessageText(message);
+    if (systemText) {
+      richContent.push(createTextNode(systemText));
+    }
+  }
+
+  const componentLabels = extractComponentLabels(message.components);
+  if (componentLabels.length) {
+    const text = componentLabels.join('\n');
+    richContent.push(createTextNode(text));
   }
 
   return {

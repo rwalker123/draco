@@ -15,6 +15,9 @@ import type {
   DiscordRoleMappingListType,
   DiscordRoleMappingType,
   DiscordRoleMappingUpdateType,
+  DiscordTeamForumListType,
+  DiscordTeamForumQueryType,
+  DiscordTeamForumRepairResultType,
 } from '@draco/shared-schemas';
 import type { Client } from '@draco/shared-api-client/generated/client';
 import {
@@ -30,8 +33,10 @@ import {
   listAccountDiscordAvailableChannels,
   listAccountDiscordChannelMappings,
   listAccountDiscordRoleMappings,
+  listAccountDiscordTeamForums,
   startAccountDiscordInstall,
   startAccountDiscordLink,
+  repairAccountDiscordTeamForums,
   updateAccountDiscordConfig,
   updateAccountDiscordFeatureSync,
   updateAccountDiscordRoleMapping,
@@ -162,6 +167,28 @@ export class DiscordIntegrationService {
     return unwrapApiResult(result, 'Unable to load channel mappings.');
   }
 
+  async listTeamForums(
+    accountId: string,
+    query?: Partial<DiscordTeamForumQueryType>,
+  ): Promise<DiscordTeamForumListType> {
+    const result = await listAccountDiscordTeamForums({
+      client: this.client,
+      path: { accountId },
+      query: this.buildQuery(query),
+      throwOnError: false,
+    });
+    return unwrapApiResult(result, 'Unable to load Discord team forums.');
+  }
+
+  async repairTeamForums(accountId: string): Promise<DiscordTeamForumRepairResultType> {
+    const result = await repairAccountDiscordTeamForums({
+      client: this.client,
+      path: { accountId },
+      throwOnError: false,
+    });
+    return unwrapApiResult(result, 'Unable to repair Discord team forums.');
+  }
+
   async createChannelMapping(
     accountId: string,
     payload: DiscordChannelMappingCreateType,
@@ -217,5 +244,17 @@ export class DiscordIntegrationService {
       throwOnError: false,
     });
     return unwrapApiResult(result, 'Unable to update Discord sync settings.');
+  }
+
+  private buildQuery<T extends Record<string, unknown>>(
+    query?: Partial<T>,
+  ): Record<string, unknown> | undefined {
+    if (!query) {
+      return undefined;
+    }
+    const entries = Object.entries(query).filter(
+      ([, value]) => value !== undefined && value !== null && value !== '',
+    );
+    return entries.length ? Object.fromEntries(entries) : undefined;
   }
 }

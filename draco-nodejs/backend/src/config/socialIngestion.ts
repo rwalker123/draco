@@ -16,6 +16,7 @@ export interface YouTubeIngestionTarget extends SocialIngestionTargetBase {
 export interface DiscordIngestionTarget extends SocialIngestionTargetBase {
   channelId: string;
   label?: string;
+  guildId?: string;
 }
 
 function parseBoolean(value: string | undefined, fallback = false): boolean {
@@ -97,7 +98,8 @@ function parseDiscordTargets(raw: string | undefined): DiscordIngestionTarget[] 
     .map((entry) => entry.trim())
     .filter(Boolean)
     .map((entry) => {
-      const [accountId, seasonId, channelId, teamSeasonId, teamId, label] = entry.split(':');
+      const [accountId, seasonId, channelId, teamSeasonId, teamId, label, guildId] =
+        entry.split(':');
       if (!accountId || !seasonId || !channelId) {
         throw new Error(
           `Invalid SOCIAL_INGESTION_DISCORD_CHANNELS entry "${entry}". Expected format accountId:seasonId:channelId[:teamSeasonId][:teamId][:label]`,
@@ -111,6 +113,7 @@ function parseDiscordTargets(raw: string | undefined): DiscordIngestionTarget[] 
         teamSeasonId: teamSeasonId ? BigInt(teamSeasonId) : undefined,
         teamId: teamId ? BigInt(teamId) : undefined,
         label,
+        guildId: guildId || undefined,
       };
     });
 }

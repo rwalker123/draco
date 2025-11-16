@@ -80,7 +80,7 @@ export class PrismaSocialContentRepository implements ISocialContentRepository {
       where: {
         accountid: accountId,
         seasonid: seasonId,
-        ...(teamSeasonId ? { teamseasonid: teamSeasonId } : {}),
+        ...(typeof teamSeasonId === 'bigint' ? { teamseasonid: teamSeasonId } : {}),
         ...(channelIds?.length ? { channelid: { in: channelIds } } : {}),
       },
       include: this.discordInclude,

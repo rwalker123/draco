@@ -334,7 +334,11 @@ export default function Standings({
         pb: { xs: 1, md: 1.5 },
       }}
     >
-      <Typography variant="h6" fontWeight={700} color={(theme) => theme.palette.widget.headerText}>
+      <Typography
+        variant="h6"
+        fontWeight={700}
+        sx={{ color: (theme) => theme.palette.widget.headerText }}
+      >
         {title}
       </Typography>
     </Box>

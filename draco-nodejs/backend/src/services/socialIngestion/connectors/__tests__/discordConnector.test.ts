@@ -12,6 +12,7 @@ const target: DiscordIngestionTarget = {
   seasonId: BigInt(2),
   channelId: 'channel-123',
   label: 'general',
+  guildId: 'guild-123',
 };
 
 function createMessage(
@@ -62,7 +63,9 @@ describe('DiscordConnector message cache', () => {
     const fetchSpy = vi
       .spyOn(
         connector as unknown as {
-          fetchChannelMessages: (channelId: string) => Promise<DiscordMessageIngestionRecord[]>;
+          fetchChannelMessages: (
+            target: DiscordIngestionTarget,
+          ) => Promise<DiscordMessageIngestionRecord[]>;
         },
         'fetchChannelMessages',
       )
@@ -93,7 +96,9 @@ describe('DiscordConnector message cache', () => {
     const fetchSpy = vi
       .spyOn(
         connector as unknown as {
-          fetchChannelMessages: (channelId: string) => Promise<DiscordMessageIngestionRecord[]>;
+          fetchChannelMessages: (
+            target: DiscordIngestionTarget,
+          ) => Promise<DiscordMessageIngestionRecord[]>;
         },
         'fetchChannelMessages',
       )

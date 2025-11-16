@@ -10,6 +10,7 @@ export interface DiscordMessage {
   id: string;
   content: string;
   timestamp: string;
+  type?: number;
   author: {
     id: string;
     username: string;
@@ -28,6 +29,9 @@ export interface DiscordMessage {
   embeds?: Array<{
     type?: string;
     url?: string;
+    image?: {
+      url?: string;
+    };
     thumbnail?: {
       url?: string;
     };
@@ -60,6 +64,15 @@ export interface DiscordMessage {
   mention_channels?: Array<{
     id: string;
     name?: string;
+  }>;
+  components?: Array<{
+    type: number;
+    components?: Array<{
+      type: number;
+      label?: string | null;
+      style?: number;
+    }>;
+    label?: string | null;
   }>;
 }
 
@@ -96,8 +109,9 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
       return;
     }
 
+    let noChangeCount = 0;
     for (const target of targets) {
-      const messages = await this.fetchChannelMessages(target.channelId);
+      const messages = await this.fetchChannelMessages(target);
       let ingestedCount = 0;
 
       for (const message of messages) {
@@ -142,12 +156,21 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
           `[discord] Removed ${deletedCount} deleted messages for channel ${target.channelId}`,
         );
       } else {
-        console.info(`[discord] No changes for channel ${target.channelId}`);
+        noChangeCount += 1;
       }
+    }
+
+    if (noChangeCount > 0) {
+      console.info(
+        `[discord] No changes for ${noChangeCount} channel${noChangeCount === 1 ? '' : 's'}`,
+      );
     }
   }
 
-  private async fetchChannelMessages(channelId: string): Promise<DiscordMessageIngestionRecord[]> {
+  private async fetchChannelMessages(
+    target: DiscordIngestionTarget,
+  ): Promise<DiscordMessageIngestionRecord[]> {
+    const { channelId, guildId } = target;
     const url = new URL(`https://discord.com/api/v10/channels/${channelId}/messages`);
     url.searchParams.set('limit', String(Math.min(this.options.limit, 50)));
 
@@ -163,21 +186,56 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
         return [];
       }
 
-      return response.map((message) => {
-        const normalized = normalizeDiscordMessage(message);
-        return {
-          messageId: message.id,
-          content: message.content,
-          authorDisplayName:
-            message.author.display_name ?? message.author.global_name ?? message.author.username,
-          authorId: message.author.id,
-          authorAvatarUrl: this.buildAvatarUrl(message.author.id, message.author.avatar),
-          postedAt: new Date(message.timestamp),
-          attachments: normalized.attachments.length ? normalized.attachments : undefined,
-          richContent: normalized.richContent.length ? normalized.richContent : undefined,
-          permalink: '',
-        };
-      });
+      return Promise.all(
+        response.map(async (message) => {
+          const normalized = normalizeDiscordMessage(message);
+          const attachments =
+            normalized.attachments.length > 0
+              ? await Promise.all(
+                  normalized.attachments.map(async (attachment) => {
+                    if (attachment.type === 'lottie') {
+                      try {
+                        const stickerResponse = await fetch(attachment.url);
+                        if (!stickerResponse.ok) {
+                          throw new Error(
+                            `Sticker fetch failed with status ${stickerResponse.status}`,
+                          );
+                        }
+                        const json = await stickerResponse.text();
+                        return {
+                          ...attachment,
+                          metadata: { lottieJson: json },
+                        };
+                      } catch (error) {
+                        console.error('[discord] Failed to fetch sticker animation', {
+                          url: attachment.url,
+                          error,
+                        });
+                        return attachment;
+                      }
+                    }
+                    return attachment;
+                  }),
+                )
+              : undefined;
+          const permalink =
+            guildId && channelId
+              ? `https://discord.com/channels/${guildId}/${channelId}/${message.id}`
+              : undefined;
+          return {
+            messageId: message.id,
+            content: message.content,
+            authorDisplayName:
+              message.author.display_name ?? message.author.global_name ?? message.author.username,
+            authorId: message.author.id,
+            authorAvatarUrl: this.buildAvatarUrl(message.author.id, message.author.avatar),
+            postedAt: new Date(message.timestamp),
+            attachments,
+            richContent: normalized.richContent.length ? normalized.richContent : undefined,
+            permalink,
+          };
+        }),
+      );
     } catch (error) {
       if (error instanceof HttpError && error.status === 429) {
         const retryAfterMs = this.extractRetryAfterMs(error.body);

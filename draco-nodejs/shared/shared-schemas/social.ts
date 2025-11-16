@@ -58,12 +58,17 @@ export const SocialSourceSchema = z
 
 export const SocialMediaAttachmentSchema = z
   .object({
-    type: z.enum(['image', 'video', 'file']).openapi({
+    type: z.enum(['image', 'video', 'audio', 'file', 'lottie']).openapi({
       description: 'Attachment media type.',
       example: 'image',
     }),
     url: z.string().url().openapi({ example: 'https://cdn.example.com/media.jpg' }),
     thumbnailUrl: z.string().url().nullable().optional(),
+    metadata: z
+      .object({
+        lottieJson: z.string().optional(),
+      })
+      .optional(),
   })
   .openapi({
     title: 'SocialMediaAttachment',
@@ -245,6 +250,8 @@ export const CommunityChannelSchema = z
     scope: DiscordChannelScopeEnum,
     channelType: z.string().trim().nullable().optional(),
     url: z.string().url().nullable().optional(),
+    teamId: optionalBigintStringSchema,
+    teamSeasonId: optionalBigintStringSchema,
   })
   .openapi({
     title: 'CommunityChannel',
@@ -256,6 +263,14 @@ export const CommunityChannelListSchema = z
   })
   .openapi({
     title: 'CommunityChannelList',
+  });
+
+export const CommunityChannelQuerySchema = z
+  .object({
+    teamSeasonId: optionalBigintStringSchema.optional(),
+  })
+  .openapi({
+    title: 'CommunityChannelQuery',
   });
 
 export const LiveEventStatusSchema = z
@@ -363,6 +378,7 @@ export type CommunityMessageListType = z.infer<typeof CommunityMessageListSchema
 export type CommunityMessageQueryType = z.infer<typeof CommunityMessageQuerySchema>;
 export type CommunityChannelType = z.infer<typeof CommunityChannelSchema>;
 export type CommunityChannelListType = z.infer<typeof CommunityChannelListSchema>;
+export type CommunityChannelQueryType = z.infer<typeof CommunityChannelQuerySchema>;
 export type DiscordRichContentNodeType = z.infer<typeof DiscordRichContentNodeSchema>;
 export type LiveEventStatusType = z.infer<typeof LiveEventStatusSchema>;
 export type LiveEventType = z.infer<typeof LiveEventSchema>;

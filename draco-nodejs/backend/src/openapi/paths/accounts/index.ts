@@ -59,6 +59,9 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     DiscordLinkStatusSchemaRef,
     DiscordFeatureSyncStatusSchemaRef,
     DiscordFeatureSyncUpdateSchemaRef,
+    DiscordTeamForumListSchemaRef,
+    DiscordTeamForumQuerySchemaRef,
+    DiscordTeamForumRepairResultSchemaRef,
   } = schemaRefs;
 
   // GET /api/accounts/search
@@ -3028,6 +3031,72 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
       409: {
         description: 'Conflict error.',
         content: { 'application/json': { schema: ConflictErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/discord/team-forums',
+    operationId: 'listAccountDiscordTeamForums',
+    summary: 'List Discord team forums for the current season',
+    description: 'Returns metadata about the Discord forums provisioned for each team season.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      query: DiscordTeamForumQuerySchemaRef,
+    },
+    responses: {
+      200: {
+        description: 'Discord team forums.',
+        content: { 'application/json': { schema: DiscordTeamForumListSchemaRef } },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/discord/team-forums/repair',
+    operationId: 'repairAccountDiscordTeamForums',
+    summary: 'Repair Discord team forums',
+    description:
+      'Triggers synchronization of Discord forums for every team season, recreating missing channels or mappings as needed.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Repair summary.',
+        content: {
+          'application/json': { schema: DiscordTeamForumRepairResultSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
       },
     },
   });

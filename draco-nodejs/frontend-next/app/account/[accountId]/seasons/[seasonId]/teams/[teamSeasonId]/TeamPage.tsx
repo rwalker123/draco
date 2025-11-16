@@ -49,6 +49,7 @@ import TeamRosterWidget from '@/components/roster/TeamRosterWidget';
 import TeamManagersWidget from '@/components/team/TeamManagersWidget';
 import TeamFeaturedVideosWidget from '../../../../../../../components/social/TeamFeaturedVideosWidget';
 import InformationWidget from '@/components/information/InformationWidget';
+import TeamForumWidget from '@/components/team/TeamForumWidget';
 
 interface TeamPageProps {
   accountId: string;
@@ -615,6 +616,17 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               teamName={teamData?.teamName ?? null}
               canViewContactInfo={canViewManagerContacts}
             />
+
+            {teamData?.teamId ? (
+              <TeamForumWidget
+                accountId={accountId}
+                seasonId={seasonId}
+                teamSeasonId={teamSeasonId}
+                teamName={teamData?.teamName ?? null}
+                isTeamMember={isTeamMember}
+                membershipLoading={teamMembershipLoading}
+              />
+            ) : null}
 
             {showInformationWidget ? (
               <Box sx={{ display: informationWidgetVisible ? 'block' : 'none' }}>

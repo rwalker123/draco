@@ -3,6 +3,7 @@ import {
   accountdiscordrolemapping,
   accountdiscordchannels,
   accountdiscordfeaturesync,
+  accountdiscordteamforums,
   userdiscordaccounts,
   PrismaClient,
   Prisma,
@@ -13,6 +14,8 @@ import {
   DiscordRoleMappingUpsertInput,
   DiscordChannelMappingCreateInput,
   DiscordFeatureSyncUpsertInput,
+  DiscordTeamForumCreateInput,
+  DiscordTeamForumUpdateInput,
   IDiscordIntegrationRepository,
 } from '../interfaces/IDiscordIntegrationRepository.js';
 
@@ -41,18 +44,33 @@ export class PrismaDiscordIntegrationRepository implements IDiscordIntegrationRe
       guildid: data.guildId ?? null,
       guildname: data.guildName ?? null,
       rolesyncenabled: data.roleSyncEnabled ?? false,
+      teamforumenabled: data.teamForumEnabled ?? false,
+      teamforumlastsynced: data.teamForumLastSyncedAt ?? null,
       accounts: {
         connect: { id: accountId },
       },
     };
 
-    const updateData: Prisma.accountdiscordsettingsUpdateInput = {
-      guildid: data.guildId ?? null,
-      guildname: data.guildName ?? null,
-    };
+    const updateData: Prisma.accountdiscordsettingsUpdateInput = {};
+
+    if (data.guildId !== undefined) {
+      updateData.guildid = data.guildId ?? null;
+    }
+
+    if (data.guildName !== undefined) {
+      updateData.guildname = data.guildName ?? null;
+    }
 
     if (data.roleSyncEnabled !== undefined) {
       updateData.rolesyncenabled = data.roleSyncEnabled;
+    }
+
+    if (data.teamForumEnabled !== undefined) {
+      updateData.teamforumenabled = data.teamForumEnabled;
+    }
+
+    if (data.teamForumLastSyncedAt !== undefined) {
+      updateData.teamforumlastsynced = data.teamForumLastSyncedAt ?? null;
     }
 
     return this.prisma.accountdiscordsettings.upsert({
@@ -318,6 +336,91 @@ export class PrismaDiscordIntegrationRepository implements IDiscordIntegrationRe
       where: {
         accountid: accountId,
       },
+    });
+  }
+
+  async listTeamForums(accountId: bigint): Promise<accountdiscordteamforums[]> {
+    return this.prisma.accountdiscordteamforums.findMany({
+      where: { accountid: accountId },
+      orderBy: { createdat: 'asc' },
+    });
+  }
+
+  async findTeamForumByTeamSeasonId(
+    accountId: bigint,
+    teamSeasonId: bigint,
+  ): Promise<accountdiscordteamforums | null> {
+    return this.prisma.accountdiscordteamforums.findFirst({
+      where: {
+        accountid: accountId,
+        teamseasonid: teamSeasonId,
+      },
+    });
+  }
+
+  async createTeamForum(
+    accountId: bigint,
+    data: DiscordTeamForumCreateInput,
+  ): Promise<accountdiscordteamforums> {
+    return this.prisma.accountdiscordteamforums.create({
+      data: {
+        accountid: accountId,
+        seasonid: data.seasonId,
+        teamseasonid: data.teamSeasonId,
+        teamid: data.teamId,
+        discordchannelid: data.discordChannelId,
+        discordchannelname: data.discordChannelName,
+        channeltype: data.channelType ?? null,
+        discordroleid: data.discordRoleId ?? null,
+        status: data.status,
+        autocreated: data.autoCreated ?? false,
+        lastsyncedat: data.lastSyncedAt ?? null,
+      },
+    });
+  }
+
+  async updateTeamForum(
+    forumId: bigint,
+    data: DiscordTeamForumUpdateInput,
+  ): Promise<accountdiscordteamforums> {
+    const updateData: Prisma.accountdiscordteamforumsUpdateInput = {};
+    if (data.discordChannelId !== undefined) {
+      updateData.discordchannelid = data.discordChannelId;
+    }
+    if (data.discordChannelName !== undefined) {
+      updateData.discordchannelname = data.discordChannelName;
+    }
+    if (data.channelType !== undefined) {
+      updateData.channeltype = data.channelType ?? null;
+    }
+    if (data.discordRoleId !== undefined) {
+      updateData.discordroleid = data.discordRoleId ?? null;
+    }
+    if (data.status !== undefined) {
+      updateData.status = data.status;
+    }
+    if (data.autoCreated !== undefined) {
+      updateData.autocreated = data.autoCreated;
+    }
+    if (data.lastSyncedAt !== undefined) {
+      updateData.lastsyncedat = data.lastSyncedAt ?? null;
+    }
+
+    return this.prisma.accountdiscordteamforums.update({
+      where: { id: forumId },
+      data: updateData,
+    });
+  }
+
+  async deleteTeamForum(forumId: bigint): Promise<void> {
+    await this.prisma.accountdiscordteamforums.deleteMany({
+      where: { id: forumId },
+    });
+  }
+
+  async deleteTeamForumsByAccount(accountId: bigint): Promise<void> {
+    await this.prisma.accountdiscordteamforums.deleteMany({
+      where: { accountid: accountId },
     });
   }
 }

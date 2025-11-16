@@ -12,6 +12,9 @@ import type {
   DiscordChannelMappingType,
   DiscordChannelMappingCreateType,
   DiscordGuildChannelType,
+  DiscordTeamForumListType,
+  DiscordTeamForumQueryType,
+  DiscordTeamForumRepairResultType,
 } from '@draco/shared-schemas';
 import { useApiClient } from './useApiClient';
 import { DiscordIntegrationService } from '@/services/discordIntegrationService';
@@ -90,6 +93,20 @@ export const useAccountDiscordAdmin = () => {
     [service],
   );
 
+  const fetchTeamForums = useCallback(
+    (
+      accountId: string,
+      query?: Partial<DiscordTeamForumQueryType>,
+    ): Promise<DiscordTeamForumListType> => service.listTeamForums(accountId, query),
+    [service],
+  );
+
+  const repairTeamForums = useCallback(
+    (accountId: string): Promise<DiscordTeamForumRepairResultType> =>
+      service.repairTeamForums(accountId),
+    [service],
+  );
+
   return {
     fetchConfig,
     updateConfig,
@@ -103,5 +120,7 @@ export const useAccountDiscordAdmin = () => {
     fetchChannelMappings,
     createChannelMapping,
     deleteChannelMapping,
+    fetchTeamForums,
+    repairTeamForums,
   };
 };
