@@ -71,6 +71,7 @@ export const MemberBusinessListSchema = z
 export const MemberBusinessQueryParamsSchema = z
   .object({
     contactId: z.string().trim().optional(),
+    seasonId: z.string().trim().optional(),
   })
   .openapi({
     title: 'MemberBusinessQueryParams',

@@ -44,6 +44,18 @@ const parseOptionalContactId = (contactId?: string) => {
   }
 };
 
+const parseOptionalSeasonId = (seasonId?: string) => {
+  if (!seasonId) {
+    return undefined;
+  }
+
+  try {
+    return BigInt(seasonId);
+  } catch (_error) {
+    throw new ValidationError('seasonId must be a valid identifier');
+  }
+};
+
 type MemberBusinessAction = 'create' | 'update' | 'delete';
 
 // Allows account members to manage their own member business records while
@@ -136,6 +148,7 @@ router.get(
 
     const memberBusinesses = await memberBusinessService.listMemberBusinesses(accountId, {
       contactId: parseOptionalContactId(query.contactId),
+      seasonId: parseOptionalSeasonId(query.seasonId),
     });
 
     res.json({ memberBusinesses });

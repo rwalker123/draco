@@ -20,6 +20,7 @@ import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 
 type ListMemberBusinessOptions = {
   contactId?: bigint;
+  seasonId?: bigint;
 };
 
 export class MemberBusinessService {
@@ -39,10 +40,10 @@ export class MemberBusinessService {
       await this.ensureContact(accountId, options.contactId);
     }
 
-    const memberBusinesses = await this.memberBusinessRepository.listByAccount(
-      accountId,
-      options.contactId,
-    );
+    const memberBusinesses = await this.memberBusinessRepository.listByAccount(accountId, {
+      contactId: options.contactId,
+      seasonId: options.seasonId,
+    });
 
     return MemberBusinessResponseFormatter.formatMany(memberBusinesses);
   }

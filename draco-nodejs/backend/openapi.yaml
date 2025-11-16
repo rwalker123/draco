@@ -4404,6 +4404,8 @@ components:
       properties:
         contactId:
           type: string
+        seasonId:
+          type: string
       title: MemberBusinessQueryParams
       description: Optional filters for member business listings
     DiscordAccountConfig:
@@ -24481,6 +24483,11 @@ paths:
             type: string
           required: false
           name: contactId
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: seasonId
           in: query
       responses:
         "200":

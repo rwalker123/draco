@@ -48,6 +48,7 @@ import PlayersWantedPreview from '@/components/join-league/PlayersWantedPreview'
 import WidgetShell from '../ui/WidgetShell';
 import CommunityMessageList from './CommunityMessageList';
 import NextLink from 'next/link';
+import MemberBusinessSpotlightWidget from '@/components/social/MemberBusinessSpotlightWidget';
 
 const getSourceIcon = (source: string) => {
   switch (source) {
@@ -493,6 +494,21 @@ export default function SocialHubExperience({
               renderAccountRequiredNotice(
                 'Looking for Players/Teams',
                 'Choose an account to browse the latest classifieds.',
+              )
+            )}
+          </Box>
+
+          <Box sx={{ mb: 3 }}>
+            {accountId ? (
+              <MemberBusinessSpotlightWidget
+                accountId={accountId}
+                seasonId={seasonId}
+                viewAllHref={`/account/${accountId}/social-hub/member-businesses`}
+              />
+            ) : (
+              renderAccountRequiredNotice(
+                'Member Businesses',
+                'Select an account to highlight member-owned businesses.',
               )
             )}
           </Box>
