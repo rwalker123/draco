@@ -34,7 +34,7 @@ function createMessage(
 describe('DiscordConnector message cache', () => {
   let repository: Pick<
     ISocialContentRepository,
-    'upsertCommunityMessage' | 'deleteCommunityMessages'
+    'upsertCommunityMessage' | 'deleteCommunityMessages' | 'listCommunityMessageCacheEntries'
   >;
   let options: DiscordConnectorOptions;
   let connector: DiscordConnector;
@@ -43,6 +43,7 @@ describe('DiscordConnector message cache', () => {
     repository = {
       upsertCommunityMessage: vi.fn().mockResolvedValue(undefined),
       deleteCommunityMessages: vi.fn().mockResolvedValue(undefined),
+      listCommunityMessageCacheEntries: vi.fn().mockResolvedValue([]),
     };
 
     options = {
@@ -87,6 +88,12 @@ describe('DiscordConnector message cache', () => {
 
     expect(repository.deleteCommunityMessages).not.toHaveBeenCalled();
     expect(fetchSpy).toHaveBeenCalledTimes(3);
+    expect(repository.listCommunityMessageCacheEntries).toHaveBeenCalledTimes(1);
+    expect(repository.listCommunityMessageCacheEntries).toHaveBeenCalledWith(
+      target.accountId,
+      target.channelId,
+      options.limit,
+    );
   });
 
   it('deletes cached messages that are no longer returned by Discord', async () => {
@@ -117,5 +124,46 @@ describe('DiscordConnector message cache', () => {
       `${target.accountId.toString()}-${second.messageId}`,
     ]);
     expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(repository.listCommunityMessageCacheEntries).toHaveBeenCalledTimes(1);
+    expect(repository.listCommunityMessageCacheEntries).toHaveBeenCalledWith(
+      target.accountId,
+      target.channelId,
+      options.limit,
+    );
+  });
+
+  it('hydrates cache from existing records and deletes missing messages on first run', async () => {
+    const existingId = `${target.accountId.toString()}-stale`;
+    repository.listCommunityMessageCacheEntries = vi.fn().mockResolvedValue([
+      {
+        id: existingId,
+        content: 'Old message',
+        attachments: [],
+        permalink: '',
+        postedAt: new Date('2024-01-01T00:00:00.000Z'),
+      },
+    ]);
+
+    const fetchSpy = vi
+      .spyOn(
+        connector as unknown as {
+          fetchChannelMessages: (
+            target: DiscordIngestionTarget,
+          ) => Promise<DiscordMessageIngestionRecord[]>;
+        },
+        'fetchChannelMessages',
+      )
+      .mockResolvedValue([]);
+
+    await (connector as unknown as { runIngestion: () => Promise<void> }).runIngestion();
+
+    expect(repository.deleteCommunityMessages).toHaveBeenCalledWith([existingId]);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(repository.listCommunityMessageCacheEntries).toHaveBeenCalledTimes(1);
+    expect(repository.listCommunityMessageCacheEntries).toHaveBeenCalledWith(
+      target.accountId,
+      target.channelId,
+      options.limit,
+    );
   });
 });

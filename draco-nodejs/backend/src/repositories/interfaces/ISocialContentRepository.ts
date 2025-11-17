@@ -28,6 +28,14 @@ export interface CommunityMessageQuery {
   limit?: number;
 }
 
+export interface CommunityMessageCacheEntry {
+  id: string;
+  content: string;
+  attachments?: Prisma.JsonValue | null;
+  permalink?: string | null;
+  postedAt: Date;
+}
+
 export type CreateSocialFeedItemInput = Prisma.socialfeeditemsCreateManyInput;
 export type UpsertSocialVideoInput = Prisma.socialvideosUncheckedCreateInput & { id?: string };
 export type UpsertCommunityMessageInput = Prisma.discordmessagesUncheckedCreateInput & {
@@ -42,4 +50,9 @@ export interface ISocialContentRepository {
   listCommunityMessages(query: CommunityMessageQuery): Promise<dbDiscordMessagePreview[]>;
   upsertCommunityMessage(data: UpsertCommunityMessageInput): Promise<void>;
   deleteCommunityMessages(ids: string[]): Promise<void>;
+  listCommunityMessageCacheEntries(
+    accountId: bigint,
+    channelId: string,
+    limit?: number,
+  ): Promise<CommunityMessageCacheEntry[]>;
 }

@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import {
+  CommunityMessageCacheEntry,
   CommunityMessageQuery,
   CreateSocialFeedItemInput,
   ISocialContentRepository,
@@ -110,6 +111,36 @@ export class PrismaSocialContentRepository implements ISocialContentRepository {
         },
       },
     });
+  }
+
+  async listCommunityMessageCacheEntries(
+    accountId: bigint,
+    channelId: string,
+    limit?: number,
+  ): Promise<CommunityMessageCacheEntry[]> {
+    const records = await this.prisma.discordmessages.findMany({
+      select: {
+        id: true,
+        content: true,
+        attachments: true,
+        permalink: true,
+        postedat: true,
+      },
+      where: {
+        accountid: accountId,
+        channelid: channelId,
+      },
+      orderBy: [{ postedat: 'desc' }, { id: 'desc' }],
+      take: typeof limit === 'number' ? limit : 1000,
+    });
+
+    return records.map((record) => ({
+      id: record.id,
+      content: record.content,
+      attachments: record.attachments,
+      permalink: record.permalink,
+      postedAt: record.postedat,
+    }));
   }
 
   private readonly feedInclude = {
