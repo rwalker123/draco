@@ -616,6 +616,48 @@ export interface dbSeasonWithLeagues {
   }>;
 }
 
+export type dbSeasonCopySource = Prisma.seasonGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    accountid: true;
+    leagueseason: {
+      select: {
+        id: true;
+        leagueid: true;
+        divisionseason: {
+          select: {
+            id: true;
+            divisionid: true;
+            priority: true;
+          };
+        };
+        teamsseason: {
+          select: {
+            id: true;
+            teamid: true;
+            name: true;
+            divisionseasonid: true;
+            rosterseason: {
+              where: { inactive: false };
+              select: {
+                playerid: true;
+                playernumber: true;
+                dateadded: true;
+              };
+            };
+            teamseasonmanager: {
+              select: {
+                contactid: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;
+
 export type dbLeagueSeasonBasic = Prisma.leagueseasonGetPayload<{
   select: {
     id: true;

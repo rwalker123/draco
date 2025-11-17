@@ -1596,6 +1596,83 @@ components:
             - name
             - accountId
             - leagues
+    SeasonCopyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        accountId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        isCurrent:
+          type: boolean
+        leagues:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              league:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  name:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                required:
+                  - id
+                  - name
+              divisions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      pattern: ^\d+$
+                      example: "12345"
+                    division:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          pattern: ^\d+$
+                          example: "12345"
+                        name:
+                          type: string
+                          minLength: 1
+                          maxLength: 100
+                      required:
+                        - id
+                        - name
+                    priority:
+                      type: integer
+                  required:
+                    - id
+                    - division
+                    - priority
+            required:
+              - id
+              - league
+      required:
+        - id
+        - name
+        - accountId
+        - leagues
     SeasonParticipantCountData:
       type: object
       properties:
@@ -27482,8 +27559,8 @@ paths:
     post:
       operationId: copyAccountSeason
       summary: Copy season
-      description: Copy an existing season, creating a new season with duplicated
-        league assignments.
+      description: Copy an existing season including leagues, divisions, team seasons,
+        active rosters, and manager assignments.
       tags:
         - Seasons
       security:
@@ -27503,11 +27580,12 @@ paths:
             format: number
       responses:
         "201":
-          description: Season copied successfully.
+          description: Season copied successfully with duplicated leagues, divisions,
+            teams, active rosters, and team managers.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LeagueSeasonWithDivision"
+                $ref: "#/components/schemas/SeasonCopyResponse"
         "401":
           description: Authentication required to copy the season.
           content:

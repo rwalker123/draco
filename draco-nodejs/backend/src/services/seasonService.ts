@@ -5,11 +5,7 @@ import {
   SeasonType,
   UpsertSeasonType,
 } from '@draco/shared-schemas';
-import {
-  ISeasonsRepository,
-  RepositoryFactory,
-  dbLeagueSeasonBasic,
-} from '../repositories/index.js';
+import { ISeasonsRepository, RepositoryFactory } from '../repositories/index.js';
 import { SeasonResponseFormatter } from '../responseFormatters/index.js';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { ServiceFactory } from './serviceFactory.js';
@@ -146,39 +142,29 @@ export class SeasonService {
   }
 
   async copySeason(accountId: bigint, seasonId: bigint): Promise<LeagueSeasonWithDivisionType> {
-    const sourceSeason = await this.seasonsRepository.findSeasonWithLeagues(
-      accountId,
-      seasonId,
-      false,
-    );
+    const sourceSeason = await this.seasonsRepository.findSeasonForCopy(accountId, seasonId);
 
     if (!sourceSeason) {
       throw new NotFoundError('Source season not found');
     }
 
-    const newSeasonName = `${sourceSeason.name} Copy`;
+    const sourceSeasonName = sourceSeason.name.trim();
+    const newSeasonName = `${sourceSeasonName} Copy`;
     const existingCopy = await this.seasonsRepository.findSeasonByName(accountId, newSeasonName);
 
     if (existingCopy) {
       throw new ConflictError('A season with this copy name already exists');
     }
 
-    const newSeason = await this.seasonsRepository.createSeason({
-      name: newSeasonName,
-      accountid: accountId,
-    });
+    const copiedSeason = await this.seasonsRepository.copySeasonStructure(
+      accountId,
+      sourceSeason,
+      newSeasonName,
+    );
 
-    const copiedLeagueSeasons: dbLeagueSeasonBasic[] = [];
-    for (const leagueSeason of sourceSeason.leagueseason) {
-      const createdLeagueSeason = await this.seasonsRepository.createLeagueSeason(
-        newSeason.id,
-        leagueSeason.leagueid,
-      );
-      copiedLeagueSeasons.push(createdLeagueSeason);
-    }
-
-    return SeasonResponseFormatter.formatSeasonWithLeagueBasics(newSeason, copiedLeagueSeasons, {
-      isCurrent: false,
+    return SeasonResponseFormatter.formatSeasonWithLeagues(copiedSeason, {
+      includeDivisions: true,
+      currentSeasonId: null,
     });
   }
 

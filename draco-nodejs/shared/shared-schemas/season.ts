@@ -10,3 +10,7 @@ export * from './seasonBase.js';
 export const CurrentSeasonResponseSchema = z.union([SeasonSchema, LeagueSeasonWithDivisionSchema]);
 
 export type CurrentSeasonResponseType = z.infer<typeof CurrentSeasonResponseSchema>;
+
+export const SeasonCopyResponseSchema = LeagueSeasonWithDivisionSchema;
+
+export type SeasonCopyResponseType = z.infer<typeof SeasonCopyResponseSchema>;

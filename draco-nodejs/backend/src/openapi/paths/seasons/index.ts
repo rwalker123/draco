@@ -8,6 +8,7 @@ export const registerSeasonEndpoints = ({ registry, schemaRefs, z }: RegisterCon
     InternalServerErrorSchemaRef,
     LeagueSeasonWithDivisionSchemaRef,
     NotFoundErrorSchemaRef,
+    SeasonCopyResponseSchemaRef,
     SeasonParticipantCountDataSchemaRef,
     CurrentSeasonResponseSchemaRef,
     SeasonSchemaRef,
@@ -412,7 +413,7 @@ export const registerSeasonEndpoints = ({ registry, schemaRefs, z }: RegisterCon
     operationId: 'copyAccountSeason',
     summary: 'Copy season',
     description:
-      'Copy an existing season, creating a new season with duplicated league assignments.',
+      'Copy an existing season including leagues, divisions, team seasons, active rosters, and manager assignments.',
     tags: ['Seasons'],
     security: [{ bearerAuth: [] }],
     parameters: [
@@ -437,10 +438,11 @@ export const registerSeasonEndpoints = ({ registry, schemaRefs, z }: RegisterCon
     ],
     responses: {
       201: {
-        description: 'Season copied successfully.',
+        description:
+          'Season copied successfully with duplicated leagues, divisions, teams, active rosters, and team managers.',
         content: {
           'application/json': {
-            schema: LeagueSeasonWithDivisionSchemaRef,
+            schema: SeasonCopyResponseSchemaRef,
           },
         },
       },

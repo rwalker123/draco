@@ -3,6 +3,7 @@ import {
   dbContactEmailOnly,
   dbLeagueSeasonBasic,
   dbSeason,
+  dbSeasonCopySource,
   dbSeasonWithLeagues,
 } from '../types/dbTypes.js';
 import { ISeasonsRepository } from '../interfaces/ISeasonsRepository.js';
@@ -209,6 +210,172 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
           },
         },
       },
+    });
+  }
+
+  async findSeasonForCopy(
+    accountId: bigint,
+    seasonId: bigint,
+  ): Promise<dbSeasonCopySource | null> {
+    return this.prisma.season.findFirst({
+      where: { id: seasonId, accountid: accountId },
+      select: {
+        id: true,
+        name: true,
+        accountid: true,
+        leagueseason: {
+          select: {
+            id: true,
+            leagueid: true,
+            divisionseason: {
+              select: {
+                id: true,
+                divisionid: true,
+                priority: true,
+              },
+            },
+            teamsseason: {
+              select: {
+                id: true,
+                teamid: true,
+                name: true,
+                divisionseasonid: true,
+                rosterseason: {
+                  where: { inactive: false },
+                  select: {
+                    playerid: true,
+                    playernumber: true,
+                    dateadded: true,
+                  },
+                },
+                teamseasonmanager: {
+                  select: {
+                    contactid: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async copySeasonStructure(
+    accountId: bigint,
+    sourceSeason: dbSeasonCopySource,
+    newSeasonName: string,
+  ): Promise<dbSeasonWithLeagues> {
+    return this.prisma.$transaction(async (tx) => {
+      const createdSeason = await tx.season.create({
+        data: {
+          accountid: accountId,
+          name: newSeasonName,
+        },
+        select: { id: true },
+      });
+
+      for (const leagueSeason of sourceSeason.leagueseason) {
+        const createdLeagueSeason = await tx.leagueseason.create({
+          data: {
+            seasonid: createdSeason.id,
+            leagueid: leagueSeason.leagueid,
+          },
+          select: { id: true },
+        });
+
+        const divisionSeasonIdMap = new Map<bigint, bigint>();
+
+        for (const division of leagueSeason.divisionseason) {
+          const createdDivisionSeason = await tx.divisionseason.create({
+            data: {
+              divisionid: division.divisionid,
+              leagueseasonid: createdLeagueSeason.id,
+              priority: division.priority ?? 0,
+            },
+            select: { id: true },
+          });
+          divisionSeasonIdMap.set(division.id, createdDivisionSeason.id);
+        }
+
+        for (const teamSeason of leagueSeason.teamsseason) {
+          const divisionSeasonId =
+            teamSeason.divisionseasonid !== null
+              ? divisionSeasonIdMap.get(teamSeason.divisionseasonid) ?? null
+              : null;
+
+          const createdTeamSeason = await tx.teamsseason.create({
+            data: {
+              leagueseasonid: createdLeagueSeason.id,
+              teamid: teamSeason.teamid,
+              name: teamSeason.name,
+              divisionseasonid: divisionSeasonId,
+            },
+            select: { id: true },
+          });
+
+          if (teamSeason.rosterseason.length > 0) {
+            await tx.rosterseason.createMany({
+              data: teamSeason.rosterseason.map((roster) => ({
+                playerid: roster.playerid,
+                playernumber: roster.playernumber,
+                dateadded: roster.dateadded,
+                teamseasonid: createdTeamSeason.id,
+                inactive: false,
+                submittedwaiver: false,
+              })),
+            });
+          }
+
+          if (teamSeason.teamseasonmanager.length > 0) {
+            await tx.teamseasonmanager.createMany({
+              data: teamSeason.teamseasonmanager.map((manager) => ({
+                contactid: manager.contactid,
+                teamseasonid: createdTeamSeason.id,
+              })),
+            });
+          }
+        }
+      }
+
+      const copiedSeason = await tx.season.findFirst({
+        where: { id: createdSeason.id, accountid: accountId },
+        select: {
+          id: true,
+          name: true,
+          accountid: true,
+          leagueseason: {
+            select: {
+              id: true,
+              leagueid: true,
+              league: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              divisionseason: {
+                select: {
+                  id: true,
+                  priority: true,
+                  divisiondefs: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!copiedSeason) {
+        throw new Error('Copied season not found after creation');
+      }
+
+      return copiedSeason;
     });
   }
 
