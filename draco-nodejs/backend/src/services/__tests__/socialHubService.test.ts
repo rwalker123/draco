@@ -97,6 +97,7 @@ describe('SocialHubService', () => {
       listCommunityMessages: vi.fn().mockResolvedValue([]),
       upsertCommunityMessage: vi.fn(),
       deleteCommunityMessages: vi.fn(),
+      listCommunityMessageCacheEntries: vi.fn().mockResolvedValue([]),
     };
 
     liveEventRepository = {

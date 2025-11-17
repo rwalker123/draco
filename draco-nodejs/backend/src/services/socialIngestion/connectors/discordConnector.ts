@@ -1,7 +1,10 @@
 import { Prisma } from '@prisma/client';
 import { BaseSocialIngestionConnector } from './baseConnector.js';
 import { DiscordConnectorOptions, DiscordMessageIngestionRecord } from '../ingestionTypes.js';
-import { ISocialContentRepository } from '../../../repositories/interfaces/ISocialContentRepository.js';
+import {
+  CommunityMessageCacheEntry,
+  ISocialContentRepository,
+} from '../../../repositories/interfaces/ISocialContentRepository.js';
 import { fetchJson, HttpError } from '../../../utils/fetchJson.js';
 import { normalizeDiscordMessage } from '../transformers/discordMessageTransformer.js';
 import type { DiscordIngestionTarget } from '../../../config/socialIngestion.js';
@@ -83,6 +86,7 @@ interface CachedDiscordMessage {
 
 export class DiscordConnector extends BaseSocialIngestionConnector {
   private readonly messageCache = new Map<string, CachedDiscordMessage>();
+  private readonly hydratedTargets = new Set<string>();
   private nextAllowedRun = 0;
   private globalCooldownUntil = 0;
 
@@ -111,6 +115,7 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
 
     let noChangeCount = 0;
     for (const target of targets) {
+      await this.ensureCacheHydrated(target);
       const messages = await this.fetchChannelMessages(target);
       let ingestedCount = 0;
 
@@ -319,6 +324,60 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
 
   private buildCommunityMessageId(accountId: bigint, messageId: string): string {
     return `${accountId.toString()}-${messageId}`;
+  }
+
+  private async ensureCacheHydrated(target: DiscordIngestionTarget): Promise<void> {
+    const prefix = this.getCachePrefix(target);
+    if (this.hydratedTargets.has(prefix)) {
+      return;
+    }
+
+    try {
+      const records = await this.repository.listCommunityMessageCacheEntries(
+        target.accountId,
+        target.channelId,
+      );
+
+      for (const record of records) {
+        const messageId = this.extractMessageIdFromRecord(target.accountId, record.id);
+        if (!messageId) {
+          continue;
+        }
+
+        this.messageCache.set(`${prefix}${messageId}`, {
+          postedAtMs: record.postedAt.getTime(),
+          signature: this.buildStoredMessageSignature(record),
+        });
+      }
+
+      this.hydratedTargets.add(prefix);
+    } catch (error) {
+      console.error('[discord] Failed to hydrate cache for channel', {
+        accountId: target.accountId.toString(),
+        channelId: target.channelId,
+        error,
+      });
+    }
+  }
+
+  private extractMessageIdFromRecord(accountId: bigint, recordId: string): string | null {
+    const prefix = `${accountId.toString()}-`;
+    if (!recordId.startsWith(prefix)) {
+      return null;
+    }
+    return recordId.slice(prefix.length);
+  }
+
+  private buildStoredMessageSignature(record: CommunityMessageCacheEntry): string {
+    const attachments = Array.isArray(record.attachments)
+      ? record.attachments
+      : (record.attachments ?? []);
+
+    return JSON.stringify({
+      content: record.content,
+      attachments,
+      permalink: record.permalink ?? '',
+    });
   }
 
   private async removeDeletedMessages(
