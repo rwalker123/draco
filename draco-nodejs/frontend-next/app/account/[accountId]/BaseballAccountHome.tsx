@@ -93,6 +93,7 @@ const BaseballAccountHome: React.FC = () => {
   const hasAccountContact = Boolean(isAccountMember);
   const canSubmitPhotos = Boolean(isAccountMember);
   const showSubmissionPanel = Boolean(isAccountMember);
+  const shouldShowJoinLeagueNearSponsors = Boolean(user && hasAccountContact);
 
   const canModerateAccountPhotos = useMemo(() => {
     if (!accountIdStr) {
@@ -627,6 +628,7 @@ const BaseballAccountHome: React.FC = () => {
           leagueName: team.league?.name ?? 'Unknown League',
           divisionName: team.division?.name ?? undefined,
           teamId: team.team?.id,
+          logoUrl: team.team?.logoUrl ?? undefined,
         }));
 
         setUserTeams(teams);
@@ -816,6 +818,15 @@ const BaseballAccountHome: React.FC = () => {
     );
   }
 
+  const joinLeagueDashboard = (
+    <JoinLeagueDashboard
+      accountId={accountIdStr}
+      account={account}
+      token={token || undefined}
+      isAccountMember={isAccountMember}
+    />
+  );
+
   return (
     <main className="min-h-screen bg-background">
       {/* Unified Header with Logo and Page Content */}
@@ -901,12 +912,7 @@ const BaseballAccountHome: React.FC = () => {
           }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <JoinLeagueDashboard
-              accountId={accountIdStr}
-              account={account}
-              token={token || undefined}
-              isAccountMember={isAccountMember}
-            />
+            {shouldShowJoinLeagueNearSponsors ? null : joinLeagueDashboard}
 
             {showInformationWidget && accountIdStr ? (
               <InformationWidget
@@ -981,6 +987,8 @@ const BaseballAccountHome: React.FC = () => {
                 albumOptions={submissionAlbumOptions}
               />
             ) : null}
+
+            {shouldShowJoinLeagueNearSponsors ? joinLeagueDashboard : null}
 
             {shouldShowAccountSponsors ? (
               <SponsorCard
