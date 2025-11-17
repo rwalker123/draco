@@ -62,6 +62,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   const shouldShowYouTubeLink = Boolean(youtubeHref);
   const { token } = useAuth();
   const [teamsWantedCount, setTeamsWantedCount] = React.useState<number | null>(null);
+  const [teamsWantedCountError, setTeamsWantedCountError] = React.useState(false);
 
   React.useEffect(() => {
     if (!teamsWantedHref || !token) {
@@ -83,9 +84,12 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
         }
         const total = typeof result.total === 'number' ? result.total : result.data.length;
         setTeamsWantedCount(total);
-      } catch {
+        setTeamsWantedCountError(false);
+      } catch (error) {
+        console.error('Failed to load teams wanted count', error);
         if (active) {
           setTeamsWantedCount(null);
+          setTeamsWantedCountError(true);
         }
       }
     };
@@ -100,6 +104,10 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   const teamsWantedMessage = React.useMemo(() => {
     if (!teamsWantedHref) {
       return null;
+    }
+
+    if (teamsWantedCountError) {
+      return 'Unable to load player counts right now';
     }
 
     if (typeof teamsWantedCount === 'number') {
@@ -219,8 +227,6 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
             <Typography variant="body2" color="text.secondary">
               Need reinforcements? Easily post a Players Wanted ad to recruit new talent.
             </Typography>
-          </AccountOptional>
-          <AccountOptional accountId={accountId} componentId="team.playerClassified.cta">
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="flex-start">
               <Button
                 variant="outlined"
@@ -247,7 +253,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
           {teamsWantedHref && teamsWantedMessage && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle2" color="text.primary" sx={{ fontWeight: 600 }}>
-                Players Looking For Teams
+                Players Looking for Teams
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {teamsWantedMessage},{' '}
