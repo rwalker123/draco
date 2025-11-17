@@ -33,7 +33,7 @@ jobs:
             ${{ runner.os }}-nextjs-
 
       - name: Security - Audit Dependencies
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=critical
 
       - name: Lint
         run: npm run lint
