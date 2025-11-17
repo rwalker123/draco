@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Button, Box, Stack, Typography } from '@mui/material';
+import { Button, Box, Stack, Typography, Link as MuiLink } from '@mui/material';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import Link from 'next/link';
@@ -13,6 +13,8 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import WidgetShell from '../ui/WidgetShell';
 import AccountOptional from '../account/AccountOptional';
+import { useAuth } from '../../context/AuthContext';
+import { playerClassifiedService } from '../../services/playerClassifiedService';
 
 interface TeamAdminPanelProps {
   accountId: string;
@@ -29,6 +31,7 @@ interface TeamAdminPanelProps {
   informationMessagesHref?: string;
   canManageInformationMessages?: boolean;
   youtubeHref?: string;
+  teamsWantedHref?: string;
 }
 
 const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
@@ -46,6 +49,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   informationMessagesHref,
   canManageInformationMessages = false,
   youtubeHref,
+  teamsWantedHref,
 }) => {
   const shouldShowClassifiedsLink =
     showPlayerClassifiedsLink && (!!playerClassifiedsHref || !!onPostPlayersWanted);
@@ -56,11 +60,60 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
     canManageInformationMessages && informationMessagesHref,
   );
   const shouldShowYouTubeLink = Boolean(youtubeHref);
+  const { token } = useAuth();
+  const [teamsWantedCount, setTeamsWantedCount] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (!teamsWantedHref || !token) {
+      setTeamsWantedCount(null);
+      return;
+    }
+
+    let active = true;
+
+    const fetchTeamsWantedCount = async () => {
+      try {
+        const result = await playerClassifiedService.getTeamsWanted(
+          accountId,
+          { page: 1, limit: 1 },
+          token,
+        );
+        if (!active) {
+          return;
+        }
+        const total = typeof result.total === 'number' ? result.total : result.data.length;
+        setTeamsWantedCount(total);
+      } catch {
+        if (active) {
+          setTeamsWantedCount(null);
+        }
+      }
+    };
+
+    fetchTeamsWantedCount();
+
+    return () => {
+      active = false;
+    };
+  }, [accountId, token, teamsWantedHref]);
+
+  const teamsWantedMessage = React.useMemo(() => {
+    if (!teamsWantedHref) {
+      return null;
+    }
+
+    if (typeof teamsWantedCount === 'number') {
+      const noun = teamsWantedCount === 1 ? 'player' : 'players';
+      return `${teamsWantedCount} ${noun} looking for teams`;
+    }
+
+    return 'Players looking for teams';
+  }, [teamsWantedCount, teamsWantedHref]);
 
   return (
     <WidgetShell
-      title="Team Admin Tools"
-      subtitle="Manage the resources that keep your roster thriving."
+      title="Team Management"
+      subtitle="Manage the resources for your team."
       accent="info"
       sx={{
         mb: 4,
@@ -75,17 +128,11 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
           gap: 2,
         }}
       >
-        {shouldShowClassifiedsLink && (
-          <AccountOptional accountId={accountId} componentId="team.playerClassified.cta">
-            <Typography variant="body2" color="text.secondary">
-              Need reinforcements? Easily post a Players Wanted ad to recruit new talent.
-            </Typography>
-          </AccountOptional>
-        )}
         <Stack
-          direction={{ xs: 'column', sm: 'row' }}
+          direction="row"
           spacing={1}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
+          useFlexGap
+          sx={{ width: { xs: '100%', sm: 'auto' }, flexWrap: 'wrap' }}
         >
           {canManageSponsors && (
             <Button
@@ -95,7 +142,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               component={Link}
               href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/sponsors/manage`}
             >
-              Manage Team Sponsors
+              Sponsors
             </Button>
           )}
           {shouldShowStatEntryLink && (
@@ -106,7 +153,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               component={Link}
               href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/stat-entry`}
             >
-              Enter Statistics
+              Statistics
             </Button>
           )}
           {shouldShowAnnouncementsLink && (
@@ -117,7 +164,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               component={Link}
               href={announcementsHref!}
             >
-              Manage Announcements
+              Announcements
             </Button>
           )}
           {shouldShowInformationMessagesLink && (
@@ -128,7 +175,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               component={Link}
               href={informationMessagesHref!}
             >
-              Manage Information Messages
+              Information
             </Button>
           )}
           {shouldShowYouTubeLink && (
@@ -139,7 +186,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               component={Link}
               href={youtubeHref!}
             >
-              Manage YouTube Channel
+              YouTube
             </Button>
           )}
           {shouldShowHandoutsLink && (
@@ -150,7 +197,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               component={Link}
               href={handoutsHref!}
             >
-              Manage Handouts
+              Handouts
             </Button>
           )}
           <AccountOptional accountId={accountId} componentId="team.printableRosterCard">
@@ -164,10 +211,19 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               Printable Roster Card
             </Button>
           </AccountOptional>
-          {shouldShowClassifiedsLink && (
-            <AccountOptional accountId={accountId} componentId="team.playerClassified.cta">
+        </Stack>
+      </Box>
+      {shouldShowClassifiedsLink && (
+        <Stack direction="column" spacing={2} useFlexGap sx={{ width: '100%', mt: 3 }}>
+          <AccountOptional accountId={accountId} componentId="team.playerClassified.cta">
+            <Typography variant="body2" color="text.secondary">
+              Need reinforcements? Easily post a Players Wanted ad to recruit new talent.
+            </Typography>
+          </AccountOptional>
+          <AccountOptional accountId={accountId} componentId="team.playerClassified.cta">
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="flex-start">
               <Button
-                variant="contained"
+                variant="outlined"
                 color="primary"
                 startIcon={<PersonSearchIcon />}
                 {...(onPostPlayersWanted
@@ -176,10 +232,33 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               >
                 Post Players Wanted Ad
               </Button>
-            </AccountOptional>
+              {playerClassifiedsHref && (
+                <Button
+                  variant="text"
+                  color="primary"
+                  component={Link}
+                  href={playerClassifiedsHref}
+                >
+                  View Players Wanted
+                </Button>
+              )}
+            </Stack>
+          </AccountOptional>
+          {teamsWantedHref && teamsWantedMessage && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" color="text.primary" sx={{ fontWeight: 600 }}>
+                Players Looking For Teams
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {teamsWantedMessage},{' '}
+                <MuiLink component={Link} href={teamsWantedHref} sx={{ fontWeight: 600 }}>
+                  view them now
+                </MuiLink>
+              </Typography>
+            </Box>
           )}
         </Stack>
-      </Box>
+      )}
     </WidgetShell>
   );
 };
