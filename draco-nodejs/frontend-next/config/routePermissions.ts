@@ -114,6 +114,15 @@ export const routePermissions: Record<string, RoutePermission> = {
   '/account/[accountId]/statistics': {
     public: true,
   },
+  '/account/[accountId]/social-hub': {
+    public: true,
+  },
+  '/account/[accountId]/social-hub/videos': {
+    public: true,
+  },
+  '/account/[accountId]/social-hub/community': {
+    public: true,
+  },
   '/account/[accountId]/surveys': {
     public: true,
   },

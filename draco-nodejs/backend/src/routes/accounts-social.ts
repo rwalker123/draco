@@ -20,7 +20,6 @@ const socialHubService = ServiceFactory.getSocialHubService();
 router.get(
   '/:accountId/seasons/:seasonId/social/feed',
   optionalAuth,
-  routeProtection.enforceAccountBoundaryIfAuthenticated(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
     const query = SocialFeedQuerySchema.parse(req.query);
@@ -32,7 +31,6 @@ router.get(
 router.get(
   '/:accountId/seasons/:seasonId/social/videos',
   optionalAuth,
-  routeProtection.enforceAccountBoundaryIfAuthenticated(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractSeasonParams(req.params);
     const query = SocialVideoQuerySchema.parse(req.query);
@@ -44,7 +42,6 @@ router.get(
 router.get(
   '/:accountId/seasons/:seasonId/social/community-messages',
   optionalAuth,
-  routeProtection.enforceAccountBoundaryIfAuthenticated(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
     const query = CommunityMessageQuerySchema.parse(req.query);
@@ -56,7 +53,6 @@ router.get(
 router.get(
   '/:accountId/seasons/:seasonId/social/community-channels',
   optionalAuth,
-  routeProtection.enforceAccountBoundaryIfAuthenticated(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
     const query = CommunityChannelQuerySchema.parse(req.query);
