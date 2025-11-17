@@ -13,10 +13,9 @@ export interface SocialFeedQuery {
 
 export interface SocialVideoQuery {
   accountId: bigint;
-  seasonId: bigint;
   teamId?: bigint;
-  teamSeasonId?: bigint;
   liveOnly?: boolean;
+  accountOnly?: boolean;
   limit?: number;
 }
 

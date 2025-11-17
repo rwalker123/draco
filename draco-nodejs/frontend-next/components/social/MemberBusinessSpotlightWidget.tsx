@@ -9,7 +9,6 @@ import type { MemberBusinessType } from '@draco/shared-schemas';
 import WidgetShell from '@/components/ui/WidgetShell';
 import MemberBusinessSummary from '@/components/profile/MemberBusinessSummary';
 import { useApiClient } from '@/hooks/useApiClient';
-import { useAuth } from '@/context/AuthContext';
 import { unwrapApiResult, ApiClientError } from '@/utils/apiResult';
 
 interface MemberBusinessSpotlightWidgetProps {
@@ -26,15 +25,13 @@ const MemberBusinessSpotlightWidget: React.FC<MemberBusinessSpotlightWidgetProps
   viewAllHref,
 }) => {
   const apiClient = useApiClient();
-  const { token } = useAuth();
   const [businesses, setBusinesses] = React.useState<MemberBusinessType[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!accountId || !seasonId || !token) {
+    if (!accountId || !seasonId) {
       setBusinesses([]);
-      setError(null);
       return;
     }
 
@@ -48,7 +45,6 @@ const MemberBusinessSpotlightWidget: React.FC<MemberBusinessSpotlightWidgetProps
           client: apiClient,
           path: { accountId },
           query: { seasonId, limit: BUSINESSES_TO_DISPLAY, randomize: true },
-          security: [{ type: 'http', scheme: 'bearer' }],
           throwOnError: false,
         });
         const payload = unwrapApiResult(result, 'Unable to load member businesses.');
@@ -59,19 +55,7 @@ const MemberBusinessSpotlightWidget: React.FC<MemberBusinessSpotlightWidgetProps
         if (ignore) {
           return;
         }
-        if (err instanceof ApiClientError) {
-          if (err.status === 401) {
-            setError('Sign in to view member businesses.');
-            return;
-          }
-          if (err.status === 403) {
-            setError('You must be an active member of this account to view businesses.');
-            return;
-          }
-          setError(err.message);
-          return;
-        }
-        setError('Unable to load member businesses.');
+        setError(err instanceof ApiClientError ? err.message : 'Unable to load member businesses.');
       } finally {
         if (!ignore) {
           setLoading(false);
@@ -84,7 +68,7 @@ const MemberBusinessSpotlightWidget: React.FC<MemberBusinessSpotlightWidgetProps
     return () => {
       ignore = true;
     };
-  }, [accountId, apiClient, seasonId, token]);
+  }, [accountId, apiClient, seasonId]);
 
   const actions = viewAllHref ? (
     <Button component={NextLink} href={viewAllHref} size="small" variant="text">
@@ -95,10 +79,6 @@ const MemberBusinessSpotlightWidget: React.FC<MemberBusinessSpotlightWidgetProps
   const renderContent = () => {
     if (!accountId || !seasonId) {
       return <Alert severity="info">Select a season to feature member businesses.</Alert>;
-    }
-
-    if (!token) {
-      return <Alert severity="info">Sign in to discover businesses owned by your members.</Alert>;
     }
 
     if (error) {

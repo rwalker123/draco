@@ -75,17 +75,12 @@ export class SocialHubService {
     return SocialFeedResponseFormatter.formatFeedItems(records);
   }
 
-  async listVideos(
-    accountId: bigint,
-    seasonId: bigint,
-    query?: SocialVideoQueryType,
-  ): Promise<SocialVideoType[]> {
+  async listVideos(accountId: bigint, query?: SocialVideoQueryType): Promise<SocialVideoType[]> {
     const repositoryQuery: SocialVideoQuery = {
       accountId,
-      seasonId,
       teamId: toOptionalBigInt(query?.teamId),
-      teamSeasonId: toOptionalBigInt(query?.teamSeasonId),
       liveOnly: query?.liveOnly,
+      accountOnly: query?.accountOnly,
       limit: query?.limit,
     };
 

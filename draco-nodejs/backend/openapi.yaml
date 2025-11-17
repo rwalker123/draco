@@ -3153,6 +3153,17 @@ components:
             autoPlayVideo:
               type: boolean
               default: false
+        discordIntegration:
+          type: object
+          properties:
+            guildId:
+              type: string
+              nullable: true
+            guildName:
+              type: string
+              nullable: true
+          required:
+            - guildId
       required:
         - id
         - name
@@ -3359,6 +3370,17 @@ components:
                 autoPlayVideo:
                   type: boolean
                   default: false
+            discordIntegration:
+              type: object
+              properties:
+                guildId:
+                  type: string
+                  nullable: true
+                guildName:
+                  type: string
+                  nullable: true
+              required:
+                - guildId
           required:
             - id
             - name
@@ -3673,6 +3695,17 @@ components:
             autoPlayVideo:
               type: boolean
               default: false
+        discordIntegration:
+          type: object
+          properties:
+            guildId:
+              type: string
+              nullable: true
+            guildName:
+              type: string
+              nullable: true
+          required:
+            - guildId
         ownerContact:
           type: object
           properties:
@@ -12784,16 +12817,7 @@ components:
           type: string
           pattern: ^\d+$
           example: "12345"
-        seasonId:
-          type: string
-          pattern: ^\d+$
-          example: "12345"
         teamId:
-          type: string
-          nullable: true
-          pattern: ^\d+$
-          example: "12345"
-        teamSeasonId:
           type: string
           nullable: true
           pattern: ^\d+$
@@ -12838,7 +12862,6 @@ components:
       required:
         - id
         - accountId
-        - seasonId
         - source
         - title
         - thumbnailUrl
@@ -12861,16 +12884,7 @@ components:
                 type: string
                 pattern: ^\d+$
                 example: "12345"
-              seasonId:
-                type: string
-                pattern: ^\d+$
-                example: "12345"
               teamId:
-                type: string
-                nullable: true
-                pattern: ^\d+$
-                example: "12345"
-              teamSeasonId:
                 type: string
                 nullable: true
                 pattern: ^\d+$
@@ -12915,7 +12929,6 @@ components:
             required:
               - id
               - accountId
-              - seasonId
               - source
               - title
               - thumbnailUrl
@@ -12933,11 +12946,9 @@ components:
           type: string
           pattern: ^\d+$
           example: "12345"
-        teamSeasonId:
-          type: string
-          pattern: ^\d+$
-          example: "12345"
         liveOnly:
+          type: boolean
+        accountOnly:
           type: boolean
         limit:
           type: number
@@ -15350,6 +15361,17 @@ paths:
                     autoPlayVideo:
                       type: boolean
                       default: false
+                discordIntegration:
+                  type: object
+                  properties:
+                    guildId:
+                      type: string
+                      nullable: true
+                    guildName:
+                      type: string
+                      nullable: true
+                  required:
+                    - guildId
                 ownerContact:
                   type: object
                   properties:
@@ -27771,16 +27793,14 @@ paths:
           name: teamId
           in: query
         - schema:
-            type: string
-            pattern: ^\d+$
-            example: "12345"
+            type: boolean
           required: false
-          name: teamSeasonId
+          name: liveOnly
           in: query
         - schema:
             type: boolean
           required: false
-          name: liveOnly
+          name: accountOnly
           in: query
         - schema:
             type: number

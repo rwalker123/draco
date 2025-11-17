@@ -38,9 +38,7 @@ export class SocialFeedResponseFormatter {
     return records.map((record) => ({
       id: record.id,
       accountId: record.accountid.toString(),
-      seasonId: record.seasonid.toString(),
       teamId: record.teamid?.toString() ?? null,
-      teamSeasonId: record.teamseasonid?.toString() ?? null,
       source: record.source as SocialVideoType['source'],
       title: record.title,
       description: record.description,

@@ -34,9 +34,9 @@ router.get(
   optionalAuth,
   routeProtection.enforceAccountBoundaryIfAuthenticated(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId, seasonId } = extractSeasonParams(req.params);
+    const { accountId } = extractSeasonParams(req.params);
     const query = SocialVideoQuerySchema.parse(req.query);
-    const videos = await socialHubService.listVideos(accountId, seasonId, query);
+    const videos = await socialHubService.listVideos(accountId, query);
     res.json({ videos });
   }),
 );

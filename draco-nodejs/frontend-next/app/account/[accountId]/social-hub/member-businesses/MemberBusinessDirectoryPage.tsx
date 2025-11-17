@@ -20,7 +20,6 @@ import type { MemberBusinessType } from '@draco/shared-schemas';
 import AccountPageHeader from '@/components/AccountPageHeader';
 import MemberBusinessSummary from '@/components/profile/MemberBusinessSummary';
 import { useAccount } from '@/context/AccountContext';
-import { useAuth } from '@/context/AuthContext';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useCurrentSeason } from '@/hooks/useCurrentSeason';
 import { unwrapApiResult, ApiClientError } from '@/utils/apiResult';
@@ -30,7 +29,6 @@ const MemberBusinessDirectoryPage: React.FC = () => {
   const accountIdParam = params?.accountId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
   const { currentAccount } = useAccount();
-  const { token } = useAuth();
   const apiClient = useApiClient();
   const {
     currentSeasonId,
@@ -52,7 +50,7 @@ const MemberBusinessDirectoryPage: React.FC = () => {
   }, [accountId, fetchCurrentSeason]);
 
   React.useEffect(() => {
-    if (!accountId || !currentSeasonId || !token) {
+    if (!accountId || !currentSeasonId) {
       setBusinesses([]);
       return;
     }
@@ -67,7 +65,6 @@ const MemberBusinessDirectoryPage: React.FC = () => {
           client: apiClient,
           path: { accountId },
           query: { seasonId: currentSeasonId },
-          security: [{ type: 'http', scheme: 'bearer' }],
           throwOnError: false,
         });
         const payload = unwrapApiResult(result, 'Unable to load member businesses.');
@@ -95,7 +92,7 @@ const MemberBusinessDirectoryPage: React.FC = () => {
     return () => {
       ignore = true;
     };
-  }, [accountId, apiClient, currentSeasonId, token]);
+  }, [accountId, apiClient, currentSeasonId]);
 
   if (!accountId) {
     return null;

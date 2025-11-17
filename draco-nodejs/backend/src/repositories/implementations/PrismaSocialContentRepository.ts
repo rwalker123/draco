@@ -44,15 +44,14 @@ export class PrismaSocialContentRepository implements ISocialContentRepository {
   }
 
   async listVideos(query: SocialVideoQuery): Promise<dbSocialVideo[]> {
-    const { accountId, seasonId, teamId, teamSeasonId, liveOnly, limit = 20 } = query;
+    const { accountId, teamId, liveOnly, accountOnly, limit = 20 } = query;
 
     return this.prisma.socialvideos.findMany({
       where: {
         accountid: accountId,
-        seasonid: seasonId,
-        ...(teamSeasonId ? { teamseasonid: teamSeasonId } : {}),
         ...(teamId ? { teamid: teamId } : {}),
         ...(liveOnly ? { islive: true } : {}),
+        ...(accountOnly ? { teamid: null } : {}),
       },
       include: this.videoInclude,
       orderBy: [{ publishedat: 'desc' }, { id: 'desc' }],

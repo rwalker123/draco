@@ -4264,6 +4264,22 @@
                 "default": false
               }
             }
+          },
+          "discordIntegration": {
+            "type": "object",
+            "properties": {
+              "guildId": {
+                "type": "string",
+                "nullable": true
+              },
+              "guildName": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "guildId"
+            ]
           }
         },
         "required": [
@@ -4547,6 +4563,22 @@
                     "default": false
                   }
                 }
+              },
+              "discordIntegration": {
+                "type": "object",
+                "properties": {
+                  "guildId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "guildName": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "guildId"
+                ]
               }
             },
             "required": [
@@ -4978,6 +5010,22 @@
                 "default": false
               }
             }
+          },
+          "discordIntegration": {
+            "type": "object",
+            "properties": {
+              "guildId": {
+                "type": "string",
+                "nullable": true
+              },
+              "guildName": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "guildId"
+            ]
           },
           "ownerContact": {
             "type": "object",
@@ -17148,18 +17196,7 @@
             "pattern": "^\\d+$",
             "example": "12345"
           },
-          "seasonId": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "example": "12345"
-          },
           "teamId": {
-            "type": "string",
-            "nullable": true,
-            "pattern": "^\\d+$",
-            "example": "12345"
-          },
-          "teamSeasonId": {
             "type": "string",
             "nullable": true,
             "pattern": "^\\d+$",
@@ -17215,7 +17252,6 @@
         "required": [
           "id",
           "accountId",
-          "seasonId",
           "source",
           "title",
           "thumbnailUrl",
@@ -17242,18 +17278,7 @@
                   "pattern": "^\\d+$",
                   "example": "12345"
                 },
-                "seasonId": {
-                  "type": "string",
-                  "pattern": "^\\d+$",
-                  "example": "12345"
-                },
                 "teamId": {
-                  "type": "string",
-                  "nullable": true,
-                  "pattern": "^\\d+$",
-                  "example": "12345"
-                },
-                "teamSeasonId": {
                   "type": "string",
                   "nullable": true,
                   "pattern": "^\\d+$",
@@ -17309,7 +17334,6 @@
               "required": [
                 "id",
                 "accountId",
-                "seasonId",
                 "source",
                 "title",
                 "thumbnailUrl",
@@ -17334,12 +17358,10 @@
             "pattern": "^\\d+$",
             "example": "12345"
           },
-          "teamSeasonId": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "example": "12345"
-          },
           "liveOnly": {
+            "type": "boolean"
+          },
+          "accountOnly": {
             "type": "boolean"
           },
           "limit": {
@@ -20648,6 +20670,22 @@
                         "default": false
                       }
                     }
+                  },
+                  "discordIntegration": {
+                    "type": "object",
+                    "properties": {
+                      "guildId": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "guildName": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "guildId"
+                    ]
                   },
                   "ownerContact": {
                     "type": "object",
@@ -40838,12 +40876,10 @@
           },
           {
             "schema": {
-              "type": "string",
-              "pattern": "^\\d+$",
-              "example": "12345"
+              "type": "boolean"
             },
             "required": false,
-            "name": "teamSeasonId",
+            "name": "liveOnly",
             "in": "query"
           },
           {
@@ -40851,7 +40887,7 @@
               "type": "boolean"
             },
             "required": false,
-            "name": "liveOnly",
+            "name": "accountOnly",
             "in": "query"
           },
           {

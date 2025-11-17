@@ -27,7 +27,8 @@ import type { SocialVideoType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '@/utils/apiResult';
 
 const PAGE_SIZE = 12;
-const TEAM_FILTER_ACCOUNT = 'account';
+const FILTER_ALL = 'all';
+const FILTER_ACCOUNT_ONLY = 'account-only';
 
 const AccountVideosPage: React.FC = () => {
   const params = useParams();
@@ -48,7 +49,7 @@ const AccountVideosPage: React.FC = () => {
   const apiClient = useApiClient();
 
   const [videos, setVideos] = React.useState<SocialVideoType[]>([]);
-  const [selectedTeamId, setSelectedTeamId] = React.useState<string>(TEAM_FILTER_ACCOUNT);
+  const [selectedFilter, setSelectedFilter] = React.useState<string>(FILTER_ALL);
   const [limit, setLimit] = React.useState(PAGE_SIZE);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -63,17 +64,20 @@ const AccountVideosPage: React.FC = () => {
   }, [accountId, fetchCurrentSeason]);
 
   const loadVideos = React.useCallback(
-    async (limitValue: number, teamSeasonId?: string | null) => {
+    async (limitValue: number, currentFilter?: string | null) => {
       if (!accountId || !currentSeasonId) {
         return;
       }
       setLoading(true);
       setError(null);
       try {
+        const filterValue = currentFilter ?? FILTER_ALL;
         const query =
-          teamSeasonId && teamSeasonId !== TEAM_FILTER_ACCOUNT
-            ? { limit: limitValue, teamSeasonId }
-            : { limit: limitValue };
+          filterValue !== FILTER_ALL && filterValue !== FILTER_ACCOUNT_ONLY
+            ? { limit: limitValue, teamId: filterValue }
+            : filterValue === FILTER_ACCOUNT_ONLY
+              ? { limit: limitValue, accountOnly: true }
+              : { limit: limitValue };
         const result = await fetchVideos(query);
         setVideos(result);
         setHasMore(result.length === limitValue);
@@ -114,7 +118,7 @@ const AccountVideosPage: React.FC = () => {
 
       const teamIdsWithVideos = new Set(
         (videoPayload?.videos ?? [])
-          .map((video) => video.teamSeasonId)
+          .map((video) => video.teamId)
           .filter((value): value is string => Boolean(value)),
       );
 
@@ -123,13 +127,20 @@ const AccountVideosPage: React.FC = () => {
         return;
       }
 
-      const filtered = (teamsPayload ?? []).filter((team) => teamIdsWithVideos.has(team.id));
-      setTeamOptions(
-        filtered.map((team) => ({
-          id: team.id,
+      const optionEntries: Array<{ id: string; name: string }> = [];
+      const seen = new Set<string>();
+      (teamsPayload ?? []).forEach((team) => {
+        const id = team.team?.id;
+        if (!id || !teamIdsWithVideos.has(id) || seen.has(id)) {
+          return;
+        }
+        seen.add(id);
+        optionEntries.push({
+          id,
           name: team.name ?? 'Team',
-        })),
-      );
+        });
+      });
+      setTeamOptions(optionEntries);
     } catch {
       setTeamOptions([]);
     }
@@ -143,13 +154,13 @@ const AccountVideosPage: React.FC = () => {
 
   React.useEffect(() => {
     setLimit(PAGE_SIZE);
-  }, [selectedTeamId]);
+  }, [selectedFilter]);
 
   React.useEffect(() => {
     if (currentSeasonId) {
-      void loadVideos(limit, selectedTeamId === TEAM_FILTER_ACCOUNT ? null : selectedTeamId);
+      void loadVideos(limit, selectedFilter);
     }
-  }, [currentSeasonId, limit, selectedTeamId, loadVideos]);
+  }, [currentSeasonId, limit, selectedFilter, loadVideos]);
 
   if (!accountId) {
     return null;
@@ -241,16 +252,17 @@ const AccountVideosPage: React.FC = () => {
             </Link>
             <Typography color="text.primary">Videos</Typography>
           </Breadcrumbs>
-          <FormControl size="small" sx={{ minWidth: 220 }} disabled={teamOptions.length === 0}>
-            <InputLabel id="team-filter-label">Filter by team</InputLabel>
+          <FormControl size="small" sx={{ minWidth: 220 }}>
+            <InputLabel id="team-filter-label">Filter videos</InputLabel>
             <Select
               labelId="team-filter-label"
               id="team-filter-select"
-              value={selectedTeamId}
-              label="Filter by team"
-              onChange={(event) => setSelectedTeamId(event.target.value)}
+              value={selectedFilter}
+              label="Filter videos"
+              onChange={(event) => setSelectedFilter(event.target.value)}
             >
-              <MenuItem value={TEAM_FILTER_ACCOUNT}>All account videos</MenuItem>
+              <MenuItem value={FILTER_ALL}>All videos</MenuItem>
+              <MenuItem value={FILTER_ACCOUNT_ONLY}>Account videos only</MenuItem>
               {teamOptions.map((team) => (
                 <MenuItem key={team.id} value={team.id}>
                   {team.name}

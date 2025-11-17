@@ -58,14 +58,14 @@ const TeamVideosPage: React.FC = () => {
   }, [teamHeader?.youtubeUserId]);
 
   const loadVideos = React.useCallback(
-    async (limitValue: number) => {
-      if (!accountId || !seasonId || !teamSeasonId) {
+    async (limitValue: number, teamId?: string | null) => {
+      if (!accountId || !teamId) {
         return;
       }
       setLoading(true);
       setError(null);
       try {
-        const result = await fetchVideos({ limit: limitValue, teamSeasonId });
+        const result = await fetchVideos({ limit: limitValue, teamId });
         setVideos(result);
         setHasMore(result.length === limitValue);
       } catch (err) {
@@ -75,12 +75,14 @@ const TeamVideosPage: React.FC = () => {
         setLoading(false);
       }
     },
-    [accountId, seasonId, teamSeasonId, fetchVideos],
+    [accountId, fetchVideos],
   );
 
   React.useEffect(() => {
-    void loadVideos(limit);
-  }, [limit, loadVideos]);
+    if (teamHeader?.teamId) {
+      void loadVideos(limit, teamHeader.teamId);
+    }
+  }, [limit, loadVideos, teamHeader?.teamId]);
 
   if (!accountId || !seasonId || !teamSeasonId) {
     return null;

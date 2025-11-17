@@ -135,9 +135,7 @@ export const SocialVideoSchema = z
   .object({
     id: z.string().trim().min(1),
     accountId: bigintToStringSchema,
-    seasonId: bigintToStringSchema,
     teamId: bigintToStringSchema.nullable().optional(),
-    teamSeasonId: bigintToStringSchema.nullable().optional(),
     source: SocialSourceSchema,
     title: z.string().trim().min(1),
     description: z.string().trim().nullable().optional(),
@@ -160,8 +158,8 @@ export const SocialVideoListSchema = z
 export const SocialVideoQuerySchema = z
   .object({
     teamId: optionalBigintStringSchema,
-    teamSeasonId: optionalBigintStringSchema,
     liveOnly: booleanQueryParam.optional(),
+    accountOnly: booleanQueryParam.optional(),
     limit: numberQueryParam({ min: 1, max: 100 }).default(20),
   })
   .openapi({

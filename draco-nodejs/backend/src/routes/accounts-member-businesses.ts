@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware.js';
+import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
@@ -140,8 +140,8 @@ const requireSelfManagedOrPermission =
 
 router.get(
   '/:accountId/member-businesses',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
+  optionalAuth,
+  routeProtection.enforceAccountBoundaryIfAuthenticated(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const query = MemberBusinessQueryParamsSchema.parse(req.query);
@@ -161,8 +161,8 @@ router.get(
 
 router.get(
   '/:accountId/member-businesses/:memberBusinessId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
+  optionalAuth,
+  routeProtection.enforceAccountBoundaryIfAuthenticated(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const memberBusinessId = parseMemberBusinessId(req);

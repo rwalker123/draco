@@ -760,6 +760,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 accountId={accountId}
                 seasonId={seasonId}
                 teamSeasonId={teamSeasonId}
+                teamId={teamData.teamId}
                 youtubeChannelId={teamData?.youtubeUserId ?? null}
                 teamName={teamData?.teamName ?? null}
                 viewAllHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/videos`}
