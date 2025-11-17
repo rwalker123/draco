@@ -165,6 +165,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     >
   >({});
   const randomizationAppliedRef = useRef(false);
+  const leagueRandomizationAppliedRef = useRef(false);
   const leagueTabsRef = useRef<HTMLDivElement | null>(null);
   const statTabsRef = useRef<HTMLDivElement | null>(null);
   const categoryTabsRef = useRef<HTMLDivElement | null>(null);
@@ -240,6 +241,26 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
       [chosenType]: chosenCategory.key,
     }));
   }, [randomize, battingCategories, pitchingCategories]);
+
+  useEffect(() => {
+    if (isTeamVariant || !randomize || leagueRandomizationAppliedRef.current) {
+      return;
+    }
+
+    if (resolvedLeagues.length === 0) {
+      return;
+    }
+
+    const leagueIndex = Math.floor(Math.random() * resolvedLeagues.length);
+    const chosenLeagueId = resolvedLeagues[leagueIndex]?.id ?? null;
+
+    if (!chosenLeagueId) {
+      return;
+    }
+
+    leagueRandomizationAppliedRef.current = true;
+    setSelectedLeagueId(chosenLeagueId);
+  }, [isTeamVariant, randomize, resolvedLeagues]);
 
   const activeCategories: LeaderCategoryType[] =
     statType === 'batting' ? battingCategories : pitchingCategories;
