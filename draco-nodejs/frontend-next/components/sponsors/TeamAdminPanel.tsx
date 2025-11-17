@@ -116,7 +116,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
     }
 
     return 'Players looking for teams';
-  }, [teamsWantedCount, teamsWantedHref]);
+  }, [teamsWantedCount, teamsWantedHref, teamsWantedCountError]);
 
   return (
     <WidgetShell
