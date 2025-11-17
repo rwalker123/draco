@@ -177,7 +177,7 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
   ): Promise<DiscordMessageIngestionRecord[]> {
     const { channelId, guildId } = target;
     const url = new URL(`https://discord.com/api/v10/channels/${channelId}/messages`);
-    url.searchParams.set('limit', String(Math.min(this.options.limit, 50)));
+    url.searchParams.set('limit', String(this.getFetchLimit()));
 
     try {
       const response = await fetchJson<DiscordMessage[]>(url, {
@@ -336,6 +336,7 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
       const records = await this.repository.listCommunityMessageCacheEntries(
         target.accountId,
         target.channelId,
+        this.getFetchLimit(),
       );
 
       for (const record of records) {
@@ -357,6 +358,7 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
         channelId: target.channelId,
         error,
       });
+      throw error;
     }
   }
 
@@ -369,15 +371,15 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
   }
 
   private buildStoredMessageSignature(record: CommunityMessageCacheEntry): string {
-    const attachments = Array.isArray(record.attachments)
-      ? record.attachments
-      : (record.attachments ?? []);
-
     return JSON.stringify({
       content: record.content,
-      attachments,
+      attachments: Array.isArray(record.attachments) ? record.attachments : [],
       permalink: record.permalink ?? '',
     });
+  }
+
+  private getFetchLimit(): number {
+    return Math.min(this.options.limit, 50);
   }
 
   private async removeDeletedMessages(

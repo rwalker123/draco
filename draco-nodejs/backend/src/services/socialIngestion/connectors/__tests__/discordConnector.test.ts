@@ -89,6 +89,11 @@ describe('DiscordConnector message cache', () => {
     expect(repository.deleteCommunityMessages).not.toHaveBeenCalled();
     expect(fetchSpy).toHaveBeenCalledTimes(3);
     expect(repository.listCommunityMessageCacheEntries).toHaveBeenCalledTimes(1);
+    expect(repository.listCommunityMessageCacheEntries).toHaveBeenCalledWith(
+      target.accountId,
+      target.channelId,
+      options.limit,
+    );
   });
 
   it('deletes cached messages that are no longer returned by Discord', async () => {
@@ -120,6 +125,11 @@ describe('DiscordConnector message cache', () => {
     ]);
     expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect(repository.listCommunityMessageCacheEntries).toHaveBeenCalledTimes(1);
+    expect(repository.listCommunityMessageCacheEntries).toHaveBeenCalledWith(
+      target.accountId,
+      target.channelId,
+      options.limit,
+    );
   });
 
   it('hydrates cache from existing records and deletes missing messages on first run', async () => {
@@ -150,5 +160,10 @@ describe('DiscordConnector message cache', () => {
     expect(repository.deleteCommunityMessages).toHaveBeenCalledWith([existingId]);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(repository.listCommunityMessageCacheEntries).toHaveBeenCalledTimes(1);
+    expect(repository.listCommunityMessageCacheEntries).toHaveBeenCalledWith(
+      target.accountId,
+      target.channelId,
+      options.limit,
+    );
   });
 });

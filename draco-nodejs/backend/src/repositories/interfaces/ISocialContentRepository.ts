@@ -53,5 +53,6 @@ export interface ISocialContentRepository {
   listCommunityMessageCacheEntries(
     accountId: bigint,
     channelId: string,
+    limit?: number,
   ): Promise<CommunityMessageCacheEntry[]>;
 }

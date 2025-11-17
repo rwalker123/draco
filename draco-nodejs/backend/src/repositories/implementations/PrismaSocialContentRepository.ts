@@ -116,6 +116,7 @@ export class PrismaSocialContentRepository implements ISocialContentRepository {
   async listCommunityMessageCacheEntries(
     accountId: bigint,
     channelId: string,
+    limit?: number,
   ): Promise<CommunityMessageCacheEntry[]> {
     const records = await this.prisma.discordmessages.findMany({
       select: {
@@ -129,6 +130,8 @@ export class PrismaSocialContentRepository implements ISocialContentRepository {
         accountid: accountId,
         channelid: channelId,
       },
+      orderBy: [{ postedat: 'desc' }, { id: 'desc' }],
+      take: typeof limit === 'number' ? limit : 1000,
     });
 
     return records.map((record) => ({
