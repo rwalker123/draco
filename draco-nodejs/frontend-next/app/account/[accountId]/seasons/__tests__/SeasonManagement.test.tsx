@@ -25,8 +25,10 @@ vi.mock('@/context/RoleContext', () => ({
   }),
 }));
 
+const mockApiClient = {};
+
 vi.mock('@/hooks/useApiClient', () => ({
-  useApiClient: () => ({}),
+  useApiClient: () => mockApiClient,
 }));
 
 vi.mock('@draco/shared-api-client', () => ({
