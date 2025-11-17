@@ -213,10 +213,7 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
     });
   }
 
-  async findSeasonForCopy(
-    accountId: bigint,
-    seasonId: bigint,
-  ): Promise<dbSeasonCopySource | null> {
+  async findSeasonForCopy(accountId: bigint, seasonId: bigint): Promise<dbSeasonCopySource | null> {
     return this.prisma.season.findFirst({
       where: { id: seasonId, accountid: accountId },
       select: {
@@ -291,7 +288,7 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
             data: {
               divisionid: division.divisionid,
               leagueseasonid: createdLeagueSeason.id,
-              priority: division.priority ?? 0,
+              priority: division.priority,
             },
             select: { id: true },
           });
@@ -299,10 +296,16 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
         }
 
         for (const teamSeason of leagueSeason.teamsseason) {
-          const divisionSeasonId =
-            teamSeason.divisionseasonid !== null
-              ? divisionSeasonIdMap.get(teamSeason.divisionseasonid) ?? null
-              : null;
+          let divisionSeasonId: bigint | null = null;
+          if (teamSeason.divisionseasonid !== null) {
+            const mappedDivisionSeasonId = divisionSeasonIdMap.get(teamSeason.divisionseasonid);
+            if (mappedDivisionSeasonId === undefined) {
+              throw new Error(
+                `DivisionSeason mapping missing for teamSeason.divisionseasonid=${teamSeason.divisionseasonid}`,
+              );
+            }
+            divisionSeasonId = mappedDivisionSeasonId;
+          }
 
           const createdTeamSeason = await tx.teamsseason.create({
             data: {
