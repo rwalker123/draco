@@ -3830,10 +3830,10 @@ components:
                 type: string
                 enum:
                   - ShowBusinessDirectory
-                  - ShowSponsorSpotlight
                   - ShowPlayerClassified
                   - ShowPlayerSurvey
                   - ShowHOF
+                  - AllowPhotoUploads
                   - TrackWaiver
                   - ShowWaiver
                   - TrackIdentification
@@ -3886,10 +3886,10 @@ components:
                       type: string
                       enum:
                         - ShowBusinessDirectory
-                        - ShowSponsorSpotlight
                         - ShowPlayerClassified
                         - ShowPlayerSurvey
                         - ShowHOF
+                        - AllowPhotoUploads
                         - TrackWaiver
                         - ShowWaiver
                         - TrackIdentification
@@ -3977,10 +3977,10 @@ components:
               type: string
               enum:
                 - ShowBusinessDirectory
-                - ShowSponsorSpotlight
                 - ShowPlayerClassified
                 - ShowPlayerSurvey
                 - ShowHOF
+                - AllowPhotoUploads
                 - TrackWaiver
                 - ShowWaiver
                 - TrackIdentification
@@ -4033,10 +4033,10 @@ components:
                     type: string
                     enum:
                       - ShowBusinessDirectory
-                      - ShowSponsorSpotlight
                       - ShowPlayerClassified
                       - ShowPlayerSurvey
                       - ShowHOF
+                      - AllowPhotoUploads
                       - TrackWaiver
                       - ShowWaiver
                       - TrackIdentification
@@ -4127,10 +4127,10 @@ components:
       type: string
       enum:
         - ShowBusinessDirectory
-        - ShowSponsorSpotlight
         - ShowPlayerClassified
         - ShowPlayerSurvey
         - ShowHOF
+        - AllowPhotoUploads
         - TrackWaiver
         - ShowWaiver
         - TrackIdentification
@@ -16911,10 +16911,10 @@ paths:
             type: string
             enum:
               - ShowBusinessDirectory
-              - ShowSponsorSpotlight
               - ShowPlayerClassified
               - ShowPlayerSurvey
               - ShowHOF
+              - AllowPhotoUploads
               - TrackWaiver
               - ShowWaiver
               - TrackIdentification
