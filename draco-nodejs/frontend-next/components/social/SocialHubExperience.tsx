@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Avatar,
   Box,
@@ -11,12 +11,9 @@ import {
   CardContent,
   CardMedia,
   IconButton,
-  Button,
   Stack,
   Alert,
   Skeleton,
-  ToggleButton,
-  ToggleButtonGroup,
 } from '@mui/material';
 import {
   Twitter,
@@ -29,22 +26,16 @@ import {
   Share,
   Forum,
 } from '@mui/icons-material';
-import type {
-  SocialFeedItemType,
-  CommunityMessagePreviewType,
-  CommunityChannelType,
-} from '@draco/shared-schemas';
+import type { SocialFeedItemType } from '@draco/shared-schemas';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
 import { formatRelativeTime } from './utils';
 import FeaturedVideosWidget from './FeaturedVideosWidget';
 import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
 import PlayersWantedPreview from '@/components/join-league/PlayersWantedPreview';
-import WidgetShell from '../ui/WidgetShell';
-import CommunityMessageList from './CommunityMessageList';
-import NextLink from 'next/link';
 import MemberBusinessSpotlightWidget from '@/components/social/MemberBusinessSpotlightWidget';
 import AccountOptional from '@/components/account/AccountOptional';
+import CommunityChatsWidget from './CommunityChatsWidget';
 
 const getSourceIcon = (source: string) => {
   switch (source) {
@@ -145,7 +136,7 @@ export default function SocialHubExperience({
   seasonId,
   isAccountMember,
 }: SocialHubExperienceProps) {
-  const { fetchFeed, fetchCommunityMessages, fetchCommunityChannels } = useSocialHubService({
+  const { fetchFeed } = useSocialHubService({
     accountId,
     seasonId,
   });
@@ -154,26 +145,6 @@ export default function SocialHubExperience({
     loading: boolean;
     error: string | null;
   }>({ items: [], loading: false, error: null });
-  const [communityState, setCommunityState] = useState<{
-    items: CommunityMessagePreviewType[];
-    loading: boolean;
-    error: string | null;
-  }>({ items: [], loading: false, error: null });
-  const [channelState, setChannelState] = useState<{
-    channels: CommunityChannelType[];
-    loading: boolean;
-    error: string | null;
-  }>({ channels: [], loading: false, error: null });
-  const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
-  const selectedChannel = channelState.channels.find((channel) => channel.id === selectedChannelId);
-  const selectedDiscordChannelId = selectedChannel?.discordChannelId;
-  const handleOpenMessagePermalink = useCallback((permalink?: string) => {
-    if (!permalink) {
-      return;
-    }
-    window.open(permalink, '_blank', 'noopener,noreferrer');
-  }, []);
-
   useEffect(() => {
     if (!accountId || !seasonId) {
       setFeedState({ items: [], loading: false, error: null });
@@ -203,79 +174,6 @@ export default function SocialHubExperience({
       cancelled = true;
     };
   }, [accountId, seasonId, fetchFeed]);
-
-  useEffect(() => {
-    if (!accountId || !seasonId) {
-      setCommunityState({ items: [], loading: false, error: null });
-      return;
-    }
-
-    let cancelled = false;
-    setCommunityState((prev) => ({ ...prev, loading: true, error: null }));
-
-    const channelIds = selectedDiscordChannelId ? [selectedDiscordChannelId] : undefined;
-    fetchCommunityMessages({ limit: 5, channelIds })
-      .then((items) => {
-        if (!cancelled) {
-          setCommunityState({ items, loading: false, error: null });
-        }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          console.error('[SocialHub] Community message load failed', error);
-          setCommunityState({
-            items: [],
-            loading: false,
-            error: error instanceof Error ? error.message : 'Unable to load community discussions.',
-          });
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [accountId, seasonId, fetchCommunityMessages, selectedDiscordChannelId]);
-
-  useEffect(() => {
-    if (!accountId || !seasonId) {
-      setChannelState({ channels: [], loading: false, error: null });
-      return;
-    }
-
-    let cancelled = false;
-    setChannelState((prev) => ({ ...prev, loading: true, error: null }));
-
-    fetchCommunityChannels()
-      .then((channels) => {
-        if (!cancelled) {
-          setChannelState({ channels, loading: false, error: null });
-          setSelectedChannelId((prev) =>
-            prev && !channels.some((channel) => channel.id === prev) ? null : prev,
-          );
-        }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          setChannelState({
-            channels: [],
-            loading: false,
-            error: error instanceof Error ? error.message : 'Unable to load community channels.',
-          });
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [accountId, seasonId, fetchCommunityChannels]);
-
-  const handleOpenDiscord = useCallback(() => {
-    const targetUrl =
-      selectedChannel?.url ?? channelState.channels.find((channel) => channel.url)?.url;
-    if (targetUrl && typeof window !== 'undefined') {
-      window.open(targetUrl, '_blank', 'noopener');
-    }
-  }, [selectedChannel?.url, channelState.channels]);
 
   const displayedFeedItems = feedState.items.slice(0, 4);
   const renderCardSkeletons = (count: number) => (
@@ -336,98 +234,7 @@ export default function SocialHubExperience({
               viewAllHref={accountId ? `/account/${accountId}/social-hub/videos` : undefined}
             />
 
-            <WidgetShell
-              title={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Forum sx={{ color: 'primary.main' }} /> Community Chats
-                </Box>
-              }
-              accent="primary"
-            >
-              {!accountId || !seasonId ? (
-                <Alert severity="info">
-                  Select an account and season to load community messages.
-                </Alert>
-              ) : (
-                <>
-                  <Box sx={{ mb: 2 }}>
-                    {channelState.error ? (
-                      <Alert severity="warning" sx={{ mb: 2 }}>
-                        {channelState.error}
-                      </Alert>
-                    ) : null}
-                    {channelState.channels.length > 0 ? (
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        useFlexGap
-                        flexWrap="wrap"
-                        alignItems="center"
-                      >
-                        <ToggleButtonGroup
-                          exclusive
-                          size="small"
-                          value={selectedChannelId ?? 'all'}
-                          onChange={(
-                            event: React.SyntheticEvent<Element, Event>,
-                            value: string | null,
-                          ) => {
-                            event.preventDefault();
-                            if (value === null) {
-                              return;
-                            }
-                            const nextId = value === 'all' ? null : value;
-                            setSelectedChannelId(nextId);
-                          }}
-                          sx={{ flexWrap: 'wrap' }}
-                        >
-                          <ToggleButton value="all">All Channels</ToggleButton>
-                          {channelState.channels.map((channel) => (
-                            <ToggleButton key={channel.id} value={channel.id} sx={{ gap: 0.5 }}>
-                              <Forum fontSize="small" /> {channel.label ?? `#${channel.name}`}
-                            </ToggleButton>
-                          ))}
-                        </ToggleButtonGroup>
-                        <Button
-                          size="small"
-                          variant="text"
-                          startIcon={<OpenInNew fontSize="inherit" />}
-                          onClick={handleOpenDiscord}
-                          disabled={!channelState.channels.some((channel) => channel.url)}
-                        >
-                          Open Discord
-                        </Button>
-                        {accountId ? (
-                          <Button
-                            size="small"
-                            variant="text"
-                            component={NextLink}
-                            href={`/account/${accountId}/social-hub/community`}
-                            startIcon={<Forum fontSize="inherit" />}
-                          >
-                            View all messages
-                          </Button>
-                        ) : null}
-                      </Stack>
-                    ) : null}
-                  </Box>
-                  {communityState.error ? (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                      {communityState.error}
-                    </Alert>
-                  ) : null}
-                  {communityState.items.length > 0 ? (
-                    <CommunityMessageList
-                      messages={communityState.items}
-                      formatTimestamp={formatRelativeTime}
-                      onPermalinkClick={handleOpenMessagePermalink}
-                    />
-                  ) : (
-                    <Alert severity="info">No recent Discord activity yet.</Alert>
-                  )}
-                </>
-              )}
-            </WidgetShell>
+            <CommunityChatsWidget accountId={accountId} seasonId={seasonId} />
           </Stack>
         </Box>
 

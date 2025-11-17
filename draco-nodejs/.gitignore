@@ -76,6 +76,10 @@ frontend-next/public/*
 !frontend-next/public/branding/
 frontend-next/public/branding/*
 !frontend-next/public/branding/default-sports-favicon.svg
+!frontend-next/public/branding/x-logo-light.svg
+!frontend-next/public/branding/x-logo-dark.svg
+!frontend-next/public/branding/discord-logo-light.svg
+!frontend-next/public/branding/discord-logo-dark.svg
 
 # Storybook build outputs
 .out

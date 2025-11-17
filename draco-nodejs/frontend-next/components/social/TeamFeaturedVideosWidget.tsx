@@ -12,6 +12,7 @@ interface TeamFeaturedVideosWidgetProps {
   accountId: string;
   seasonId: string;
   teamSeasonId: string;
+  teamId: string;
   youtubeChannelId?: string | null;
   teamName?: string | null;
   viewAllHref?: string;
@@ -41,6 +42,7 @@ const TeamFeaturedVideosWidget: React.FC<TeamFeaturedVideosWidgetProps> = ({
   accountId,
   seasonId,
   teamSeasonId,
+  teamId,
   youtubeChannelId,
   teamName,
   viewAllHref,
@@ -54,7 +56,7 @@ const TeamFeaturedVideosWidget: React.FC<TeamFeaturedVideosWidgetProps> = ({
   });
 
   useEffect(() => {
-    if (!accountId || !seasonId || !teamSeasonId) {
+    if (!accountId || !seasonId || !teamSeasonId || !teamId) {
       setVideoState({ items: [], loading: false, error: null });
       return;
     }
@@ -67,7 +69,7 @@ const TeamFeaturedVideosWidget: React.FC<TeamFeaturedVideosWidgetProps> = ({
     let cancelled = false;
     setVideoState((prev) => ({ ...prev, loading: true, error: null }));
 
-    fetchVideos({ limit: 4, teamSeasonId })
+    fetchVideos({ limit: 4, teamId })
       .then((items) => {
         if (!cancelled) {
           setVideoState({ items, loading: false, error: null });
@@ -83,7 +85,7 @@ const TeamFeaturedVideosWidget: React.FC<TeamFeaturedVideosWidgetProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [accountId, seasonId, teamSeasonId, fetchVideos, youtubeChannelId]);
+  }, [accountId, seasonId, teamSeasonId, teamId, fetchVideos, youtubeChannelId]);
 
   const hasVideos = videoState.items.length > 0;
   const hasConfiguredChannel = Boolean(youtubeChannelId && youtubeChannelId.trim().length > 0);

@@ -95,6 +95,11 @@ export const AccountSocialsSchema = z.object({
   autoPlayVideo: z.boolean().default(false),
 });
 
+export const AccountDiscordIntegrationSchema = z.object({
+  guildId: z.string().trim().nullable(),
+  guildName: z.string().trim().nullable().optional(),
+});
+
 export const AccountTwitterSettingsSchema = z.object({
   twitterAccountName: z.string().trim().optional(),
   twitterOauthToken: z.string().trim().optional(),
@@ -128,6 +133,7 @@ export const AccountSchema = AccountHeaderSchema.extend({
     })
     .optional(),
   socials: AccountSocialsSchema.optional(),
+  discordIntegration: AccountDiscordIntegrationSchema.optional(),
 });
 
 export const AccountCurrentSeasonSchema = z.object({
@@ -157,6 +163,7 @@ export const AccountWithSeasonsSchema = z.object({
 export type AccountType = z.infer<typeof AccountSchema>;
 export type AccountConfigurationType = z.infer<typeof AccountConfigurationSchema>;
 export type AccountSocialsType = z.infer<typeof AccountSocialsSchema>;
+export type AccountDiscordIntegrationType = z.infer<typeof AccountDiscordIntegrationSchema>;
 export type AccountAffiliationType = z.infer<typeof AccountAffiliationSchema>;
 export type AccountUrlType = z.infer<typeof AccountUrlSchema>;
 export type CreateAccountUrlType = z.infer<typeof CreateAccountUrlSchema>;

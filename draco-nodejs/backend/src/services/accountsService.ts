@@ -11,6 +11,7 @@ import {
   CreateAccountUrlType,
   CreateContactSchema,
   CreateContactType,
+  AccountDiscordIntegrationType,
 } from '@draco/shared-schemas';
 import { accounts, contacts } from '@prisma/client';
 import {
@@ -40,6 +41,7 @@ import { ROLE_IDS } from '../config/roles.js';
 import { RoleNamesType } from '../types/roles.js';
 import { getAccountLogoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
+import { DiscordIntegrationService } from './discordIntegrationService.js';
 
 type OwnerSummary = AccountOwnerSummary;
 
@@ -51,6 +53,7 @@ export class AccountsService {
   private readonly userRepository: IUserRepository;
   private readonly roleRepository: IRoleRepository;
   private readonly seasonRepository: ISeasonsRepository;
+  private readonly discordIntegrationService: DiscordIntegrationService;
 
   constructor() {
     this.accountRepository = RepositoryFactory.getAccountRepository();
@@ -58,6 +61,7 @@ export class AccountsService {
     this.userRepository = RepositoryFactory.getUserRepository();
     this.roleRepository = RepositoryFactory.getRoleRepository();
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
+    this.discordIntegrationService = new DiscordIntegrationService();
   }
 
   async getAccountsForUser(userId: string): Promise<AccountType[]> {
@@ -187,11 +191,26 @@ export class AccountsService {
     const { account, affiliationMap, ownerContact, ownerUser } =
       await this.loadAccountContext(accountId);
 
+    let discordIntegration: AccountDiscordIntegrationType | undefined;
+    try {
+      const config = await this.discordIntegrationService.getAccountConfig(accountId);
+      discordIntegration = {
+        guildId: config.guildId,
+        guildName: config.guildName ?? null,
+      };
+    } catch (error) {
+      console.error('[AccountsService] Unable to load Discord config for account', {
+        accountId: accountId.toString(),
+        error,
+      });
+    }
+
     const formattedAccount = AccountResponseFormatter.formatAccount(
       account,
       affiliationMap,
       ownerContact,
       ownerUser,
+      discordIntegration ? { discordIntegration } : undefined,
     );
 
     const includeCurrentSeason = options?.includeCurrentSeason ?? false;

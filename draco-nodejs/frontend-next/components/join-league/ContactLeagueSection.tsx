@@ -1,16 +1,37 @@
 import React from 'react';
-import { Box, Button, Typography } from '@mui/material';
-import { ContactSupport, QuestionAnswer, Twitter, Facebook } from '@mui/icons-material';
+import { Avatar, Box, Button, Link as MuiLink, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { ContactSupport, QuestionAnswer, Facebook, Search } from '@mui/icons-material';
 import Link from 'next/link';
 import SectionHeader from './SectionHeader';
 import SectionCard from '../common/SectionCard';
 import { AccountType } from '@draco/shared-schemas';
+import AccountOptional from '../account/AccountOptional';
+import XLogo from '../icons/XLogo';
+import DiscordLogo from '../icons/DiscordLogo';
+
+const sanitizeTwitterHandle = (handle?: string | null): string | null => {
+  if (!handle) {
+    return null;
+  }
+
+  const trimmed = handle.trim().replace(/^@+/, '');
+  return trimmed.length ? trimmed : null;
+};
+
+const buildTwitterFollowUrl = (handle: string): string =>
+  `https://x.com/intent/follow?screen_name=${encodeURIComponent(handle)}`;
 
 interface ContactLeagueSectionProps {
   account: AccountType;
 }
 
 const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) => {
+  const twitterHandle = sanitizeTwitterHandle(account.socials?.twitterAccountName);
+  const playerClassifiedsHref = `/account/${account.id.toString()}/player-classifieds?tab=teams-wanted`;
+  const guildId = account.discordIntegration?.guildId ?? null;
+  const discordServerUrl = guildId ? `https://discord.com/channels/${guildId}` : null;
+
   return (
     <SectionCard>
       <SectionHeader
@@ -40,13 +61,13 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
             View League FAQs
           </Button>
 
-          {account.socials?.twitterAccountName && (
+          {twitterHandle && (
             <Button
               variant="outlined"
-              href={`https://twitter.com/${account.socials.twitterAccountName?.replace('@', '') || account.socials.twitterAccountName}`}
+              href={buildTwitterFollowUrl(twitterHandle)}
               target="_blank"
               rel="noopener noreferrer"
-              startIcon={<Twitter />}
+              startIcon={<XLogo size={20} />}
               fullWidth
               sx={{
                 py: 1.25,
@@ -54,7 +75,25 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
               }}
               color="primary"
             >
-              Follow on Twitter
+              Follow us on X
+            </Button>
+          )}
+
+          {discordServerUrl && (
+            <Button
+              variant="outlined"
+              href={discordServerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              startIcon={<DiscordLogo size={20} />}
+              fullWidth
+              sx={{
+                py: 1.25,
+                textTransform: 'none',
+              }}
+              color="primary"
+            >
+              Join us on Discord
             </Button>
           )}
 
@@ -77,13 +116,61 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
           )}
         </Box>
 
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ mt: 'auto', textAlign: 'center' }}
+        <AccountOptional
+          accountId={account.id.toString()}
+          componentId="home.playerClassified.widget"
         >
-          We typically respond within 24 hours
-        </Typography>
+          <Box
+            sx={(theme) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              p: 2,
+              mt: 2,
+              borderRadius: 2,
+              border: `1px solid ${theme.palette.widget.border}`,
+              backgroundColor: theme.palette.widget.surface,
+            })}
+          >
+            <Avatar
+              sx={(theme) => ({
+                width: 48,
+                height: 48,
+                flexShrink: 0,
+                bgcolor: alpha(
+                  theme.palette.primary.main,
+                  theme.palette.mode === 'dark' ? 0.2 : 0.1,
+                ),
+                color: theme.palette.primary.main,
+              })}
+            >
+              <Search />
+            </Avatar>
+            <Box>
+              <Typography
+                variant="subtitle1"
+                sx={(theme) => ({
+                  fontWeight: 600,
+                  color: theme.palette.widget.headerText,
+                })}
+              >
+                Looking for a team?
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Connect with teams looking for players in our{' '}
+                <MuiLink
+                  component={Link}
+                  href={playerClassifiedsHref}
+                  underline="always"
+                  sx={{ fontWeight: 600 }}
+                >
+                  Teams Wanted classifieds
+                </MuiLink>{' '}
+                to get matched with open rosters.
+              </Typography>
+            </Box>
+          </Box>
+        </AccountOptional>
       </Box>
     </SectionCard>
   );

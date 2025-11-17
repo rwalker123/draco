@@ -1,5 +1,6 @@
 import {
   AccountAffiliationType,
+  AccountDiscordIntegrationType,
   AccountType,
   AccountTypeReference,
   AccountUrlType,
@@ -23,6 +24,10 @@ export type AccountOwnerDetailsByAccount = {
   ownerUsersByAccount?: Map<string, AccountOwnerSummary>;
 };
 
+type AccountFormatOptions = {
+  discordIntegration?: AccountDiscordIntegrationType;
+};
+
 export class AccountResponseFormatter {
   static formatAccounts(
     accounts: dbAccount[],
@@ -42,6 +47,7 @@ export class AccountResponseFormatter {
     affiliationMap: Map<string, dbAccountAffiliation>,
     ownerContact?: dbBaseContact,
     ownerUser?: AccountOwnerSummary,
+    options?: AccountFormatOptions,
   ): AccountType {
     const affiliationId = account.affiliationid ? account.affiliationid.toString() : undefined;
     const affiliationRecord = affiliationId ? affiliationMap.get(affiliationId) : undefined;
@@ -79,6 +85,10 @@ export class AccountResponseFormatter {
         url: url.url,
       })),
     };
+
+    if (options?.discordIntegration) {
+      formattedAccount.discordIntegration = options.discordIntegration;
+    }
 
     if (ownerContact || ownerUser) {
       formattedAccount.accountOwner = {
