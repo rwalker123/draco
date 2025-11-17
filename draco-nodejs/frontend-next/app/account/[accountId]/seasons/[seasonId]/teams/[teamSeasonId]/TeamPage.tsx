@@ -647,7 +647,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               canViewContactInfo={canViewManagerContacts}
             />
 
-            {teamData?.teamId ? (
+            {teamData?.teamId && (isTeamMember || teamMembershipLoading) ? (
               <TeamForumWidget
                 accountId={accountId}
                 seasonId={seasonId}
