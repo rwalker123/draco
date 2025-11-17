@@ -214,7 +214,7 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
   );
 
   const heroPhotos = photos.slice(0, Math.min(10, photos.length));
-  const gridPhotos = photos.slice(heroPhotos.length);
+  const gridPhotos = photos;
   const lightboxPhoto = lightboxIndex !== null ? (photos[lightboxIndex] ?? null) : null;
 
   const shouldRender = React.useMemo(() => {
@@ -302,7 +302,6 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
         loading={loading}
         emptyMessage={emptyMessage}
         onPhotoClick={handleOpenLightbox}
-        photoIndexOffset={heroPhotos.length}
       />
       <PhotoGalleryLightbox
         open={lightboxIndex !== null}

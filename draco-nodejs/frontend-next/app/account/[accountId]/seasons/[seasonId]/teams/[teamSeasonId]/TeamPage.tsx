@@ -620,6 +620,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 canManageAnnouncements={Boolean(teamData?.teamId)}
                 showPlayerClassifiedsLink={isAccountMember}
                 playerClassifiedsHref={`/account/${accountId}/player-classifieds?tab=players-wanted`}
+                teamsWantedHref={`/account/${accountId}/player-classifieds?tab=teams-wanted`}
                 onPostPlayersWanted={handleOpenPlayersWantedDialog}
                 handoutsHref={
                   teamData?.teamId
@@ -646,7 +647,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               canViewContactInfo={canViewManagerContacts}
             />
 
-            {teamData?.teamId ? (
+            {teamData?.teamId && (isTeamMember || teamMembershipLoading) ? (
               <TeamForumWidget
                 accountId={accountId}
                 seasonId={seasonId}
