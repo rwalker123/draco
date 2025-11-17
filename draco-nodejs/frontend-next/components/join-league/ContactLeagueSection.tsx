@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Button, SvgIcon, type SvgIconProps, Typography } from '@mui/material';
-import { ContactSupport, QuestionAnswer, Facebook } from '@mui/icons-material';
+import { alpha } from '@mui/material/styles';
+import { ContactSupport, QuestionAnswer, Facebook, Search } from '@mui/icons-material';
 import Link from 'next/link';
 import SectionHeader from './SectionHeader';
 import SectionCard from '../common/SectionCard';
@@ -29,10 +30,14 @@ const findDiscordServerUrl = (account: AccountType): string | null => {
     try {
       const parsed = new URL(entry.url);
       const host = parsed.hostname.toLowerCase();
-      if (host.includes('discord.com') || host.includes('discord.gg') || host.includes('discordapp.com')) {
+      if (
+        host.includes('discord.com') ||
+        host.includes('discord.gg') ||
+        host.includes('discordapp.com')
+      ) {
         return parsed.toString();
       }
-    } catch (error) {
+    } catch {
       const normalized = entry.url.toLowerCase();
       if (normalized.includes('discord.com') || normalized.includes('discord.gg')) {
         return entry.url;
@@ -148,17 +153,65 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
           )}
         </Box>
 
-        <AccountOptional accountId={account.id.toString()} componentId="home.playerClassified.widget">
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
-            Looking for a team? Explore our{' '}
-            <Link href={playerClassifiedsHref} style={{ fontWeight: 600 }}>
-              Teams Wanted classifieds
-            </Link>{' '}
-            to get matched with open rosters.
-          </Typography>
+        <AccountOptional
+          accountId={account.id.toString()}
+          componentId="home.playerClassified.widget"
+        >
+          <Box
+            sx={(theme) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              p: 2,
+              mt: 2,
+              borderRadius: 2,
+              border: `1px solid ${theme.palette.widget.border}`,
+              backgroundColor: theme.palette.widget.surface,
+            })}
+          >
+            <Box
+              sx={(theme) => ({
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                bgcolor: alpha(
+                  theme.palette.primary.main,
+                  theme.palette.mode === 'dark' ? 0.2 : 0.1,
+                ),
+                color: theme.palette.primary.main,
+              })}
+            >
+              <Search />
+            </Box>
+            <Box>
+              <Typography
+                variant="subtitle1"
+                sx={(theme) => ({
+                  fontWeight: 600,
+                  color: theme.palette.widget.headerText,
+                })}
+              >
+                Looking for a team?
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Connect with teams looking for players in our{' '}
+                <Link href={playerClassifiedsHref} style={{ fontWeight: 600 }}>
+                  Teams Wanted classifieds
+                </Link>{' '}
+                to get matched with open rosters.
+              </Typography>
+            </Box>
+          </Box>
         </AccountOptional>
 
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 'auto', textAlign: 'center' }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ mt: 'auto', textAlign: 'center' }}
+        >
           We typically respond within 24 hours
         </Typography>
       </Box>
