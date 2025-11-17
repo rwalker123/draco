@@ -44,6 +44,7 @@ import WidgetShell from '../ui/WidgetShell';
 import CommunityMessageList from './CommunityMessageList';
 import NextLink from 'next/link';
 import MemberBusinessSpotlightWidget from '@/components/social/MemberBusinessSpotlightWidget';
+import AccountOptional from '@/components/account/AccountOptional';
 
 const getSourceIcon = (source: string) => {
   switch (source) {
@@ -276,17 +277,6 @@ export default function SocialHubExperience({
     }
   }, [selectedChannel?.url, channelState.channels]);
 
-  const renderAccountRequiredNotice = (title: string, description: string) => (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        {title}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {description}
-      </Typography>
-    </Paper>
-  );
-
   const displayedFeedItems = feedState.items.slice(0, 4);
   const renderCardSkeletons = (count: number) => (
     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
@@ -445,57 +435,45 @@ export default function SocialHubExperience({
         <Box sx={{ flex: { xs: 1, md: '1 1 0' } }}>
           <Box sx={{ mb: 3 }}>
             {accountId ? (
-              <SurveySpotlightWidget
-                accountId={accountId}
-                canAnswerSurvey={Boolean(isAccountMember)}
-              />
-            ) : (
-              renderAccountRequiredNotice(
-                'Player Spotlights',
-                'Select an account to highlight recent survey responses.',
-              )
-            )}
+              <AccountOptional accountId={accountId} componentId="account.playerSurvey.widget">
+                <SurveySpotlightWidget
+                  accountId={accountId}
+                  canAnswerSurvey={Boolean(isAccountMember)}
+                />
+              </AccountOptional>
+            ) : null}
           </Box>
 
           <Box sx={{ mb: 3 }}>
             {accountId ? (
-              <PlayersWantedPreview
-                accountId={accountId}
-                isAccountMember={Boolean(isAccountMember)}
-                maxDisplay={3}
-              />
-            ) : (
-              renderAccountRequiredNotice(
-                'Looking for Players/Teams',
-                'Choose an account to browse the latest classifieds.',
-              )
-            )}
+              <AccountOptional accountId={accountId} componentId="home.playerClassified.widget">
+                <PlayersWantedPreview
+                  accountId={accountId}
+                  isAccountMember={Boolean(isAccountMember)}
+                  maxDisplay={3}
+                />
+              </AccountOptional>
+            ) : null}
           </Box>
 
           <Box sx={{ mb: 3 }}>
             {accountId ? (
-              <MemberBusinessSpotlightWidget
-                accountId={accountId}
-                seasonId={seasonId}
-                viewAllHref={`/account/${accountId}/social-hub/member-businesses`}
-              />
-            ) : (
-              renderAccountRequiredNotice(
-                'Member Businesses',
-                'Select an account to highlight member-owned businesses.',
-              )
-            )}
+              <AccountOptional accountId={accountId} componentId="profile.memberBusiness.card">
+                <MemberBusinessSpotlightWidget
+                  accountId={accountId}
+                  seasonId={seasonId}
+                  viewAllHref={`/account/${accountId}/social-hub/member-businesses`}
+                />
+              </AccountOptional>
+            ) : null}
           </Box>
 
-          <Box>
+          <Box sx={{ mb: 3 }}>
             {accountId ? (
-              <HofSpotlightWidget accountId={accountId} hideCta />
-            ) : (
-              renderAccountRequiredNotice(
-                'Hall of Fame',
-                'Select an account to celebrate recent inductees.',
-              )
-            )}
+              <AccountOptional accountId={accountId} componentId="account.home.hallOfFame">
+                <HofSpotlightWidget accountId={accountId} />
+              </AccountOptional>
+            ) : null}
           </Box>
         </Box>
       </Box>

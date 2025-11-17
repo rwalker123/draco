@@ -23,6 +23,11 @@ vi.mock('@/components/surveys/SurveySpotlightWidget', () => ({
   default: () => <div data-testid="survey-widget" />,
 }));
 
+vi.mock('@/components/account/AccountOptional', () => ({
+  __esModule: true,
+  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 vi.mock('@/components/hall-of-fame/HofSpotlightWidget', () => ({
   default: () => <div data-testid="hof-widget" />,
 }));

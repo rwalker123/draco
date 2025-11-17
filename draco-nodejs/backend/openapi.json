@@ -5195,10 +5195,10 @@
                   "type": "string",
                   "enum": [
                     "ShowBusinessDirectory",
-                    "ShowSponsorSpotlight",
                     "ShowPlayerClassified",
                     "ShowPlayerSurvey",
                     "ShowHOF",
+                    "AllowPhotoUploads",
                     "TrackWaiver",
                     "ShowWaiver",
                     "TrackIdentification",
@@ -5206,10 +5206,8 @@
                     "TrackGamesPlayed",
                     "ShowRosterCard",
                     "ShowUserInfoOnRosterPage",
-                    "MsgBoardShowPhoto",
                     "ShowContactInfo",
-                    "EditContactInfo",
-                    "MessageBoardCleanup"
+                    "EditContactInfo"
                   ]
                 },
                 "label": {
@@ -5224,8 +5222,7 @@
                     "accountFeatures",
                     "playerData",
                     "contactInformation",
-                    "teamPages",
-                    "messageBoard"
+                    "teamPages"
                   ]
                 },
                 "groupLabel": {
@@ -5271,10 +5268,10 @@
                         "type": "string",
                         "enum": [
                           "ShowBusinessDirectory",
-                          "ShowSponsorSpotlight",
                           "ShowPlayerClassified",
                           "ShowPlayerSurvey",
                           "ShowHOF",
+                          "AllowPhotoUploads",
                           "TrackWaiver",
                           "ShowWaiver",
                           "TrackIdentification",
@@ -5282,10 +5279,8 @@
                           "TrackGamesPlayed",
                           "ShowRosterCard",
                           "ShowUserInfoOnRosterPage",
-                          "MsgBoardShowPhoto",
                           "ShowContactInfo",
-                          "EditContactInfo",
-                          "MessageBoardCleanup"
+                          "EditContactInfo"
                         ]
                       },
                       "value": {
@@ -5413,10 +5408,10 @@
                 "type": "string",
                 "enum": [
                   "ShowBusinessDirectory",
-                  "ShowSponsorSpotlight",
                   "ShowPlayerClassified",
                   "ShowPlayerSurvey",
                   "ShowHOF",
+                  "AllowPhotoUploads",
                   "TrackWaiver",
                   "ShowWaiver",
                   "TrackIdentification",
@@ -5424,10 +5419,8 @@
                   "TrackGamesPlayed",
                   "ShowRosterCard",
                   "ShowUserInfoOnRosterPage",
-                  "MsgBoardShowPhoto",
                   "ShowContactInfo",
-                  "EditContactInfo",
-                  "MessageBoardCleanup"
+                  "EditContactInfo"
                 ]
               },
               "label": {
@@ -5442,8 +5435,7 @@
                   "accountFeatures",
                   "playerData",
                   "contactInformation",
-                  "teamPages",
-                  "messageBoard"
+                  "teamPages"
                 ]
               },
               "groupLabel": {
@@ -5489,10 +5481,10 @@
                       "type": "string",
                       "enum": [
                         "ShowBusinessDirectory",
-                        "ShowSponsorSpotlight",
                         "ShowPlayerClassified",
                         "ShowPlayerSurvey",
                         "ShowHOF",
+                        "AllowPhotoUploads",
                         "TrackWaiver",
                         "ShowWaiver",
                         "TrackIdentification",
@@ -5500,10 +5492,8 @@
                         "TrackGamesPlayed",
                         "ShowRosterCard",
                         "ShowUserInfoOnRosterPage",
-                        "MsgBoardShowPhoto",
                         "ShowContactInfo",
-                        "EditContactInfo",
-                        "MessageBoardCleanup"
+                        "EditContactInfo"
                       ]
                     },
                     "value": {
@@ -5642,10 +5632,10 @@
         "type": "string",
         "enum": [
           "ShowBusinessDirectory",
-          "ShowSponsorSpotlight",
           "ShowPlayerClassified",
           "ShowPlayerSurvey",
           "ShowHOF",
+          "AllowPhotoUploads",
           "TrackWaiver",
           "ShowWaiver",
           "TrackIdentification",
@@ -5653,10 +5643,8 @@
           "TrackGamesPlayed",
           "ShowRosterCard",
           "ShowUserInfoOnRosterPage",
-          "MsgBoardShowPhoto",
           "ShowContactInfo",
-          "EditContactInfo",
-          "MessageBoardCleanup"
+          "EditContactInfo"
         ]
       },
       "Sponsor": {
@@ -23159,10 +23147,10 @@
               "type": "string",
               "enum": [
                 "ShowBusinessDirectory",
-                "ShowSponsorSpotlight",
                 "ShowPlayerClassified",
                 "ShowPlayerSurvey",
                 "ShowHOF",
+                "AllowPhotoUploads",
                 "TrackWaiver",
                 "ShowWaiver",
                 "TrackIdentification",
@@ -23170,10 +23158,8 @@
                 "TrackGamesPlayed",
                 "ShowRosterCard",
                 "ShowUserInfoOnRosterPage",
-                "MsgBoardShowPhoto",
                 "ShowContactInfo",
-                "EditContactInfo",
-                "MessageBoardCleanup"
+                "EditContactInfo"
               ]
             }
           }

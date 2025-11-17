@@ -125,13 +125,6 @@ const CommunityMessageList: React.FC<CommunityMessageListProps> = ({
                     {message.attachments && message.attachments.length > 0 ? (
                       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" component="div">
                         {message.attachments.map((attachment, attachmentIndex) => {
-                          if (process.env.NODE_ENV !== 'production') {
-                            console.debug('[CommunityMessageList] attachment', {
-                              messageId: message.id,
-                              attachment,
-                            });
-                          }
-
                           const lowerUrl = attachment.url.toLowerCase();
                           let normalizedType: CommunityMessageAttachmentType['type'] =
                             attachment.type;

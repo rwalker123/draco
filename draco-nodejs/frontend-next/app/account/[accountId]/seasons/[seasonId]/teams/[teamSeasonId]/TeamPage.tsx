@@ -703,19 +703,21 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               />
             ) : null}
             {teamData?.teamId && showTeamSubmissionPanel ? (
-              <PhotoSubmissionPanel
-                variant="team"
-                enabled={showTeamSubmissionPanel}
-                isLoading={teamMembershipLoading}
-                error={teamMembershipError}
-                canSubmit={isTeamMember}
-                accountId={accountId}
-                contextName={teamData.teamName ?? teamSeason?.name ?? 'this team'}
-                teamId={teamData.teamId}
-                onSubmitted={() => {
-                  void refreshTeamPending();
-                }}
-              />
+              <AccountOptional accountId={accountId} componentId="account.home.photoUploadWidget">
+                <PhotoSubmissionPanel
+                  variant="team"
+                  enabled={showTeamSubmissionPanel}
+                  isLoading={teamMembershipLoading}
+                  error={teamMembershipError}
+                  canSubmit={isTeamMember}
+                  accountId={accountId}
+                  contextName={teamData.teamName ?? teamSeason?.name ?? 'this team'}
+                  teamId={teamData.teamId}
+                  onSubmitted={() => {
+                    void refreshTeamPending();
+                  }}
+                />
+              </AccountOptional>
             ) : null}
 
             {shouldShowTeamPendingPanel ? (

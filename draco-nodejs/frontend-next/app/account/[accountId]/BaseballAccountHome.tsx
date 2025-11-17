@@ -944,19 +944,24 @@ const BaseballAccountHome: React.FC = () => {
               sx={{ height: '100%' }}
             />
             {showSubmissionPanel ? (
-              <PhotoSubmissionPanel
-                variant="account"
-                enabled={showSubmissionPanel}
-                isLoading={membershipLoading}
-                error={membershipError}
-                canSubmit={canSubmitPhotos}
-                accountId={accountIdStr ?? ''}
-                contextName={accountDisplayName}
-                albumOptions={submissionAlbumOptions}
-                onSubmitted={() => {
-                  void refreshPendingSubmissions();
-                }}
-              />
+              <AccountOptional
+                accountId={accountIdStr}
+                componentId="account.home.photoUploadWidget"
+              >
+                <PhotoSubmissionPanel
+                  variant="account"
+                  enabled={showSubmissionPanel}
+                  isLoading={membershipLoading}
+                  error={membershipError}
+                  canSubmit={canSubmitPhotos}
+                  accountId={accountIdStr ?? ''}
+                  contextName={accountDisplayName}
+                  albumOptions={submissionAlbumOptions}
+                  onSubmitted={() => {
+                    void refreshPendingSubmissions();
+                  }}
+                />
+              </AccountOptional>
             ) : null}
 
             {shouldShowPendingPanel ? (

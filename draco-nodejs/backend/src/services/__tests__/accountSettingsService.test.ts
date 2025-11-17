@@ -3,7 +3,7 @@ import type { accountsettings } from '@prisma/client';
 import { AccountSettingsService } from '../accountSettingsService.js';
 import type { IAccountSettingsRepository } from '../../repositories/interfaces/index.js';
 import { ACCOUNT_SETTING_DEFINITIONS } from '@draco/shared-schemas';
-import { ConflictError, ValidationError } from '../../utils/customErrors.js';
+import { ConflictError } from '../../utils/customErrors.js';
 
 class InMemoryAccountSettingsRepository implements IAccountSettingsRepository {
   private readonly store = new Map<string, Map<string, string>>();
@@ -92,11 +92,5 @@ describe('AccountSettingsService', () => {
     const showWaiver = refreshed.find((setting) => setting.definition.key === 'ShowWaiver');
     expect(showWaiver?.value).toBe(false);
     expect(showWaiver?.isDefault).toBe(true);
-  });
-
-  it('validates numeric ranges for cleanup settings', async () => {
-    await expect(
-      service.updateAccountSetting(accountId, 'MessageBoardCleanup', 0),
-    ).rejects.toBeInstanceOf(ValidationError);
   });
 });

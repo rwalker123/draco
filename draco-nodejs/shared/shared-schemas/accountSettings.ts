@@ -5,10 +5,10 @@ export type AccountSettingValueType = z.infer<typeof AccountSettingValueTypeEnum
 
 export const ACCOUNT_SETTING_KEYS = [
   'ShowBusinessDirectory',
-  'ShowSponsorSpotlight',
   'ShowPlayerClassified',
   'ShowPlayerSurvey',
   'ShowHOF',
+  'AllowPhotoUploads',
   'TrackWaiver',
   'ShowWaiver',
   'TrackIdentification',
@@ -16,10 +16,8 @@ export const ACCOUNT_SETTING_KEYS = [
   'TrackGamesPlayed',
   'ShowRosterCard',
   'ShowUserInfoOnRosterPage',
-  'MsgBoardShowPhoto',
   'ShowContactInfo',
   'EditContactInfo',
-  'MessageBoardCleanup',
 ] as const;
 
 export const AccountSettingKeySchema = z.enum(ACCOUNT_SETTING_KEYS);
@@ -33,7 +31,6 @@ export const AccountSettingGroupEnum = z.enum([
   'playerData',
   'contactInformation',
   'teamPages',
-  'messageBoard',
 ]);
 export type AccountSettingGroupId = z.infer<typeof AccountSettingGroupEnum>;
 
@@ -86,15 +83,6 @@ const booleanSetting = (
   ...partial,
 });
 
-const numberSetting = (
-  partial: Omit<AccountSettingDefinition, 'valueType' | 'defaultValue'> & {
-    defaultValue: number;
-  },
-): AccountSettingDefinition => ({
-  valueType: AccountSettingValueTypeEnum.enum.number,
-  ...partial,
-});
-
 export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
   booleanSetting({
     key: 'ShowBusinessDirectory',
@@ -128,22 +116,6 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
         id: 'admin.memberBusiness.toggle',
         type: 'widget',
         displayName: 'Member Business Directory Toggle',
-        expectedValue: true,
-      },
-    ],
-  }),
-  booleanSetting({
-    key: 'ShowSponsorSpotlight',
-    label: 'Show Sponsor Spotlight',
-    description: 'Displays sponsor spotlights on the account home experience.',
-    groupId: AccountSettingGroupEnum.enum.accountFeatures,
-    groupLabel: 'Account Features',
-    sortOrder: 20,
-    componentGates: [
-      {
-        id: 'account.home.sponsorSpotlight',
-        type: 'widget',
-        displayName: 'Sponsor Spotlight Widget',
         expectedValue: true,
       },
     ],
@@ -249,6 +221,22 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
         id: 'admin.hallOfFame.toggle',
         type: 'widget',
         displayName: 'Hall Of Fame Availability Toggle',
+        expectedValue: true,
+      },
+    ],
+  }),
+  booleanSetting({
+    key: 'AllowPhotoUploads',
+    label: 'Allow Users to Upload Photos',
+    description: 'Enables users to upload photos for approval to Account and Teams.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 70,
+    componentGates: [
+      {
+        id: 'account.home.photoUploadWidget',
+        type: 'widget',
+        displayName: 'Photo Upload Widget',
         expectedValue: true,
       },
     ],
@@ -393,22 +381,6 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
     ],
   }),
   booleanSetting({
-    key: 'MsgBoardShowPhoto',
-    label: 'Show Poster Photo On Message Board',
-    description: 'Displays the author’s photo next to message board posts.',
-    groupId: AccountSettingGroupEnum.enum.messageBoard,
-    groupLabel: 'Message Board',
-    sortOrder: 10,
-    componentGates: [
-      {
-        id: 'discussions.posterPhoto',
-        type: 'widget',
-        displayName: 'Message Board Poster Photo',
-        expectedValue: true,
-      },
-    ],
-  }),
-  booleanSetting({
     key: 'ShowContactInfo',
     label: 'Show Contact Information page',
     description: 'Allows end users to view their saved contact information.',
@@ -447,19 +419,6 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
         expectedValue: true,
       },
     ],
-  }),
-  numberSetting({
-    key: 'MessageBoardCleanup',
-    label: 'Message Board Cleanup (days)',
-    description: 'Controls how many days message board posts remain before cleanup runs.',
-    groupId: AccountSettingGroupEnum.enum.messageBoard,
-    groupLabel: 'Message Board',
-    sortOrder: 20,
-    defaultValue: 30,
-    valueRange: {
-      min: 1,
-      max: 365,
-    },
   }),
 ];
 
