@@ -628,6 +628,7 @@ const BaseballAccountHome: React.FC = () => {
           leagueName: team.league?.name ?? 'Unknown League',
           divisionName: team.division?.name ?? undefined,
           teamId: team.team?.id,
+          logoUrl: team.team?.logoUrl ?? undefined,
         }));
 
         setUserTeams(teams);
