@@ -2,6 +2,7 @@ import {
   dbContactEmailOnly,
   dbLeagueSeasonBasic,
   dbSeason,
+  dbSeasonCopySource,
   dbSeasonWithLeagues,
 } from '../types/dbTypes.js';
 
@@ -26,4 +27,10 @@ export interface ISeasonsRepository {
   createLeagueSeason(seasonId: bigint, leagueId: bigint): Promise<dbLeagueSeasonBasic>;
   countSeasonParticipants(accountId: bigint, seasonId: bigint): Promise<number>;
   findSeasonParticipants(accountId: bigint, seasonId: bigint): Promise<dbContactEmailOnly[]>;
+  findSeasonForCopy(accountId: bigint, seasonId: bigint): Promise<dbSeasonCopySource | null>;
+  copySeasonStructure(
+    accountId: bigint,
+    sourceSeason: dbSeasonCopySource,
+    newSeasonName: string,
+  ): Promise<dbSeasonWithLeagues>;
 }

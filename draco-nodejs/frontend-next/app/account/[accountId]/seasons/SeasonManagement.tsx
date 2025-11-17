@@ -339,17 +339,14 @@ const SeasonManagement: React.FC = () => {
         throwOnError: false,
       });
 
-      const copiedSeason = unwrapApiResult(result, 'Failed to copy season');
-      const mappedSeason = mapSeasonWithDivisions(copiedSeason);
+      unwrapApiResult(result, 'Failed to copy season');
 
       setSuccessMessage(
-        `Season copied successfully with ${mappedSeason.leagues.length} league${
-          mappedSeason.leagues.length === 1 ? '' : 's'
-        }.`,
+        'Season copied successfully. All leagues, divisions, teams, active rosters, and managers were duplicated.',
       );
       setCopyDialogOpen(false);
       setSelectedSeason(null);
-      addSeasonToState(mappedSeason);
+      await fetchSeasons();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to copy season');
     } finally {
@@ -794,7 +791,11 @@ const SeasonManagement: React.FC = () => {
 
                         {canEdit && (
                           <Tooltip title="Copy season">
-                            <IconButton size="small" onClick={() => openCopyDialog(season)}>
+                            <IconButton
+                              size="small"
+                              aria-label={`Copy ${season.name}`}
+                              onClick={() => openCopyDialog(season)}
+                            >
                               <CopyIcon />
                             </IconButton>
                           </Tooltip>
