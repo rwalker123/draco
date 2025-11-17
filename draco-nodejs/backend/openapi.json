@@ -5206,10 +5206,8 @@
                     "TrackGamesPlayed",
                     "ShowRosterCard",
                     "ShowUserInfoOnRosterPage",
-                    "MsgBoardShowPhoto",
                     "ShowContactInfo",
-                    "EditContactInfo",
-                    "MessageBoardCleanup"
+                    "EditContactInfo"
                   ]
                 },
                 "label": {
@@ -5224,8 +5222,7 @@
                     "accountFeatures",
                     "playerData",
                     "contactInformation",
-                    "teamPages",
-                    "messageBoard"
+                    "teamPages"
                   ]
                 },
                 "groupLabel": {
@@ -5282,10 +5279,8 @@
                           "TrackGamesPlayed",
                           "ShowRosterCard",
                           "ShowUserInfoOnRosterPage",
-                          "MsgBoardShowPhoto",
                           "ShowContactInfo",
-                          "EditContactInfo",
-                          "MessageBoardCleanup"
+                          "EditContactInfo"
                         ]
                       },
                       "value": {
@@ -5424,10 +5419,8 @@
                   "TrackGamesPlayed",
                   "ShowRosterCard",
                   "ShowUserInfoOnRosterPage",
-                  "MsgBoardShowPhoto",
                   "ShowContactInfo",
-                  "EditContactInfo",
-                  "MessageBoardCleanup"
+                  "EditContactInfo"
                 ]
               },
               "label": {
@@ -5442,8 +5435,7 @@
                   "accountFeatures",
                   "playerData",
                   "contactInformation",
-                  "teamPages",
-                  "messageBoard"
+                  "teamPages"
                 ]
               },
               "groupLabel": {
@@ -5500,10 +5492,8 @@
                         "TrackGamesPlayed",
                         "ShowRosterCard",
                         "ShowUserInfoOnRosterPage",
-                        "MsgBoardShowPhoto",
                         "ShowContactInfo",
-                        "EditContactInfo",
-                        "MessageBoardCleanup"
+                        "EditContactInfo"
                       ]
                     },
                     "value": {
@@ -5653,10 +5643,8 @@
           "TrackGamesPlayed",
           "ShowRosterCard",
           "ShowUserInfoOnRosterPage",
-          "MsgBoardShowPhoto",
           "ShowContactInfo",
-          "EditContactInfo",
-          "MessageBoardCleanup"
+          "EditContactInfo"
         ]
       },
       "Sponsor": {
@@ -23170,10 +23158,8 @@
                 "TrackGamesPlayed",
                 "ShowRosterCard",
                 "ShowUserInfoOnRosterPage",
-                "MsgBoardShowPhoto",
                 "ShowContactInfo",
-                "EditContactInfo",
-                "MessageBoardCleanup"
+                "EditContactInfo"
               ]
             }
           }

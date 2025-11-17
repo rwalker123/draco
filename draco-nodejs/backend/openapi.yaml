@@ -3841,10 +3841,8 @@ components:
                   - TrackGamesPlayed
                   - ShowRosterCard
                   - ShowUserInfoOnRosterPage
-                  - MsgBoardShowPhoto
                   - ShowContactInfo
                   - EditContactInfo
-                  - MessageBoardCleanup
               label:
                 type: string
               description:
@@ -3856,7 +3854,6 @@ components:
                   - playerData
                   - contactInformation
                   - teamPages
-                  - messageBoard
               groupLabel:
                 type: string
               sortOrder:
@@ -3897,10 +3894,8 @@ components:
                         - TrackGamesPlayed
                         - ShowRosterCard
                         - ShowUserInfoOnRosterPage
-                        - MsgBoardShowPhoto
                         - ShowContactInfo
                         - EditContactInfo
-                        - MessageBoardCleanup
                     value:
                       anyOf:
                         - type: boolean
@@ -3988,10 +3983,8 @@ components:
                 - TrackGamesPlayed
                 - ShowRosterCard
                 - ShowUserInfoOnRosterPage
-                - MsgBoardShowPhoto
                 - ShowContactInfo
                 - EditContactInfo
-                - MessageBoardCleanup
             label:
               type: string
             description:
@@ -4003,7 +3996,6 @@ components:
                 - playerData
                 - contactInformation
                 - teamPages
-                - messageBoard
             groupLabel:
               type: string
             sortOrder:
@@ -4044,10 +4036,8 @@ components:
                       - TrackGamesPlayed
                       - ShowRosterCard
                       - ShowUserInfoOnRosterPage
-                      - MsgBoardShowPhoto
                       - ShowContactInfo
                       - EditContactInfo
-                      - MessageBoardCleanup
                   value:
                     anyOf:
                       - type: boolean
@@ -4138,10 +4128,8 @@ components:
         - TrackGamesPlayed
         - ShowRosterCard
         - ShowUserInfoOnRosterPage
-        - MsgBoardShowPhoto
         - ShowContactInfo
         - EditContactInfo
-        - MessageBoardCleanup
     Sponsor:
       type: object
       properties:
@@ -16922,10 +16910,8 @@ paths:
               - TrackGamesPlayed
               - ShowRosterCard
               - ShowUserInfoOnRosterPage
-              - MsgBoardShowPhoto
               - ShowContactInfo
               - EditContactInfo
-              - MessageBoardCleanup
       requestBody:
         content:
           application/json:

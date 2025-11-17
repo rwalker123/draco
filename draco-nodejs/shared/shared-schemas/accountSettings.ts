@@ -16,10 +16,8 @@ export const ACCOUNT_SETTING_KEYS = [
   'TrackGamesPlayed',
   'ShowRosterCard',
   'ShowUserInfoOnRosterPage',
-  'MsgBoardShowPhoto',
   'ShowContactInfo',
   'EditContactInfo',
-  'MessageBoardCleanup',
 ] as const;
 
 export const AccountSettingKeySchema = z.enum(ACCOUNT_SETTING_KEYS);
@@ -33,7 +31,6 @@ export const AccountSettingGroupEnum = z.enum([
   'playerData',
   'contactInformation',
   'teamPages',
-  'messageBoard',
 ]);
 export type AccountSettingGroupId = z.infer<typeof AccountSettingGroupEnum>;
 
