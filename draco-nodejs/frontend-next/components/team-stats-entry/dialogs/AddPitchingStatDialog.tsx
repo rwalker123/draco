@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { z } from 'zod';
 import {
   Alert,
@@ -50,8 +50,9 @@ const PitchingDialogSchema = GamePitchingStatInputSchema.extend({
 
 type PitchingFormValues = z.infer<typeof PitchingDialogSchema>;
 
-export const AddPitchingStatDialog: React.FC<AddPitchingStatDialogProps> = ({
-  open,
+type AddPitchingStatDialogContentProps = Omit<AddPitchingStatDialogProps, 'open'>;
+
+const AddPitchingStatDialogContent: React.FC<AddPitchingStatDialogContentProps> = ({
   onClose,
   availablePlayers,
   accountId,
@@ -62,28 +63,26 @@ export const AddPitchingStatDialog: React.FC<AddPitchingStatDialogProps> = ({
   onSuccess,
   onError,
 }) => {
+  const defaultValues = useMemo(
+    () => ({
+      ...defaultCreatePitchingValues,
+      rosterSeasonId: availablePlayers[0]?.rosterSeasonId ?? '',
+    }),
+    [availablePlayers],
+  );
+
   const {
     control,
     register,
     handleSubmit,
-    reset,
     formState: { errors, isSubmitting },
   } = useForm<PitchingFormValues>({
     resolver: zodResolver(PitchingDialogSchema),
     defaultValues: defaultCreatePitchingValues,
+    values: defaultValues,
   });
 
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (open) {
-      reset({
-        ...defaultCreatePitchingValues,
-        rosterSeasonId: availablePlayers[0]?.rosterSeasonId ?? '',
-      });
-      setSubmitError(null);
-    }
-  }, [availablePlayers, open, reset]);
 
   const submitHandler = handleSubmit(async (values) => {
     if (!gameId) {
@@ -120,7 +119,7 @@ export const AddPitchingStatDialog: React.FC<AddPitchingStatDialogProps> = ({
   });
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <>
       <DialogTitle>Add Pitching Stat</DialogTitle>
       <DialogContent dividers>
         {submitError && (
@@ -217,16 +216,26 @@ export const AddPitchingStatDialog: React.FC<AddPitchingStatDialogProps> = ({
           {isSubmitting ? 'Saving...' : 'Save'}
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };
+
+export const AddPitchingStatDialog: React.FC<AddPitchingStatDialogProps> = ({ open, ...rest }) => (
+  <Dialog open={open} onClose={rest.onClose} maxWidth="md" fullWidth>
+    {open && <AddPitchingStatDialogContent {...rest} />}
+  </Dialog>
+);
 
 interface EditPitchingStatDialogProps extends BaseDialogProps {
   stat: GamePitchingStatLineType | null;
   onClose: () => void;
 }
 
-export const EditPitchingStatDialog: React.FC<EditPitchingStatDialogProps> = ({
+type EditPitchingStatDialogContentProps = Omit<EditPitchingStatDialogProps, 'stat'> & {
+  stat: GamePitchingStatLineType;
+};
+
+const EditPitchingStatDialogContent: React.FC<EditPitchingStatDialogContentProps> = ({
   stat,
   onClose,
   accountId,
@@ -237,42 +246,40 @@ export const EditPitchingStatDialog: React.FC<EditPitchingStatDialogProps> = ({
   onSuccess,
   onError,
 }) => {
+  const updateValues = useMemo(
+    () => ({
+      ipDecimal: stat.ipDecimal,
+      w: stat.w,
+      l: stat.l,
+      s: stat.s,
+      h: stat.h,
+      r: stat.r,
+      er: stat.er,
+      d: stat.d,
+      t: stat.t,
+      hr: stat.hr,
+      so: stat.so,
+      bb: stat.bb,
+      bf: stat.bf,
+      wp: stat.wp,
+      hbp: stat.hbp,
+      bk: stat.bk,
+      sc: stat.sc,
+    }),
+    [stat],
+  );
+
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors, isSubmitting },
   } = useForm<UpdateGamePitchingStatType>({
     resolver: zodResolver(UpdateGamePitchingStatSchema),
     defaultValues: defaultUpdatePitchingValues,
+    values: updateValues,
   });
 
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (stat) {
-      reset({
-        ipDecimal: stat.ipDecimal,
-        w: stat.w,
-        l: stat.l,
-        s: stat.s,
-        h: stat.h,
-        r: stat.r,
-        er: stat.er,
-        d: stat.d,
-        t: stat.t,
-        hr: stat.hr,
-        so: stat.so,
-        bb: stat.bb,
-        bf: stat.bf,
-        wp: stat.wp,
-        hbp: stat.hbp,
-        bk: stat.bk,
-        sc: stat.sc,
-      });
-      setSubmitError(null);
-    }
-  }, [reset, stat]);
 
   const submitHandler = handleSubmit(async (values) => {
     if (!gameId || !stat) {
@@ -305,7 +312,7 @@ export const EditPitchingStatDialog: React.FC<EditPitchingStatDialogProps> = ({
   });
 
   return (
-    <Dialog open={Boolean(stat)} onClose={onClose} maxWidth="md" fullWidth>
+    <>
       <DialogTitle>Edit Pitching Stat</DialogTitle>
       <DialogContent dividers>
         {submitError && (
@@ -313,67 +320,74 @@ export const EditPitchingStatDialog: React.FC<EditPitchingStatDialogProps> = ({
             {submitError}
           </Alert>
         )}
-        {stat && (
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Box
-              sx={{
-                display: 'grid',
-                gap: 2,
-                gridTemplateColumns: {
-                  xs: 'repeat(2, minmax(0, 1fr))',
-                  sm: 'repeat(3, minmax(0, 1fr))',
-                  md: 'repeat(4, minmax(0, 1fr))',
-                },
-              }}
-            >
-              {(
-                [
-                  { name: 'ipDecimal', label: 'Innings (e.g. 5.2)' },
-                  { name: 'w', label: 'Wins' },
-                  { name: 'l', label: 'Losses' },
-                  { name: 's', label: 'Saves' },
-                  { name: 'h', label: 'Hits Allowed' },
-                  { name: 'r', label: 'Runs' },
-                  { name: 'er', label: 'Earned Runs' },
-                  { name: 'd', label: 'Doubles' },
-                  { name: 't', label: 'Triples' },
-                  { name: 'hr', label: 'Home Runs' },
-                  { name: 'so', label: 'Strikeouts' },
-                  { name: 'bb', label: 'Walks' },
-                  { name: 'bf', label: 'Batters Faced' },
-                  { name: 'wp', label: 'Wild Pitches' },
-                  { name: 'hbp', label: 'Hit Batters' },
-                  { name: 'bk', label: 'Balks' },
-                  { name: 'sc', label: 'Sacrifice Outs' },
-                ] as const
-              ).map((field) => (
-                <TextField
-                  key={field.name}
-                  label={field.label}
-                  type="number"
-                  fullWidth
-                  {...register(field.name, { valueAsNumber: true })}
-                  error={Boolean((errors as Record<string, unknown>)[field.name])}
-                  helperText={(errors as Record<string, { message?: string }>)[field.name]?.message}
-                  inputProps={{ min: 0, step: field.name === 'ipDecimal' ? 0.1 : 1 }}
-                />
-              ))}
-            </Box>
-          </Stack>
-        )}
+
+        <Stack spacing={2} sx={{ mt: 1 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: {
+                xs: 'repeat(2, minmax(0, 1fr))',
+                sm: 'repeat(3, minmax(0, 1fr))',
+                md: 'repeat(4, minmax(0, 1fr))',
+              },
+            }}
+          >
+            {(
+              [
+                { name: 'ipDecimal', label: 'Innings (e.g. 5.2)' },
+                { name: 'w', label: 'Wins' },
+                { name: 'l', label: 'Losses' },
+                { name: 's', label: 'Saves' },
+                { name: 'h', label: 'Hits Allowed' },
+                { name: 'r', label: 'Runs' },
+                { name: 'er', label: 'Earned Runs' },
+                { name: 'd', label: 'Doubles' },
+                { name: 't', label: 'Triples' },
+                { name: 'hr', label: 'Home Runs' },
+                { name: 'so', label: 'Strikeouts' },
+                { name: 'bb', label: 'Walks' },
+                { name: 'bf', label: 'Batters Faced' },
+                { name: 'wp', label: 'Wild Pitches' },
+                { name: 'hbp', label: 'Hit Batters' },
+                { name: 'bk', label: 'Balks' },
+                { name: 'sc', label: 'Sacrifice Outs' },
+              ] as const
+            ).map((field) => (
+              <TextField
+                key={field.name}
+                label={field.label}
+                type="number"
+                fullWidth
+                {...register(field.name, { valueAsNumber: true })}
+                error={Boolean((errors as Record<string, unknown>)[field.name])}
+                helperText={(errors as Record<string, { message?: string }>)[field.name]?.message}
+                inputProps={{ min: 0, step: field.name === 'ipDecimal' ? 0.1 : 1 }}
+              />
+            ))}
+          </Box>
+        </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="inherit">
           Cancel
         </Button>
-        <Button
-          onClick={() => void submitHandler()}
-          variant="contained"
-          disabled={isSubmitting || !stat}
-        >
+        <Button onClick={() => void submitHandler()} variant="contained" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : 'Save Changes'}
         </Button>
       </DialogActions>
+    </>
+  );
+};
+
+export const EditPitchingStatDialog: React.FC<EditPitchingStatDialogProps> = ({
+  stat,
+  ...rest
+}) => {
+  const open = Boolean(stat);
+  return (
+    <Dialog open={open} onClose={rest.onClose} maxWidth="md" fullWidth>
+      {stat && <EditPitchingStatDialogContent stat={stat} {...rest} />}
     </Dialog>
   );
 };

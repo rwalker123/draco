@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Box, Container, Typography, Tabs, Tab, Paper, CircularProgress } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Container, Typography, Tabs, Tab, Paper } from '@mui/material';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import StatisticsFilters from './StatisticsFilters';
 import StatisticsLeaders from './StatisticsLeaders';
@@ -59,13 +59,6 @@ export default function Statistics({ accountId }: StatisticsProps) {
     divisionId: '',
     isHistorical: false,
   });
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Statistics are publicly viewable, no auth required
-    setIsLoading(false);
-  }, []);
-
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
@@ -73,18 +66,6 @@ export default function Statistics({ accountId }: StatisticsProps) {
   const handleFiltersChange = (newFilters: Partial<StatisticsFilters>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
   };
-
-  if (isLoading) {
-    return (
-      <main className="min-h-screen bg-background">
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-            <CircularProgress />
-          </Box>
-        </Container>
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-background">

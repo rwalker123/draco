@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -46,11 +46,7 @@ const DeletePlayersWantedDialog: React.FC<DeletePlayersWantedDialogProps> = ({
   } = usePlayersWantedClassifieds(accountId);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (serviceError) {
-      setLocalError(serviceError);
-    }
-  }, [serviceError]);
+  const combinedError = useMemo(() => localError ?? serviceError, [localError, serviceError]);
 
   if (!classified) return null;
 
@@ -86,9 +82,16 @@ const DeletePlayersWantedDialog: React.FC<DeletePlayersWantedDialogProps> = ({
       <DialogTitle>Delete Players Wanted Ad</DialogTitle>
 
       <DialogContent>
-        {localError && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLocalError(null)}>
-            {localError}
+        {combinedError && (
+          <Alert
+            severity="error"
+            sx={{ mb: 2 }}
+            onClose={() => {
+              setLocalError(null);
+              resetError();
+            }}
+          >
+            {combinedError}
           </Alert>
         )}
         <Typography variant="body1" sx={{ mb: 2 }}>

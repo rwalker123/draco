@@ -14461,7 +14461,7 @@
           "question": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 50
+            "maxLength": 150
           },
           "answer": {
             "type": "string",
@@ -14494,7 +14494,7 @@
           "question": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 50
+            "maxLength": 150
           },
           "answer": {
             "type": "string",
@@ -14517,7 +14517,7 @@
             "question": {
               "type": "string",
               "minLength": 1,
-              "maxLength": 50
+              "maxLength": 150
             },
             "answer": {
               "type": "string",

@@ -1320,40 +1320,63 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
 }) => {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerSearch = useCallback(
+    (query: string) => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      const trimmedQuery = query.trim();
+
+      if (!trimmedQuery) {
+        setSearchContacts([]);
+        setSearchError(null);
+        return;
+      }
+
+      if (!onSearch) {
+        return;
+      }
+
+      searchTimeoutRef.current = setTimeout(() => {
+        onSearch(trimmedQuery).catch((error) => {
+          console.error('Search failed:', error);
+          setSearchError(error instanceof Error ? error.message : 'Search failed');
+        });
+      }, 300);
+    },
+    [onSearch, setSearchContacts],
+  );
 
   // Handle clear search
   const handleClearSearch = useCallback(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = null;
+    }
     setSearchContacts([]);
     setSearchError(null);
     setSearchQuery('');
   }, [setSearchContacts]);
 
   // Handle search query change
-  const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query);
-  }, []);
+  const handleSearchChange = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+      triggerSearch(query);
+    },
+    [triggerSearch],
+  );
 
-  // Effect to trigger search when search query changes (with debouncing)
   useEffect(() => {
-    const trimmedQuery = searchQuery?.trim();
-
-    if (!trimmedQuery) {
-      setSearchContacts([]);
-      setSearchError(null);
-      return;
-    }
-
-    if (onSearch) {
-      const timeoutId = setTimeout(() => {
-        onSearch(trimmedQuery).catch((error) => {
-          console.error('Search failed:', error);
-          setSearchError(error instanceof Error ? error.message : 'Search failed');
-        });
-      }, 300);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [searchQuery, onSearch, setSearchContacts]);
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Determine which contacts to display - use searchContacts when there's an active search
   const displayContacts = useMemo(() => {

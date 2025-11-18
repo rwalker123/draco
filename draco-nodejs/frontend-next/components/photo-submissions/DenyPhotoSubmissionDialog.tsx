@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -41,14 +41,20 @@ const DenyPhotoSubmissionDialog: React.FC<DenyPhotoSubmissionDialogProps> = ({
   const [reason, setReason] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) {
-      setReason('');
-      setValidationError(null);
-    }
-  }, [open]);
+  const resetForm = useCallback(() => {
+    setReason('');
+    setValidationError(null);
+  }, []);
 
   const normalizedTitle = useMemo(() => normalizeTitle(submissionTitle), [submissionTitle]);
+
+  const handleDialogClose = useCallback(() => {
+    if (loading) {
+      return;
+    }
+    resetForm();
+    onClose();
+  }, [loading, onClose, resetForm]);
 
   const handleConfirm = async () => {
     const trimmedReason = reason.trim();
@@ -62,12 +68,12 @@ const DenyPhotoSubmissionDialog: React.FC<DenyPhotoSubmissionDialogProps> = ({
     const result = await onConfirm(trimmedReason);
 
     if (result) {
-      setReason('');
+      resetForm();
     }
   };
 
   return (
-    <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
       <DialogTitle>Deny Photo Submission</DialogTitle>
       <DialogContent>
         <DialogContentText component="div">
@@ -103,7 +109,7 @@ const DenyPhotoSubmissionDialog: React.FC<DenyPhotoSubmissionDialogProps> = ({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
+        <Button onClick={handleDialogClose} disabled={loading}>
           Cancel
         </Button>
         <Button

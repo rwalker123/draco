@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, use } from 'react';
 import {
   Box,
   Typography,
@@ -20,57 +20,70 @@ import AccountPageHeader from '../AccountPageHeader';
 import { getSources, putSources } from '../../services/workoutService';
 import { WorkoutSourcesType } from '@draco/shared-schemas';
 
+const EMPTY_SOURCES: WorkoutSourcesType = { options: [] };
+const DEFAULT_FALLBACK_SOURCES: WorkoutSourcesType = {
+  options: ['Website', 'Friend', 'Social Media', 'Other'],
+};
+
 export const WorkoutSourcesForm: React.FC = () => {
-  const [error, setError] = useState<string | null>(null);
+  const params = useParams();
+  const accountParam = params.accountId;
+  const resolvedAccountId = Array.isArray(accountParam) ? accountParam[0] : accountParam;
+
+  const initialLoadPromise = useMemo(() => {
+    if (!resolvedAccountId) {
+      return Promise.resolve({ data: EMPTY_SOURCES, error: 'Account not found' as string | null });
+    }
+
+    return getSources(resolvedAccountId)
+      .then((data) => ({ data: data ?? EMPTY_SOURCES, error: null as string | null }))
+      .catch((err) => {
+        console.error('Error fetching sources:', err);
+        return { data: DEFAULT_FALLBACK_SOURCES, error: 'Failed to load sources' as string | null };
+      });
+  }, [resolvedAccountId]);
+
+  const { data: initialSources, error: initialLoadError } = use(initialLoadPromise);
+
+  const [error, setError] = useState<string | null>(initialLoadError);
   const [newOption, setNewOption] = useState('');
   const [success, setSuccess] = useState(false);
-  const [sources, setSources] = useState<WorkoutSourcesType>({ options: [] });
-  const { accountId } = useParams();
+  const [sources, setSources] = useState<WorkoutSourcesType>({
+    options: [...initialSources.options],
+  });
   const router = useRouter();
   const { token } = useAuth();
 
-  const fetchSources = useCallback(async () => {
-    try {
-      setError(null);
-      const data = await getSources(accountId as string);
-      setSources(data || { options: [] });
-    } catch (err) {
-      console.error('Error fetching sources:', err);
-      setError('Failed to load sources');
-      // Set default options if fetch fails
-      setSources({ options: ['Website', 'Friend', 'Social Media', 'Other'] });
-    }
-  }, [accountId]);
-
-  useEffect(() => {
-    if (accountId) {
-      fetchSources();
-    }
-  }, [fetchSources, accountId]);
-
   const handleAddOption = async () => {
     if (newOption.trim() && !sources.options.includes(newOption.trim())) {
+      const trimmed = newOption.trim();
+      const previousSources = sources;
       const updatedSources = {
         ...sources,
-        options: [...sources.options, newOption.trim()],
+        options: [...sources.options, trimmed],
       };
       setSources(updatedSources);
       setNewOption('');
 
       try {
-        await putSources(accountId as string, updatedSources, token || undefined);
+        if (!resolvedAccountId) {
+          throw new Error('Account not found');
+        }
+        setError(null);
+        await putSources(resolvedAccountId, updatedSources, token || undefined);
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
       } catch (err) {
         setError('Failed to save new option');
         // Revert on failure
-        setSources(sources);
+        setSources(previousSources);
         console.error('Error saving new option:', err);
       }
     }
   };
 
   const handleRemoveOption = async (optionToRemove: string) => {
+    const previousSources = sources;
     const updatedSources = {
       ...sources,
       options: sources.options.filter((option: string) => option !== optionToRemove),
@@ -78,19 +91,26 @@ export const WorkoutSourcesForm: React.FC = () => {
     setSources(updatedSources);
 
     try {
-      await putSources(accountId as string, updatedSources, token || undefined);
+      if (!resolvedAccountId) {
+        throw new Error('Account not found');
+      }
+      setError(null);
+      await putSources(resolvedAccountId, updatedSources, token || undefined);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       setError('Failed to remove option');
       // Revert on failure
-      setSources(sources);
+      setSources(previousSources);
       console.error('Error removing option:', err);
     }
   };
 
   const handleBackToWorkouts = () => {
-    router.push(`/account/${accountId}/workouts`);
+    if (!resolvedAccountId) {
+      return;
+    }
+    router.push(`/account/${resolvedAccountId}/workouts`);
   };
 
   // Ensure sources.options is always an array
@@ -98,7 +118,7 @@ export const WorkoutSourcesForm: React.FC = () => {
 
   return (
     <main className="min-h-screen bg-background">
-      <AccountPageHeader accountId={accountId as string}>
+      <AccountPageHeader accountId={resolvedAccountId ?? ''}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
             Workout Where Heard

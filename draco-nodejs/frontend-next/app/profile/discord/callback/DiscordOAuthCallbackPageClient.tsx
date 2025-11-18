@@ -1,23 +1,29 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material';
 
 const DiscordOAuthCallbackPageClient: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState<'pending' | 'success' | 'error'>('pending');
-  const [message, setMessage] = useState('Finalizing your Discord link…');
   const redirectTimeoutRef = useRef<number | null>(null);
 
   const statusParam = searchParams.get('status');
   const messageParam = searchParams.get('message');
+  const hasExplicitStatus = statusParam === 'success' || statusParam === 'error';
+  const status: 'pending' | 'success' | 'error' = hasExplicitStatus
+    ? (statusParam as 'success' | 'error')
+    : 'pending';
+  const message =
+    status === 'success'
+      ? 'Discord account linked successfully. Redirecting to your profile…'
+      : status === 'error'
+        ? messageParam || 'Discord linking could not be completed.'
+        : 'Finalizing your Discord link…';
 
   useEffect(() => {
-    if (statusParam === 'success') {
-      setStatus('success');
-      setMessage('Discord account linked successfully. Redirecting to your profile…');
+    if (status === 'success') {
       redirectTimeoutRef.current = window.setTimeout(() => {
         router.replace('/profile');
       }, 1500);
@@ -28,11 +34,8 @@ const DiscordOAuthCallbackPageClient: React.FC = () => {
         }
       };
     }
-
-    setStatus('error');
-    setMessage(messageParam || 'Discord linking could not be completed.');
     return undefined;
-  }, [messageParam, router, statusParam]);
+  }, [router, status]);
 
   const showSpinner = status === 'pending';
   const isError = status === 'error';

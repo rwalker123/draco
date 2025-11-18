@@ -4,7 +4,7 @@ import { bigintToStringSchema } from './standardSchema.js';
 
 extendZodWithOpenApi(z);
 
-export const LEAGUE_FAQ_QUESTION_MAX_LENGTH = 50;
+export const LEAGUE_FAQ_QUESTION_MAX_LENGTH = 150;
 export const LEAGUE_FAQ_ANSWER_MAX_LENGTH = 1000;
 
 const trimmedString = (maxLength: number, fieldLabel: string) =>

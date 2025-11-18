@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   AlertColor,
@@ -96,7 +96,9 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
   const theme = useTheme();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogSubmission, setDialogSubmission] = useState<PhotoSubmissionDetailType | null>(null);
-  const [albumSelections, setAlbumSelections] = useState<Record<string, string | null>>({});
+  const [albumSelectionOverrides, setAlbumSelectionOverrides] = useState<
+    Record<string, string | null>
+  >({});
   const NO_ALBUM_VALUE = '__none__';
 
   const tileStyles = useMemo(() => {
@@ -210,45 +212,32 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
     [contextAlbumOptions],
   );
 
-  useEffect(() => {
-    setAlbumSelections((previous) => {
-      const next = { ...previous };
-      const submissionIds = new Set(submissions.map((submission) => submission.id));
-
-      submissions.forEach((submission) => {
-        if (!(submission.id in next)) {
-          const submissionAlbumId = submission.album?.id ?? null;
-          next[submission.id] = allowedAlbumIds.has(submissionAlbumId ?? null)
-            ? submissionAlbumId
-            : fallbackAlbumId;
-        }
-      });
-
-      Object.keys(next).forEach((submissionId) => {
-        if (!submissionIds.has(submissionId)) {
-          delete next[submissionId];
-        }
-      });
-
-      return next;
+  const albumSelections = useMemo(() => {
+    const next: Record<string, string | null> = {};
+    submissions.forEach((submission) => {
+      const override = albumSelectionOverrides[submission.id];
+      const baseSelection = override ?? submission.album?.id ?? null;
+      next[submission.id] = allowedAlbumIds.has(baseSelection ?? null)
+        ? (baseSelection ?? null)
+        : (fallbackAlbumId ?? null);
     });
-  }, [submissions, allowedAlbumIds, fallbackAlbumId]);
+    return next;
+  }, [albumSelectionOverrides, submissions, allowedAlbumIds, fallbackAlbumId]);
 
   const getSelectedAlbumId = (submission: PhotoSubmissionDetailType): string | null => {
-    const storedSelection =
-      submission.id in albumSelections
-        ? albumSelections[submission.id]
-        : (submission.album?.id ?? null);
-
-    if (allowedAlbumIds.has(storedSelection ?? null)) {
-      return storedSelection ?? null;
+    const selected = albumSelections[submission.id];
+    if (typeof selected !== 'undefined') {
+      return selected;
     }
 
-    return fallbackAlbumId ?? null;
+    const defaultSelection = submission.album?.id ?? null;
+    return allowedAlbumIds.has(defaultSelection ?? null)
+      ? (defaultSelection ?? null)
+      : (fallbackAlbumId ?? null);
   };
 
   const handleAlbumSelectionChange = (submissionId: string, value: string) => {
-    setAlbumSelections((previous) => ({
+    setAlbumSelectionOverrides((previous) => ({
       ...previous,
       [submissionId]: value === NO_ALBUM_VALUE ? null : value,
     }));

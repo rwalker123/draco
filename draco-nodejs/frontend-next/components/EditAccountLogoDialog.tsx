@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { z } from 'zod';
 import {
   Dialog,
@@ -63,32 +63,54 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
   onSuccess,
   onError,
 }) => {
+  const normalizedAccountId = useMemo(() => accountId?.trim() || null, [accountId]);
+  const logoOps = useAccountLogoOperations(normalizedAccountId);
+
+  const contentKey = `${accountId}-${accountLogoUrl ?? 'none'}`;
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
+      <LogoEditorContent
+        key={contentKey}
+        accountLogoUrl={accountLogoUrl}
+        onClose={onClose}
+        onSuccess={onSuccess}
+        onError={onError}
+        operations={logoOps}
+      />
+    </Dialog>
+  );
+};
+
+type LogoEditorContentProps = {
+  accountLogoUrl?: string | null;
+  onClose: () => void;
+  onSuccess?: (result: AccountLogoOperationSuccess) => void;
+  onError?: (message: string) => void;
+  operations: ReturnType<typeof useAccountLogoOperations>;
+};
+
+const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
+  accountLogoUrl,
+  onClose,
+  onSuccess,
+  onError,
+  operations,
+}) => {
+  const { uploadLogo, deleteLogo, uploading, deleting, error, clearError } = operations;
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(
+    accountLogoUrl ? addCacheBuster(accountLogoUrl) : null,
+  );
   const [validationError, setValidationError] = useState<string | null>(null);
   const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const normalizedAccountId = useMemo(() => accountId?.trim() || null, [accountId]);
-  const { uploadLogo, deleteLogo, uploading, deleting, error, clearError } =
-    useAccountLogoOperations(normalizedAccountId);
 
   const combinedError = validationError ?? error;
-
-  useEffect(() => {
-    if (open) {
-      setLogoFile(null);
-      setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl) : null);
-      setValidationError(null);
-      setLogoPreviewError(false);
-      clearError();
-    }
-  }, [open, accountLogoUrl, clearError]);
-
-  useEffect(() => {
-    if (!open) {
-      setConfirmDeleteOpen(false);
-    }
-  }, [open]);
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -107,6 +129,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
     setLogoFile(file);
     setValidationError(null);
     clearError();
+    setLogoPreviewError(false);
     const reader = new FileReader();
     reader.onload = (e) => {
       setLogoPreview(e.target?.result as string);
@@ -118,7 +141,8 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
     const validationResult = logoFileSchema.safeParse(logoFile);
 
     if (!validationResult.success) {
-      const message = validationResult.error.issues[0]?.message ?? 'Please select a logo to upload.';
+      const message =
+        validationResult.error.issues[0]?.message ?? 'Please select a logo to upload.';
       setValidationError(message);
       return;
     }
@@ -148,12 +172,8 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
     onError?.(result.error);
   };
 
-  useEffect(() => {
-    setLogoPreviewError(false);
-  }, [logoPreview]);
-
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <>
       <DialogTitle>Edit Account Logo</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
@@ -216,7 +236,9 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
                   startIcon={deleting ? <CircularProgress size={20} /> : <DeleteIcon />}
                   onClick={() => setConfirmDeleteOpen(true)}
                   disabled={uploading || deleting}
-                ></Button>
+                >
+                  Delete Logo
+                </Button>
               )}
             </Box>
             <Typography variant="caption" color="textSecondary">
@@ -255,7 +277,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
-    </Dialog>
+    </>
   );
 };
 

@@ -154,7 +154,7 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
   const accountTabValue =
     accountAlbumKeys.has(selectedAlbumKey) || selectedAlbumKey === 'all' ? selectedAlbumKey : false;
   const hasTeamAlbumHierarchy = teamAlbumHierarchy.length > 0;
-  const selectedTeamEntry = React.useMemo(() => {
+  const selectedTeamEntry = (() => {
     if (!selectedAlbumKey || !hasTeamAlbumHierarchy) {
       return null;
     }
@@ -166,6 +166,7 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
           return { leagueName: league.leagueName, divisionName: division.name, team: found };
         }
       }
+
       const unassigned = league.unassignedTeams.find((team) => team.albumId === selectedAlbumKey);
       if (unassigned) {
         return { leagueName: league.leagueName, divisionName: 'Unassigned', team: unassigned };
@@ -173,7 +174,7 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
     }
 
     return null;
-  }, [hasTeamAlbumHierarchy, selectedAlbumKey, teamAlbumHierarchy]);
+  })();
 
   const handleOpenLightbox = React.useCallback(
     (index: number) => {
@@ -181,12 +182,12 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
         setLightboxIndex(index);
       }
     },
-    [photos.length],
+    [photos.length, setLightboxIndex],
   );
 
   const handleCloseLightbox = React.useCallback(() => {
     setLightboxIndex(null);
-  }, []);
+  }, [setLightboxIndex]);
 
   const handleNextLightbox = React.useCallback(() => {
     setLightboxIndex((current) => {
@@ -195,7 +196,7 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
       }
       return (current + 1) % photos.length;
     });
-  }, [photos.length]);
+  }, [photos.length, setLightboxIndex]);
 
   const handlePrevLightbox = React.useCallback(() => {
     setLightboxIndex((current) => {
@@ -204,7 +205,7 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
       }
       return (current - 1 + photos.length) % photos.length;
     });
-  }, [photos.length]);
+  }, [photos.length, setLightboxIndex]);
 
   const handleAlbumSelection = React.useCallback(
     (albumId: string) => {

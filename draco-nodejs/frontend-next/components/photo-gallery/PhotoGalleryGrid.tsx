@@ -60,7 +60,13 @@ const PhotoGalleryGrid: React.FC<PhotoGalleryGridProps> = ({
   );
 
   useEffect(() => {
-    updateScrollAffordances();
+    const frame = window.requestAnimationFrame(() => {
+      updateScrollAffordances();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
   }, [photos.length, updateScrollAffordances]);
 
   useEffect(() => {

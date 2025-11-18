@@ -2,8 +2,43 @@
 
 import React, { useState } from 'react';
 import { Tooltip } from '@mui/material';
-import { getRoleIcon, getRoleColors, getRoleTooltipText } from '../../utils/roleIcons';
+import type { SvgIconProps } from '@mui/material/SvgIcon';
+import {
+  AdminPanelSettings,
+  Business,
+  PhotoCamera,
+  EmojiEvents,
+  SportsBaseball,
+  CameraAlt,
+} from '@mui/icons-material';
+import { getRoleColors, getRoleTooltipText } from '../../utils/roleIcons';
 import { ContactRoleType } from '@draco/shared-schemas';
+
+const renderRoleIconElement = (
+  roleId: string | undefined,
+  iconProps: SvgIconProps,
+): React.ReactElement | null => {
+  const normalized = roleId?.toUpperCase();
+
+  switch (normalized) {
+    case '93DAC465-4C64-4422-B444-3CE79C549329':
+      return <AdminPanelSettings {...iconProps} />;
+    case '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A':
+      return <Business {...iconProps} />;
+    case 'A87EA9A3-47E2-49D1-9E1E-C35358D1A677':
+      return <PhotoCamera {...iconProps} />;
+    case '05BEC889-3499-4DE1-B44F-4EED41412B3D':
+      return <CameraAlt {...iconProps} />;
+    case '672DDF06-21AC-4D7C-B025-9319CC69281A':
+      return <EmojiEvents {...iconProps} />;
+    case '777D771B-1CBA-4126-B8F3-DD7F3478D40E':
+      return <SportsBaseball {...iconProps} />;
+    case '55FD3262-343F-4000-9561-6BB7F658DEB7':
+      return <CameraAlt {...iconProps} />;
+    default:
+      return null;
+  }
+};
 
 interface RoleIconProps {
   role: ContactRoleType;
@@ -25,7 +60,6 @@ const RoleIcon: React.FC<RoleIconProps> = ({
   disabled = false,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const IconComponent = getRoleIcon(role.roleId);
   const colors = getRoleColors(role.roleId);
   const baseTooltipText = getRoleTooltipText(role);
   const tooltipText =
@@ -50,7 +84,15 @@ const RoleIcon: React.FC<RoleIconProps> = ({
   const finalColors = colors || fallbackColors;
   const iconSize = size === 'small' ? 20 : size === 'medium' ? 24 : 32;
 
-  if (!IconComponent) {
+  const iconElement = renderRoleIconElement(role.roleId, {
+    fontSize: size,
+    style: {
+      color: finalColors?.primary || '#1976d2',
+      fill: finalColors?.primary || '#1976d2',
+    },
+  });
+
+  if (!iconElement) {
     return (
       <Tooltip title={tooltipText} arrow placement="top" enterDelay={300} leaveDelay={200}>
         <span
@@ -95,13 +137,7 @@ const RoleIcon: React.FC<RoleIconProps> = ({
           position: 'relative',
         }}
       >
-        <IconComponent
-          fontSize={size}
-          style={{
-            color: finalColors?.primary || '#1976d2',
-            fill: finalColors?.primary || '#1976d2',
-          }}
-        />
+        {iconElement}
 
         {/* Delete marker on hover */}
         {isHovered && onClick && !disabled && (

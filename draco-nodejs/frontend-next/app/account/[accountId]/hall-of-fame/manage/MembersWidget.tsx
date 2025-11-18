@@ -545,7 +545,9 @@ const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
                       label="Select Contact"
                       required
                       error={Boolean(errors.contactId)}
-                      helperText={errors.contactId?.message ?? 'Start typing to find a contact.'}
+                      helperText={String(
+                        errors.contactId?.message ?? 'Start typing to find a contact.',
+                      )}
                     />
                   )}
                 />
@@ -566,7 +568,7 @@ const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
                     max: new Date().getFullYear() + 1,
                   }}
                   error={Boolean(errors.yearInducted)}
-                  helperText={errors.yearInducted?.message}
+                  helperText={String(errors.yearInducted?.message)}
                 />
               )}
             />

@@ -42,54 +42,82 @@ type ScheduleOption = 'later_today' | 'tomorrow' | 'next_week' | 'custom';
 /**
  * ScheduleDialog - Modal for setting email scheduling options
  */
-export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({ open, onClose, onSchedule }) => {
-  const { state, actions } = useEmailCompose();
+type EmailComposeContext = ReturnType<typeof useEmailCompose>;
 
-  // Real-time validation for contextual error display
-  const validation = useMemo(() => validateComposeData(state, state.config), [state]);
+const computeQuickScheduleDate = (option: ScheduleOption): Date => {
+  const now = new Date();
+
+  switch (option) {
+    case 'later_today': {
+      const laterToday = new Date(now);
+      laterToday.setHours(18, 0, 0, 0);
+      if (laterToday <= now) {
+        return new Date(now.getTime() + 2 * 60 * 60 * 1000);
+      }
+      return laterToday;
+    }
+    case 'tomorrow': {
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(9, 0, 0, 0);
+      return tomorrow;
+    }
+    case 'next_week': {
+      const nextWeek = new Date(now);
+      const daysUntilMonday = (8 - nextWeek.getDay()) % 7 || 7;
+      nextWeek.setDate(nextWeek.getDate() + daysUntilMonday);
+      nextWeek.setHours(9, 0, 0, 0);
+      return nextWeek;
+    }
+    default:
+      return now;
+  }
+};
+
+const createDefaultCustomDate = (): Date => {
+  const now = new Date();
+  return new Date(now.getTime() + 24 * 60 * 60 * 1000);
+};
+
+const createCustomDateBounds = () => {
+  const timestamp = new Date().getTime();
+  return {
+    min: new Date(timestamp + 5 * 60 * 1000),
+    max: new Date(timestamp + 365 * 24 * 60 * 60 * 1000),
+  };
+};
+
+interface ScheduleDialogContentProps extends ScheduleDialogProps {
+  composeState: EmailComposeContext['state'];
+  composeActions: EmailComposeContext['actions'];
+}
+
+const ScheduleDialogContent: React.FC<ScheduleDialogContentProps> = ({
+  open,
+  onClose,
+  onSchedule,
+  composeState,
+  composeActions,
+}) => {
+  const validation = useMemo(
+    () => validateComposeData(composeState, composeState.config),
+    [composeState],
+  );
 
   const [scheduleOption, setScheduleOption] = useState<ScheduleOption>('custom');
-  const [customDate, setCustomDate] = useState<Date | null>(
-    state.scheduledDate || new Date(Date.now() + 24 * 60 * 60 * 1000), // Default to tomorrow
-  );
+  const [customDate, setCustomDate] = useState<Date | null>(() => {
+    if (composeState.scheduledDate) {
+      return composeState.scheduledDate;
+    }
+    return createDefaultCustomDate();
+  });
   const [error, setError] = useState<string | null>(null);
+  const [customDateBounds] = useState(createCustomDateBounds);
 
   // Quick schedule options
-  const getQuickScheduleDate = useCallback(
-    (option: ScheduleOption): Date => {
-      const now = new Date();
-
-      switch (option) {
-        case 'later_today':
-          // 6 PM today, or 2 hours from now if after 6 PM
-          const laterToday = new Date(now);
-          laterToday.setHours(18, 0, 0, 0);
-          if (laterToday <= now) {
-            return new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
-          }
-          return laterToday;
-
-        case 'tomorrow':
-          // 9 AM tomorrow
-          const tomorrow = new Date(now);
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          tomorrow.setHours(9, 0, 0, 0);
-          return tomorrow;
-
-        case 'next_week':
-          // 9 AM next Monday
-          const nextWeek = new Date(now);
-          const daysUntilMonday = (8 - nextWeek.getDay()) % 7 || 7;
-          nextWeek.setDate(nextWeek.getDate() + daysUntilMonday);
-          nextWeek.setHours(9, 0, 0, 0);
-          return nextWeek;
-
-        default:
-          return customDate || new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      }
-    },
-    [customDate],
-  );
+  const getQuickScheduleDate = useCallback((option: ScheduleOption): Date => {
+    return computeQuickScheduleDate(option);
+  }, []);
 
   // Handle schedule option change
   const handleScheduleOptionChange = useCallback(
@@ -145,7 +173,7 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({ open, onClose, o
     }
 
     if (selectedDate) {
-      actions.setScheduled(true, selectedDate);
+      composeActions.setScheduled(true, selectedDate);
 
       if (onSchedule) {
         onSchedule(selectedDate);
@@ -158,7 +186,7 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({ open, onClose, o
     customDate,
     getQuickScheduleDate,
     validateScheduleDate,
-    actions,
+    composeActions,
     onSchedule,
     onClose,
   ]);
@@ -170,9 +198,9 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({ open, onClose, o
 
   // Handle remove scheduling
   const handleRemoveSchedule = useCallback(() => {
-    actions.clearSchedule();
+    composeActions.clearSchedule();
     onClose();
-  }, [actions, onClose]);
+  }, [composeActions, onClose]);
 
   // Format date for display
   const formatDate = (date: Date) => {
@@ -211,13 +239,13 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({ open, onClose, o
         <DialogContent>
           <Stack spacing={3} sx={{ pt: 1 }}>
             {/* Current Schedule Status */}
-            {state.isScheduled && state.scheduledDate && (
+            {composeState.isScheduled && composeState.scheduledDate && (
               <Alert severity="info">
                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                   <Typography variant="body2">Currently scheduled for:</Typography>
                   <Chip
                     icon={<EventIcon />}
-                    label={formatDate(state.scheduledDate)}
+                    label={formatDate(composeState.scheduledDate)}
                     size="small"
                     color="primary"
                   />
@@ -296,8 +324,8 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({ open, onClose, o
                   label="Select Date and Time"
                   value={customDate}
                   onChange={handleCustomDateChange}
-                  minDateTime={new Date(Date.now() + 5 * 60 * 1000)} // 5 minutes from now
-                  maxDateTime={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)} // 1 year from now
+                  minDateTime={customDateBounds.min}
+                  maxDateTime={customDateBounds.max}
                   sx={{ width: '100%' }}
                 />
               </Box>
@@ -334,7 +362,7 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({ open, onClose, o
             Cancel
           </Button>
 
-          {state.isScheduled && (
+          {composeState.isScheduled && (
             <Button onClick={handleRemoveSchedule} color="error" variant="outlined">
               Remove Schedule
             </Button>
@@ -350,5 +378,21 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({ open, onClose, o
         </DialogActions>
       </Dialog>
     </LocalizationProvider>
+  );
+};
+
+export const ScheduleDialog: React.FC<ScheduleDialogProps> = (props) => {
+  const composeContext = useEmailCompose();
+  const scheduleKey = props.open
+    ? `open-${composeContext.state.scheduledDate?.getTime() ?? 'none'}`
+    : `closed-${composeContext.state.scheduledDate?.getTime() ?? 'none'}`;
+
+  return (
+    <ScheduleDialogContent
+      key={scheduleKey}
+      {...props}
+      composeState={composeContext.state}
+      composeActions={composeContext.actions}
+    />
   );
 };

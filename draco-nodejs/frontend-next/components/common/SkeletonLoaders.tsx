@@ -100,17 +100,15 @@ export const GroupListSkeleton: React.FC<{
             {showMembers && (
               <Box sx={{ ml: compact ? 4 : 5 }}>
                 <Stack spacing={0.5}>
-                  {Array.from({ length: Math.floor(Math.random() * 3) + 1 }).map(
-                    (_, memberIndex) => (
-                      <Skeleton
-                        key={memberIndex}
-                        variant="text"
-                        width={`${Math.floor(Math.random() * 40) + 30}%`}
-                        height={16}
-                        sx={{ fontSize: '0.75rem' }}
-                      />
-                    ),
-                  )}
+                  {[...Array(3)].map((_, memberIndex) => (
+                    <Skeleton
+                      key={memberIndex}
+                      variant="text"
+                      width={['30%', '50%', '70%'][memberIndex % 3]}
+                      height={16}
+                      sx={{ fontSize: '0.75rem' }}
+                    />
+                  ))}
                 </Stack>
               </Box>
             )}

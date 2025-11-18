@@ -76,23 +76,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [filterType, setFilterType] = useState<FilterType>('month');
   const [filterDate, setFilterDate] = useState<Date>(new Date());
   const prefersListView = useMediaQuery(`(max-width:${CALENDAR_VIEW_BREAKPOINT}px)`);
-  const [viewMode, setViewMode] = useState<ViewMode>(() => (prefersListView ? 'list' : 'calendar'));
-  const [viewModeManuallySelected, setViewModeManuallySelected] = useState(false);
   const defaultViewMode = prefersListView ? 'list' : 'calendar';
-
-  // Default to list view on narrow screens, but respect any manual user selection.
-  useEffect(() => {
-    if (viewMode === defaultViewMode) {
-      if (viewModeManuallySelected) {
-        setViewModeManuallySelected(false);
-      }
-      return;
-    }
-
-    if (!viewModeManuallySelected) {
-      setViewMode(defaultViewMode);
-    }
-  }, [defaultViewMode, viewMode, viewModeManuallySelected]);
+  const [manualViewMode, setManualViewMode] = useState<ViewMode | null>(null);
+  const viewMode = manualViewMode ?? defaultViewMode;
 
   // Use modular schedule hooks
   const {
@@ -309,8 +295,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
   const handleViewModeChange = useCallback(
     (mode: ViewMode) => {
-      setViewMode(mode);
-      setViewModeManuallySelected(mode !== defaultViewMode);
+      setManualViewMode(mode === defaultViewMode ? null : mode);
     },
     [defaultViewMode],
   );

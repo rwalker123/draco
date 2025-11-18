@@ -17,7 +17,7 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { DiscordFeatureSyncChannelType, DiscordGuildChannelType } from '@draco/shared-schemas';
@@ -113,7 +113,6 @@ const DiscordFeatureChannelDialog: React.FC<DiscordFeatureChannelDialogProps> = 
   const {
     control,
     handleSubmit,
-    watch,
     reset,
     formState: { errors },
   } = useForm<FormValues>({
@@ -122,7 +121,7 @@ const DiscordFeatureChannelDialog: React.FC<DiscordFeatureChannelDialogProps> = 
     mode: 'onSubmit',
   });
 
-  const selectedMode = watch('mode');
+  const selectedMode = useWatch({ control, name: 'mode' });
 
   React.useEffect(() => {
     if (!open) {

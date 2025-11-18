@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -138,8 +138,75 @@ const createGameDialogSchema = (gameStatus: number, timeZone: string) =>
 type GameDialogSchema = ReturnType<typeof createGameDialogSchema>;
 export type GameDialogFormValues = z.infer<GameDialogSchema>;
 
-const GameDialog: React.FC<GameDialogProps> = ({
-  open,
+const buildInitialFormValues = (
+  mode: 'create' | 'edit',
+  selectedGame: Game | null | undefined,
+  timeZone: string,
+  defaultLeagueSeasonId?: string,
+  defaultGameDate?: Date,
+): GameDialogFormValues => {
+  if (mode === 'edit' && selectedGame) {
+    const zonedDate = convertUTCToZonedDate(selectedGame.gameDate, timeZone);
+    const baseDate = zonedDate ?? new Date(selectedGame.gameDate);
+    const baseTime = new Date(baseDate.getTime());
+
+    return {
+      leagueSeasonId: selectedGame.league.id,
+      gameDate: baseDate,
+      gameTime: baseTime,
+      homeTeamId: selectedGame.homeTeamId,
+      visitorTeamId: selectedGame.visitorTeamId,
+      fieldId: selectedGame.fieldId || '',
+      comment: selectedGame.comment || '',
+      gameType: selectedGame.gameType ?? GameType.RegularSeason,
+      umpire1: selectedGame.umpire1 || '',
+      umpire2: selectedGame.umpire2 || '',
+      umpire3: selectedGame.umpire3 || '',
+      umpire4: selectedGame.umpire4 || '',
+    };
+  }
+
+  const initialDate = defaultGameDate ?? new Date();
+
+  return {
+    leagueSeasonId: defaultLeagueSeasonId ?? '',
+    gameDate: initialDate,
+    gameTime: initialDate,
+    homeTeamId: '',
+    visitorTeamId: '',
+    fieldId: '',
+    comment: '',
+    gameType: GameType.RegularSeason,
+    umpire1: '',
+    umpire2: '',
+    umpire3: '',
+    umpire4: '',
+  };
+};
+
+const GameDialog: React.FC<GameDialogProps> = (props) => {
+  if (!props.open) {
+    return null;
+  }
+
+  if (props.mode === 'edit' && !props.selectedGame) {
+    return null;
+  }
+
+  const key = [
+    props.mode,
+    props.selectedGame?.id ?? 'new',
+    props.defaultLeagueSeasonId ?? 'none',
+    props.defaultGameDate ? props.defaultGameDate.getTime() : 'no-date',
+    props.timeZone,
+  ].join('-');
+
+  return <GameDialogInner key={key} {...props} />;
+};
+
+type GameDialogInnerProps = Omit<GameDialogProps, 'open'>;
+
+const GameDialogInner: React.FC<GameDialogInnerProps> = ({
   mode,
   title,
   accountId,
@@ -164,7 +231,6 @@ const GameDialog: React.FC<GameDialogProps> = ({
 }) => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [keepDialogOpen, setKeepDialogOpen] = useState(false);
-  const [dialogTeams, setDialogTeams] = useState<TeamSeasonType[]>([]);
 
   const defaultSchemaStatus =
     mode === 'edit' && selectedGame ? selectedGame.gameStatus : GameStatus.Scheduled;
@@ -186,22 +252,15 @@ const GameDialog: React.FC<GameDialogProps> = ({
     [validationSchema],
   );
 
+  const initialFormValues = useMemo(
+    () =>
+      buildInitialFormValues(mode, selectedGame, timeZone, defaultLeagueSeasonId, defaultGameDate),
+    [mode, selectedGame, timeZone, defaultLeagueSeasonId, defaultGameDate],
+  );
+
   const formMethods = useForm<GameDialogFormValues>({
     resolver: formResolver,
-    defaultValues: {
-      leagueSeasonId: '',
-      gameDate: new Date(),
-      gameTime: new Date(),
-      homeTeamId: '',
-      visitorTeamId: '',
-      fieldId: '',
-      comment: '',
-      gameType: GameType.RegularSeason,
-      umpire1: '',
-      umpire2: '',
-      umpire3: '',
-      umpire4: '',
-    },
+    defaultValues: initialFormValues,
     shouldUnregister: false,
   });
 
@@ -211,76 +270,12 @@ const GameDialog: React.FC<GameDialogProps> = ({
     name: 'leagueSeasonId',
   });
 
-  useEffect(() => {
+  const dialogTeams = useMemo(() => {
     if (leagueSeasonId) {
-      setDialogTeams(leagueTeamsCache.get(leagueSeasonId) ?? []);
-    } else {
-      setDialogTeams([]);
+      return leagueTeamsCache.get(leagueSeasonId) ?? [];
     }
+    return [];
   }, [leagueSeasonId, leagueTeamsCache]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    setSubmitError(null);
-
-    if (mode === 'edit' && selectedGame) {
-      const zonedDate = convertUTCToZonedDate(selectedGame.gameDate, timeZone);
-      const baseDate = zonedDate ?? new Date(selectedGame.gameDate);
-      const baseTime = new Date(baseDate.getTime());
-
-      reset({
-        leagueSeasonId: selectedGame.league.id,
-        gameDate: baseDate,
-        gameTime: baseTime,
-        homeTeamId: selectedGame.homeTeamId,
-        visitorTeamId: selectedGame.visitorTeamId,
-        fieldId: selectedGame.fieldId || '',
-        comment: selectedGame.comment || '',
-        gameType: selectedGame.gameType ?? GameType.RegularSeason,
-        umpire1: selectedGame.umpire1 || '',
-        umpire2: selectedGame.umpire2 || '',
-        umpire3: selectedGame.umpire3 || '',
-        umpire4: selectedGame.umpire4 || '',
-      });
-      setDialogTeams(leagueTeamsCache.get(selectedGame.league.id) ?? []);
-    } else {
-      const initialDate = defaultGameDate ?? new Date();
-
-      reset({
-        leagueSeasonId: defaultLeagueSeasonId ?? '',
-        gameDate: initialDate,
-        gameTime: initialDate,
-        homeTeamId: '',
-        visitorTeamId: '',
-        fieldId: '',
-        comment: '',
-        gameType: GameType.RegularSeason,
-        umpire1: '',
-        umpire2: '',
-        umpire3: '',
-        umpire4: '',
-      });
-      if (defaultLeagueSeasonId) {
-        setDialogTeams(leagueTeamsCache.get(defaultLeagueSeasonId) ?? []);
-      } else {
-        setDialogTeams([]);
-      }
-    }
-
-    setKeepDialogOpen(false);
-  }, [
-    open,
-    mode,
-    selectedGame,
-    reset,
-    leagueTeamsCache,
-    defaultLeagueSeasonId,
-    defaultGameDate,
-    timeZone,
-  ]);
 
   const getAvailableUmpires = useCallback(
     (currentPosition: string, currentValue: string) => {
@@ -347,15 +342,10 @@ const GameDialog: React.FC<GameDialogProps> = ({
           umpire3: '',
           umpire4: '',
         });
-        if (preservedLeague) {
-          setDialogTeams(leagueTeamsCache.get(preservedLeague) ?? []);
-        } else {
-          setDialogTeams([]);
-        }
         return;
       }
 
-      onClose();
+      handleClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save game';
       setSubmitError(message);
@@ -370,7 +360,7 @@ const GameDialog: React.FC<GameDialogProps> = ({
 
   return (
     <Dialog
-      open={open}
+      open
       onClose={handleClose}
       maxWidth="md"
       fullWidth

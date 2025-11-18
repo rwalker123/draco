@@ -2,6 +2,7 @@
 
 - Ground yourself with the shared [Repository Guidelines](../../AGENTS.md).
 - UI architecture practices live in [Frontend Architecture - ezRecSports](./FRONTEND_ARCHITECTURE.md).
+- In particular, follow the “Derived Data in Render” section which cites React’s [You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect); do **not** store or reset derived state via effects or refs—calculate it during render exactly as documented.
 
 ## Daily Workflow
 - Launch the Next.js app with `npm run dev -w @draco/frontend-next` from the repo root.

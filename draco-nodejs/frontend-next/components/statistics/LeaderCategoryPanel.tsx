@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import NextLink from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Box, Typography } from '@mui/material';
@@ -164,7 +164,30 @@ export default function LeaderCategoryPanel({
     [leaders, leaderForCard],
   );
   const cardContainerRef = useRef<HTMLDivElement | null>(null);
-  const [cardWidth, setCardWidth] = useState<number>();
+  const [cardWidthStore] = useState(() => {
+    let snapshot: number | undefined;
+    const listeners = new Set<() => void>();
+
+    return {
+      getSnapshot: () => snapshot,
+      setSnapshot: (next: number | undefined) => {
+        if (snapshot === next) {
+          return;
+        }
+        snapshot = next;
+        listeners.forEach((listener) => listener());
+      },
+      subscribe: (listener: () => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    };
+  });
+  const cardWidth = useSyncExternalStore(
+    cardWidthStore.subscribe,
+    cardWidthStore.getSnapshot,
+    cardWidthStore.getSnapshot,
+  );
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -268,22 +291,22 @@ export default function LeaderCategoryPanel({
     const element = cardContainerRef.current;
 
     if (!element) {
-      setCardWidth(undefined);
+      cardWidthStore.setSnapshot(undefined);
       return;
     }
 
     const updateWidth = () => {
       const measuredWidth = element.offsetWidth;
+      const previousWidth = cardWidthStore.getSnapshot();
+      const nextWidth = Math.max(measuredWidth, MIN_CARD_WIDTH);
 
-      setCardWidth((prev) => {
-        if (prev === undefined) {
-          return Math.max(measuredWidth, MIN_CARD_WIDTH);
-        }
+      if (previousWidth === undefined) {
+        cardWidthStore.setSnapshot(nextWidth);
+        return;
+      }
 
-        const difference = Math.abs(prev - measuredWidth);
-        const nextWidth = Math.max(measuredWidth, MIN_CARD_WIDTH);
-        return difference > 1 ? nextWidth : prev;
-      });
+      const difference = Math.abs(previousWidth - nextWidth);
+      cardWidthStore.setSnapshot(difference > 1 ? nextWidth : previousWidth);
     };
 
     updateWidth();
@@ -301,7 +324,7 @@ export default function LeaderCategoryPanel({
     return () => {
       resizeObserver.disconnect();
     };
-  }, [leaderForCard]);
+  }, [cardWidthStore, leaderForCard]);
 
   useEffect(() => {
     if (!onWidthChange) {

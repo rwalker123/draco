@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Box, Button, CircularProgress, Alert, Typography } from '@mui/material';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
@@ -27,35 +27,25 @@ export default function EmailCompose() {
     refresh: refreshRecipients,
   } = useEmailRecipients(accountId as string, currentSeason?.id);
 
-  const [initialData, setInitialData] = useState<Partial<EmailComposeRequest> | undefined>();
-
-  // Combined loading and error states
-  const loading = seasonLoading || recipientsLoading;
-  const error = seasonError || recipientsError;
-
-  // Load initial compose data from URL parameters
-  const loadInitialData = useCallback(() => {
-    // Check for initial data from URL params (reply, forward, template, etc.)
+  const initialData = useMemo(() => {
     const templateId = searchParams.get('template');
     const subject = searchParams.get('subject');
     const body = searchParams.get('body');
 
-    let composeInitialData: Partial<EmailComposeRequest> | undefined;
-    if (subject || body || templateId) {
-      composeInitialData = {
-        subject: subject || '',
-        body: body || '',
-        templateId: templateId || undefined,
-      };
+    if (!subject && !body && !templateId) {
+      return undefined;
     }
 
-    setInitialData(composeInitialData);
+    return {
+      subject: subject ?? '',
+      body: body ?? '',
+      templateId: templateId ?? undefined,
+    } satisfies Partial<EmailComposeRequest>;
   }, [searchParams]);
 
-  // Load initial data on mount
-  useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+  // Combined loading and error states
+  const loading = seasonLoading || recipientsLoading;
+  const error = seasonError || recipientsError;
 
   // Handle back navigation
   const handleBack = useCallback(() => {

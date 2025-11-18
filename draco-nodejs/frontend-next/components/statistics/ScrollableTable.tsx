@@ -1,14 +1,6 @@
 'use client';
 
-import React, {
-  useRef,
-  useState,
-  useEffect,
-  useCallback,
-  ReactNode,
-  useMemo,
-  useLayoutEffect,
-} from 'react';
+import React, { useRef, useState, useEffect, useCallback, ReactNode, useLayoutEffect } from 'react';
 import { Box, IconButton, Fade } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
@@ -35,16 +27,21 @@ export default function ScrollableTable({
   const [isHovering, setIsHovering] = useState(false);
   const storeKey = `scroll-${dataVersion?.toString().split('-').slice(0, -1).join('-') || 'default'}`; // Group by sort field/order, not data length
 
-  // Save scroll position BEFORE render when data is about to change
-  useMemo(() => {
-    if (preserveScrollOnUpdate && scrollRef.current) {
-      const currentScroll = scrollRef.current.scrollLeft;
-      // Only save if we have a meaningful scroll position
-      if (currentScroll > 0) {
-        scrollPositionStore.set(storeKey, currentScroll);
-      }
+  useLayoutEffect(() => {
+    if (!preserveScrollOnUpdate) {
+      return;
     }
-  }, [preserveScrollOnUpdate, storeKey]);
+
+    const container = scrollRef.current;
+    if (!container) {
+      return;
+    }
+
+    const currentScroll = container.scrollLeft;
+    if (currentScroll > 0) {
+      scrollPositionStore.set(storeKey, currentScroll);
+    }
+  }, [preserveScrollOnUpdate, storeKey, dataVersion]);
 
   const checkScrollButtons = useCallback(() => {
     if (!scrollRef.current) return;

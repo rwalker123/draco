@@ -46,6 +46,16 @@ type LeadersWidgetProps = AccountLeadersWidgetProps | TeamLeadersWidgetProps;
 const DEFAULT_ACCOUNT_TITLE = 'League Leaders';
 const DEFAULT_TEAM_TITLE = 'Team Leaders';
 
+const computeStableHash = (input: string): number => {
+  let hash = 0;
+
+  for (let index = 0; index < input.length; index += 1) {
+    hash = (hash * 31 + input.charCodeAt(index)) >>> 0;
+  }
+
+  return hash >>> 0;
+};
+
 const buildStatTypeTabSx = (muiTheme: Theme) => ({
   minWidth: 120,
   borderRadius: 2,
@@ -128,44 +138,47 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
 
   const title = props.title ?? (isTeamVariant ? DEFAULT_TEAM_TITLE : DEFAULT_ACCOUNT_TITLE);
 
-  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(defaultLeagueId);
+  const [preferredLeagueId, setPreferredLeagueId] = useState<string | null>(null);
+  const randomizedLeagueId = useMemo(() => {
+    if (!randomize || isTeamVariant || resolvedLeagues.length === 0) {
+      return null;
+    }
+    const seedInput = `${accountId}-${resolvedLeagues.map((league) => league.id).join('|')}`;
+    const leagueIndex = computeStableHash(seedInput) % resolvedLeagues.length;
+    return resolvedLeagues[leagueIndex]?.id ?? null;
+  }, [accountId, isTeamVariant, randomize, resolvedLeagues]);
 
-  useEffect(() => {
-    const desiredLeagueId = defaultLeagueId ?? null;
-
+  const selectedLeagueId = useMemo(() => {
     if (isTeamVariant) {
-      if (desiredLeagueId !== selectedLeagueId) {
-        setSelectedLeagueId(desiredLeagueId);
-      }
-      return;
+      return defaultLeagueId ?? null;
     }
 
     if (resolvedLeagues.length === 0) {
-      if (selectedLeagueId !== null) {
-        setSelectedLeagueId(null);
-      }
-      return;
+      return null;
     }
 
-    if (!selectedLeagueId || !resolvedLeagues.some((league) => league.id === selectedLeagueId)) {
-      setSelectedLeagueId(resolvedLeagues[0].id);
-    }
-  }, [defaultLeagueId, isTeamVariant, resolvedLeagues, selectedLeagueId]);
+    const isValidLeagueId = (leagueId?: string | null) =>
+      Boolean(leagueId && resolvedLeagues.some((league) => league.id === leagueId));
 
-  const [statType, setStatType] = useState<StatType>('batting');
+    if (isValidLeagueId(preferredLeagueId)) {
+      return preferredLeagueId;
+    }
+
+    if (isValidLeagueId(randomizedLeagueId)) {
+      return randomizedLeagueId;
+    }
+
+    if (isValidLeagueId(defaultLeagueId)) {
+      return defaultLeagueId;
+    }
+
+    return resolvedLeagues[0]?.id ?? null;
+  }, [defaultLeagueId, isTeamVariant, preferredLeagueId, randomizedLeagueId, resolvedLeagues]);
+
+  const [preferredStatType, setPreferredStatType] = useState<StatType | null>(null);
   const [requestedCategoryByType, setRequestedCategoryByType] = useState<
     Partial<Record<StatType, string>>
   >({});
-  const [displayedCategoryByType, setDisplayedCategoryByType] = useState<
-    Partial<Record<StatType, string>>
-  >({});
-  const [renderStateByType, setRenderStateByType] = useState<
-    Partial<
-      Record<StatType, { leagueId: string | null; categoryKey: string; leaders: LeaderRowType[] }>
-    >
-  >({});
-  const randomizationAppliedRef = useRef(false);
-  const leagueRandomizationAppliedRef = useRef(false);
   const leagueTabsRef = useRef<HTMLDivElement | null>(null);
   const statTabsRef = useRef<HTMLDivElement | null>(null);
   const categoryTabsRef = useRef<HTMLDivElement | null>(null);
@@ -176,40 +189,9 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     error: categoriesError,
   } = useLeaderCategories(accountId);
 
-  const ensureCategoryState = useCallback((type: StatType, categories: LeaderCategoryType[]) => {
-    if (categories.length === 0) {
-      console.debug('[LeadersWidget] no categories available', { statType: type });
-      return;
-    }
-
-    const availableKeys = new Set(categories.map((category) => category.key));
-    const defaultKey = categories[0].key;
-
-    setRequestedCategoryByType((previous) => {
-      const current = previous[type];
-      const next = current && availableKeys.has(current) ? current : defaultKey;
-      if (current === next) {
-        return previous;
-      }
-      console.debug('[LeadersWidget] initializing requested category', {
-        statType: type,
-        next,
-      });
-      return { ...previous, [type]: next };
-    });
-  }, []);
-
-  useEffect(() => {
-    ensureCategoryState('batting', battingCategories);
-  }, [battingCategories, ensureCategoryState]);
-
-  useEffect(() => {
-    ensureCategoryState('pitching', pitchingCategories);
-  }, [pitchingCategories, ensureCategoryState]);
-
-  useEffect(() => {
-    if (!randomize || randomizationAppliedRef.current) {
-      return;
+  const randomSelection = useMemo(() => {
+    if (!randomize) {
+      return null;
     }
 
     const battingCount = battingCategories.length;
@@ -217,67 +199,46 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     const totalCategories = battingCount + pitchingCount;
 
     if (totalCategories === 0) {
-      return;
+      return null;
     }
 
-    const seed = Math.floor(Math.random() * totalCategories);
+    const seedSource = `${accountId}-${battingCategories
+      .map((category) => category.key)
+      .join(
+        '|',
+      )}-${pitchingCategories.map((category) => category.key).join('|')}-${totalCategories}`;
+    const seed = computeStableHash(seedSource);
     const chosenType: StatType = seed < battingCount ? 'batting' : 'pitching';
     const categoryIndex = chosenType === 'batting' ? seed : seed - battingCount;
     const categoriesForType = chosenType === 'batting' ? battingCategories : pitchingCategories;
     const chosenCategory = categoriesForType[categoryIndex];
 
     if (!chosenCategory) {
-      return;
+      return null;
     }
 
-    randomizationAppliedRef.current = true;
-    setStatType(chosenType);
-    setRequestedCategoryByType((previous) => ({
-      ...previous,
-      [chosenType]: chosenCategory.key,
-    }));
-    setDisplayedCategoryByType((previous) => ({
-      ...previous,
-      [chosenType]: chosenCategory.key,
-    }));
-  }, [randomize, battingCategories, pitchingCategories]);
+    return {
+      statType: chosenType,
+      categoryKey: chosenCategory.key,
+    };
+  }, [accountId, battingCategories, pitchingCategories, randomize]);
 
-  useEffect(() => {
-    if (isTeamVariant || !randomize || leagueRandomizationAppliedRef.current) {
-      return;
-    }
-
-    if (resolvedLeagues.length === 0) {
-      return;
-    }
-
-    const leagueIndex = Math.floor(Math.random() * resolvedLeagues.length);
-    const chosenLeagueId = resolvedLeagues[leagueIndex]?.id ?? null;
-
-    if (!chosenLeagueId) {
-      return;
-    }
-
-    leagueRandomizationAppliedRef.current = true;
-    setSelectedLeagueId(chosenLeagueId);
-  }, [isTeamVariant, randomize, resolvedLeagues]);
+  const statType = preferredStatType ?? randomSelection?.statType ?? 'batting';
 
   const activeCategories: LeaderCategoryType[] =
     statType === 'batting' ? battingCategories : pitchingCategories;
 
-  const displayedCategoryKey = displayedCategoryByType[statType];
-  const requestedCategoryKey =
-    requestedCategoryByType[statType] ?? displayedCategoryKey ?? activeCategories[0]?.key;
-
-  const renderState = renderStateByType[statType];
-  const resolvedDisplayedKey =
-    renderState?.categoryKey ?? displayedCategoryKey ?? requestedCategoryKey ?? null;
-  const displayedCategory = useMemo(() => {
-    if (!resolvedDisplayedKey) {
-      return null;
+  const resolveCategoryKey = (key?: string | null) => {
+    if (!key) {
+      return undefined;
     }
-    return activeCategories.find((category) => category.key === resolvedDisplayedKey) ?? null;
-  }, [activeCategories, resolvedDisplayedKey]);
+    return activeCategories.some((category) => category.key === key) ? key : undefined;
+  };
+
+  const storedDisplayedCategoryKey = resolveCategoryKey(
+    requestedCategoryByType[statType] ?? undefined,
+  );
+  const requestedCategoryKey = storedDisplayedCategoryKey ?? activeCategories[0]?.key;
 
   const requestedCategory = useMemo(() => {
     if (!requestedCategoryKey) {
@@ -285,9 +246,6 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     }
     return activeCategories.find((category) => category.key === requestedCategoryKey) ?? null;
   }, [activeCategories, requestedCategoryKey]);
-
-  const tabCategoryKey =
-    displayedCategory?.key ?? requestedCategory?.key ?? activeCategories[0]?.key ?? '';
 
   const canFetchTeamData = !isTeamVariant || Boolean(teamIdFilter && selectedLeagueId);
 
@@ -328,8 +286,45 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     [accountId, divisionId, isHistorical, leaderLimit, selectedLeagueId, teamIdFilter],
   );
 
-  const requestedCacheKey = buildCacheKey(requestedCategoryKey ?? null);
-  const displayedLeaders = renderState?.leaders ?? [];
+  const resolveRenderState = useMemo(() => {
+    if (
+      requestedCategoryKey &&
+      resolvedCacheKey === buildCacheKey(requestedCategoryKey ?? null) &&
+      !leadersLoading &&
+      !leadersError
+    ) {
+      return {
+        leagueId: selectedLeagueId ?? null,
+        categoryKey: requestedCategoryKey,
+        leaders,
+      };
+    }
+    return null;
+  }, [
+    buildCacheKey,
+    leaders,
+    leadersError,
+    leadersLoading,
+    requestedCategoryKey,
+    resolvedCacheKey,
+    selectedLeagueId,
+  ]);
+
+  const resolvedDisplayedKey =
+    resolveCategoryKey(resolveRenderState?.categoryKey) ?? requestedCategoryKey ?? null;
+
+  const displayedCategory = useMemo(() => {
+    if (!resolvedDisplayedKey) {
+      return null;
+    }
+    return activeCategories.find((category) => category.key === resolvedDisplayedKey) ?? null;
+  }, [activeCategories, resolvedDisplayedKey]);
+
+  const tabCategoryKey =
+    displayedCategory?.key ?? requestedCategory?.key ?? activeCategories[0]?.key ?? '';
+
+  const displayedLeaders: LeaderRowType[] = resolveRenderState?.leaders ?? [];
+
   const resetTabsScrollLeft = useCallback((node: HTMLDivElement | null) => {
     if (!node) {
       return;
@@ -341,7 +336,10 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   }, []);
 
   const handleLeagueChange = (_: React.SyntheticEvent, value: string) => {
-    setSelectedLeagueId(value);
+    if (!value || value === selectedLeagueId) {
+      return;
+    }
+    setPreferredLeagueId(value);
   };
 
   const handleStatTypeChange = (_: React.SyntheticEvent, value: string) => {
@@ -352,69 +350,8 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
       from: statType,
       to: value,
     });
-    setStatType(value);
+    setPreferredStatType(value);
   };
-
-  useEffect(() => {
-    if (!requestedCategoryKey || !requestedCacheKey) {
-      console.debug('[LeadersWidget] awaiting category initialization', {
-        statType,
-        requestedCategoryKey,
-        requestedCacheKey,
-      });
-      return;
-    }
-    if (leadersLoading || leadersError) {
-      console.debug('[LeadersWidget] waiting for leaders response', {
-        statType,
-        requestedCategoryKey,
-        leadersLoading,
-        leadersError,
-      });
-      return;
-    }
-    if (resolvedCacheKey !== requestedCacheKey) {
-      console.debug('[LeadersWidget] resolved data not yet for requested category', {
-        statType,
-        requestedCategoryKey,
-        resolvedCacheKey,
-      });
-      return;
-    }
-
-    setDisplayedCategoryByType((previous) => {
-      if (previous[statType] === requestedCategoryKey) {
-        return previous;
-      }
-
-      console.debug('[LeadersWidget] updating displayed category', {
-        statType,
-        requestedCategoryKey,
-      });
-      return {
-        ...previous,
-        [statType]: requestedCategoryKey,
-      };
-    });
-
-    setRenderStateByType((previous) => ({
-      ...previous,
-      [statType]: {
-        leagueId: selectedLeagueId ?? null,
-        categoryKey: requestedCategoryKey,
-        leaders,
-      },
-    }));
-  }, [
-    requestedCategoryKey,
-    requestedCacheKey,
-    leaders,
-    leadersLoading,
-    leadersError,
-    selectedLeagueId,
-    resolvedCacheKey,
-    statType,
-  ]);
 
   const handleCategoryChange = (_: React.SyntheticEvent, value: string) => {
     if (!value || value === requestedCategoryKey) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Avatar, Typography } from '@mui/material';
 import Image from 'next/image';
 import { addCacheBuster } from '../config/teams';
@@ -18,15 +18,16 @@ const getInitials = (name: string) => {
 };
 
 const TeamAvatar: React.FC<TeamAvatarProps> = ({ name, logoUrl, size = 48, alt }) => {
-  const [imgError, setImgError] = useState(false);
+  const [failedLogo, setFailedLogo] = useState<string | null>(null);
   const initials = getInitials(name);
-  // Always apply cache buster if logoUrl is present
-  const cacheBustedLogoUrl = logoUrl ? addCacheBuster(logoUrl) : undefined;
-
-  // Reset imgError when logoUrl changes
-  useEffect(() => {
-    setImgError(false);
+  // Cache-bust once per logo change to avoid endless reload attempts
+  const cacheBustedLogoUrl = useMemo(() => {
+    if (!logoUrl) {
+      return undefined;
+    }
+    return addCacheBuster(logoUrl) ?? undefined;
   }, [logoUrl]);
+  const imageError = failedLogo === cacheBustedLogoUrl;
 
   return (
     <Avatar
@@ -40,14 +41,14 @@ const TeamAvatar: React.FC<TeamAvatarProps> = ({ name, logoUrl, size = 48, alt }
       }}
       alt={alt || name}
     >
-      {logoUrl && !imgError ? (
+      {cacheBustedLogoUrl && !imageError ? (
         <Image
           src={cacheBustedLogoUrl as string}
           alt={alt || name}
           width={size}
           height={size}
           style={{ objectFit: 'cover', width: size, height: size }}
-          onError={() => setImgError(true)}
+          onError={() => setFailedLogo(cacheBustedLogoUrl ?? null)}
         />
       ) : (
         <Typography component="span" sx={{ fontWeight: 'bold', fontSize: size * 0.45 }}>

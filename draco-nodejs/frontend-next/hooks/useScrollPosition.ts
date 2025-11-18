@@ -14,7 +14,7 @@ interface UseScrollPositionOptions {
 
 export const useScrollPosition = (options: UseScrollPositionOptions = {}) => {
   const { debounceMs = 100, elementId, enabled = true } = options;
-  const scrollPositionRef = useRef<ScrollPosition>({ x: 0, y: 0, timestamp: Date.now() });
+  const scrollPositionRef = useRef<ScrollPosition>({ x: 0, y: 0, timestamp: 0 });
   const debounceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Save current scroll position

@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { DEFAULT_SITE_NAME } from '../lib/seoConstants';
 
@@ -30,20 +29,15 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
     digest: error.digest,
   });
 
-  const [isCrawler, setIsCrawler] = useState(true);
-  const [canonical, setCanonical] = useState(() => buildCanonical('/'));
-
-  useEffect(() => {
-    const detectedUserAgent = typeof navigator === 'object' ? (navigator.userAgent ?? '') : '';
-    const crawlerMatch = CRAWLER_USER_AGENT_REGEX.test(detectedUserAgent);
-    setIsCrawler(crawlerMatch);
-
-    if (typeof window === 'object') {
-      const { pathname, search } = window.location;
-      const requestPath = `${pathname}${search}`;
-      setCanonical(buildCanonical(requestPath, window.location.origin));
-    }
-  }, []);
+  const detectedUserAgent = typeof navigator === 'object' ? (navigator.userAgent ?? '') : '';
+  const isCrawler = CRAWLER_USER_AGENT_REGEX.test(detectedUserAgent);
+  const canonical =
+    typeof window === 'object'
+      ? buildCanonical(
+          `${window.location.pathname}${window.location.search}`,
+          window.location.origin,
+        )
+      : buildCanonical('/');
 
   if (isCrawler) {
     return (
