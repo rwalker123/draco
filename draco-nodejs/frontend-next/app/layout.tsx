@@ -37,6 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const cookieTheme = cookieStore.get('draco-theme')?.value;
   const initialTheme =
     cookieTheme === 'dark' || cookieTheme === 'light' ? (cookieTheme as 'dark' | 'light') : 'light';
+  // Safe because initialTheme is restricted to 'dark' or 'light' above.
   const themeInitScript = `
     (function() {
       try {

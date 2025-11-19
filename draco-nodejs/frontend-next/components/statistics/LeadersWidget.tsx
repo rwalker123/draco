@@ -306,13 +306,16 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     resolvedLeagues,
   ]);
 
+  const initialSelectionQueuedRef = useRef(false);
+
   useEffect(() => {
-    if (model || pendingSelection || !isTeamDataFetchable) {
+    if (initialSelectionQueuedRef.current || model || pendingSelection || !isTeamDataFetchable) {
       return;
     }
 
     const initialSelection = queueInitialSelection();
     if (initialSelection) {
+      initialSelectionQueuedRef.current = true;
       requestSelectionLoad(initialSelection);
     }
   }, [isTeamDataFetchable, model, pendingSelection, queueInitialSelection, requestSelectionLoad]);
