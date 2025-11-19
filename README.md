@@ -426,6 +426,19 @@ npm run backend:install        # Backend dependencies
 npm run frontend:install       # Frontend dependencies
 ```
 
+### Regenerating `package-lock.json`
+If the lockfile is ever deleted or needs to be rebuilt, regenerate it from a Linux environment so CI runners (which use Ubuntu) capture the required native optional dependencies (e.g., `lightningcss-linux-x64-gnu`). A reliable workflow:
+
+1. Remove the existing lockfile and all workspace `node_modules` directories (or stash them if you prefer to restore later).
+   ```bash
+   rm -rf package-lock.json node_modules draco-nodejs/**/node_modules
+   ```
+2. Recreate the lock inside Linux via Docker so npm records the Linux binaries:
+   ```bash
+   docker run --rm -v "$PWD":/repo -w /repo node:20 npm install
+   ```
+3. Back on macOS (or your host OS), run `npm install` again so local native modules for that platform are present, while keeping the Linux entries that CI needs.
+
 ### Development
 ```bash
 # Start both backend and frontend in development mode
