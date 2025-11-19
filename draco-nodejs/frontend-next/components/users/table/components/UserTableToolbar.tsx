@@ -18,7 +18,6 @@ import {
   Search as SearchIcon,
   Clear as ClearIcon,
   GetApp as ExportIcon,
-  PersonAdd as PersonAddIcon,
   MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 import { UserTableToolbarProps, UserTableAction } from '../../../../types/userTable';
@@ -31,7 +30,6 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
   onSearchSubmit,
   onSearchClear,
   isShowingSearchResults = false,
-  onAddUser,
   customActions,
   onBulkAction,
   canManageUsers,
@@ -190,34 +188,18 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
               />
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                {userCount} {userCount === 1 ? 'user' : 'users'}
-              </Typography>
-
-              {canManageUsers && (
-                <>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<PersonAddIcon />}
-                    onClick={onAddUser}
-                    disabled={loading}
-                  >
-                    Add User
-                  </Button>
-
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<ExportIcon />}
-                    disabled={loading || userCount === 0}
-                  >
-                    Export
-                  </Button>
-                </>
-              )}
-            </Box>
+            {canManageUsers && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<ExportIcon />}
+                  disabled={loading || userCount === 0}
+                >
+                  Export
+                </Button>
+              </Box>
+            )}
           </>
         )}
       </Toolbar>
@@ -240,8 +222,7 @@ const areToolbarPropsEqual = (
     prevProps.userCount === nextProps.userCount && // Compare user count directly
     prevProps.onSearchChange === nextProps.onSearchChange &&
     prevProps.onSearchSubmit === nextProps.onSearchSubmit &&
-    prevProps.onSearchClear === nextProps.onSearchClear &&
-    prevProps.onAddUser === nextProps.onAddUser
+    prevProps.onSearchClear === nextProps.onSearchClear
   );
 };
 

@@ -51,6 +51,7 @@ describe('WelcomeMessageService', () => {
           },
         ],
       },
+      request: {} as Request,
       response: {} as Response,
     });
 
@@ -92,6 +93,7 @@ describe('WelcomeMessageService', () => {
         isTeamScoped: true,
         scope: 'team',
       },
+      request: {} as Request,
       response: {} as Response,
     });
 
@@ -120,6 +122,7 @@ describe('WelcomeMessageService', () => {
         statusCode: 403,
         isRetryable: false,
       } as AuthorizationError,
+      request: {} as Request,
       response: {} as Response,
     });
 

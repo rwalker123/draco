@@ -134,14 +134,16 @@ type PitchingTotalsRow = {
 
 type PitchingGridRow = PitchingRow | PitchingNewRow | PitchingTotalsRow;
 
-const renderHeaderWithTooltip = (field: PitchingViewField) => {
-  const HeaderComponent: React.FC = () => (
+const renderHeaderWithTooltip = (
+  field: PitchingViewField,
+): NonNullable<GridColDef<PitchingGridRow>['renderHeader']> => {
+  const HeaderComponent = (() => (
     <Tooltip title={PITCHING_FIELD_TOOLTIPS[field]}>
       <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
         {PITCHING_FIELD_LABELS[field]}
       </Typography>
     </Tooltip>
-  );
+  )) as NonNullable<GridColDef<PitchingGridRow>['renderHeader']> & { displayName?: string };
   HeaderComponent.displayName = `PitchingHeader_${field}`;
   return HeaderComponent;
 };
@@ -927,18 +929,6 @@ const PitchingStatsEditableGrid = forwardRef<
           editable: true,
           sortable: false,
           preProcessEditCellProps: buildNonNegativePreProcessor(field === 'ipDecimal'),
-          valueFormatter:
-            field === 'ipDecimal'
-              ? (params) => {
-                  const value = params?.value;
-                  if (value === null || value === undefined) {
-                    return formatInnings(Number.NaN);
-                  }
-                  const numeric = typeof value === 'number' ? value : Number(value);
-                  return formatInnings(Number.isNaN(numeric) ? Number.NaN : numeric);
-                }
-              : (params) =>
-                  formatStatDecimal(params?.value as number | string | null | undefined, 0),
           renderCell: (params) => {
             const numeric = getNumericPitchingFieldValue(
               params.row as PitchingGridRow | undefined,
@@ -963,8 +953,6 @@ const PitchingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           sortable: false,
-          valueFormatter: (params) =>
-            formatStatDecimal(params?.value as number | string | null | undefined, 2),
           renderCell: (params) =>
             params.id === NEW_ROW_ID
               ? '-'
@@ -978,8 +966,6 @@ const PitchingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           sortable: false,
-          valueFormatter: (params) =>
-            formatStatDecimal(params?.value as number | string | null | undefined, 2),
           renderCell: (params) =>
             params.id === NEW_ROW_ID
               ? '-'
@@ -993,8 +979,6 @@ const PitchingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           sortable: false,
-          valueFormatter: (params) =>
-            formatStatDecimal(params?.value as number | string | null | undefined, 2),
           renderCell: (params) =>
             params.id === NEW_ROW_ID
               ? '-'
@@ -1008,8 +992,6 @@ const PitchingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           sortable: false,
-          valueFormatter: (params) =>
-            formatStatDecimal(params?.value as number | string | null | undefined, 2),
           renderCell: (params) =>
             params.id === NEW_ROW_ID
               ? '-'
@@ -1023,8 +1005,6 @@ const PitchingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           sortable: false,
-          valueFormatter: (params) =>
-            formatStatDecimal(params?.value as number | string | null | undefined, 3),
           renderCell: (params) =>
             params.id === NEW_ROW_ID
               ? '-'
@@ -1037,8 +1017,6 @@ const PitchingStatsEditableGrid = forwardRef<
           align: 'center',
           headerAlign: 'center',
           width: 90,
-          valueFormatter: (params) =>
-            formatStatDecimal(params?.value as number | string | null | undefined, 3),
           renderCell: (params) =>
             params.id === NEW_ROW_ID
               ? '-'
@@ -1247,7 +1225,7 @@ const PitchingStatsEditableGrid = forwardRef<
           onCellKeyDown={handleCellKeyDown}
           density="compact"
           hideFooter
-          columnBuffer={4}
+          columnBufferPx={600}
           getCellClassName={(params) => {
             if (
               params.id === TOTALS_ROW_ID ||

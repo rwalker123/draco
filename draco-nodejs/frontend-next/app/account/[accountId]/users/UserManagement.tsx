@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { Alert, Box, Typography } from '@mui/material';
+import { Alert, Box, Typography, Fab } from '@mui/material';
 import { useUserManagement } from '../../../../hooks/useUserManagement';
 import { useUserDialogs } from '../../../../hooks/useUserDialogs';
 import {
@@ -19,6 +19,7 @@ import {
 } from '../../../../components/users/automatic-roles';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { ContactType, ContactRoleType, RoleWithContactType } from '@draco/shared-schemas';
+import AddIcon from '@mui/icons-material/Add';
 
 interface UserManagementProps {
   accountId: string;
@@ -250,7 +251,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onRemoveRole={handleRemoveRoleWrapper}
         onEditContact={handleEditContactWrapper}
         onDeleteContact={handleDeleteContactWrapper}
-        onAddUser={handleAddUserWrapper}
         canManageUsers={canManageUsers}
         page={page}
         rowsPerPage={rowsPerPage}
@@ -353,6 +353,22 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onSuccess={handleRevokeRegistrationSuccess}
         accountId={accountId}
       />
+
+      {canManageUsers && (
+        <Fab
+          color="primary"
+          aria-label="add user"
+          sx={{
+            position: 'fixed',
+            bottom: { xs: 16, sm: 24 },
+            right: { xs: 16, sm: 24 },
+            zIndex: (theme) => theme.zIndex.tooltip,
+          }}
+          onClick={handleAddUserWrapper}
+        >
+          <AddIcon />
+        </Fab>
+      )}
     </main>
   );
 };

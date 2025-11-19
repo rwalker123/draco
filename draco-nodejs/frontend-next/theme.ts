@@ -170,16 +170,16 @@ const addCssBaselineOverrides = (options: ThemeOptions) => {
 
   const mergedOverrides = deepmerge(existingStyleOverrides, {
     html: {
-      backgroundColor: baseTheme.palette.background.default,
+      backgroundColor: baseTheme.palette.background.paper,
     },
     body: {
-      backgroundColor: baseTheme.palette.background.default,
+      backgroundColor: baseTheme.palette.background.paper,
       color: baseTheme.palette.text.primary,
       margin: 0,
     },
     '#__next': {
       minHeight: '100%',
-      backgroundColor: baseTheme.palette.background.default,
+      backgroundColor: baseTheme.palette.background.paper,
     },
   });
 

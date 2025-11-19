@@ -78,13 +78,6 @@ export function useStatisticalLeaders({
 
   const loadLeaders = useCallback(async () => {
     if (!canLoad || !cacheKey) {
-      console.debug('[useStatisticalLeaders] skipping load', {
-        canLoad,
-        cacheKey,
-        accountId,
-        leagueId,
-        categoryKey,
-      });
       setLeaders([]);
       setError(null);
       setLoading(false);
@@ -94,10 +87,6 @@ export function useStatisticalLeaders({
 
     const cached = cacheRef.current.get(cacheKey);
     if (cached) {
-      console.debug('[useStatisticalLeaders] using cached leaders', {
-        cacheKey,
-        length: cached.length,
-      });
       if (isMountedRef.current) {
         setLeaders(cached);
         setError(null);
@@ -109,12 +98,6 @@ export function useStatisticalLeaders({
 
     let inflight = inflightRef.current.get(cacheKey);
     if (!inflight) {
-      console.debug('[useStatisticalLeaders] fetching leaders', {
-        accountId,
-        leagueId,
-        categoryKey,
-        cacheKey,
-      });
       inflight = fetchStatisticalLeaders(
         accountId as string,
         leagueId as string,
@@ -136,10 +119,6 @@ export function useStatisticalLeaders({
 
     try {
       const result = await inflight;
-      console.debug('[useStatisticalLeaders] leaders fetched', {
-        cacheKey,
-        length: result.length,
-      });
       cacheRef.current.set(cacheKey, result);
 
       if (!isMountedRef.current) {
@@ -163,10 +142,6 @@ export function useStatisticalLeaders({
         inflightRef.current.delete(cacheKey);
       }
       if (isMountedRef.current) {
-        console.debug('[useStatisticalLeaders] load completed', {
-          cacheKey,
-          loading: false,
-        });
         setLoading(false);
       }
     }

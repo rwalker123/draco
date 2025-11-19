@@ -131,14 +131,16 @@ type BattingTotalsRow = {
 
 type BattingGridRow = BattingRow | BattingNewRow | BattingTotalsRow;
 
-const renderHeaderWithTooltip = (field: BattingViewField) => {
-  const HeaderComponent: React.FC = () => (
+const renderHeaderWithTooltip = (
+  field: BattingViewField,
+): NonNullable<GridColDef<BattingGridRow>['renderHeader']> => {
+  const HeaderComponent = (() => (
     <Tooltip title={BATTING_FIELD_TOOLTIPS[field]}>
       <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
         {BATTING_FIELD_LABELS[field]}
       </Typography>
     </Tooltip>
-  );
+  )) as NonNullable<GridColDef<BattingGridRow>['renderHeader']> & { displayName?: string };
   HeaderComponent.displayName = `BattingHeader_${field}`;
   return HeaderComponent;
 };
@@ -746,8 +748,6 @@ const BattingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           sortable: false,
-          valueFormatter: (params) =>
-            formatStatDecimal(params?.value as number | string | null | undefined, 0),
           renderCell: (params) =>
             params.id === NEW_ROW_ID
               ? '-'
@@ -762,8 +762,6 @@ const BattingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           sortable: false,
-          valueFormatter: (params) =>
-            formatStatDecimal(params?.value as number | string | null | undefined, 0),
           renderCell: (params) =>
             params.id === NEW_ROW_ID
               ? '-'
@@ -777,8 +775,6 @@ const BattingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           sortable: false,
-          valueFormatter: (params) =>
-            formatStatDecimal(params?.value as number | string | null | undefined, 3),
           renderCell: (params) =>
             params.id === NEW_ROW_ID
               ? '-'
@@ -792,8 +788,6 @@ const BattingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           sortable: false,
-          valueFormatter: (params) =>
-            formatStatDecimal(params?.value as number | string | null | undefined, 3),
           renderCell: (params) =>
             params.id === NEW_ROW_ID
               ? '-'
@@ -807,8 +801,6 @@ const BattingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           sortable: false,
-          valueFormatter: (params) =>
-            formatStatDecimal(params?.value as number | string | null | undefined, 3),
           renderCell: (params) =>
             params.id === NEW_ROW_ID
               ? '-'
@@ -822,8 +814,6 @@ const BattingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           sortable: false,
-          valueFormatter: (params) =>
-            formatStatDecimal(params?.value as number | string | null | undefined, 3),
           renderCell: (params) =>
             params.id === NEW_ROW_ID
               ? '-'
@@ -1013,7 +1003,7 @@ const BattingStatsEditableGrid = forwardRef<
           onCellKeyDown={handleCellKeyDown}
           density="compact"
           hideFooter
-          columnBuffer={4}
+          columnBufferPx={600}
           getCellClassName={(params) => {
             if (
               params.id === TOTALS_ROW_ID ||

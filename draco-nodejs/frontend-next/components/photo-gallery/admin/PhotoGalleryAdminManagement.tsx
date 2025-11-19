@@ -714,6 +714,8 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
         accountId={accountId}
         open={albumDialogOpen}
         albums={albums}
+        albumPhotoCounts={albumPhotoCounts}
+        defaultAlbumPhotoCount={defaultAlbumPhotoCount}
         token={token}
         onClose={handleAlbumDialogClose}
         onSuccess={handleAlbumDialogSuccess}
