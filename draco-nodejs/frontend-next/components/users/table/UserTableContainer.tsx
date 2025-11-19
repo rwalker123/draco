@@ -31,7 +31,6 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   onEditContact,
   onDeleteContact,
   onDeleteContactPhoto,
-  onAddUser,
   canManageUsers,
   page,
   rowsPerPage: _rowsPerPage,
@@ -233,7 +232,6 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
           onSearchSubmit={handleSearchSubmit}
           onSearchClear={handleSearchClear}
           isShowingSearchResults={externalIsShowingSearchResults}
-          onAddUser={onAddUser}
           customActions={allBulkActions}
           onBulkAction={handleBulkAction}
           canManageUsers={canManageUsers}
@@ -357,7 +355,6 @@ const areEqual = (prevProps: UserTableContainerProps, nextProps: UserTableContai
     'subtitle',
     'showTitle',
     'accountId',
-    'onAddUser',
   ] as const;
 
   return keysToCompare.every((key) => prevProps[key] === nextProps[key]);

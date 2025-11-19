@@ -187,7 +187,6 @@ export interface UserTableToolbarProps {
   onSearchSubmit: () => void;
   onSearchClear: () => void;
   isShowingSearchResults?: boolean;
-  onAddUser?: () => void;
   onlyWithRoles?: boolean;
   onOnlyWithRolesChange?: (onlyWithRoles: boolean) => void;
   customActions: UserTableAction[];
@@ -359,9 +358,6 @@ export interface UserTableContainerProps extends ModernUserTableProps {
   searchLoading?: boolean;
   isShowingSearchResults?: boolean;
 
-  // User management actions
-  onAddUser?: () => void;
-
   // Contact photo management
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
 
@@ -394,9 +390,6 @@ export interface UserTableEnhancedProps extends UserTableProps {
   // Filter props
   onlyWithRoles?: boolean;
   onOnlyWithRolesChange?: (onlyWithRoles: boolean) => void;
-
-  // User management actions
-  onAddUser?: () => void;
 
   // Contact photo management
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;

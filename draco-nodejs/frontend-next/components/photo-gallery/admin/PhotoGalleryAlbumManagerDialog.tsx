@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -12,6 +12,7 @@ import {
   ListItem,
   ListItemSecondaryAction,
   ListItemText,
+  ListSubheader,
   TextField,
   Tooltip,
   Typography,
@@ -32,11 +33,14 @@ import {
 } from '../../../services/photoGalleryAdminService';
 import { ApiClientError } from '../../../utils/apiResult';
 import ConfirmationDialog from '../../common/ConfirmationDialog';
+import PhotoGalleryAlbumSections, { PhotoGalleryAlbumEntry } from './PhotoGalleryAlbumSections';
 
 interface PhotoGalleryAlbumManagerDialogProps {
   accountId: string;
   open: boolean;
   albums: PhotoGalleryAdminAlbumType[];
+  albumPhotoCounts: Map<string, number>;
+  defaultAlbumPhotoCount: number;
   token?: string | null;
   onClose: () => void;
   onSuccess?: (payload: { message: string }) => void;
@@ -48,12 +52,19 @@ interface EditableAlbum extends PhotoGalleryAdminAlbumType {
   isDefault: boolean;
 }
 
-const normalizeAlbums = (albums: PhotoGalleryAdminAlbumType[]): EditableAlbum[] => {
+const normalizeAlbums = (
+  albums: PhotoGalleryAdminAlbumType[],
+  albumPhotoCounts: Map<string, number>,
+  defaultAlbumPhotoCount: number,
+): EditableAlbum[] => {
   return albums
     .filter((album): album is PhotoGalleryAdminAlbumType & { id: string } => Boolean(album.id))
     .map((album) => ({
       ...album,
-      photoCount: album.photoCount ?? 0,
+      photoCount:
+        (album.accountId ?? '') === '0'
+          ? defaultAlbumPhotoCount
+          : (albumPhotoCounts.get(album.id) ?? album.photoCount ?? 0),
       isDefault: (album.accountId ?? '') === '0',
     }));
 };
@@ -62,6 +73,8 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
   accountId,
   open,
   albums,
+  albumPhotoCounts,
+  defaultAlbumPhotoCount,
   token,
   onClose,
   onSuccess,
@@ -77,25 +90,13 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
 
   useEffect(() => {
     if (open) {
-      setLocalAlbums(normalizeAlbums(albums));
+      setLocalAlbums(normalizeAlbums(albums, albumPhotoCounts, defaultAlbumPhotoCount));
       setNewAlbumTitle('');
       setEditingAlbumId(null);
       setEditingTitle('');
       setOperationMessage(null);
     }
-  }, [open, albums]);
-
-  const sortedAlbums = useMemo(() => {
-    return [...localAlbums].sort((a, b) => {
-      if (a.isDefault && !b.isDefault) {
-        return -1;
-      }
-      if (!a.isDefault && b.isDefault) {
-        return 1;
-      }
-      return a.title.localeCompare(b.title);
-    });
-  }, [localAlbums]);
+  }, [open, albums, albumPhotoCounts, defaultAlbumPhotoCount]);
 
   const handleCreate = useCallback(async () => {
     const title = newAlbumTitle.trim();
@@ -280,17 +281,39 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
           ) : null}
 
           <List dense disablePadding>
-            {sortedAlbums.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                No custom albums yet. Create one to organize your gallery.
-              </Typography>
-            ) : (
-              sortedAlbums.map((album) => {
+            <PhotoGalleryAlbumSections
+              accountId={accountId}
+              albums={localAlbums}
+              emptyState={
+                <Typography variant="body2" color="text.secondary">
+                  No custom albums yet. Create one to organize your gallery.
+                </Typography>
+              }
+              renderSectionHeader={(section) => (
+                <ListSubheader
+                  component="div"
+                  disableSticky
+                  sx={{
+                    px: 0,
+                    pt: section.type === 'account' ? 0 : 2,
+                    pb: 0.5,
+                    bgcolor: 'transparent',
+                    color: 'text.secondary',
+                    textTransform: 'uppercase',
+                    fontWeight: 600,
+                    fontSize: '0.75rem',
+                  }}
+                >
+                  {section.title}
+                </ListSubheader>
+              )}
+              renderAlbum={(albumEntry: PhotoGalleryAlbumEntry<EditableAlbum>) => {
+                const album = albumEntry.album;
                 const isEditing = editingAlbumId === album.id;
-                const isDefault = album.isDefault;
+                const isDefault = albumEntry.isDefault;
 
                 return (
-                  <ListItem key={album.id} divider disableGutters>
+                  <ListItem divider disableGutters>
                     {isEditing && !isDefault ? (
                       <TextField
                         value={editingTitle}
@@ -311,7 +334,9 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
                             ) : null}
                           </Stack>
                         }
-                        secondary={`${album.photoCount} photo${album.photoCount === 1 ? '' : 's'}`}
+                        secondary={`${albumEntry.photoCount} photo${
+                          albumEntry.photoCount === 1 ? '' : 's'
+                        }`}
                       />
                     )}
                     <ListItemSecondaryAction>
@@ -355,7 +380,7 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
                           </Tooltip>
                           <Tooltip
                             title={
-                              album.photoCount > 0
+                              albumEntry.photoCount > 0
                                 ? 'Albums containing photos cannot be deleted'
                                 : 'Delete album'
                             }
@@ -364,7 +389,7 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
                               <IconButton
                                 color="error"
                                 onClick={() => handleConfirmDelete(album)}
-                                disabled={submitting || album.photoCount > 0}
+                                disabled={submitting || albumEntry.photoCount > 0}
                               >
                                 <DeleteIcon />
                               </IconButton>
@@ -375,8 +400,8 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
                     </ListItemSecondaryAction>
                   </ListItem>
                 );
-              })
-            )}
+              }}
+            />
           </List>
         </DialogContent>
         <DialogActions>

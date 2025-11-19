@@ -106,7 +106,6 @@ export default memo(UserTableEnhanced, (prevProps, nextProps) => {
     prevProps.searchLoading === nextProps.searchLoading &&
     prevProps.canManageUsers === nextProps.canManageUsers &&
     prevProps.rowsPerPage === nextProps.rowsPerPage &&
-    prevProps.accountId === nextProps.accountId &&
-    prevProps.onAddUser === nextProps.onAddUser
+    prevProps.accountId === nextProps.accountId
   );
 });

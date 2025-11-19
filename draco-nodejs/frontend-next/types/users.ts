@@ -76,7 +76,6 @@ export interface UserTableProps {
   onRemoveRole: (user: ContactType, role: ContactRoleType) => Promise<void>;
   onEditContact?: (contact: ContactType) => Promise<void>;
   onDeleteContact?: (contact: ContactType) => Promise<void>;
-  onAddUser?: () => void;
   canManageUsers: boolean;
   page: number;
   rowsPerPage: number;

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -8,6 +8,7 @@ import {
   DialogTitle,
   FormControl,
   InputLabel,
+  ListSubheader,
   MenuItem,
   Select,
   TextField,
@@ -21,6 +22,7 @@ import {
   type UpdateGalleryPhotoInput,
 } from '../../../services/photoGalleryAdminService';
 import { ApiClientError } from '../../../utils/apiResult';
+import PhotoGalleryAlbumSections from './PhotoGalleryAlbumSections';
 
 type PhotoDialogMode = 'create' | 'edit';
 
@@ -81,13 +83,6 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
       setFile(null);
     }
   }, [open, mode, photo]);
-
-  const albumOptions = useMemo(() => {
-    return albums.map((album) => ({
-      id: album.id,
-      title: album.title,
-    }));
-  }, [albums]);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -194,11 +189,26 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
               <MenuItem value="">
                 <em>Account Album (default)</em>
               </MenuItem>
-              {albumOptions.map((albumOption) => (
-                <MenuItem key={albumOption.id} value={albumOption.id}>
-                  {albumOption.title}
-                </MenuItem>
-              ))}
+              <PhotoGalleryAlbumSections
+                accountId={accountId}
+                albums={albums}
+                renderSectionHeader={(section) => (
+                  <ListSubheader
+                    component="div"
+                    disableSticky
+                    sx={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                    }}
+                  >
+                    {section.title}
+                  </ListSubheader>
+                )}
+                renderAlbum={(albumEntry) => (
+                  <MenuItem value={albumEntry.id}>{albumEntry.title}</MenuItem>
+                )}
+              />
             </Select>
           </FormControl>
           {mode === 'create' ? (
