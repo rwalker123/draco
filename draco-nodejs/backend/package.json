@@ -52,7 +52,7 @@
     "multer": "^2.0.1",
     "nodemailer": "^7.0.6",
     "on-finished": "^2.4.1",
-    "resend": "^3.0.0",
+    "resend": "^6.5.0",
     "sharp": "^0.34.3",
     "svix": "^1.22.0",
     "validator": "^13.15.15",
