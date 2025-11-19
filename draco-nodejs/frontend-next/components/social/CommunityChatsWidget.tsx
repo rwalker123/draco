@@ -187,7 +187,7 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
       ) : (
         <>
           <Box sx={{ mb: 2 }}>
-            {(!accountId || !seasonId ? false : channelState.loading) ? (
+            {channelState.loading ? (
               <Stack direction="row" spacing={1}>
                 {Array.from({ length: 3 }).map((_, index) => (
                   <Button key={`channel-skeleton-${index}`} size="small" disabled>
@@ -196,7 +196,7 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
                 ))}
               </Stack>
             ) : null}
-            {!accountId || !seasonId ? null : channelState.error ? (
+            {channelState.error ? (
               <Alert severity="warning" sx={{ mb: 2 }}>
                 {channelState.error}
               </Alert>

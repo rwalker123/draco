@@ -1,43 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Tooltip } from '@mui/material';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
-import {
-  AdminPanelSettings,
-  Business,
-  PhotoCamera,
-  EmojiEvents,
-  SportsBaseball,
-  CameraAlt,
-} from '@mui/icons-material';
-import { getRoleColors, getRoleTooltipText } from '../../utils/roleIcons';
+import { getRoleColors, getRoleIcon, getRoleTooltipText } from '../../utils/roleIcons';
 import { ContactRoleType } from '@draco/shared-schemas';
 
 const renderRoleIconElement = (
   roleId: string | undefined,
   iconProps: SvgIconProps,
 ): React.ReactElement | null => {
-  const normalized = roleId?.toUpperCase();
-
-  switch (normalized) {
-    case '93DAC465-4C64-4422-B444-3CE79C549329':
-      return <AdminPanelSettings {...iconProps} />;
-    case '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A':
-      return <Business {...iconProps} />;
-    case 'A87EA9A3-47E2-49D1-9E1E-C35358D1A677':
-      return <PhotoCamera {...iconProps} />;
-    case '05BEC889-3499-4DE1-B44F-4EED41412B3D':
-      return <CameraAlt {...iconProps} />;
-    case '672DDF06-21AC-4D7C-B025-9319CC69281A':
-      return <EmojiEvents {...iconProps} />;
-    case '777D771B-1CBA-4126-B8F3-DD7F3478D40E':
-      return <SportsBaseball {...iconProps} />;
-    case '55FD3262-343F-4000-9561-6BB7F658DEB7':
-      return <CameraAlt {...iconProps} />;
-    default:
-      return null;
+  if (!roleId) {
+    return null;
   }
+
+  const IconComponent = getRoleIcon(roleId);
+  if (!IconComponent) {
+    return null;
+  }
+
+  return <IconComponent {...iconProps} />;
 };
 
 interface RoleIconProps {
@@ -84,13 +66,18 @@ const RoleIcon: React.FC<RoleIconProps> = ({
   const finalColors = colors || fallbackColors;
   const iconSize = size === 'small' ? 20 : size === 'medium' ? 24 : 32;
 
-  const iconElement = renderRoleIconElement(role.roleId, {
-    fontSize: size,
-    style: {
-      color: finalColors?.primary || '#1976d2',
-      fill: finalColors?.primary || '#1976d2',
-    },
-  });
+  const iconColor = finalColors?.primary || '#1976d2';
+  const iconElement = useMemo(
+    () =>
+      renderRoleIconElement(role.roleId, {
+        fontSize: size,
+        style: {
+          color: iconColor,
+          fill: iconColor,
+        },
+      }),
+    [role.roleId, size, iconColor],
+  );
 
   if (!iconElement) {
     return (
