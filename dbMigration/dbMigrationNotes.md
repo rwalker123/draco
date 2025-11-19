@@ -80,7 +80,7 @@ If you need to run the migration manually:
 - Access to both source SQL Server and target PostgreSQL databases
 
 ### File Migration
-- Node.js 18+ and npm
+- Node.js 20.19+ and npm
 - FTP access to source server
 - Built backend application (`npm run build` in draco-nodejs/backend)
 - FTP credentials in backend/.env file

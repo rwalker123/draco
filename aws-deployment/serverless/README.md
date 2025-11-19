@@ -150,7 +150,7 @@ aws-deployment/serverless/.env
 ## Infrastructure Components
 
 ### Lambda Function
-- Node.js 18.x runtime
+- Node.js 20.x runtime
 - 512MB memory allocation
 - 30-second timeout
 - VPC access for RDS connectivity
