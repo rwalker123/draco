@@ -22,22 +22,16 @@ export const createApiClient = ({
   const client = createClient(createConfig(configOverrides));
 
   if (transformHostHeader) {
-    client.interceptors.request.use(async (options) => {
-      let headers = options.headers;
-
-      if (!headers) {
-        headers = new Headers();
-        options.headers = headers;
-      } else if (!(headers instanceof Headers)) {
-        headers = new Headers(headers as Record<string, string>);
-        options.headers = headers;
-      }
+    client.interceptors.request.use(async (request) => {
+      const headers = request.headers;
 
       const hostHeader = headers.get('host');
       if (hostHeader) {
         headers.delete('host');
         headers.set('x-forwarded-host', hostHeader);
       }
+
+      return request;
     });
   }
 

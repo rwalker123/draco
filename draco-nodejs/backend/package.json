@@ -19,7 +19,7 @@
     "type-check": "tsc --noEmit",
     "build:lambda": "npm run build && cd dist && zip -r ../draco-backend.zip . && cd ..",
     "generate:openapi": "tsx src/openapi/generate-openapi.ts",
-    "generate:client": "openapi-ts --input ./openapi.json --output ../shared/shared-api-client/generated -c @hey-api/client-next"
+    "generate:client": "openapi-ts"
   },
   "keywords": [],
   "author": "",
@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",
-    "@hey-api/openapi-ts": "^0.83.1",
+    "@hey-api/openapi-ts": "^0.87.5",
     "@types/aws-lambda": "^8.10.159",
     "@types/bcrypt": "^5.0.2",
     "@types/compression": "^1.8.1",
