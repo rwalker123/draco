@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -32,7 +32,7 @@ import {
   CreateContactSchema,
   ContactType,
 } from '@draco/shared-schemas';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useContactOperations } from '../../hooks/useContactOperations';
 
@@ -76,10 +76,70 @@ interface EditContactDialogProps {
  * EditContactDialog Component
  * Self-contained dialog for editing contact information with internal API calls and error handling
  */
-const EditContactDialog: React.FC<EditContactDialogProps> = ({
-  open,
+const EMPTY_CONTACT_DETAILS: NonNullable<CreateContactType['contactDetails']> = {
+  phone1: '',
+  phone2: '',
+  phone3: '',
+  streetAddress: '',
+  city: '',
+  state: '',
+  zip: '',
+  dateOfBirth: '',
+};
+
+const EMPTY_CONTACT_VALUES: CreateContactType = {
+  firstName: '',
+  lastName: '',
+  middleName: '',
+  email: '',
+  contactDetails: EMPTY_CONTACT_DETAILS,
+};
+
+const createEmptyContactValues = (): CreateContactType => ({
+  ...EMPTY_CONTACT_VALUES,
+  contactDetails: { ...EMPTY_CONTACT_DETAILS },
+});
+
+const mapContactToCreateValues = (contact: BaseContactType | null): CreateContactType => ({
+  firstName: contact?.firstName ?? '',
+  lastName: contact?.lastName ?? '',
+  middleName: contact?.middleName ?? '',
+  email: contact?.email ?? '',
+  contactDetails: {
+    phone1: contact?.contactDetails?.phone1 ?? '',
+    phone2: contact?.contactDetails?.phone2 ?? '',
+    phone3: contact?.contactDetails?.phone3 ?? '',
+    streetAddress: contact?.contactDetails?.streetAddress ?? '',
+    city: contact?.contactDetails?.city ?? '',
+    state: contact?.contactDetails?.state ?? '',
+    zip: contact?.contactDetails?.zip ?? '',
+    dateOfBirth: contact?.contactDetails?.dateOfBirth ?? '',
+  },
+});
+
+const buildInitialValues = (mode: 'create' | 'edit', contact: BaseContactType | null) =>
+  mode === 'edit' && contact ? mapContactToCreateValues(contact) : createEmptyContactValues();
+
+const EditContactDialog: React.FC<EditContactDialogProps> = ({ open, ...rest }) => {
+  if (!open) {
+    return null;
+  }
+
+  if (rest.mode === 'edit' && !rest.contact) {
+    return null;
+  }
+
+  const key = `${rest.mode}-${rest.contact?.id ?? 'new'}-${rest.initialRosterSignup ? '1' : '0'}`;
+
+  return <EditContactDialogInner key={key} open={open} {...rest} />;
+};
+
+type EditContactDialogInnerProps = EditContactDialogProps;
+
+const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
   contact,
   accountId,
+  open,
   mode = 'edit',
   showRosterSignup = false,
   initialRosterSignup = false,
@@ -87,6 +147,8 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
   onSuccess,
   onRosterSignup,
 }) => {
+  const initialValues = useMemo(() => buildInitialValues(mode, contact), [mode, contact]);
+
   const {
     register,
     handleSubmit,
@@ -94,8 +156,9 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
     setValue,
     reset,
     formState: { errors, isDirty },
-  } = useForm({
-    resolver: zodResolver(CreateContactSchema),
+  } = useForm<CreateContactType>({
+    resolver: zodResolver(CreateContactSchema) as Resolver<CreateContactType>,
+    defaultValues: initialValues,
   });
 
   // Use the contact operations hook
@@ -106,44 +169,6 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
   const [photoError, setPhotoError] = useState<string>('');
   const [rosterSignup, setRosterSignup] = useState<boolean>(initialRosterSignup);
   const [createMultiplePlayers, setCreateMultiplePlayers] = useState(false);
-
-  // Reset form when dialog opens/closes or contact changes
-  useEffect(() => {
-    if (open) {
-      if (mode === 'edit' && contact) {
-        reset(contact);
-      } else {
-        // Create mode OR edit mode with no contact: start with empty form
-        reset({
-          firstName: '',
-          lastName: '',
-          middleName: '',
-          email: '',
-          contactDetails: {
-            phone1: '',
-            phone2: '',
-            phone3: '',
-            streetAddress: '',
-            city: '',
-            state: '',
-            zip: '',
-            dateOfBirth: '',
-          },
-        });
-      }
-      setSaveError('');
-      setPhotoFile(null);
-      setPhotoError('');
-      setRosterSignup(initialRosterSignup);
-    } else {
-      // Also reset when dialog closes to ensure clean state
-      reset({});
-      setSaveError('');
-      setPhotoFile(null);
-      setPhotoError('');
-      setCreateMultiplePlayers(false);
-    }
-  }, [open, contact, mode, initialRosterSignup, reset]);
 
   const handlePhoneChange =
     (field: 'phone1' | 'phone2' | 'phone3') => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,28 +198,13 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
 
   // Reset form for next player (used in multiple create mode)
   const resetFormForNextPlayer = () => {
-    reset({
-      firstName: '',
-      lastName: '',
-      middleName: '',
-      email: '',
-      contactDetails: {
-        phone1: '',
-        phone2: '',
-        phone3: '',
-        streetAddress: '',
-        city: '',
-        state: '',
-        zip: '',
-        dateOfBirth: '',
-      },
-    });
+    reset(createEmptyContactValues());
     setPhotoFile(null);
     setPhotoError('');
     setSaveError('');
   };
 
-  const handleSave = handleSubmit(async (data) => {
+  const handleSave = handleSubmit(async (data: CreateContactType) => {
     try {
       // Clear any previous errors
       setSaveError('');
@@ -254,6 +264,12 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
 
   const handleClose = () => {
     if (!loading) {
+      setSaveError('');
+      setPhotoFile(null);
+      setPhotoError('');
+      setCreateMultiplePlayers(false);
+      setRosterSignup(initialRosterSignup);
+      reset(initialValues);
       onClose();
     }
   };

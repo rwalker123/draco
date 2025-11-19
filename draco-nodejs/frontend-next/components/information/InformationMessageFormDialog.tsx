@@ -20,7 +20,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -102,11 +102,11 @@ const InformationMessageFormDialog: React.FC<InformationMessageFormDialogProps> 
   const editorRef = React.useRef<RichTextEditorHandle | null>(null);
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<WelcomeMessageFormInput, unknown, WelcomeMessageFormValues>({
     resolver: zodResolver(WelcomeMessageFormSchema),
@@ -117,7 +117,11 @@ const InformationMessageFormDialog: React.FC<InformationMessageFormDialogProps> 
     register('bodyHtml');
   }, [register]);
 
-  const captionValue = watch('caption', defaultValues.caption);
+  const captionValue = useWatch({
+    control,
+    name: 'caption',
+    defaultValue: defaultValues.caption,
+  });
 
   const resetForm = React.useCallback(() => {
     reset(defaultValues);

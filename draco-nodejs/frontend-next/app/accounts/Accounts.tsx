@@ -72,8 +72,10 @@ const Accounts: FC = () => {
     [searchAccountsOperation],
   );
 
-  useEffect(() => {
-    if (!searchTerm.trim()) {
+  const handleSearchTermChange = useCallback((term: string) => {
+    setSearchTerm(term);
+
+    if (!term.trim()) {
       setSearchState((previous) => {
         if (previous.status === 'idle' && previous.results.length === 0) {
           return previous;
@@ -82,7 +84,7 @@ const Accounts: FC = () => {
         return { status: 'idle', results: [] };
       });
     }
-  }, [searchTerm]);
+  }, []);
 
   const handleCreateAccount = useCallback(() => {
     if (!user) {
@@ -175,7 +177,7 @@ const Accounts: FC = () => {
         loading={searchState.status === 'searching'}
         onSearch={handleSearch}
         searchTerm={searchTerm}
-        onSearchTermChange={setSearchTerm}
+        onSearchTermChange={handleSearchTermChange}
       />
 
       {/* Signup Modal */}

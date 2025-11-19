@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export interface SmoothTransitionState {
   isTransitioning: boolean;
   showContent: boolean;
   displayData: unknown;
   opacity: number;
+  dataVersion: number;
 }
 
 export interface UseSmoothTransitionOptions {
@@ -26,23 +27,17 @@ export const useSmoothTransition = (
     showContent: true,
     displayData: data,
     opacity: 1,
+    dataVersion: 0,
   });
 
   const dataRef = useRef(data);
   const loadingRef = useRef(loading);
   const isInitialMount = useRef(true);
 
-  // Create a unique key for data changes to help React track transitions
-  const dataKey = useRef(0);
-  const getDataKey = useCallback(() => {
-    return `data-${dataKey.current}`;
-  }, []);
-
   useEffect(() => {
     // Skip transition on initial mount
     if (isInitialMount.current) {
       isInitialMount.current = false;
-      setState((prev) => ({ ...prev, displayData: data }));
       dataRef.current = data;
       loadingRef.current = loading;
       return;
@@ -52,25 +47,44 @@ export const useSmoothTransition = (
     const startedLoading = !loadingRef.current && loading;
     const finishedLoading = loadingRef.current && !loading;
 
+    let cancelled = false;
+    let exitTimer: ReturnType<typeof setTimeout> | null = null;
+    let resetTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleUpdate = (update: () => void) => {
+      Promise.resolve().then(() => {
+        if (!cancelled) {
+          update();
+        }
+      });
+    };
+
     if (startedLoading && dataChanged) {
       // Start transition - fade out slightly and add blur
-      dataKey.current += 1;
-      setState((prev) => ({
-        ...prev,
-        isTransitioning: true,
-        opacity: keepPreviousDataVisible ? 0.85 : 0.4,
-      }));
+      scheduleUpdate(() => {
+        setState((prev) => ({
+          ...prev,
+          dataVersion: prev.dataVersion + 1,
+          isTransitioning: true,
+          opacity: keepPreviousDataVisible ? 0.85 : 0.4,
+        }));
+      });
     }
 
     if (finishedLoading && dataChanged) {
       // Complete transition - fade out old, fade in new
-      setState((prev) => ({
-        ...prev,
-        showContent: false,
-        opacity: 0,
-      }));
+      scheduleUpdate(() => {
+        setState((prev) => ({
+          ...prev,
+          showContent: false,
+          opacity: 0,
+        }));
+      });
 
-      setTimeout(() => {
+      exitTimer = setTimeout(() => {
+        if (cancelled) {
+          return;
+        }
         setState((prev) => ({
           ...prev,
           displayData: data,
@@ -78,7 +92,10 @@ export const useSmoothTransition = (
           opacity: 1,
         }));
 
-        setTimeout(() => {
+        resetTimer = setTimeout(() => {
+          if (cancelled) {
+            return;
+          }
           setState((prev) => ({
             ...prev,
             isTransitioning: false,
@@ -90,6 +107,16 @@ export const useSmoothTransition = (
     // Update refs
     dataRef.current = data;
     loadingRef.current = loading;
+
+    return () => {
+      cancelled = true;
+      if (exitTimer) {
+        clearTimeout(exitTimer);
+      }
+      if (resetTimer) {
+        clearTimeout(resetTimer);
+      }
+    };
   }, [data, loading, transitionDuration, keepPreviousDataVisible]);
 
   const transitionStyles = {
@@ -131,7 +158,7 @@ export const useSmoothTransition = (
     ...state,
     transitionStyles,
     containerStyles: { ...containerStyles, ...progressBarStyles },
-    dataKey: getDataKey(),
+    dataKey: `data-${state.dataVersion}`,
     isLoading: loading,
   };
 };

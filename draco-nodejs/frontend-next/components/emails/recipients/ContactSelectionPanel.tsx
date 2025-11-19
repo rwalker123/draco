@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   Box,
   Stack,
@@ -108,11 +108,13 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
 
   // Use contacts from props if provided, otherwise empty array (provider-independent)
   const contactsToUse = useMemo(() => propContacts || [], [propContacts]);
-  const [previousContactCount, setPreviousContactCount] = useState(contactsToUse?.length || 0);
+  const previousContactCountRef = useRef(contactsToUse?.length || 0);
 
   // Auto-scroll to show new contacts when they're loaded
   useEffect(() => {
+    const previousContactCount = previousContactCountRef.current;
     const currentContactCount = contactsToUse?.length || 0;
+
     if (currentContactCount > previousContactCount && listContainerRef.current) {
       // Small delay to ensure DOM is updated
       setTimeout(() => {
@@ -129,8 +131,8 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
         }
       }, 100);
     }
-    setPreviousContactCount(currentContactCount);
-  }, [contactsToUse?.length, previousContactCount, compact]);
+    previousContactCountRef.current = currentContactCount;
+  }, [contactsToUse?.length, compact]);
 
   // Display contacts without filtering
   const displayContacts = useMemo(() => {

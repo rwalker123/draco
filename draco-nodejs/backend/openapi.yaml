@@ -10758,7 +10758,7 @@ components:
         question:
           type: string
           minLength: 1
-          maxLength: 50
+          maxLength: 150
         answer:
           type: string
           minLength: 1
@@ -10784,7 +10784,7 @@ components:
         question:
           type: string
           minLength: 1
-          maxLength: 50
+          maxLength: 150
         answer:
           type: string
           minLength: 1
@@ -10802,7 +10802,7 @@ components:
           question:
             type: string
             minLength: 1
-            maxLength: 50
+            maxLength: 150
           answer:
             type: string
             minLength: 1

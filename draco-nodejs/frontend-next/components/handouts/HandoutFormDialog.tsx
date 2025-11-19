@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -65,14 +65,33 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
   onSuccess,
   onError,
 }) => {
-  const { createHandout, updateHandout, loading, error, clearError } = useHandoutOperations(scope);
+  const isTeamScope = scope.type === 'team';
+
+  const teamId = scope.type === 'team' ? scope.teamId : null;
+  const stableScope = React.useMemo<HandoutScope>(() => {
+    if (isTeamScope) {
+      return {
+        type: 'team',
+        accountId: scope.accountId,
+        teamId: teamId as string,
+      };
+    }
+
+    return {
+      type: 'account',
+      accountId: scope.accountId,
+    };
+  }, [isTeamScope, scope.accountId, teamId]);
+
+  const { createHandout, updateHandout, loading, error, clearError } =
+    useHandoutOperations(stableScope);
   const [localError, setLocalError] = React.useState<string | null>(null);
 
   const {
+    control,
     handleSubmit,
     reset,
     setValue,
-    watch,
     getValues,
     formState: { errors, isSubmitting },
   } = useForm<HandoutFormValues>({
@@ -82,7 +101,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
 
   const editorRef = React.useRef<RichTextEditorHandle | null>(null);
 
-  const fileValue = watch('file');
+  const fileValue = useWatch({ control, name: 'file' });
   const [editorInitialValue, setEditorInitialValue] = React.useState<string>('');
   const [plainTextLength, setPlainTextLength] = React.useState<number>(0);
   const [editorKey, setEditorKey] = React.useState<number>(0);

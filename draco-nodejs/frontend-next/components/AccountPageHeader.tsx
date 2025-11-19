@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -32,17 +32,14 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
 }) => {
   const theme = useTheme();
   const { accountName, logoUrl } = useAccountHeader(accountId, accountLogoUrl);
-  const [imageError, setImageError] = useState(false);
+  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
+  const imageError = failedLogoUrl !== null && failedLogoUrl === (logoUrl ?? null);
 
   // Use theme colors for default background if none provided
   const defaultBackground = theme.palette.background.paper;
   const headerBackgroundStyles = background
     ? { background }
     : { backgroundColor: defaultBackground };
-
-  useEffect(() => {
-    setImageError(false);
-  }, [logoUrl]);
 
   return (
     <Box
@@ -77,7 +74,7 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
               height={LOGO_HEIGHT}
               width={512}
               style={{ objectFit: 'contain', maxWidth: '100%', maxHeight: '100%' }}
-              onError={() => setImageError(true)}
+              onError={() => setFailedLogoUrl(logoUrl)}
               unoptimized
             />
           ) : (

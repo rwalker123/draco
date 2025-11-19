@@ -26,7 +26,7 @@ export function useDebounce<T extends (...args: any[]) => any>(callback: T, dela
   }, []);
 
   return useCallback(
-    ((...args: Parameters<T>) => {
+    (...args: Parameters<T>) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -34,9 +34,9 @@ export function useDebounce<T extends (...args: any[]) => any>(callback: T, dela
       timeoutRef.current = setTimeout(() => {
         callbackRef.current(...args);
       }, delay);
-    }) as T,
+    },
     [delay],
-  );
+  ) as T;
 }
 
 /**

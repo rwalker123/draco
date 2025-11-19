@@ -3,7 +3,6 @@
 import React, {
   forwardRef,
   useCallback,
-  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -115,7 +114,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
     },
     ref,
   ) => {
-    const [editMode, setEditMode] = useState(false);
+    const [editModeEnabled, setEditModeEnabled] = useState(false);
     const battingGridRef = useRef<EditableGridHandle | null>(null);
     const pitchingGridRef = useRef<EditableGridHandle | null>(null);
 
@@ -125,11 +124,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
     const [unsavedPrompt, setUnsavedPrompt] = useState<UnsavedChangesPrompt | null>(null);
     const unsavedResolverRef = useRef<((decision: UnsavedChangesDecision) => void) | null>(null);
 
-    useEffect(() => {
-      if (!selectedGameId || !canManageStats) {
-        setEditMode(false);
-      }
-    }, [selectedGameId, canManageStats]);
+    const editMode = Boolean(editModeEnabled && selectedGameId && canManageStats);
 
     const showAttendanceTab = enableAttendanceTracking && canManageStats && Boolean(selectedGameId);
 
@@ -238,7 +233,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
 
       try {
         if (!editMode) {
-          setEditMode(true);
+          setEditModeEnabled(true);
           return;
         }
 
@@ -251,7 +246,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
           return;
         }
 
-        setEditMode(false);
+        setEditModeEnabled(false);
       } catch (error) {
         console.error('Unable to toggle edit mode', error);
         onProcessError(error instanceof Error ? error : new Error('Unable to toggle edit mode.'));

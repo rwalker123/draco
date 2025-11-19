@@ -25,7 +25,6 @@ import {
 const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, next }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [needsRedirect, setNeedsRedirect] = useState(false);
   const router = useRouter();
   const { login, loading, error, user } = useAuth();
   const { userRoles, loading: roleLoading } = useRole();
@@ -68,10 +67,7 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
   }, [user, roleLoading, userRoles, next, accountId, router]);
 
   const handleLogin = async () => {
-    const success = await login({ userName: email, password: password });
-    if (success) {
-      setNeedsRedirect(true);
-    }
+    await login({ userName: email, password: password });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,11 +77,10 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
 
   // Handle redirect after successful login when contexts are loaded
   useEffect(() => {
-    if (needsRedirect && user && !roleLoading && userRoles) {
+    if (user && !roleLoading && userRoles) {
       validateAndRedirect();
-      setNeedsRedirect(false);
     }
-  }, [needsRedirect, user, roleLoading, userRoles, validateAndRedirect]);
+  }, [user, roleLoading, userRoles, validateAndRedirect]);
 
   return (
     <main className="min-h-screen bg-background">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { PhotoCamera as PhotoCameraIcon, Save as SaveIcon } from '@mui/icons-material';
 import Image from 'next/image';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { getLogoSize, validateLogoFile } from '../config/teams';
@@ -28,10 +28,6 @@ const TeamMetadataFormSchema = z.object({
 
 type TeamMetadataFormValues = z.infer<typeof TeamMetadataFormSchema>;
 
-const DEFAULT_VALUES: TeamMetadataFormValues = {
-  name: '',
-};
-
 interface EditTeamDialogProps {
   open: boolean;
   accountId: string;
@@ -42,8 +38,21 @@ interface EditTeamDialogProps {
   onError?: (error: string) => void;
 }
 
-const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
-  open,
+const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, teamSeason, ...rest }) => {
+  if (!open || !teamSeason) {
+    return null;
+  }
+
+  const dialogKey = `${teamSeason.id}-${teamSeason.team.logoUrl ?? 'no-logo'}`;
+
+  return <EditTeamDialogInner key={dialogKey} teamSeason={teamSeason} {...rest} />;
+};
+
+interface EditTeamDialogInnerProps extends Omit<EditTeamDialogProps, 'open' | 'teamSeason'> {
+  teamSeason: TeamSeasonType;
+}
+
+const EditTeamDialogInner: React.FC<EditTeamDialogInnerProps> = ({
   accountId,
   seasonId,
   teamSeason,
@@ -52,7 +61,9 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
   onError,
 }) => {
   const LOGO_SIZE = getLogoSize();
-  const [logoPreview, setLogoPreview] = useState<string | null>(teamSeason?.team.logoUrl ?? null);
+  const initialName = teamSeason.name ?? '';
+  const initialLogoUrl = teamSeason.team.logoUrl ?? null;
+  const [logoPreview, setLogoPreview] = useState<string | null>(initialLogoUrl);
   const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
@@ -64,45 +75,17 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
     control,
     handleSubmit,
     reset,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<TeamMetadataFormValues>({
     resolver: zodResolver(TeamMetadataFormSchema),
-    defaultValues: DEFAULT_VALUES,
+    defaultValues: { name: initialName },
   });
 
-  useEffect(() => {
-    if (!open) {
-      reset(DEFAULT_VALUES, { keepErrors: false, keepDirty: false, keepTouched: false });
-      setLogoPreview(teamSeason?.team.logoUrl ?? null);
-      setLogoFile(null);
-      setLogoError(null);
-      setLogoPreviewError(false);
-      clearError();
-      return;
-    }
-
-    if (teamSeason) {
-      reset(
-        {
-          name: teamSeason.name ?? '',
-        },
-        { keepErrors: false, keepDirty: false, keepTouched: false },
-      );
-      setLogoPreview(teamSeason.team.logoUrl ?? null);
-      setLogoFile(null);
-    } else {
-      reset(DEFAULT_VALUES, { keepErrors: false, keepDirty: false, keepTouched: false });
-      setLogoPreview(null);
-      setLogoFile(null);
-    }
-
-    setLogoPreviewError(false);
-    setLogoError(null);
-    clearError();
-  }, [open, teamSeason, reset, clearError]);
-
-  const watchedName = watch('name', teamSeason?.name ?? '');
+  const watchedName = useWatch({
+    control,
+    name: 'name',
+    defaultValue: initialName,
+  });
   const isBusy = loading || isSubmitting;
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,7 +111,7 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
       reader.readAsDataURL(file);
     } else {
       setLogoFile(null);
-      setLogoPreview(teamSeason?.team.logoUrl ?? null);
+      setLogoPreview(initialLogoUrl);
       setLogoPreviewError(false);
       setLogoError(null);
       clearError();
@@ -136,10 +119,6 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
   };
 
   const handleFormSubmit = handleSubmit(async (values) => {
-    if (!teamSeason) {
-      return;
-    }
-
     clearError();
 
     try {
@@ -166,14 +145,12 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
 
   const handleCancel = () => {
     reset(
-      teamSeason
-        ? {
-            name: teamSeason.name ?? '',
-          }
-        : DEFAULT_VALUES,
+      {
+        name: initialName,
+      },
       { keepErrors: false, keepDirty: false, keepTouched: false },
     );
-    setLogoPreview(teamSeason?.team.logoUrl ?? null);
+    setLogoPreview(initialLogoUrl);
     setLogoPreviewError(false);
     setLogoFile(null);
     setLogoError(null);
@@ -181,15 +158,7 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
     onClose();
   };
 
-  useEffect(() => {
-    setLogoPreviewError(false);
-  }, [logoPreview]);
-
   const displayedError = error;
-
-  if (!teamSeason) {
-    return null;
-  }
 
   const fallbackInitial =
     watchedName?.trim().charAt(0).toUpperCase() ||
@@ -197,7 +166,7 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
     '?';
 
   return (
-    <Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
+    <Dialog open onClose={handleCancel} maxWidth="sm" fullWidth>
       <DialogTitle>Edit Team</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>

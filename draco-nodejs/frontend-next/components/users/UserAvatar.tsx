@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, memo, useMemo } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import { Box, Typography, IconButton, Tooltip, SxProps, Theme } from '@mui/material';
 import { PhotoCamera as PhotoCameraIcon, Close as CloseIcon } from '@mui/icons-material';
 import Image from 'next/image';
@@ -33,7 +33,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   className,
   sx,
 }) => {
-  const [photoError, setPhotoError] = useState(false);
+  const [errorPhotoUrl, setErrorPhotoUrl] = useState<string | null>(null);
   const [isPhotoHovered, setIsPhotoHovered] = useState(false);
 
   // Memoize the cache-busted URL to prevent unnecessary re-requests
@@ -43,15 +43,10 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     return addCacheBuster(user.photoUrl);
   }, [user.photoUrl]);
 
-  // Reset photo error when photoUrl changes
-  useEffect(() => {
-    setPhotoError(false);
-  }, [user.photoUrl]);
-
   // Generate user initials for fallback
   const initials = `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
 
-  const hasPhoto = user.photoUrl && !photoError;
+  const hasPhoto = Boolean(user.photoUrl && errorPhotoUrl !== user.photoUrl);
 
   // Size-responsive delete button positioning
   const getDeleteButtonPosition = () => {
@@ -115,7 +110,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
             fill
             style={{ objectFit: 'cover', borderRadius: '50%' }}
             unoptimized
-            onError={() => setPhotoError(true)}
+            onError={() => setErrorPhotoUrl(user.photoUrl ?? null)}
           />
         ) : (
           <Typography
@@ -155,38 +150,42 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
       </Box>
 
       {/* Delete photo button on hover for large avatars */}
-      {enablePhotoActions && user.photoUrl && !photoError && isPhotoHovered && onPhotoDelete && (
-        <Tooltip title="Delete Photo">
-          <IconButton
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPhotoDelete(user.id);
-            }}
-            sx={{
-              position: 'absolute',
-              top: deleteButtonPos.top,
-              right: deleteButtonPos.right,
-              backgroundColor: 'background.paper',
-              color: 'error.main',
-              boxShadow: 2,
-              zIndex: 1,
-              '&:hover': {
-                backgroundColor: 'error.main',
-                color: 'white',
-              },
-              padding: '4px',
-              minWidth: size < 40 ? '20px' : '24px',
-              height: size < 40 ? '20px' : '24px',
-            }}
-          >
-            <CloseIcon
-              fontSize={size < 40 ? 'inherit' : 'small'}
-              sx={{ fontSize: size < 40 ? '12px' : '16px' }}
-            />
-          </IconButton>
-        </Tooltip>
-      )}
+      {enablePhotoActions &&
+        user.photoUrl &&
+        errorPhotoUrl !== user.photoUrl &&
+        isPhotoHovered &&
+        onPhotoDelete && (
+          <Tooltip title="Delete Photo">
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPhotoDelete(user.id);
+              }}
+              sx={{
+                position: 'absolute',
+                top: deleteButtonPos.top,
+                right: deleteButtonPos.right,
+                backgroundColor: 'background.paper',
+                color: 'error.main',
+                boxShadow: 2,
+                zIndex: 1,
+                '&:hover': {
+                  backgroundColor: 'error.main',
+                  color: 'white',
+                },
+                padding: '4px',
+                minWidth: size < 40 ? '20px' : '24px',
+                height: size < 40 ? '20px' : '24px',
+              }}
+            >
+              <CloseIcon
+                fontSize={size < 40 ? 'inherit' : 'small'}
+                sx={{ fontSize: size < 40 ? '12px' : '16px' }}
+              />
+            </IconButton>
+          </Tooltip>
+        )}
     </Box>
   );
 };

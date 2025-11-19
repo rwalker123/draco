@@ -80,25 +80,6 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     hasAccountManagementPrivileges ||
     Boolean(user && currentAccountId && hasRole('AccountAdmin', { accountId: currentAccountId }));
 
-  // Custom admin menu icon component
-  const AdminMenuIcon = () => (
-    <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-      <MenuIcon />
-      <KeyIcon
-        sx={{
-          position: 'absolute',
-          top: -2,
-          right: -2,
-          fontSize: '0.7rem',
-          color: 'primary.main',
-          backgroundColor: 'background.paper',
-          borderRadius: '50%',
-          padding: '1px',
-        }}
-      />
-    </Box>
-  );
-
   // Extract accountId from prop, URL path, query string, or context (in that order of preference)
   const accountIdFromQuery = searchParams.get('accountId');
   const accountIdFromPath = getAccountIdFromPath(pathname);
@@ -253,7 +234,25 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
               sx={{ mr: 2 }}
               onClick={handleMenuOpen}
             >
-              {shouldShowAdminMenuIcon ? <AdminMenuIcon /> : <MenuIcon />}
+              {shouldShowAdminMenuIcon ? (
+                <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                  <MenuIcon />
+                  <KeyIcon
+                    sx={{
+                      position: 'absolute',
+                      top: -2,
+                      right: -2,
+                      fontSize: '0.7rem',
+                      color: 'primary.main',
+                      backgroundColor: 'background.paper',
+                      borderRadius: '50%',
+                      padding: '1px',
+                    }}
+                  />
+                </Box>
+              ) : (
+                <MenuIcon />
+              )}
             </IconButton>
             <Box
               onClick={handleHomeClick}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 import {
   Alert,
@@ -62,28 +62,46 @@ export const AddBattingStatDialog: React.FC<AddBattingStatDialogProps> = ({
   onSuccess,
   onError,
 }) => {
+  const playerVersion = useMemo(
+    () => availablePlayers.map((player) => player.rosterSeasonId).join('|'),
+    [availablePlayers],
+  );
+
+  const defaultValues = useMemo(
+    () => ({
+      ...defaultCreateBattingValues,
+      rosterSeasonId: availablePlayers[0]?.rosterSeasonId ?? '',
+    }),
+    [availablePlayers],
+  );
+
   const {
     control,
     register,
     handleSubmit,
-    reset,
     formState: { errors, isSubmitting },
   } = useForm<BattingFormValues>({
     resolver: zodResolver(BattingDialogSchema),
     defaultValues: defaultCreateBattingValues,
+    values: open ? defaultValues : undefined,
   });
 
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (open) {
-      reset({
-        ...defaultCreateBattingValues,
-        rosterSeasonId: availablePlayers[0]?.rosterSeasonId ?? '',
-      });
-      setSubmitError(null);
-    }
-  }, [availablePlayers, open, reset]);
+  const dialogContextKey = `${open ? 'open' : 'closed'}:${playerVersion}`;
+  const [submitErrorState, setSubmitErrorState] = useState<{
+    message: string | null;
+    contextKey: string;
+  }>(() => ({
+    message: null,
+    contextKey: dialogContextKey,
+  }));
+  const submitError =
+    submitErrorState.contextKey === dialogContextKey ? submitErrorState.message : null;
+  const setSubmitError = useCallback(
+    (message: string | null) => {
+      setSubmitErrorState({ message, contextKey: dialogContextKey });
+    },
+    [dialogContextKey],
+  );
 
   const submitHandler = handleSubmit(async (values) => {
     if (!gameId) {
@@ -237,42 +255,58 @@ export const EditBattingStatDialog: React.FC<EditBattingStatDialogProps> = ({
   onSuccess,
   onError,
 }) => {
+  const statKey = useMemo(() => (stat ? JSON.stringify(stat) : 'none'), [stat]);
+
+  const updateValues = useMemo(() => {
+    if (!stat) {
+      return defaultUpdateBattingValues;
+    }
+
+    return {
+      ab: stat.ab,
+      h: stat.h,
+      r: stat.r,
+      d: stat.d,
+      t: stat.t,
+      hr: stat.hr,
+      rbi: stat.rbi,
+      so: stat.so,
+      bb: stat.bb,
+      hbp: stat.hbp,
+      sb: stat.sb,
+      cs: stat.cs,
+      sf: stat.sf,
+      sh: stat.sh,
+      re: stat.re,
+      intr: stat.intr,
+      lob: stat.lob,
+    };
+  }, [stat]);
+
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors, isSubmitting },
   } = useForm<UpdateGameBattingStatType>({
     resolver: zodResolver(UpdateGameBattingStatSchema),
     defaultValues: defaultUpdateBattingValues,
+    values: stat ? updateValues : undefined,
   });
 
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (stat) {
-      reset({
-        ab: stat.ab,
-        h: stat.h,
-        r: stat.r,
-        d: stat.d,
-        t: stat.t,
-        hr: stat.hr,
-        rbi: stat.rbi,
-        so: stat.so,
-        bb: stat.bb,
-        hbp: stat.hbp,
-        sb: stat.sb,
-        cs: stat.cs,
-        sf: stat.sf,
-        sh: stat.sh,
-        re: stat.re,
-        intr: stat.intr,
-        lob: stat.lob,
-      });
-      setSubmitError(null);
-    }
-  }, [reset, stat]);
+  const [submitErrorState, setSubmitErrorState] = useState<{
+    message: string | null;
+    contextKey: string;
+  }>(() => ({
+    message: null,
+    contextKey: statKey,
+  }));
+  const submitError = submitErrorState.contextKey === statKey ? submitErrorState.message : null;
+  const setSubmitError = useCallback(
+    (message: string | null) => {
+      setSubmitErrorState({ message, contextKey: statKey });
+    },
+    [statKey],
+  );
 
   const submitHandler = handleSubmit(async (values) => {
     if (!gameId || !stat) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -24,46 +24,38 @@ import TeamSelector from '../TeamSelector';
 import { getRoleDisplayName, isTeamBasedRole, isLeagueBasedRole } from '../../utils/roleUtils';
 import { useRoleAssignment } from '../../hooks/useRoleAssignment';
 
-/**
- * AssignRoleDialog Component
- * Dialog for assigning roles to users with self-contained error handling
- */
-const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
-  open,
+interface AssignRoleDialogContentProps {
+  onClose: () => void;
+  onSuccess?: AssignRoleDialogProps['onSuccess'];
+  roles: AssignRoleDialogProps['roles'];
+  accountId: string;
+  preselectedUser: AssignRoleDialogProps['preselectedUser'];
+  isUserReadonly: boolean;
+  leagues: AssignRoleDialogProps['leagues'];
+  teams: AssignRoleDialogProps['teams'];
+  leagueSeasons: AssignRoleDialogProps['leagueSeasons'];
+  contextDataLoading: boolean;
+}
+
+const AssignRoleDialogContent: React.FC<AssignRoleDialogContentProps> = ({
   onClose,
   onSuccess,
   roles,
   accountId,
-  // Pre-population props
   preselectedUser,
-  isUserReadonly = false,
-  // Context data props
+  isUserReadonly,
   leagues = [],
   teams = [],
   leagueSeasons = [],
-  contextDataLoading = false,
+  contextDataLoading,
 }) => {
-  // Internal state management
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [newUserContactId, setNewUserContactId] = useState<string>('');
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>('');
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  // Use the role assignment hook
   const { assignRole, loading } = useRoleAssignment(accountId);
-
-  // Reset form when dialog opens/closes
-  useEffect(() => {
-    if (open) {
-      // Reset form state when opening
-      setSelectedRole('');
-      setSelectedLeagueId('');
-      setSelectedTeamId('');
-      setNewUserContactId('');
-      setError(null); // Clear any previous errors
-    }
-  }, [open]);
 
   // Determine which role is selected to show appropriate context selector
   const isLeagueAdmin = selectedRole ? isLeagueBasedRole(selectedRole) : false;
@@ -124,11 +116,10 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
   ]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <>
       <DialogTitle>Assign Role to User</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
-          {/* Error display */}
           {error && (
             <Alert severity="error" onClose={() => setError(null)}>
               {error}
@@ -186,7 +177,6 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
             </Select>
           </FormControl>
 
-          {/* League selector for LeagueAdmin role */}
           {isLeagueAdmin && (
             <LeagueSelector
               leagues={leagues}
@@ -198,7 +188,6 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
             />
           )}
 
-          {/* Team selector for TeamAdmin role */}
           {isTeamAdmin && (
             <TeamSelector
               teams={teams}
@@ -232,8 +221,42 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
           Assign Role
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };
+
+/**
+ * AssignRoleDialog Component
+ */
+const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
+  open,
+  onClose,
+  onSuccess,
+  roles,
+  accountId,
+  preselectedUser,
+  isUserReadonly = false,
+  leagues = [],
+  teams = [],
+  leagueSeasons = [],
+  contextDataLoading = false,
+}) => (
+  <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    {open && (
+      <AssignRoleDialogContent
+        onClose={onClose}
+        onSuccess={onSuccess}
+        roles={roles}
+        accountId={accountId}
+        preselectedUser={preselectedUser}
+        isUserReadonly={isUserReadonly}
+        leagues={leagues}
+        teams={teams}
+        leagueSeasons={leagueSeasons}
+        contextDataLoading={contextDataLoading}
+      />
+    )}
+  </Dialog>
+);
 
 export default AssignRoleDialog;

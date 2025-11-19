@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -22,7 +22,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, useForm, type DefaultValues, type Resolver } from 'react-hook-form';
+import { Controller, useForm, useWatch, type DefaultValues, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { formatPhoneNumber } from '../../utils/phoneNumber';
 import {
@@ -225,11 +225,53 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
   const turnstileEnabled = useMemo(() => Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY), []);
   const captchaRequired = turnstileEnabled && isMember !== true;
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [captchaResetKey, setCaptchaResetKey] = useState(0);
-  const [captchaError, setCaptchaError] = useState<string | null>(null);
-  const previousOpenRef = useRef(open);
-  const previousCaptchaRequiredRef = useRef<boolean | null>(null);
+  const captchaAutoResetKey = (open ? 1 : 0) + (captchaRequired ? 2 : 0);
+  const [captchaTokenState, setCaptchaTokenState] = useState<{
+    token: string | null;
+    contextKey: number;
+  }>({ token: null, contextKey: captchaAutoResetKey });
+  const captchaToken =
+    captchaTokenState.contextKey === captchaAutoResetKey ? captchaTokenState.token : null;
+  const setCaptchaToken = useCallback(
+    (token: string | null) => {
+      setCaptchaTokenState({ token, contextKey: captchaAutoResetKey });
+    },
+    [captchaAutoResetKey],
+  );
+  const [manualCaptchaResetCount, setManualCaptchaResetCount] = useState(0);
+
+  const captchaResetKey = manualCaptchaResetCount * 10 + captchaAutoResetKey;
+
+  const incrementCaptchaResetKey = useCallback(() => {
+    setManualCaptchaResetCount((count) => count + 1);
+  }, []);
+
+  const [captchaErrorState, setCaptchaErrorState] = useState<{
+    message: string | null;
+    contextKey: number;
+  }>({
+    message: null,
+    contextKey: captchaAutoResetKey,
+  });
+  const captchaError =
+    captchaErrorState.contextKey === captchaAutoResetKey ? captchaErrorState.message : null;
+
+  const setCaptchaError = useCallback(
+    (message: string | null) => {
+      setCaptchaErrorState({ message, contextKey: captchaAutoResetKey });
+    },
+    [captchaAutoResetKey],
+  );
+
+  const handleCaptchaTokenChange = useCallback(
+    (token: string | null) => {
+      setCaptchaToken(token);
+      if (token) {
+        setCaptchaError(null);
+      }
+    },
+    [setCaptchaError, setCaptchaToken],
+  );
 
   const contactPrefill = useMemo(() => {
     if (!contact) {
@@ -318,7 +360,6 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     control,
     handleSubmit: submitForm,
     reset,
-    watch,
     formState: { errors, isDirty },
     clearErrors,
     register,
@@ -328,50 +369,9 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   });
 
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const displayedSubmitError = submitError ?? serviceError ?? null;
 
-  const experienceValue = watch('experience') ?? '';
-
-  useEffect(() => {
-    if (serviceError) {
-      setSubmitError(serviceError);
-    }
-  }, [serviceError]);
-
-  useEffect(() => {
-    if (previousOpenRef.current !== open) {
-      previousOpenRef.current = open;
-
-      setCaptchaToken(null);
-      setCaptchaError(null);
-
-      if (!open || captchaRequired) {
-        setCaptchaResetKey((key) => key + 1);
-      }
-    }
-  }, [open, captchaRequired]);
-
-  useEffect(() => {
-    if (!open) {
-      previousCaptchaRequiredRef.current = captchaRequired;
-      return;
-    }
-
-    if (previousCaptchaRequiredRef.current !== captchaRequired) {
-      previousCaptchaRequiredRef.current = captchaRequired;
-      setCaptchaToken(null);
-      setCaptchaError(null);
-
-      if (captchaRequired) {
-        setCaptchaResetKey((key) => key + 1);
-      }
-    }
-  }, [open, captchaRequired]);
-
-  useEffect(() => {
-    if (captchaToken) {
-      setCaptchaError(null);
-    }
-  }, [captchaToken]);
+  const experienceValue = useWatch({ control, name: 'experience' }) ?? '';
 
   useEffect(() => {
     if (!open) {
@@ -381,7 +381,6 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     if (!isDirty) {
       reset(formDefaults);
       clearErrors();
-      setSubmitError(null);
       resetError();
     }
   }, [open, formDefaults, reset, clearErrors, resetError, isDirty]);
@@ -392,7 +391,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
     if (captchaRequired && !captchaToken) {
       setCaptchaError('Please verify that you are human before submitting.');
-      setCaptchaResetKey((key) => key + 1);
+      incrementCaptchaResetKey();
       return;
     }
 
@@ -443,7 +442,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
     if (captchaRequired) {
       setCaptchaToken(null);
-      setCaptchaResetKey((key) => key + 1);
+      incrementCaptchaResetKey();
     }
   });
 
@@ -454,7 +453,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     resetError();
     setCaptchaToken(null);
     setCaptchaError(null);
-    setCaptchaResetKey((key) => key + 1);
+    incrementCaptchaResetKey();
     onClose();
   };
 
@@ -465,9 +464,9 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <DialogContent>
             {/* Error Alert */}
-            {submitError && (
+            {displayedSubmitError && (
               <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError(null)}>
-                {submitError}
+                {displayedSubmitError}
               </Alert>
             )}
 
@@ -675,7 +674,7 @@ Examples:
                   </Alert>
                 )}
                 <TurnstileChallenge
-                  onTokenChange={setCaptchaToken}
+                  onTokenChange={handleCaptchaTokenChange}
                   resetSignal={captchaResetKey}
                   loading={operationLoading}
                 />

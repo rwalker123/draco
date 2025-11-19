@@ -12,26 +12,21 @@ export const useDelayedLoading = (isLoading: boolean, delay: number = 2000): boo
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (isLoading) {
-      // Start the delay timer
-      timeoutRef.current = setTimeout(() => {
-        setShowLoading(true);
-      }, delay);
-    } else {
-      // Clear timeout and hide loading immediately when not loading
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      setShowLoading(false);
+    if (!isLoading) {
+      return;
     }
 
-    // Cleanup function
+    timeoutRef.current = setTimeout(() => {
+      setShowLoading(true);
+      timeoutRef.current = null;
+    }, delay);
+
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
+      setShowLoading(false);
     };
   }, [isLoading, delay]);
 

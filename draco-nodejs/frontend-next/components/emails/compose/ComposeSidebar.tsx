@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -24,9 +24,6 @@ import {
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 
-import { useAuth } from '../../../context/AuthContext';
-import { useApiClient } from '../../../hooks/useApiClient';
-import { createEmailService } from '../../../services/emailService';
 import { EmailTemplate } from '../../../types/emails/email';
 import {
   EmailComposeState,
@@ -35,7 +32,8 @@ import {
 } from '../../../types/emails/compose';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { EmailRecipientError, EmailRecipientErrorCode } from '../../../types/errors';
-import { createEmailRecipientError, safeAsync } from '../../../utils/errorHandling';
+import { createEmailRecipientError } from '../../../utils/errorHandling';
+import { useEmailTemplates } from '../../../hooks/useEmailTemplates';
 
 // Shared styling constants to eliminate DRY violations
 const SECTION_STYLES = {
@@ -82,75 +80,52 @@ export default function ComposeSidebar({
   showTemplates = true,
   compact = false,
 }: ComposeSidebarProps) {
-  const { token } = useAuth();
-  const apiClient = useApiClient();
   const theme = useTheme();
 
   // Real-time validation for contextual error display
   const validation = useMemo(() => validateComposeData(state, state.config), [state]);
 
-  // Template state
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const [loadingTemplates, setLoadingTemplates] = useState(false);
-  const [templatesError, setTemplatesError] = useState<EmailRecipientError | null>(null);
+  const {
+    templates: fetchedTemplates,
+    loading: loadingTemplates,
+    error: templatesLoadError,
+    refresh: refreshTemplates,
+  } = useEmailTemplates(accountId);
+  const templates = useMemo(
+    () => fetchedTemplates.filter((template) => template.isActive),
+    [fetchedTemplates],
+  );
+  const templatesError = useMemo<EmailRecipientError | null>(() => {
+    if (!templatesLoadError) {
+      return null;
+    }
+
+    return createEmailRecipientError(
+      EmailRecipientErrorCode.SERVICE_UNAVAILABLE,
+      templatesLoadError,
+      {
+        userMessage: 'Unable to load email templates. Please try again later.',
+        retryable: true,
+        context: {
+          operation: 'loadTemplates',
+          accountId,
+          additionalData: { componentName: 'ComposeSidebar' },
+        },
+      },
+    );
+  }, [templatesLoadError, accountId]);
   const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(
     new Set(['templates', 'recipients']),
   );
+
+  const loadTemplates = useCallback(() => {
+    void refreshTemplates();
+  }, [refreshTemplates]);
 
   const hasTemplates = templates.length > 0;
   const shouldRenderTemplatesSection =
     showTemplates &&
     (loadingTemplates || !!templatesError || hasTemplates || !!state.selectedTemplate);
-
-  const loadTemplates = useCallback(async () => {
-    if (!token) return;
-
-    const result = await safeAsync(
-      async () => {
-        setLoadingTemplates(true);
-        setTemplatesError(null);
-
-        const emailService = createEmailService(token, apiClient);
-        const templateList = await emailService.listTemplates(accountId);
-        setTemplates(templateList.filter((t) => t.isActive));
-      },
-      {
-        operation: 'loadTemplates',
-        accountId,
-        additionalData: { component: 'ComposeSidebar' },
-      },
-    );
-
-    if (!result.success) {
-      const templateError =
-        result.error.code === EmailRecipientErrorCode.API_UNAVAILABLE
-          ? createEmailRecipientError(
-              EmailRecipientErrorCode.SERVICE_UNAVAILABLE,
-              'Template service is temporarily unavailable',
-              {
-                userMessage: 'Unable to load email templates. Please try again later.',
-                retryable: true,
-                context: {
-                  operation: 'loadTemplates',
-                  accountId,
-                  additionalData: { component: 'ComposeSidebar' },
-                },
-              },
-            )
-          : result.error;
-
-      setTemplatesError(templateError);
-    }
-
-    setLoadingTemplates(false);
-  }, [token, accountId, apiClient]);
-
-  // Load templates
-  useEffect(() => {
-    if (showTemplates && token) {
-      loadTemplates();
-    }
-  }, [showTemplates, token, loadTemplates]);
 
   // Handle accordion expansion
   const handleAccordionChange = useCallback(

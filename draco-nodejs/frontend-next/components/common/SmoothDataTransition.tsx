@@ -4,7 +4,7 @@
 // Provides seamless fade transitions when data changes
 // Single Responsibility: Handle smooth transitions between data states
 
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { Box, Fade } from '@mui/material';
 
 export interface SmoothDataTransitionProps {
@@ -20,70 +20,14 @@ export interface SmoothDataTransitionProps {
 const SmoothDataTransition: React.FC<SmoothDataTransitionProps> = ({
   children,
   loading,
-  data,
+  data: _data,
   transitionDuration = 300,
   keepPreviousDataVisible = true,
   className,
   sx = {},
 }) => {
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [displayData, setDisplayData] = useState(data);
-  const [showContent, setShowContent] = useState(true);
-  const dataRef = useRef(data);
-  const loadingRef = useRef(loading);
-
-  // Track data changes and loading state
-  useEffect(() => {
-    const dataChanged = dataRef.current !== data;
-
-    // Start transition when loading begins (new data requested)
-    if (!loadingRef.current && loading && dataChanged) {
-      if (keepPreviousDataVisible) {
-        // Keep showing old data while loading
-        setIsTransitioning(true);
-      } else {
-        // Fade out immediately
-        setShowContent(false);
-        setIsTransitioning(true);
-      }
-    }
-
-    // Complete transition when loading ends (new data available)
-    if (loadingRef.current && !loading && dataChanged) {
-      if (keepPreviousDataVisible) {
-        // Quick fade out then fade in with new data
-        setShowContent(false);
-        setTimeout(() => {
-          setDisplayData(data);
-          setShowContent(true);
-          setTimeout(() => {
-            setIsTransitioning(false);
-          }, transitionDuration);
-        }, transitionDuration / 3);
-      } else {
-        // Just fade in with new data
-        setDisplayData(data);
-        setShowContent(true);
-        setTimeout(() => {
-          setIsTransitioning(false);
-        }, transitionDuration);
-      }
-    }
-
-    // Update refs
-    dataRef.current = data;
-    loadingRef.current = loading;
-  }, [data, loading, transitionDuration, keepPreviousDataVisible]);
-
-  // Initial data setup
-  useEffect(() => {
-    if (!isTransitioning) {
-      setDisplayData(data);
-    }
-  }, [data, isTransitioning]);
-
-  // Suppress unused variable warning - displayData is used for state management
-  void displayData;
+  const shouldHideContent = !keepPreviousDataVisible && loading;
+  const shouldDimContent = keepPreviousDataVisible && loading;
 
   return (
     <Box
@@ -94,18 +38,12 @@ const SmoothDataTransition: React.FC<SmoothDataTransitionProps> = ({
         ...sx,
       }}
     >
-      <Fade
-        in={showContent}
-        timeout={transitionDuration}
-        style={{
-          transitionDelay: showContent ? '0ms' : '0ms',
-        }}
-      >
+      <Fade in={!shouldHideContent} timeout={transitionDuration} style={{ transitionDelay: '0ms' }}>
         <Box
           sx={{
-            opacity: isTransitioning && loading ? 0.7 : 1,
+            opacity: shouldDimContent ? 0.7 : 1,
             transition: `opacity ${transitionDuration}ms ease-in-out`,
-            filter: isTransitioning && loading ? 'blur(0.5px)' : 'none',
+            filter: shouldDimContent ? 'blur(0.5px)' : 'none',
           }}
         >
           {children}

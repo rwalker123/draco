@@ -140,40 +140,47 @@ export default function SocialHubExperience({
     accountId,
     seasonId,
   });
+
+  const canFetch = Boolean(accountId && seasonId);
   const [feedState, setFeedState] = useState<{
     items: SocialFeedItemType[];
     loading: boolean;
     error: string | null;
-  }>({ items: [], loading: false, error: null });
+  }>({
+    items: [],
+    loading: false,
+    error: null,
+  });
+
   useEffect(() => {
-    if (!accountId || !seasonId) {
-      setFeedState({ items: [], loading: false, error: null });
+    if (!canFetch) {
       return;
     }
 
-    let cancelled = false;
-    setFeedState((prev) => ({ ...prev, loading: true, error: null }));
+    let isActive = true;
 
     fetchFeed({ limit: 6 })
       .then((items) => {
-        if (!cancelled) {
-          setFeedState({ items, loading: false, error: null });
+        if (!isActive) {
+          return;
         }
+        setFeedState({ items, loading: false, error: null });
       })
       .catch((error) => {
-        if (!cancelled) {
-          setFeedState({
-            items: [],
-            loading: false,
-            error: error instanceof Error ? error.message : 'Unable to load social feed.',
-          });
+        if (!isActive) {
+          return;
         }
+        setFeedState({
+          items: [],
+          loading: false,
+          error: error instanceof Error ? error.message : 'Unable to load social feed.',
+        });
       });
 
     return () => {
-      cancelled = true;
+      isActive = false;
     };
-  }, [accountId, seasonId, fetchFeed]);
+  }, [canFetch, fetchFeed]);
 
   const displayedFeedItems = feedState.items.slice(0, 4);
   const renderCardSkeletons = (count: number) => (

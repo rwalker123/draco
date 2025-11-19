@@ -16,10 +16,7 @@ import { formatDisplayDate } from './utils';
 
 type TransitionProps = Omit<SlideProps, 'direction'>;
 
-const Transition = React.forwardRef(function Transition(
-  props: TransitionProps,
-  ref: React.Ref<unknown>,
-) {
+const Transition = React.forwardRef<unknown, TransitionProps>(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 

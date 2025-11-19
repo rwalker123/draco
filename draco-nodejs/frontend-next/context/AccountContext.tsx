@@ -6,6 +6,7 @@ import React, {
   useEffect,
   ReactNode,
   useCallback,
+  useRef,
 } from 'react';
 import { useAuth } from './AuthContext';
 import { useRole } from './RoleContext';
@@ -35,27 +36,47 @@ export interface AccountContextType {
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
+const normalizeAccountShape = (account: Account): Account => ({
+  ...account,
+  timeZone:
+    account.timeZone && account.timeZone.trim().length > 0 ? account.timeZone : DEFAULT_TIMEZONE,
+  timeZoneSource:
+    account.timeZoneSource ??
+    (account.timeZone && account.timeZone.trim().length > 0 ? 'account' : 'fallback'),
+});
+
+const readPersistedAccount = (): Account | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    const stored = window.localStorage.getItem(ACCOUNT_STORAGE_KEY);
+    if (!stored) {
+      return null;
+    }
+    const parsed = JSON.parse(stored) as Account;
+    if (!parsed?.id) {
+      return null;
+    }
+    return normalizeAccountShape(parsed);
+  } catch {
+    return null;
+  }
+};
+
 export const AccountProvider = ({ children }: { children: ReactNode }) => {
   const { token, loading: authLoading } = useAuth();
   const { userRoles, loading: roleLoading } = useRole();
   const apiClient = useApiClient();
-  const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
+  const [currentAccount, setCurrentAccount] = useState<Account | null>(() =>
+    readPersistedAccount(),
+  );
   const [userAccounts, setUserAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestedAccountIdRef = useRef<string | null>(null);
 
   const normalizeAccount = useCallback(
-    (account: Account): Account => ({
-      ...account,
-      timeZone:
-        account.timeZone && account.timeZone.trim().length > 0
-          ? account.timeZone
-          : DEFAULT_TIMEZONE,
-      timeZoneSource:
-        account.timeZoneSource ??
-        (account.timeZone && account.timeZone.trim().length > 0 ? 'account' : 'fallback'),
-    }),
+    (account: Account): Account => normalizeAccountShape(account),
     [],
   );
 
@@ -83,110 +104,75 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     [normalizeAccount, persistAccount],
   );
 
-  const fetchAccountDetails = useCallback(
+  const resolveAccountDetails = useCallback(
     async (accountId: string) => {
-      try {
-        setLoading(true);
-        setError(null);
+      const result = await getAccountById({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
+      });
 
-        const result = await getAccountById({
-          client: apiClient,
-          path: { accountId },
-          throwOnError: false,
-        });
+      const data = unwrapApiResult(result, 'Failed to fetch account');
+      const account = data.account;
 
-        const data = unwrapApiResult(result, 'Failed to fetch account');
-        const account = data.account;
-
-        handleSetCurrentAccount({
-          id: account.id,
-          name: account.name,
-          accountType: account.configuration?.accountType?.name ?? undefined,
-          timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
-          timeZoneSource: 'account',
-        });
-
-        setLoading(false);
-        setInitialized(true);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch account');
-        setLoading(false);
-        setInitialized(true);
-      }
+      return {
+        id: account.id,
+        name: account.name,
+        accountType: account.configuration?.accountType?.name ?? undefined,
+        timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
+        timeZoneSource: 'account' as const,
+      };
     },
-    [apiClient, handleSetCurrentAccount],
+    [apiClient],
   );
 
-  // Manage loading state based on dependencies
+  const hasRoles = (userRoles?.contactRoles?.length ?? 0) > 0;
+  const accountId = userRoles?.accountId ?? null;
+
   useEffect(() => {
     if (authLoading || roleLoading) {
-      setLoading(true);
-      setInitialized(false);
       return;
     }
 
-    if (!token) {
-      setLoading(false);
-      setInitialized(true);
+    if (!token || !accountId || !hasRoles) {
+      requestedAccountIdRef.current = null;
       return;
     }
 
-    if (!userRoles) {
-      setLoading(false);
-      setInitialized(true);
+    if (requestedAccountIdRef.current === accountId) {
       return;
     }
 
-    const hasRoles = (userRoles.contactRoles?.length ?? 0) > 0;
-    if (!hasRoles) {
-      setLoading(false);
-      setInitialized(true);
-      return;
-    }
+    requestedAccountIdRef.current = accountId;
+    let cancelled = false;
 
-    if (!currentAccount && userRoles.accountId) {
-      fetchAccountDetails(userRoles.accountId).catch(() => {
-        // Error state handled within fetchAccountDetails
+    resolveAccountDetails(accountId)
+      .then((account) => {
+        if (cancelled) {
+          return;
+        }
+        handleSetCurrentAccount(account);
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) {
+          return;
+        }
+        setError(err instanceof Error ? err.message : 'Failed to fetch account');
       });
-      return;
-    }
 
-    setLoading(false);
-    setInitialized(true);
+    return () => {
+      cancelled = true;
+    };
   }, [
+    accountId,
     authLoading,
+    handleSetCurrentAccount,
+    hasRoles,
+    resolveAccountDetails,
     roleLoading,
     token,
-    userRoles,
-    currentAccount,
-    fetchAccountDetails,
-    persistAccount,
   ]);
-
-  // Hydrate from localStorage on mount/refresh
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    try {
-      const stored = window.localStorage.getItem(ACCOUNT_STORAGE_KEY);
-      if (!stored) {
-        return;
-      }
-      const parsed = JSON.parse(stored) as Account;
-      if (parsed?.id) {
-        handleSetCurrentAccount(parsed);
-        if (token) {
-          fetchAccountDetails(parsed.id).catch(() => {
-            // Ignore, already have persisted data
-          });
-        }
-      }
-    } catch {
-      // Ignore malformed storage
-    }
-  }, [fetchAccountDetails, handleSetCurrentAccount, token]);
 
   // Sync across tabs
   useEffect(() => {
@@ -199,12 +185,14 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
       }
       if (!event.newValue) {
         setCurrentAccount(null);
+        requestedAccountIdRef.current = null;
         return;
       }
       try {
         const parsed = JSON.parse(event.newValue) as Account;
         if (parsed?.id) {
           setCurrentAccount(normalizeAccount(parsed));
+          requestedAccountIdRef.current = null;
         }
       } catch {
         // Ignore
@@ -218,8 +206,16 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     setCurrentAccount(null);
     setUserAccounts([]);
     setError(null);
-    setInitialized(true);
+    requestedAccountIdRef.current = null;
+    persistAccount(null);
   };
+
+  const requiresAccountSelection = Boolean(token && accountId && hasRoles);
+  const awaitingAuthOrRole = authLoading || roleLoading;
+  const awaitingAccountData = requiresAccountSelection && !currentAccount && error === null;
+  const loading = awaitingAuthOrRole || awaitingAccountData;
+  const initialized =
+    !awaitingAuthOrRole && (!requiresAccountSelection || currentAccount !== null || error !== null);
 
   return (
     <AccountContext.Provider

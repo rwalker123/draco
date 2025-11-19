@@ -1,9 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Tooltip } from '@mui/material';
-import { getRoleIcon, getRoleColors, getRoleTooltipText } from '../../utils/roleIcons';
+import type { SvgIconProps } from '@mui/material/SvgIcon';
+import { getRoleColors, getRoleIcon, getRoleTooltipText } from '../../utils/roleIcons';
 import { ContactRoleType } from '@draco/shared-schemas';
+
+const renderRoleIconElement = (
+  roleId: string | undefined,
+  iconProps: SvgIconProps,
+): React.ReactElement | null => {
+  if (!roleId) {
+    return null;
+  }
+
+  const IconComponent = getRoleIcon(roleId);
+  if (!IconComponent) {
+    return null;
+  }
+
+  return <IconComponent {...iconProps} />;
+};
 
 interface RoleIconProps {
   role: ContactRoleType;
@@ -25,7 +42,6 @@ const RoleIcon: React.FC<RoleIconProps> = ({
   disabled = false,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const IconComponent = getRoleIcon(role.roleId);
   const colors = getRoleColors(role.roleId);
   const baseTooltipText = getRoleTooltipText(role);
   const tooltipText =
@@ -50,7 +66,20 @@ const RoleIcon: React.FC<RoleIconProps> = ({
   const finalColors = colors || fallbackColors;
   const iconSize = size === 'small' ? 20 : size === 'medium' ? 24 : 32;
 
-  if (!IconComponent) {
+  const iconColor = finalColors?.primary || '#1976d2';
+  const iconElement = useMemo(
+    () =>
+      renderRoleIconElement(role.roleId, {
+        fontSize: size,
+        style: {
+          color: iconColor,
+          fill: iconColor,
+        },
+      }),
+    [role.roleId, size, iconColor],
+  );
+
+  if (!iconElement) {
     return (
       <Tooltip title={tooltipText} arrow placement="top" enterDelay={300} leaveDelay={200}>
         <span
@@ -95,13 +124,7 @@ const RoleIcon: React.FC<RoleIconProps> = ({
           position: 'relative',
         }}
       >
-        <IconComponent
-          fontSize={size}
-          style={{
-            color: finalColors?.primary || '#1976d2',
-            fill: finalColors?.primary || '#1976d2',
-          }}
-        />
+        {iconElement}
 
         {/* Delete marker on hover */}
         {isHovered && onClick && !disabled && (

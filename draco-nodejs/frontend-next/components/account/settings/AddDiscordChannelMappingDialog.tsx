@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, type Resolver, useForm } from 'react-hook-form';
+import { Controller, type Resolver, useForm, useWatch } from 'react-hook-form';
 import type { DiscordChannelMappingType, DiscordGuildChannelType } from '@draco/shared-schemas';
 import {
   DiscordChannelCreateTypeEnum,
@@ -75,7 +75,6 @@ const AddDiscordChannelMappingDialog: React.FC<AddDiscordChannelMappingDialogPro
     control,
     register,
     handleSubmit,
-    watch,
     reset,
     setValue,
     formState: { errors, isSubmitting },
@@ -85,17 +84,15 @@ const AddDiscordChannelMappingDialog: React.FC<AddDiscordChannelMappingDialogPro
     mode: 'onSubmit',
   });
 
+  const resetForm = useCallback(() => {
+    reset(defaultValues);
+    setSubmitError(null);
+  }, [reset]);
+
   const fieldErrors = errors as Partial<Record<string, { message?: string }>>;
 
-  const selectedMode = watch('mode');
-  const selectedChannelId = watch('discordChannelId');
-
-  useEffect(() => {
-    if (!open) {
-      reset(defaultValues);
-      setSubmitError(null);
-    }
-  }, [open, reset]);
+  const selectedMode = useWatch({ control, name: 'mode' });
+  const selectedChannelId = useWatch({ control, name: 'discordChannelId' });
 
   useEffect(() => {
     if (selectedMode !== 'existing') {
@@ -131,9 +128,10 @@ const AddDiscordChannelMappingDialog: React.FC<AddDiscordChannelMappingDialogPro
 
   const handleDialogClose = useCallback(() => {
     if (!isSubmitting) {
+      resetForm();
       onClose();
     }
-  }, [isSubmitting, onClose]);
+  }, [isSubmitting, onClose, resetForm]);
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
@@ -141,7 +139,7 @@ const AddDiscordChannelMappingDialog: React.FC<AddDiscordChannelMappingDialogPro
       const payload = DiscordChannelMappingCreateSchema.parse(values);
       const mapping = await createChannelMapping(accountId, payload);
       onSuccess(mapping);
-      reset(defaultValues);
+      resetForm();
       onClose();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to add the channel mapping.';

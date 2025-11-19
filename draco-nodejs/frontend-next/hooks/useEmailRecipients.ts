@@ -328,9 +328,9 @@ export function useContactSearch(contacts: RecipientContact[]): UseContactSearch
   }, []);
 
   // Filter contacts based on debounced query with comprehensive error handling
-  const filteredContacts = useMemo(() => {
+  const filterOutcome = useMemo(() => {
     if (!debouncedQuery.trim()) {
-      return validContacts;
+      return { contacts: validContacts, error: null as EmailRecipientError | null };
     }
 
     const filterResult = safe(
@@ -382,21 +382,23 @@ export function useContactSearch(contacts: RecipientContact[]): UseContactSearch
     );
 
     if (filterResult.success) {
-      return filterResult.data;
-    } else {
-      setSearchError(filterResult.error);
-      logError(filterResult.error, 'useContactSearch.filteredContacts');
-      // Return original contacts as fallback
-      return validContacts;
+      return { contacts: filterResult.data, error: null as EmailRecipientError | null };
     }
+
+    logError(filterResult.error, 'useContactSearch.filteredContacts');
+    // Return original contacts as fallback
+    return { contacts: validContacts, error: filterResult.error };
   }, [validContacts, debouncedQuery]);
+
+  const filteredContacts = filterOutcome.contacts;
+  const derivedSearchError = filterOutcome.error;
 
   return {
     searchQuery,
     setSearchQuery,
     filteredContacts,
     isSearching,
-    searchError,
+    searchError: searchError ?? derivedSearchError,
     clearSearchError,
   };
 }

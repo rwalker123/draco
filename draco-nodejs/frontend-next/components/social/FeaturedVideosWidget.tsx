@@ -4,10 +4,10 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Box, Skeleton, Button } from '@mui/material';
 import { YouTube } from '@mui/icons-material';
 import NextLink from 'next/link';
-import type { SocialVideoType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
 import SocialVideoCard from './SocialVideoCard';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
+import type { SocialVideoType } from '@draco/shared-schemas';
 
 interface FeaturedVideosWidgetProps {
   accountId?: string;
@@ -28,49 +28,55 @@ const renderSkeletons = (count: number) => (
   </Box>
 );
 
+type VideoState = {
+  items: SocialVideoType[];
+  loading: boolean;
+  error: string | null;
+};
+
 const FeaturedVideosWidget: React.FC<FeaturedVideosWidgetProps> = ({
   accountId,
   seasonId,
   viewAllHref,
 }) => {
   const { fetchVideos } = useSocialHubService({ accountId, seasonId });
-  const [state, setState] = useState<{
-    items: SocialVideoType[];
-    loading: boolean;
-    error: string | null;
-  }>({ items: [], loading: false, error: null });
+  const canFetch = Boolean(accountId && seasonId);
+  const [videoState, setVideoState] = useState<VideoState>({
+    items: [],
+    loading: false,
+    error: null,
+  });
 
   useEffect(() => {
-    if (!accountId || !seasonId) {
-      setState({ items: [], loading: false, error: null });
+    if (!canFetch) {
       return;
     }
 
-    let cancelled = false;
-    setState((previous) => ({ ...previous, loading: true, error: null }));
-
+    let isActive = true;
     fetchVideos({ limit: 6 })
       .then((items) => {
-        if (!cancelled) {
-          setState({ items, loading: false, error: null });
+        if (!isActive) {
+          return;
         }
+        setVideoState({ items, loading: false, error: null });
       })
       .catch((error) => {
-        if (!cancelled) {
-          setState({
-            items: [],
-            loading: false,
-            error: error instanceof Error ? error.message : 'Unable to load social videos.',
-          });
+        if (!isActive) {
+          return;
         }
+        setVideoState({
+          items: [],
+          loading: false,
+          error: error instanceof Error ? error.message : 'Unable to load social videos.',
+        });
       });
 
     return () => {
-      cancelled = true;
+      isActive = false;
     };
-  }, [accountId, seasonId, fetchVideos]);
+  }, [canFetch, fetchVideos]);
 
-  const displayedVideos = state.items.slice(0, 6);
+  const displayedVideos = videoState.items.slice(0, 6);
 
   return (
     <WidgetShell
@@ -85,12 +91,12 @@ const FeaturedVideosWidget: React.FC<FeaturedVideosWidgetProps> = ({
         <Alert severity="info">Select an account and season to load social videos.</Alert>
       ) : (
         <>
-          {state.error ? (
+          {videoState.error ? (
             <Alert severity="error" sx={{ mb: 2 }}>
-              {state.error}
+              {videoState.error}
             </Alert>
           ) : null}
-          {state.loading && state.items.length === 0 ? (
+          {videoState.loading && videoState.items.length === 0 ? (
             renderSkeletons(3)
           ) : displayedVideos.length > 0 ? (
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>

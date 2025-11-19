@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Box,
   Button,
@@ -55,7 +55,7 @@ export const RegistrationForm: React.FC<Props> = (props) => {
 
   // Form state
   const [mode, setMode] = useState<'newUser' | 'existingUser'>('newUser');
-  const [email, setEmail] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -71,28 +71,37 @@ export const RegistrationForm: React.FC<Props> = (props) => {
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const [credentialsError, setCredentialsError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (requiresCaptcha) {
-      setCaptchaToken(null);
-      setCaptchaResetKey((key) => key + 1);
-      setCaptchaError(null);
+  const resetCaptcha = useCallback(() => {
+    if (!requiresCaptcha) {
+      return;
     }
-  }, [requiresCaptcha, mode]);
+    setCaptchaToken(null);
+    setCaptchaResetKey((key) => key + 1);
+    setCaptchaError(null);
+  }, [requiresCaptcha]);
 
-  useEffect(() => {
-    if (isAuthenticated && authenticatedUserName) {
-      setEmail(authenticatedUserName);
-    } else if (!isAuthenticated) {
-      setEmail('');
-    }
-  }, [isAuthenticated, authenticatedUserName]);
+  const handleModeChange = useCallback(
+    (_: React.SyntheticEvent, newMode: 'newUser' | 'existingUser' | null) => {
+      if (!newMode || newMode === mode) {
+        return;
+      }
+      setMode(newMode);
+      if (newMode === 'newUser') {
+        resetCaptcha();
+      } else {
+        setCaptchaToken(null);
+        setCaptchaError(null);
+      }
+    },
+    [mode, resetCaptcha],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isAuthenticated && requiresCaptcha && mode === 'newUser' && !captchaToken) {
       setCaptchaError('Please verify that you are human before continuing.');
-      setCaptchaResetKey((key) => key + 1);
+      resetCaptcha();
       return;
     }
 
@@ -124,7 +133,7 @@ export const RegistrationForm: React.FC<Props> = (props) => {
         mode === 'newUser'
           ? {
               mode,
-              email,
+              email: userEmail,
               password,
               firstName,
               middleName: middleName || undefined,
@@ -158,8 +167,7 @@ export const RegistrationForm: React.FC<Props> = (props) => {
     }
 
     if (usedCaptcha) {
-      setCaptchaToken(null);
-      setCaptchaResetKey((key) => key + 1);
+      resetCaptcha();
     }
   };
 
@@ -175,7 +183,7 @@ export const RegistrationForm: React.FC<Props> = (props) => {
           <ToggleButtonGroup
             value={mode}
             exclusive
-            onChange={(_, newMode) => newMode && setMode(newMode)}
+            onChange={handleModeChange}
             size="small"
             sx={{ mb: 2 }}
           >
@@ -215,8 +223,8 @@ export const RegistrationForm: React.FC<Props> = (props) => {
                   label="Email"
                   type="email"
                   name="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={userEmail}
+                  onChange={(e) => setUserEmail(e.target.value)}
                   autoComplete="email"
                   required
                 />

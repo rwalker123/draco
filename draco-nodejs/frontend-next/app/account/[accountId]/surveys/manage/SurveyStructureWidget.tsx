@@ -408,7 +408,7 @@ const SurveyCategoryManager: React.FC<SurveyCategoryManagerProps> = ({
           <Stack spacing={2}>
             {categories.map((category) => (
               <CategoryCard
-                key={category.id}
+                key={`${category.id}-${category.categoryName}-${category.priority}`}
                 category={category}
                 drafts={questionDrafts[category.id] ?? { question: '', questionNumber: '' }}
                 onDraftChange={(draft) =>
@@ -527,12 +527,6 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   const [priority, setPriority] = useState<string>(String(category.priority));
   const [isDirty, setIsDirty] = useState(false);
 
-  useEffect(() => {
-    setName(category.categoryName);
-    setPriority(String(category.priority));
-    setIsDirty(false);
-  }, [category.categoryName, category.priority]);
-
   const handleSave = useCallback(() => {
     const trimmedName = name.trim();
     const parsedPriority = Number(priority);
@@ -615,7 +609,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           ) : (
             category.questions.map((question) => (
               <QuestionRow
-                key={question.id}
+                key={`${question.id}-${question.question}-${question.questionNumber}`}
                 question={question}
                 onSave={onSaveQuestion}
                 saving={Boolean(questionSavingIds[question.id])}
@@ -689,12 +683,6 @@ const QuestionRow: React.FC<QuestionRowProps> = ({
   const [label, setLabel] = useState(question.question);
   const [numberValue, setNumberValue] = useState<string>(String(question.questionNumber));
   const [dirty, setDirty] = useState(false);
-
-  useEffect(() => {
-    setLabel(question.question);
-    setNumberValue(String(question.questionNumber));
-    setDirty(false);
-  }, [question.question, question.questionNumber]);
 
   const handleSave = useCallback(() => {
     const trimmed = label.trim();

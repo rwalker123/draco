@@ -630,6 +630,21 @@ if (result.success) {
 import { ContactType } from '@draco/shared-schemas';
 ```
 
+### Derived Data in Render (React Compliance)
+
+React’s own documentation—[You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect)—is explicit: **derive UI state during render** and use effects only to synchronize with external systems. Our codebase enforces this by:
+
+1. Treating API responses and props as the single source of truth.
+2. Computing view-specific data (like sorting, filtering, or display keys) via `useMemo`/plain functions during render.
+3. Reserving `useEffect` for true side effects (e.g., kicking off fetches, subscribing/unsubscribing).
+4. Never reading mutable refs inside render; refs are only touched in event handlers or effects.
+
+Reference implementations:
+- `components/social/FeaturedVideosWidget.tsx`, `TeamFeaturedVideosWidget.tsx`, `SocialHubExperience.tsx`: fetch data once, store the raw results, and derive loading/error/display branches synchronously in render without redundant state.
+- `components/statistics/LeadersWidget.tsx`: derives the active tab, displayed category, and leaders purely from the finished `useStatisticalLeaders` result and current props; no ref reads or `setState` inside effects.
+
+Whenever you introduce data derivation, revisit the React article linked above and follow this pattern verbatim. Deviations (like resetting state at the top of an effect or caching “latest” data in refs) reintroduce the very lint errors React is guarding against, so consider this section the authoritative architecture for derived UI data.
+
 ## Tools and Libraries
 
 ### Development Tools

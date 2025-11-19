@@ -72,8 +72,19 @@ const getRiskLevelIcon = (riskLevel: string) => {
  * DeleteContactDialog Component
  * Self-contained dialog for deleting contacts with internal error handling and dependency checking
  */
-const DeleteContactDialog: React.FC<DeleteContactDialogProps> = ({
-  open,
+const DeleteContactDialog: React.FC<DeleteContactDialogProps> = ({ open, contact, ...rest }) => {
+  if (!open || !contact) {
+    return null;
+  }
+
+  return <DeleteContactDialogInner key={contact.id} contact={contact} {...rest} />;
+};
+
+interface DeleteContactDialogInnerProps extends Omit<DeleteContactDialogProps, 'open' | 'contact'> {
+  contact: BaseContactType;
+}
+
+const DeleteContactDialogInner: React.FC<DeleteContactDialogInnerProps> = ({
   contact,
   onClose,
   onSuccess,
@@ -85,28 +96,29 @@ const DeleteContactDialog: React.FC<DeleteContactDialogProps> = ({
   const { deleteContact, checkDependencies, loading, checkingDependencies } =
     useContactDeletion(accountId);
 
-  // Reset state when dialog opens/closes
   useEffect(() => {
-    if (open && contact) {
-      setForceDelete(false);
-      setError(null);
-      setDependencyResult(null);
-      // Call checkDependencies directly to avoid circular dependency
-      const performCheck = async () => {
-        const result = await checkDependencies(contact.id);
-        if (result.success) {
-          setDependencyResult(result.dependencyCheck || null);
-        } else {
-          setError(result.error || 'Failed to check dependencies');
-        }
-      };
-      performCheck();
-    } else {
-      setDependencyResult(null);
-      setForceDelete(false);
-      setError(null);
-    }
-  }, [open, contact, checkDependencies]);
+    let cancelled = false;
+
+    const performCheck = async () => {
+      const result = await checkDependencies(contact.id);
+      if (cancelled) {
+        return;
+      }
+      if (result.success) {
+        setDependencyResult(result.dependencyCheck || null);
+        setError(null);
+      } else {
+        setDependencyResult(null);
+        setError(result.error || 'Failed to check dependencies');
+      }
+    };
+
+    performCheck();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [checkDependencies, contact.id]);
 
   const handleDelete = useCallback(async () => {
     if (!contact) return;
@@ -132,12 +144,8 @@ const DeleteContactDialog: React.FC<DeleteContactDialogProps> = ({
 
   const canProceed = checkingDependencies ? false : dependencyResult?.canDelete || forceDelete;
 
-  if (!contact) {
-    return null;
-  }
-
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
           <ErrorIcon color="error" />

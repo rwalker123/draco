@@ -25,7 +25,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import Autocomplete from '@mui/material/Autocomplete';
-import { useForm, Controller, Resolver } from 'react-hook-form';
+import { useForm, Controller, Resolver, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   HofNominationType,
@@ -391,7 +391,6 @@ const NominationEditDialog: React.FC<NominationEditDialogProps> = ({
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-    watch,
   } = useForm<NominationFormValues>({
     resolver: zodResolver(UpdateNominationFormSchema) as Resolver<NominationFormValues>,
     defaultValues: {
@@ -402,7 +401,7 @@ const NominationEditDialog: React.FC<NominationEditDialogProps> = ({
       reason: nomination.reason,
     },
   });
-  const reasonValue = watch('reason');
+  const reasonValue = useWatch({ control, name: 'reason' });
 
   React.useEffect(() => {
     reset({

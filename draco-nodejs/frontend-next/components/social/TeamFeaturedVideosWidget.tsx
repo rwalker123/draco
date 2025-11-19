@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Alert, Skeleton, Typography, Button } from '@mui/material';
 import NextLink from 'next/link';
-import type { SocialVideoType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
+import type { SocialVideoType } from '@draco/shared-schemas';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
 import SocialVideoCard from './SocialVideoCard';
 
@@ -17,12 +17,6 @@ interface TeamFeaturedVideosWidgetProps {
   teamName?: string | null;
   viewAllHref?: string;
   channelUrl?: string | null;
-}
-
-interface VideoState {
-  items: SocialVideoType[];
-  loading: boolean;
-  error: string | null;
 }
 
 const renderSkeletons = (count: number) => (
@@ -38,6 +32,12 @@ const renderSkeletons = (count: number) => (
   </Box>
 );
 
+type TeamVideoState = {
+  items: SocialVideoType[];
+  loading: boolean;
+  error: string | null;
+};
+
 const TeamFeaturedVideosWidget: React.FC<TeamFeaturedVideosWidgetProps> = ({
   accountId,
   seasonId,
@@ -49,46 +49,46 @@ const TeamFeaturedVideosWidget: React.FC<TeamFeaturedVideosWidgetProps> = ({
   channelUrl,
 }) => {
   const { fetchVideos } = useSocialHubService({ accountId, seasonId });
-  const [videoState, setVideoState] = useState<VideoState>({
+  const hasConfiguredChannel = Boolean(youtubeChannelId && youtubeChannelId.trim().length > 0);
+  const canFetch = Boolean(accountId && seasonId && teamSeasonId && teamId && hasConfiguredChannel);
+
+  const [videoState, setVideoState] = useState<TeamVideoState>({
     items: [],
     loading: false,
     error: null,
   });
 
   useEffect(() => {
-    if (!accountId || !seasonId || !teamSeasonId || !teamId) {
-      setVideoState({ items: [], loading: false, error: null });
+    if (!canFetch) {
       return;
     }
 
-    if (!youtubeChannelId || !youtubeChannelId.trim()) {
-      setVideoState({ items: [], loading: false, error: null });
-      return;
-    }
-
-    let cancelled = false;
-    setVideoState((prev) => ({ ...prev, loading: true, error: null }));
+    let isActive = true;
 
     fetchVideos({ limit: 4, teamId })
       .then((items) => {
-        if (!cancelled) {
-          setVideoState({ items, loading: false, error: null });
+        if (!isActive) {
+          return;
         }
+        setVideoState({ items, loading: false, error: null });
       })
       .catch((error) => {
-        if (!cancelled) {
-          const message = error instanceof Error ? error.message : 'Unable to load team videos.';
-          setVideoState({ items: [], loading: false, error: message });
+        if (!isActive) {
+          return;
         }
+        setVideoState({
+          items: [],
+          loading: false,
+          error: error instanceof Error ? error.message : 'Unable to load team videos.',
+        });
       });
 
     return () => {
-      cancelled = true;
+      isActive = false;
     };
-  }, [accountId, seasonId, teamSeasonId, teamId, fetchVideos, youtubeChannelId]);
+  }, [canFetch, fetchVideos, teamId]);
 
   const hasVideos = videoState.items.length > 0;
-  const hasConfiguredChannel = Boolean(youtubeChannelId && youtubeChannelId.trim().length > 0);
   const heading = teamName ? `${teamName} Highlights` : 'Team Highlights';
   const subtitle = hasConfiguredChannel
     ? 'Catch the latest uploads from the team channel.'

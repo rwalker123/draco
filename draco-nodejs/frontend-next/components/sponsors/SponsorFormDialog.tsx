@@ -25,7 +25,7 @@ import {
   useSponsorOperations,
 } from '../../hooks/useSponsorOperations';
 import { z } from 'zod';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { formatPhoneInput, isValidPhoneNumber } from '../../utils/phoneNumber';
 
@@ -91,7 +91,6 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
     handleSubmit,
     reset,
     setValue,
-    watch,
     control,
     formState: { errors, isSubmitting },
   } = useForm<SponsorFormSchemaType>({
@@ -99,8 +98,8 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
     defaultValues,
   });
 
-  const photoValue = watch('photo') as File | null | undefined;
-  const sponsorName = watch('name');
+  const photoValue = useWatch({ control, name: 'photo' }) as File | null | undefined;
+  const sponsorName = useWatch({ control, name: 'name' });
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const handlePreviewError = React.useCallback(() => {
     setPreviewUrl(null);

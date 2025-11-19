@@ -29,39 +29,30 @@ export const useTableLoadingState = ({
 
   // Handle loading delay for skeleton display
   useEffect(() => {
-    if (loading) {
-      // Clear any existing timer
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
+    if (!loading) {
+      return;
+    }
 
-      // Set a new timer to show skeleton after delay
-      timerRef.current = setTimeout(() => {
-        setShouldShowSkeleton(true);
-      }, loadingDelay);
-    } else {
-      // Clear timer and hide skeleton immediately when loading stops
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    // Set a new timer to show skeleton after delay
+    timerRef.current = setTimeout(() => {
+      setShouldShowSkeleton(true);
+      timerRef.current = null;
+    }, loadingDelay);
+
+    // Cleanup on unmount or when loading stops
+    return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
       setShouldShowSkeleton(false);
-    }
-
-    // Cleanup on unmount
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
     };
   }, [loading, loadingDelay]);
-
-  // Reset skeleton state when loading state changes
-  useEffect(() => {
-    if (!loading) {
-      setShouldShowSkeleton(false);
-    }
-  }, [loading]);
 
   return {
     isInitialLoad,

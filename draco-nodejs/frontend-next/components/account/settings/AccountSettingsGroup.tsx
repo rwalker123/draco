@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   AccountSettingKey,
   AccountSettingState,
@@ -87,9 +87,6 @@ function AccountSettingRow({
 }: AccountSettingRowProps) {
   const { definition, value, isDefault, isLocked, lockedReason } = setting;
   const [localError, setLocalError] = useState<string | null>(null);
-  const [numericDraft, setNumericDraft] = useState<string>(() =>
-    definition.valueType === AccountSettingValueTypeEnum.enum.number ? String(value) : '',
-  );
 
   const unmetDependencies = useMemo(() => {
     if (!definition.requires?.length) {
@@ -109,13 +106,6 @@ function AccountSettingRow({
   const dependenciesSatisfied = unmetDependencies.length === 0;
   const disabled = !canManage || isLocked || !dependenciesSatisfied;
 
-  useEffect(() => {
-    if (definition.valueType === AccountSettingValueTypeEnum.enum.number) {
-      setNumericDraft(String(value));
-      setLocalError(null);
-    }
-  }, [definition.valueType, value]);
-
   const handleBooleanToggle = async (nextValue: boolean) => {
     setLocalError(null);
     try {
@@ -127,32 +117,7 @@ function AccountSettingRow({
     }
   };
 
-  const handleNumberSave = async () => {
-    const parsedValue = Number(numericDraft);
-
-    if (!Number.isFinite(parsedValue)) {
-      setLocalError('Enter a valid number.');
-      return;
-    }
-
-    if (!Number.isInteger(parsedValue)) {
-      setLocalError('Enter a whole number.');
-      return;
-    }
-
-    const min = definition.valueRange?.min;
-    const max = definition.valueRange?.max;
-
-    if (typeof min === 'number' && parsedValue < min) {
-      setLocalError(`Value must be at least ${min}.`);
-      return;
-    }
-
-    if (typeof max === 'number' && parsedValue > max) {
-      setLocalError(`Value must be at most ${max}.`);
-      return;
-    }
-
+  const handleNumberSave = async (parsedValue: number) => {
     setLocalError(null);
 
     try {
@@ -166,40 +131,16 @@ function AccountSettingRow({
 
   const renderControl = () => {
     if (definition.valueType === AccountSettingValueTypeEnum.enum.number) {
-      const min = definition.valueRange?.min;
-      const max = definition.valueRange?.max;
-      const hasChanges = numericDraft !== String(value);
-
       return (
-        <Stack direction="row" spacing={1} alignItems="center">
-          <TextField
-            size="small"
-            type="number"
-            value={numericDraft}
-            disabled={disabled}
-            onChange={(event) => setNumericDraft(event.target.value)}
-            inputProps={{
-              min: typeof min === 'number' ? min : undefined,
-              max: typeof max === 'number' ? max : undefined,
-            }}
-            sx={{ width: 140 }}
-            aria-label={`${definition.label} value`}
-          />
-          <Button
-            variant="contained"
-            onClick={handleNumberSave}
-            disabled={disabled || !hasChanges || isUpdating}
-          >
-            {isUpdating ? (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <CircularProgress size={16} color="inherit" />
-                <span>Saving…</span>
-              </Stack>
-            ) : (
-              'Save'
-            )}
-          </Button>
-        </Stack>
+        <NumberSettingControl
+          key={`${definition.key}-${value}`}
+          definition={definition}
+          value={value as number}
+          disabled={disabled}
+          isUpdating={isUpdating}
+          onSave={handleNumberSave}
+          setLocalError={setLocalError}
+        />
       );
     }
 
@@ -285,5 +226,85 @@ function AccountSettingRow({
         </Alert>
       )}
     </Box>
+  );
+}
+
+function NumberSettingControl({
+  definition,
+  value,
+  disabled,
+  isUpdating,
+  onSave,
+  setLocalError,
+}: {
+  definition: AccountSettingState['definition'];
+  value: number;
+  disabled: boolean;
+  isUpdating: boolean;
+  onSave: (value: number) => Promise<void>;
+  setLocalError: (value: string | null) => void;
+}) {
+  const [numericDraft, setNumericDraft] = useState<string>(() => String(value));
+  const min = definition.valueRange?.min;
+  const max = definition.valueRange?.max;
+  const hasChanges = numericDraft !== String(value);
+
+  const handleSave = async () => {
+    const parsedValue = Number(numericDraft);
+
+    if (!Number.isFinite(parsedValue)) {
+      setLocalError('Enter a valid number.');
+      return;
+    }
+
+    if (!Number.isInteger(parsedValue)) {
+      setLocalError('Enter a whole number.');
+      return;
+    }
+
+    if (typeof min === 'number' && parsedValue < min) {
+      setLocalError(`Value must be at least ${min}.`);
+      return;
+    }
+
+    if (typeof max === 'number' && parsedValue > max) {
+      setLocalError(`Value must be at most ${max}.`);
+      return;
+    }
+
+    setLocalError(null);
+    await onSave(parsedValue);
+  };
+
+  return (
+    <Stack direction="row" spacing={1} alignItems="center">
+      <TextField
+        size="small"
+        type="number"
+        value={numericDraft}
+        disabled={disabled}
+        onChange={(event) => setNumericDraft(event.target.value)}
+        inputProps={{
+          min: typeof min === 'number' ? min : undefined,
+          max: typeof max === 'number' ? max : undefined,
+        }}
+        sx={{ width: 140 }}
+        aria-label={`${definition.label} value`}
+      />
+      <Button
+        variant="contained"
+        onClick={handleSave}
+        disabled={disabled || !hasChanges || isUpdating}
+      >
+        {isUpdating ? (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CircularProgress size={16} color="inherit" />
+            <span>Saving…</span>
+          </Stack>
+        ) : (
+          'Save'
+        )}
+      </Button>
+    </Stack>
   );
 }

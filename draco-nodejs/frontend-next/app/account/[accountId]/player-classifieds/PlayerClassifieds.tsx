@@ -37,52 +37,47 @@ function TabPanel(props: TabPanelProps) {
 
 const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
   const searchParams = useSearchParams();
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState(() =>
+    searchParams.get('tab') === 'teams-wanted' ? 1 : 0,
+  );
   const [verificationData, setVerificationData] = useState<{
     accessCode: string;
     classifiedData: TeamsWantedOwnerClassifiedType;
-  } | null>(null);
+  } | null>(() => {
+    const storedVerification = localStorage.getItem('teamsWantedVerification');
+    if (!storedVerification) {
+      return null;
+    }
+
+    try {
+      const data = JSON.parse(storedVerification);
+      const isValidAccount = data.accountId === accountId;
+      const isNotExpired =
+        Date.now() - data.timestamp < VERIFICATION_TIMEOUTS.EMAIL_VERIFICATION_TIMEOUT_MS;
+
+      if (isValidAccount && isNotExpired) {
+        return {
+          accessCode: data.accessCode,
+          classifiedData: data.classifiedData,
+        };
+      }
+    } catch {
+      // ignore invalid data and fall through to null
+    }
+
+    return null;
+  });
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
   useEffect(() => {
-    // Check for tab parameter in URL
-    const tabParam = searchParams.get('tab');
-    if (tabParam === 'teams-wanted') {
-      setTabValue(1);
-    }
+    // Clean up any stale verification data once we've initialized state
+    localStorage.removeItem('teamsWantedVerification');
+  }, []);
 
-    // Check for verification data from email verification flow
-    const storedVerification = localStorage.getItem('teamsWantedVerification');
-    if (storedVerification) {
-      try {
-        const data = JSON.parse(storedVerification);
-
-        // Verify the data is for the current account and not too old
-        const isValidAccount = data.accountId === accountId;
-        const isNotExpired =
-          Date.now() - data.timestamp < VERIFICATION_TIMEOUTS.EMAIL_VERIFICATION_TIMEOUT_MS;
-
-        if (isValidAccount && isNotExpired) {
-          setVerificationData({
-            accessCode: data.accessCode,
-            classifiedData: data.classifiedData,
-          });
-
-          // Auto-switch to Teams Wanted tab
-          setTabValue(1);
-        }
-
-        // Clean up stored verification data (whether valid or not)
-        localStorage.removeItem('teamsWantedVerification');
-      } catch {
-        // Invalid JSON, remove it
-        localStorage.removeItem('teamsWantedVerification');
-      }
-    }
-  }, [accountId, searchParams]);
+  const effectiveTabValue = verificationData ? 1 : tabValue;
 
   return (
     <main className="min-h-screen bg-background">
@@ -105,7 +100,7 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
       {/* Tab Navigation */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
         <Tabs
-          value={tabValue}
+          value={effectiveTabValue}
           onChange={handleTabChange}
           aria-label="player classifieds tabs"
           sx={{ px: 2 }}
@@ -124,14 +119,17 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
       </Box>
 
       {/* Tab Content */}
-      <TabPanel value={tabValue} index={0}>
+      <TabPanel value={effectiveTabValue} index={0}>
         <PlayersWanted accountId={accountId} />
       </TabPanel>
-      <TabPanel value={tabValue} index={1} data-testid="teams-wanted-tabpanel">
+      <TabPanel value={effectiveTabValue} index={1} data-testid="teams-wanted-tabpanel">
         <TeamsWanted
           accountId={accountId}
           autoVerificationData={verificationData}
-          onVerificationProcessed={() => setVerificationData(null)}
+          onVerificationProcessed={() => {
+            setVerificationData(null);
+            setTabValue(1);
+          }}
         />
       </TabPanel>
     </main>

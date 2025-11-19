@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { Alert, Box, Button, Stack, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { Forum, OpenInNew } from '@mui/icons-material';
 import NextLink from 'next/link';
@@ -16,6 +16,37 @@ interface CommunityChatsWidgetProps {
 
 const DEFAULT_MESSAGE_LIMIT = 5;
 
+type CommunityState = {
+  items: CommunityMessagePreviewType[];
+  loading: boolean;
+  error: string | null;
+};
+
+type ChannelState = {
+  channels: CommunityChannelType[];
+  loading: boolean;
+  error: string | null;
+};
+
+const createStore = <T,>(initial: T) => {
+  let snapshot = initial;
+  const listeners = new Set<() => void>();
+
+  return {
+    getSnapshot: () => snapshot,
+    setSnapshot: (next: T | ((prev: T) => T)) => {
+      snapshot = typeof next === 'function' ? (next as (prev: T) => T)(snapshot) : next;
+      listeners.forEach((listener) => listener());
+    },
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+};
+
 const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
   accountId,
   seasonId,
@@ -25,90 +56,113 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
     accountId,
     seasonId,
   });
-  const [communityState, setCommunityState] = useState<{
-    items: CommunityMessagePreviewType[];
-    loading: boolean;
-    error: string | null;
-  }>({ items: [], loading: false, error: null });
-  const [channelState, setChannelState] = useState<{
-    channels: CommunityChannelType[];
-    loading: boolean;
-    error: string | null;
-  }>({ channels: [], loading: false, error: null });
+  const [communityStore] = useState(() =>
+    createStore<CommunityState>({ items: [], loading: false, error: null }),
+  );
+  const communityState = useSyncExternalStore(
+    communityStore.subscribe,
+    communityStore.getSnapshot,
+    communityStore.getSnapshot,
+  );
+  const [channelStore] = useState(() =>
+    createStore<ChannelState>({ channels: [], loading: false, error: null }),
+  );
+  const channelState = useSyncExternalStore(
+    channelStore.subscribe,
+    channelStore.getSnapshot,
+    channelStore.getSnapshot,
+  );
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
+  const effectiveChannelId = useMemo(() => {
+    if (!selectedChannelId) {
+      return null;
+    }
+
+    return channelState.channels.some((channel) => channel.id === selectedChannelId)
+      ? selectedChannelId
+      : null;
+  }, [channelState.channels, selectedChannelId]);
 
   const selectedChannel = useMemo(
-    () => channelState.channels.find((channel) => channel.id === selectedChannelId),
-    [channelState.channels, selectedChannelId],
+    () => channelState.channels.find((channel) => channel.id === effectiveChannelId),
+    [channelState.channels, effectiveChannelId],
   );
   const selectedDiscordChannelId = selectedChannel?.discordChannelId;
   const contextMissing = !accountId || !seasonId;
 
-  useEffect(() => {
-    if (contextMissing) {
-      setCommunityState({ items: [], loading: false, error: null });
-      return;
-    }
+  const loadCommunityMessages = useCallback(
+    async (signal: { cancelled: boolean }) => {
+      if (contextMissing) {
+        communityStore.setSnapshot({ items: [], loading: false, error: null });
+        return;
+      }
 
-    let cancelled = false;
-    setCommunityState((prev) => ({ ...prev, loading: true, error: null }));
+      communityStore.setSnapshot((prev) => ({ ...prev, loading: true, error: null }));
 
-    const channelIds = selectedDiscordChannelId ? [selectedDiscordChannelId] : undefined;
-    fetchCommunityMessages({ limit: maxMessages, channelIds })
-      .then((items) => {
-        if (!cancelled) {
-          setCommunityState({ items, loading: false, error: null });
+      try {
+        const channelIds = selectedDiscordChannelId ? [selectedDiscordChannelId] : undefined;
+        const items = await fetchCommunityMessages({ limit: maxMessages, channelIds });
+        if (!signal.cancelled) {
+          communityStore.setSnapshot({ items, loading: false, error: null });
         }
-      })
-      .catch((error) => {
-        if (!cancelled) {
+      } catch (error) {
+        if (!signal.cancelled) {
           console.error('[CommunityChatsWidget] message load failed', error);
-          setCommunityState({
+          communityStore.setSnapshot({
             items: [],
             loading: false,
             error: error instanceof Error ? error.message : 'Unable to load community discussions.',
           });
         }
-      });
+      }
+    },
+    [communityStore, contextMissing, fetchCommunityMessages, maxMessages, selectedDiscordChannelId],
+  );
 
-    return () => {
-      cancelled = true;
-    };
-  }, [contextMissing, fetchCommunityMessages, maxMessages, selectedDiscordChannelId]);
+  const loadCommunityChannels = useCallback(
+    async (signal: { cancelled: boolean }) => {
+      if (contextMissing) {
+        channelStore.setSnapshot({ channels: [], loading: false, error: null });
+        return;
+      }
 
-  useEffect(() => {
-    if (contextMissing) {
-      setChannelState({ channels: [], loading: false, error: null });
-      return;
-    }
+      channelStore.setSnapshot((prev) => ({ ...prev, loading: true, error: null }));
 
-    let cancelled = false;
-    setChannelState((prev) => ({ ...prev, loading: true, error: null }));
-
-    fetchCommunityChannels()
-      .then((channels) => {
-        if (!cancelled) {
-          setChannelState({ channels, loading: false, error: null });
-          setSelectedChannelId((prev) =>
-            prev && !channels.some((channel) => channel.id === prev) ? null : prev,
-          );
+      try {
+        const channels = await fetchCommunityChannels();
+        if (signal.cancelled) {
+          return;
         }
-      })
-      .catch((error) => {
-        if (!cancelled) {
+        channelStore.setSnapshot({ channels, loading: false, error: null });
+      } catch (error) {
+        if (!signal.cancelled) {
           console.error('[CommunityChatsWidget] channel load failed', error);
-          setChannelState({
+          channelStore.setSnapshot({
             channels: [],
             loading: false,
             error: error instanceof Error ? error.message : 'Unable to load community channels.',
           });
         }
-      });
+      }
+    },
+    [channelStore, contextMissing, fetchCommunityChannels],
+  );
 
+  useEffect(() => {
+    const signal = { cancelled: false };
+    void loadCommunityMessages(signal);
     return () => {
-      cancelled = true;
+      signal.cancelled = true;
     };
-  }, [contextMissing, fetchCommunityChannels]);
+  }, [loadCommunityMessages]);
+
+  useEffect(() => {
+    const signal = { cancelled: false };
+    void loadCommunityChannels(signal);
+    return () => {
+      signal.cancelled = true;
+    };
+  }, [loadCommunityChannels]);
 
   const handleOpenDiscord = useCallback(() => {
     const targetUrl =
@@ -147,12 +201,12 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
                 {channelState.error}
               </Alert>
             ) : null}
-            {channelState.channels.length > 0 ? (
+            {contextMissing ? null : channelState.channels.length > 0 ? (
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
                 <ToggleButtonGroup
                   exclusive
                   size="small"
-                  value={selectedChannelId ?? 'all'}
+                  value={effectiveChannelId ?? 'all'}
                   onChange={(event: React.SyntheticEvent<Element, Event>, value: string | null) => {
                     event.preventDefault();
                     if (value === null) {
@@ -193,12 +247,12 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
               </Stack>
             ) : null}
           </Box>
-          {communityState.error ? (
+          {contextMissing ? null : communityState.error ? (
             <Alert severity="error" sx={{ mb: 2 }}>
               {communityState.error}
             </Alert>
           ) : null}
-          {communityState.items.length > 0 ? (
+          {contextMissing ? null : communityState.items.length > 0 ? (
             <CommunityMessageList
               messages={communityState.items}
               formatTimestamp={formatRelativeTime}
@@ -209,7 +263,7 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
                 window.open(permalink, '_blank', 'noopener,noreferrer');
               }}
             />
-          ) : (
+          ) : contextMissing ? null : (
             <Alert severity="info">No recent Discord activity yet.</Alert>
           )}
         </>

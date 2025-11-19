@@ -78,6 +78,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const editorResetKeyRef = useRef(0);
+  const [editorInstanceKey, setEditorInstanceKey] = useState('game-recap-editor-0');
   const [editorContent, setEditorContent] = useState<string>(initialRecap ?? '');
   const [plainTextContent, setPlainTextContent] = useState<string>(
     extractPlainText(initialRecap ?? ''),
@@ -88,6 +89,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
   useEffect(() => {
     if (open) {
       editorResetKeyRef.current += 1;
+      setEditorInstanceKey(`game-recap-editor-${editorResetKeyRef.current}`);
       setEditorContent(initialRecap ?? '');
       setPlainTextContent(extractPlainText(initialRecap ?? ''));
       setIsDirty(false);
@@ -258,7 +260,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
           })()
         ) : (
           <RichTextEditor
-            key={`game-recap-editor-${editorResetKeyRef.current}`}
+            key={editorInstanceKey}
             initialValue={initialRecap ?? ''}
             onChange={handleEditorChange}
             placeholder="Enter the game recap..."

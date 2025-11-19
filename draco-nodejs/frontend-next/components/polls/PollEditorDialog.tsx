@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -65,46 +65,47 @@ const buildStateFromPoll = (poll: AccountPollType): PollFormState => ({
     })),
 });
 
-const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
+const cloneFormState = (state: PollFormState): PollFormState => ({
+  question: state.question,
+  active: state.active,
+  options: state.options.map((option) => ({ ...option })),
+});
+
+const PollEditorDialog: React.FC<PollEditorDialogProps> = (props) => {
+  if (!props.open) {
+    return null;
+  }
+
+  const key = props.poll ? `poll-${props.poll.id}` : 'poll-new';
+  return <PollEditorDialogInner key={key} {...props} />;
+};
+
+type PollEditorDialogInnerProps = Omit<PollEditorDialogProps, 'open'>;
+
+const PollEditorDialogInner: React.FC<PollEditorDialogInnerProps> = ({
   accountId,
-  open,
   onClose,
   poll,
   onSuccess,
   onError,
 }) => {
   const { createPoll, updatePoll, loading, resetError } = usePollsService(accountId);
-  const [formState, setFormState] = useState<PollFormState>(createDefaultFormState);
+  const baseState = useMemo(
+    () => (poll ? buildStateFromPoll(poll) : createDefaultFormState()),
+    [poll],
+  );
+  const [formState, setFormState] = useState<PollFormState>(() => cloneFormState(baseState));
   const [removedOptionIds, setRemovedOptionIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const isEditMode = useMemo(() => Boolean(poll), [poll]);
+  const isEditMode = Boolean(poll);
 
   const resetFormState = useCallback(() => {
-    if (poll) {
-      setFormState(buildStateFromPoll(poll));
-    } else {
-      setFormState(createDefaultFormState());
-    }
+    setFormState(cloneFormState(baseState));
     setRemovedOptionIds([]);
     setFormError(null);
-  }, [poll]);
-
-  useEffect(() => {
-    if (open) {
-      resetFormState();
-      resetError();
-    }
-  }, [open, resetError, resetFormState]);
-
-  useEffect(() => {
-    if (!open) {
-      setFormState(createDefaultFormState());
-      setRemovedOptionIds([]);
-      setFormError(null);
-      resetError();
-    }
-  }, [open, resetError]);
+    resetError();
+  }, [baseState, resetError]);
 
   const handleAddOption = useCallback(() => {
     setFormState((prev) => ({
@@ -165,6 +166,11 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
     });
   }, []);
 
+  const handleClose = useCallback(() => {
+    resetFormState();
+    onClose();
+  }, [onClose, resetFormState]);
+
   const handleSave = useCallback(async () => {
     setFormError(null);
 
@@ -219,7 +225,7 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
       }
 
       onSuccess?.(result);
-      onClose();
+      handleClose();
     } catch (err) {
       console.error('Failed to save poll:', err);
       const message = err instanceof Error ? err.message : 'Failed to save poll.';
@@ -229,7 +235,7 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
   }, [
     formState,
     isEditMode,
-    onClose,
+    handleClose,
     onError,
     onSuccess,
     poll,
@@ -239,7 +245,7 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
   ]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>{isEditMode ? 'Edit Poll' : 'Create Poll'}</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
         {formError && <Alert severity="error">{formError}</Alert>}
@@ -298,7 +304,7 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
+        <Button onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
         <Button onClick={handleSave} variant="contained" disabled={loading}>

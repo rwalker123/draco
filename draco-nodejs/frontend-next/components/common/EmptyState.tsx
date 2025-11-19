@@ -14,17 +14,13 @@ export interface EmptyStateProps {
   children?: React.ReactNode;
 }
 
-const EmptyState: React.FC<EmptyStateProps> = ({
+function EmptyStateContent({
+  icon,
   title,
   subtitle,
-  icon,
-  minHeight = 300,
-  wrapper = 'box',
-  colSpan = 100,
-  sx,
   children,
-}) => {
-  const EmptyStateContent = () => (
+}: Pick<EmptyStateProps, 'icon' | 'title' | 'subtitle' | 'children'>) {
+  return (
     <>
       {icon && <Box sx={{ mb: 2, color: 'text.secondary' }}>{icon}</Box>}
       <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -38,19 +34,36 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       {children}
     </>
   );
+}
 
+const EmptyState: React.FC<EmptyStateProps> = ({
+  title,
+  subtitle,
+  icon,
+  minHeight = 300,
+  wrapper = 'box',
+  colSpan = 100,
+  sx,
+  children,
+}) => {
   if (wrapper === 'table-row') {
     return (
       <tr>
         <td colSpan={colSpan} style={{ textAlign: 'center', padding: '40px' }}>
-          <EmptyStateContent />
+          <EmptyStateContent icon={icon} title={title} subtitle={subtitle}>
+            {children}
+          </EmptyStateContent>
         </td>
       </tr>
     );
   }
 
   if (wrapper === 'none') {
-    return <EmptyStateContent />;
+    return (
+      <EmptyStateContent icon={icon} title={title} subtitle={subtitle}>
+        {children}
+      </EmptyStateContent>
+    );
   }
 
   // Default box wrapper
@@ -67,7 +80,9 @@ const EmptyState: React.FC<EmptyStateProps> = ({
         ...sx,
       }}
     >
-      <EmptyStateContent />
+      <EmptyStateContent icon={icon} title={title} subtitle={subtitle}>
+        {children}
+      </EmptyStateContent>
     </Box>
   );
 };

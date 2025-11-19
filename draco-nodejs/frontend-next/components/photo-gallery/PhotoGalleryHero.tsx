@@ -24,6 +24,10 @@ const PhotoGalleryHero: React.FC<PhotoGalleryHeroProps> = ({
     [photos],
   );
   const [activeIndex, setActiveIndex] = useState(0);
+  const effectiveActiveIndex =
+    heroPhotos.length > 0
+      ? ((activeIndex % heroPhotos.length) + heroPhotos.length) % heroPhotos.length
+      : 0;
 
   useEffect(() => {
     if (heroPhotos.length <= 1) {
@@ -38,12 +42,6 @@ const PhotoGalleryHero: React.FC<PhotoGalleryHeroProps> = ({
       window.clearInterval(timer);
     };
   }, [autoAdvanceMs, heroPhotos.length]);
-
-  useEffect(() => {
-    if (activeIndex >= heroPhotos.length) {
-      setActiveIndex(0);
-    }
-  }, [activeIndex, heroPhotos.length]);
 
   const handleSelect = useCallback(
     (index: number) => {
@@ -132,12 +130,14 @@ const PhotoGalleryHero: React.FC<PhotoGalleryHeroProps> = ({
           }}
         >
           {heroPhotos.map((photo, index) => {
-            const offset = index - activeIndex;
+            const offset = index - effectiveActiveIndex;
             const normalizedOffset =
-              ((offset + heroPhotos.length + Math.floor(heroPhotos.length / 2)) %
-                heroPhotos.length) -
-              Math.floor(heroPhotos.length / 2);
-            const isActive = index === activeIndex;
+              heroPhotos.length === 0
+                ? 0
+                : ((offset + heroPhotos.length + Math.floor(heroPhotos.length / 2)) %
+                    heroPhotos.length) -
+                  Math.floor(heroPhotos.length / 2);
+            const isActive = index === effectiveActiveIndex;
             const submittedOn = formatDisplayDate(photo.submittedAt);
             const primarySrc = photo.primaryUrl ?? photo.originalUrl;
 

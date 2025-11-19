@@ -4,15 +4,7 @@ import { ThemeProvider, Theme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { dracoTheme, darkTheme } from '../theme';
 import Layout from './Layout';
-import React, {
-  useState,
-  createContext,
-  useContext,
-  Suspense,
-  useEffect,
-  useMemo,
-  useCallback,
-} from 'react';
+import React, { useState, createContext, useContext, Suspense, useMemo, useCallback } from 'react';
 import EmotionCacheProvider from './EmotionCacheProvider';
 
 const THEME_STORAGE_KEY = 'draco-theme';
@@ -62,12 +54,9 @@ const getInitialThemeName = (): ThemeName => {
 };
 
 export default function ThemeClientProvider({ children }: { children: React.ReactNode }) {
-  const [currentThemeName, setCurrentThemeNameState] = useState<ThemeName>('light');
-
-  useEffect(() => {
-    const initial = getInitialThemeName();
-    setCurrentThemeNameState(initial);
-  }, []);
+  const [currentThemeName, setCurrentThemeNameState] = useState<ThemeName>(() =>
+    typeof window === 'undefined' ? 'light' : getInitialThemeName(),
+  );
 
   const setCurrentThemeName = useCallback((name: ThemeName) => {
     setCurrentThemeNameState(name);
@@ -77,29 +66,6 @@ export default function ThemeClientProvider({ children }: { children: React.Reac
   }, []);
 
   const currentTheme = useMemo(() => themesByName[currentThemeName], [currentThemeName]);
-
-  useEffect(() => {
-    if (typeof document === 'undefined') {
-      return;
-    }
-
-    const root = document.documentElement;
-    root.classList.toggle('dark', currentThemeName === 'dark');
-  }, [currentThemeName]);
-
-  useEffect(() => {
-    if (typeof document === 'undefined') {
-      return;
-    }
-
-    const backgroundColor = currentTheme.palette.background.default;
-    document.documentElement.style.backgroundColor = backgroundColor;
-    document.body.style.backgroundColor = backgroundColor;
-    const nextRoot = document.getElementById('__next');
-    if (nextRoot) {
-      nextRoot.style.backgroundColor = backgroundColor;
-    }
-  }, [currentTheme]);
 
   const value = useMemo(
     () => ({
