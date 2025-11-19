@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useEffect, useCallback, ReactNode, useLayoutEffect } from 'react';
 import { Box, IconButton, Fade } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
@@ -255,7 +256,13 @@ export default function ScrollableTable({
             top: 0,
             bottom: 0,
             width: 30,
-            background: 'linear-gradient(to right, rgba(255,255,255,0.9), transparent)',
+            background: (theme) =>
+              `linear-gradient(to right, ${alpha(
+                theme.palette.mode === 'dark'
+                  ? theme.palette.background.paper
+                  : theme.palette.background.default,
+                theme.palette.mode === 'dark' ? 0.9 : 0.95,
+              )}, transparent)`,
             pointerEvents: 'none',
             zIndex: 999,
           }}
@@ -270,7 +277,13 @@ export default function ScrollableTable({
             top: 0,
             bottom: 0,
             width: 30,
-            background: 'linear-gradient(to left, rgba(255,255,255,0.9), transparent)',
+            background: (theme) =>
+              `linear-gradient(to left, ${alpha(
+                theme.palette.mode === 'dark'
+                  ? theme.palette.background.paper
+                  : theme.palette.background.default,
+                theme.palette.mode === 'dark' ? 0.9 : 0.95,
+              )}, transparent)`,
             pointerEvents: 'none',
             zIndex: 999,
           }}

@@ -9,6 +9,9 @@
 Draco/
 Draco.sln
 
+# compressed files
+*.tgz
+
 # Visual Studio files
 .vs/
 *.suo
@@ -64,6 +67,9 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Ignore temporary files
+/tmp/
 
 # Ignore build output
 /dist/
