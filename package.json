@@ -71,7 +71,7 @@
     "lint-staged": "^16.1.2",
     "prettier": "^3.6.2",
     "typescript": "^5.8.3",
-    "vitest": "^2.0.5"
+    "vitest": "^4.0.10"
   },
   "lint-staged": {
     "draco-nodejs/**/*.{js,jsx,ts,tsx}": [
