@@ -419,7 +419,7 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
               gap: 1,
             }}
           >
-            <EmojiEventsIcon sx={{ color: theme.palette.primary.main }} /> Hall of Fame
+            <EmojiEventsIcon sx={{ color: 'text.primary' }} /> Hall of Fame
           </Typography>
           <Typography variant="body1" sx={{ color: 'text.secondary' }}>
             Celebrate legendary contributors and revisit the moments that shaped your organization.
@@ -453,7 +453,7 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
               }}
             >
               <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
                   Hall of Fame Classes
                 </Typography>
               </Stack>
@@ -514,7 +514,7 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
                           <Typography variant="subtitle2" color="text.secondary">
                             Class of
                           </Typography>
-                          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                          <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
                             {hofClass.year}
                           </Typography>
                           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -610,7 +610,10 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
                     sx={{ p: 2, borderRadius: 3 }}
                   >
                     <Stack spacing={1.5}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ fontWeight: 700, color: 'text.primary' }}
+                      >
                         Find an Inductee
                       </Typography>
                       <TextField
@@ -651,7 +654,10 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
                   <Paper elevation={3} sx={{ p: 2, borderRadius: 3 }}>
                     <Stack spacing={1.5}>
                       <Stack direction="row" alignItems="center" justifyContent="space-between">
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{ fontWeight: 700, color: 'text.primary' }}
+                        >
                           Search Results
                         </Typography>
                         <Button size="small" onClick={handleClearSearch}>
