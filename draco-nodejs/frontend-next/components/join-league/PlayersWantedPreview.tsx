@@ -175,7 +175,6 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
               sx={(theme) => ({
                 borderRadius: 2,
                 border: `1px solid ${theme.palette.widget.border}`,
-                backgroundColor: theme.palette.widget.surface,
                 transition:
                   'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
                 '&:hover': {
