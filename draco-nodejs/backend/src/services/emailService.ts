@@ -30,6 +30,7 @@ import { RosterService } from './rosterService.js';
 import { ServiceFactory } from './serviceFactory.js';
 import validator from 'validator';
 import { TeamService } from './teamService.js';
+import { TeamManagerService } from './teamManagerService.js';
 import { htmlToPlainText } from '../utils/emailContent.js';
 import { ContactService } from './contactService.js';
 
@@ -102,11 +103,17 @@ export class EmailService {
     startTime: new Date(),
     count: 0,
   };
+  private rateLimitMinuteWindow: { startTime: Date; count: number } = {
+    startTime: new Date(),
+    count: 0,
+  };
+  private globalRateLimitUntil: Date | null = null;
   private attachmentService: EmailAttachmentService;
   private emailRepository: IEmailRepository;
   private seasonRepository: ISeasonsRepository;
   private rosterService: RosterService;
   private teamService: TeamService;
+  private teamManagerService: TeamManagerService;
   private contactService: ContactService;
 
   // Provider-specific queue configuration
@@ -152,7 +159,7 @@ export class EmailService {
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAYS = [1000, 5000, 15000]; // ms delays for retries
   private readonly MAX_RATE_LIMIT_RETRIES = 5;
-  private readonly RATE_LIMIT_BACKOFF_MS = [5000, 10000, 20000, 35000, 55000];
+  private readonly RATE_LIMIT_BACKOFF_MS = [30000, 60000, 120000, 240000, 480000];
   private currentProviderType: 'sendgrid' | 'ethereal' | 'ses' | 'resend' | 'none' | null = null;
 
   constructor(config?: EmailConfig, fromEmail?: string, baseUrl?: string) {
@@ -163,6 +170,7 @@ export class EmailService {
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
     this.rosterService = ServiceFactory.getRosterService();
     this.teamService = ServiceFactory.getTeamService();
+    this.teamManagerService = ServiceFactory.getTeamManagerService();
     this.contactService = ServiceFactory.getContactService();
 
     // Start queue processor
@@ -575,20 +583,32 @@ export class EmailService {
    * Start the background queue processor
    */
   private startQueueProcessor(): void {
-    if (this.queueProcessor) {
-      clearInterval(this.queueProcessor);
-    }
-
-    // Start with default interval, will adjust dynamically based on provider
-    this.queueProcessor = setInterval(async () => {
-      try {
-        await this.processQueue();
-      } catch (error) {
-        console.error('Queue processor error:', error);
+    const startInterval = (intervalMs: number) => {
+      if (this.queueProcessor) {
+        clearInterval(this.queueProcessor);
       }
-    }, 100); // Will be adjusted based on provider
 
-    console.log('Email queue processor started');
+      this.queueProcessor = setInterval(async () => {
+        try {
+          await this.processQueue();
+        } catch (error) {
+          console.error('Queue processor error:', error);
+        }
+      }, intervalMs);
+    };
+
+    // Start immediately with a safe default while loading provider config
+    startInterval(100);
+
+    void this.getProviderConfig()
+      .then((config) => {
+        const interval = config?.PROCESS_INTERVAL_MS ?? 100;
+        startInterval(interval);
+        console.log(`Email queue processor started (interval ${interval}ms)`);
+      })
+      .catch((error) => {
+        console.error('Failed to configure queue processor interval:', error);
+      });
   }
 
   /**
@@ -766,24 +786,52 @@ export class EmailService {
    */
   private async canSendEmails(): Promise<boolean> {
     const config = await this.getProviderConfig();
+    const now = new Date();
+
+    if (this.globalRateLimitUntil) {
+      if (now < this.globalRateLimitUntil) {
+        return false;
+      }
+
+      this.globalRateLimitUntil = null;
+      this.rateLimitWindow = { startTime: now, count: 0 };
+      this.rateLimitMinuteWindow = { startTime: now, count: 0 };
+    }
 
     // If rate limiting is disabled (e.g., Ethereal Email), always allow
     if (!config.RATE_LIMIT_ENABLED) {
       return true;
     }
 
-    const now = new Date();
     const windowStart = this.rateLimitWindow.startTime;
     const windowDurationMs = now.getTime() - windowStart.getTime();
+    const minuteWindowStart = this.rateLimitMinuteWindow.startTime;
+    const minuteDurationMs = now.getTime() - minuteWindowStart.getTime();
 
     // Reset window if it's been more than a second
     if (windowDurationMs >= 1000) {
       this.rateLimitWindow = { startTime: now, count: 0 };
-      return true;
+    }
+
+    // Reset minute window if it's been more than a minute
+    if (minuteDurationMs >= 60000) {
+      this.rateLimitMinuteWindow = { startTime: now, count: 0 };
     }
 
     // Check if we're under the per-second limit
-    return this.rateLimitWindow.count < config.MAX_EMAILS_PER_SECOND;
+    if (this.rateLimitWindow.count >= config.MAX_EMAILS_PER_SECOND) {
+      return false;
+    }
+
+    // Check per-minute limit if configured
+    if (
+      config.MAX_EMAILS_PER_MINUTE > 0 &&
+      this.rateLimitMinuteWindow.count >= config.MAX_EMAILS_PER_MINUTE
+    ) {
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -873,6 +921,7 @@ export class EmailService {
 
         if (config.RATE_LIMIT_ENABLED && result.success) {
           this.rateLimitWindow.count++;
+          this.rateLimitMinuteWindow.count++;
         }
 
         if (result.success) {
@@ -1011,6 +1060,102 @@ export class EmailService {
     return 'Rate limit exceeded';
   }
 
+  private getRetryAfterDelayMs(error: unknown, explicitMessage?: string): number | null {
+    const parseNumericDelay = (value: string | number): number | null => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value > 100000 ? value : value * 1000;
+      }
+
+      const num = Number(value);
+      if (!Number.isFinite(num)) {
+        return null;
+      }
+
+      return num > 100000 ? num : num * 1000;
+    };
+
+    const parseDateDelay = (value: string): number | null => {
+      const retryDate = new Date(value);
+      const diff = retryDate.getTime() - Date.now();
+      return diff > 0 ? diff : null;
+    };
+
+    const candidates: Array<string | number> = [];
+
+    if (typeof explicitMessage === 'string') {
+      candidates.push(explicitMessage);
+    }
+
+    if (error && typeof error === 'object') {
+      const errObj = error as {
+        retryAfter?: string | number;
+        headers?: Record<string, unknown>;
+        response?: string;
+        message?: string;
+      };
+
+      if (typeof errObj.retryAfter === 'string' || typeof errObj.retryAfter === 'number') {
+        candidates.push(errObj.retryAfter);
+      }
+
+      if (errObj.headers && typeof errObj.headers === 'object') {
+        const headerValue = (errObj.headers as Record<string, unknown>)['retry-after'];
+        if (typeof headerValue === 'string' || typeof headerValue === 'number') {
+          candidates.push(headerValue);
+        }
+      }
+
+      if (typeof errObj.response === 'string') {
+        candidates.push(errObj.response);
+      }
+
+      if (typeof errObj.message === 'string') {
+        candidates.push(errObj.message);
+      }
+    }
+
+    for (const candidate of candidates) {
+      if (typeof candidate === 'number') {
+        const numericDelay = parseNumericDelay(candidate);
+        if (numericDelay !== null) {
+          return numericDelay;
+        }
+      }
+
+      if (typeof candidate === 'string') {
+        const numericDelay = parseNumericDelay(candidate);
+        if (numericDelay !== null) {
+          return numericDelay;
+        }
+
+        const dateDelay = parseDateDelay(candidate);
+        if (dateDelay !== null) {
+          return dateDelay;
+        }
+
+        const retryAfterMatch = candidate.match(/retry[ -]?after[:]?\\s*(\\d+)/i);
+        if (retryAfterMatch && retryAfterMatch[1]) {
+          const parsed = Number(retryAfterMatch[1]);
+          if (Number.isFinite(parsed)) {
+            return parsed * 1000;
+          }
+        }
+
+        const retryInMatch = candidate.match(
+          /retry (?:in|after)\\s*(\\d+)\\s*(seconds|second|secs|s)?/i,
+        );
+        if (retryInMatch && retryInMatch[1]) {
+          const parsed = Number(retryInMatch[1]);
+          if (Number.isFinite(parsed)) {
+            return parsed * 1000;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
   private async handleRateLimitBackoff(
     job: EmailQueueJob,
     startIndex: number,
@@ -1025,6 +1170,13 @@ export class EmailService {
 
     const attempt = job.rateLimitRetries + 1;
     const message = this.getRateLimitErrorMessage(error, explicitMessage);
+    const retryAfterDelay = this.getRetryAfterDelayMs(error, explicitMessage);
+
+    const fallbackDelay =
+      this.RATE_LIMIT_BACKOFF_MS[Math.min(attempt - 1, this.RATE_LIMIT_BACKOFF_MS.length - 1)];
+    const delay =
+      retryAfterDelay !== null ? Math.max(retryAfterDelay, fallbackDelay) : fallbackDelay;
+    const backoffEnd = new Date(Date.now() + delay);
 
     if (attempt > this.MAX_RATE_LIMIT_RETRIES) {
       console.error(
@@ -1038,30 +1190,28 @@ export class EmailService {
         });
       }
 
+      this.globalRateLimitUntil = backoffEnd;
+      this.rateLimitWindow = { startTime: new Date(), count: 0 };
+      this.rateLimitMinuteWindow = { startTime: new Date(), count: 0 };
       return { requeued: false, failedCount: remainingRecipients.length };
     }
-
-    const delay =
-      this.RATE_LIMIT_BACKOFF_MS[attempt - 1] ??
-      this.RATE_LIMIT_BACKOFF_MS[this.RATE_LIMIT_BACKOFF_MS.length - 1];
 
     const requeueJob: EmailQueueJob = {
       ...job,
       id: `${job.emailId}-${job.batchIndex}-ratelimit-${Date.now()}`,
       recipients: remainingRecipients,
       rateLimitRetries: attempt,
-      scheduledAt: new Date(Date.now() + delay),
+      scheduledAt: backoffEnd,
     };
 
     this.jobQueue.set(requeueJob.id, requeueJob);
 
-    this.rateLimitWindow = {
-      startTime: new Date(),
-      count: config.MAX_EMAILS_PER_SECOND,
-    };
+    this.globalRateLimitUntil = backoffEnd;
+    this.rateLimitWindow = { startTime: new Date(), count: 0 };
+    this.rateLimitMinuteWindow = { startTime: new Date(), count: 0 };
 
     console.warn(
-      `⏳ Rate limit encountered for job ${job.id}. Re-queued ${remainingRecipients.length} recipients in ${delay}ms (attempt ${attempt}/${this.MAX_RATE_LIMIT_RETRIES}). Message: ${message}`,
+      `⏳ Rate limit encountered for job ${job.id}. Pausing all email sends for ${delay}ms (attempt ${attempt}/${this.MAX_RATE_LIMIT_RETRIES}). Message: ${message}`,
     );
 
     return { requeued: true, failedCount: 0 };
@@ -1209,6 +1359,7 @@ export class EmailService {
   ): Promise<ResolvedRecipient[]> {
     // Placeholder implementation - will be enhanced
     const recipients: ResolvedRecipient[] = [];
+    const useManagersOnly = selection.teamManagers === true;
 
     // Add individual contacts
     if (selection.contacts && selection.contacts.length > 0) {
@@ -1252,22 +1403,34 @@ export class EmailService {
           accountId,
         );
         for (const team of leagueTeams) {
-          // for each team, get the roster members
-          const teamMembers = await this.rosterService.getTeamRosterMembers(
-            BigInt(team.id),
-            seasonId,
-            accountId,
-          );
+          if (useManagersOnly) {
+            const teamManagers = await this.teamManagerService.listManagers(BigInt(team.id));
+            recipients.push(
+              ...teamManagers.map((manager) => ({
+                contactId: BigInt(manager.contact.id),
+                emailAddress: manager.contact.email ?? '',
+                contactName: `${manager.contact.firstName} ${manager.contact.lastName}`.trim(),
+                recipientType: 'teamManager',
+              })),
+            );
+          } else {
+            // for each team, get the roster members
+            const teamMembers = await this.rosterService.getTeamRosterMembers(
+              BigInt(team.id),
+              seasonId,
+              accountId,
+            );
 
-          recipients.push(
-            ...teamMembers.rosterMembers.map((rosterMember) => ({
-              contactId: BigInt(rosterMember.player.contact.id),
-              emailAddress: rosterMember.player.contact.email!,
-              contactName:
-                `${rosterMember.player.contact.firstName} ${rosterMember.player.contact.lastName}`.trim(),
-              recipientType: 'league',
-            })),
-          );
+            recipients.push(
+              ...teamMembers.rosterMembers.map((rosterMember) => ({
+                contactId: BigInt(rosterMember.player.contact.id),
+                emailAddress: rosterMember.player.contact.email!,
+                contactName:
+                  `${rosterMember.player.contact.firstName} ${rosterMember.player.contact.lastName}`.trim(),
+                recipientType: 'league',
+              })),
+            );
+          }
         }
       }
     }
@@ -1282,9 +1445,55 @@ export class EmailService {
           accountId,
         );
         for (const team of divisionTeams) {
-          // for each team, get the roster members
+          if (useManagersOnly) {
+            const teamManagers = await this.teamManagerService.listManagers(BigInt(team.id));
+            recipients.push(
+              ...teamManagers.map((manager) => ({
+                contactId: BigInt(manager.contact.id),
+                emailAddress: manager.contact.email ?? '',
+                contactName: `${manager.contact.firstName} ${manager.contact.lastName}`.trim(),
+                recipientType: 'teamManager',
+              })),
+            );
+          } else {
+            // for each team, get the roster members
+            const teamMembers = await this.rosterService.getTeamRosterMembers(
+              BigInt(team.id),
+              seasonId,
+              accountId,
+            );
+
+            recipients.push(
+              ...teamMembers.rosterMembers.map((rosterMember) => ({
+                contactId: BigInt(rosterMember.player.contact.id),
+                emailAddress: rosterMember.player.contact.email!,
+                contactName:
+                  `${rosterMember.player.contact.firstName} ${rosterMember.player.contact.lastName}`.trim(),
+                recipientType: 'division',
+              })),
+            );
+          }
+        }
+      }
+    }
+
+    // add team members
+    if (seasonId && selection.teams && selection.teams.length > 0) {
+      const teamIds = selection.teams.map((id: string) => BigInt(id));
+      for (const id of teamIds) {
+        if (useManagersOnly) {
+          const teamManagers = await this.teamManagerService.listManagers(id);
+          recipients.push(
+            ...teamManagers.map((manager) => ({
+              contactId: BigInt(manager.contact.id),
+              emailAddress: manager.contact.email ?? '',
+              contactName: `${manager.contact.firstName} ${manager.contact.lastName}`.trim(),
+              recipientType: 'teamManager',
+            })),
+          );
+        } else {
           const teamMembers = await this.rosterService.getTeamRosterMembers(
-            BigInt(team.id),
+            id,
             seasonId,
             accountId,
           );
@@ -1295,28 +1504,10 @@ export class EmailService {
               emailAddress: rosterMember.player.contact.email!,
               contactName:
                 `${rosterMember.player.contact.firstName} ${rosterMember.player.contact.lastName}`.trim(),
-              recipientType: 'division',
+              recipientType: 'team',
             })),
           );
         }
-      }
-    }
-
-    // add team members
-    if (seasonId && selection.teams && selection.teams.length > 0) {
-      const teamIds = selection.teams.map((id: string) => BigInt(id));
-      for (const id of teamIds) {
-        const teamMembers = await this.rosterService.getTeamRosterMembers(id, seasonId, accountId);
-
-        recipients.push(
-          ...teamMembers.rosterMembers.map((rosterMember) => ({
-            contactId: BigInt(rosterMember.player.contact.id),
-            emailAddress: rosterMember.player.contact.email!,
-            contactName:
-              `${rosterMember.player.contact.firstName} ${rosterMember.player.contact.lastName}`.trim(),
-            recipientType: 'team',
-          })),
-        );
       }
     }
 

@@ -53,13 +53,17 @@ const createService = () => {
     jobQueue: new Map<string, unknown>(),
     processingQueue: new Set<string>(),
     rateLimitWindow: { startTime: new Date(), count: 0 },
+    rateLimitMinuteWindow: { startTime: new Date(), count: 0 },
+    globalRateLimitUntil: null,
     emailRepository,
     sleep: vi.fn().mockResolvedValue(undefined),
     checkAndUpdateEmailStatus: vi.fn().mockResolvedValue(undefined),
-    RATE_LIMIT_BACKOFF_MS: [5000, 10000, 20000],
+    RATE_LIMIT_BACKOFF_MS: [30000, 60000, 120000],
     MAX_RATE_LIMIT_RETRIES: 3,
     RETRY_DELAYS: [1000, 5000, 15000],
-    canSendEmails: vi.fn().mockResolvedValue(true),
+    canSendEmails: (
+      EmailService.prototype as unknown as { canSendEmails: EmailService['canSendEmails'] }
+    ).canSendEmails.bind(service),
     getProviderConfig: vi.fn().mockResolvedValue(BASE_CONFIG),
     getProviderType: vi.fn().mockResolvedValue('sendgrid'),
   });
@@ -112,9 +116,74 @@ describe('EmailService rate limit handling', () => {
     expect(queuedJobs[0].rateLimitRetries).toBe(1);
     expect(queuedJobs[0].scheduledAt.getTime()).toBeGreaterThan(Date.now());
 
+    const rateLimitState = service as unknown as {
+      rateLimitWindow: { count: number };
+      rateLimitMinuteWindow: { count: number };
+      globalRateLimitUntil: Date | null;
+    };
+
+    expect(rateLimitState.rateLimitWindow.count).toBe(0);
+    expect(rateLimitState.rateLimitMinuteWindow.count).toBe(0);
+    expect(rateLimitState.globalRateLimitUntil?.getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it('honors retry-after guidance when present on rate limit errors', async () => {
+    const { service } = createService();
+    const job = buildJob();
+    const retryAfterSeconds = 120;
+    const before = Date.now();
+
+    const result = await (
+      service as unknown as {
+        handleRateLimitBackoff(
+          job: ReturnType<typeof buildJob>,
+          startIndex: number,
+          config: typeof BASE_CONFIG,
+          error: unknown,
+          explicitMessage?: string,
+        ): Promise<{ requeued: boolean; failedCount: number }>;
+      }
+    ).handleRateLimitBackoff(
+      job,
+      0,
+      BASE_CONFIG,
+      { headers: { 'retry-after': `${retryAfterSeconds}` } },
+      '429',
+    );
+
+    expect(result.requeued).toBe(true);
+    const queuedJobs = Array.from(
+      (service as unknown as { jobQueue: Map<string, { scheduledAt: Date }> }).jobQueue.values(),
+    );
+    expect(queuedJobs[0].scheduledAt.getTime()).toBeGreaterThanOrEqual(
+      before + retryAfterSeconds * 1000 - 50,
+    );
     expect(
-      (service as unknown as { rateLimitWindow: { count: number } }).rateLimitWindow.count,
-    ).toBe(BASE_CONFIG.MAX_EMAILS_PER_SECOND);
+      (
+        service as unknown as { globalRateLimitUntil: Date | null }
+      ).globalRateLimitUntil?.getTime() ?? 0,
+    ).toBeGreaterThanOrEqual(before + retryAfterSeconds * 1000 - 50);
+  });
+
+  it('pauses processing when a global rate limit backoff is active', async () => {
+    const { service } = createService();
+    const sendEmail = vi.fn().mockResolvedValue({ success: true });
+    Object.assign(service, {
+      getProvider: vi.fn().mockResolvedValue({ sendEmail }),
+      canSendEmails: (
+        EmailService.prototype as unknown as { canSendEmails: EmailService['canSendEmails'] }
+      ).canSendEmails.bind(service),
+      globalRateLimitUntil: new Date(Date.now() + 60000),
+    });
+
+    const job = buildJob();
+    (service as unknown as { jobQueue: Map<string, ReturnType<typeof buildJob>> }).jobQueue.set(
+      'job-1',
+      job,
+    );
+
+    await (service as unknown as { processQueue(): Promise<void> }).processQueue();
+    expect(sendEmail).not.toHaveBeenCalled();
   });
 
   it('marks recipients as failed when rate limit retries are exhausted', async () => {
