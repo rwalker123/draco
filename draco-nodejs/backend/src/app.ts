@@ -11,10 +11,10 @@ import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLo
 import { DateUtils } from './utils/dateUtils.js';
 
 import authRouter from './routes/auth.js';
-import passwordResetRouter from './routes/passwordReset.js';
+import passwordResetRouter from './routes/password-reset.js';
 import accountsRouter from './routes/accounts.js';
 import seasonsRouter from './routes/seasons.js';
-import leagueSeasonsRouter from './routes/leagueSeasons.js';
+import leagueSeasonsRouter from './routes/league-seasons.js';
 import leaguesRouter from './routes/leagues.js';
 import accountTeamsRouter from './routes/accounts-teams.js';
 import teamsRouter from './routes/teams.js';
@@ -30,14 +30,14 @@ import accountsWelcomeMessagesRouter from './routes/accounts-welcome-messages.js
 import teamWelcomeMessagesRouter from './routes/team-welcome-messages.js';
 import gamesRouter from './routes/games.js';
 import teamManagersRouter from './routes/team-managers.js';
-import seasonManagersRouter from './routes/seasonManagers.js';
+import seasonManagersRouter from './routes/season-managers.js';
 import statisticsRouter from './routes/statistics.js';
 import standingsRouter from './routes/standings.js';
 import monitoringRouter from './routes/monitoring.js';
-import adminAnalyticsRouter from './routes/adminAnalytics.js';
+import adminAnalyticsRouter from './routes/admin-analytics.js';
 import { domainRouting } from './middleware/domainRouting.js';
 import emailsRouter from './routes/emails.js';
-import webhookRouter from './routes/webhookRoutes.js';
+import webhookRouter from './routes/webhook-routes.js';
 import cleanupRouter from './routes/cleanup.js';
 import rolesRouter from './routes/roles.js';
 import discordRouter from './routes/discord.js';
