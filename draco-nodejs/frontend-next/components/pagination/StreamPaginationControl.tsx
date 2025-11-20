@@ -125,7 +125,14 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
         backgroundColor: hasPrev ? theme.palette.primary.dark : 'action.hover',
       },
     }),
-    [hasPrev, theme.palette.primary.main, theme.palette.primary.dark, theme.transitions],
+    [
+      hasPrev,
+      theme.palette.primary.main,
+      theme.palette.primary.dark,
+      theme.palette.primary.contrastText,
+      theme.palette.text.disabled,
+      theme.transitions,
+    ],
   );
 
   const desktopNextButtonSx = useMemo(
@@ -140,7 +147,14 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
         backgroundColor: hasNext ? theme.palette.primary.dark : 'action.hover',
       },
     }),
-    [hasNext, theme.palette.primary.main, theme.palette.primary.dark, theme.transitions],
+    [
+      hasNext,
+      theme.palette.primary.main,
+      theme.palette.primary.dark,
+      theme.palette.primary.contrastText,
+      theme.palette.text.disabled,
+      theme.transitions,
+    ],
   );
 
   // Track current page - use direct useEffect to avoid callback recreation

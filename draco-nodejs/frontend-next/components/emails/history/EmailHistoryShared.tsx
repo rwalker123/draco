@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Box, Card, CardContent, Chip, Stack, Typography } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import type { EmailRecipientStatus, EmailStatus } from '../../../types/emails/email';
 
 export const STATUS_LABELS: Record<EmailStatus, string> = {
@@ -65,11 +66,31 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   helper,
   color = 'primary',
 }) => {
-  const backgroundColor = color === 'default' ? 'grey.100' : `${color}.light`;
-  const foregroundColor = color === 'default' ? 'grey.800' : `${color}.dark`;
+  const backgroundColor = (theme: Theme) =>
+    color === 'default'
+      ? theme.palette.mode === 'dark'
+        ? theme.palette.action.hover
+        : theme.palette.grey[100]
+      : theme.palette.mode === 'dark'
+        ? theme.palette[color].main
+        : theme.palette[color].light;
+  const foregroundColor = (theme: Theme) =>
+    color === 'default'
+      ? theme.palette.text.primary
+      : theme.palette.mode === 'dark'
+        ? theme.palette.getContrastText(theme.palette[color].main)
+        : theme.palette[color].dark;
 
   return (
-    <Card sx={{ flex: '1 1 240px', minWidth: 240 }}>
+    <Card
+      sx={{
+        flex: '1 1 240px',
+        minWidth: 240,
+        bgcolor: 'background.paper',
+        borderColor: 'divider',
+      }}
+      variant="outlined"
+    >
       <CardContent>
         <Stack direction="row" spacing={2} alignItems="center">
           <Box
