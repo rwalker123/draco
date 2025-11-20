@@ -906,12 +906,15 @@ const BaseballAccountHome: React.FC = () => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 2.2fr) minmax(0, 1fr)' },
+            gridTemplateColumns: {
+              xs: 'minmax(0, 1fr)',
+              lg: 'minmax(0, 2.2fr) minmax(0, 1fr)',
+            },
             gap: { xs: 4, lg: 6 },
             alignItems: 'start',
           }}
         >
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
             {shouldShowJoinLeagueNearSponsors ? null : joinLeagueDashboard}
 
             {showInformationWidget && accountIdStr ? (
@@ -1014,7 +1017,7 @@ const BaseballAccountHome: React.FC = () => {
             ) : null}
           </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
             {user && userTeams.length > 0 ? (
               <MyTeams
                 userTeams={userTeams}
