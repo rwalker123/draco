@@ -383,7 +383,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
           setServerPaginationState({
             hasNext: result.pagination?.hasNext || false,
-            hasPrev: result.pagination?.hasPrev || false,
+            hasPrev: result.pagination?.hasPrev || page > 1,
             totalContacts: recipientContacts.length,
           });
           setCurrentPage(page);
@@ -641,12 +641,12 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         if (isInSearchMode()) {
           // Handle search pagination
           if (searchPaginationState.hasPrev && !paginationLoading && searchCurrentPage > 1) {
-            handleSearchWithPagination(lastSearchQuery, searchCurrentPage, rowsPerPage);
+            handleSearchWithPagination(lastSearchQuery, searchCurrentPage - 1, rowsPerPage);
           }
         } else {
           // Handle regular pagination
           if (serverPaginationState.hasPrev && !paginationLoading && currentPage > 1) {
-            fetchContactsPage(currentPage, rowsPerPage);
+            fetchContactsPage(currentPage - 1, rowsPerPage);
           }
         }
       },
