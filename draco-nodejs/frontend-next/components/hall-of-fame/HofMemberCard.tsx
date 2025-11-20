@@ -38,10 +38,6 @@ const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx
 
   const displayName = contact.displayName ?? `${contact.firstName} ${contact.lastName}`.trim();
   const baseColor = theme.palette.primary.main;
-  const cardBackground = `linear-gradient(180deg, ${alpha(
-    baseColor,
-    theme.palette.mode === 'dark' ? 0.24 : 0.08,
-  )} 0%, ${alpha(baseColor, 0)} 80%)`;
   const avatarShadow = theme.shadows[4];
   const avatarBorderColor = alpha(baseColor, theme.palette.mode === 'dark' ? 0.6 : 0.25);
   const avatarFallbackColor =
@@ -54,7 +50,6 @@ const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx
     width: '100%',
     borderRadius: 3,
     border: `1px solid ${themeArg.palette.widget.border}`,
-    background: cardBackground,
   });
 
   return (
@@ -78,7 +73,12 @@ const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx
           </Avatar>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="h6" component="h3" sx={{ fontWeight: 700 }} noWrap>
+            <Typography
+              variant="h6"
+              component="h3"
+              sx={{ fontWeight: 700, color: 'text.primary' }}
+              noWrap
+            >
               {displayName}
             </Typography>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
