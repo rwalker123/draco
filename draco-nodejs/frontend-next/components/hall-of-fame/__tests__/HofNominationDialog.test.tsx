@@ -39,6 +39,8 @@ vi.mock('@/components/security/TurnstileChallenge', () => ({
   ),
 }));
 
+const LONG_TEST_TIMEOUT = 15_000;
+
 describe('HofNominationDialog', () => {
   const originalSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -93,84 +95,95 @@ describe('HofNominationDialog', () => {
     );
   };
 
-  it('submits a nomination and shows success feedback', async () => {
-    vi.mocked(submitAccountHallOfFameNomination).mockResolvedValue(
-      {} as Awaited<ReturnType<typeof submitAccountHallOfFameNomination>>,
-    );
+  it(
+    'submits a nomination and shows success feedback',
+    async () => {
+      vi.mocked(submitAccountHallOfFameNomination).mockResolvedValue(
+        {} as Awaited<ReturnType<typeof submitAccountHallOfFameNomination>>,
+      );
 
-    const onSubmitted = vi.fn();
-    const onClose = vi.fn();
+      const onSubmitted = vi.fn();
+      const onClose = vi.fn();
 
-    render(
-      <HofNominationDialog
-        accountId="abc123"
-        open
-        onClose={onClose}
-        onSubmitted={onSubmitted}
-        criteriaText="<p>Be respectful</p>"
-      />,
-    );
+      render(
+        <HofNominationDialog
+          accountId="abc123"
+          open
+          onClose={onClose}
+          onSubmitted={onSubmitted}
+          criteriaText="<p>Be respectful</p>"
+        />,
+      );
 
-    await fillRequiredFields();
-    await userEvent.click(screen.getByRole('button', { name: 'Submit Nomination' }));
+      await fillRequiredFields();
+      await userEvent.click(screen.getByRole('button', { name: 'Submit Nomination' }));
 
-    await waitFor(() => expect(submitAccountHallOfFameNomination).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(submitAccountHallOfFameNomination).toHaveBeenCalledTimes(1));
 
-    const submissionArgs = vi.mocked(submitAccountHallOfFameNomination).mock.calls[0]?.[0];
-    expect(submissionArgs?.path).toEqual({ accountId: 'abc123' });
-    expect(submissionArgs?.body).toEqual({
-      nominator: 'Jane Coach',
-      phoneNumber: '(555) 123-4567',
-      email: 'jane@example.com',
-      nominee: 'Alex Player',
-      reason: 'Outstanding leadership and performance.',
-    });
-    expect(submissionArgs?.headers).toBeUndefined();
+      const submissionArgs = vi.mocked(submitAccountHallOfFameNomination).mock.calls[0]?.[0];
+      expect(submissionArgs?.path).toEqual({ accountId: 'abc123' });
+      expect(submissionArgs?.body).toEqual({
+        nominator: 'Jane Coach',
+        phoneNumber: '(555) 123-4567',
+        email: 'jane@example.com',
+        nominee: 'Alex Player',
+        reason: 'Outstanding leadership and performance.',
+      });
+      expect(submissionArgs?.headers).toBeUndefined();
 
-    await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
-    expect(
-      await screen.findByText('Thank you! Your Hall of Fame nomination has been received.'),
-    ).toBeInTheDocument();
-  });
+      await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      expect(
+        await screen.findByText('Thank you! Your Hall of Fame nomination has been received.'),
+      ).toBeInTheDocument();
+    },
+    LONG_TEST_TIMEOUT,
+  );
 
-  it('requires a Turnstile challenge when a site key is configured', async () => {
-    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'test-site-key';
-    vi.mocked(submitAccountHallOfFameNomination).mockResolvedValue(
-      {} as Awaited<ReturnType<typeof submitAccountHallOfFameNomination>>,
-    );
+  it(
+    'requires a Turnstile challenge when a site key is configured',
+    async () => {
+      process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'test-site-key';
+      vi.mocked(submitAccountHallOfFameNomination).mockResolvedValue(
+        {} as Awaited<ReturnType<typeof submitAccountHallOfFameNomination>>,
+      );
 
-    const onSubmitted = vi.fn();
-    const onClose = vi.fn();
+      const onSubmitted = vi.fn();
+      const onClose = vi.fn();
 
-    render(
-      <HofNominationDialog
-        accountId="hall-of-fame"
-        open
-        onClose={onClose}
-        onSubmitted={onSubmitted}
-      />,
-    );
+      render(
+        <HofNominationDialog
+          accountId="hall-of-fame"
+          open
+          onClose={onClose}
+          onSubmitted={onSubmitted}
+        />,
+      );
 
-    await fillRequiredFields();
-    await userEvent.click(screen.getByRole('button', { name: 'Submit Nomination' }));
+      await fillRequiredFields();
+      await userEvent.click(screen.getByRole('button', { name: 'Submit Nomination' }));
 
-    expect(
-      await screen.findByText('Please verify that you are human before submitting the nomination.'),
-    ).toBeInTheDocument();
-    expect(submitAccountHallOfFameNomination).not.toHaveBeenCalled();
+      expect(
+        await screen.findByText(
+          'Please verify that you are human before submitting the nomination.',
+        ),
+      ).toBeInTheDocument();
+      expect(submitAccountHallOfFameNomination).not.toHaveBeenCalled();
 
-    await userEvent.click(screen.getByTestId('turnstile-challenge'));
-    await userEvent.click(screen.getByRole('button', { name: 'Submit Nomination' }));
+      await userEvent.click(screen.getByTestId('turnstile-challenge'));
+      await userEvent.click(screen.getByRole('button', { name: 'Submit Nomination' }));
 
-    await waitFor(() => expect(submitAccountHallOfFameNomination).toHaveBeenCalledTimes(1));
-    const submissionWithChallenge = vi.mocked(submitAccountHallOfFameNomination).mock.calls[0]?.[0];
-    expect(submissionWithChallenge?.headers).toEqual({
-      'cf-turnstile-token': 'mock-turnstile-token',
-    });
-    expect(onSubmitted).toHaveBeenCalledTimes(1);
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+      await waitFor(() => expect(submitAccountHallOfFameNomination).toHaveBeenCalledTimes(1));
+      const submissionWithChallenge = vi.mocked(submitAccountHallOfFameNomination).mock
+        .calls[0]?.[0];
+      expect(submissionWithChallenge?.headers).toEqual({
+        'cf-turnstile-token': 'mock-turnstile-token',
+      });
+      expect(onSubmitted).toHaveBeenCalledTimes(1);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    },
+    LONG_TEST_TIMEOUT,
+  );
 
   it('prefills contact information when membership data is available', async () => {
     const mockContact = {

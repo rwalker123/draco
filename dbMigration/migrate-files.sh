@@ -173,7 +173,7 @@ show_usage() {
     echo "  --test              Run a limited sample migration (2 accounts/teams/contacts)"
     echo ""
     echo "Prerequisites:"
-    echo "  - Node.js 18+ and npm"
+    echo "  - Node.js 20.19+ and npm"
     echo "  - Built backend (npm run build in draco-nodejs/backend)"
     echo "  - FTP credentials in backend/.env file"
     echo ""

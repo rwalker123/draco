@@ -83,7 +83,7 @@ draco-nodejs/
 
 ### Prerequisites
 
-- **Node.js** v18 or higher
+- **Node.js** v20.19 or higher
 - **PostgreSQL** v12 or higher
 - **npm** or **yarn** package manager
 
@@ -411,7 +411,7 @@ This project is a migration from an ASP.NET Framework application. See [MIGRATIO
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm
+- Node.js 20.19+ and npm
 - PostgreSQL database
 - Environment variables configured
 

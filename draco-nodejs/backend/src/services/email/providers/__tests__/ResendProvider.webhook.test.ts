@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ResendProvider } from '../ResendProvider.js';
 import { ResendWebhookEvent } from '../../../../interfaces/emailInterfaces.js';
 
-const hoisted = vi.hoisted(() => ({
-  mockPrisma: {
+const hoisted = vi.hoisted(() => {
+  const mockPrisma = {
     email_recipients: {
       findMany: vi.fn(),
       update: vi.fn(),
@@ -14,25 +14,36 @@ const hoisted = vi.hoisted(() => ({
     emails: {
       update: vi.fn(),
     },
-  },
-}));
+  };
+
+  class MockResend {
+    emails = {
+      send: vi.fn().mockResolvedValue({ data: { id: 'test' } }),
+    };
+
+    domains = {
+      list: vi.fn().mockResolvedValue({ data: [] }),
+    };
+  }
+
+  class MockWebhook {
+    verify = vi.fn();
+  }
+
+  return {
+    mockPrisma,
+    MockResend,
+    MockWebhook,
+  };
+});
 
 vi.mock('../../../../lib/prisma.js', () => ({ default: hoisted.mockPrisma }));
 vi.mock('resend', () => ({
-  Resend: vi.fn().mockImplementation(() => ({
-    emails: {
-      send: vi.fn().mockResolvedValue({ data: { id: 'test' } }),
-    },
-    domains: {
-      list: vi.fn().mockResolvedValue({ data: [] }),
-    },
-  })),
+  Resend: hoisted.MockResend,
 }));
 
 vi.mock('svix', () => ({
-  Webhook: vi.fn().mockImplementation(() => ({
-    verify: vi.fn(),
-  })),
+  Webhook: hoisted.MockWebhook,
 }));
 
 describe('ResendProvider - Webhook Processing', () => {

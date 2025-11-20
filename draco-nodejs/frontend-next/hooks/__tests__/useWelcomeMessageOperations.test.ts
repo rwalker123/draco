@@ -2,16 +2,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWelcomeMessageOperations } from '../useWelcomeMessageOperations';
 
-const listAccountMessages = vi.fn();
-const listTeamMessages = vi.fn();
-const createAccountMessage = vi.fn();
-const createTeamMessage = vi.fn();
-const updateAccountMessage = vi.fn();
-const updateTeamMessage = vi.fn();
-const deleteAccountMessage = vi.fn();
-const deleteTeamMessage = vi.fn();
-
-const WelcomeMessageServiceMock = vi.fn().mockImplementation(() => ({
+const {
   listAccountMessages,
   listTeamMessages,
   createAccountMessage,
@@ -20,7 +11,42 @@ const WelcomeMessageServiceMock = vi.fn().mockImplementation(() => ({
   updateTeamMessage,
   deleteAccountMessage,
   deleteTeamMessage,
-}));
+  WelcomeMessageServiceMock,
+} = vi.hoisted(() => {
+  const listAccountMessages = vi.fn();
+  const listTeamMessages = vi.fn();
+  const createAccountMessage = vi.fn();
+  const createTeamMessage = vi.fn();
+  const updateAccountMessage = vi.fn();
+  const updateTeamMessage = vi.fn();
+  const deleteAccountMessage = vi.fn();
+  const deleteTeamMessage = vi.fn();
+
+  const WelcomeMessageServiceMock = vi.fn(function mockWelcomeMessageService() {
+    return {
+      listAccountMessages,
+      listTeamMessages,
+      createAccountMessage,
+      createTeamMessage,
+      updateAccountMessage,
+      updateTeamMessage,
+      deleteAccountMessage,
+      deleteTeamMessage,
+    };
+  });
+
+  return {
+    listAccountMessages,
+    listTeamMessages,
+    createAccountMessage,
+    createTeamMessage,
+    updateAccountMessage,
+    updateTeamMessage,
+    deleteAccountMessage,
+    deleteTeamMessage,
+    WelcomeMessageServiceMock,
+  };
+});
 
 vi.mock('../../context/AuthContext', () => ({
   useAuth: vi.fn(() => ({ token: 'token-123' })),
@@ -31,7 +57,7 @@ vi.mock('../useApiClient', () => ({
 }));
 
 vi.mock('../../services/welcomeMessageService', () => ({
-  WelcomeMessageService: vi.fn((...args) => new WelcomeMessageServiceMock(...args)),
+  WelcomeMessageService: WelcomeMessageServiceMock,
 }));
 
 describe('useWelcomeMessageOperations', () => {
