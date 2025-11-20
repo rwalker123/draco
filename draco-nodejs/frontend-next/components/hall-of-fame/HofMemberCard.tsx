@@ -47,22 +47,18 @@ const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx
   const avatarFallbackColor =
     theme.palette.mode === 'dark' ? theme.palette.primary.contrastText : theme.palette.primary.main;
 
+  const baseCardSx: SxProps<Theme> = (themeArg) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    width: '100%',
+    borderRadius: 3,
+    border: `1px solid ${themeArg.palette.widget.border}`,
+    background: cardBackground,
+  });
+
   return (
-    <Card
-      elevation={elevation}
-      sx={[
-        {
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'divider',
-          background: cardBackground,
-        },
-        ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
-      ]}
-    >
+    <Card elevation={elevation} sx={[baseCardSx, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}>
       <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Stack direction="row" spacing={2} alignItems="center">
           <Avatar
