@@ -1,8 +1,13 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
-import type { Plugin } from 'vite';
 
-const stubNodeModulesCssPlugin = (): Plugin => ({
+type StubPlugin = {
+  name: string;
+  enforce?: 'pre' | 'post';
+  transform: (code: string, id: string) => { code: string; map: null } | null;
+};
+
+const stubNodeModulesCssPlugin = (): StubPlugin => ({
   name: 'stub-node-modules-css',
   enforce: 'pre',
   transform(_code: string, id: string) {

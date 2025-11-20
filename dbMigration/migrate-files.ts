@@ -17,12 +17,12 @@ import sharp from 'sharp';
 // Load environment variables, preferring migration overrides before backend defaults
 const migrationEnvPath = path.join(__dirname, '.env');
 if (fs.existsSync(migrationEnvPath)) {
-  dotenv.config({ path: migrationEnvPath });
+  dotenv.config({ path: migrationEnvPath, quiet: true });
 }
 
 const backendEnvPath = path.join(__dirname, '../draco-nodejs/backend/.env');
 if (fs.existsSync(backendEnvPath)) {
-  dotenv.config({ path: backendEnvPath });
+  dotenv.config({ path: backendEnvPath, quiet: true });
 }
 
 // Types for our migration
