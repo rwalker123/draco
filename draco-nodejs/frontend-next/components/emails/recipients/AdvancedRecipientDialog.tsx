@@ -1119,10 +1119,10 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         }}
       >
         <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6" component="div" id="recipient-dialog-title">
+          <Typography variant="h6" component="div" id="recipient-dialog-title" color="text.primary">
             Advanced Recipient Selection
           </Typography>
-          <IconButton onClick={handleCancel} size="small">
+          <IconButton onClick={handleCancel} size="small" color="inherit">
             <CloseIcon />
           </IconButton>
         </Stack>
