@@ -113,14 +113,14 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
               gutterBottom
               sx={{
                 fontWeight: 'bold',
-                color: 'primary.main',
+                color: 'text.primary',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
                 mb: 3,
               }}
             >
-              <EventIcon sx={{ color: 'warning.main' }} />
+              <EventIcon color="action" />
               {section.title}
             </Typography>
             {section.games.length > 0 ? (

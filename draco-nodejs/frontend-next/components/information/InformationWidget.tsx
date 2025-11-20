@@ -164,8 +164,11 @@ const InformationWidget: React.FC<InformationWidgetProps> = ({
                 '&:before': { display: 'none' },
               }}
             >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6" component="h3">
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                sx={{ color: 'text.primary', '& .MuiAccordionSummary-content': { my: 0.5 } }}
+              >
+                <Typography variant="h6" component="h3" color="inherit">
                   {message.caption}
                 </Typography>
               </AccordionSummary>
