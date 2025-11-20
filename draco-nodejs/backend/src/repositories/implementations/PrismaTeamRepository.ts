@@ -1,4 +1,4 @@
-import { PrismaClient, teamsseason, teams, teamseasonmanager, Prisma } from '@prisma/client';
+import { PrismaClient, teamsseason, teams, teamseasonmanager, Prisma } from '#prisma/client';
 import { ITeamRepository } from '../interfaces/index.js';
 import {
   dbTeamWithLeague,

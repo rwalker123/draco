@@ -3,7 +3,7 @@ import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { FieldResponseFormatter } from '../responseFormatters/index.js';
 import { PaginationHelper } from '../utils/pagination.js';
 import { FieldType, FieldsType, UpsertFieldType, PagingType } from '@draco/shared-schemas';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#prisma/client';
 
 const FIELD_SORT_FIELDS = [
   'name',

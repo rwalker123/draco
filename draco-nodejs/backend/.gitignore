@@ -1,8 +1,7 @@
 node_modules
+
 # Keep environment variables out of version control
 .env
-
-/src/generated/prisma
 
 # Ignore build output
 /dist/
@@ -13,3 +12,6 @@ node_modules
 
 certs/*.pem
 certs/*.key
+
+# prisma generated client
+/src/generated/**

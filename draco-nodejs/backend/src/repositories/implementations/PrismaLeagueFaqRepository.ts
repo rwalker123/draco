@@ -1,4 +1,4 @@
-import { PrismaClient, leaguefaq } from '@prisma/client';
+import { PrismaClient, leaguefaq } from '#prisma/client';
 import { ILeagueFaqRepository } from '../interfaces/ILeagueFaqRepository.js';
 import { dbLeagueFaq } from '../types/index.js';
 

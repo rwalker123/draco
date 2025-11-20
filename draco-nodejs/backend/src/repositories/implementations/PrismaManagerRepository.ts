@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma, teamseasonmanager } from '@prisma/client';
+import { PrismaClient, Prisma, teamseasonmanager } from '#prisma/client';
 import {
   IManagerRepository,
   SeasonManagerRepositoryFilters,

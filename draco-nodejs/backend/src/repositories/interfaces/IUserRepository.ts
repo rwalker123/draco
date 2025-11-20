@@ -1,4 +1,4 @@
-import { aspnetusers, aspnetuserroles, aspnetroles } from '@prisma/client';
+import { aspnetusers, aspnetuserroles, aspnetroles } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 
 export interface IUserRepository extends IBaseRepository<aspnetusers> {

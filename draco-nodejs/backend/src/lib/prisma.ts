@@ -1,5 +1,5 @@
-import PrismaPg from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '#prisma/client';
 import { databaseConfig, buildConnectionUrl } from '../config/database.js';
 import { performanceMonitor } from '../utils/performanceMonitor.js';
 

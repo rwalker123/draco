@@ -1,4 +1,4 @@
-import { Prisma, leagueschedule, teamsseason, gamerecap } from '@prisma/client';
+import { Prisma, leagueschedule, teamsseason, gamerecap } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import {
   dbScheduleGameWithDetails,

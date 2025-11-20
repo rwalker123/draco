@@ -12,7 +12,7 @@ import * as path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Client as FTPClient, type AccessOptions, type FileInfo as FtpFileInfo } from 'basic-ftp';
 // PrismaClient will be imported dynamically from the backend
-import PrismaPg from '@prisma/adapter-pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 import * as dotenv from 'dotenv';
 import sharp from 'sharp';
 

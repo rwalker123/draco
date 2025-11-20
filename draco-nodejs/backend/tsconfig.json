@@ -26,12 +26,14 @@
     // "moduleDetection": "auto",                        /* Control what method is used to detect module-format JS files. */
 
     /* Modules */
-    "module": "ESNext",                                /* Use Node's native ESM semantics for module output. */
+    "module": "NodeNext",                                /* Use Node's native ESM semantics for module output. */
     "rootDir": "./",                                  /* Specify the root folder within your source files. */
-    "moduleResolution": "node",                     /* Resolve modules using Node's ESM rules. */
+    "moduleResolution": "nodenext",                     /* Resolve modules using Node's ESM rules with support for package imports. */
     "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "#prisma/client": ["src/generated/client/client"],
+      "#prisma/client/*": ["src/generated/client/*"]
     },
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
     "types": ["node", "vitest/globals"],                                      /* Specify type package names to be included without being referenced in a source file. */

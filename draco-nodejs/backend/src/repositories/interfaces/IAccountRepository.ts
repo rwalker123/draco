@@ -1,4 +1,4 @@
-import { accounts } from '@prisma/client';
+import { accounts } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import {
   dbAccountAffiliation,

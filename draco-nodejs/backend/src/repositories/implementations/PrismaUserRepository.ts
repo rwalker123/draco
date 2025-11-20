@@ -1,4 +1,4 @@
-import { PrismaClient, aspnetusers, aspnetroles, aspnetuserroles } from '@prisma/client';
+import { PrismaClient, aspnetusers, aspnetroles, aspnetuserroles } from '#prisma/client';
 import { IUserRepository } from '../interfaces/IUserRepository.js';
 
 export class PrismaUserRepository implements IUserRepository {

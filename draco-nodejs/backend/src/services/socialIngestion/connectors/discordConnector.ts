@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#prisma/client';
 import { BaseSocialIngestionConnector } from './baseConnector.js';
 import { DiscordConnectorOptions, DiscordMessageIngestionRecord } from '../ingestionTypes.js';
 import {

@@ -16,7 +16,7 @@ import {
 } from '../../../interfaces/emailInterfaces.js';
 import { EmailConfig } from '../../../config/email.js';
 import prisma from '../../../lib/prisma.js';
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '#prisma/client';
 
 type ResendAttachment = {
   filename: string;

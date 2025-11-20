@@ -7,7 +7,7 @@ import {
   userdiscordaccounts,
   PrismaClient,
   Prisma,
-} from '@prisma/client';
+} from '#prisma/client';
 import {
   DiscordAccountConfigUpsertInput,
   DiscordLinkUpsertInput,

@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { LeagueFaqService } from '../LeagueFaqService.js';
 import { ILeagueFaqRepository, dbLeagueFaq } from '../../repositories/index.js';
-import { leaguefaq } from '@prisma/client';
+import { leaguefaq } from '#prisma/client';
 import { NotFoundError } from '../../utils/customErrors.js';
 
 const makeDbFaq = (overrides: Partial<dbLeagueFaq> = {}): dbLeagueFaq => ({

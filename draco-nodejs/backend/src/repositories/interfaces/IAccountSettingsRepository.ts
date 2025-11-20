@@ -1,4 +1,4 @@
-import { accountsettings } from '@prisma/client';
+import { accountsettings } from '#prisma/client';
 
 export interface IAccountSettingsRepository {
   findByAccountId(accountId: bigint): Promise<accountsettings[]>;

@@ -1,5 +1,5 @@
 import { describe, beforeEach, afterEach, expect, it, vi } from 'vitest';
-import type { accountdiscordchannels, accountdiscordsettings } from '@prisma/client';
+import type { accountdiscordchannels, accountdiscordsettings } from '#prisma/client';
 import { DiscordIntegrationService } from '../discordIntegrationService.js';
 import { RepositoryFactory } from '../../repositories/index.js';
 import type { IDiscordIntegrationRepository } from '../../repositories/interfaces/IDiscordIntegrationRepository.js';

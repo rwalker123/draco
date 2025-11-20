@@ -5,7 +5,7 @@ import {
   accountdiscordfeaturesync,
   accountdiscordteamforums,
   userdiscordaccounts,
-} from '@prisma/client';
+} from '#prisma/client';
 
 export interface DiscordAccountConfigUpsertInput {
   guildId?: string | null;

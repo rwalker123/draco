@@ -1,4 +1,4 @@
-import { PrismaClient, leagueseason, Prisma } from '@prisma/client';
+import { PrismaClient, leagueseason, Prisma } from '#prisma/client';
 import {
   ILeagueRepository,
   LeagueSeasonGameFilters,

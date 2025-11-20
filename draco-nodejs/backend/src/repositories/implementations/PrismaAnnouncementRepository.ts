@@ -1,4 +1,4 @@
-import { PrismaClient, leaguenews, teamnews } from '@prisma/client';
+import { PrismaClient, leaguenews, teamnews } from '#prisma/client';
 import { IAnnouncementRepository } from '../interfaces/IAnnouncementRepository.js';
 import { dbAccountAnnouncement, dbTeamAnnouncement } from '../types/index.js';
 

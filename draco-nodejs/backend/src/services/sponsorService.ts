@@ -1,4 +1,4 @@
-import { sponsors, teamsseason } from '@prisma/client';
+import { sponsors, teamsseason } from '#prisma/client';
 import { CreateSponsorType, SponsorType } from '@draco/shared-schemas';
 import {
   RepositoryFactory,

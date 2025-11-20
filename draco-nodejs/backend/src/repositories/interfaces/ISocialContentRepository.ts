@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#prisma/client';
 import { dbDiscordMessagePreview, dbSocialFeedItem, dbSocialVideo } from '../types/dbTypes.js';
 
 export interface SocialFeedQuery {

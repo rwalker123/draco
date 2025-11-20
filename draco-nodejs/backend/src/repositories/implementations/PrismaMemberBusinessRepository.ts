@@ -1,4 +1,4 @@
-import { PrismaClient, memberbusiness } from '@prisma/client';
+import { PrismaClient, memberbusiness } from '#prisma/client';
 import { IMemberBusinessRepository } from '../interfaces/IMemberBusinessRepository.js';
 import { dbMemberBusiness } from '../types/index.js';
 

@@ -5,7 +5,7 @@ import type {
   accountdiscordfeaturesync,
   userdiscordaccounts,
   accountdiscordteamforums,
-} from '@prisma/client';
+} from '#prisma/client';
 import {
   DiscordAccountConfigType,
   DiscordLinkStatusType,

@@ -2,6 +2,9 @@
   "name": "@draco/backend",
   "version": "1.0.0",
   "type": "module",
+  "imports": {
+    "#prisma/client": "./dist/src/generated/client/client.js"
+  },
   "main": "index.js",
   "scripts": {
     "test": "vitest run",

@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import type { accountsettings } from '@prisma/client';
+import type { accountsettings } from '#prisma/client';
 import { AccountSettingsService } from '../accountSettingsService.js';
 import type { IAccountSettingsRepository } from '../../repositories/interfaces/index.js';
 import { ACCOUNT_SETTING_DEFINITIONS } from '@draco/shared-schemas';

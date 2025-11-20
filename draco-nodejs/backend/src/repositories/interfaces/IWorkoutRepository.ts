@@ -1,4 +1,4 @@
-import { Prisma, workoutannouncement, workoutregistration } from '@prisma/client';
+import { Prisma, workoutannouncement, workoutregistration } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import type {
   dbWorkoutWithField,

@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '#prisma/client';
 import { dbPasswordResetToken, dbPasswordResetTokenCreateInput } from '../types/dbTypes.js';
 import { IPasswordResetTokenRepository } from '../interfaces/IPasswordResetTokenRepository.js';
 

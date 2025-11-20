@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#prisma/client';
 import { BaseSocialIngestionConnector } from './baseConnector.js';
 import { SocialVideoIngestionRecord, YouTubeConnectorOptions } from '../ingestionTypes.js';
 import { deterministicUuid } from '../../../utils/deterministicUuid.js';

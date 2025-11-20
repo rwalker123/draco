@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '#prisma/client';
 import { IHandoutRepository } from '../interfaces/index.js';
 import { dbAccountHandout, dbTeamHandout } from '../types/index.js';
 
@@ -33,7 +33,7 @@ export class PrismaHandoutRepository implements IHandoutRepository {
     });
   }
 
-  async createAccountHandout(data: Partial<import('@prisma/client').accounthandouts>) {
+  async createAccountHandout(data: Partial<import('#prisma/client').accounthandouts>) {
     return this.prisma.accounthandouts.create({
       data: data as Parameters<typeof this.prisma.accounthandouts.create>[0]['data'],
     });
@@ -51,8 +51,8 @@ export class PrismaHandoutRepository implements IHandoutRepository {
 
   async updateAccountHandout(
     handoutId: bigint,
-    data: Partial<import('@prisma/client').accounthandouts>,
-  ): Promise<import('@prisma/client').accounthandouts> {
+    data: Partial<import('#prisma/client').accounthandouts>,
+  ): Promise<import('#prisma/client').accounthandouts> {
     return this.prisma.accounthandouts.update({
       where: { id: Number(handoutId) },
       data: data as Parameters<typeof this.prisma.accounthandouts.update>[0]['data'],
@@ -73,7 +73,7 @@ export class PrismaHandoutRepository implements IHandoutRepository {
     });
   }
 
-  async createTeamHandout(data: Partial<import('@prisma/client').teamhandouts>) {
+  async createTeamHandout(data: Partial<import('#prisma/client').teamhandouts>) {
     return this.prisma.teamhandouts.create({
       data: data as Parameters<typeof this.prisma.teamhandouts.create>[0]['data'],
     });
@@ -88,8 +88,8 @@ export class PrismaHandoutRepository implements IHandoutRepository {
 
   async updateTeamHandout(
     handoutId: bigint,
-    data: Partial<import('@prisma/client').teamhandouts>,
-  ): Promise<import('@prisma/client').teamhandouts> {
+    data: Partial<import('#prisma/client').teamhandouts>,
+  ): Promise<import('#prisma/client').teamhandouts> {
     return this.prisma.teamhandouts.update({
       where: { id: Number(handoutId) },
       data: data as Parameters<typeof this.prisma.teamhandouts.update>[0]['data'],

@@ -1,4 +1,4 @@
-import { playerswantedclassified, Prisma } from '@prisma/client';
+import { playerswantedclassified, Prisma } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import {
   dbClassifiedPageResponse,

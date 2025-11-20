@@ -1,4 +1,4 @@
-import { PrismaClient, accountsettings } from '@prisma/client';
+import { PrismaClient, accountsettings } from '#prisma/client';
 import { IAccountSettingsRepository } from '../interfaces/index.js';
 
 export class PrismaAccountSettingsRepository implements IAccountSettingsRepository {

@@ -13,7 +13,7 @@ import {
   CreateContactType,
   AccountDiscordIntegrationType,
 } from '@draco/shared-schemas';
-import { accounts, contacts } from '@prisma/client';
+import { accounts, contacts } from '#prisma/client';
 import {
   RepositoryFactory,
   IAccountRepository,

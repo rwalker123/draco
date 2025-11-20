@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '#prisma/client';
 import { IPollRepository } from '../interfaces/index.js';
 import {
   dbPollCreateData,
