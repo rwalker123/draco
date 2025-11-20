@@ -222,7 +222,7 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
     <Box>
       {showHeader && (
         <Box sx={{ mb: 3 }}>
-          <Typography variant="h5" component="h2" gutterBottom>
+          <Typography variant="h5" component="h2" gutterBottom color="text.primary">
             Email History
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -261,7 +261,7 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
         />
       </Stack>
 
-      <Card>
+      <Card variant="outlined">
         <CardContent>
           <Stack
             direction={{ xs: 'column', md: 'row' }}

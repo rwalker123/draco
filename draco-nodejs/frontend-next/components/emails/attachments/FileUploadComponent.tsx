@@ -5,13 +5,14 @@ import {
   Box,
   Stack,
   Alert,
-  Paper,
   Typography,
   Divider,
   useTheme,
   useMediaQuery,
   LinearProgress,
   IconButton,
+  alpha,
+  Paper,
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
@@ -42,9 +43,15 @@ interface AttachmentItemProps {
 
 const AttachmentItem = React.memo<AttachmentItemProps>(
   ({ attachment, onRetry, onCancel, onRemove }) => {
+    const theme = useTheme();
     const isUploading = attachment.status === 'uploading';
     const isError = attachment.status === 'error';
     const isUploaded = attachment.status === 'uploaded';
+    const errorBg = alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.18 : 0.08);
+    const removeHoverBg = alpha(
+      theme.palette.error.main,
+      theme.palette.mode === 'dark' ? 0.2 : 0.1,
+    );
 
     return (
       <Box
@@ -53,7 +60,7 @@ const AttachmentItem = React.memo<AttachmentItemProps>(
           border: 1,
           borderColor: isError ? 'error.main' : 'divider',
           borderRadius: 1,
-          bgcolor: isError ? 'error.background' : 'background.paper',
+          bgcolor: isError ? errorBg : 'background.paper',
         }}
       >
         {/* File info row */}
@@ -123,7 +130,7 @@ const AttachmentItem = React.memo<AttachmentItemProps>(
                 color: 'text.secondary',
                 '&:hover': {
                   color: 'error.main',
-                  bgcolor: 'error.background',
+                  bgcolor: removeHoverBg,
                 },
               }}
             >
@@ -277,10 +284,21 @@ export const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
               order: { xs: 1, md: 1 }, // Mobile: first, Desktop: first (left)
             }}
           >
-            <Paper variant="outlined" sx={{ p: 2, height: 'fit-content' }}>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                height: 'fit-content',
+                bgcolor: 'background.paper',
+                borderColor: 'divider',
+              }}
+            >
               <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-                <UploadIcon fontSize="small" color="primary" />
-                <Typography variant="subtitle2" fontWeight="medium">
+                <UploadIcon
+                  fontSize="small"
+                  sx={{ color: isUploading ? 'primary.main' : 'text.secondary' }}
+                />
+                <Typography variant="subtitle2" fontWeight="medium" color="text.primary">
                   Attachments ({attachments.length})
                 </Typography>
               </Stack>

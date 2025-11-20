@@ -383,7 +383,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
           setServerPaginationState({
             hasNext: result.pagination?.hasNext || false,
-            hasPrev: result.pagination?.hasPrev || false,
+            hasPrev: result.pagination?.hasPrev || page > 1,
             totalContacts: recipientContacts.length,
           });
           setCurrentPage(page);
@@ -641,12 +641,12 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         if (isInSearchMode()) {
           // Handle search pagination
           if (searchPaginationState.hasPrev && !paginationLoading && searchCurrentPage > 1) {
-            handleSearchWithPagination(lastSearchQuery, searchCurrentPage, rowsPerPage);
+            handleSearchWithPagination(lastSearchQuery, searchCurrentPage - 1, rowsPerPage);
           }
         } else {
           // Handle regular pagination
           if (serverPaginationState.hasPrev && !paginationLoading && currentPage > 1) {
-            fetchContactsPage(currentPage, rowsPerPage);
+            fetchContactsPage(currentPage - 1, rowsPerPage);
           }
         }
       },
@@ -1038,7 +1038,10 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         fullWidth
         aria-labelledby="recipient-dialog-error-title"
       >
-        <DialogTitle id="recipient-dialog-error-title">
+        <DialogTitle
+          id="recipient-dialog-error-title"
+          sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}
+        >
           <Stack direction="row" alignItems="center" spacing={1}>
             <WarningIcon color="error" />
             <Typography variant="h6">Error Loading Recipients</Typography>
@@ -1061,10 +1064,24 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
             </Box>
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancel}>Close</Button>
+        <DialogActions
+          sx={{ bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider', px: 2, py: 1 }}
+        >
+          <Button disableElevation onClick={handleCancel}>
+            Close
+          </Button>
           {onRetry && retryCount < maxRetries && (
-            <Button onClick={handleRetry} variant="contained" startIcon={<RefreshIcon />}>
+            <Button
+              disableElevation
+              onClick={handleRetry}
+              variant="contained"
+              startIcon={<RefreshIcon />}
+              sx={{
+                backgroundImage: 'none',
+                bgcolor: 'primary.main',
+                '&:hover': { bgcolor: 'primary.dark', backgroundImage: 'none' },
+              }}
+            >
               Retry ({retryCount}/{maxRetries})
             </Button>
           )}
@@ -1087,23 +1104,32 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           height: isMobile ? '100%' : '80vh',
           minHeight: 600,
           maxHeight: 800,
+          bgcolor: 'background.paper',
         },
       }}
     >
       {/* Dialog Header */}
-      <DialogTitle>
+      <DialogTitle
+        sx={{
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider',
+          px: 3,
+          py: 2,
+        }}
+      >
         <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6" component="div" id="recipient-dialog-title">
+          <Typography variant="h6" component="div" id="recipient-dialog-title" color="text.primary">
             Advanced Recipient Selection
           </Typography>
-          <IconButton onClick={handleCancel} size="small">
+          <IconButton onClick={handleCancel} size="small" color="inherit">
             <CloseIcon />
           </IconButton>
         </Stack>
       </DialogTitle>
 
       {/* Tab Navigation */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, bgcolor: 'background.paper' }}>
         <Tabs
           value={currentTab}
           onChange={handleTabChange}
@@ -1117,7 +1143,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       </Box>
 
       {/* Dialog Content */}
-      <DialogContent sx={{ p: 0, height: '100%', overflow: 'hidden' }}>
+      <DialogContent sx={{ p: 0, height: '100%', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {/* General Error Alert */}
         {errorState.general && (
           <Box sx={{ p: 2 }}>
@@ -1170,6 +1196,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
             </Box>
             {onRetry && (
               <Button
+                disableElevation
                 onClick={handleRetry}
                 variant="outlined"
                 startIcon={<RefreshIcon />}
@@ -1183,7 +1210,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
         {/* Main Content */}
         {hasAnyData && (
-          <Stack direction="row" sx={{ height: '100%' }}>
+          <Stack direction="row" sx={{ height: '100%', bgcolor: 'background.paper' }}>
             {/* Main Selection Panel */}
             <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
               {/* Contacts Tab - Now using ContactSelectionTable with local state */}
@@ -1227,15 +1254,33 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       </DialogContent>
 
       {/* Dialog Actions */}
-      <DialogActions sx={{ px: 3, py: 2 }}>
+      <DialogActions
+        sx={{
+          px: 3,
+          py: 2,
+          borderTop: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
         <Stack direction="row" spacing={2} justifyContent="space-between" width="100%">
           {/* Selection Controls */}
           <Stack direction="row" alignItems="center" spacing={2}>
             <Button
+              disableElevation
               size="small"
               variant={getTotalSelected() > 0 ? 'contained' : 'outlined'}
               onClick={unifiedActions.clearAllRecipients}
               disabled={loadingState.applying || getTotalSelected() === 0}
+              sx={{
+                backgroundImage: 'none',
+                ...(getTotalSelected() > 0
+                  ? {
+                      bgcolor: 'primary.main',
+                      '&:hover': { bgcolor: 'primary.dark', backgroundImage: 'none' },
+                    }
+                  : {}),
+              }}
             >
               Clear All
             </Button>
@@ -1246,14 +1291,25 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
           {/* Action Buttons */}
           <Stack direction="row" spacing={2}>
-            <Button onClick={handleCancel} color="inherit" disabled={loadingState.applying}>
+            <Button
+              disableElevation
+              onClick={handleCancel}
+              color="inherit"
+              disabled={loadingState.applying}
+            >
               Cancel
             </Button>
             <Button
+              disableElevation
               onClick={handleApply}
               variant="contained"
               disabled={loadingState.applying}
               startIcon={loadingState.applying ? <CircularProgress size={20} /> : undefined}
+              sx={{
+                backgroundImage: 'none',
+                bgcolor: 'primary.main',
+                '&:hover': { bgcolor: 'primary.dark', backgroundImage: 'none' },
+              }}
             >
               {loadingState.applying ? 'Applying...' : 'Apply Selection'}
             </Button>

@@ -18,6 +18,7 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CampaignIcon from '@mui/icons-material/Campaign';
+import CreateIcon from '@mui/icons-material/Create';
 import DescriptionIcon from '@mui/icons-material/Description';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -28,6 +29,7 @@ import { getAccountUserTeams } from '@draco/shared-api-client';
 import { HandoutService } from '../services/handoutService';
 import { AnnouncementService, type AnnouncementSummaryItem } from '../services/announcementService';
 import { useAuth } from '../context/AuthContext';
+import { useRole } from '../context/RoleContext';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -131,6 +133,15 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   const { currentThemeName, setCurrentThemeName } = useThemeContext();
   const isDarkMode = currentThemeName === 'dark';
   const themeToggleLabel = isDarkMode ? 'Switch to light mode' : 'Switch to dark mode';
+  const { hasRole, loading: roleLoading, initialized: roleInitialized } = useRole();
+  const composeHref = accountId ? `/account/${accountId}/communications/compose` : null;
+  const canComposeEmail =
+    Boolean(composeHref) &&
+    roleInitialized &&
+    !roleLoading &&
+    accountId !== undefined &&
+    accountId !== null &&
+    hasRole('AccountAdmin', { accountId });
 
   const resetHandoutState = React.useCallback(() => {
     hasLoadedAccountHandoutsRef.current = false;
@@ -1057,7 +1068,10 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
       Boolean(accountAnnouncementsError) ||
       Boolean(teamAnnouncementsError));
 
-  const shouldShowQuickActionsMenu = shouldShowAnnouncementAction || shouldShowHandoutAction;
+  const shouldShowComposeAction = canComposeEmail && Boolean(composeHref);
+
+  const shouldShowQuickActionsMenu =
+    shouldShowAnnouncementAction || shouldShowHandoutAction || shouldShowComposeAction;
 
   const announcementDialog = (
     <AnnouncementDetailDialog
@@ -1169,6 +1183,19 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
               </Menu>
             </>
           ) : null}
+          {shouldShowComposeAction && composeHref ? (
+            <Tooltip title="Compose email">
+              <IconButton
+                color="inherit"
+                size="small"
+                component={NextLink}
+                href={composeHref}
+                aria-label="Compose email"
+              >
+                <CreateIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : null}
           <ThemeSwitcher />
         </Box>
         {announcementDialog}
@@ -1200,6 +1227,14 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         PaperProps={menuPaperStyles}
       >
+        {shouldShowComposeAction && composeHref ? (
+          <MenuItem dense component={NextLink} href={composeHref} onClick={handleCompactMenuClose}>
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <CreateIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="Compose email" />
+          </MenuItem>
+        ) : null}
         <MenuItem
           dense
           onClick={() => {

@@ -471,7 +471,7 @@ const EmailComposePageInternal: React.FC<
 
                   {/* Enhanced File Upload */}
                   <Box>
-                    <Typography variant="h6" sx={{ mb: 1 }}>
+                    <Typography variant="h6" color="text.primary" sx={{ mb: 1, fontWeight: 600 }}>
                       File Attachments
                     </Typography>
 

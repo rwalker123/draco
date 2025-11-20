@@ -132,8 +132,11 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
         variant="outlined"
         sx={{
           p: compact ? 1.5 : 2,
-          backgroundColor: alpha(theme.palette.grey[50], 0.5),
-          border: `1px dashed ${theme.palette.grey[300]}`,
+          backgroundColor:
+            theme.palette.mode === 'dark'
+              ? alpha(theme.palette.text.primary, 0.04)
+              : alpha(theme.palette.grey[100], 0.9),
+          border: `1px dashed ${theme.palette.divider}`,
         }}
       >
         <Stack direction="row" spacing={1} alignItems="center">
@@ -151,8 +154,11 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
       variant="outlined"
       sx={{
         p: compact ? 1.5 : 2,
-        backgroundColor: alpha(theme.palette.primary.main, 0.02),
-        borderColor: alpha(theme.palette.primary.main, 0.3),
+        backgroundColor: alpha(
+          theme.palette.primary.main,
+          theme.palette.mode === 'dark' ? 0.12 : 0.04,
+        ),
+        borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.5 : 0.3),
       }}
     >
       <Stack spacing={compact ? 1 : 1.5}>
@@ -168,7 +174,10 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
                 variant="outlined"
                 color="default"
                 sx={{
-                  backgroundColor: alpha(theme.palette.grey[500], 0.1),
+                  backgroundColor: alpha(
+                    theme.palette.text.primary,
+                    theme.palette.mode === 'dark' ? 0.12 : 0.06,
+                  ),
                   '& .MuiChip-label': {
                     fontSize: compact ? '0.7rem' : '0.8rem',
                     fontWeight: 500,

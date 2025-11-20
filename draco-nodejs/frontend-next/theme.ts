@@ -31,7 +31,7 @@ export const dracoThemeOptions: ThemeOptions = {
       dark: '#be123c',
     },
     background: {
-      default: '#f4f6fb',
+      default: '#ffffff',
       paper: '#ffffff',
     },
     text: {
