@@ -116,12 +116,14 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
   const desktopPrevButtonSx = useMemo(
     () => ({
       minWidth: 100,
-      background: hasPrev
-        ? `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`
-        : 'transparent',
-      transition: theme.transitions.create(['background', 'opacity'], {
+      backgroundColor: hasPrev ? theme.palette.primary.main : 'action.hover',
+      color: hasPrev ? theme.palette.primary.contrastText : theme.palette.text.disabled,
+      transition: theme.transitions.create(['background-color', 'opacity'], {
         duration: theme.transitions.duration.short,
       }),
+      '&:hover': {
+        backgroundColor: hasPrev ? theme.palette.primary.dark : 'action.hover',
+      },
     }),
     [hasPrev, theme.palette.primary.main, theme.palette.primary.dark, theme.transitions],
   );
@@ -129,12 +131,14 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
   const desktopNextButtonSx = useMemo(
     () => ({
       minWidth: 100,
-      background: hasNext
-        ? `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`
-        : 'transparent',
-      transition: theme.transitions.create(['background', 'opacity'], {
+      backgroundColor: hasNext ? theme.palette.primary.main : 'action.hover',
+      color: hasNext ? theme.palette.primary.contrastText : theme.palette.text.disabled,
+      transition: theme.transitions.create(['background-color', 'opacity'], {
         duration: theme.transitions.duration.short,
       }),
+      '&:hover': {
+        backgroundColor: hasNext ? theme.palette.primary.dark : 'action.hover',
+      },
     }),
     [hasNext, theme.palette.primary.main, theme.palette.primary.dark, theme.transitions],
   );
@@ -262,7 +266,7 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
         elevation={1}
         sx={{
           p: 2,
-          background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+          backgroundColor: theme.palette.background.paper,
         }}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -318,7 +322,7 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
       elevation={2}
       sx={{
         p: 2,
-        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+        backgroundColor: theme.palette.background.paper,
         borderRadius: 2,
       }}
     >
@@ -331,7 +335,8 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
             variant="filled"
             sx={{
               fontWeight: 600,
-              background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.light} 90%)`,
+              backgroundColor: theme.palette.primary.main,
+              color: theme.palette.primary.contrastText,
             }}
           />
 
