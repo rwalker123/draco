@@ -1133,7 +1133,7 @@ export class EmailService {
           return dateDelay;
         }
 
-        const retryAfterMatch = candidate.match(/retry[ -]?after[:]?\\s*(\\d+)/i);
+        const retryAfterMatch = candidate.match(/retry[ -]?after[:]?\s*(\d+)/i);
         if (retryAfterMatch && retryAfterMatch[1]) {
           const parsed = Number(retryAfterMatch[1]);
           if (Number.isFinite(parsed)) {
@@ -1142,7 +1142,7 @@ export class EmailService {
         }
 
         const retryInMatch = candidate.match(
-          /retry (?:in|after)\\s*(\\d+)\\s*(seconds|second|secs|s)?/i,
+          /retry (?:in|after)\s*(\d+)\s*(seconds|second|secs|s)?/i,
         );
         if (retryInMatch && retryInMatch[1]) {
           const parsed = Number(retryInMatch[1]);

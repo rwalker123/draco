@@ -116,13 +116,13 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
   const desktopPrevButtonSx = useMemo(
     () => ({
       minWidth: 100,
-      backgroundColor: hasPrev ? theme.palette.primary.main : 'action.hover',
+      backgroundColor: hasPrev ? theme.palette.primary.main : theme.palette.action.hover,
       color: hasPrev ? theme.palette.primary.contrastText : theme.palette.text.disabled,
       transition: theme.transitions.create(['background-color', 'opacity'], {
         duration: theme.transitions.duration.short,
       }),
       '&:hover': {
-        backgroundColor: hasPrev ? theme.palette.primary.dark : 'action.hover',
+        backgroundColor: hasPrev ? theme.palette.primary.dark : theme.palette.action.hover,
       },
     }),
     [
@@ -131,6 +131,7 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
       theme.palette.primary.dark,
       theme.palette.primary.contrastText,
       theme.palette.text.disabled,
+      theme.palette.action.hover,
       theme.transitions,
     ],
   );
@@ -138,13 +139,13 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
   const desktopNextButtonSx = useMemo(
     () => ({
       minWidth: 100,
-      backgroundColor: hasNext ? theme.palette.primary.main : 'action.hover',
+      backgroundColor: hasNext ? theme.palette.primary.main : theme.palette.action.hover,
       color: hasNext ? theme.palette.primary.contrastText : theme.palette.text.disabled,
       transition: theme.transitions.create(['background-color', 'opacity'], {
         duration: theme.transitions.duration.short,
       }),
       '&:hover': {
-        backgroundColor: hasNext ? theme.palette.primary.dark : 'action.hover',
+        backgroundColor: hasNext ? theme.palette.primary.dark : theme.palette.action.hover,
       },
     }),
     [
@@ -153,6 +154,7 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
       theme.palette.primary.dark,
       theme.palette.primary.contrastText,
       theme.palette.text.disabled,
+      theme.palette.action.hover,
       theme.transitions,
     ],
   );
