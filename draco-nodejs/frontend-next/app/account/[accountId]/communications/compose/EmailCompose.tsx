@@ -69,13 +69,22 @@ export default function EmailCompose() {
   // Show loading state
   if (loading) {
     return (
-      <main className="min-h-screen bg-background">
+      <Box
+        component="main"
+        sx={{
+          minHeight: '100vh',
+          bgcolor: 'background.default',
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
         <Box
           sx={{
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
+            width: '100%',
             height: '50vh',
             gap: 2,
           }}
@@ -85,14 +94,14 @@ export default function EmailCompose() {
             Loading email composer...
           </Typography>
         </Box>
-      </main>
+      </Box>
     );
   }
 
   // Show error state
   if (error) {
     return (
-      <main className="min-h-screen bg-background">
+      <Box component="main" sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
         {/* Account Header */}
         <AccountPageHeader accountId={accountId as string}>
           <Box
@@ -128,13 +137,13 @@ export default function EmailCompose() {
             </Typography>
           </Alert>
         </Box>
-      </main>
+      </Box>
     );
   }
 
   // Render the complete email compose interface
   return (
-    <main className="min-h-screen bg-background">
+    <Box component="main" sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Account Header */}
       <AccountPageHeader accountId={accountId as string}>
         <Box
@@ -151,7 +160,7 @@ export default function EmailCompose() {
         </Box>
       </AccountPageHeader>
 
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ minHeight: 'calc(100vh - 160px)', display: 'flex', flexDirection: 'column' }}>
         {/* Navigation Header */}
         <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
           <Button startIcon={<ArrowBackIcon />} onClick={handleBack} size="small" color="inherit">
@@ -160,7 +169,7 @@ export default function EmailCompose() {
         </Box>
 
         {/* Main Compose Interface */}
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, bgcolor: 'background.default' }}>
           <EmailComposePage
             accountId={accountId as string}
             seasonId={currentSeason?.id}
@@ -170,6 +179,6 @@ export default function EmailCompose() {
           />
         </Box>
       </Box>
-    </main>
+    </Box>
   );
 }

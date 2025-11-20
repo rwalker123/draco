@@ -13,6 +13,7 @@ import {
   Alert,
   Button,
   CircularProgress,
+  alpha,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -89,13 +90,22 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
   };
 
   return (
-    <Paper variant="outlined" sx={{ p: compact ? 2 : 3, mb: 2, position: 'relative' }}>
+    <Paper
+      variant="outlined"
+      sx={{
+        p: compact ? 2 : 3,
+        mb: 2,
+        position: 'relative',
+        bgcolor: 'background.paper',
+        borderColor: 'divider',
+      }}
+    >
       {/* Cancel Button */}
       {onCancelClick && (
         <Button
           variant="outlined"
           size="small"
-          color="secondary"
+          color="error"
           startIcon={<ClearIcon />}
           onClick={onCancelClick}
           disabled={state.isSending}
@@ -105,6 +115,19 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
             right: compact ? 8 : 12,
             minWidth: 'auto',
             px: compact ? 1.5 : 2,
+            borderColor: 'error.main',
+            color: 'error.main',
+            backgroundColor: 'background.paper',
+            '&:hover': {
+              borderColor: 'error.main',
+              backgroundColor: (theme) =>
+                alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.12 : 0.08),
+            },
+            '&.Mui-disabled': {
+              color: 'text.disabled',
+              borderColor: 'divider',
+              backgroundColor: 'action.hover',
+            },
           }}
         >
           {compact ? '' : 'Clear'}
@@ -151,8 +174,21 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
                         px: 2,
                         fontWeight: 'medium',
                         borderWidth: 2,
+                        color: 'primary.main',
+                        borderColor: 'primary.main',
+                        backgroundColor: 'background.paper',
                         '&:hover': {
                           borderWidth: 2,
+                          backgroundColor: (theme) =>
+                            alpha(
+                              theme.palette.primary.main,
+                              theme.palette.mode === 'dark' ? 0.12 : 0.08,
+                            ),
+                        },
+                        '&.Mui-disabled': {
+                          color: 'text.disabled',
+                          borderColor: 'divider',
+                          backgroundColor: 'action.hover',
                         },
                       }}
                     >

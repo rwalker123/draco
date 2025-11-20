@@ -52,7 +52,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     })();
   `;
 
-  const bodyBackground = initialTheme === 'dark' ? '#1e1e1e' : '#f4f6fb';
+  // Keep body surface aligned with the main paper background for both themes
+  const bodyBackground = initialTheme === 'dark' ? '#1e1e1e' : '#ffffff';
   const bodyColor = initialTheme === 'dark' ? '#e0e0e0' : '#0f172a';
 
   return (

@@ -30,6 +30,20 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
   const theme = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const dragOverlayColor = alpha(
+    theme.palette.primary.main,
+    theme.palette.mode === 'dark' ? 0.18 : 0.1,
+  );
+  const dragSurfaceColor = alpha(
+    theme.palette.primary.main,
+    theme.palette.mode === 'dark' ? 0.14 : 0.06,
+  );
+  const hoverSurfaceColor = alpha(
+    theme.palette.primary.main,
+    theme.palette.mode === 'dark' ? 0.12 : 0.04,
+  );
+  const disabledSurfaceColor = alpha(theme.palette.text.primary, 0.04);
+  const disabledBorderColor = alpha(theme.palette.text.primary, 0.12);
 
   // Handle file input change
   const handleFileInputChange = useCallback(
@@ -131,13 +145,13 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
         sx={{
           border: 2,
           borderStyle: 'dashed',
-          borderColor: isDragOver ? 'primary.main' : disabled ? 'action.disabled' : 'divider',
+          borderColor: isDragOver ? 'primary.main' : disabled ? disabledBorderColor : 'divider',
           borderRadius: 2,
           p: compact ? 2 : 3,
           bgcolor: isDragOver
-            ? alpha(theme.palette.primary.main, 0.05)
+            ? dragSurfaceColor
             : disabled
-              ? 'action.hover'
+              ? disabledSurfaceColor
               : 'background.paper',
           cursor: disabled ? 'not-allowed' : 'pointer',
           transition: 'all 0.2s ease-in-out',
@@ -146,7 +160,7 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
           ...(!disabled && {
             '&:hover': {
               borderColor: 'primary.main',
-              bgcolor: alpha(theme.palette.primary.main, 0.02),
+              bgcolor: hoverSurfaceColor,
             },
           }),
         }}
@@ -156,7 +170,7 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
           <UploadIcon
             sx={{
               fontSize: compact ? 28 : 42,
-              color: isDragOver ? 'primary.main' : disabled ? 'action.disabled' : 'action.active',
+              color: isDragOver ? 'primary.main' : disabled ? 'text.disabled' : 'text.secondary',
             }}
           />
 
@@ -208,7 +222,7 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
               left: 0,
               right: 0,
               bottom: 0,
-              bgcolor: alpha(theme.palette.primary.main, 0.1),
+              bgcolor: dragOverlayColor,
               borderRadius: 2,
               border: 2,
               borderStyle: 'dashed',
