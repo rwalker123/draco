@@ -91,7 +91,11 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
                       {announcement.heading}
                     </Typography>
                   ) : null}
-                  <Typography variant="h6" sx={{ mt: titleMarginTop, mb: 0.5 }}>
+                  <Typography
+                    variant="h6"
+                    color="text.primary"
+                    sx={{ mt: titleMarginTop, mb: 0.5 }}
+                  >
                     {announcement.title}
                   </Typography>
                   <Typography

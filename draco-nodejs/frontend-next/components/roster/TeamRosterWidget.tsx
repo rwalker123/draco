@@ -321,26 +321,35 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   const totalPlayers = hasPrivateAccess ? activePlayers.length : publicPlayers.length;
 
   return (
-    <WidgetShell
-      accent="primary"
-      disablePadding
-      headerContent={
-        <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
-          <Typography variant="h6" fontWeight={700}>
-            Team Roster
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Active Players ({totalPlayers})
-          </Typography>
-        </Box>
-      }
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        width: '100%',
-      }}
-    >
-      <Box sx={{ p: 3 }}>{renderContent()}</Box>
+    <WidgetShell accent="primary" sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <Box
+        sx={(theme) => ({
+          p: 3,
+          borderBottom: 1,
+          borderColor: theme.palette.divider,
+          backgroundColor: theme.palette.widget.surface,
+          borderRadius: 2,
+        })}
+      >
+        <Typography variant="h6" fontWeight={700} color="text.primary">
+          Team Roster
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Active Players ({totalPlayers})
+        </Typography>
+      </Box>
+      <Box
+        sx={(theme) => ({
+          p: 3,
+          borderRadius: 2,
+          backgroundColor:
+            theme.palette.mode === 'dark'
+              ? theme.palette.grey[900]
+              : theme.palette.background.paper,
+        })}
+      >
+        {renderContent()}
+      </Box>
     </WidgetShell>
   );
 };

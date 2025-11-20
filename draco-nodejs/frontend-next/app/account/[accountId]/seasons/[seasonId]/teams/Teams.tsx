@@ -11,6 +11,7 @@ import {
   Menu,
   MenuItem,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { Edit as EditIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import { useAuth } from '../../../../../../context/AuthContext';
 import { useRole } from '../../../../../../context/RoleContext';
@@ -319,10 +320,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             sx={{
               fontWeight: 'bold',
               textDecoration: 'none',
-              color: 'primary.main',
+              color: 'text.primary',
               '&:hover': {
                 textDecoration: 'underline',
-                color: 'primary.dark',
+                color: 'text.primary',
               },
               textAlign: 'left',
               border: 'none',
@@ -341,10 +342,9 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         {canEditTeams && (
           <IconButton
             onClick={() => handleEditTeam(teamSeason)}
-            color="primary"
             size="small"
             title="Edit team"
-            sx={{ flexShrink: 0 }}
+            sx={{ flexShrink: 0, color: 'text.secondary' }}
           >
             <EditIcon fontSize="small" />
           </IconButton>
@@ -360,7 +360,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
           variant="subtitle2"
           sx={{
             fontWeight: 'bold',
-            color: 'primary.main',
+            color: 'text.secondary',
             mb: 1,
             textTransform: 'uppercase',
             fontSize: '0.8rem',
@@ -396,7 +396,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
               alignItems: 'center',
               mb: 2,
               borderBottom: '2px solid',
-              borderColor: 'secondary.main',
+              borderColor: 'divider',
               pb: 1,
             }}
           >
@@ -404,7 +404,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
               variant="h6"
               sx={{
                 fontWeight: 'bold',
-                color: 'secondary.main',
+                color: 'text.primary',
               }}
             >
               {leagueSeason.league.name}
@@ -420,6 +420,32 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
                   minWidth: 'auto',
                   px: 2,
                   py: 1,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.common.white, 0.08)
+                      : alpha(theme.palette.primary.main, 0.08),
+                  color: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? theme.palette.common.white
+                      : theme.palette.primary.main,
+                  border: (theme) =>
+                    `1px solid ${
+                      theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.common.white, 0.3)
+                        : alpha(theme.palette.primary.main, 0.3)
+                    }`,
+                  '&:hover': {
+                    bgcolor: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.common.white, 0.15)
+                        : alpha(theme.palette.primary.main, 0.15),
+                    border: (theme) =>
+                      `1px solid ${
+                        theme.palette.mode === 'dark'
+                          ? alpha(theme.palette.common.white, 0.4)
+                          : alpha(theme.palette.primary.main, 0.4)
+                      }`,
+                  },
                 }}
               >
                 Export
@@ -482,12 +508,31 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
                 minWidth: 'auto',
                 px: 2,
                 py: 1,
-                bgcolor: 'rgba(255,255,255,0.1)',
-                color: 'white',
-                border: '1px solid rgba(255,255,255,0.3)',
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.common.white, 0.08)
+                    : alpha(theme.palette.primary.main, 0.08),
+                color: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.common.white
+                    : theme.palette.primary.main,
+                border: (theme) =>
+                  `1px solid ${
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.common.white, 0.3)
+                      : alpha(theme.palette.primary.main, 0.3)
+                  }`,
                 '&:hover': {
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  border: '1px solid rgba(255,255,255,0.4)',
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.common.white, 0.15)
+                      : alpha(theme.palette.primary.main, 0.15),
+                  border: (theme) =>
+                    `1px solid ${
+                      theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.common.white, 0.4)
+                        : alpha(theme.palette.primary.main, 0.4)
+                    }`,
                 },
                 position: 'absolute',
                 right: 16,
