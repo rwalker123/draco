@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '#prisma/client';
 import { MinimumCalculator } from './minimumCalculator.js';
 import {
   BattingStatisticsFiltersType,

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '#prisma/client';
 
 /**
  * Utility class for performing batch queries to eliminate N+1 query problems

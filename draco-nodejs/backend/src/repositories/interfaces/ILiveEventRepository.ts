@@ -1,4 +1,4 @@
-import { leagueevents, socialliveevents, Prisma } from '@prisma/client';
+import { leagueevents, socialliveevents, Prisma } from '#prisma/client';
 import { dbLiveEvent } from '../types/dbTypes.js';
 
 export interface LiveEventQuery {

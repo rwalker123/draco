@@ -2,7 +2,7 @@ import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { UmpireResponseFormatter } from '../responseFormatters/index.js';
 import { PaginationHelper } from '../utils/pagination.js';
 import { PagingType, UmpiresType } from '@draco/shared-schemas';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#prisma/client';
 
 const UMPIRE_SORT_FIELDS = ['contacts.firstname', 'contacts.lastname', 'contacts.email', 'id'];
 

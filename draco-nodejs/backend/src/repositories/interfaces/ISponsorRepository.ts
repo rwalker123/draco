@@ -1,4 +1,4 @@
-import { sponsors } from '@prisma/client';
+import { sponsors } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import { dbSponsor } from '../types/index.js';
 

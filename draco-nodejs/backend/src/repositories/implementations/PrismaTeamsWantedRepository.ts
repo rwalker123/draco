@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma, teamswantedclassified } from '@prisma/client';
+import { PrismaClient, Prisma, teamswantedclassified } from '#prisma/client';
 import { DateUtils } from '../../utils/dateUtils.js';
 import { PaginationHelper } from '../../utils/pagination.js';
 import { DEFAULT_VALUES } from '../../config/playerClassifiedConstants.js';

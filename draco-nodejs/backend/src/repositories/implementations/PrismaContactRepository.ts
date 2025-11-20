@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, contacts } from '@prisma/client';
+import { Prisma, PrismaClient, contacts } from '#prisma/client';
 import { ActiveRosterContactFilters, IContactRepository } from '../interfaces/index.js';
 import {
   dbRosterPlayer,

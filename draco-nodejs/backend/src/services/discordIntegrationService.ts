@@ -3,7 +3,7 @@ import type {
   accountdiscordsettings,
   accountdiscordchannels,
   accountdiscordteamforums,
-} from '@prisma/client';
+} from '#prisma/client';
 import { z } from 'zod';
 import {
   AnnouncementType,

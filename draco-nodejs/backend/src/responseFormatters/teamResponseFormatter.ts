@@ -1,4 +1,4 @@
-import { teamsseason } from '@prisma/client';
+import { teamsseason } from '#prisma/client';
 import { getContactPhotoUrl, getLogoUrl } from '../config/logo.js';
 import {
   dbTeam,

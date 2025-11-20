@@ -1,4 +1,4 @@
-import { teamsseason, teams, teamseasonmanager, Prisma } from '@prisma/client';
+import { teamsseason, teams, teamseasonmanager, Prisma } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import {
   dbTeamWithLeague,

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '#prisma/client';
 import { IMonitoringRepository } from '../interfaces/index.js';
 import { dbMonitoringConnectivityResult } from '../types/index.js';
 

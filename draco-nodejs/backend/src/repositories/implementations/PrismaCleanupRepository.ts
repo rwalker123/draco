@@ -1,7 +1,7 @@
 // Prisma implementation of ICleanupRepository
 // Provides database operations for cleanup service
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '#prisma/client';
 import { ICleanupRepository } from '../interfaces/index.js';
 import { ValidationError, InternalServerError } from '../../utils/customErrors.js';
 

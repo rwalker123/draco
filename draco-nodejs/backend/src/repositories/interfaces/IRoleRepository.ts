@@ -1,4 +1,4 @@
-import { contactroles } from '@prisma/client';
+import { contactroles } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import {
   dbAspnetRole,

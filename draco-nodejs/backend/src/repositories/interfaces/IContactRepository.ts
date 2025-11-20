@@ -1,4 +1,4 @@
-import { contacts } from '@prisma/client';
+import { contacts } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import {
   dbBaseContact,

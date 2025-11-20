@@ -1,4 +1,4 @@
-import { playerswantedclassified } from '@prisma/client';
+import { playerswantedclassified } from '#prisma/client';
 import { getContactPhotoUrl } from '../config/logo.js';
 import { dbClassifiedPageResponse, dbPlayersWanted } from '../repositories/index.js';
 import { DateUtils } from '../utils/dateUtils.js';

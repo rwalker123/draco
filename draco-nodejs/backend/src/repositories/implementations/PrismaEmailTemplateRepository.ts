@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '#prisma/client';
 import { IEmailTemplateRepository } from '../interfaces/IEmailTemplateRepository.js';
 import {
   dbEmailTemplate,

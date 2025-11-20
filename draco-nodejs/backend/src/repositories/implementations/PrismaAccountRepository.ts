@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, accounts } from '@prisma/client';
+import { Prisma, PrismaClient, accounts } from '#prisma/client';
 import { IAccountRepository } from '../interfaces/index.js';
 import {
   dbAccountAffiliation,

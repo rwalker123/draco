@@ -19,7 +19,7 @@ import {
   UpsertTeamSeasonType,
 } from '@draco/shared-schemas';
 import { TeamResponseFormatter } from '../responseFormatters/index.js';
-import { Prisma, teamsseason, teams } from '@prisma/client';
+import { Prisma, teamsseason, teams } from '#prisma/client';
 import { dbTeamWithLeague, dbTeamSeasonValidationResult } from '../repositories/types/dbTypes.js';
 
 export interface TeamValidationOptions {

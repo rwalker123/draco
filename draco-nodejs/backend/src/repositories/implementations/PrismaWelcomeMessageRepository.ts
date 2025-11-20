@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '#prisma/client';
 import { IWelcomeMessageRepository } from '../interfaces/IWelcomeMessageRepository.js';
 import { dbWelcomeMessage } from '../types/dbTypes.js';
 

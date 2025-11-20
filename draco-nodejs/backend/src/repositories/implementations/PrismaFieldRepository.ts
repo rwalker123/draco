@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, availablefields } from '@prisma/client';
+import { Prisma, PrismaClient, availablefields } from '#prisma/client';
 import { IFieldRepository } from '../interfaces/IFieldRepository.js';
 import { dbAvailableField } from '../types/dbTypes.js';
 

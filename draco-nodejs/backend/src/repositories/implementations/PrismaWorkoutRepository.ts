@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, workoutregistration } from '@prisma/client';
+import { Prisma, PrismaClient, workoutregistration } from '#prisma/client';
 import { IWorkoutRepository, WorkoutListOptions } from '../interfaces/IWorkoutRepository.js';
 import {
   dbWorkoutRegistration,

@@ -9,10 +9,15 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Client as FTPClient, type AccessOptions, type FileInfo as FtpFileInfo } from 'basic-ftp';
 // PrismaClient will be imported dynamically from the backend
+import { PrismaPg } from '@prisma/adapter-pg';
 import * as dotenv from 'dotenv';
 import sharp from 'sharp';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables, preferring migration overrides before backend defaults
 const migrationEnvPath = path.join(__dirname, '.env');
@@ -231,9 +236,14 @@ class FileMigrationService {
 
     // Import and create Prisma client from backend
     try {
-      console.log(`🔍 DATABASE_URL: ${process.env.DATABASE_URL}`);
+      const connectionString = process.env.DATABASE_URL;
+      if (!connectionString) {
+        throw new Error('DATABASE_URL must be set to initialize Prisma for file migration');
+      }
+      console.log(`🔍 DATABASE_URL: ${connectionString}`);
       const { PrismaClient } = await import('@prisma/client');
-      this.prisma = new PrismaClient();
+      const adapter = new PrismaPg({ connectionString });
+      this.prisma = new PrismaClient({ adapter });
       console.log('✅ Prisma client initialized');
     } catch (error) {
       console.error(
@@ -2125,7 +2135,9 @@ class FileMigrationService {
 }
 
 // Run the migration if this file is executed directly
-if (require.main === module) {
+const isMainModule = import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isMainModule) {
   const args = process.argv.slice(2);
   const options: FileMigrationOptions = {};
 

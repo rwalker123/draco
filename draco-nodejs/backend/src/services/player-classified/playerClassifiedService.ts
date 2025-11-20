@@ -1,7 +1,7 @@
 // PlayerClassified Service for Draco Sports Manager
 // Orchestrator service that coordinates between specialized services following SOLID principles
 
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#prisma/client';
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcrypt';
 import { NotFoundError, ValidationError, InternalServerError } from '../../utils/customErrors.js';

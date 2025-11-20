@@ -17,10 +17,10 @@ A comprehensive sports management application migrated from ASP.NET Framework to
 ### Technology Stack
 
 **Backend:**
-- **Runtime**: Node.js v22.16.0
+- **Runtime**: Node.js v22.16.0 (minimum v20.19.0+ for Prisma 7)
 - **Framework**: Express.js 4.18.2
-- **Language**: TypeScript 5.8.3
-- **Database ORM**: Prisma 6.9.0
+- **Language**: TypeScript 5.9.x
+- **Database ORM**: Prisma 7
 - **Database**: PostgreSQL
 - **Authentication**: JWT (jsonwebtoken 9.0.2)
 - **Password Hashing**: bcrypt 6.0.0
@@ -103,7 +103,9 @@ draco-nodejs/
    # Set up environment variables
    cp .env.example .env
    # Edit .env with your database credentials
-   
+
+   # Prisma CLI reads DATABASE_URL via prisma.config.ts (dotenv), so ensure .env is in place
+
    # Set up database
    npx prisma generate
    npx prisma db push
@@ -225,6 +227,8 @@ npm run mobile:test        # Run mobile unit tests
 ```
 
 ### Database Management
+
+Prisma CLI commands should be run from `draco-nodejs/backend`, where `prisma.config.ts` loads `.env` automatically via `dotenv/config`.
 
 ```bash
 # Generate Prisma client

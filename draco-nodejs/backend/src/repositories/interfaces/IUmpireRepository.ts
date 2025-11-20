@@ -1,4 +1,4 @@
-import { Prisma, leagueumpires } from '@prisma/client';
+import { Prisma, leagueumpires } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import { dbLeagueUmpireWithContact } from '../types/dbTypes.js';
 

@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma, playerswantedclassified } from '@prisma/client';
+import { PrismaClient, Prisma, playerswantedclassified } from '#prisma/client';
 import { PaginationHelper } from '../../utils/pagination.js';
 import { DEFAULT_VALUES } from '../../config/playerClassifiedConstants.js';
 import { IPlayersWantedRepository } from '../interfaces/index.js';

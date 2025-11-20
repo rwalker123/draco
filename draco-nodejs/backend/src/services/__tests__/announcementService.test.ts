@@ -6,7 +6,7 @@ import {
   dbAccountAnnouncement,
   dbTeamAnnouncement,
 } from '../../repositories/index.js';
-import { leaguenews, teamnews } from '@prisma/client';
+import { leaguenews, teamnews } from '#prisma/client';
 import { NotFoundError, ValidationError } from '../../utils/customErrors.js';
 import { DiscordIntegrationService } from '../discordIntegrationService.js';
 

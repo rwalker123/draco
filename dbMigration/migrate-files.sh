@@ -60,10 +60,14 @@ check_prerequisites() {
         exit 1
     fi
     
-    # Check Node.js version (need >= 18 for modern features)
-    local node_version=$(node -v | cut -d'.' -f1 | sed 's/v//')
-    if [ "$node_version" -lt 18 ]; then
-        print_error "Node.js version 18 or higher is required. Current version: $(node -v)"
+    # Check Node.js version (need >= 20.19 for Prisma 7)
+    local node_version_raw=$(node -v | sed 's/^v//')
+    local node_major=${node_version_raw%%.*}
+    local node_minor_patch=${node_version_raw#${node_major}.}
+    local node_minor=${node_minor_patch%%.*}
+
+    if [ "$node_major" -lt 20 ] || { [ "$node_major" -eq 20 ] && [ "$node_minor" -lt 19 ]; }; then
+        print_error "Node.js version 20.19 or higher is required. Current version: $(node -v)"
         exit 1
     fi
     
@@ -101,7 +105,7 @@ setup_dependencies() {
     if ! node -e "require('basic-ftp')" 2>/dev/null; then
         print_status "Installing migration dependencies..."
         npm init -y >/dev/null 2>&1 || true
-        npm install basic-ftp dotenv @prisma/client 2>/dev/null
+        npm install basic-ftp dotenv @prisma/client @prisma/adapter-pg 2>/dev/null
     fi
     
     print_success "Dependencies ready"
@@ -130,14 +134,14 @@ run_migration() {
     fi
 
     if command_exists ts-node; then
-        ts-node "$SCRIPT_DIR/migrate-files.ts" "${script_args[@]}"
+        ts-node --esm "$SCRIPT_DIR/migrate-files.ts" "${script_args[@]}"
         return
     fi
 
     # Fallback: compile and run using tsc if a runtime wasn't found
     if command_exists tsc; then
         print_status "Compiling TypeScript..."
-        npx tsc "$SCRIPT_DIR/migrate-files.ts" --target es2022 --module es2022 --moduleResolution node --outDir "$SCRIPT_DIR/dist"
+        npx tsc "$SCRIPT_DIR/migrate-files.ts" --target es2023 --module esnext --moduleResolution node --outDir "$SCRIPT_DIR/dist"
         node "$SCRIPT_DIR/dist/migrate-files.js" "${script_args[@]}"
         return
     fi

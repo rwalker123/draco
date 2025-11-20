@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#prisma/client';
 import * as os from 'node:os';
 import { DateUtils } from '../utils/dateUtils.js';
 

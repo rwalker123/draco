@@ -1,4 +1,4 @@
-import { accounthandouts, teamhandouts } from '@prisma/client';
+import { accounthandouts, teamhandouts } from '#prisma/client';
 import { dbAccountHandout, dbTeamHandout } from '../types/index.js';
 
 export interface IHandoutRepository {

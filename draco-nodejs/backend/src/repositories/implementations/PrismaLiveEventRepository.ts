@@ -1,4 +1,4 @@
-import { PrismaClient, leagueevents, socialliveevents, Prisma } from '@prisma/client';
+import { PrismaClient, leagueevents, socialliveevents, Prisma } from '#prisma/client';
 import { NotFoundError } from '../../utils/customErrors.js';
 import { ILiveEventRepository, LiveEventQuery } from '../interfaces/ILiveEventRepository.js';
 import { dbLiveEvent } from '../types/dbTypes.js';

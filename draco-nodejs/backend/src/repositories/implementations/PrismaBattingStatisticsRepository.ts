@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '#prisma/client';
 import { GameType } from '../../types/gameEnums.js';
 import {
   BattingStatisticsQueryOptions,

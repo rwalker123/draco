@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma, leagueschedule, teamsseason, gamerecap } from '@prisma/client';
+import { PrismaClient, Prisma, leagueschedule, teamsseason, gamerecap } from '#prisma/client';
 import {
   IScheduleRepository,
   ScheduleListFilters,
@@ -16,7 +16,7 @@ import {
 } from '../types/index.js';
 import { BatchQueryHelper } from './batchQueries.js';
 
-const teamGameSelect = Prisma.validator<Prisma.leaguescheduleSelect>()({
+const teamGameSelect = {
   id: true,
   gamedate: true,
   hteamid: true,
@@ -37,7 +37,7 @@ const teamGameSelect = Prisma.validator<Prisma.leaguescheduleSelect>()({
   visitingteam: { select: { id: true, name: true } },
   leagueseason: { select: { id: true, league: { select: { name: true } } } },
   _count: { select: { gamerecap: true } },
-});
+} satisfies Prisma.leaguescheduleSelect;
 
 type TeamGameInfoPayload = Prisma.leaguescheduleGetPayload<{ select: typeof teamGameSelect }>;
 
