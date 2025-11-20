@@ -76,11 +76,11 @@ If you need to run the migration manually:
 ### Database Migration
 - PostgreSQL client (`psql`)
 - Docker (for SQLPipe)
-- Node.js and npm (for Prisma integration)
+- Node.js v20.19.0+ and npm (aligns with the backend/runtime minimum)
 - Access to both source SQL Server and target PostgreSQL databases
 
 ### File Migration
-- Node.js 20.19+ and npm
+- Node.js v20.19.0+ and npm
 - FTP access to source server
 - Built backend application (`npm run build` in draco-nodejs/backend)
 - FTP credentials in backend/.env file

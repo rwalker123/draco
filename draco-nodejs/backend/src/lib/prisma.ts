@@ -1,3 +1,4 @@
+import PrismaPg from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { databaseConfig, buildConnectionUrl } from '../config/database.js';
 import { performanceMonitor } from '../utils/performanceMonitor.js';
@@ -58,16 +59,13 @@ type ExtendedPrismaClient = ReturnType<typeof createExtendedPrismaClient>;
 // Build the connection URL with pool configuration
 const baseUrl = process.env.DATABASE_URL || 'postgresql://postgres@localhost:5432/ezrecsports';
 const connectionUrl = buildConnectionUrl(baseUrl, databaseConfig);
+const adapter = new PrismaPg({ connectionString: connectionUrl });
 
 // Create a singleton PrismaClient instance with enhanced configuration
 const prisma =
   globalThis.__prisma ||
   new PrismaClient({
-    datasources: {
-      db: {
-        url: connectionUrl,
-      },
-    },
+    adapter,
     log: databaseConfig.logLevel,
   });
 
