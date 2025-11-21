@@ -41,6 +41,8 @@ import {
   ContentCut,
   ContentCopy,
   ContentPaste,
+  FormatColorText,
+  FormatColorFill,
 } from '@mui/icons-material';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
@@ -128,8 +130,52 @@ function ToolbarPlugin({
   const [alignmentMenuAnchor, setAlignmentMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [fontMenuAnchor, setFontMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [fontSizeMenuAnchor, setFontSizeMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [fontColorMenuAnchor, setFontColorMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [bgColorMenuAnchor, setBgColorMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [fontFamily, setFontFamily] = React.useState('default');
   const [fontSize, setFontSize] = React.useState('default');
+  const [fontColor, setFontColor] = React.useState('default');
+  const [bgColor, setBgColor] = React.useState('default');
+  const normalizeColor = useCallback((value: string | undefined): string => {
+    if (!value) return '';
+    const trimmed = value.trim();
+    const hexMatch = trimmed.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (hexMatch) {
+      return trimmed.toLowerCase();
+    }
+    const rgbMatch = trimmed.match(
+      /^rgba?\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})(?:,\s*[\d.]+)?\)$/i,
+    );
+    if (rgbMatch) {
+      const [r, g, b] = rgbMatch
+        .slice(1, 4)
+        .map((n) => Math.max(0, Math.min(255, Number.parseInt(n, 10))));
+      const toHex = (n: number) => n.toString(16).padStart(2, '0');
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+    return trimmed.toLowerCase();
+  }, []);
+  const fontColors = React.useMemo(
+    () => [
+      { label: 'Black', value: '#000000' },
+      { label: 'Blue', value: '#1a73e8' },
+      { label: 'Red', value: '#d93025' },
+      { label: 'Green', value: '#188038' },
+      { label: 'Orange', value: '#f9ab00' },
+      { label: 'Gray', value: '#5f6368' },
+    ],
+    [],
+  );
+  const bgColors = React.useMemo(
+    () => [
+      { label: 'Light Yellow', value: '#fff3cd' },
+      { label: 'Light Blue', value: '#e8f0fe' },
+      { label: 'Light Red', value: '#fce8e6' },
+      { label: 'Light Green', value: '#e6f4ea' },
+      { label: 'Light Gray', value: '#f6f6f6' },
+    ],
+    [],
+  );
 
   const normalizeFontValue = React.useCallback((value: string): string => {
     if (!value) return '';
@@ -204,8 +250,10 @@ function ToolbarPlugin({
       const styleMap = parseStyleMap(styleString);
       setFontFamily(normalizeFontValue(styleMap['font-family']) || 'default');
       setFontSize(styleMap['font-size'] || 'default');
+      setFontColor(normalizeColor(styleMap.color) || 'default');
+      setBgColor(normalizeColor(styleMap['background-color']) || 'default');
     }
-  }, [normalizeFontValue, parseStyleMap]);
+  }, [normalizeColor, normalizeFontValue, parseStyleMap]);
 
   useEffect(() => {
     return editor.registerCommand(
@@ -257,6 +305,22 @@ function ToolbarPlugin({
 
   const closeFontSizeMenu = () => {
     setFontSizeMenuAnchor(null);
+  };
+
+  const openFontColorMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setFontColorMenuAnchor(event.currentTarget);
+  };
+
+  const closeFontColorMenu = () => {
+    setFontColorMenuAnchor(null);
+  };
+
+  const openBgColorMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setBgColorMenuAnchor(event.currentTarget);
+  };
+
+  const closeBgColorMenu = () => {
+    setBgColorMenuAnchor(null);
   };
 
   const applyBlockType = (type: 'paragraph' | 'h1' | 'h2' | 'h3' | 'quote' | 'code') => {
@@ -350,6 +414,34 @@ function ToolbarPlugin({
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           $patchStyleText(selection, { 'font-size': value });
+        }
+      });
+    }
+  };
+
+  const applyFontColor = (colorValue: string) => {
+    const value = colorValue === 'default' ? '' : colorValue;
+    setFontColor(colorValue);
+    closeFontColorMenu();
+    if (!disabled) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $patchStyleText(selection, { color: value });
+        }
+      });
+    }
+  };
+
+  const applyBgColor = (colorValue: string) => {
+    const value = colorValue === 'default' ? '' : colorValue;
+    setBgColor(colorValue);
+    closeBgColorMenu();
+    if (!disabled) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $patchStyleText(selection, { 'background-color': value });
         }
       });
     }
@@ -531,6 +623,8 @@ function ToolbarPlugin({
         flexWrap: 'wrap',
         columnGap: 0.5,
         rowGap: 0.5,
+        maxHeight: theme.spacing(12),
+        overflowY: 'auto',
         bgcolor: toolbarBackground,
         borderBottom: 1,
         borderColor: theme.palette.divider,
@@ -587,7 +681,7 @@ function ToolbarPlugin({
         onClick={openFontMenu}
         endIcon={<ArrowDropDown />}
         disabled={disabled}
-        sx={{ textTransform: 'none', minWidth: 110 }}
+        sx={{ textTransform: 'none', minWidth: 100 }}
       >
         <Typography variant="caption" sx={{ fontWeight: 600 }}>
           {fontFamily === 'default' ? 'Font' : fontFamily}
@@ -622,7 +716,7 @@ function ToolbarPlugin({
         onClick={openFontSizeMenu}
         endIcon={<ArrowDropDown />}
         disabled={disabled}
-        sx={{ textTransform: 'none', minWidth: 90 }}
+        sx={{ textTransform: 'none', minWidth: 80 }}
       >
         <Typography variant="caption" sx={{ fontWeight: 600 }}>
           {fontSize === 'default' ? 'Size' : fontSize}
@@ -651,6 +745,80 @@ function ToolbarPlugin({
         <MenuItem selected={fontSize === '20px'} onClick={() => applyFontSize('20px')}>
           20 px
         </MenuItem>
+      </Menu>
+
+      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+      <Button
+        size="small"
+        onClick={openFontColorMenu}
+        endIcon={<ArrowDropDown />}
+        disabled={disabled}
+        sx={{ textTransform: 'none', minWidth: 100 }}
+      >
+        <Typography
+          variant="caption"
+          sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.75 }}
+        >
+          <FormatColorText fontSize="small" />
+          {fontColor === 'default'
+            ? 'Text color'
+            : fontColors.find((c) => c.value === fontColor)?.label || fontColor}
+        </Typography>
+      </Button>
+      <Menu
+        anchorEl={fontColorMenuAnchor}
+        open={Boolean(fontColorMenuAnchor)}
+        onClose={closeFontColorMenu}
+      >
+        <MenuItem selected={fontColor === 'default'} onClick={() => applyFontColor('default')}>
+          Default
+        </MenuItem>
+        {fontColors.map((option) => (
+          <MenuItem
+            key={option.value}
+            selected={fontColor === option.value}
+            onClick={() => applyFontColor(option.value)}
+          >
+            {option.label}
+          </MenuItem>
+        ))}
+      </Menu>
+
+      <Button
+        size="small"
+        onClick={openBgColorMenu}
+        endIcon={<ArrowDropDown />}
+        disabled={disabled}
+        sx={{ textTransform: 'none', minWidth: 110 }}
+      >
+        <Typography
+          variant="caption"
+          sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.75 }}
+        >
+          <FormatColorFill fontSize="small" />
+          {bgColor === 'default'
+            ? 'Highlight'
+            : bgColors.find((c) => c.value === bgColor)?.label || bgColor}
+        </Typography>
+      </Button>
+      <Menu
+        anchorEl={bgColorMenuAnchor}
+        open={Boolean(bgColorMenuAnchor)}
+        onClose={closeBgColorMenu}
+      >
+        <MenuItem selected={bgColor === 'default'} onClick={() => applyBgColor('default')}>
+          Default
+        </MenuItem>
+        {bgColors.map((option) => (
+          <MenuItem
+            key={option.value}
+            selected={bgColor === option.value}
+            onClick={() => applyBgColor(option.value)}
+          >
+            {option.label}
+          </MenuItem>
+        ))}
       </Menu>
 
       <Button
