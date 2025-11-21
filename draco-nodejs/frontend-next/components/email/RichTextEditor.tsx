@@ -26,9 +26,6 @@ import {
   FormatListBulleted,
   FormatListNumbered,
   Link as LinkIcon,
-  Undo,
-  Redo,
-  Spellcheck,
   ArrowDropDown,
   FormatAlignLeft,
   FormatAlignCenter,
@@ -38,11 +35,9 @@ import {
   FormatIndentDecrease,
   Code,
   FormatQuote,
-  ContentCut,
-  ContentCopy,
-  ContentPaste,
   FormatColorText,
   FormatColorFill,
+  MoreHoriz,
 } from '@mui/icons-material';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
@@ -132,10 +127,13 @@ function ToolbarPlugin({
   const [fontSizeMenuAnchor, setFontSizeMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [fontColorMenuAnchor, setFontColorMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [bgColorMenuAnchor, setBgColorMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [overflowMenuAnchor, setOverflowMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [fontFamily, setFontFamily] = React.useState('default');
   const [fontSize, setFontSize] = React.useState('default');
   const [fontColor, setFontColor] = React.useState('default');
   const [bgColor, setBgColor] = React.useState('default');
+  const [isCompactToolbar, setIsCompactToolbar] = React.useState<boolean>(false);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
   const normalizeColor = useCallback((value: string | undefined): string => {
     if (!value) return '';
     const trimmed = value.trim();
@@ -266,6 +264,30 @@ function ToolbarPlugin({
     );
   }, [editor, updateToolbar]);
 
+  useEffect(() => {
+    if (!toolbarRef.current) return;
+
+    const updateCompact = (width: number) => {
+      setIsCompactToolbar(width < 760);
+    };
+
+    const measureAndUpdate = () => {
+      if (toolbarRef.current) {
+        updateCompact(toolbarRef.current.getBoundingClientRect().width);
+      }
+    };
+
+    measureAndUpdate();
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry?.contentRect) {
+        updateCompact(entry.contentRect.width);
+      }
+    });
+    observer.observe(toolbarRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   const formatLabel = {
     paragraph: 'Paragraph',
     h1: 'H1',
@@ -321,6 +343,14 @@ function ToolbarPlugin({
 
   const closeBgColorMenu = () => {
     setBgColorMenuAnchor(null);
+  };
+
+  const openOverflowMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setOverflowMenuAnchor(event.currentTarget);
+  };
+
+  const closeOverflowMenu = () => {
+    setOverflowMenuAnchor(null);
   };
 
   const applyBlockType = (type: 'paragraph' | 'h1' | 'h2' | 'h3' | 'quote' | 'code') => {
@@ -617,14 +647,13 @@ function ToolbarPlugin({
 
   return (
     <Toolbar
+      ref={toolbarRef}
       variant="dense"
       sx={{
         minHeight: 'auto',
         flexWrap: 'wrap',
         columnGap: 0.5,
         rowGap: 0.5,
-        maxHeight: theme.spacing(12),
-        overflowY: 'auto',
         bgcolor: toolbarBackground,
         borderBottom: 1,
         borderColor: theme.palette.divider,
@@ -861,65 +890,90 @@ function ToolbarPlugin({
         </MenuItem>
       </Menu>
 
-      <IconButton size="small" onClick={insertBulletList} disabled={disabled} title="Bullet List">
-        <FormatListBulleted />
-      </IconButton>
+      {!isCompactToolbar && (
+        <>
+          <IconButton
+            size="small"
+            onClick={insertBulletList}
+            disabled={disabled}
+            title="Bullet List"
+          >
+            <FormatListBulleted />
+          </IconButton>
 
-      <IconButton
-        size="small"
-        onClick={insertNumberedList}
-        disabled={disabled}
-        title="Numbered List"
-      >
-        <FormatListNumbered />
-      </IconButton>
+          <IconButton
+            size="small"
+            onClick={insertNumberedList}
+            disabled={disabled}
+            title="Numbered List"
+          >
+            <FormatListNumbered />
+          </IconButton>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+          <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
-      <IconButton size="small" onClick={outdentContent} disabled={disabled} title="Decrease indent">
-        <FormatIndentDecrease />
-      </IconButton>
+          <IconButton
+            size="small"
+            onClick={outdentContent}
+            disabled={disabled}
+            title="Decrease indent"
+          >
+            <FormatIndentDecrease />
+          </IconButton>
 
-      <IconButton size="small" onClick={indentContent} disabled={disabled} title="Increase indent">
-        <FormatIndentIncrease />
-      </IconButton>
+          <IconButton
+            size="small"
+            onClick={indentContent}
+            disabled={disabled}
+            title="Increase indent"
+          >
+            <FormatIndentIncrease />
+          </IconButton>
 
-      <Button
-        size="small"
-        onClick={openAlignmentMenu}
-        endIcon={<ArrowDropDown />}
-        disabled={disabled}
-        sx={{ minWidth: 48, textTransform: 'none' }}
-      >
-        {elementFormat === 'center' && <FormatAlignCenter fontSize="small" />}
-        {elementFormat === 'right' && <FormatAlignRight fontSize="small" />}
-        {elementFormat === 'justify' && <FormatAlignJustify fontSize="small" />}
-        {elementFormat === 'left' && <FormatAlignLeft fontSize="small" />}
-      </Button>
-      <Menu
-        anchorEl={alignmentMenuAnchor}
-        open={Boolean(alignmentMenuAnchor)}
-        onClose={closeAlignmentMenu}
-      >
-        <MenuItem selected={elementFormat === 'left'} onClick={() => applyAlignment('left')}>
-          <FormatAlignLeft fontSize="small" sx={{ mr: 1 }} />
-          Align Left
-        </MenuItem>
-        <MenuItem selected={elementFormat === 'center'} onClick={() => applyAlignment('center')}>
-          <FormatAlignCenter fontSize="small" sx={{ mr: 1 }} />
-          Align Center
-        </MenuItem>
-        <MenuItem selected={elementFormat === 'right'} onClick={() => applyAlignment('right')}>
-          <FormatAlignRight fontSize="small" sx={{ mr: 1 }} />
-          Align Right
-        </MenuItem>
-        <MenuItem selected={elementFormat === 'justify'} onClick={() => applyAlignment('justify')}>
-          <FormatAlignJustify fontSize="small" sx={{ mr: 1 }} />
-          Justify
-        </MenuItem>
-      </Menu>
+          <Button
+            size="small"
+            onClick={openAlignmentMenu}
+            endIcon={<ArrowDropDown />}
+            disabled={disabled}
+            sx={{ minWidth: 48, textTransform: 'none' }}
+          >
+            {elementFormat === 'center' && <FormatAlignCenter fontSize="small" />}
+            {elementFormat === 'right' && <FormatAlignRight fontSize="small" />}
+            {elementFormat === 'justify' && <FormatAlignJustify fontSize="small" />}
+            {elementFormat === 'left' && <FormatAlignLeft fontSize="small" />}
+          </Button>
+          <Menu
+            anchorEl={alignmentMenuAnchor}
+            open={Boolean(alignmentMenuAnchor)}
+            onClose={closeAlignmentMenu}
+          >
+            <MenuItem selected={elementFormat === 'left'} onClick={() => applyAlignment('left')}>
+              <FormatAlignLeft fontSize="small" sx={{ mr: 1 }} />
+              Align Left
+            </MenuItem>
+            <MenuItem
+              selected={elementFormat === 'center'}
+              onClick={() => applyAlignment('center')}
+            >
+              <FormatAlignCenter fontSize="small" sx={{ mr: 1 }} />
+              Align Center
+            </MenuItem>
+            <MenuItem selected={elementFormat === 'right'} onClick={() => applyAlignment('right')}>
+              <FormatAlignRight fontSize="small" sx={{ mr: 1 }} />
+              Align Right
+            </MenuItem>
+            <MenuItem
+              selected={elementFormat === 'justify'}
+              onClick={() => applyAlignment('justify')}
+            >
+              <FormatAlignJustify fontSize="small" sx={{ mr: 1 }} />
+              Justify
+            </MenuItem>
+          </Menu>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+          <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+        </>
+      )}
 
       <IconButton
         size="small"
@@ -967,39 +1021,152 @@ function ToolbarPlugin({
 
       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
-      <IconButton size="small" onClick={undo} disabled={disabled} title="Undo (Ctrl+Z)">
-        <Undo />
+      <IconButton size="small" onClick={openOverflowMenu} disabled={disabled} title="More">
+        <MoreHoriz />
       </IconButton>
-
-      <IconButton size="small" onClick={redo} disabled={disabled} title="Redo (Ctrl+Y)">
-        <Redo />
-      </IconButton>
-
-      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-
-      <IconButton size="small" onClick={cutSelection} disabled={disabled} title="Cut (Ctrl+X)">
-        <ContentCut />
-      </IconButton>
-
-      <IconButton size="small" onClick={copySelection} disabled={disabled} title="Copy (Ctrl+C)">
-        <ContentCopy />
-      </IconButton>
-
-      <IconButton size="small" onClick={pasteClipboard} disabled={disabled} title="Paste (Ctrl+V)">
-        <ContentPaste />
-      </IconButton>
-
-      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-
-      <IconButton
-        size="small"
-        onClick={onToggleSpellCheck}
-        disabled={disabled}
-        color={spellCheckEnabled ? 'primary' : 'default'}
-        title={spellCheckEnabled ? 'Spellcheck on' : 'Spellcheck off'}
+      <Menu
+        anchorEl={overflowMenuAnchor}
+        open={Boolean(overflowMenuAnchor)}
+        onClose={closeOverflowMenu}
       >
-        <Spellcheck />
-      </IconButton>
+        {isCompactToolbar && [
+          <MenuItem
+            key="compact-bullet"
+            onClick={() => {
+              closeOverflowMenu();
+              insertBulletList();
+            }}
+            disabled={disabled}
+          >
+            Bullet list
+          </MenuItem>,
+          <MenuItem
+            key="compact-numbered"
+            onClick={() => {
+              closeOverflowMenu();
+              insertNumberedList();
+            }}
+            disabled={disabled}
+          >
+            Numbered list
+          </MenuItem>,
+          <MenuItem
+            key="compact-outdent"
+            onClick={() => {
+              closeOverflowMenu();
+              outdentContent();
+            }}
+            disabled={disabled}
+          >
+            Decrease indent
+          </MenuItem>,
+          <MenuItem
+            key="compact-indent"
+            onClick={() => {
+              closeOverflowMenu();
+              indentContent();
+            }}
+            disabled={disabled}
+          >
+            Increase indent
+          </MenuItem>,
+          <MenuItem
+            key="compact-align-left"
+            onClick={() => {
+              closeOverflowMenu();
+              applyAlignment('left');
+            }}
+            disabled={disabled}
+          >
+            Align Left
+          </MenuItem>,
+          <MenuItem
+            key="compact-align-center"
+            onClick={() => {
+              closeOverflowMenu();
+              applyAlignment('center');
+            }}
+            disabled={disabled}
+          >
+            Align Center
+          </MenuItem>,
+          <MenuItem
+            key="compact-align-right"
+            onClick={() => {
+              closeOverflowMenu();
+              applyAlignment('right');
+            }}
+            disabled={disabled}
+          >
+            Align Right
+          </MenuItem>,
+          <MenuItem
+            key="compact-align-justify"
+            onClick={() => {
+              closeOverflowMenu();
+              applyAlignment('justify');
+            }}
+            disabled={disabled}
+          >
+            Justify
+          </MenuItem>,
+          <Divider key="compact-divider" />,
+        ]}
+        <MenuItem
+          onClick={() => {
+            closeOverflowMenu();
+            undo();
+          }}
+          disabled={disabled}
+        >
+          Undo
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            closeOverflowMenu();
+            redo();
+          }}
+          disabled={disabled}
+        >
+          Redo
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            closeOverflowMenu();
+            cutSelection();
+          }}
+          disabled={disabled}
+        >
+          Cut
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            closeOverflowMenu();
+            copySelection();
+          }}
+          disabled={disabled}
+        >
+          Copy
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            closeOverflowMenu();
+            pasteClipboard();
+          }}
+          disabled={disabled}
+        >
+          Paste
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            closeOverflowMenu();
+            onToggleSpellCheck();
+          }}
+          disabled={disabled}
+        >
+          {spellCheckEnabled ? 'Spellcheck on' : 'Spellcheck off'}
+        </MenuItem>
+      </Menu>
     </Toolbar>
   );
 }
