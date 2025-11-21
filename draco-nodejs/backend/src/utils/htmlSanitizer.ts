@@ -105,6 +105,9 @@ const filterAllowedStyles = (styleContent: string): string => {
     const normalizedProp = prop.trim().toLowerCase();
     if (ALLOWED_STYLE_PROPERTIES.has(normalizedProp)) {
       // Basic protocol guard inside styles (e.g., background-image: url(javascript:...))
+      if (/url\s*\(/i.test(value)) {
+        continue;
+      }
       const safeValue = value
         .replace(/javascript:/gi, '')
         .replace(/vbscript:/gi, '')

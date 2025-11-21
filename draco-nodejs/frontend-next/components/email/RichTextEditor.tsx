@@ -151,7 +151,22 @@ function ToolbarPlugin({
       const toHex = (n: number) => n.toString(16).padStart(2, '0');
       return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     }
-    return trimmed.toLowerCase();
+    // Whitelist a handful of safe named colors if needed
+    const named = trimmed.toLowerCase();
+    const allowedNamed = new Set([
+      'black',
+      'white',
+      'red',
+      'blue',
+      'green',
+      'orange',
+      'gray',
+      'grey',
+    ]);
+    if (allowedNamed.has(named)) {
+      return named;
+    }
+    return '';
   }, []);
   const fontColors = React.useMemo(
     () => [
@@ -513,6 +528,10 @@ function ToolbarPlugin({
     if (!trimmed) {
       return '';
     }
+    // Drop dangerous protocols
+    if (/^(javascript:|data:|vbscript:)/i.test(trimmed)) {
+      return '';
+    }
     const hasProtocol = /^(https?:)?\/\//i.test(trimmed) || /^mailto:/i.test(trimmed);
     return hasProtocol ? trimmed : `https://${trimmed}`;
   };
@@ -563,10 +582,11 @@ function ToolbarPlugin({
         editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
         return;
       }
-      editor.dispatchCommand(TOGGLE_LINK_COMMAND, normalized);
       if (selection.isCollapsed()) {
-        selection.insertText(linkText || normalized);
+        const textToInsert = linkText || normalized;
+        selection.insertText(textToInsert);
       }
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, normalized);
     });
     handleCloseLinkDialog();
   };
@@ -631,7 +651,7 @@ function ToolbarPlugin({
     try {
       const text = (await navigator.clipboard?.readText?.()) || '';
       if (!text) {
-        document.execCommand('paste');
+        console.warn('Paste is not available: Clipboard API unavailable or empty clipboard.');
         return;
       }
       editor.update(() => {
@@ -1181,8 +1201,18 @@ function ToolbarPlugin({
 function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
   const [editor] = useLexicalComposerContext();
 
+  /**
+   * Walks the source DOM tree and records allowed inline styles per text run.
+   * @param node Current DOM node being inspected
+   * @param styleStack Accumulated styles from ancestor elements
+   * @param segments Output list of { style, length } for each text run
+   */
   const collectStyleSegments = useCallback(
-    (node: Node, inherited: string[], segments: Array<{ style: string; length: number }>): void => {
+    (
+      node: Node,
+      styleStack: string[],
+      segments: Array<{ style: string; length: number }>,
+    ): void => {
       const traverse = (current: Node, carry: string[]): void => {
         if (current.nodeType === Node.TEXT_NODE) {
           const textContent = current.textContent ?? '';
@@ -1202,7 +1232,7 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
         }
       };
 
-      traverse(node, inherited);
+      traverse(node, styleStack);
     },
     [], // filterAllowedInlineStyles is a module import and stable
   );

@@ -349,7 +349,6 @@ describe('Email Security Tests', () => {
         expect(sanitized).not.toContain('onerror');
         expect(sanitized).not.toContain('onclick');
         expect(sanitized).not.toContain('javascript:');
-        expect(sanitized).not.toContain('javascript:');
         expect(sanitized).not.toContain('background-image');
         expect(sanitized).not.toContain('<script');
         expect(sanitized).not.toContain('<iframe');
