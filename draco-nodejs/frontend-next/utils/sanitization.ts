@@ -74,16 +74,119 @@ export const sanitizeRichContent = (text: string): string => {
   if (!text || typeof text !== 'string') return '';
 
   // Use DOMPurify with HTML profile to allow safe formatting while removing XSS
-  return DOMPurify.sanitize(text, {
+  let sanitized = DOMPurify.sanitize(text, {
     USE_PROFILES: { html: true }, // Allow only safe HTML elements
     FORBID_TAGS: ['svg', 'math'], // Explicitly forbid SVG and MathML for security
-    ALLOWED_ATTR: ['class', 'href', 'target', 'rel'], // Allow safe attributes while blocking inline styles
-    FORBID_ATTR: ['style'], // Explicitly strip any inline styling hooks
+    ALLOWED_ATTR: ['class', 'href', 'target', 'rel', 'style'], // Allow safe attributes including filtered inline styles
+    FORBID_ATTR: [], // Do not blanket-forbid style; we'll manually filter allowed properties
     KEEP_CONTENT: true, // Preserve text content when removing tags
     RETURN_DOM: false, // Return string, not DOM object
     SANITIZE_DOM: true, // Enable DOM clobbering protection
     SANITIZE_NAMED_PROPS: true, // Enforce strict DOM clobbering protection
-  }).trim();
+  });
+
+  const applyStyleFiltering = (styleContent: string): string => {
+    // Legacy fallback for non-browser environments
+    if (typeof window === 'undefined' || !window.document) {
+      return filterAllowedStyles(styleContent);
+    }
+
+    const el = window.document.createElement('div');
+    el.setAttribute('style', styleContent);
+    const style = el.style;
+    const allowed: string[] = [];
+
+    ALLOWED_STYLE_PROPERTIES.forEach((prop) => {
+      const value = style.getPropertyValue(prop);
+      if (!value) {
+        return;
+      }
+      if (/url\s*\(/i.test(value)) {
+        return;
+      }
+      let cleanedValue = value.replace(/javascript:/gi, '').trim();
+      if (!cleanedValue) {
+        return;
+      }
+      if (prop === 'font-family') {
+        // Normalize font family names to avoid stray quotes breaking attributes
+        const normalized = cleanedValue.replace(/['"]/g, '').trim();
+        if (!normalized) {
+          return;
+        }
+        cleanedValue = normalized.includes(' ') ? `'${normalized}'` : normalized;
+      }
+      allowed.push(`${prop}: ${cleanedValue}`);
+    });
+
+    return allowed.join('; ');
+  };
+
+  // Use DOM parsing instead of regex to handle quoted values like "Times New Roman"
+  if (typeof DOMParser !== 'undefined') {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(sanitized, 'text/html');
+    doc.body.querySelectorAll<HTMLElement>('[style]').forEach((element) => {
+      const filtered = applyStyleFiltering(element.getAttribute('style') ?? '');
+      if (filtered) {
+        element.setAttribute('style', filtered);
+      } else {
+        element.removeAttribute('style');
+      }
+    });
+    sanitized = doc.body.innerHTML;
+  } else {
+    // Fallback for environments without DOMParser
+    sanitized = sanitized.replace(/\sstyle="([^"]*)"/gi, (_match, styleContent) => {
+      const filtered = applyStyleFiltering(styleContent);
+      return filtered ? ` style="${filtered}"` : '';
+    });
+    sanitized = sanitized.replace(/\sstyle='([^']*)'/gi, (_match, styleContent) => {
+      const filtered = applyStyleFiltering(styleContent);
+      return filtered ? ` style="${filtered}"` : '';
+    });
+  }
+
+  // Additional guard to strip any lingering javascript: url fragments
+  return sanitized.replace(/javascript:/gi, '').trim();
+};
+
+const ALLOWED_STYLE_PROPERTIES = new Set([
+  'font-family',
+  'font-size',
+  'font-weight',
+  'color',
+  'background-color',
+  'text-align',
+  'line-height',
+]);
+
+const filterAllowedStyles = (styleContent: string): string => {
+  if (!styleContent) return '';
+  const declarations = styleContent
+    .split(';')
+    .map((decl) => decl.trim())
+    .filter(Boolean);
+
+  const allowed: string[] = [];
+  for (const decl of declarations) {
+    const [prop, ...rest] = decl.split(':');
+    if (!prop || rest.length === 0) continue;
+    const value = rest.join(':').trim();
+    const normalizedProp = prop.trim().toLowerCase();
+    if (!ALLOWED_STYLE_PROPERTIES.has(normalizedProp)) {
+      continue;
+    }
+    if (/url\s*\(/i.test(value) || /background-image/i.test(normalizedProp)) {
+      continue;
+    }
+    const cleanedValue = value.replace(/javascript:/gi, '').trim();
+    if (cleanedValue) {
+      allowed.push(`${normalizedProp}: ${cleanedValue}`);
+    }
+  }
+
+  return allowed.join('; ');
 };
 
 /**

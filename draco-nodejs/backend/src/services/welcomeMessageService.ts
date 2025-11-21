@@ -187,7 +187,8 @@ export class WelcomeMessageService {
   private normalizePayload(payload: UpsertWelcomeMessageType): NormalizedWelcomeMessagePayload {
     const caption = payload.caption.trim();
     const order = payload.order;
-    const bodyHtml = sanitizeRichHtml(payload.bodyHtml);
+    const rawBody = payload.bodyHtml ?? '';
+    const bodyHtml = sanitizeRichHtml(rawBody);
 
     if (!bodyHtml) {
       throw new ValidationError('Body content is required');

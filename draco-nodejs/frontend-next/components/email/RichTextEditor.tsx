@@ -9,6 +9,8 @@ import {
   Divider,
   Typography,
   Button,
+  Menu,
+  MenuItem,
   Dialog,
   DialogActions,
   DialogContent,
@@ -26,6 +28,19 @@ import {
   Link as LinkIcon,
   Undo,
   Redo,
+  Spellcheck,
+  ArrowDropDown,
+  FormatAlignLeft,
+  FormatAlignCenter,
+  FormatAlignRight,
+  FormatAlignJustify,
+  FormatIndentIncrease,
+  FormatIndentDecrease,
+  Code,
+  FormatQuote,
+  ContentCut,
+  ContentCopy,
+  ContentPaste,
 } from '@mui/icons-material';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
@@ -38,10 +53,15 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import {
   $getSelection,
   $isRangeSelection,
+  $isElementNode,
   FORMAT_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  FORMAT_ELEMENT_COMMAND,
+  INDENT_CONTENT_COMMAND,
+  OUTDENT_CONTENT_COMMAND,
   LexicalEditor,
   RangeSelection,
+  $isTextNode,
   $setSelection,
   $getRoot,
   $insertNodes,
@@ -51,11 +71,18 @@ import {
   $createParagraphNode,
 } from 'lexical';
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html';
-import { HeadingNode, $createHeadingNode, $isHeadingNode } from '@lexical/rich-text';
+import {
+  HeadingNode,
+  $createHeadingNode,
+  $isHeadingNode,
+  QuoteNode,
+  $createQuoteNode,
+} from '@lexical/rich-text';
 import { ListNode, ListItemNode, $insertList } from '@lexical/list';
 import { LinkNode, AutoLinkNode, $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link';
+import { CodeNode, $createCodeNode } from '@lexical/code';
 import { sanitizeRichContent } from '../../utils/sanitization';
-import { $setBlocksType } from '@lexical/selection';
+import { $patchStyleText, $setBlocksType } from '@lexical/selection';
 
 interface RichTextEditorProps {
   initialValue?: string;
@@ -67,7 +94,15 @@ interface RichTextEditorProps {
 }
 
 // Toolbar component for format controls
-function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
+function ToolbarPlugin({
+  disabled = false,
+  spellCheckEnabled,
+  onToggleSpellCheck,
+}: {
+  disabled?: boolean;
+  spellCheckEnabled: boolean;
+  onToggleSpellCheck: () => void;
+}) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const toolbarBackground = isDark
@@ -79,11 +114,43 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
   const [isBold, setIsBold] = React.useState(false);
   const [isItalic, setIsItalic] = React.useState(false);
   const [isUnderline, setIsUnderline] = React.useState(false);
-  const [headingLevel, setHeadingLevel] = React.useState<string>('');
+  const [blockType, setBlockType] = React.useState<
+    'paragraph' | 'h1' | 'h2' | 'h3' | 'quote' | 'code'
+  >('paragraph');
+  const [elementFormat, setElementFormat] = React.useState<'left' | 'center' | 'right' | 'justify'>(
+    'left',
+  );
   const [linkDialogOpen, setLinkDialogOpen] = React.useState(false);
   const [linkUrl, setLinkUrl] = React.useState('https://');
   const [linkText, setLinkText] = React.useState('');
   const lastSelectionRef = React.useRef<RangeSelection | null>(null);
+  const [formatMenuAnchor, setFormatMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [alignmentMenuAnchor, setAlignmentMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [fontMenuAnchor, setFontMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [fontSizeMenuAnchor, setFontSizeMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [fontFamily, setFontFamily] = React.useState('default');
+  const [fontSize, setFontSize] = React.useState('default');
+
+  const normalizeFontValue = React.useCallback((value: string): string => {
+    if (!value) return '';
+    const trimmed = value.trim();
+    // Strip matching leading/trailing quotes
+    return trimmed.replace(/^['"]+|['"]+$/g, '');
+  }, []);
+
+  const parseStyleMap = useCallback((styleString: string) => {
+    const entries = styleString
+      .split(';')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const [key, ...rest] = part.split(':');
+        if (!key || rest.length === 0) return null;
+        return [key.trim().toLowerCase(), rest.join(':').trim()] as const;
+      })
+      .filter(Boolean) as [string, string][];
+    return Object.fromEntries(entries);
+  }, []);
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -92,19 +159,53 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
       setIsItalic(selection.hasFormat('italic'));
       setIsUnderline(selection.hasFormat('underline'));
 
-      // Check for heading level
       const anchorNode = selection.anchor.getNode();
       const element =
         anchorNode.getKey() === 'root' ? anchorNode : anchorNode.getTopLevelElementOrThrow();
 
       if ($isHeadingNode(element)) {
-        // Use proper type guard to check HeadingNode
-        setHeadingLevel(element.getTag());
+        const tag = element.getTag();
+        if (tag === 'h1' || tag === 'h2' || tag === 'h3') {
+          setBlockType(tag);
+        } else {
+          setBlockType('paragraph');
+        }
       } else {
-        setHeadingLevel('');
+        const type = element.getType();
+        if (type === 'quote') {
+          setBlockType('quote');
+        } else if (type === 'code') {
+          setBlockType('code');
+        } else {
+          setBlockType('paragraph');
+        }
       }
+
+      const format =
+        $isElementNode(element) && typeof element.getFormatType === 'function'
+          ? element.getFormatType()
+          : null;
+      if (format === 'left' || format === 'center' || format === 'right' || format === 'justify') {
+        setElementFormat(format);
+      } else if (format === 'start') {
+        setElementFormat('left');
+      } else if (format === 'end') {
+        setElementFormat('right');
+      } else {
+        setElementFormat('left');
+      }
+
+      let styleString = '';
+      const nodes = selection.getNodes();
+      const textNode = nodes.find((node) => $isTextNode(node));
+      if (textNode && $isTextNode(textNode)) {
+        styleString = textNode.getStyle();
+      }
+      const styleMap = parseStyleMap(styleString);
+      setFontFamily(normalizeFontValue(styleMap['font-family']) || 'default');
+      setFontSize(styleMap['font-size'] || 'default');
     }
-  }, []);
+  }, [normalizeFontValue, parseStyleMap]);
 
   useEffect(() => {
     return editor.registerCommand(
@@ -116,6 +217,97 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
       1,
     );
   }, [editor, updateToolbar]);
+
+  const formatLabel = {
+    paragraph: 'Paragraph',
+    h1: 'H1',
+    h2: 'H2',
+    h3: 'H3',
+    quote: 'Quote',
+    code: 'Pre',
+  }[blockType];
+
+  const openFormatMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setFormatMenuAnchor(event.currentTarget);
+  };
+
+  const closeFormatMenu = () => {
+    setFormatMenuAnchor(null);
+  };
+
+  const openAlignmentMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAlignmentMenuAnchor(event.currentTarget);
+  };
+
+  const closeAlignmentMenu = () => {
+    setAlignmentMenuAnchor(null);
+  };
+
+  const openFontMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setFontMenuAnchor(event.currentTarget);
+  };
+
+  const closeFontMenu = () => {
+    setFontMenuAnchor(null);
+  };
+
+  const openFontSizeMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setFontSizeMenuAnchor(event.currentTarget);
+  };
+
+  const closeFontSizeMenu = () => {
+    setFontSizeMenuAnchor(null);
+  };
+
+  const applyBlockType = (type: 'paragraph' | 'h1' | 'h2' | 'h3' | 'quote' | 'code') => {
+    closeFormatMenu();
+    if (disabled) {
+      return;
+    }
+    editor.update(() => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
+      switch (type) {
+        case 'paragraph':
+          $setBlocksType(selection, () => $createParagraphNode());
+          break;
+        case 'h1':
+        case 'h2':
+        case 'h3':
+          $setBlocksType(selection, () => $createHeadingNode(type));
+          break;
+        case 'quote':
+          $setBlocksType(selection, () => $createQuoteNode());
+          break;
+        case 'code':
+          $setBlocksType(selection, () => $createCodeNode());
+          break;
+        default:
+          break;
+      }
+    });
+  };
+
+  const applyAlignment = (format: 'left' | 'center' | 'right' | 'justify') => {
+    closeAlignmentMenu();
+    if (!disabled) {
+      editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, format);
+    }
+  };
+
+  const indentContent = () => {
+    if (!disabled) {
+      editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+    }
+  };
+
+  const outdentContent = () => {
+    if (!disabled) {
+      editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+    }
+  };
 
   const formatBold = () => {
     if (!disabled) {
@@ -132,6 +324,34 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
   const formatUnderline = () => {
     if (!disabled) {
       editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
+    }
+  };
+
+  const applyFontFamily = (family: string) => {
+    const value = family === 'default' ? '' : family;
+    setFontFamily(family);
+    closeFontMenu();
+    if (!disabled) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $patchStyleText(selection, { 'font-family': value });
+        }
+      });
+    }
+  };
+
+  const applyFontSize = (size: string) => {
+    const value = size === 'default' ? '' : size;
+    setFontSize(size);
+    closeFontSizeMenu();
+    if (!disabled) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $patchStyleText(selection, { 'font-size': value });
+        }
+      });
     }
   };
 
@@ -241,25 +461,65 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
     }
   };
 
-  const formatHeading = (headingTag: 'h1' | 'h2' | 'h3') => {
-    if (!disabled) {
-      editor.update(() => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          $setBlocksType(selection, () => $createHeadingNode(headingTag));
-        }
-      });
+  const copySelection = async () => {
+    if (disabled) {
+      return;
+    }
+    const selection = window.getSelection();
+    const text = selection?.toString() || '';
+    try {
+      if (text && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        document.execCommand('copy');
+      }
+    } catch (error) {
+      console.warn('Copy failed', error);
     }
   };
 
-  const clearHeadingFormatting = () => {
-    if (!disabled) {
+  const cutSelection = async () => {
+    if (disabled) {
+      return;
+    }
+    const selection = window.getSelection();
+    const text = selection?.toString() || '';
+    try {
+      if (text && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        document.execCommand('cut');
+      }
+    } catch (error) {
+      console.warn('Cut failed', error);
+    }
+
+    editor.update(() => {
+      const range = $getSelection();
+      if ($isRangeSelection(range)) {
+        range.removeText();
+      }
+    });
+  };
+
+  const pasteClipboard = async () => {
+    if (disabled) {
+      return;
+    }
+    try {
+      const text = (await navigator.clipboard?.readText?.()) || '';
+      if (!text) {
+        document.execCommand('paste');
+        return;
+      }
       editor.update(() => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
-          $setBlocksType(selection, () => $createParagraphNode());
+          selection.insertText(text);
         }
       });
+    } catch (error) {
+      console.warn('Paste failed', error);
     }
   };
 
@@ -267,7 +527,10 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
     <Toolbar
       variant="dense"
       sx={{
-        minHeight: 48,
+        minHeight: 'auto',
+        flexWrap: 'wrap',
+        columnGap: 0.5,
+        rowGap: 0.5,
         bgcolor: toolbarBackground,
         borderBottom: 1,
         borderColor: theme.palette.divider,
@@ -283,6 +546,7 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
         },
         '& .MuiDivider-root': {
           borderColor: theme.palette.divider,
+          alignSelf: 'stretch',
         },
       }}
     >
@@ -318,6 +582,117 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
 
       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
+      <Button
+        size="small"
+        onClick={openFontMenu}
+        endIcon={<ArrowDropDown />}
+        disabled={disabled}
+        sx={{ textTransform: 'none', minWidth: 110 }}
+      >
+        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+          {fontFamily === 'default' ? 'Font' : fontFamily}
+        </Typography>
+      </Button>
+      <Menu anchorEl={fontMenuAnchor} open={Boolean(fontMenuAnchor)} onClose={closeFontMenu}>
+        <MenuItem selected={fontFamily === 'default'} onClick={() => applyFontFamily('default')}>
+          Default
+        </MenuItem>
+        <MenuItem selected={fontFamily === 'Arial'} onClick={() => applyFontFamily('Arial')}>
+          Arial
+        </MenuItem>
+        <MenuItem selected={fontFamily === 'Georgia'} onClick={() => applyFontFamily('Georgia')}>
+          Georgia
+        </MenuItem>
+        <MenuItem
+          selected={fontFamily === 'Times New Roman'}
+          onClick={() => applyFontFamily('Times New Roman')}
+        >
+          Times New Roman
+        </MenuItem>
+        <MenuItem
+          selected={fontFamily === 'Courier New'}
+          onClick={() => applyFontFamily('Courier New')}
+        >
+          Courier New
+        </MenuItem>
+      </Menu>
+
+      <Button
+        size="small"
+        onClick={openFontSizeMenu}
+        endIcon={<ArrowDropDown />}
+        disabled={disabled}
+        sx={{ textTransform: 'none', minWidth: 90 }}
+      >
+        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+          {fontSize === 'default' ? 'Size' : fontSize}
+        </Typography>
+      </Button>
+      <Menu
+        anchorEl={fontSizeMenuAnchor}
+        open={Boolean(fontSizeMenuAnchor)}
+        onClose={closeFontSizeMenu}
+      >
+        <MenuItem selected={fontSize === 'default'} onClick={() => applyFontSize('default')}>
+          Default
+        </MenuItem>
+        <MenuItem selected={fontSize === '12px'} onClick={() => applyFontSize('12px')}>
+          12 px
+        </MenuItem>
+        <MenuItem selected={fontSize === '14px'} onClick={() => applyFontSize('14px')}>
+          14 px
+        </MenuItem>
+        <MenuItem selected={fontSize === '16px'} onClick={() => applyFontSize('16px')}>
+          16 px
+        </MenuItem>
+        <MenuItem selected={fontSize === '18px'} onClick={() => applyFontSize('18px')}>
+          18 px
+        </MenuItem>
+        <MenuItem selected={fontSize === '20px'} onClick={() => applyFontSize('20px')}>
+          20 px
+        </MenuItem>
+      </Menu>
+
+      <Button
+        size="small"
+        onClick={openFormatMenu}
+        endIcon={<ArrowDropDown />}
+        disabled={disabled}
+        sx={{ textTransform: 'none', minWidth: 90 }}
+      >
+        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+          {formatLabel}
+        </Typography>
+      </Button>
+      <Menu anchorEl={formatMenuAnchor} open={Boolean(formatMenuAnchor)} onClose={closeFormatMenu}>
+        <MenuItem selected={blockType === 'paragraph'} onClick={() => applyBlockType('paragraph')}>
+          Paragraph
+        </MenuItem>
+        <MenuItem selected={blockType === 'h1'} onClick={() => applyBlockType('h1')}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+            H1
+          </Typography>
+        </MenuItem>
+        <MenuItem selected={blockType === 'h2'} onClick={() => applyBlockType('h2')}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+            H2
+          </Typography>
+        </MenuItem>
+        <MenuItem selected={blockType === 'h3'} onClick={() => applyBlockType('h3')}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+            H3
+          </Typography>
+        </MenuItem>
+        <MenuItem selected={blockType === 'quote'} onClick={() => applyBlockType('quote')}>
+          <FormatQuote fontSize="small" sx={{ mr: 1 }} />
+          Blockquote
+        </MenuItem>
+        <MenuItem selected={blockType === 'code'} onClick={() => applyBlockType('code')}>
+          <Code fontSize="small" sx={{ mr: 1 }} />
+          Pre
+        </MenuItem>
+      </Menu>
+
       <IconButton size="small" onClick={insertBulletList} disabled={disabled} title="Bullet List">
         <FormatListBulleted />
       </IconButton>
@@ -333,57 +708,48 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
 
       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
-      <IconButton
-        size="small"
-        onClick={() => formatHeading('h1')}
-        disabled={disabled}
-        color={headingLevel === 'h1' ? 'primary' : 'default'}
-        title="Heading 1"
-        sx={{ minWidth: 32 }}
-      >
-        <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
-          H1
-        </Typography>
+      <IconButton size="small" onClick={outdentContent} disabled={disabled} title="Decrease indent">
+        <FormatIndentDecrease />
       </IconButton>
 
-      <IconButton
-        size="small"
-        onClick={() => formatHeading('h2')}
-        disabled={disabled}
-        color={headingLevel === 'h2' ? 'primary' : 'default'}
-        title="Heading 2"
-        sx={{ minWidth: 32 }}
-      >
-        <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
-          H2
-        </Typography>
+      <IconButton size="small" onClick={indentContent} disabled={disabled} title="Increase indent">
+        <FormatIndentIncrease />
       </IconButton>
 
-      <IconButton
+      <Button
         size="small"
-        onClick={() => formatHeading('h3')}
+        onClick={openAlignmentMenu}
+        endIcon={<ArrowDropDown />}
         disabled={disabled}
-        color={headingLevel === 'h3' ? 'primary' : 'default'}
-        title="Heading 3"
-        sx={{ minWidth: 32 }}
+        sx={{ minWidth: 48, textTransform: 'none' }}
       >
-        <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
-          H3
-        </Typography>
-      </IconButton>
-
-      <IconButton
-        size="small"
-        onClick={clearHeadingFormatting}
-        disabled={disabled}
-        color={headingLevel === '' ? 'primary' : 'default'}
-        title="Normal Text"
-        sx={{ minWidth: 32 }}
+        {elementFormat === 'center' && <FormatAlignCenter fontSize="small" />}
+        {elementFormat === 'right' && <FormatAlignRight fontSize="small" />}
+        {elementFormat === 'justify' && <FormatAlignJustify fontSize="small" />}
+        {elementFormat === 'left' && <FormatAlignLeft fontSize="small" />}
+      </Button>
+      <Menu
+        anchorEl={alignmentMenuAnchor}
+        open={Boolean(alignmentMenuAnchor)}
+        onClose={closeAlignmentMenu}
       >
-        <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
-          N
-        </Typography>
-      </IconButton>
+        <MenuItem selected={elementFormat === 'left'} onClick={() => applyAlignment('left')}>
+          <FormatAlignLeft fontSize="small" sx={{ mr: 1 }} />
+          Align Left
+        </MenuItem>
+        <MenuItem selected={elementFormat === 'center'} onClick={() => applyAlignment('center')}>
+          <FormatAlignCenter fontSize="small" sx={{ mr: 1 }} />
+          Align Center
+        </MenuItem>
+        <MenuItem selected={elementFormat === 'right'} onClick={() => applyAlignment('right')}>
+          <FormatAlignRight fontSize="small" sx={{ mr: 1 }} />
+          Align Right
+        </MenuItem>
+        <MenuItem selected={elementFormat === 'justify'} onClick={() => applyAlignment('justify')}>
+          <FormatAlignJustify fontSize="small" sx={{ mr: 1 }} />
+          Justify
+        </MenuItem>
+      </Menu>
 
       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
@@ -440,6 +806,32 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
       <IconButton size="small" onClick={redo} disabled={disabled} title="Redo (Ctrl+Y)">
         <Redo />
       </IconButton>
+
+      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+      <IconButton size="small" onClick={cutSelection} disabled={disabled} title="Cut (Ctrl+X)">
+        <ContentCut />
+      </IconButton>
+
+      <IconButton size="small" onClick={copySelection} disabled={disabled} title="Copy (Ctrl+C)">
+        <ContentCopy />
+      </IconButton>
+
+      <IconButton size="small" onClick={pasteClipboard} disabled={disabled} title="Paste (Ctrl+V)">
+        <ContentPaste />
+      </IconButton>
+
+      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+      <IconButton
+        size="small"
+        onClick={onToggleSpellCheck}
+        disabled={disabled}
+        color={spellCheckEnabled ? 'primary' : 'default'}
+        title={spellCheckEnabled ? 'Spellcheck on' : 'Spellcheck off'}
+      >
+        <Spellcheck />
+      </IconButton>
     </Toolbar>
   );
 }
@@ -449,6 +841,73 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
 function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
   const [editor] = useLexicalComposerContext();
 
+  const allowedInlineStyleKeys = React.useMemo(
+    () =>
+      new Set([
+        'font-family',
+        'font-size',
+        'font-weight',
+        'color',
+        'background-color',
+        'text-align',
+        'line-height',
+      ]),
+    [],
+  );
+
+  const filterAllowedStyles = useCallback(
+    (styleContent: string): string => {
+      if (!styleContent) return '';
+      const declarations = styleContent
+        .split(';')
+        .map((decl) => decl.trim())
+        .filter(Boolean);
+
+      const allowed: string[] = [];
+      for (const decl of declarations) {
+        const [prop, ...rest] = decl.split(':');
+        if (!prop || rest.length === 0) continue;
+        const value = rest.join(':').trim();
+        const normalizedProp = prop.trim().toLowerCase();
+        if (!allowedInlineStyleKeys.has(normalizedProp)) {
+          continue;
+        }
+        if (/url\s*\(/i.test(value) || /background-image/i.test(normalizedProp)) {
+          continue;
+        }
+        const cleanedValue = value.replace(/javascript:/gi, '').trim();
+        if (cleanedValue) {
+          allowed.push(`${normalizedProp}: ${cleanedValue}`);
+        }
+      }
+
+      return allowed.join('; ');
+    },
+    [allowedInlineStyleKeys],
+  );
+
+  const collectTextNodeStyles = useCallback(
+    (node: Node, inherited: string[], styles: string[]): void => {
+      const traverse = (current: Node, carry: string[]): void => {
+        if (current.nodeType === Node.TEXT_NODE) {
+          styles.push(carry.filter(Boolean).join('; '));
+          return;
+        }
+
+        if (current.nodeType === Node.ELEMENT_NODE) {
+          const element = current as HTMLElement;
+          const styleAttr = element.getAttribute('style') ?? '';
+          const filteredStyle = filterAllowedStyles(styleAttr);
+          const nextInherited = filteredStyle ? [...carry, filteredStyle] : carry;
+          element.childNodes.forEach((child) => traverse(child, nextInherited));
+        }
+      };
+
+      traverse(node, inherited);
+    },
+    [filterAllowedStyles],
+  );
+
   useEffect(() => {
     if (!initialHtml || initialHtml.trim() === '') return;
 
@@ -457,6 +916,8 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
       try {
         const parser = new DOMParser();
         const dom = parser.parseFromString(initialHtml, 'text/html');
+        const textNodeStyles: string[] = [];
+        collectTextNodeStyles(dom.body, [], textNodeStyles);
         const nodes = $generateNodesFromDOM(editor, dom);
 
         const root = $getRoot();
@@ -465,6 +926,13 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
         if (nodes.length > 0) {
           // Insert the parsed nodes which preserve all formatting
           $insertNodes(nodes);
+          const lexicalTextNodes = root.getAllTextNodes();
+          lexicalTextNodes.forEach((textNode, index) => {
+            const style = textNodeStyles[index];
+            if (style) {
+              textNode.setStyle(style);
+            }
+          });
         } else {
           // Fallback: create empty paragraph if parsing produces no nodes
           const paragraph = $createParagraphNode();
@@ -488,7 +956,7 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
         }
       }
     });
-  }, [editor, initialHtml]);
+  }, [collectTextNodeStyles, editor, filterAllowedStyles, initialHtml]);
 
   return null;
 }
@@ -544,7 +1012,7 @@ function createInitialEditorState(_html?: string): (() => void) | null {
   return null;
 }
 
-const nodes = [HeadingNode, ListNode, ListItemNode, LinkNode, AutoLinkNode];
+const nodes = [HeadingNode, QuoteNode, CodeNode, ListNode, ListItemNode, LinkNode, AutoLinkNode];
 
 const editorConfig = {
   namespace: 'EmailEditor',
@@ -575,6 +1043,7 @@ const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEditorProp
     ref,
   ) => {
     const theme = useTheme();
+    const [spellCheckEnabled, setSpellCheckEnabled] = React.useState(true);
     // Ref to access the editor instance
     const editorRef = useRef<LexicalEditor | null>(null);
 
@@ -664,7 +1133,13 @@ const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEditorProp
             },
           }}
         >
-          {!disabled && <ToolbarPlugin disabled={disabled} />}
+          {!disabled && (
+            <ToolbarPlugin
+              disabled={disabled}
+              spellCheckEnabled={spellCheckEnabled}
+              onToggleSpellCheck={() => setSpellCheckEnabled((prev) => !prev)}
+            />
+          )}
 
           <Box
             sx={{
@@ -734,6 +1209,11 @@ const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEditorProp
                     backgroundColor: 'transparent',
                     color: theme.palette.text.primary,
                   }}
+                  spellCheck={spellCheckEnabled}
+                  lang="en"
+                  autoCorrect="on"
+                  autoCapitalize="sentences"
+                  inputMode="text"
                   readOnly={disabled}
                 />
               }

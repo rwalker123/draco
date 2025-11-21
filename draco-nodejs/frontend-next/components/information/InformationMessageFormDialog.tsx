@@ -30,7 +30,6 @@ import {
 } from '@draco/shared-schemas';
 
 import RichTextEditor, { type RichTextEditorHandle } from '../email/RichTextEditor';
-import { sanitizeRichContent } from '../../utils/sanitization';
 
 const WelcomeMessageFormSchema = z.object({
   caption: z
@@ -141,11 +140,11 @@ const InformationMessageFormDialog: React.FC<InformationMessageFormDialogProps> 
     setSelectedTeamSeasonId(initialTeamSeasonId ?? availableTeams[0]?.teamSeasonId ?? '');
 
     if (initialMessage) {
-      const sanitizedBody = sanitizeRichContent(initialMessage.bodyHtml ?? '');
+      const bodyHtml = initialMessage.bodyHtml ?? '';
       setValue('caption', initialMessage.caption ?? '', { shouldDirty: false });
       setValue('order', initialMessage.order ?? 0, { shouldDirty: false });
-      setValue('bodyHtml', sanitizedBody, { shouldDirty: false });
-      setEditorInitialValue(sanitizedBody);
+      setValue('bodyHtml', bodyHtml, { shouldDirty: false });
+      setEditorInitialValue(bodyHtml);
     } else {
       resetForm();
     }
