@@ -19,8 +19,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          npm-version: '11'
           cache: 'npm'
+
+      - name: Install npm 11
+        run: npm install -g npm@11
           
       - name: Install dependencies
         run: npm install
