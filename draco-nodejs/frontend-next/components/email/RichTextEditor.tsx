@@ -78,7 +78,7 @@ import {
 import { ListNode, ListItemNode, $insertList } from '@lexical/list';
 import { LinkNode, AutoLinkNode, $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link';
 import { CodeNode, $createCodeNode } from '@lexical/code';
-import { sanitizeRichContent } from '../../utils/sanitization';
+import { sanitizeRichContent, filterAllowedInlineStyles } from '../../utils/sanitization';
 import { $patchStyleText, $setBlocksType } from '@lexical/selection';
 
 interface RichTextEditorProps {
@@ -593,7 +593,7 @@ function ToolbarPlugin({
       if (text && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
       } else {
-        document.execCommand('copy');
+        console.warn('Copy unavailable: Clipboard API not supported in this context');
       }
     } catch (error) {
       console.warn('Copy failed', error);
@@ -610,7 +610,7 @@ function ToolbarPlugin({
       if (text && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
       } else {
-        document.execCommand('cut');
+        console.warn('Cut unavailable: Clipboard API not supported in this context');
       }
     } catch (error) {
       console.warn('Cut failed', error);
@@ -1029,89 +1029,94 @@ function ToolbarPlugin({
         open={Boolean(overflowMenuAnchor)}
         onClose={closeOverflowMenu}
       >
-        {isCompactToolbar && [
-          <MenuItem
-            key="compact-bullet"
-            onClick={() => {
-              closeOverflowMenu();
-              insertBulletList();
-            }}
-            disabled={disabled}
-          >
-            Bullet list
-          </MenuItem>,
-          <MenuItem
-            key="compact-numbered"
-            onClick={() => {
-              closeOverflowMenu();
-              insertNumberedList();
-            }}
-            disabled={disabled}
-          >
-            Numbered list
-          </MenuItem>,
-          <MenuItem
-            key="compact-outdent"
-            onClick={() => {
-              closeOverflowMenu();
-              outdentContent();
-            }}
-            disabled={disabled}
-          >
-            Decrease indent
-          </MenuItem>,
-          <MenuItem
-            key="compact-indent"
-            onClick={() => {
-              closeOverflowMenu();
-              indentContent();
-            }}
-            disabled={disabled}
-          >
-            Increase indent
-          </MenuItem>,
-          <MenuItem
-            key="compact-align-left"
-            onClick={() => {
-              closeOverflowMenu();
-              applyAlignment('left');
-            }}
-            disabled={disabled}
-          >
-            Align Left
-          </MenuItem>,
-          <MenuItem
-            key="compact-align-center"
-            onClick={() => {
-              closeOverflowMenu();
-              applyAlignment('center');
-            }}
-            disabled={disabled}
-          >
-            Align Center
-          </MenuItem>,
-          <MenuItem
-            key="compact-align-right"
-            onClick={() => {
-              closeOverflowMenu();
-              applyAlignment('right');
-            }}
-            disabled={disabled}
-          >
-            Align Right
-          </MenuItem>,
-          <MenuItem
-            key="compact-align-justify"
-            onClick={() => {
-              closeOverflowMenu();
-              applyAlignment('justify');
-            }}
-            disabled={disabled}
-          >
-            Justify
-          </MenuItem>,
-          <Divider key="compact-divider" />,
-        ]}
+        {isCompactToolbar && (
+          <>
+            {[
+              {
+                key: 'compact-bullet',
+                label: 'Bullet list',
+                ariaLabel: 'Insert bullet list',
+                onClick: () => {
+                  closeOverflowMenu();
+                  insertBulletList();
+                },
+              },
+              {
+                key: 'compact-numbered',
+                label: 'Numbered list',
+                ariaLabel: 'Insert numbered list',
+                onClick: () => {
+                  closeOverflowMenu();
+                  insertNumberedList();
+                },
+              },
+              {
+                key: 'compact-outdent',
+                label: 'Decrease indent',
+                ariaLabel: 'Decrease indent',
+                onClick: () => {
+                  closeOverflowMenu();
+                  outdentContent();
+                },
+              },
+              {
+                key: 'compact-indent',
+                label: 'Increase indent',
+                ariaLabel: 'Increase indent',
+                onClick: () => {
+                  closeOverflowMenu();
+                  indentContent();
+                },
+              },
+              {
+                key: 'compact-align-left',
+                label: 'Align Left',
+                ariaLabel: 'Align text left',
+                onClick: () => {
+                  closeOverflowMenu();
+                  applyAlignment('left');
+                },
+              },
+              {
+                key: 'compact-align-center',
+                label: 'Align Center',
+                ariaLabel: 'Align text center',
+                onClick: () => {
+                  closeOverflowMenu();
+                  applyAlignment('center');
+                },
+              },
+              {
+                key: 'compact-align-right',
+                label: 'Align Right',
+                ariaLabel: 'Align text right',
+                onClick: () => {
+                  closeOverflowMenu();
+                  applyAlignment('right');
+                },
+              },
+              {
+                key: 'compact-align-justify',
+                label: 'Justify',
+                ariaLabel: 'Justify text',
+                onClick: () => {
+                  closeOverflowMenu();
+                  applyAlignment('justify');
+                },
+              },
+            ].map((item) => (
+              <MenuItem
+                key={item.key}
+                onClick={item.onClick}
+                disabled={disabled}
+                aria-label={item.ariaLabel}
+              >
+                {item.label}
+              </MenuItem>
+            ))}
+            <Divider />
+          </>
+        )}
         <MenuItem
           onClick={() => {
             closeOverflowMenu();
@@ -1176,63 +1181,22 @@ function ToolbarPlugin({
 function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
   const [editor] = useLexicalComposerContext();
 
-  const allowedInlineStyleKeys = React.useMemo(
-    () =>
-      new Set([
-        'font-family',
-        'font-size',
-        'font-weight',
-        'color',
-        'background-color',
-        'text-align',
-        'line-height',
-      ]),
-    [],
-  );
-
-  const filterAllowedStyles = useCallback(
-    (styleContent: string): string => {
-      if (!styleContent) return '';
-      const declarations = styleContent
-        .split(';')
-        .map((decl) => decl.trim())
-        .filter(Boolean);
-
-      const allowed: string[] = [];
-      for (const decl of declarations) {
-        const [prop, ...rest] = decl.split(':');
-        if (!prop || rest.length === 0) continue;
-        const value = rest.join(':').trim();
-        const normalizedProp = prop.trim().toLowerCase();
-        if (!allowedInlineStyleKeys.has(normalizedProp)) {
-          continue;
-        }
-        if (/url\s*\(/i.test(value) || /background-image/i.test(normalizedProp)) {
-          continue;
-        }
-        const cleanedValue = value.replace(/javascript:/gi, '').trim();
-        if (cleanedValue) {
-          allowed.push(`${normalizedProp}: ${cleanedValue}`);
-        }
-      }
-
-      return allowed.join('; ');
-    },
-    [allowedInlineStyleKeys],
-  );
-
-  const collectTextNodeStyles = useCallback(
-    (node: Node, inherited: string[], styles: string[]): void => {
+  const collectStyleSegments = useCallback(
+    (node: Node, inherited: string[], segments: Array<{ style: string; length: number }>): void => {
       const traverse = (current: Node, carry: string[]): void => {
         if (current.nodeType === Node.TEXT_NODE) {
-          styles.push(carry.filter(Boolean).join('; '));
+          const textContent = current.textContent ?? '';
+          const style = carry.filter(Boolean).join('; ');
+          if (textContent.length > 0) {
+            segments.push({ style, length: textContent.length });
+          }
           return;
         }
 
         if (current.nodeType === Node.ELEMENT_NODE) {
           const element = current as HTMLElement;
           const styleAttr = element.getAttribute('style') ?? '';
-          const filteredStyle = filterAllowedStyles(styleAttr);
+          const filteredStyle = filterAllowedInlineStyles(styleAttr);
           const nextInherited = filteredStyle ? [...carry, filteredStyle] : carry;
           element.childNodes.forEach((child) => traverse(child, nextInherited));
         }
@@ -1240,7 +1204,7 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
 
       traverse(node, inherited);
     },
-    [filterAllowedStyles],
+    [], // filterAllowedInlineStyles is a module import and stable
   );
 
   useEffect(() => {
@@ -1251,8 +1215,8 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
       try {
         const parser = new DOMParser();
         const dom = parser.parseFromString(initialHtml, 'text/html');
-        const textNodeStyles: string[] = [];
-        collectTextNodeStyles(dom.body, [], textNodeStyles);
+        const styleSegments: Array<{ style: string; length: number }> = [];
+        collectStyleSegments(dom.body, [], styleSegments);
         const nodes = $generateNodesFromDOM(editor, dom);
 
         const root = $getRoot();
@@ -1262,11 +1226,21 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
           // Insert the parsed nodes which preserve all formatting
           $insertNodes(nodes);
           const lexicalTextNodes = root.getAllTextNodes();
-          lexicalTextNodes.forEach((textNode, index) => {
-            const style = textNodeStyles[index];
+          let segmentIndex = 0;
+          let remaining = styleSegments[0]?.length ?? 0;
+          lexicalTextNodes.forEach((textNode) => {
+            const textLength = textNode.getTextContent().length;
+            // Advance segments until we have a remaining length
+            while (remaining === 0 && segmentIndex < styleSegments.length - 1) {
+              segmentIndex += 1;
+              remaining = styleSegments[segmentIndex]?.length ?? 0;
+            }
+            const style = styleSegments[segmentIndex]?.style ?? '';
             if (style) {
               textNode.setStyle(style);
             }
+            // Decrease remaining by current text length
+            remaining = Math.max(0, remaining - textLength);
           });
         } else {
           // Fallback: create empty paragraph if parsing produces no nodes
@@ -1291,7 +1265,7 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
         }
       }
     });
-  }, [collectTextNodeStyles, editor, filterAllowedStyles, initialHtml]);
+  }, [collectStyleSegments, editor, initialHtml]);
 
   return null;
 }

@@ -65,6 +65,16 @@ export const sanitizeFormData = (text: string): string => {
   return sanitized;
 };
 
+export const ALLOWED_STYLE_PROPERTIES = new Set([
+  'font-family',
+  'font-size',
+  'font-weight',
+  'color',
+  'background-color',
+  'text-align',
+  'line-height',
+]);
+
 /**
  * Sanitizes rich content to allow safe HTML while removing dangerous elements
  * Used for templates and rich content where formatting should be preserved
@@ -85,49 +95,12 @@ export const sanitizeRichContent = (text: string): string => {
     SANITIZE_NAMED_PROPS: true, // Enforce strict DOM clobbering protection
   });
 
-  const applyStyleFiltering = (styleContent: string): string => {
-    // Legacy fallback for non-browser environments
-    if (typeof window === 'undefined' || !window.document) {
-      return filterAllowedStyles(styleContent);
-    }
-
-    const el = window.document.createElement('div');
-    el.setAttribute('style', styleContent);
-    const style = el.style;
-    const allowed: string[] = [];
-
-    ALLOWED_STYLE_PROPERTIES.forEach((prop) => {
-      const value = style.getPropertyValue(prop);
-      if (!value) {
-        return;
-      }
-      if (/url\s*\(/i.test(value)) {
-        return;
-      }
-      let cleanedValue = value.replace(/javascript:/gi, '').trim();
-      if (!cleanedValue) {
-        return;
-      }
-      if (prop === 'font-family') {
-        // Normalize font family names to avoid stray quotes breaking attributes
-        const normalized = cleanedValue.replace(/['"]/g, '').trim();
-        if (!normalized) {
-          return;
-        }
-        cleanedValue = normalized.includes(' ') ? `'${normalized}'` : normalized;
-      }
-      allowed.push(`${prop}: ${cleanedValue}`);
-    });
-
-    return allowed.join('; ');
-  };
-
   // Use DOM parsing instead of regex to handle quoted values like "Times New Roman"
   if (typeof DOMParser !== 'undefined') {
     const parser = new DOMParser();
     const doc = parser.parseFromString(sanitized, 'text/html');
     doc.body.querySelectorAll<HTMLElement>('[style]').forEach((element) => {
-      const filtered = applyStyleFiltering(element.getAttribute('style') ?? '');
+      const filtered = applyAllowedInlineStyles(element.getAttribute('style') ?? '');
       if (filtered) {
         element.setAttribute('style', filtered);
       } else {
@@ -138,11 +111,11 @@ export const sanitizeRichContent = (text: string): string => {
   } else {
     // Fallback for environments without DOMParser
     sanitized = sanitized.replace(/\sstyle="([^"]*)"/gi, (_match, styleContent) => {
-      const filtered = applyStyleFiltering(styleContent);
+      const filtered = applyAllowedInlineStyles(styleContent);
       return filtered ? ` style="${filtered}"` : '';
     });
     sanitized = sanitized.replace(/\sstyle='([^']*)'/gi, (_match, styleContent) => {
-      const filtered = applyStyleFiltering(styleContent);
+      const filtered = applyAllowedInlineStyles(styleContent);
       return filtered ? ` style="${filtered}"` : '';
     });
   }
@@ -151,17 +124,7 @@ export const sanitizeRichContent = (text: string): string => {
   return sanitized.replace(/javascript:/gi, '').trim();
 };
 
-const ALLOWED_STYLE_PROPERTIES = new Set([
-  'font-family',
-  'font-size',
-  'font-weight',
-  'color',
-  'background-color',
-  'text-align',
-  'line-height',
-]);
-
-const filterAllowedStyles = (styleContent: string): string => {
+export const filterAllowedInlineStyles = (styleContent: string): string => {
   if (!styleContent) return '';
   const declarations = styleContent
     .split(';')
@@ -185,6 +148,41 @@ const filterAllowedStyles = (styleContent: string): string => {
       allowed.push(`${normalizedProp}: ${cleanedValue}`);
     }
   }
+
+  return allowed.join('; ');
+};
+
+const applyAllowedInlineStyles = (styleContent: string): string => {
+  if (typeof window === 'undefined' || !window.document) {
+    return filterAllowedInlineStyles(styleContent);
+  }
+
+  const el = window.document.createElement('div');
+  el.setAttribute('style', styleContent);
+  const style = el.style;
+  const allowed: string[] = [];
+
+  ALLOWED_STYLE_PROPERTIES.forEach((prop) => {
+    const value = style.getPropertyValue(prop);
+    if (!value) {
+      return;
+    }
+    if (/url\s*\(/i.test(value)) {
+      return;
+    }
+    let cleanedValue = value.replace(/javascript:/gi, '').trim();
+    if (!cleanedValue) {
+      return;
+    }
+    if (prop === 'font-family') {
+      const normalized = cleanedValue.replace(/['"]/g, '').trim();
+      if (!normalized) {
+        return;
+      }
+      cleanedValue = normalized.includes(' ') ? `'${normalized}'` : normalized;
+    }
+    allowed.push(`${prop}: ${cleanedValue}`);
+  });
 
   return allowed.join('; ');
 };
