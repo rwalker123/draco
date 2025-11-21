@@ -35,6 +35,14 @@ const baseStyles: SxProps<Theme> = {
   '& u, & .editor-text-underline': {
     textDecoration: 'underline',
   },
+  '& a, & .editor-link': {
+    color: 'primary.main',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    '&:hover': {
+      textDecoration: 'none',
+    },
+  },
   '& h1, & .editor-heading-h1': {
     fontSize: '1.5rem',
     fontWeight: 700,

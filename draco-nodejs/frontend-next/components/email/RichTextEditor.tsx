@@ -1,7 +1,23 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Box, Paper, Toolbar, IconButton, Divider, Typography } from '@mui/material';
+import {
+  Box,
+  Paper,
+  Toolbar,
+  IconButton,
+  Divider,
+  Typography,
+  Button,
+  Menu,
+  MenuItem,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  TextField,
+} from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 import {
   FormatBold,
@@ -10,8 +26,18 @@ import {
   FormatListBulleted,
   FormatListNumbered,
   Link as LinkIcon,
-  Undo,
-  Redo,
+  ArrowDropDown,
+  FormatAlignLeft,
+  FormatAlignCenter,
+  FormatAlignRight,
+  FormatAlignJustify,
+  FormatIndentIncrease,
+  FormatIndentDecrease,
+  Code,
+  FormatQuote,
+  FormatColorText,
+  FormatColorFill,
+  MoreHoriz,
 } from '@mui/icons-material';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
@@ -24,9 +50,16 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import {
   $getSelection,
   $isRangeSelection,
+  $isElementNode,
   FORMAT_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  FORMAT_ELEMENT_COMMAND,
+  INDENT_CONTENT_COMMAND,
+  OUTDENT_CONTENT_COMMAND,
   LexicalEditor,
+  RangeSelection,
+  $isTextNode,
+  $setSelection,
   $getRoot,
   $insertNodes,
   UNDO_COMMAND,
@@ -35,11 +68,18 @@ import {
   $createParagraphNode,
 } from 'lexical';
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html';
-import { HeadingNode, $createHeadingNode, $isHeadingNode } from '@lexical/rich-text';
+import {
+  HeadingNode,
+  $createHeadingNode,
+  $isHeadingNode,
+  QuoteNode,
+  $createQuoteNode,
+} from '@lexical/rich-text';
 import { ListNode, ListItemNode, $insertList } from '@lexical/list';
-import { LinkNode, AutoLinkNode } from '@lexical/link';
-import { sanitizeRichContent } from '../../utils/sanitization';
-import { $setBlocksType } from '@lexical/selection';
+import { LinkNode, AutoLinkNode, $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link';
+import { CodeNode, $createCodeNode } from '@lexical/code';
+import { sanitizeRichContent, filterAllowedInlineStyles } from '../../utils/sanitization';
+import { $patchStyleText, $setBlocksType } from '@lexical/selection';
 
 interface RichTextEditorProps {
   initialValue?: string;
@@ -51,7 +91,15 @@ interface RichTextEditorProps {
 }
 
 // Toolbar component for format controls
-function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
+function ToolbarPlugin({
+  disabled = false,
+  spellCheckEnabled,
+  onToggleSpellCheck,
+}: {
+  disabled?: boolean;
+  spellCheckEnabled: boolean;
+  onToggleSpellCheck: () => void;
+}) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const toolbarBackground = isDark
@@ -63,7 +111,105 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
   const [isBold, setIsBold] = React.useState(false);
   const [isItalic, setIsItalic] = React.useState(false);
   const [isUnderline, setIsUnderline] = React.useState(false);
-  const [headingLevel, setHeadingLevel] = React.useState<string>('');
+  const [blockType, setBlockType] = React.useState<
+    'paragraph' | 'h1' | 'h2' | 'h3' | 'quote' | 'code'
+  >('paragraph');
+  const [elementFormat, setElementFormat] = React.useState<'left' | 'center' | 'right' | 'justify'>(
+    'left',
+  );
+  const [linkDialogOpen, setLinkDialogOpen] = React.useState(false);
+  const [linkUrl, setLinkUrl] = React.useState('https://');
+  const [linkText, setLinkText] = React.useState('');
+  const lastSelectionRef = React.useRef<RangeSelection | null>(null);
+  const [formatMenuAnchor, setFormatMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [alignmentMenuAnchor, setAlignmentMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [fontMenuAnchor, setFontMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [fontSizeMenuAnchor, setFontSizeMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [fontColorMenuAnchor, setFontColorMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [bgColorMenuAnchor, setBgColorMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [overflowMenuAnchor, setOverflowMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [fontFamily, setFontFamily] = React.useState('default');
+  const [fontSize, setFontSize] = React.useState('default');
+  const [fontColor, setFontColor] = React.useState('default');
+  const [bgColor, setBgColor] = React.useState('default');
+  const [isCompactToolbar, setIsCompactToolbar] = React.useState<boolean>(false);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
+  const normalizeColor = useCallback((value: string | undefined): string => {
+    if (!value) return '';
+    const trimmed = value.trim();
+    const hexMatch = trimmed.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (hexMatch) {
+      return trimmed.toLowerCase();
+    }
+    const rgbMatch = trimmed.match(
+      /^rgba?\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})(?:,\s*[\d.]+)?\)$/i,
+    );
+    if (rgbMatch) {
+      const [r, g, b] = rgbMatch
+        .slice(1, 4)
+        .map((n) => Math.max(0, Math.min(255, Number.parseInt(n, 10))));
+      const toHex = (n: number) => n.toString(16).padStart(2, '0');
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+    // Whitelist a handful of safe named colors if needed
+    const named = trimmed.toLowerCase();
+    const allowedNamed = new Set([
+      'black',
+      'white',
+      'red',
+      'blue',
+      'green',
+      'orange',
+      'gray',
+      'grey',
+    ]);
+    if (allowedNamed.has(named)) {
+      return named;
+    }
+    return '';
+  }, []);
+  const fontColors = React.useMemo(
+    () => [
+      { label: 'Black', value: '#000000' },
+      { label: 'Blue', value: '#1a73e8' },
+      { label: 'Red', value: '#d93025' },
+      { label: 'Green', value: '#188038' },
+      { label: 'Orange', value: '#f9ab00' },
+      { label: 'Gray', value: '#5f6368' },
+    ],
+    [],
+  );
+  const bgColors = React.useMemo(
+    () => [
+      { label: 'Light Yellow', value: '#fff3cd' },
+      { label: 'Light Blue', value: '#e8f0fe' },
+      { label: 'Light Red', value: '#fce8e6' },
+      { label: 'Light Green', value: '#e6f4ea' },
+      { label: 'Light Gray', value: '#f6f6f6' },
+    ],
+    [],
+  );
+
+  const normalizeFontValue = React.useCallback((value: string): string => {
+    if (!value) return '';
+    const trimmed = value.trim();
+    // Strip matching leading/trailing quotes
+    return trimmed.replace(/^['"]+|['"]+$/g, '');
+  }, []);
+
+  const parseStyleMap = useCallback((styleString: string) => {
+    const entries = styleString
+      .split(';')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const [key, ...rest] = part.split(':');
+        if (!key || rest.length === 0) return null;
+        return [key.trim().toLowerCase(), rest.join(':').trim()] as const;
+      })
+      .filter(Boolean) as [string, string][];
+    return Object.fromEntries(entries);
+  }, []);
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -72,19 +218,55 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
       setIsItalic(selection.hasFormat('italic'));
       setIsUnderline(selection.hasFormat('underline'));
 
-      // Check for heading level
       const anchorNode = selection.anchor.getNode();
       const element =
         anchorNode.getKey() === 'root' ? anchorNode : anchorNode.getTopLevelElementOrThrow();
 
       if ($isHeadingNode(element)) {
-        // Use proper type guard to check HeadingNode
-        setHeadingLevel(element.getTag());
+        const tag = element.getTag();
+        if (tag === 'h1' || tag === 'h2' || tag === 'h3') {
+          setBlockType(tag);
+        } else {
+          setBlockType('paragraph');
+        }
       } else {
-        setHeadingLevel('');
+        const type = element.getType();
+        if (type === 'quote') {
+          setBlockType('quote');
+        } else if (type === 'code') {
+          setBlockType('code');
+        } else {
+          setBlockType('paragraph');
+        }
       }
+
+      const format =
+        $isElementNode(element) && typeof element.getFormatType === 'function'
+          ? element.getFormatType()
+          : null;
+      if (format === 'left' || format === 'center' || format === 'right' || format === 'justify') {
+        setElementFormat(format);
+      } else if (format === 'start') {
+        setElementFormat('left');
+      } else if (format === 'end') {
+        setElementFormat('right');
+      } else {
+        setElementFormat('left');
+      }
+
+      let styleString = '';
+      const nodes = selection.getNodes();
+      const textNode = nodes.find((node) => $isTextNode(node));
+      if (textNode && $isTextNode(textNode)) {
+        styleString = textNode.getStyle();
+      }
+      const styleMap = parseStyleMap(styleString);
+      setFontFamily(normalizeFontValue(styleMap['font-family']) || 'default');
+      setFontSize(styleMap['font-size'] || 'default');
+      setFontColor(normalizeColor(styleMap.color) || 'default');
+      setBgColor(normalizeColor(styleMap['background-color']) || 'default');
     }
-  }, []);
+  }, [normalizeColor, normalizeFontValue, parseStyleMap]);
 
   useEffect(() => {
     return editor.registerCommand(
@@ -96,6 +278,145 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
       1,
     );
   }, [editor, updateToolbar]);
+
+  useEffect(() => {
+    if (!toolbarRef.current) return;
+
+    const updateCompact = (width: number) => {
+      setIsCompactToolbar(width < 760);
+    };
+
+    const measureAndUpdate = () => {
+      if (toolbarRef.current) {
+        updateCompact(toolbarRef.current.getBoundingClientRect().width);
+      }
+    };
+
+    measureAndUpdate();
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry?.contentRect) {
+        updateCompact(entry.contentRect.width);
+      }
+    });
+    observer.observe(toolbarRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const formatLabel = {
+    paragraph: 'Paragraph',
+    h1: 'H1',
+    h2: 'H2',
+    h3: 'H3',
+    quote: 'Quote',
+    code: 'Pre',
+  }[blockType];
+
+  const openFormatMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setFormatMenuAnchor(event.currentTarget);
+  };
+
+  const closeFormatMenu = () => {
+    setFormatMenuAnchor(null);
+  };
+
+  const openAlignmentMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAlignmentMenuAnchor(event.currentTarget);
+  };
+
+  const closeAlignmentMenu = () => {
+    setAlignmentMenuAnchor(null);
+  };
+
+  const openFontMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setFontMenuAnchor(event.currentTarget);
+  };
+
+  const closeFontMenu = () => {
+    setFontMenuAnchor(null);
+  };
+
+  const openFontSizeMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setFontSizeMenuAnchor(event.currentTarget);
+  };
+
+  const closeFontSizeMenu = () => {
+    setFontSizeMenuAnchor(null);
+  };
+
+  const openFontColorMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setFontColorMenuAnchor(event.currentTarget);
+  };
+
+  const closeFontColorMenu = () => {
+    setFontColorMenuAnchor(null);
+  };
+
+  const openBgColorMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setBgColorMenuAnchor(event.currentTarget);
+  };
+
+  const closeBgColorMenu = () => {
+    setBgColorMenuAnchor(null);
+  };
+
+  const openOverflowMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setOverflowMenuAnchor(event.currentTarget);
+  };
+
+  const closeOverflowMenu = () => {
+    setOverflowMenuAnchor(null);
+  };
+
+  const applyBlockType = (type: 'paragraph' | 'h1' | 'h2' | 'h3' | 'quote' | 'code') => {
+    closeFormatMenu();
+    if (disabled) {
+      return;
+    }
+    editor.update(() => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
+      switch (type) {
+        case 'paragraph':
+          $setBlocksType(selection, () => $createParagraphNode());
+          break;
+        case 'h1':
+        case 'h2':
+        case 'h3':
+          $setBlocksType(selection, () => $createHeadingNode(type));
+          break;
+        case 'quote':
+          $setBlocksType(selection, () => $createQuoteNode());
+          break;
+        case 'code':
+          $setBlocksType(selection, () => $createCodeNode());
+          break;
+        default:
+          break;
+      }
+    });
+  };
+
+  const applyAlignment = (format: 'left' | 'center' | 'right' | 'justify') => {
+    closeAlignmentMenu();
+    if (!disabled) {
+      editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, format);
+    }
+  };
+
+  const indentContent = () => {
+    if (!disabled) {
+      editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+    }
+  };
+
+  const outdentContent = () => {
+    if (!disabled) {
+      editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+    }
+  };
 
   const formatBold = () => {
     if (!disabled) {
@@ -112,6 +433,62 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
   const formatUnderline = () => {
     if (!disabled) {
       editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
+    }
+  };
+
+  const applyFontFamily = (family: string) => {
+    const value = family === 'default' ? '' : family;
+    setFontFamily(family);
+    closeFontMenu();
+    if (!disabled) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $patchStyleText(selection, { 'font-family': value });
+        }
+      });
+    }
+  };
+
+  const applyFontSize = (size: string) => {
+    const value = size === 'default' ? '' : size;
+    setFontSize(size);
+    closeFontSizeMenu();
+    if (!disabled) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $patchStyleText(selection, { 'font-size': value });
+        }
+      });
+    }
+  };
+
+  const applyFontColor = (colorValue: string) => {
+    const value = colorValue === 'default' ? '' : colorValue;
+    setFontColor(colorValue);
+    closeFontColorMenu();
+    if (!disabled) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $patchStyleText(selection, { color: value });
+        }
+      });
+    }
+  };
+
+  const applyBgColor = (colorValue: string) => {
+    const value = colorValue === 'default' ? '' : colorValue;
+    setBgColor(colorValue);
+    closeBgColorMenu();
+    if (!disabled) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $patchStyleText(selection, { 'background-color': value });
+        }
+      });
     }
   };
 
@@ -137,20 +514,81 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
     }
   };
 
-  const insertLink = () => {
-    if (!disabled) {
-      const url = prompt('Enter URL:');
-      if (url) {
-        // Simple link insertion - would be enhanced with proper link dialog
-        editor.update(() => {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            const linkText = selection.getTextContent() || url;
-            selection.insertText(`[${linkText}](${url})`);
-          }
-        });
-      }
+  const getSelectedNode = (selection: RangeSelection) => {
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+    if (anchorNode === focusNode) {
+      return anchorNode;
     }
+    return selection.isBackward() ? anchorNode : focusNode;
+  };
+
+  const normalizeUrl = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return '';
+    }
+    // Drop dangerous protocols
+    if (/^(javascript:|data:|vbscript:)/i.test(trimmed)) {
+      return '';
+    }
+    const hasProtocol = /^(https?:)?\/\//i.test(trimmed) || /^mailto:/i.test(trimmed);
+    return hasProtocol ? trimmed : `https://${trimmed}`;
+  };
+
+  const handleOpenLinkDialog = () => {
+    if (disabled) {
+      return;
+    }
+    editor.getEditorState().read(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        lastSelectionRef.current = selection.clone();
+        const node = getSelectedNode(selection);
+        const parent = node.getParent();
+        const targetLinkNode = $isLinkNode(node) ? node : $isLinkNode(parent) ? parent : null;
+        const existingUrl = targetLinkNode?.getURL() ?? '';
+        setLinkUrl(existingUrl || 'https://');
+        setLinkText(selection.getTextContent());
+      } else {
+        setLinkUrl('https://');
+        setLinkText('');
+      }
+    });
+    setLinkDialogOpen(true);
+  };
+
+  const handleCloseLinkDialog = () => {
+    setLinkDialogOpen(false);
+    setLinkText('');
+    lastSelectionRef.current = null;
+  };
+
+  const handleConfirmLink = () => {
+    if (disabled) {
+      return;
+    }
+    const normalized = normalizeUrl(linkUrl);
+    editor.update(() => {
+      let selection = $getSelection();
+      if (!$isRangeSelection(selection) && lastSelectionRef.current) {
+        $setSelection(lastSelectionRef.current);
+        selection = $getSelection();
+      }
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
+      if (!normalized) {
+        editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+        return;
+      }
+      if (selection.isCollapsed()) {
+        const textToInsert = linkText || normalized;
+        selection.insertText(textToInsert);
+      }
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, normalized);
+    });
+    handleCloseLinkDialog();
   };
 
   const undo = () => {
@@ -165,33 +603,77 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
     }
   };
 
-  const formatHeading = (headingTag: 'h1' | 'h2' | 'h3') => {
-    if (!disabled) {
-      editor.update(() => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          $setBlocksType(selection, () => $createHeadingNode(headingTag));
-        }
-      });
+  const copySelection = async () => {
+    if (disabled) {
+      return;
+    }
+    const selection = window.getSelection();
+    const text = selection?.toString() || '';
+    try {
+      if (text && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        console.warn('Copy unavailable: Clipboard API not supported in this context');
+      }
+    } catch (error) {
+      console.warn('Copy failed', error);
     }
   };
 
-  const clearHeadingFormatting = () => {
-    if (!disabled) {
+  const cutSelection = async () => {
+    if (disabled) {
+      return;
+    }
+    const selection = window.getSelection();
+    const text = selection?.toString() || '';
+    try {
+      if (text && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        console.warn('Cut unavailable: Clipboard API not supported in this context');
+      }
+    } catch (error) {
+      console.warn('Cut failed', error);
+    }
+
+    editor.update(() => {
+      const range = $getSelection();
+      if ($isRangeSelection(range)) {
+        range.removeText();
+      }
+    });
+  };
+
+  const pasteClipboard = async () => {
+    if (disabled) {
+      return;
+    }
+    try {
+      const text = (await navigator.clipboard?.readText?.()) || '';
+      if (!text) {
+        console.warn('Paste is not available: Clipboard API unavailable or empty clipboard.');
+        return;
+      }
       editor.update(() => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
-          $setBlocksType(selection, () => $createParagraphNode());
+          selection.insertText(text);
         }
       });
+    } catch (error) {
+      console.warn('Paste failed', error);
     }
   };
 
   return (
     <Toolbar
+      ref={toolbarRef}
       variant="dense"
       sx={{
-        minHeight: 48,
+        minHeight: 'auto',
+        flexWrap: 'wrap',
+        columnGap: 0.5,
+        rowGap: 0.5,
         bgcolor: toolbarBackground,
         borderBottom: 1,
         borderColor: theme.palette.divider,
@@ -207,6 +689,7 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
         },
         '& .MuiDivider-root': {
           borderColor: theme.palette.divider,
+          alignSelf: 'stretch',
         },
       }}
     >
@@ -242,88 +725,473 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
 
       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
-      <IconButton size="small" onClick={insertBulletList} disabled={disabled} title="Bullet List">
-        <FormatListBulleted />
-      </IconButton>
-
-      <IconButton
+      <Button
         size="small"
-        onClick={insertNumberedList}
+        onClick={openFontMenu}
+        endIcon={<ArrowDropDown />}
         disabled={disabled}
-        title="Numbered List"
+        sx={{ textTransform: 'none', minWidth: 100 }}
       >
-        <FormatListNumbered />
-      </IconButton>
+        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+          {fontFamily === 'default' ? 'Font' : fontFamily}
+        </Typography>
+      </Button>
+      <Menu anchorEl={fontMenuAnchor} open={Boolean(fontMenuAnchor)} onClose={closeFontMenu}>
+        <MenuItem selected={fontFamily === 'default'} onClick={() => applyFontFamily('default')}>
+          Default
+        </MenuItem>
+        <MenuItem selected={fontFamily === 'Arial'} onClick={() => applyFontFamily('Arial')}>
+          Arial
+        </MenuItem>
+        <MenuItem selected={fontFamily === 'Georgia'} onClick={() => applyFontFamily('Georgia')}>
+          Georgia
+        </MenuItem>
+        <MenuItem
+          selected={fontFamily === 'Times New Roman'}
+          onClick={() => applyFontFamily('Times New Roman')}
+        >
+          Times New Roman
+        </MenuItem>
+        <MenuItem
+          selected={fontFamily === 'Courier New'}
+          onClick={() => applyFontFamily('Courier New')}
+        >
+          Courier New
+        </MenuItem>
+      </Menu>
+
+      <Button
+        size="small"
+        onClick={openFontSizeMenu}
+        endIcon={<ArrowDropDown />}
+        disabled={disabled}
+        sx={{ textTransform: 'none', minWidth: 80 }}
+      >
+        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+          {fontSize === 'default' ? 'Size' : fontSize}
+        </Typography>
+      </Button>
+      <Menu
+        anchorEl={fontSizeMenuAnchor}
+        open={Boolean(fontSizeMenuAnchor)}
+        onClose={closeFontSizeMenu}
+      >
+        <MenuItem selected={fontSize === 'default'} onClick={() => applyFontSize('default')}>
+          Default
+        </MenuItem>
+        <MenuItem selected={fontSize === '12px'} onClick={() => applyFontSize('12px')}>
+          12 px
+        </MenuItem>
+        <MenuItem selected={fontSize === '14px'} onClick={() => applyFontSize('14px')}>
+          14 px
+        </MenuItem>
+        <MenuItem selected={fontSize === '16px'} onClick={() => applyFontSize('16px')}>
+          16 px
+        </MenuItem>
+        <MenuItem selected={fontSize === '18px'} onClick={() => applyFontSize('18px')}>
+          18 px
+        </MenuItem>
+        <MenuItem selected={fontSize === '20px'} onClick={() => applyFontSize('20px')}>
+          20 px
+        </MenuItem>
+      </Menu>
 
       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
+      <Button
+        size="small"
+        onClick={openFontColorMenu}
+        endIcon={<ArrowDropDown />}
+        disabled={disabled}
+        sx={{ textTransform: 'none', minWidth: 100 }}
+      >
+        <Typography
+          variant="caption"
+          sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.75 }}
+        >
+          <FormatColorText fontSize="small" />
+          {fontColor === 'default'
+            ? 'Text color'
+            : fontColors.find((c) => c.value === fontColor)?.label || fontColor}
+        </Typography>
+      </Button>
+      <Menu
+        anchorEl={fontColorMenuAnchor}
+        open={Boolean(fontColorMenuAnchor)}
+        onClose={closeFontColorMenu}
+      >
+        <MenuItem selected={fontColor === 'default'} onClick={() => applyFontColor('default')}>
+          Default
+        </MenuItem>
+        {fontColors.map((option) => (
+          <MenuItem
+            key={option.value}
+            selected={fontColor === option.value}
+            onClick={() => applyFontColor(option.value)}
+          >
+            {option.label}
+          </MenuItem>
+        ))}
+      </Menu>
+
+      <Button
+        size="small"
+        onClick={openBgColorMenu}
+        endIcon={<ArrowDropDown />}
+        disabled={disabled}
+        sx={{ textTransform: 'none', minWidth: 110 }}
+      >
+        <Typography
+          variant="caption"
+          sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.75 }}
+        >
+          <FormatColorFill fontSize="small" />
+          {bgColor === 'default'
+            ? 'Highlight'
+            : bgColors.find((c) => c.value === bgColor)?.label || bgColor}
+        </Typography>
+      </Button>
+      <Menu
+        anchorEl={bgColorMenuAnchor}
+        open={Boolean(bgColorMenuAnchor)}
+        onClose={closeBgColorMenu}
+      >
+        <MenuItem selected={bgColor === 'default'} onClick={() => applyBgColor('default')}>
+          Default
+        </MenuItem>
+        {bgColors.map((option) => (
+          <MenuItem
+            key={option.value}
+            selected={bgColor === option.value}
+            onClick={() => applyBgColor(option.value)}
+          >
+            {option.label}
+          </MenuItem>
+        ))}
+      </Menu>
+
+      <Button
+        size="small"
+        onClick={openFormatMenu}
+        endIcon={<ArrowDropDown />}
+        disabled={disabled}
+        sx={{ textTransform: 'none', minWidth: 90 }}
+      >
+        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+          {formatLabel}
+        </Typography>
+      </Button>
+      <Menu anchorEl={formatMenuAnchor} open={Boolean(formatMenuAnchor)} onClose={closeFormatMenu}>
+        <MenuItem selected={blockType === 'paragraph'} onClick={() => applyBlockType('paragraph')}>
+          Paragraph
+        </MenuItem>
+        <MenuItem selected={blockType === 'h1'} onClick={() => applyBlockType('h1')}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+            H1
+          </Typography>
+        </MenuItem>
+        <MenuItem selected={blockType === 'h2'} onClick={() => applyBlockType('h2')}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+            H2
+          </Typography>
+        </MenuItem>
+        <MenuItem selected={blockType === 'h3'} onClick={() => applyBlockType('h3')}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+            H3
+          </Typography>
+        </MenuItem>
+        <MenuItem selected={blockType === 'quote'} onClick={() => applyBlockType('quote')}>
+          <FormatQuote fontSize="small" sx={{ mr: 1 }} />
+          Blockquote
+        </MenuItem>
+        <MenuItem selected={blockType === 'code'} onClick={() => applyBlockType('code')}>
+          <Code fontSize="small" sx={{ mr: 1 }} />
+          Pre
+        </MenuItem>
+      </Menu>
+
+      {!isCompactToolbar && (
+        <>
+          <IconButton
+            size="small"
+            onClick={insertBulletList}
+            disabled={disabled}
+            title="Bullet List"
+          >
+            <FormatListBulleted />
+          </IconButton>
+
+          <IconButton
+            size="small"
+            onClick={insertNumberedList}
+            disabled={disabled}
+            title="Numbered List"
+          >
+            <FormatListNumbered />
+          </IconButton>
+
+          <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+          <IconButton
+            size="small"
+            onClick={outdentContent}
+            disabled={disabled}
+            title="Decrease indent"
+          >
+            <FormatIndentDecrease />
+          </IconButton>
+
+          <IconButton
+            size="small"
+            onClick={indentContent}
+            disabled={disabled}
+            title="Increase indent"
+          >
+            <FormatIndentIncrease />
+          </IconButton>
+
+          <Button
+            size="small"
+            onClick={openAlignmentMenu}
+            endIcon={<ArrowDropDown />}
+            disabled={disabled}
+            sx={{ minWidth: 48, textTransform: 'none' }}
+          >
+            {elementFormat === 'center' && <FormatAlignCenter fontSize="small" />}
+            {elementFormat === 'right' && <FormatAlignRight fontSize="small" />}
+            {elementFormat === 'justify' && <FormatAlignJustify fontSize="small" />}
+            {elementFormat === 'left' && <FormatAlignLeft fontSize="small" />}
+          </Button>
+          <Menu
+            anchorEl={alignmentMenuAnchor}
+            open={Boolean(alignmentMenuAnchor)}
+            onClose={closeAlignmentMenu}
+          >
+            <MenuItem selected={elementFormat === 'left'} onClick={() => applyAlignment('left')}>
+              <FormatAlignLeft fontSize="small" sx={{ mr: 1 }} />
+              Align Left
+            </MenuItem>
+            <MenuItem
+              selected={elementFormat === 'center'}
+              onClick={() => applyAlignment('center')}
+            >
+              <FormatAlignCenter fontSize="small" sx={{ mr: 1 }} />
+              Align Center
+            </MenuItem>
+            <MenuItem selected={elementFormat === 'right'} onClick={() => applyAlignment('right')}>
+              <FormatAlignRight fontSize="small" sx={{ mr: 1 }} />
+              Align Right
+            </MenuItem>
+            <MenuItem
+              selected={elementFormat === 'justify'}
+              onClick={() => applyAlignment('justify')}
+            >
+              <FormatAlignJustify fontSize="small" sx={{ mr: 1 }} />
+              Justify
+            </MenuItem>
+          </Menu>
+
+          <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+        </>
+      )}
+
       <IconButton
         size="small"
-        onClick={() => formatHeading('h1')}
+        onClick={handleOpenLinkDialog}
         disabled={disabled}
-        color={headingLevel === 'h1' ? 'primary' : 'default'}
-        title="Heading 1"
-        sx={{ minWidth: 32 }}
+        title="Insert Link"
       >
-        <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
-          H1
-        </Typography>
-      </IconButton>
-
-      <IconButton
-        size="small"
-        onClick={() => formatHeading('h2')}
-        disabled={disabled}
-        color={headingLevel === 'h2' ? 'primary' : 'default'}
-        title="Heading 2"
-        sx={{ minWidth: 32 }}
-      >
-        <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
-          H2
-        </Typography>
-      </IconButton>
-
-      <IconButton
-        size="small"
-        onClick={() => formatHeading('h3')}
-        disabled={disabled}
-        color={headingLevel === 'h3' ? 'primary' : 'default'}
-        title="Heading 3"
-        sx={{ minWidth: 32 }}
-      >
-        <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
-          H3
-        </Typography>
-      </IconButton>
-
-      <IconButton
-        size="small"
-        onClick={clearHeadingFormatting}
-        disabled={disabled}
-        color={headingLevel === '' ? 'primary' : 'default'}
-        title="Normal Text"
-        sx={{ minWidth: 32 }}
-      >
-        <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
-          N
-        </Typography>
-      </IconButton>
-
-      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-
-      <IconButton size="small" onClick={insertLink} disabled={disabled} title="Insert Link">
         <LinkIcon />
       </IconButton>
 
+      <Dialog
+        open={linkDialogOpen}
+        onClose={handleCloseLinkDialog}
+        fullWidth
+        maxWidth="xs"
+        keepMounted
+      >
+        <DialogTitle>Add Link</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              autoFocus
+              label="URL"
+              fullWidth
+              value={linkUrl}
+              onChange={(event) => setLinkUrl(event.target.value)}
+              placeholder="https://example.com"
+            />
+            <TextField
+              label="Text to display"
+              fullWidth
+              value={linkText}
+              onChange={(event) => setLinkText(event.target.value)}
+              helperText="Leave blank to use the URL as the link text"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseLinkDialog}>Cancel</Button>
+          <Button onClick={handleConfirmLink} variant="contained">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
-      <IconButton size="small" onClick={undo} disabled={disabled} title="Undo (Ctrl+Z)">
-        <Undo />
+      <IconButton size="small" onClick={openOverflowMenu} disabled={disabled} title="More">
+        <MoreHoriz />
       </IconButton>
-
-      <IconButton size="small" onClick={redo} disabled={disabled} title="Redo (Ctrl+Y)">
-        <Redo />
-      </IconButton>
+      <Menu
+        anchorEl={overflowMenuAnchor}
+        open={Boolean(overflowMenuAnchor)}
+        onClose={closeOverflowMenu}
+      >
+        {isCompactToolbar && (
+          <>
+            {[
+              {
+                key: 'compact-bullet',
+                label: 'Bullet list',
+                ariaLabel: 'Insert bullet list',
+                onClick: () => {
+                  closeOverflowMenu();
+                  insertBulletList();
+                },
+              },
+              {
+                key: 'compact-numbered',
+                label: 'Numbered list',
+                ariaLabel: 'Insert numbered list',
+                onClick: () => {
+                  closeOverflowMenu();
+                  insertNumberedList();
+                },
+              },
+              {
+                key: 'compact-outdent',
+                label: 'Decrease indent',
+                ariaLabel: 'Decrease indent',
+                onClick: () => {
+                  closeOverflowMenu();
+                  outdentContent();
+                },
+              },
+              {
+                key: 'compact-indent',
+                label: 'Increase indent',
+                ariaLabel: 'Increase indent',
+                onClick: () => {
+                  closeOverflowMenu();
+                  indentContent();
+                },
+              },
+              {
+                key: 'compact-align-left',
+                label: 'Align Left',
+                ariaLabel: 'Align text left',
+                onClick: () => {
+                  closeOverflowMenu();
+                  applyAlignment('left');
+                },
+              },
+              {
+                key: 'compact-align-center',
+                label: 'Align Center',
+                ariaLabel: 'Align text center',
+                onClick: () => {
+                  closeOverflowMenu();
+                  applyAlignment('center');
+                },
+              },
+              {
+                key: 'compact-align-right',
+                label: 'Align Right',
+                ariaLabel: 'Align text right',
+                onClick: () => {
+                  closeOverflowMenu();
+                  applyAlignment('right');
+                },
+              },
+              {
+                key: 'compact-align-justify',
+                label: 'Justify',
+                ariaLabel: 'Justify text',
+                onClick: () => {
+                  closeOverflowMenu();
+                  applyAlignment('justify');
+                },
+              },
+            ].map((item) => (
+              <MenuItem
+                key={item.key}
+                onClick={item.onClick}
+                disabled={disabled}
+                aria-label={item.ariaLabel}
+              >
+                {item.label}
+              </MenuItem>
+            ))}
+            <Divider />
+          </>
+        )}
+        <MenuItem
+          onClick={() => {
+            closeOverflowMenu();
+            undo();
+          }}
+          disabled={disabled}
+        >
+          Undo
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            closeOverflowMenu();
+            redo();
+          }}
+          disabled={disabled}
+        >
+          Redo
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            closeOverflowMenu();
+            cutSelection();
+          }}
+          disabled={disabled}
+        >
+          Cut
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            closeOverflowMenu();
+            copySelection();
+          }}
+          disabled={disabled}
+        >
+          Copy
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            closeOverflowMenu();
+            pasteClipboard();
+          }}
+          disabled={disabled}
+        >
+          Paste
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            closeOverflowMenu();
+            onToggleSpellCheck();
+          }}
+          disabled={disabled}
+        >
+          {spellCheckEnabled ? 'Spellcheck on' : 'Spellcheck off'}
+        </MenuItem>
+      </Menu>
     </Toolbar>
   );
 }
@@ -333,6 +1201,42 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
 function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
   const [editor] = useLexicalComposerContext();
 
+  /**
+   * Walks the source DOM tree and records allowed inline styles per text run.
+   * @param node Current DOM node being inspected
+   * @param styleStack Accumulated styles from ancestor elements
+   * @param segments Output list of { style, length } for each text run
+   */
+  const collectStyleSegments = useCallback(
+    (
+      node: Node,
+      styleStack: string[],
+      segments: Array<{ style: string; length: number }>,
+    ): void => {
+      const traverse = (current: Node, carry: string[]): void => {
+        if (current.nodeType === Node.TEXT_NODE) {
+          const textContent = current.textContent ?? '';
+          const style = carry.filter(Boolean).join('; ');
+          if (textContent.length > 0) {
+            segments.push({ style, length: textContent.length });
+          }
+          return;
+        }
+
+        if (current.nodeType === Node.ELEMENT_NODE) {
+          const element = current as HTMLElement;
+          const styleAttr = element.getAttribute('style') ?? '';
+          const filteredStyle = filterAllowedInlineStyles(styleAttr);
+          const nextInherited = filteredStyle ? [...carry, filteredStyle] : carry;
+          element.childNodes.forEach((child) => traverse(child, nextInherited));
+        }
+      };
+
+      traverse(node, styleStack);
+    },
+    [], // filterAllowedInlineStyles is a module import and stable
+  );
+
   useEffect(() => {
     if (!initialHtml || initialHtml.trim() === '') return;
 
@@ -341,6 +1245,8 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
       try {
         const parser = new DOMParser();
         const dom = parser.parseFromString(initialHtml, 'text/html');
+        const styleSegments: Array<{ style: string; length: number }> = [];
+        collectStyleSegments(dom.body, [], styleSegments);
         const nodes = $generateNodesFromDOM(editor, dom);
 
         const root = $getRoot();
@@ -349,6 +1255,23 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
         if (nodes.length > 0) {
           // Insert the parsed nodes which preserve all formatting
           $insertNodes(nodes);
+          const lexicalTextNodes = root.getAllTextNodes();
+          let segmentIndex = 0;
+          let remaining = styleSegments[0]?.length ?? 0;
+          lexicalTextNodes.forEach((textNode) => {
+            const textLength = textNode.getTextContent().length;
+            // Advance segments until we have a remaining length
+            while (remaining === 0 && segmentIndex < styleSegments.length - 1) {
+              segmentIndex += 1;
+              remaining = styleSegments[segmentIndex]?.length ?? 0;
+            }
+            const style = styleSegments[segmentIndex]?.style ?? '';
+            if (style) {
+              textNode.setStyle(style);
+            }
+            // Decrease remaining by current text length
+            remaining = Math.max(0, remaining - textLength);
+          });
         } else {
           // Fallback: create empty paragraph if parsing produces no nodes
           const paragraph = $createParagraphNode();
@@ -372,7 +1295,7 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
         }
       }
     });
-  }, [editor, initialHtml]);
+  }, [collectStyleSegments, editor, initialHtml]);
 
   return null;
 }
@@ -404,6 +1327,7 @@ const theme = {
     italic: 'editor-text-italic',
     underline: 'editor-text-underline',
   },
+  link: 'editor-link',
   list: {
     ul: 'editor-list-ul',
     ol: 'editor-list-ol',
@@ -427,7 +1351,7 @@ function createInitialEditorState(_html?: string): (() => void) | null {
   return null;
 }
 
-const nodes = [HeadingNode, ListNode, ListItemNode, LinkNode, AutoLinkNode];
+const nodes = [HeadingNode, QuoteNode, CodeNode, ListNode, ListItemNode, LinkNode, AutoLinkNode];
 
 const editorConfig = {
   namespace: 'EmailEditor',
@@ -458,6 +1382,7 @@ const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEditorProp
     ref,
   ) => {
     const theme = useTheme();
+    const [spellCheckEnabled, setSpellCheckEnabled] = React.useState(true);
     // Ref to access the editor instance
     const editorRef = useRef<LexicalEditor | null>(null);
 
@@ -547,7 +1472,13 @@ const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEditorProp
             },
           }}
         >
-          {!disabled && <ToolbarPlugin disabled={disabled} />}
+          {!disabled && (
+            <ToolbarPlugin
+              disabled={disabled}
+              spellCheckEnabled={spellCheckEnabled}
+              onToggleSpellCheck={() => setSpellCheckEnabled((prev) => !prev)}
+            />
+          )}
 
           <Box
             sx={{
@@ -560,6 +1491,14 @@ const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEditorProp
               '& .editor-text-bold': { fontWeight: 'bold' },
               '& .editor-text-italic': { fontStyle: 'italic' },
               '& .editor-text-underline': { textDecoration: 'underline' },
+              '& .editor-link': {
+                color: theme.palette.primary.main,
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                '&:hover': {
+                  textDecoration: 'none',
+                },
+              },
               '& .editor-list-ul': { listStyleType: 'disc', margin: 0, paddingLeft: '20px' },
               '& .editor-list-ol': { listStyleType: 'decimal', margin: 0, paddingLeft: '20px' },
               '& .editor-list-item': { margin: '4px 0' },
@@ -609,6 +1548,11 @@ const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEditorProp
                     backgroundColor: 'transparent',
                     color: theme.palette.text.primary,
                   }}
+                  spellCheck={spellCheckEnabled}
+                  lang="en"
+                  autoCorrect="on"
+                  autoCapitalize="sentences"
+                  inputMode="text"
                   readOnly={disabled}
                 />
               }

@@ -18,6 +18,7 @@ The root `package.json` supervises npm workspaces for `draco-nodejs/backend`, `d
 
 ## Build, Test, and Development Commands
 Always execute scripts from the repository root. Use `npm run dev` for the full stack, or `npm run backend:dev` and `npm run dev -w @draco/frontend-next` when working independently. Production builds rely on `npm run build -w @draco/backend` and `npm run build -w @draco/frontend-next`; `npm run build` performs shared schema sync and both compilations. Test with `npm run backend:test`, `npm run frontend:test`, or `npm run test` for the entire workspace, and run `npm run sync:api` whenever backend contracts change.
+- Linting: run `npm run lint --workspaces` or scope with `-w @draco/frontend-next`/`-w @draco/backend`; do not append file paths to the lint command (it will report “no files matching” even though lint is configured).
 
 ## Coding Style & Naming Conventions
 TypeScript, ES modules, two-space indentation, and trailing commas are standard. ESLint and Prettier run through Husky, so lint before pushing with `npm run lint --workspaces` and rely on the staged formatter. Prefer `camelCase` for variables and functions, `PascalCase` for React components, services, and types, and `SCREAMING_SNAKE_CASE` for constants. Match filenames to their primary export.

@@ -270,10 +270,20 @@ describe('Email Security Tests', () => {
       );
     });
 
-    test('should remove style attributes to prevent CSS injection', () => {
-      expect(sanitizeRichContent('<p style="color: red;">Text</p>')).toBe('<p>Text</p>');
+    test('should allow only safe style properties and strip dangerous values', () => {
+      expect(sanitizeRichContent('<p style="color: red;">Text</p>')).toBe(
+        '<p style="color: red">Text</p>',
+      );
+      expect(sanitizeRichContent('<p style="font-size: 16px;">Text</p>')).toBe(
+        '<p style="font-size: 16px">Text</p>',
+      );
       expect(
         sanitizeRichContent('<div style="background: url(javascript:alert(1))">Content</div>'),
+      ).toBe('<div>Content</div>');
+      expect(
+        sanitizeRichContent(
+          '<div style="background-image: url(javascript:alert(1))">Content</div>',
+        ),
       ).toBe('<div>Content</div>');
     });
 
@@ -339,7 +349,7 @@ describe('Email Security Tests', () => {
         expect(sanitized).not.toContain('onerror');
         expect(sanitized).not.toContain('onclick');
         expect(sanitized).not.toContain('javascript:');
-        expect(sanitized).not.toContain('style=');
+        expect(sanitized).not.toContain('background-image');
         expect(sanitized).not.toContain('<script');
         expect(sanitized).not.toContain('<iframe');
         expect(sanitized).not.toContain('<object');

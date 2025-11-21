@@ -13,6 +13,7 @@ import {
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
+import { sanitizeRichHtml } from '../utils/htmlSanitizer.js';
 
 interface NormalizedAnnouncementPayload {
   title: string;
@@ -184,7 +185,7 @@ export class AnnouncementService {
 
   private normalizePayload(payload: UpsertAnnouncementType): NormalizedAnnouncementPayload {
     const title = payload.title.trim();
-    const body = payload.body.trim();
+    const body = sanitizeRichHtml(payload.body).trim();
 
     const publishedAt = DateUtils.parseDateTimeForDatabase(payload.publishedAt);
     if (!publishedAt) {

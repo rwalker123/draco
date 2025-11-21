@@ -2,6 +2,7 @@ import { LeagueFaqType, UpsertLeagueFaqType } from '@draco/shared-schemas';
 import { RepositoryFactory, ILeagueFaqRepository, dbLeagueFaq } from '../repositories/index.js';
 import { LeagueFaqResponseFormatter } from '../responseFormatters/index.js';
 import { NotFoundError } from '../utils/customErrors.js';
+import { sanitizeRichHtml } from '../utils/htmlSanitizer.js';
 
 export class LeagueFaqService {
   private readonly leagueFaqRepository: ILeagueFaqRepository;
@@ -69,8 +70,8 @@ export class LeagueFaqService {
   }
 
   private buildWriteData(payload: UpsertLeagueFaqType): { question: string; answer: string } {
-    const question = payload.question.trim();
-    const answer = payload.answer.trim();
+    const question = sanitizeRichHtml(payload.question).trim();
+    const answer = sanitizeRichHtml(payload.answer).trim();
 
     return {
       question,

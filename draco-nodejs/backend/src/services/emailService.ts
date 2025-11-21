@@ -33,6 +33,7 @@ import { TeamService } from './teamService.js';
 import { TeamManagerService } from './teamManagerService.js';
 import { htmlToPlainText } from '../utils/emailContent.js';
 import { ContactService } from './contactService.js';
+import { sanitizeRichHtml } from '../utils/htmlSanitizer.js';
 
 // Email queue management interfaces
 interface EmailQueueJob {
@@ -363,13 +364,14 @@ export class EmailService {
     const emailStatus = shouldDelaySend ? 'scheduled' : 'sending';
 
     const senderContext = await this.resolveSenderContext(accountId, createdByUserId);
+    const sanitizedBody = sanitizeRichHtml(request.body);
 
     const email = await this.emailRepository.createEmail({
       account_id: accountId,
       created_by_user_id: createdByUserId,
       subject: request.subject,
-      body_html: request.body,
-      body_text: htmlToPlainText(request.body),
+      body_html: sanitizedBody,
+      body_text: htmlToPlainText(sanitizedBody),
       template_id: request.templateId ? BigInt(request.templateId) : null,
       status: emailStatus,
       scheduled_send_at: scheduledDate,

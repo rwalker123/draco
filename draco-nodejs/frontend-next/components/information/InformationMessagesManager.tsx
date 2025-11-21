@@ -196,17 +196,6 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
     clearError();
   }, [operationsScope, clearError]);
 
-  React.useEffect(() => {
-    const handleFocus = () => {
-      void refreshMessages();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [refreshMessages]);
-
   const handleCreate = () => {
     clearError();
     setDialogError(null);
