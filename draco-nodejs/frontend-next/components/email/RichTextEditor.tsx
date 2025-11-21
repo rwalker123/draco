@@ -1,7 +1,21 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Box, Paper, Toolbar, IconButton, Divider, Typography } from '@mui/material';
+import {
+  Box,
+  Paper,
+  Toolbar,
+  IconButton,
+  Divider,
+  Typography,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  TextField,
+} from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 import {
   FormatBold,
@@ -27,6 +41,8 @@ import {
   FORMAT_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
   LexicalEditor,
+  RangeSelection,
+  $setSelection,
   $getRoot,
   $insertNodes,
   UNDO_COMMAND,
@@ -37,7 +53,7 @@ import {
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html';
 import { HeadingNode, $createHeadingNode, $isHeadingNode } from '@lexical/rich-text';
 import { ListNode, ListItemNode, $insertList } from '@lexical/list';
-import { LinkNode, AutoLinkNode } from '@lexical/link';
+import { LinkNode, AutoLinkNode, $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link';
 import { sanitizeRichContent } from '../../utils/sanitization';
 import { $setBlocksType } from '@lexical/selection';
 
@@ -64,6 +80,10 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
   const [isItalic, setIsItalic] = React.useState(false);
   const [isUnderline, setIsUnderline] = React.useState(false);
   const [headingLevel, setHeadingLevel] = React.useState<string>('');
+  const [linkDialogOpen, setLinkDialogOpen] = React.useState(false);
+  const [linkUrl, setLinkUrl] = React.useState('https://');
+  const [linkText, setLinkText] = React.useState('');
+  const lastSelectionRef = React.useRef<RangeSelection | null>(null);
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -137,20 +157,76 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
     }
   };
 
-  const insertLink = () => {
-    if (!disabled) {
-      const url = prompt('Enter URL:');
-      if (url) {
-        // Simple link insertion - would be enhanced with proper link dialog
-        editor.update(() => {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            const linkText = selection.getTextContent() || url;
-            selection.insertText(`[${linkText}](${url})`);
-          }
-        });
-      }
+  const getSelectedNode = (selection: RangeSelection) => {
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+    if (anchorNode === focusNode) {
+      return anchorNode;
     }
+    return selection.isBackward() ? anchorNode : focusNode;
+  };
+
+  const normalizeUrl = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return '';
+    }
+    const hasProtocol = /^(https?:)?\/\//i.test(trimmed) || /^mailto:/i.test(trimmed);
+    return hasProtocol ? trimmed : `https://${trimmed}`;
+  };
+
+  const handleOpenLinkDialog = () => {
+    if (disabled) {
+      return;
+    }
+    editor.getEditorState().read(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        lastSelectionRef.current = selection.clone();
+        const node = getSelectedNode(selection);
+        const parent = node.getParent();
+        const targetLinkNode = $isLinkNode(node) ? node : $isLinkNode(parent) ? parent : null;
+        const existingUrl = targetLinkNode?.getURL() ?? '';
+        setLinkUrl(existingUrl || 'https://');
+        setLinkText(selection.getTextContent());
+      } else {
+        setLinkUrl('https://');
+        setLinkText('');
+      }
+    });
+    setLinkDialogOpen(true);
+  };
+
+  const handleCloseLinkDialog = () => {
+    setLinkDialogOpen(false);
+    setLinkText('');
+    lastSelectionRef.current = null;
+  };
+
+  const handleConfirmLink = () => {
+    if (disabled) {
+      return;
+    }
+    const normalized = normalizeUrl(linkUrl);
+    editor.update(() => {
+      let selection = $getSelection();
+      if (!$isRangeSelection(selection) && lastSelectionRef.current) {
+        $setSelection(lastSelectionRef.current);
+        selection = $getSelection();
+      }
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
+      if (!normalized) {
+        editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+        return;
+      }
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, normalized);
+      if (selection.isCollapsed()) {
+        selection.insertText(linkText || normalized);
+      }
+    });
+    handleCloseLinkDialog();
   };
 
   const undo = () => {
@@ -311,9 +387,49 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
 
       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
-      <IconButton size="small" onClick={insertLink} disabled={disabled} title="Insert Link">
+      <IconButton
+        size="small"
+        onClick={handleOpenLinkDialog}
+        disabled={disabled}
+        title="Insert Link"
+      >
         <LinkIcon />
       </IconButton>
+
+      <Dialog
+        open={linkDialogOpen}
+        onClose={handleCloseLinkDialog}
+        fullWidth
+        maxWidth="xs"
+        keepMounted
+      >
+        <DialogTitle>Add Link</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              autoFocus
+              label="URL"
+              fullWidth
+              value={linkUrl}
+              onChange={(event) => setLinkUrl(event.target.value)}
+              placeholder="https://example.com"
+            />
+            <TextField
+              label="Text to display"
+              fullWidth
+              value={linkText}
+              onChange={(event) => setLinkText(event.target.value)}
+              helperText="Leave blank to use the URL as the link text"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseLinkDialog}>Cancel</Button>
+          <Button onClick={handleConfirmLink} variant="contained">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
@@ -404,6 +520,7 @@ const theme = {
     italic: 'editor-text-italic',
     underline: 'editor-text-underline',
   },
+  link: 'editor-link',
   list: {
     ul: 'editor-list-ul',
     ol: 'editor-list-ol',
@@ -560,6 +677,14 @@ const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEditorProp
               '& .editor-text-bold': { fontWeight: 'bold' },
               '& .editor-text-italic': { fontStyle: 'italic' },
               '& .editor-text-underline': { textDecoration: 'underline' },
+              '& .editor-link': {
+                color: theme.palette.primary.main,
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                '&:hover': {
+                  textDecoration: 'none',
+                },
+              },
               '& .editor-list-ul': { listStyleType: 'disc', margin: 0, paddingLeft: '20px' },
               '& .editor-list-ol': { listStyleType: 'decimal', margin: 0, paddingLeft: '20px' },
               '& .editor-list-item': { margin: '4px 0' },
