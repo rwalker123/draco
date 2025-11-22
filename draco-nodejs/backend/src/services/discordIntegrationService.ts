@@ -39,6 +39,7 @@ import { getDiscordOAuthConfig, type DiscordOAuthConfig } from '../config/discor
 import { fetchJson } from '../utils/fetchJson.js';
 import type { dbTeamSeasonWithLeaguesAndTeams } from '../repositories/types/dbTypes.js';
 import type { DiscordIngestionTarget } from '../config/socialIngestion.js';
+import { AccountSettingsService } from './accountSettingsService.js';
 
 type DiscordLinkStatePayload =
   | {
@@ -92,13 +93,29 @@ interface CreatedDiscordChannel {
 type DiscordChannelCreateType = z.infer<typeof DiscordChannelCreateTypeEnum> | 'category';
 type TeamForumCleanupMode = z.infer<typeof DiscordTeamForumCleanupModeEnum>;
 
-const SUPPORTED_FEATURES: readonly DiscordFeatureSyncFeatureType[] = ['announcements'] as const;
+interface DiscordGameResultPayload {
+  gameId: bigint;
+  gameDate?: Date;
+  gameStatus?: number | null;
+  homeScore?: number | null;
+  visitorScore?: number | null;
+  homeTeamName?: string;
+  visitorTeamName?: string;
+  leagueName?: string | null;
+  seasonName?: string | null;
+}
+
+const SUPPORTED_FEATURES: readonly DiscordFeatureSyncFeatureType[] = [
+  'announcements',
+  'gameResults',
+] as const;
 
 export class DiscordIntegrationService {
   private readonly discordRepository = RepositoryFactory.getDiscordIntegrationRepository();
   private readonly accountRepository = RepositoryFactory.getAccountRepository();
   private readonly seasonsRepository = RepositoryFactory.getSeasonsRepository();
   private readonly teamRepository = RepositoryFactory.getTeamRepository();
+  private readonly accountSettingsService = new AccountSettingsService();
   private channelIngestionTargetsCache: DiscordIngestionTarget[] | null = null;
   private getBotToken(): string {
     const token = process.env.DISCORD_BOT_TOKEN;
@@ -137,6 +154,7 @@ export class DiscordIntegrationService {
       payload.teamForumEnabled === true && !existingConfig.teamforumenabled;
     const disablingTeamForums =
       payload.teamForumEnabled === false && Boolean(existingConfig.teamforumenabled);
+    const hasConfigUpdates = Object.values(updateData).some((value) => value !== undefined);
 
     try {
       if (enablingTeamForums) {
@@ -153,6 +171,10 @@ export class DiscordIntegrationService {
         });
       }
       throw error;
+    }
+
+    if (hasConfigUpdates) {
+      await this.discordRepository.updateAccountConfig(accountId, updateData);
     }
 
     const refreshed = await this.getOrCreateAccountConfigRecord(accountId);
@@ -1511,6 +1533,50 @@ export class DiscordIntegrationService {
     }
   }
 
+  async publishGameResult(accountId: bigint, payload: DiscordGameResultPayload): Promise<void> {
+    try {
+      await this.ensureAccountExists(accountId);
+      if (!(await this.shouldPostGameResults(accountId))) {
+        return;
+      }
+
+      const featureRecord = await this.discordRepository.getFeatureSync(accountId, 'gameResults');
+      if (!featureRecord || !featureRecord.enabled || !featureRecord.discordchannelid) {
+        return;
+      }
+
+      const content = this.composeGameResultMessage(payload);
+      if (!content) {
+        return;
+      }
+
+      await this.postDiscordMessage(featureRecord.discordchannelid, content);
+      await this.discordRepository.upsertFeatureSync(accountId, {
+        feature: 'gameResults',
+        enabled: true,
+        discordChannelId: featureRecord.discordchannelid,
+        discordChannelName: featureRecord.discordchannelname ?? null,
+        channelType: featureRecord.channeltype ?? null,
+        autoCreated: featureRecord.autocreated ?? false,
+        lastSyncedAt: new Date(),
+      });
+    } catch (error) {
+      console.error('[discord] Failed to publish game result', {
+        accountId: accountId.toString(),
+        gameId: payload.gameId.toString(),
+        error,
+      });
+    }
+  }
+
+  private async shouldPostGameResults(accountId: bigint): Promise<boolean> {
+    const settings = await this.accountSettingsService.getAccountSettings(accountId);
+    const postResultsSetting = settings.find(
+      (setting) => setting.definition.key === 'PostGameResultsToDiscord',
+    );
+    return Boolean(postResultsSetting?.effectiveValue);
+  }
+
   async publishAnnouncement(accountId: bigint, announcement: AnnouncementType): Promise<void> {
     try {
       await this.ensureAccountExists(accountId);
@@ -1540,6 +1606,96 @@ export class DiscordIntegrationService {
         announcementId: announcement.id,
         error,
       });
+    }
+  }
+
+  private composeGameResultMessage(payload: DiscordGameResultPayload): string | null {
+    if (payload.gameStatus === undefined || payload.gameStatus === null) {
+      return null;
+    }
+
+    if (payload.gameStatus === 0) {
+      return null;
+    }
+
+    const trimName = (name?: string) => {
+      const safe = name?.trim() || '';
+      if (!safe) {
+        return safe;
+      }
+      return safe.length > 40 ? `${safe.slice(0, 37)}...` : safe;
+    };
+
+    const homeName = trimName(payload.homeTeamName) || 'Home';
+    const visitorName = trimName(payload.visitorTeamName) || 'Visitor';
+    const isRainout = payload.gameStatus === 2;
+    const hasScores =
+      !isRainout &&
+      payload.homeScore !== undefined &&
+      payload.homeScore !== null &&
+      payload.visitorScore !== undefined &&
+      payload.visitorScore !== null;
+
+    const nameColumnWidth = Math.min(Math.max(visitorName.length, homeName.length, 10), 50);
+    const scoreColumnWidth = 5;
+
+    const topBorder = `┌${'─'.repeat(nameColumnWidth + 2)}┬${'─'.repeat(scoreColumnWidth + 2)}┐`;
+    const middleBorder = `├${'─'.repeat(nameColumnWidth + 2)}┼${'─'.repeat(scoreColumnWidth + 2)}┤`;
+    const bottomBorder = `└${'─'.repeat(nameColumnWidth + 2)}┴${'─'.repeat(scoreColumnWidth + 2)}┘`;
+
+    const formatRow = (name: string, score?: number | null) => {
+      const scoreValue = score ?? ' ';
+      return `│ ${name.padEnd(nameColumnWidth, ' ')} │ ${String(scoreValue).padStart(scoreColumnWidth, ' ')} │`;
+    };
+
+    const scoreLines = hasScores
+      ? [
+          topBorder,
+          formatRow(visitorName, payload.visitorScore),
+          middleBorder,
+          formatRow(homeName, payload.homeScore),
+          bottomBorder,
+        ]
+      : [topBorder, formatRow(visitorName), middleBorder, formatRow(homeName), bottomBorder];
+
+    const statusLabel = this.describeGameStatus(payload.gameStatus);
+    const formattedDate = payload.gameDate ? payload.gameDate.toISOString().split('T')[0] : null;
+
+    const header = [payload.leagueName, payload.seasonName]
+      .filter((segment): segment is string => Boolean(segment))
+      .join(' • ');
+
+    const details = [
+      statusLabel ? `Status: ${statusLabel}` : null,
+      formattedDate ? `Date: ${formattedDate}` : null,
+    ].filter((segment): segment is string => Boolean(segment));
+
+    const table = ['```', ...scoreLines, '```'].join('\n');
+
+    const message = [header || null, table, details.length ? details.join(' • ') : null]
+      .filter((segment): segment is string => Boolean(segment))
+      .join('\n')
+      .slice(0, 1900);
+
+    return message || null;
+  }
+
+  private describeGameStatus(gameStatus?: number | null): string | null {
+    switch (gameStatus) {
+      case 1:
+        return 'Final';
+      case 2:
+        return 'Rainout';
+      case 3:
+        return 'Postponed';
+      case 4:
+        return 'Forfeit';
+      case 5:
+        return 'Did Not Report';
+      case 0:
+        return 'Scheduled';
+      default:
+        return null;
     }
   }
 

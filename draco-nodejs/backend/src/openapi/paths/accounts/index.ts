@@ -62,7 +62,13 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     DiscordTeamForumListSchemaRef,
     DiscordTeamForumQuerySchemaRef,
     DiscordTeamForumRepairResultSchemaRef,
+    SocialFeedItemSchemaRef,
+    SocialFeedListSchemaRef,
+    SocialFeedQuerySchemaRef,
   } = schemaRefs;
+
+  const TweetCreateSchemaRef = SocialFeedItemSchemaRef.pick({ content: true });
+  const TweetListQuerySchemaRef = SocialFeedQuerySchemaRef.pick({ limit: true });
 
   // GET /api/accounts/search
   registry.registerPath({
@@ -1045,6 +1051,155 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
       },
       403: {
         description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/twitter/recent',
+    operationId: 'listAccountRecentTweets',
+    summary: 'Fetch recent tweets for an account',
+    description:
+      'Fetches recent tweets using the stored Twitter credentials for the requested account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      query: TweetListQuerySchemaRef,
+    },
+    responses: {
+      200: {
+        description: 'Recent tweets for the account',
+        content: {
+          'application/json': {
+            schema: SocialFeedListSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/twitter/tweets',
+    operationId: 'postAccountTweet',
+    summary: 'Create a tweet for an account',
+    description: 'Creates a tweet using the stored Twitter credentials for the requested account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: TweetCreateSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Tweet created successfully',
+        content: {
+          'application/json': {
+            schema: SocialFeedItemSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Insufficient permissions',
         content: {
           'application/json': {
             schema: AuthorizationErrorSchemaRef,
@@ -3185,7 +3340,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
         required: true,
         schema: {
           type: 'string',
-          enum: ['announcements'],
+          enum: ['announcements', 'gameResults'],
         },
       },
     ],
@@ -3224,7 +3379,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
         required: true,
         schema: {
           type: 'string',
-          enum: ['announcements'],
+          enum: ['announcements', 'gameResults'],
         },
       },
     ],

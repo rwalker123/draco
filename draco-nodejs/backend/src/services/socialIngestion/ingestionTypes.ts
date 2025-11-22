@@ -53,10 +53,13 @@ export interface SocialIngestionConnector {
   ingest(): Promise<void>;
 }
 
-export interface TwitterConnectorOptions {
+export interface TwitterIngestionTargetWithAuth extends TwitterIngestionTarget {
   bearerToken?: string;
+}
+
+export interface TwitterConnectorOptions {
   maxResults: number;
-  targets: TwitterIngestionTarget[];
+  targetsProvider: () => Promise<TwitterIngestionTargetWithAuth[]>;
   intervalMs: number;
   enabled: boolean;
 }

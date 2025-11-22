@@ -22,6 +22,7 @@ import accountsLeagueFaqRouter from './accounts-league-faq.js';
 import accountsAnnouncementsRouter from './accounts-announcements.js';
 import accountsSocialRouter from './accounts-social.js';
 import accountsDiscordRouter from './accounts-discord.js';
+import accountsTwitterRouter from './accounts-twitter.js';
 
 const router = Router({ mergeParams: true });
 
@@ -49,6 +50,9 @@ router.use('/', accountsSettingsRouter);
 
 // Discord integration endpoints
 router.use('/', accountsDiscordRouter);
+
+// Twitter integration endpoints
+router.use('/', accountsTwitterRouter);
 
 // Assets endpoints (logo management)
 router.use('/', accountsAssetsRouter);
