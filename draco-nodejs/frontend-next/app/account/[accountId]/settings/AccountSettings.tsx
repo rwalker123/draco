@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Paper, Tabs, Tab, Alert, CircularProgress, Stack } from '@mui/material';
+import { Box, Typography, Paper, Tabs, Tab, Alert, CircularProgress } from '@mui/material';
 import { useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
@@ -14,9 +14,6 @@ import type { AccountSettingKey, AccountType } from '@draco/shared-schemas';
 import { useAccountSettings } from '../../../../hooks/useAccountSettings';
 import { GeneralSettingsWidget } from '../../../../components/account/settings/GeneralSettingsWidget';
 import { UrlManagementWidget } from '../../../../components/account/settings/UrlManagementWidget';
-import { SocialMediaWidget } from '../../../../components/account/settings/SocialMediaWidget';
-import { SecuritySettingsWidget } from '../../../../components/account/settings/SecuritySettingsWidget';
-import { DiscordIntegrationAdminWidget } from '../../../../components/account/settings/DiscordIntegrationAdminWidget';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -185,8 +182,6 @@ const AccountSettings: React.FC = () => {
             >
               <Tab label="URLs & Domains" {...a11yProps(0)} />
               <Tab label="General Settings" {...a11yProps(1)} />
-              <Tab label="Social Media" {...a11yProps(2)} />
-              <Tab label="Security" {...a11yProps(3)} />
             </Tabs>
           </Box>
 
@@ -211,23 +206,6 @@ const AccountSettings: React.FC = () => {
               updatingKey={updatingKey}
               onRetry={refreshSettings}
               onUpdate={handleSettingUpdate}
-            />
-          </TabPanel>
-
-          {/* Social Media Tab */}
-          <TabPanel value={tabValue} index={2}>
-            <Stack spacing={3}>
-              <SocialMediaWidget account={account} onAccountUpdate={setAccount} />
-              <DiscordIntegrationAdminWidget accountId={accountIdStr || null} />
-            </Stack>
-          </TabPanel>
-
-          {/* Security Tab */}
-          <TabPanel value={tabValue} index={3}>
-            <SecuritySettingsWidget
-              account={account}
-              isAccountAdmin={hasRole('AccountAdmin')}
-              isAdministrator={hasRole('Administrator')}
             />
           </TabPanel>
         </Paper>

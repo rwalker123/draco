@@ -14,12 +14,13 @@ import {
 } from '@mui/material';
 import { LinkOff as LinkOffIcon, WarningAmber as WarningAmberIcon } from '@mui/icons-material';
 import { useAccountDiscordAdmin } from '@/hooks/useAccountDiscordAdmin';
+import type { DiscordAccountConfigType } from '@draco/shared-schemas';
 
 interface ConfirmDiscordDisconnectDialogProps {
   open: boolean;
   accountId: string;
   onClose: () => void;
-  onDisconnected?: () => Promise<void> | void;
+  onDisconnected?: (config: DiscordAccountConfigType) => Promise<void> | void;
 }
 
 const ConfirmDiscordDisconnectDialog: React.FC<ConfirmDiscordDisconnectDialogProps> = ({
@@ -46,8 +47,8 @@ const ConfirmDiscordDisconnectDialog: React.FC<ConfirmDiscordDisconnectDialogPro
     setSubmitting(true);
     setError(null);
     try {
-      await disconnectGuild(accountId);
-      await onDisconnected?.();
+      const config = await disconnectGuild(accountId);
+      await onDisconnected?.(config);
       onClose();
     } catch (err) {
       const message =

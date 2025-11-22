@@ -11,19 +11,11 @@ import {
   MenuItem,
   Box,
   Typography,
-  FormControlLabel,
-  Checkbox,
-  Chip,
   Alert,
   CircularProgress,
   FormHelperText,
 } from '@mui/material';
-import {
-  Close as CloseIcon,
-  Save as SaveIcon,
-  Email as EmailIcon,
-  Twitter as TwitterIcon,
-} from '@mui/icons-material';
+import { Close as CloseIcon, Save as SaveIcon } from '@mui/icons-material';
 import type { GameRecapType, GameResultType, UpdateGameResultsType } from '@draco/shared-schemas';
 import { UpdateGameResultsSchema } from '@draco/shared-schemas';
 import { useForm, Controller } from 'react-hook-form';
@@ -496,148 +488,6 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 )}
               />
             </Box>
-          </Box>
-        </Box>
-
-        {/* Notification Options */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-            Notifications & Social Media
-          </Typography>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: 2,
-              p: 2,
-              bgcolor: 'action.hover',
-              borderRadius: 1,
-            }}
-          >
-            <Controller
-              name="emailPlayers"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      {...field}
-                      checked={Boolean(field.value)}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                      sx={{
-                        color: 'text.secondary',
-                        '&.Mui-checked': {
-                          color: 'primary.main',
-                        },
-                      }}
-                    />
-                  }
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <EmailIcon fontSize="small" />
-                      <Typography variant="body2" color="text.primary">
-                        Email to players
-                      </Typography>
-                    </Box>
-                  }
-                />
-              )}
-            />
-            <Controller
-              name="postToTwitter"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      {...field}
-                      checked={Boolean(field.value)}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                      sx={{
-                        color: 'text.secondary',
-                        '&.Mui-checked': {
-                          color: 'primary.main',
-                        },
-                      }}
-                    />
-                  }
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TwitterIcon fontSize="small" />
-                      <Typography variant="body2" color="text.primary">
-                        Post to Twitter
-                      </Typography>
-                    </Box>
-                  }
-                />
-              )}
-            />
-            <Controller
-              name="postToBluesky"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      {...field}
-                      checked={Boolean(field.value)}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                      sx={{
-                        color: 'text.secondary',
-                        '&.Mui-checked': {
-                          color: 'primary.main',
-                        },
-                      }}
-                    />
-                  }
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip
-                        label="BS"
-                        size="small"
-                        sx={{ bgcolor: '#0085FF', color: 'white', fontSize: '0.75rem' }}
-                      />
-                      <Typography variant="body2" color="text.primary">
-                        Post to Bluesky
-                      </Typography>
-                    </Box>
-                  }
-                />
-              )}
-            />
-            <Controller
-              name="postToFacebook"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      {...field}
-                      checked={Boolean(field.value)}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                      sx={{
-                        color: 'text.secondary',
-                        '&.Mui-checked': {
-                          color: 'primary.main',
-                        },
-                      }}
-                    />
-                  }
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip
-                        label="FB"
-                        size="small"
-                        sx={{ bgcolor: '#1877F2', color: 'white', fontSize: '0.75rem' }}
-                      />
-                      <Typography variant="body2" color="text.primary">
-                        Post to Facebook
-                      </Typography>
-                    </Box>
-                  }
-                />
-              )}
-            />
           </Box>
         </Box>
       </DialogContent>

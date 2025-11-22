@@ -5360,7 +5360,9 @@
                     "ShowRosterCard",
                     "ShowUserInfoOnRosterPage",
                     "ShowContactInfo",
-                    "EditContactInfo"
+                    "EditContactInfo",
+                    "PostGameResultsToDiscord",
+                    "PostGameResultsToTwitter"
                   ]
                 },
                 "label": {
@@ -5433,7 +5435,9 @@
                           "ShowRosterCard",
                           "ShowUserInfoOnRosterPage",
                           "ShowContactInfo",
-                          "EditContactInfo"
+                          "EditContactInfo",
+                          "PostGameResultsToDiscord",
+                          "PostGameResultsToTwitter"
                         ]
                       },
                       "value": {
@@ -5573,7 +5577,9 @@
                   "ShowRosterCard",
                   "ShowUserInfoOnRosterPage",
                   "ShowContactInfo",
-                  "EditContactInfo"
+                  "EditContactInfo",
+                  "PostGameResultsToDiscord",
+                  "PostGameResultsToTwitter"
                 ]
               },
               "label": {
@@ -5646,7 +5652,9 @@
                         "ShowRosterCard",
                         "ShowUserInfoOnRosterPage",
                         "ShowContactInfo",
-                        "EditContactInfo"
+                        "EditContactInfo",
+                        "PostGameResultsToDiscord",
+                        "PostGameResultsToTwitter"
                       ]
                     },
                     "value": {
@@ -5797,7 +5805,9 @@
           "ShowRosterCard",
           "ShowUserInfoOnRosterPage",
           "ShowContactInfo",
-          "EditContactInfo"
+          "EditContactInfo",
+          "PostGameResultsToDiscord",
+          "PostGameResultsToTwitter"
         ]
       },
       "Sponsor": {
@@ -6883,7 +6893,8 @@
           "feature": {
             "type": "string",
             "enum": [
-              "announcements"
+              "announcements",
+              "gameResults"
             ]
           },
           "enabled": {
@@ -7012,7 +7023,8 @@
       "DiscordFeatureSyncFeature": {
         "type": "string",
         "enum": [
-          "announcements"
+          "announcements",
+          "gameResults"
         ]
       },
       "DiscordTeamForumList": {
@@ -21391,6 +21403,210 @@
         }
       }
     },
+    "/api/accounts/{accountId}/twitter/recent": {
+      "get": {
+        "operationId": "listAccountRecentTweets",
+        "summary": "Fetch recent tweets for an account",
+        "description": "Fetches recent tweets using the stored Twitter credentials for the requested account.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recent tweets for the account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialFeedList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/twitter/tweets": {
+      "post": {
+        "operationId": "postAccountTweet",
+        "summary": "Create a tweet for an account",
+        "description": "Creates a tweet using the stored Twitter credentials for the requested account.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "content"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tweet created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialFeedItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/urls": {
       "get": {
         "operationId": "getAccountUrls",
@@ -23302,7 +23518,9 @@
                 "ShowRosterCard",
                 "ShowUserInfoOnRosterPage",
                 "ShowContactInfo",
-                "EditContactInfo"
+                "EditContactInfo",
+                "PostGameResultsToDiscord",
+                "PostGameResultsToTwitter"
               ]
             }
           }
@@ -24494,7 +24712,8 @@
             "schema": {
               "type": "string",
               "enum": [
-                "announcements"
+                "announcements",
+                "gameResults"
               ]
             }
           }
@@ -24557,7 +24776,8 @@
             "schema": {
               "type": "string",
               "enum": [
-                "announcements"
+                "announcements",
+                "gameResults"
               ]
             }
           }

@@ -18,6 +18,8 @@ export const ACCOUNT_SETTING_KEYS = [
   'ShowUserInfoOnRosterPage',
   'ShowContactInfo',
   'EditContactInfo',
+  'PostGameResultsToDiscord',
+  'PostGameResultsToTwitter',
 ] as const;
 
 export const AccountSettingKeySchema = z.enum(ACCOUNT_SETTING_KEYS);
@@ -240,6 +242,23 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
         expectedValue: true,
       },
     ],
+  }),
+  booleanSetting({
+    key: 'PostGameResultsToDiscord',
+    label: 'Post game results to Discord',
+    description:
+      'Automatically share final scores in a Discord game results channel and mirror updates to team channels.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 80,
+  }),
+  booleanSetting({
+    key: 'PostGameResultsToTwitter',
+    label: 'Post game results to Twitter',
+    description: 'Publish final scores to the connected Twitter account when games are completed.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 90,
   }),
   booleanSetting({
     key: 'TrackWaiver',

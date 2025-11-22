@@ -54,6 +54,7 @@ import { ROLE_DISPLAY_NAMES, ROLE_NAME_TO_ID } from '@/utils/roleUtils';
 
 interface DiscordIntegrationAdminWidgetProps {
   accountId: string | null;
+  onConfigUpdated?: (config: DiscordAccountConfigType) => void;
 }
 
 type DracoRoleOption = {
@@ -236,7 +237,10 @@ const RoleMappingFormSchema = DiscordRoleMappingUpdateSchema.extend({
 
 type RoleMappingFormValues = z.infer<typeof RoleMappingFormSchema>;
 
-const DiscordIntegrationAdminWidgetInner: React.FC<{ accountId: string }> = ({ accountId }) => {
+const DiscordIntegrationAdminWidgetInner: React.FC<{
+  accountId: string;
+  onConfigUpdated?: (config: DiscordAccountConfigType) => void;
+}> = ({ accountId, onConfigUpdated }) => {
   const {
     fetchConfig,
     updateConfig,
@@ -490,9 +494,26 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{ accountId: string }> = ({ a
     setDisconnectDialogOpen(false);
   }, []);
 
-  const handleDisconnectSuccess = useCallback(async () => {
-    await loadAll();
-  }, [loadAll]);
+  const handleDisconnectSuccess = useCallback(
+    async (configAfterDisconnect: DiscordAccountConfigType) => {
+      setConfig(configAfterDisconnect);
+      setGuildIdInput(configAfterDisconnect.guildId ?? '');
+      onConfigUpdated?.(configAfterDisconnect);
+      await Promise.all([
+        loadRoleMappingsData(),
+        loadChannelMappings(),
+        loadAvailableChannelsData(),
+        loadTeamForums(),
+      ]);
+    },
+    [
+      loadAvailableChannelsData,
+      loadChannelMappings,
+      loadRoleMappingsData,
+      loadTeamForums,
+      onConfigUpdated,
+    ],
+  );
 
   const handleGuildIdSave = useCallback(async () => {
     if (!accountId) {
@@ -506,15 +527,32 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{ accountId: string }> = ({ a
     setSavingGuildId(true);
     setGuildIdError(null);
     try {
-      await updateConfig(accountId, { guildId: trimmed });
-      await loadAll();
+      const updated = await updateConfig(accountId, { guildId: trimmed });
+      setConfig(updated);
+      setGuildIdInput(updated.guildId ?? '');
+      onConfigUpdated?.(updated);
+      await Promise.all([
+        loadRoleMappingsData(),
+        loadChannelMappings(),
+        loadAvailableChannelsData(),
+        loadTeamForums(),
+      ]);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to save the Discord guild id.';
       setGuildIdError(message);
     } finally {
       setSavingGuildId(false);
     }
-  }, [accountId, guildIdInput, loadAll, updateConfig]);
+  }, [
+    accountId,
+    guildIdInput,
+    loadAvailableChannelsData,
+    loadChannelMappings,
+    loadRoleMappingsData,
+    loadTeamForums,
+    onConfigUpdated,
+    updateConfig,
+  ]);
 
   const openRoleDialog = useCallback(() => {
     setRoleMappingError(null);
@@ -1152,12 +1190,15 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{ accountId: string }> = ({ a
 
 export const DiscordIntegrationAdminWidget: React.FC<DiscordIntegrationAdminWidgetProps> = ({
   accountId,
+  onConfigUpdated,
 }) => {
   if (!accountId) {
     return null;
   }
 
-  return <DiscordIntegrationAdminWidgetInner accountId={accountId} />;
+  return (
+    <DiscordIntegrationAdminWidgetInner accountId={accountId} onConfigUpdated={onConfigUpdated} />
+  );
 };
 
 export default DiscordIntegrationAdminWidget;

@@ -89,6 +89,13 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
   );
   const selectedDiscordChannelId = selectedChannel?.discordChannelId;
   const contextMissing = !accountId || !seasonId;
+  const hasContent =
+    channelState.channels.length > 0 || communityState.items.length > 0 || channelState.loading;
+  const loadsComplete =
+    !channelState.loading &&
+    !communityState.loading &&
+    !channelState.error &&
+    !communityState.error;
 
   const loadCommunityMessages = useCallback(
     async (signal: { cancelled: boolean }) => {
@@ -171,6 +178,11 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
       window.open(targetUrl, '_blank', 'noopener');
     }
   }, [channelState.channels, selectedChannel?.url]);
+
+  const shouldHide = !contextMissing && loadsComplete && !hasContent;
+  if (shouldHide) {
+    return null;
+  }
 
   return (
     <WidgetShell

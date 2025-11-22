@@ -38,6 +38,7 @@ import {
   ValidationError,
 } from '../utils/customErrors.js';
 import { ROLE_IDS } from '../config/roles.js';
+import { encryptSecret } from '../utils/secretEncryption.js';
 import { RoleNamesType } from '../types/roles.js';
 import { getAccountLogoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
@@ -516,6 +517,24 @@ export class AccountsService {
     accountId: bigint,
     twitterSettings: AccountTwitterSettingsType,
   ): Promise<AccountType> {
+    const encryptTwitterSecret = (value?: string): string | undefined => {
+      if (value === undefined) {
+        return undefined;
+      }
+
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return '';
+      }
+
+      try {
+        return encryptSecret(trimmed);
+      } catch (error) {
+        console.error('Failed to encrypt Twitter credential', error);
+        throw new ValidationError('Unable to store Twitter credentials securely');
+      }
+    };
+
     const hasUpdates = Object.values(twitterSettings).some(
       (value) => value !== undefined && value !== null,
     );
@@ -532,12 +551,14 @@ export class AccountsService {
       updateData.twitteraccountname = twitterSettings.twitterAccountName;
     }
 
-    if (twitterSettings.twitterOauthToken !== undefined) {
-      updateData.twitteroauthtoken = twitterSettings.twitterOauthToken;
+    const encryptedOauthToken = encryptTwitterSecret(twitterSettings.twitterOauthToken);
+    if (encryptedOauthToken !== undefined) {
+      updateData.twitteroauthtoken = encryptedOauthToken;
     }
 
-    if (twitterSettings.twitterOauthSecretKey !== undefined) {
-      updateData.twitteroauthsecretkey = twitterSettings.twitterOauthSecretKey;
+    const encryptedOauthSecretKey = encryptTwitterSecret(twitterSettings.twitterOauthSecretKey);
+    if (encryptedOauthSecretKey !== undefined) {
+      updateData.twitteroauthsecretkey = encryptedOauthSecretKey;
     }
 
     if (twitterSettings.twitterWidgetScript !== undefined) {

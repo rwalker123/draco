@@ -25,8 +25,8 @@ model accounts {
   affiliationid             BigInt
   timezoneid                String                      @db.VarChar(50)
   twitteraccountname        String                      @db.VarChar(50)
-  twitteroauthtoken         String                      @db.VarChar(50)
-  twitteroauthsecretkey     String                      @db.VarChar(50)
+  twitteroauthtoken         String                      @db.Text
+  twitteroauthsecretkey     String                      @db.Text
   youtubeuserid             String?                     @db.VarChar(50)
   facebookfanpage           String?                     @db.VarChar(50)
   twitterwidgetscript       String?                     @db.VarChar(512)
