@@ -23,6 +23,8 @@ import {
   dbScheduleUpdateData,
   dbScheduleResultUpdateData,
 } from '../repositories/index.js';
+import { DiscordIntegrationService } from './discordIntegrationService.js';
+import { TwitterIntegrationService } from './twitterIntegrationService.js';
 
 interface GameListFilters {
   startDate?: Date;
@@ -33,9 +35,17 @@ interface GameListFilters {
 
 export class ScheduleService {
   private readonly scheduleRepository: IScheduleRepository;
+  private readonly discordIntegrationService: DiscordIntegrationService;
+  private readonly twitterIntegrationService: TwitterIntegrationService;
 
-  constructor() {
-    this.scheduleRepository = RepositoryFactory.getScheduleRepository();
+  constructor(
+    scheduleRepository?: IScheduleRepository,
+    discordIntegrationService?: DiscordIntegrationService,
+    twitterIntegrationService?: TwitterIntegrationService,
+  ) {
+    this.scheduleRepository = scheduleRepository ?? RepositoryFactory.getScheduleRepository();
+    this.discordIntegrationService = discordIntegrationService ?? new DiscordIntegrationService();
+    this.twitterIntegrationService = twitterIntegrationService ?? new TwitterIntegrationService();
   }
 
   async updateGameResults(
@@ -53,7 +63,68 @@ export class ScheduleService {
 
     const updatedGame = await this.scheduleRepository.updateGameResults(gameId, resultUpdateData);
 
+    void this.syncGameResultToSocial(accountId, updatedGame);
+
     return ScheduleResponseFormatter.formatGameResult(updatedGame);
+  }
+
+  private async syncGameResultToSocial(
+    accountId: bigint,
+    game: dbScheduleGameWithDetails,
+  ): Promise<void> {
+    try {
+      const teamIds: bigint[] = [];
+      if (game.hteamid !== undefined && game.hteamid !== null) {
+        teamIds.push(game.hteamid);
+      }
+      if (game.vteamid !== undefined && game.vteamid !== null) {
+        teamIds.push(game.vteamid);
+      }
+
+      const teamNames = teamIds.length
+        ? await this.scheduleRepository.getTeamNames(teamIds)
+        : new Map<string, string>();
+
+      const payload = {
+        gameId: game.id,
+        gameDate: game.gamedate ?? undefined,
+        gameStatus: game.gamestatus ?? undefined,
+        homeScore: game.hscore ?? undefined,
+        visitorScore: game.vscore ?? undefined,
+        homeTeamName:
+          game.hteamid !== undefined && game.hteamid !== null
+            ? (teamNames.get(game.hteamid.toString()) ?? undefined)
+            : undefined,
+        visitorTeamName:
+          game.vteamid !== undefined && game.vteamid !== null
+            ? (teamNames.get(game.vteamid.toString()) ?? undefined)
+            : undefined,
+        leagueName: game.leagueseason?.league?.name ?? undefined,
+        seasonName: game.leagueseason?.season?.name ?? undefined,
+      };
+
+      const results = await Promise.allSettled([
+        this.discordIntegrationService.publishGameResult(accountId, payload),
+        this.twitterIntegrationService.publishGameResult(accountId, payload),
+      ]);
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const target = index === 0 ? 'discord' : 'twitter';
+          console.error(`[${target}] Failed to sync game result`, {
+            accountId: accountId.toString(),
+            gameId: game.id.toString(),
+            error: result.reason,
+          });
+        }
+      });
+    } catch (error) {
+      console.error('[social] Failed to sync game result', {
+        accountId: accountId.toString(),
+        gameId: game.id.toString(),
+        error,
+      });
+    }
   }
 
   async listSeasonGames(

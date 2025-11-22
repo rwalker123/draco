@@ -33,6 +33,7 @@ import {
   HelpOutline as HelpOutlineIcon,
   Campaign as CampaignIcon,
   InfoOutlined as InfoOutlinedIcon,
+  Public as PublicIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -408,6 +409,28 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <SettingsIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Account Settings</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
+                  handleNavigation(`/account/${String(currentAccount.id)}/social-media`)
+                }
+                key="social-media-management"
+              >
+                <ListItemIcon>
+                  <PublicIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Social Media Management</ListItemText>
               </MenuItem>
             );
           }

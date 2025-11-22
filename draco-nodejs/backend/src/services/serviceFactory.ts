@@ -69,6 +69,7 @@ import { YouTubeConnector } from './socialIngestion/connectors/youtubeConnector.
 import { DiscordConnector } from './socialIngestion/connectors/discordConnector.js';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { YouTubeIntegrationService } from './youtubeIntegrationService.js';
+import { TwitterIntegrationService } from './twitterIntegrationService.js';
 import { WelcomeMessageService } from './welcomeMessageService.js';
 
 /**
@@ -132,6 +133,7 @@ export class ServiceFactory {
   private static socialIngestionService: SocialIngestionService;
   private static discordIntegrationService: DiscordIntegrationService;
   private static youtubeIntegrationService: YouTubeIntegrationService;
+  private static twitterIntegrationService: TwitterIntegrationService;
   private static welcomeMessageService: WelcomeMessageService;
 
   static getRoleService(): IRoleService {
@@ -444,6 +446,14 @@ export class ServiceFactory {
     return this.youtubeIntegrationService;
   }
 
+  static getTwitterIntegrationService(): TwitterIntegrationService {
+    if (!this.twitterIntegrationService) {
+      this.twitterIntegrationService = new TwitterIntegrationService();
+    }
+
+    return this.twitterIntegrationService;
+  }
+
   static getWelcomeMessageService(): WelcomeMessageService {
     if (!this.welcomeMessageService) {
       const welcomeMessageRepository = RepositoryFactory.getWelcomeMessageRepository();
@@ -474,17 +484,25 @@ export class ServiceFactory {
       const connectors = [];
       const socialContentRepository = RepositoryFactory.getSocialContentRepository();
       const discordIntegrationService = this.getDiscordIntegrationService();
+      const twitterIntegrationService = this.getTwitterIntegrationService();
 
-      if (socialIngestionConfig.twitter.enabled && socialIngestionConfig.twitter.targets.length) {
+      if (socialIngestionConfig.twitter.enabled) {
+        const staticTargets = socialIngestionConfig.twitter.targets.map((target) => ({
+          ...target,
+          bearerToken: socialIngestionConfig.twitter.bearerToken,
+        }));
+
+        const targetsProvider = async () => {
+          const dbTargets = await twitterIntegrationService.listIngestionTargets();
+          return [...dbTargets, ...staticTargets].filter((target) => Boolean(target.bearerToken));
+        };
+
         connectors.push(
           new TwitterConnector(socialContentRepository, {
-            bearerToken: socialIngestionConfig.twitter.bearerToken,
             maxResults: socialIngestionConfig.twitter.maxResults,
-            targets: socialIngestionConfig.twitter.targets,
+            targetsProvider,
             intervalMs: socialIngestionConfig.twitter.intervalMs,
-            enabled:
-              socialIngestionConfig.twitter.enabled &&
-              Boolean(socialIngestionConfig.twitter.bearerToken),
+            enabled: socialIngestionConfig.twitter.enabled,
           }),
         );
       }
