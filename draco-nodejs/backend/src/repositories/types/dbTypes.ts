@@ -1494,10 +1494,28 @@ export type dbAccountTypeRecord = Prisma.accounttypesGetPayload<{
   };
 }>;
 
+export type dbAccountTwitterCredentials = Prisma.accounttwittercredentialsGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    handle: true;
+    clientid: true;
+    clientsecret: true;
+    ingestionbearertoken: true;
+    useraccesstoken: true;
+    userrefreshtoken: true;
+    useraccesstokenexpiresat: true;
+    scope: true;
+    createdat: true;
+    updatedat: true;
+  };
+}>;
+
 export type dbAccount = Prisma.accountsGetPayload<{
   include: {
     accounttypes: true;
     accountsurl: true;
+    accounttwittercredentials: true;
   };
 }>;
 

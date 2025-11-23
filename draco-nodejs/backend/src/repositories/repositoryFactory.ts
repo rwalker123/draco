@@ -44,6 +44,7 @@ import {
   ILiveEventRepository,
   IDiscordIntegrationRepository,
   IWelcomeMessageRepository,
+  IAccountTwitterCredentialsRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -89,6 +90,7 @@ import {
   PrismaLiveEventRepository,
   PrismaDiscordIntegrationRepository,
   PrismaWelcomeMessageRepository,
+  PrismaAccountTwitterCredentialsRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -141,6 +143,7 @@ export class RepositoryFactory {
   private static liveEventRepository: ILiveEventRepository;
   private static discordIntegrationRepository: IDiscordIntegrationRepository;
   private static welcomeMessageRepository: IWelcomeMessageRepository;
+  private static accountTwitterCredentialsRepository: IAccountTwitterCredentialsRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -231,6 +234,15 @@ export class RepositoryFactory {
       this.liveEventRepository = new PrismaLiveEventRepository(prisma);
     }
     return this.liveEventRepository;
+  }
+
+  static getAccountTwitterCredentialsRepository(): IAccountTwitterCredentialsRepository {
+    if (!this.accountTwitterCredentialsRepository) {
+      this.accountTwitterCredentialsRepository = new PrismaAccountTwitterCredentialsRepository(
+        prisma,
+      );
+    }
+    return this.accountTwitterCredentialsRepository;
   }
 
   private static ensurePhotoGalleryRepository(): PrismaPhotoGalleryRepository {

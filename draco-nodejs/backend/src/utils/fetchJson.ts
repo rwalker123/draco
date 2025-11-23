@@ -10,6 +10,7 @@ export class HttpError extends Error {
     message: string,
     public readonly status: number,
     public readonly body: string,
+    public readonly headers: Record<string, string> = {},
   ) {
     super(message);
   }
@@ -32,12 +33,18 @@ export async function fetchJson<T>(input: string | URL, options?: FetchJsonOptio
 
     if (!response.ok) {
       const message = await response.text().catch(() => response.statusText);
+      const headers: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headers[key.toLowerCase()] = value;
+      });
+
       throw new HttpError(
         `Request to ${typeof input === 'string' ? input : input.toString()} failed with status ${
           response.status
         }: ${message}`,
         response.status,
         message,
+        headers,
       );
     }
 

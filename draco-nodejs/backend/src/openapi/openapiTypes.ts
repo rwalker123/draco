@@ -13,6 +13,8 @@ import {
   AccountUrlSchema,
   CreateAccountUrlSchema,
   AccountTwitterSettingsSchema,
+  AccountTwitterAuthorizationUrlSchema,
+  AccountTwitterOAuthStartSchema,
   AccountSettingsStateListSchema,
   AccountSettingStateSchema,
   AccountSettingUpdateRequestSchema,
@@ -400,6 +402,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const AccountTwitterSettingsSchemaRef = registry.register(
     'AccountTwitterSettings',
     AccountTwitterSettingsSchema,
+  );
+  const AccountTwitterOAuthStartSchemaRef = registry.register(
+    'AccountTwitterOAuthStart',
+    AccountTwitterOAuthStartSchema,
+  );
+  const AccountTwitterAuthorizationUrlSchemaRef = registry.register(
+    'AccountTwitterAuthorizationUrl',
+    AccountTwitterAuthorizationUrlSchema,
   );
   const AccountSettingsStateListSchemaRef = registry.register(
     'AccountSettingsStateList',
@@ -1060,6 +1070,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     AccountUrlSchemaRef,
     CreateAccountUrlSchemaRef,
     AccountTwitterSettingsSchemaRef,
+    AccountTwitterOAuthStartSchemaRef,
+    AccountTwitterAuthorizationUrlSchemaRef,
     AccountSettingsStateListSchemaRef,
     AccountSettingStateSchemaRef,
     AccountSettingUpdateRequestSchemaRef,

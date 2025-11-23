@@ -7,7 +7,7 @@ import {
 } from '../ingestionTypes.js';
 import type { SocialMediaAttachmentType } from '@draco/shared-schemas';
 import { deterministicUuid } from '../../../utils/deterministicUuid.js';
-import { fetchJson } from '../../../utils/fetchJson.js';
+import { fetchJson, HttpError } from '../../../utils/fetchJson.js';
 import { ISocialContentRepository } from '../../../repositories/interfaces/ISocialContentRepository.js';
 
 interface TwitterApiResponse {
@@ -40,6 +40,7 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
   ) {
     super('twitter', options.enabled, options.intervalMs);
   }
+  private readonly rateLimitUntilByHandle = new Map<string, number>();
 
   protected async runIngestion(): Promise<void> {
     const targets = await this.options.targetsProvider();
@@ -73,7 +74,30 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
         continue;
       }
 
+      const blockedUntil = this.rateLimitUntilByHandle.get(target.handle);
+      if (blockedUntil && Date.now() < blockedUntil) {
+        console.warn('[twitter] Skipping ingestion target due to rate limit window', {
+          handle: target.handle,
+          retryAfter: new Date(blockedUntil).toISOString(),
+        });
+        continue;
+      }
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.info('[twitter] Starting ingestion', {
+          accountId: target.accountId.toString(),
+          handle: target.handle,
+        });
+      }
+
       const tweets = await this.fetchRecentTweets(target);
+      if (process.env.NODE_ENV !== 'production') {
+        console.info('[twitter] Finished ingestion', {
+          accountId: target.accountId.toString(),
+          handle: target.handle,
+          ingestedCount: tweets.length,
+        });
+      }
       if (!tweets.length) {
         continue;
       }
@@ -138,7 +162,7 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
 
         const userMap = new Map(response.includes?.users?.map((user) => [user.id, user]) ?? []);
 
-        return response.data.map((tweet) => {
+        const tweets = response.data.map((tweet) => {
           const mediaEntries =
             (tweet.attachments?.media_keys
               ?.map((key) => mediaMap.get(key))
@@ -169,6 +193,9 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
               : undefined,
           };
         });
+
+        const selfHandle = `@${handle.toLowerCase()}`;
+        return tweets.filter((tweet) => tweet.authorHandle?.toLowerCase() !== selfHandle);
       } catch (error) {
         const status = (error as { status?: number }).status;
         if (status === 429 && attempt < maxAttempts) {
@@ -182,7 +209,17 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
           continue;
         }
 
-        console.error(`[twitter] Failed to fetch tweets for @${handle}`, error);
+        const retryAfter = this.computeRetryAfter(error);
+        if (retryAfter) {
+          this.rateLimitUntilByHandle.set(handle, retryAfter.untilMs);
+        }
+        console.error(`[twitter] Failed to fetch tweets for @${handle}`, {
+          error,
+          retryHint: retryAfter?.hint ?? null,
+          limit: retryAfter?.limit ?? null,
+          remaining: retryAfter?.remaining ?? null,
+          reset: retryAfter?.resetIso ?? null,
+        });
         return [];
       }
     }
@@ -192,5 +229,56 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
 
   private async sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private computeRetryAfter(
+    error: unknown,
+  ): {
+    untilMs: number;
+    hint: string;
+    limit?: number | null;
+    remaining?: number | null;
+    resetIso?: string | null;
+  } | null {
+    if (!(error instanceof HttpError)) {
+      return null;
+    }
+
+    const limit = this.parseNumberHeader(error.headers['x-rate-limit-limit']);
+    const remaining = this.parseNumberHeader(error.headers['x-rate-limit-remaining']);
+    const resetSeconds = this.parseNumberHeader(error.headers['x-rate-limit-reset']);
+    const resetMs = resetSeconds ? resetSeconds * 1000 : null;
+
+    if (error.status === 429) {
+      const untilMs = resetMs ?? Date.now() + 15 * 60 * 1000;
+      return {
+        untilMs,
+        hint: `Rate limited. Retry after ${new Date(untilMs).toISOString()}`,
+        limit,
+        remaining,
+        resetIso: resetMs ? new Date(resetMs).toISOString() : null,
+      };
+    }
+
+    if (error.status === 403 && error.body?.toLowerCase().includes('usage')) {
+      const untilMs = Date.now() + 24 * 60 * 60 * 1000;
+      return {
+        untilMs,
+        hint: 'Usage cap exceeded. Retry after the billing/window reset.',
+        limit,
+        remaining,
+        resetIso: resetMs ? new Date(resetMs).toISOString() : null,
+      };
+    }
+
+    return null;
+  }
+
+  private parseNumberHeader(value?: string): number | null {
+    if (!value) {
+      return null;
+    }
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
   }
 }
