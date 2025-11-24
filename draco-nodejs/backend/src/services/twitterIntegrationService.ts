@@ -1,15 +1,18 @@
+import crypto from 'node:crypto';
 import { SocialFeedItemType, SocialMediaAttachmentType } from '@draco/shared-schemas';
 import {
   RepositoryFactory,
   IAccountRepository,
   ISeasonsRepository,
+  IAccountTwitterCredentialsRepository,
 } from '../repositories/index.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
-import { decryptSecret } from '../utils/secretEncryption.js';
+import { decryptSecret, encryptSecret } from '../utils/secretEncryption.js';
 import { fetchJson, HttpError } from '../utils/fetchJson.js';
 import { deterministicUuid } from '../utils/deterministicUuid.js';
 import { AccountSettingsService } from './accountSettingsService.js';
 import type { TwitterIngestionTarget } from '../config/socialIngestion.js';
+import { twitterOAuthConfig } from '../config/twitterOAuth.js';
 
 interface TwitterUserResponse {
   data?: {
@@ -45,11 +48,30 @@ interface TwitterPostResponse {
   };
 }
 
+interface TwitterTokenResponse {
+  token_type?: string;
+  access_token?: string;
+  expires_in?: number;
+  scope?: string;
+  refresh_token?: string;
+}
+
+interface TwitterOAuthStatePayload {
+  accountId: string;
+  codeVerifier: string;
+  returnUrl?: string | null;
+}
+
 interface AccountTwitterCredentials {
   accountId: bigint;
   handle: string;
-  oauthToken?: string;
-  oauthSecret?: string;
+  ingestionBearerToken?: string | null;
+  clientId?: string | null;
+  clientSecret?: string | null;
+  userAccessToken?: string | null;
+  userRefreshToken?: string | null;
+  userAccessTokenExpiresAt?: Date | null;
+  scope?: string | null;
 }
 
 interface TwitterGameResultPayload {
@@ -67,42 +89,174 @@ interface TwitterGameResultPayload {
 export class TwitterIntegrationService {
   private readonly accountRepository: IAccountRepository;
   private readonly seasonsRepository: ISeasonsRepository;
+  private readonly accountTwitterCredentialsRepository: IAccountTwitterCredentialsRepository;
   private readonly accountSettingsService = new AccountSettingsService();
 
   constructor(accountRepository?: IAccountRepository, seasonsRepository?: ISeasonsRepository) {
     this.accountRepository = accountRepository ?? RepositoryFactory.getAccountRepository();
     this.seasonsRepository = seasonsRepository ?? RepositoryFactory.getSeasonsRepository();
+    this.accountTwitterCredentialsRepository =
+      RepositoryFactory.getAccountTwitterCredentialsRepository();
+  }
+
+  async createAuthorizationUrl(accountId: bigint, returnUrl?: string): Promise<string> {
+    const credentials = await this.accountTwitterCredentialsRepository.findByAccountId(accountId);
+
+    if (!credentials?.clientid || !credentials.clientsecret) {
+      throw new ValidationError('Twitter client credentials are not configured');
+    }
+
+    const codeVerifier = this.generateCodeVerifier();
+    const codeChallenge = this.toCodeChallenge(codeVerifier);
+    const statePayload: TwitterOAuthStatePayload = {
+      accountId: accountId.toString(),
+      codeVerifier,
+      returnUrl: returnUrl?.trim() || null,
+    };
+
+    const state = encryptSecret(JSON.stringify(statePayload));
+
+    const url = new URL('https://twitter.com/i/oauth2/authorize');
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('client_id', credentials.clientid);
+    url.searchParams.set('redirect_uri', twitterOAuthConfig.callbackUrl);
+    url.searchParams.set('scope', twitterOAuthConfig.scopes);
+    url.searchParams.set('state', state);
+    url.searchParams.set('code_challenge', codeChallenge);
+    url.searchParams.set('code_challenge_method', 'S256');
+
+    return url.toString();
+  }
+
+  async completeOAuthCallback(
+    code: string,
+    state: string,
+  ): Promise<{
+    accountId: bigint;
+    redirectUrl: string;
+  }> {
+    const { accountId, codeVerifier, returnUrl } = this.decryptOAuthState(state);
+
+    const accountIdBigInt = BigInt(accountId);
+
+    const credentials =
+      await this.accountTwitterCredentialsRepository.findByAccountId(accountIdBigInt);
+
+    if (!credentials?.clientid || !credentials.clientsecret) {
+      throw new ValidationError('Twitter client credentials are not configured');
+    }
+
+    const clientSecret = this.decryptSecretValue(credentials.clientsecret);
+    if (!clientSecret) {
+      throw new ValidationError('Twitter client secret is not configured for this account');
+    }
+
+    const tokenResponse = await this.exchangeAuthorizationCode({
+      code,
+      codeVerifier,
+      clientId: credentials.clientid,
+      clientSecret,
+    });
+
+    if (!tokenResponse.access_token) {
+      throw new ValidationError('Twitter did not return an access token');
+    }
+
+    const accessToken = tokenResponse.access_token;
+    const refreshToken = tokenResponse.refresh_token;
+    const expiresAt = tokenResponse.expires_in
+      ? new Date(Date.now() + tokenResponse.expires_in * 1000)
+      : null;
+
+    if (!accessToken) {
+      throw new ValidationError('Twitter did not return an access token');
+    }
+
+    const currentUser = await this.fetchCurrentUser(accessToken).catch((error) => {
+      console.warn('[twitter] Failed to fetch user profile after OAuth', error);
+      return null;
+    });
+    const derivedHandle = currentUser?.data?.username?.trim() ?? credentials.handle?.trim() ?? '';
+
+    if (!derivedHandle) {
+      throw new ValidationError(
+        'Twitter handle could not be determined from OAuth response or existing credentials.',
+      );
+    }
+
+    await this.accountTwitterCredentialsRepository.upsertForAccount(accountIdBigInt, {
+      clientid: credentials.clientid,
+      clientsecret: credentials.clientsecret,
+      ingestionbearertoken: credentials.ingestionbearertoken,
+      handle: derivedHandle,
+      useraccesstoken: encryptSecret(accessToken),
+      userrefreshtoken: refreshToken ? encryptSecret(refreshToken) : null,
+      useraccesstokenexpiresat: expiresAt,
+      scope: tokenResponse.scope ?? null,
+    });
+
+    return {
+      accountId: accountIdBigInt,
+      redirectUrl: this.buildResultUrl(accountIdBigInt, 'success', undefined, returnUrl),
+    };
+  }
+
+  buildResultRedirect(
+    accountId: bigint,
+    status: 'success' | 'error',
+    message?: string,
+    returnUrl?: string | null,
+  ): string {
+    return this.buildResultUrl(accountId, status, message, returnUrl);
+  }
+
+  buildRedirectFromState(state: string | null, status: 'success' | 'error', message?: string) {
+    if (!state) {
+      return this.buildResultUrl(BigInt(0), status, message);
+    }
+    try {
+      const payload = this.decryptOAuthState(state);
+      return this.buildResultUrl(BigInt(payload.accountId), status, message, payload.returnUrl);
+    } catch {
+      return this.buildResultUrl(BigInt(0), status, message);
+    }
   }
 
   async listIngestionTargets(): Promise<(TwitterIngestionTarget & { bearerToken: string })[]> {
-    const accounts = await this.accountRepository.findMany({
-      twitteraccountname: { not: '' },
-      twitteroauthtoken: { not: '' },
-    });
+    const credentials = await this.accountTwitterCredentialsRepository.findAllWithIngestionToken();
 
     const targets: Array<TwitterIngestionTarget & { bearerToken: string }> = [];
 
-    for (const account of accounts) {
-      const season = await this.seasonsRepository.findCurrentSeason(account.id);
+    for (const credential of credentials) {
+      const season = await this.seasonsRepository.findCurrentSeason(credential.accountid);
       if (!season) {
         console.warn('[twitter] Skipping ingestion target because no current season is set', {
-          accountId: account.id.toString(),
+          accountId: credential.accountid.toString(),
         });
         continue;
       }
 
-      const token = this.decryptSecretValue(account.twitteroauthtoken);
+      const token = credential.ingestionbearertoken
+        ? this.decryptSecretValue(credential.ingestionbearertoken)
+        : null;
       if (!token) {
         console.warn('[twitter] Skipping ingestion target without bearer token', {
-          accountId: account.id.toString(),
+          accountId: credential.accountid.toString(),
+        });
+        continue;
+      }
+
+      if (!credential.handle?.trim()) {
+        console.warn('[twitter] Skipping ingestion target without handle', {
+          accountId: credential.accountid.toString(),
         });
         continue;
       }
 
       targets.push({
-        accountId: account.id,
+        accountId: credential.accountid,
         seasonId: season.id,
-        handle: account.twitteraccountname?.replace(/^@/, '') ?? '',
+        handle: credential.handle.replace(/^@/, ''),
         bearerToken: token,
       });
     }
@@ -112,11 +266,7 @@ export class TwitterIntegrationService {
 
   async listRecentTweets(accountId: bigint, limit = 5): Promise<SocialFeedItemType[]> {
     const credentials = await this.getAccountCredentials(accountId);
-    const bearerToken = await this.resolveBearerToken(credentials);
-
-    if (!bearerToken) {
-      throw new ValidationError('Twitter credentials are not configured for this account');
-    }
+    const bearerToken = await this.resolveReadToken(credentials);
 
     const user = await this.fetchUser(credentials.handle, bearerToken);
 
@@ -180,13 +330,9 @@ export class TwitterIntegrationService {
     }
 
     const credentials = await this.getAccountCredentials(accountId);
-    const bearerToken = await this.resolveBearerToken(credentials);
+    const accessToken = await this.ensureValidUserAccessToken(credentials);
 
-    if (!bearerToken) {
-      throw new ValidationError('Twitter credentials are not configured for this account');
-    }
-
-    const response = await this.createTweet(normalizedContent, bearerToken);
+    const response = await this.createTweet(normalizedContent, accessToken);
 
     if (!response.data?.id) {
       throw new ValidationError('Twitter did not return a tweet identifier');
@@ -238,82 +384,82 @@ export class TwitterIntegrationService {
   }
 
   private composeGameResultTweet(payload: TwitterGameResultPayload): string | null {
-    const trimLine = (value?: string | null, max = 60) => {
-      const safe = value?.trim();
-      if (!safe) {
-        return '';
+    const formatDate = (date?: Date) => {
+      if (!date) {
+        return null;
       }
-      return safe.length > max ? `${safe.slice(0, max - 1)}…` : safe;
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
 
-    const trimName = (name?: string) => {
-      const safe = name?.trim() || '';
-      if (!safe) {
-        return safe;
+    const statusLabel = this.describeGameStatus(payload.gameStatus) ?? 'Final';
+    const dateText = formatDate(payload.gameDate);
+    const league = [payload.leagueName, payload.seasonName].filter(Boolean).join(' ').trim();
+    const home = (payload.homeTeamName ?? 'Home').trim();
+    const visitor = (payload.visitorTeamName ?? 'Visitor').trim();
+    const homeScore =
+      payload.homeScore !== undefined && payload.homeScore !== null ? payload.homeScore : null;
+    const visitorScore =
+      payload.visitorScore !== undefined && payload.visitorScore !== null
+        ? payload.visitorScore
+        : null;
+
+    // Final/Forfeit with scores
+    if (
+      (payload.gameStatus === 1 || payload.gameStatus === 4) &&
+      homeScore !== null &&
+      visitorScore !== null
+    ) {
+      let winner = home;
+      let loser = visitor;
+      let winnerScore = homeScore;
+      let loserScore = visitorScore;
+      let verb = 'over';
+
+      if (visitorScore > homeScore) {
+        winner = visitor;
+        loser = home;
+        winnerScore = visitorScore;
+        loserScore = homeScore;
+      } else if (homeScore === visitorScore) {
+        verb = 'tied';
       }
-      return safe.length > 30 ? `${safe.slice(0, 27)}...` : safe;
-    };
 
-    const isRainout = payload.gameStatus === 2;
-    const hasScores =
-      !isRainout &&
-      payload.homeScore !== undefined &&
-      payload.homeScore !== null &&
-      payload.visitorScore !== undefined &&
-      payload.visitorScore !== null;
+      let message: string;
+      if (verb === 'tied') {
+        const tieParts = [
+          dateText,
+          statusLabel,
+          ':',
+          league,
+          `${home} and ${visitor} tied ${homeScore} - ${visitorScore}`,
+        ].filter(Boolean);
+        message = tieParts.join(' ').replace(/\s+/g, ' ');
+      } else {
+        const parts = [
+          dateText,
+          statusLabel,
+          ':',
+          league,
+          winner,
+          verb,
+          loser,
+          `${winnerScore} - ${loserScore}`,
+        ].filter(Boolean);
+        message = parts.join(' ').replace(/\s+/g, ' ');
+      }
 
-    const homeName = trimName(payload.homeTeamName) || 'Home';
-    const visitorName = trimName(payload.visitorTeamName) || 'Visitor';
-
-    const nameColumnWidth = Math.min(Math.max(visitorName.length, homeName.length, 10), 40);
-    const scoreColumnWidth = 5;
-
-    const topBorder = `┌${'─'.repeat(nameColumnWidth + 2)}┬${'─'.repeat(scoreColumnWidth + 2)}┐`;
-    const middleBorder = `├${'─'.repeat(nameColumnWidth + 2)}┼${'─'.repeat(scoreColumnWidth + 2)}┤`;
-    const bottomBorder = `└${'─'.repeat(nameColumnWidth + 2)}┴${'─'.repeat(scoreColumnWidth + 2)}┘`;
-
-    const formatRow = (name: string, score?: number | null) => {
-      const scoreValue = score ?? ' ';
-      return `│ ${name.padEnd(nameColumnWidth, ' ')} │ ${String(scoreValue).padStart(scoreColumnWidth, ' ')} │`;
-    };
-
-    const scoreLines = [
-      topBorder,
-      formatRow(visitorName, hasScores ? payload.visitorScore : undefined),
-      middleBorder,
-      formatRow(homeName, hasScores ? payload.homeScore : undefined),
-      bottomBorder,
-    ];
-
-    const statusLabel = this.describeGameStatus(payload.gameStatus);
-    const formattedDate = payload.gameDate ? payload.gameDate.toISOString().split('T')[0] : null;
-
-    const header = [trimLine(payload.leagueName), trimLine(payload.seasonName)]
-      .filter(Boolean)
-      .join(' • ');
-
-    const details = [
-      statusLabel ? `Status: ${statusLabel}` : null,
-      formattedDate ? `Date: ${formattedDate}` : null,
-    ]
-      .filter((segment): segment is string => Boolean(segment))
-      .join(' • ');
-
-    const table = ['```', ...scoreLines, '```'].join('\n');
-
-    const parts = [header || null, table, details || null].filter((segment): segment is string =>
-      Boolean(segment),
-    );
-
-    let message = parts.join('\n');
-
-    if (message.length > 275 && details) {
-      message = [header || null, table]
-        .filter((segment): segment is string => Boolean(segment))
-        .join('\n');
+      return message.length <= 280 ? message : message.slice(0, 280);
     }
 
-    return message.length <= 280 ? message : message.slice(0, 280);
+    // Other statuses (Scheduled, Rainout, Postponed, etc.)
+    if (payload.gameStatus && payload.gameStatus !== 0) {
+      const parts = [dateText, statusLabel, ':', league, `${visitor} @ ${home}`].filter(Boolean);
+
+      const message = parts.join(' ').replace(/\s+/g, ' ');
+      return message.length <= 280 ? message : message.slice(0, 280);
+    }
+
+    return null;
   }
 
   private describeGameStatus(gameStatus?: number | null): string | null {
@@ -348,62 +494,145 @@ export class TwitterIntegrationService {
   }
 
   private async getAccountCredentials(accountId: bigint): Promise<AccountTwitterCredentials> {
-    const account = await this.accountRepository.findById(accountId);
+    const credentials = await this.accountTwitterCredentialsRepository.findByAccountId(accountId);
 
-    if (!account) {
-      throw new NotFoundError('Account not found');
+    if (!credentials) {
+      throw new NotFoundError('Twitter credentials are not configured for this account');
     }
 
-    const handle = account.twitteraccountname?.trim();
-    const oauthToken = this.decryptSecretValue(account.twitteroauthtoken)?.trim();
-    const oauthSecret = this.decryptSecretValue(account.twitteroauthsecretkey)?.trim();
+    const handle = credentials.handle?.trim();
+    const ingestionBearerToken = credentials.ingestionbearertoken
+      ? this.decryptSecretValue(credentials.ingestionbearertoken)?.trim()
+      : null;
+    const clientId = credentials.clientid?.trim() ?? null;
+    const clientSecret = credentials.clientsecret
+      ? this.decryptSecretValue(credentials.clientsecret)?.trim()
+      : null;
+    const userAccessToken = credentials.useraccesstoken
+      ? this.decryptSecretValue(credentials.useraccesstoken)?.trim()
+      : null;
+    const userRefreshToken = credentials.userrefreshtoken
+      ? this.decryptSecretValue(credentials.userrefreshtoken)?.trim()
+      : null;
 
     if (!handle) {
       throw new ValidationError('Twitter account handle is not configured');
     }
 
     return {
-      accountId: account.id,
+      accountId: credentials.accountid,
       handle: handle.replace(/^@/, ''),
-      oauthToken: oauthToken || undefined,
-      oauthSecret: oauthSecret || undefined,
+      ingestionBearerToken: ingestionBearerToken ?? null,
+      clientId,
+      clientSecret,
+      userAccessToken,
+      userRefreshToken,
+      userAccessTokenExpiresAt: credentials.useraccesstokenexpiresat ?? null,
+      scope: credentials.scope ?? null,
     };
   }
 
-  private async resolveBearerToken(credentials: AccountTwitterCredentials): Promise<string | null> {
-    if (credentials.oauthToken && !credentials.oauthSecret) {
-      return credentials.oauthToken;
+  private async resolveReadToken(credentials: AccountTwitterCredentials): Promise<string> {
+    if (credentials.ingestionBearerToken) {
+      return credentials.ingestionBearerToken;
     }
 
-    if (credentials.oauthToken && credentials.oauthSecret) {
-      try {
-        const basicToken = Buffer.from(
-          `${credentials.oauthToken}:${credentials.oauthSecret}`,
-          'utf8',
-        ).toString('base64');
-
-        const tokenResponse = await fetchJson<{ token_type?: string; access_token?: string }>(
-          'https://api.twitter.com/oauth2/token',
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Basic ${basicToken}`,
-              'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-            },
-            body: 'grant_type=client_credentials',
-            timeoutMs: 8000,
-          },
-        );
-
-        if (tokenResponse.token_type?.toLowerCase() === 'bearer' && tokenResponse.access_token) {
-          return tokenResponse.access_token;
-        }
-      } catch (error) {
-        console.warn('Failed to exchange Twitter credentials for bearer token', error);
-      }
+    if (credentials.userAccessToken) {
+      return this.ensureValidUserAccessToken(credentials);
     }
 
-    return credentials.oauthToken ?? null;
+    throw new ValidationError(
+      'Twitter credentials are missing a bearer token or user access token',
+    );
+  }
+
+  private async ensureValidUserAccessToken(
+    credentials: AccountTwitterCredentials,
+  ): Promise<string> {
+    if (!credentials.userAccessToken) {
+      throw new ValidationError('Twitter user access token is not configured for this account');
+    }
+
+    const expiresAt = credentials.userAccessTokenExpiresAt?.getTime();
+    const now = Date.now();
+    const nearExpiry = expiresAt ? expiresAt - now < 60_000 : false;
+
+    if (!nearExpiry) {
+      return credentials.userAccessToken;
+    }
+
+    if (!credentials.userRefreshToken || !credentials.clientId || !credentials.clientSecret) {
+      console.warn(
+        '[twitter] User access token is near expiry but refresh credentials are missing; proceeding with existing token.',
+      );
+      return credentials.userAccessToken;
+    }
+
+    const refreshed = await this.refreshUserAccessToken(credentials);
+    if (!refreshed.access_token) {
+      throw new Error(
+        '[twitter] Failed to refresh user access token: no access_token returned from refresh endpoint.',
+      );
+    }
+    const accessToken = refreshed.access_token;
+    const refreshToken = refreshed.refresh_token ?? credentials.userRefreshToken;
+    const expiresIn = refreshed.expires_in;
+    let scope: string | null;
+    if (typeof refreshed.scope === 'undefined' || refreshed.scope === null) {
+      console.warn(
+        `[twitter] Refresh response missing scope for account ${credentials.accountId}; falling back to previous scope: ${credentials.scope ?? 'none'}. This may indicate a scope mismatch if the OAuth app's permissions have changed.`,
+      );
+      scope = credentials.scope ?? null;
+    } else {
+      scope = refreshed.scope;
+    }
+    const nextExpiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000) : null;
+
+    await this.accountTwitterCredentialsRepository.upsertForAccount(credentials.accountId, {
+      useraccesstoken: encryptSecret(accessToken),
+      userrefreshtoken: refreshToken ? encryptSecret(refreshToken) : null,
+      useraccesstokenexpiresat: nextExpiresAt,
+      scope,
+    });
+
+    credentials.userAccessToken = accessToken;
+    credentials.userRefreshToken = refreshToken;
+    credentials.userAccessTokenExpiresAt = nextExpiresAt;
+    credentials.scope = scope;
+
+    return accessToken;
+  }
+
+  private async refreshUserAccessToken(credentials: AccountTwitterCredentials): Promise<{
+    access_token?: string;
+    refresh_token?: string;
+    expires_in?: number;
+    scope?: string;
+  }> {
+    if (!credentials.clientId || !credentials.clientSecret) {
+      throw new ValidationError('Twitter client credentials are not configured for refresh');
+    }
+
+    const payload = this.toFormEncoded({
+      grant_type: 'refresh_token',
+      refresh_token: credentials.userRefreshToken as string,
+      client_id: credentials.clientId,
+    });
+
+    const basicAuth = Buffer.from(
+      `${credentials.clientId}:${credentials.clientSecret}`,
+      'utf8',
+    ).toString('base64');
+
+    return fetchJson('https://api.twitter.com/2/oauth2/token', {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${basicAuth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: payload,
+      timeoutMs: 8000,
+    });
   }
 
   private async fetchUser(
@@ -470,11 +699,133 @@ export class TwitterIntegrationService {
       });
     } catch (error) {
       if (error instanceof HttpError) {
-        console.error('Twitter API rejected tweet request', error.message);
+        console.error('Twitter API rejected tweet request', {
+          message: error.message,
+          status: error.status,
+          body: error.body,
+        });
         throw new ValidationError('Twitter rejected the tweet request');
       }
 
       throw error;
     }
+  }
+
+  private async fetchCurrentUser(
+    accessToken: string,
+  ): Promise<TwitterUserResponse | null | undefined> {
+    try {
+      return await fetchJson<TwitterUserResponse>('https://api.twitter.com/2/users/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        timeoutMs: 8000,
+      });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        console.error('Twitter user profile lookup failed', {
+          message: error.message,
+          status: error.status,
+          body: error.body,
+        });
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  private async exchangeAuthorizationCode(params: {
+    code: string;
+    codeVerifier: string;
+    clientId: string;
+    clientSecret: string;
+  }): Promise<TwitterTokenResponse> {
+    if (!params.clientId?.trim() || !params.clientSecret?.trim()) {
+      throw new ValidationError('Twitter client credentials are not configured');
+    }
+
+    const payload = this.toFormEncoded({
+      grant_type: 'authorization_code',
+      code: params.code,
+      redirect_uri: twitterOAuthConfig.callbackUrl,
+      code_verifier: params.codeVerifier,
+      client_id: params.clientId,
+    });
+
+    const basicAuth = Buffer.from(`${params.clientId}:${params.clientSecret}`, 'utf8').toString(
+      'base64',
+    );
+
+    try {
+      return await fetchJson('https://api.twitter.com/2/oauth2/token', {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: payload,
+        timeoutMs: 8000,
+      });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        console.error('[twitter] OAuth token exchange failed', {
+          status: error.status,
+          body: error.body,
+          hasClientId: Boolean(params.clientId),
+          redirectUri: twitterOAuthConfig.callbackUrl,
+          scope: twitterOAuthConfig.scopes,
+        });
+        throw new ValidationError(
+          'Twitter rejected the OAuth token exchange. Verify client ID/secret and callback URL match your Twitter app settings.',
+        );
+      }
+      throw error;
+    }
+  }
+
+  private decryptOAuthState(state: string): TwitterOAuthStatePayload {
+    try {
+      const decoded = decryptSecret(state);
+      const payload = JSON.parse(decoded) as TwitterOAuthStatePayload;
+      if (!payload.accountId || !payload.codeVerifier) {
+        throw new ValidationError('Invalid OAuth state payload');
+      }
+      return payload;
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new ValidationError('Invalid OAuth state');
+    }
+  }
+
+  private buildResultUrl(
+    accountId: bigint,
+    status: 'success' | 'error',
+    message?: string,
+    returnUrl?: string | null,
+  ): string {
+    const base =
+      returnUrl?.trim() ||
+      twitterOAuthConfig.resultUrlTemplate.replace('{accountId}', accountId.toString());
+    const url = new URL(base);
+    url.searchParams.set('twitterAuth', status);
+    if (message) {
+      url.searchParams.set('message', message);
+    }
+    return url.toString();
+  }
+
+  private generateCodeVerifier(): string {
+    return crypto.randomBytes(32).toString('base64url');
+  }
+
+  private toCodeChallenge(codeVerifier: string): string {
+    return crypto.createHash('sha256').update(codeVerifier).digest('base64url');
+  }
+
+  private toFormEncoded(data: Record<string, string | undefined>): string {
+    return Object.entries(data)
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value as string)}`)
+      .join('&');
   }
 }

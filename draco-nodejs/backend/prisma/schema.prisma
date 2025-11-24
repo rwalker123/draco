@@ -24,15 +24,12 @@ model accounts {
   accounttypeid             BigInt
   affiliationid             BigInt
   timezoneid                String                      @db.VarChar(50)
-  twitteraccountname        String                      @db.VarChar(50)
-  twitteroauthtoken         String                      @db.Text
-  twitteroauthsecretkey     String                      @db.Text
   youtubeuserid             String?                     @db.VarChar(50)
   facebookfanpage           String?                     @db.VarChar(50)
-  twitterwidgetscript       String?                     @db.VarChar(512)
   defaultvideo              String                      @default("") @db.VarChar(50)
   autoplayvideo             Boolean                     @default(false)
   owneruserid               String?                     @db.VarChar(128)
+  accounttwittercredentials accounttwittercredentials?
   accounthandouts           accounthandouts[]
   aspnetusers               aspnetusers?                @relation(fields: [owneruserid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounts_aspnetusers")
   accounttypes              accounttypes                @relation(fields: [accounttypeid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounttypes_accounts")
@@ -74,6 +71,22 @@ model accounts {
   accountdiscordfeaturesync accountdiscordfeaturesync[]
   accountdiscordteamforums  accountdiscordteamforums[]
   userdiscordaccounts       userdiscordaccounts[]
+}
+
+model accounttwittercredentials {
+  id                         BigInt   @id @default(autoincrement())
+  accountid                  BigInt   @unique
+  handle                     String   @db.VarChar(50)
+  clientid                   String?  @db.VarChar(128)
+  clientsecret               String?  @db.Text
+  ingestionbearertoken       String?  @db.Text
+  useraccesstoken            String?  @db.Text
+  userrefreshtoken           String?  @db.Text
+  useraccesstokenexpiresat   DateTime? @db.Timestamptz(6)
+  scope                      String?  @db.VarChar(512)
+  createdat                  DateTime @default(now()) @db.Timestamptz(6)
+  updatedat                  DateTime @updatedAt @db.Timestamptz(6)
+  accounts                   accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accounttwittercredentials_accounts")
 }
 
 model accountsettings {

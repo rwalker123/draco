@@ -25,6 +25,7 @@ import {
   IRoleRepository,
   dbGlobalRoles,
   ISeasonsRepository,
+  IAccountTwitterCredentialsRepository,
 } from '../repositories/index.js';
 import {
   AccountOwnerDetailsByAccount,
@@ -55,6 +56,7 @@ export class AccountsService {
   private readonly roleRepository: IRoleRepository;
   private readonly seasonRepository: ISeasonsRepository;
   private readonly discordIntegrationService: DiscordIntegrationService;
+  private readonly accountTwitterCredentialsRepository: IAccountTwitterCredentialsRepository;
 
   constructor() {
     this.accountRepository = RepositoryFactory.getAccountRepository();
@@ -63,6 +65,8 @@ export class AccountsService {
     this.roleRepository = RepositoryFactory.getRoleRepository();
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
     this.discordIntegrationService = new DiscordIntegrationService();
+    this.accountTwitterCredentialsRepository =
+      RepositoryFactory.getAccountTwitterCredentialsRepository();
   }
 
   async getAccountsForUser(userId: string): Promise<AccountType[]> {
@@ -278,9 +282,6 @@ export class AccountsService {
       affiliationid: BigInt(affiliationId),
       timezoneid: payload.configuration?.timeZone ?? 'UTC',
       firstyear: payload.configuration?.firstYear ?? new Date().getFullYear(),
-      twitteraccountname: payload.socials?.twitterAccountName ?? '',
-      twitteroauthtoken: '',
-      twitteroauthsecretkey: '',
       defaultvideo: payload.socials?.defaultVideo ?? '',
       autoplayvideo: payload.socials?.autoPlayVideo ?? false,
       youtubeuserid: payload.socials?.youtubeUserId ?? null,
@@ -360,10 +361,6 @@ export class AccountsService {
 
     if (payload.configuration?.firstYear !== undefined) {
       updateData.firstyear = payload.configuration?.firstYear ?? new Date().getFullYear();
-    }
-
-    if (payload.socials?.twitterAccountName !== undefined) {
-      updateData.twitteraccountname = payload.socials?.twitterAccountName ?? '';
     }
 
     if (payload.socials?.youtubeUserId !== undefined) {
@@ -517,16 +514,22 @@ export class AccountsService {
     accountId: bigint,
     twitterSettings: AccountTwitterSettingsType,
   ): Promise<AccountType> {
-    const encryptTwitterSecret = (value?: string): string | undefined => {
+    const normalizePlain = (value?: string): string | null | undefined => {
       if (value === undefined) {
         return undefined;
       }
+      const trimmed = value.trim();
+      return trimmed ? trimmed : null;
+    };
 
+    const normalizeSecret = (value?: string): string | null | undefined => {
+      if (value === undefined) {
+        return undefined;
+      }
       const trimmed = value.trim();
       if (!trimmed) {
-        return '';
+        return null;
       }
-
       try {
         return encryptSecret(trimmed);
       } catch (error) {
@@ -545,27 +548,43 @@ export class AccountsService {
 
     await this.ensureAccountExists(accountId);
 
-    const updateData: Partial<accounts> = {};
+    const existing = await this.accountTwitterCredentialsRepository.findByAccountId(accountId);
 
-    if (twitterSettings.twitterAccountName !== undefined) {
-      updateData.twitteraccountname = twitterSettings.twitterAccountName;
+    const normalizedHandle = normalizePlain(twitterSettings.twitterAccountName);
+    if (normalizedHandle === null) {
+      throw new ValidationError('Twitter handle cannot be empty');
     }
 
-    const encryptedOauthToken = encryptTwitterSecret(twitterSettings.twitterOauthToken);
-    if (encryptedOauthToken !== undefined) {
-      updateData.twitteroauthtoken = encryptedOauthToken;
+    const normalizedClientId = normalizePlain(twitterSettings.twitterClientId);
+    const updateData = {
+      handle: normalizedHandle,
+      clientid: normalizedClientId,
+      clientsecret: normalizeSecret(twitterSettings.twitterClientSecret),
+      ingestionbearertoken: normalizeSecret(twitterSettings.twitterIngestionBearerToken),
+    };
+
+    const handleToUse = updateData.handle ?? existing?.handle;
+    if (!existing && !handleToUse) {
+      throw new ValidationError('Twitter handle is required to save credentials');
     }
 
-    const encryptedOauthSecretKey = encryptTwitterSecret(twitterSettings.twitterOauthSecretKey);
-    if (encryptedOauthSecretKey !== undefined) {
-      updateData.twitteroauthsecretkey = encryptedOauthSecretKey;
-    }
+    const shouldClearTokens =
+      twitterSettings.twitterClientId === '' ||
+      twitterSettings.twitterClientSecret === '' ||
+      twitterSettings.twitterIngestionBearerToken === '';
 
-    if (twitterSettings.twitterWidgetScript !== undefined) {
-      updateData.twitterwidgetscript = twitterSettings.twitterWidgetScript;
-    }
-
-    await this.accountRepository.update(accountId, updateData);
+    await this.accountTwitterCredentialsRepository.upsertForAccount(accountId, {
+      ...updateData,
+      handle: handleToUse ?? undefined,
+      ...(shouldClearTokens
+        ? {
+            useraccesstoken: null,
+            userrefreshtoken: null,
+            useraccesstokenexpiresat: null,
+            scope: null,
+          }
+        : {}),
+    });
 
     const { account, affiliationMap, ownerContact, ownerUser } =
       await this.loadAccountContext(accountId);

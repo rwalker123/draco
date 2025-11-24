@@ -42,3 +42,4 @@ export * from './ISocialContentRepository.js';
 export * from './ILiveEventRepository.js';
 export * from './IDiscordIntegrationRepository.js';
 export * from './IWelcomeMessageRepository.js';
+export * from './IAccountTwitterCredentialsRepository.js';
