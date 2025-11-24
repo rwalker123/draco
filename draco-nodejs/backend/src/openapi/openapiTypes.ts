@@ -12,6 +12,7 @@ import {
   AccountTypeSchema,
   AccountUrlSchema,
   CreateAccountUrlSchema,
+  AccountBlueskySettingsSchema,
   AccountTwitterSettingsSchema,
   AccountTwitterAuthorizationUrlSchema,
   AccountTwitterOAuthStartSchema,
@@ -399,6 +400,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const AccountTypeSchemaRef = registry.register('AccountType', AccountTypeSchema);
   const AccountUrlSchemaRef = registry.register('AccountUrl', AccountUrlSchema);
   const CreateAccountUrlSchemaRef = registry.register('CreateAccountUrl', CreateAccountUrlSchema);
+  const AccountBlueskySettingsSchemaRef = registry.register(
+    'AccountBlueskySettings',
+    AccountBlueskySettingsSchema,
+  );
   const AccountTwitterSettingsSchemaRef = registry.register(
     'AccountTwitterSettings',
     AccountTwitterSettingsSchema,
@@ -1069,6 +1074,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     AccountTypeSchemaRef,
     AccountUrlSchemaRef,
     CreateAccountUrlSchemaRef,
+    AccountBlueskySettingsSchemaRef,
     AccountTwitterSettingsSchemaRef,
     AccountTwitterOAuthStartSchemaRef,
     AccountTwitterAuthorizationUrlSchemaRef,

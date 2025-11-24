@@ -6,6 +6,7 @@ import {
   AccountAffiliationType,
   AccountUrlType,
   AccountTwitterSettingsType,
+  AccountBlueskySettingsType,
   AccountWithSeasonsType,
   CreateAccountType,
   CreateAccountUrlType,
@@ -13,7 +14,7 @@ import {
   CreateContactType,
   AccountDiscordIntegrationType,
 } from '@draco/shared-schemas';
-import { accounts, contacts } from '#prisma/client';
+import { accountblueskycredentials, accounts, contacts } from '#prisma/client';
 import {
   RepositoryFactory,
   IAccountRepository,
@@ -26,6 +27,7 @@ import {
   dbGlobalRoles,
   ISeasonsRepository,
   IAccountTwitterCredentialsRepository,
+  IAccountBlueskyCredentialsRepository,
 } from '../repositories/index.js';
 import {
   AccountOwnerDetailsByAccount,
@@ -57,6 +59,7 @@ export class AccountsService {
   private readonly seasonRepository: ISeasonsRepository;
   private readonly discordIntegrationService: DiscordIntegrationService;
   private readonly accountTwitterCredentialsRepository: IAccountTwitterCredentialsRepository;
+  private readonly accountBlueskyCredentialsRepository: IAccountBlueskyCredentialsRepository;
 
   constructor() {
     this.accountRepository = RepositoryFactory.getAccountRepository();
@@ -67,6 +70,8 @@ export class AccountsService {
     this.discordIntegrationService = new DiscordIntegrationService();
     this.accountTwitterCredentialsRepository =
       RepositoryFactory.getAccountTwitterCredentialsRepository();
+    this.accountBlueskyCredentialsRepository =
+      RepositoryFactory.getAccountBlueskyCredentialsRepository();
   }
 
   async getAccountsForUser(userId: string): Promise<AccountType[]> {
@@ -584,6 +589,75 @@ export class AccountsService {
             scope: null,
           }
         : {}),
+    });
+
+    const { account, affiliationMap, ownerContact, ownerUser } =
+      await this.loadAccountContext(accountId);
+
+    return AccountResponseFormatter.formatAccount(account, affiliationMap, ownerContact, ownerUser);
+  }
+
+  async updateAccountBlueskySettings(
+    accountId: bigint,
+    blueskySettings: AccountBlueskySettingsType,
+  ): Promise<AccountType> {
+    const normalizeHandle = (value?: string): string | null | undefined => {
+      if (value === undefined) {
+        return undefined;
+      }
+
+      const trimmed = value.trim().replace(/^@+/, '');
+      return trimmed ? trimmed : null;
+    };
+
+    const encryptSecretValue = (value?: string): string | undefined => {
+      if (value === undefined) {
+        return undefined;
+      }
+
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return '';
+      }
+
+      try {
+        return encryptSecret(trimmed);
+      } catch (error) {
+        console.error('Failed to encrypt Bluesky credential', error);
+        throw new ValidationError('Unable to store Bluesky credentials securely');
+      }
+    };
+
+    const hasUpdates = Object.values(blueskySettings).some(
+      (value) => value !== undefined && value !== null,
+    );
+
+    if (!hasUpdates) {
+      throw new ValidationError('At least one Bluesky field to update is required');
+    }
+
+    await this.ensureAccountExists(accountId);
+
+    const updateData: Partial<accountblueskycredentials> = {};
+
+    if (blueskySettings.blueskyHandle !== undefined) {
+      updateData.blueskyhandle = blueskySettings.blueskyHandle ?? '';
+    }
+
+    const encryptedAppPassword = encryptSecretValue(blueskySettings.blueskyAppPassword);
+    if (encryptedAppPassword !== undefined) {
+      updateData.blueskyapppassword = encryptedAppPassword;
+    }
+
+    const normalizedHandle = normalizeHandle(blueskySettings.blueskyHandle);
+
+    if (normalizedHandle !== undefined) {
+      updateData.blueskyhandle = normalizedHandle ?? '';
+    }
+
+    await this.accountBlueskyCredentialsRepository.upsertForAccount(accountId, {
+      ...updateData,
+      accountid: accountId,
     });
 
     const { account, affiliationMap, ownerContact, ownerUser } =

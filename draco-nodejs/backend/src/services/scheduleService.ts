@@ -25,6 +25,7 @@ import {
 } from '../repositories/index.js';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { TwitterIntegrationService } from './twitterIntegrationService.js';
+import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
 
 interface GameListFilters {
   startDate?: Date;
@@ -37,15 +38,18 @@ export class ScheduleService {
   private readonly scheduleRepository: IScheduleRepository;
   private readonly discordIntegrationService: DiscordIntegrationService;
   private readonly twitterIntegrationService: TwitterIntegrationService;
+  private readonly blueskyIntegrationService: BlueskyIntegrationService;
 
   constructor(
     scheduleRepository?: IScheduleRepository,
     discordIntegrationService?: DiscordIntegrationService,
     twitterIntegrationService?: TwitterIntegrationService,
+    blueskyIntegrationService?: BlueskyIntegrationService,
   ) {
     this.scheduleRepository = scheduleRepository ?? RepositoryFactory.getScheduleRepository();
     this.discordIntegrationService = discordIntegrationService ?? new DiscordIntegrationService();
     this.twitterIntegrationService = twitterIntegrationService ?? new TwitterIntegrationService();
+    this.blueskyIntegrationService = blueskyIntegrationService ?? new BlueskyIntegrationService();
   }
 
   async updateGameResults(
@@ -106,11 +110,12 @@ export class ScheduleService {
       const results = await Promise.allSettled([
         this.discordIntegrationService.publishGameResult(accountId, payload),
         this.twitterIntegrationService.publishGameResult(accountId, payload),
+        this.blueskyIntegrationService.publishGameResult(accountId, payload),
       ]);
 
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          const target = index === 0 ? 'discord' : 'twitter';
+          const target = ['discord', 'twitter', 'bluesky'][index] ?? 'social';
           console.error(`[${target}] Failed to sync game result`, {
             accountId: accountId.toString(),
             gameId: game.id.toString(),

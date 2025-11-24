@@ -20,6 +20,7 @@ export const ACCOUNT_SETTING_KEYS = [
   'EditContactInfo',
   'PostGameResultsToDiscord',
   'PostGameResultsToTwitter',
+  'PostGameResultsToBluesky',
 ] as const;
 
 export const AccountSettingKeySchema = z.enum(ACCOUNT_SETTING_KEYS);
@@ -259,6 +260,14 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
     sortOrder: 90,
+  }),
+  booleanSetting({
+    key: 'PostGameResultsToBluesky',
+    label: 'Post game results to Bluesky',
+    description: 'Publish final scores to the connected Bluesky account when games are completed.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 95,
   }),
   booleanSetting({
     key: 'TrackWaiver',

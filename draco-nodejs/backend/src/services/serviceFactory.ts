@@ -65,11 +65,13 @@ import { SocialHubService } from './socialHubService.js';
 import { socialIngestionConfig } from '../config/socialIngestion.js';
 import { SocialIngestionService } from './socialIngestion/socialIngestionService.js';
 import { TwitterConnector } from './socialIngestion/connectors/twitterConnector.js';
+import { BlueskyConnector } from './socialIngestion/connectors/blueskyConnector.js';
 import { YouTubeConnector } from './socialIngestion/connectors/youtubeConnector.js';
 import { DiscordConnector } from './socialIngestion/connectors/discordConnector.js';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { YouTubeIntegrationService } from './youtubeIntegrationService.js';
 import { TwitterIntegrationService } from './twitterIntegrationService.js';
+import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
 import { WelcomeMessageService } from './welcomeMessageService.js';
 
 /**
@@ -134,6 +136,7 @@ export class ServiceFactory {
   private static discordIntegrationService: DiscordIntegrationService;
   private static youtubeIntegrationService: YouTubeIntegrationService;
   private static twitterIntegrationService: TwitterIntegrationService;
+  private static blueskyIntegrationService: BlueskyIntegrationService;
   private static welcomeMessageService: WelcomeMessageService;
 
   static getRoleService(): IRoleService {
@@ -454,6 +457,14 @@ export class ServiceFactory {
     return this.twitterIntegrationService;
   }
 
+  static getBlueskyIntegrationService(): BlueskyIntegrationService {
+    if (!this.blueskyIntegrationService) {
+      this.blueskyIntegrationService = new BlueskyIntegrationService();
+    }
+
+    return this.blueskyIntegrationService;
+  }
+
   static getWelcomeMessageService(): WelcomeMessageService {
     if (!this.welcomeMessageService) {
       const welcomeMessageRepository = RepositoryFactory.getWelcomeMessageRepository();
@@ -485,6 +496,7 @@ export class ServiceFactory {
       const socialContentRepository = RepositoryFactory.getSocialContentRepository();
       const discordIntegrationService = this.getDiscordIntegrationService();
       const twitterIntegrationService = this.getTwitterIntegrationService();
+      const blueskyIntegrationService = this.getBlueskyIntegrationService();
 
       if (socialIngestionConfig.twitter.enabled) {
         const staticTargets = socialIngestionConfig.twitter.targets.map((target) => ({
@@ -503,6 +515,23 @@ export class ServiceFactory {
             targetsProvider,
             intervalMs: socialIngestionConfig.twitter.intervalMs,
             enabled: socialIngestionConfig.twitter.enabled,
+          }),
+        );
+      }
+
+      if (socialIngestionConfig.bluesky.enabled) {
+        const staticTargets = socialIngestionConfig.bluesky.targets;
+        const targetsProvider = async () => {
+          const dbTargets = await blueskyIntegrationService.listIngestionTargets();
+          return [...dbTargets, ...staticTargets];
+        };
+
+        connectors.push(
+          new BlueskyConnector(socialContentRepository, blueskyIntegrationService, {
+            maxResults: socialIngestionConfig.bluesky.maxResults,
+            targetsProvider,
+            intervalMs: socialIngestionConfig.bluesky.intervalMs,
+            enabled: socialIngestionConfig.bluesky.enabled,
           }),
         );
       }

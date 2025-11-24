@@ -29,6 +29,7 @@ model accounts {
   defaultvideo              String                      @default("") @db.VarChar(50)
   autoplayvideo             Boolean                     @default(false)
   owneruserid               String?                     @db.VarChar(128)
+  accountblueskycredentials accountblueskycredentials?
   accounttwittercredentials accounttwittercredentials?
   accounthandouts           accounthandouts[]
   aspnetusers               aspnetusers?                @relation(fields: [owneruserid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounts_aspnetusers")
@@ -71,6 +72,16 @@ model accounts {
   accountdiscordfeaturesync accountdiscordfeaturesync[]
   accountdiscordteamforums  accountdiscordteamforums[]
   userdiscordaccounts       userdiscordaccounts[]
+}
+
+model accountblueskycredentials {
+  id                 BigInt   @id @default(autoincrement())
+  accountid          BigInt   @unique
+  blueskyhandle      String   @db.VarChar(50)
+  blueskyapppassword String?  @db.Text
+  createdat          DateTime @default(now()) @db.Timestamptz(6)
+  updatedat          DateTime @updatedAt @db.Timestamptz(6)
+  accounts           accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountblueskycredentials_accounts")
 }
 
 model accounttwittercredentials {

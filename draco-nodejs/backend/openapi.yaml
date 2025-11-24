@@ -3219,6 +3219,8 @@ components:
           properties:
             twitterAccountName:
               type: string
+            blueskyHandle:
+              type: string
             twitterConnected:
               type: boolean
               default: false
@@ -3438,6 +3440,8 @@ components:
               type: object
               properties:
                 twitterAccountName:
+                  type: string
+                blueskyHandle:
                   type: string
                 twitterConnected:
                   type: boolean
@@ -3767,6 +3771,8 @@ components:
           properties:
             twitterAccountName:
               type: string
+            blueskyHandle:
+              type: string
             twitterConnected:
               type: boolean
               default: false
@@ -3926,6 +3932,13 @@ components:
           minLength: 1
       required:
         - url
+    AccountBlueskySettings:
+      type: object
+      properties:
+        blueskyHandle:
+          type: string
+        blueskyAppPassword:
+          type: string
     AccountTwitterSettings:
       type: object
       properties:
@@ -3978,6 +3991,7 @@ components:
                   - EditContactInfo
                   - PostGameResultsToDiscord
                   - PostGameResultsToTwitter
+                  - PostGameResultsToBluesky
               label:
                 type: string
               description:
@@ -4033,6 +4047,7 @@ components:
                         - EditContactInfo
                         - PostGameResultsToDiscord
                         - PostGameResultsToTwitter
+                        - PostGameResultsToBluesky
                     value:
                       anyOf:
                         - type: boolean
@@ -4124,6 +4139,7 @@ components:
                 - EditContactInfo
                 - PostGameResultsToDiscord
                 - PostGameResultsToTwitter
+                - PostGameResultsToBluesky
             label:
               type: string
             description:
@@ -4179,6 +4195,7 @@ components:
                       - EditContactInfo
                       - PostGameResultsToDiscord
                       - PostGameResultsToTwitter
+                      - PostGameResultsToBluesky
                   value:
                     anyOf:
                       - type: boolean
@@ -4273,6 +4290,7 @@ components:
         - EditContactInfo
         - PostGameResultsToDiscord
         - PostGameResultsToTwitter
+        - PostGameResultsToBluesky
     Sponsor:
       type: object
       properties:
@@ -12673,6 +12691,7 @@ components:
           type: string
           enum:
             - twitter
+            - bluesky
             - facebook
             - instagram
             - tiktok
@@ -12792,6 +12811,7 @@ components:
                 type: string
                 enum:
                   - twitter
+                  - bluesky
                   - facebook
                   - instagram
                   - tiktok
@@ -12897,6 +12917,7 @@ components:
             type: string
             enum:
               - twitter
+              - bluesky
               - facebook
               - instagram
               - tiktok
@@ -12938,6 +12959,7 @@ components:
           type: string
           enum:
             - twitter
+            - bluesky
             - facebook
             - instagram
             - tiktok
@@ -13005,6 +13027,7 @@ components:
                 type: string
                 enum:
                   - twitter
+                  - bluesky
                   - facebook
                   - instagram
                   - tiktok
@@ -15462,6 +15485,8 @@ paths:
                   properties:
                     twitterAccountName:
                       type: string
+                    blueskyHandle:
+                      type: string
                     twitterConnected:
                       type: boolean
                       default: false
@@ -16010,6 +16035,190 @@ paths:
       responses:
         "201":
           description: Tweet created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialFeedItem"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/bluesky:
+    put:
+      operationId: updateAccountBlueskySettings
+      summary: Update account Bluesky settings
+      description: Update the Bluesky integration settings for an account.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountBlueskySettings"
+      responses:
+        "200":
+          description: Updated account details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/bluesky/recent:
+    get:
+      operationId: listAccountRecentBlueskyPosts
+      summary: Fetch recent Bluesky posts for an account
+      description: Fetches recent Bluesky posts using the stored credentials for the
+        requested account.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: number
+            minimum: 1
+            maximum: 200
+            default: 50
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Recent Bluesky posts for the account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialFeedList"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/bluesky/posts:
+    post:
+      operationId: postAccountBlueskyUpdate
+      summary: Create a Bluesky post for an account
+      description: Creates a Bluesky post using the stored credentials for the
+        requested account.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+              required:
+                - content
+      responses:
+        "201":
+          description: Post created successfully
           content:
             application/json:
               schema:
@@ -17236,6 +17445,7 @@ paths:
               - EditContactInfo
               - PostGameResultsToDiscord
               - PostGameResultsToTwitter
+              - PostGameResultsToBluesky
       requestBody:
         content:
           application/json:
@@ -28016,6 +28226,7 @@ paths:
               type: string
               enum:
                 - twitter
+                - bluesky
                 - facebook
                 - instagram
                 - tiktok

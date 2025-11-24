@@ -77,6 +77,7 @@ export class AccountResponseFormatter {
         autoPlayVideo: account.autoplayvideo,
         twitterAccountName: account.accounttwittercredentials?.handle ?? undefined,
         twitterConnected: Boolean(account.accounttwittercredentials?.useraccesstoken),
+        blueskyHandle: account.accountblueskycredentials?.blueskyhandle || undefined,
         facebookFanPage: account.facebookfanpage ?? undefined,
         youtubeUserId: account.youtubeuserid,
         defaultVideo: account.defaultvideo,

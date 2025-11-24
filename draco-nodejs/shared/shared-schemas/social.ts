@@ -42,6 +42,7 @@ const coerceStringArray = <T extends z.ZodArray<z.ZodTypeAny>>(schema: T): z.Zod
 export const SocialSourceSchema = z
   .enum([
     'twitter',
+    'bluesky',
     'facebook',
     'instagram',
     'tiktok',

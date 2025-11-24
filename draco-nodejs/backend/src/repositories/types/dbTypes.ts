@@ -1516,6 +1516,7 @@ export type dbAccount = Prisma.accountsGetPayload<{
     accounttypes: true;
     accountsurl: true;
     accounttwittercredentials: true;
+    accountblueskycredentials: true;
   };
 }>;
 

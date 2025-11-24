@@ -9,6 +9,7 @@ import type { SocialMediaAttachmentType } from '@draco/shared-schemas';
 import { deterministicUuid } from '../../../utils/deterministicUuid.js';
 import { fetchJson, HttpError } from '../../../utils/fetchJson.js';
 import { ISocialContentRepository } from '../../../repositories/interfaces/ISocialContentRepository.js';
+import { SocialFeedCache } from './feedCache.js';
 
 interface TwitterApiResponse {
   data?: Array<{
@@ -35,12 +36,14 @@ interface TwitterApiResponse {
 
 export class TwitterConnector extends BaseSocialIngestionConnector {
   private readonly rateLimitUntilByHandle = new Map<string, number>();
+  private readonly feedCache: SocialFeedCache;
 
   constructor(
     private readonly repository: ISocialContentRepository,
     private readonly options: TwitterConnectorOptions,
   ) {
     super('twitter', options.enabled, options.intervalMs);
+    this.feedCache = new SocialFeedCache(this.repository);
   }
 
   protected async runIngestion(): Promise<void> {
@@ -124,8 +127,23 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
         permalink: tweet.permalink ?? null,
       }));
 
-      await this.repository.createFeedItems(payload);
-      console.info(`[twitter] Ingested ${payload.length} posts for @${target.handle}`);
+      const freshPayload = await this.feedCache.filterNewItems(
+        {
+          source: 'twitter',
+          accountId: target.accountId,
+          seasonId: target.seasonId,
+          teamId: target.teamId,
+          teamSeasonId: target.teamSeasonId,
+        },
+        payload,
+      );
+
+      if (!freshPayload.length) {
+        continue;
+      }
+
+      await this.repository.createFeedItems(freshPayload);
+      console.info(`[twitter] Ingested ${freshPayload.length} posts for @${target.handle}`);
     }
   }
 

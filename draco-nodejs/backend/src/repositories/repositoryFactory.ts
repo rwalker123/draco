@@ -45,6 +45,7 @@ import {
   IDiscordIntegrationRepository,
   IWelcomeMessageRepository,
   IAccountTwitterCredentialsRepository,
+  IAccountBlueskyCredentialsRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -91,6 +92,7 @@ import {
   PrismaDiscordIntegrationRepository,
   PrismaWelcomeMessageRepository,
   PrismaAccountTwitterCredentialsRepository,
+  PrismaAccountBlueskyCredentialsRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -144,6 +146,7 @@ export class RepositoryFactory {
   private static discordIntegrationRepository: IDiscordIntegrationRepository;
   private static welcomeMessageRepository: IWelcomeMessageRepository;
   private static accountTwitterCredentialsRepository: IAccountTwitterCredentialsRepository;
+  private static accountBlueskyCredentialsRepository: IAccountBlueskyCredentialsRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -465,5 +468,14 @@ export class RepositoryFactory {
       this.leagueLeadersDisplayRepository = new PrismaLeagueLeadersDisplayRepository(prisma);
     }
     return this.leagueLeadersDisplayRepository;
+  }
+
+  static getAccountBlueskyCredentialsRepository(): IAccountBlueskyCredentialsRepository {
+    if (!this.accountBlueskyCredentialsRepository) {
+      this.accountBlueskyCredentialsRepository = new PrismaAccountBlueskyCredentialsRepository(
+        prisma,
+      );
+    }
+    return this.accountBlueskyCredentialsRepository;
   }
 }
