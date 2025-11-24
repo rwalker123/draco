@@ -14,7 +14,7 @@ import {
   CreateContactType,
   AccountDiscordIntegrationType,
 } from '@draco/shared-schemas';
-import { accounts, contacts } from '#prisma/client';
+import { accountblueskycredentials, accounts, contacts } from '#prisma/client';
 import {
   RepositoryFactory,
   IAccountRepository,
@@ -625,7 +625,7 @@ export class AccountsService {
 
     await this.ensureAccountExists(accountId);
 
-    const updateData: Partial<accounts> = {};
+    const updateData: Partial<accountblueskycredentials> = {};
 
     if (blueskySettings.blueskyHandle !== undefined) {
       updateData.blueskyhandle = blueskySettings.blueskyHandle ?? '';

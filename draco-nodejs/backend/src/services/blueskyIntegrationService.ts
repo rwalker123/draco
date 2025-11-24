@@ -3,6 +3,7 @@ import {
   RepositoryFactory,
   IAccountRepository,
   ISeasonsRepository,
+  IAccountBlueskyCredentialsRepository,
 } from '../repositories/index.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { decryptSecret } from '../utils/secretEncryption.js';
@@ -65,11 +66,14 @@ interface BlueskyGameResultPayload {
 export class BlueskyIntegrationService {
   private readonly accountRepository: IAccountRepository;
   private readonly seasonsRepository: ISeasonsRepository;
+  private readonly accountBlueskyCredentialsRepository: IAccountBlueskyCredentialsRepository;
   private readonly accountSettingsService = new AccountSettingsService();
 
-  constructor(accountRepository?: IAccountRepository, seasonsRepository?: ISeasonsRepository) {
-    this.accountRepository = accountRepository ?? RepositoryFactory.getAccountRepository();
-    this.seasonsRepository = seasonsRepository ?? RepositoryFactory.getSeasonsRepository();
+  constructor() {
+    this.accountRepository = RepositoryFactory.getAccountRepository();
+    this.seasonsRepository = RepositoryFactory.getSeasonsRepository();
+    this.accountBlueskyCredentialsRepository =
+      RepositoryFactory.getAccountBlueskyCredentialsRepository();
   }
 
   async listRecentPosts(accountId: bigint, limit = 5): Promise<SocialFeedItemType[]> {
@@ -182,7 +186,9 @@ export class BlueskyIntegrationService {
       })) ?? [];
 
     const postedAt =
-      post.record?.createdAt || post.indexedAt ? new Date(post.record?.createdAt ?? post.indexedAt) : new Date();
+      post.record?.createdAt || post.indexedAt
+        ? new Date(post.record?.createdAt ?? post.indexedAt)
+        : new Date();
     const rkey = this.extractRkey(post.uri);
 
     return {
@@ -245,11 +251,7 @@ export class BlueskyIntegrationService {
     }
   }
 
-  private async createPost(
-    content: string,
-    accessJwt: string,
-    repo: string,
-  ): Promise<string> {
+  private async createPost(content: string, accessJwt: string, repo: string): Promise<string> {
     const record = {
       $type: 'app.bsky.feed.post',
       text: content,
@@ -258,14 +260,18 @@ export class BlueskyIntegrationService {
 
     try {
       const response = await fetchJson<{ uri?: string }>(
-        'https://bsky.social/xrpc/app.bsky.feed.post',
+        'https://bsky.social/xrpc/com.atproto.repo.createRecord',
         {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${accessJwt}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ repo, record }),
+          body: JSON.stringify({
+            repo,
+            collection: 'app.bsky.feed.post',
+            record,
+          }),
           timeoutMs: 8000,
         },
       );
@@ -315,7 +321,7 @@ export class BlueskyIntegrationService {
   }
 
   private async getAccountCredentials(accountId: bigint): Promise<AccountBlueskyCredentials> {
-    const account = await this.accountRepository.findById(accountId);
+    const account = await this.accountBlueskyCredentialsRepository.findById(accountId);
 
     if (!account) {
       throw new NotFoundError('Account not found');
@@ -340,7 +346,7 @@ export class BlueskyIntegrationService {
   }
 
   async listIngestionTargets(): Promise<BlueskyIngestionTarget[]> {
-    const accounts = await this.accountRepository.findMany({
+    const accounts = await this.accountBlueskyCredentialsRepository.findMany({
       blueskyhandle: { not: '' },
     });
 

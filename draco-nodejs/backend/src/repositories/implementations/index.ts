@@ -42,3 +42,4 @@ export * from './PrismaLiveEventRepository.js';
 export * from './PrismaDiscordIntegrationRepository.js';
 export * from './PrismaWelcomeMessageRepository.js';
 export * from './PrismaAccountTwitterCredentialsRepository.js';
+export * from './PrismaAccountBlueskyCredentialsRepository.js';
