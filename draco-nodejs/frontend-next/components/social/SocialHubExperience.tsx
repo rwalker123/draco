@@ -28,7 +28,11 @@ export default function SocialHubExperience({
         {/* Social Media Section */}
         <Box sx={{ flex: { xs: 1, md: '2 1 0' } }}>
           <Stack spacing={3}>
-            <SocialPostsWidget accountId={accountId} seasonId={seasonId} />
+            <SocialPostsWidget
+              accountId={accountId}
+              seasonId={seasonId}
+              viewAllHref={accountId ? `/account/${accountId}/social-hub/posts` : undefined}
+            />
             <CommunityChatsWidget accountId={accountId} seasonId={seasonId} />
             <FeaturedVideosWidget
               accountId={accountId}

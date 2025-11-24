@@ -1,98 +1,24 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Avatar,
-  Box,
-  Card,
-  CardContent,
-  IconButton,
-  Skeleton,
-  Typography,
-} from '@mui/material';
-import { OpenInNew } from '@mui/icons-material';
-import { Twitter } from '@mui/icons-material';
+import { Alert, Box, Skeleton, Typography, Button } from '@mui/material';
 import type { SocialFeedItemType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
-import { formatRelativeTime } from './utils';
+import SocialPostCard from './SocialPostCard';
 
 interface SocialPostsWidgetProps {
   accountId?: string;
   seasonId?: string;
   limit?: number;
+  viewAllHref?: string;
 }
-
-const SourceIcon: React.FC<{ source: string }> = ({ source }) => {
-  switch (source) {
-    case 'twitter':
-      return <Twitter sx={{ color: '#1DA1F2' }} fontSize="small" />;
-    default:
-      return null;
-  }
-};
-
-const SocialPostCard: React.FC<{ item: SocialFeedItemType }> = ({ item }) => {
-  const postedLabel = formatRelativeTime(item.postedAt);
-  const authorDisplay = item.authorName ?? item.channelName ?? 'Social';
-  const handleDisplay = item.authorHandle ?? item.channelName ?? '';
-  const initial = authorDisplay.charAt(0).toUpperCase();
-  const mediaAttachment = item.media?.[0];
-  const mediaUrl = mediaAttachment?.thumbnailUrl ?? mediaAttachment?.url;
-
-  return (
-    <Card variant="outlined" sx={{ height: '100%' }}>
-      <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SourceIcon source={item.source} />
-          <Typography variant="caption" color="text.secondary">
-            {postedLabel}
-          </Typography>
-          {item.permalink ? (
-            <IconButton
-              size="small"
-              sx={{ marginLeft: 'auto' }}
-              component="a"
-              href={item.permalink}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <OpenInNew fontSize="small" />
-            </IconButton>
-          ) : null}
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Avatar sx={{ width: 32, height: 32 }}>{initial}</Avatar>
-          <Box>
-            <Typography variant="subtitle2">{authorDisplay}</Typography>
-            {handleDisplay ? (
-              <Typography variant="caption" color="text.secondary">
-                {handleDisplay}
-              </Typography>
-            ) : null}
-          </Box>
-        </Box>
-        <Typography variant="body2" color="text.primary">
-          {item.content}
-        </Typography>
-        {mediaUrl ? (
-          <Box
-            component="img"
-            src={mediaUrl}
-            alt={authorDisplay}
-            sx={{ width: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 1 }}
-          />
-        ) : null}
-      </CardContent>
-    </Card>
-  );
-};
 
 const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
   accountId,
   seasonId,
   limit = 4,
+  viewAllHref,
 }) => {
   const { fetchFeed } = useSocialHubService({ accountId, seasonId });
   const [state, setState] = useState<{
@@ -112,7 +38,7 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
       return;
     }
     let isMounted = true;
-    fetchFeed({ sources: ['twitter'], limit })
+    fetchFeed({ sources: ['twitter', 'bluesky'], limit })
       .then((items) => {
         if (!isMounted) return;
         setState({ items, error: null, completedKey: requestKey });
@@ -177,6 +103,13 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
       ) : (
         <Alert severity="info">No recent posts yet.</Alert>
       )}
+      {viewAllHref && state.items.length > 0 ? (
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <Button component="a" href={viewAllHref} variant="text">
+            View all messages
+          </Button>
+        </Box>
+      ) : null}
     </WidgetShell>
   );
 };
