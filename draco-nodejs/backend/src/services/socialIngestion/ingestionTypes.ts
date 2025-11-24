@@ -6,6 +6,7 @@ import {
 } from '@draco/shared-schemas';
 import {
   TwitterIngestionTarget,
+  BlueskyIngestionTarget,
   YouTubeIngestionTarget,
   DiscordIngestionTarget,
 } from '../../config/socialIngestion.js';
@@ -60,6 +61,13 @@ export interface TwitterIngestionTargetWithAuth extends TwitterIngestionTarget {
 export interface TwitterConnectorOptions {
   maxResults: number;
   targetsProvider: () => Promise<TwitterIngestionTargetWithAuth[]>;
+  intervalMs: number;
+  enabled: boolean;
+}
+
+export interface BlueskyConnectorOptions {
+  maxResults: number;
+  targetsProvider: () => Promise<BlueskyIngestionTarget[]>;
   intervalMs: number;
   enabled: boolean;
 }

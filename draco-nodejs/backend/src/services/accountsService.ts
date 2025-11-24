@@ -6,6 +6,7 @@ import {
   AccountAffiliationType,
   AccountUrlType,
   AccountTwitterSettingsType,
+  AccountBlueskySettingsType,
   AccountWithSeasonsType,
   CreateAccountType,
   CreateAccountUrlType,
@@ -281,6 +282,8 @@ export class AccountsService {
       twitteraccountname: payload.socials?.twitterAccountName ?? '',
       twitteroauthtoken: '',
       twitteroauthsecretkey: '',
+      blueskyhandle: payload.socials?.blueskyHandle ?? '',
+      blueskyapppassword: '',
       defaultvideo: payload.socials?.defaultVideo ?? '',
       autoplayvideo: payload.socials?.autoPlayVideo ?? false,
       youtubeuserid: payload.socials?.youtubeUserId ?? null,
@@ -364,6 +367,10 @@ export class AccountsService {
 
     if (payload.socials?.twitterAccountName !== undefined) {
       updateData.twitteraccountname = payload.socials?.twitterAccountName ?? '';
+    }
+
+    if (payload.socials?.blueskyHandle !== undefined) {
+      updateData.blueskyhandle = payload.socials?.blueskyHandle ?? '';
     }
 
     if (payload.socials?.youtubeUserId !== undefined) {
@@ -563,6 +570,57 @@ export class AccountsService {
 
     if (twitterSettings.twitterWidgetScript !== undefined) {
       updateData.twitterwidgetscript = twitterSettings.twitterWidgetScript;
+    }
+
+    await this.accountRepository.update(accountId, updateData);
+
+    const { account, affiliationMap, ownerContact, ownerUser } =
+      await this.loadAccountContext(accountId);
+
+    return AccountResponseFormatter.formatAccount(account, affiliationMap, ownerContact, ownerUser);
+  }
+
+  async updateAccountBlueskySettings(
+    accountId: bigint,
+    blueskySettings: AccountBlueskySettingsType,
+  ): Promise<AccountType> {
+    const encryptSecretValue = (value?: string): string | undefined => {
+      if (value === undefined) {
+        return undefined;
+      }
+
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return '';
+      }
+
+      try {
+        return encryptSecret(trimmed);
+      } catch (error) {
+        console.error('Failed to encrypt Bluesky credential', error);
+        throw new ValidationError('Unable to store Bluesky credentials securely');
+      }
+    };
+
+    const hasUpdates = Object.values(blueskySettings).some(
+      (value) => value !== undefined && value !== null,
+    );
+
+    if (!hasUpdates) {
+      throw new ValidationError('At least one Bluesky field to update is required');
+    }
+
+    await this.ensureAccountExists(accountId);
+
+    const updateData: Partial<accounts> = {};
+
+    if (blueskySettings.blueskyHandle !== undefined) {
+      updateData.blueskyhandle = blueskySettings.blueskyHandle ?? '';
+    }
+
+    const encryptedAppPassword = encryptSecretValue(blueskySettings.blueskyAppPassword);
+    if (encryptedAppPassword !== undefined) {
+      updateData.blueskyapppassword = encryptedAppPassword;
     }
 
     await this.accountRepository.update(accountId, updateData);

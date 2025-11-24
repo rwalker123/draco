@@ -89,6 +89,7 @@ export const AccountAffiliationSchema = z.object({
 
 export const AccountSocialsSchema = z.object({
   twitterAccountName: z.string().optional(),
+  blueskyHandle: z.string().optional(),
   facebookFanPage: z.string().optional(),
   youtubeUserId: z.string().nullable().optional(),
   defaultVideo: z.string().nullable().optional(),
@@ -105,6 +106,11 @@ export const AccountTwitterSettingsSchema = z.object({
   twitterOauthToken: z.string().trim().optional(),
   twitterOauthSecretKey: z.string().trim().optional(),
   twitterWidgetScript: z.string().trim().optional(),
+});
+
+export const AccountBlueskySettingsSchema = z.object({
+  blueskyHandle: z.string().trim().optional(),
+  blueskyAppPassword: z.string().trim().optional(),
 });
 
 export const AccountConfigurationSchema = z.object({
@@ -168,6 +174,7 @@ export type AccountAffiliationType = z.infer<typeof AccountAffiliationSchema>;
 export type AccountUrlType = z.infer<typeof AccountUrlSchema>;
 export type CreateAccountUrlType = z.infer<typeof CreateAccountUrlSchema>;
 export type AccountTwitterSettingsType = z.infer<typeof AccountTwitterSettingsSchema>;
+export type AccountBlueskySettingsType = z.infer<typeof AccountBlueskySettingsSchema>;
 export type AccountTypeReference = z.infer<typeof AccountTypeSchema>;
 export type AccountSearchQueryParamType = z.infer<typeof AccountSearchQueryParamSchema>;
 export type CreateAccountType = z.infer<typeof CreateAccountSchema>;

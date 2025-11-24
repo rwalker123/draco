@@ -7,6 +7,7 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import {
+  AccountBlueskySettingsSchema,
   AccountTwitterSettingsSchema,
   CreateAccountUrlSchema,
   AccountSettingUpdateRequestSchema,
@@ -114,6 +115,27 @@ router.put(
 
     return accountsService
       .updateAccountTwitterSettings(accountId, twitterSettings)
+      .then((updatedAccount) => {
+        res.json(updatedAccount);
+      });
+  }),
+);
+
+/**
+ * PUT /api/accounts/:accountId/bluesky
+ * Update Bluesky settings (Account Admin or Administrator)
+ */
+router.put(
+  '/:accountId/bluesky',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const blueskySettings = AccountBlueskySettingsSchema.parse(req.body);
+
+    return accountsService
+      .updateAccountBlueskySettings(accountId, blueskySettings)
       .then((updatedAccount) => {
         res.json(updatedAccount);
       });

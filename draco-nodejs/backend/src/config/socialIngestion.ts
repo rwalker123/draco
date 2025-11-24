@@ -9,6 +9,10 @@ export interface TwitterIngestionTarget extends SocialIngestionTargetBase {
   handle: string;
 }
 
+export interface BlueskyIngestionTarget extends SocialIngestionTargetBase {
+  handle: string;
+}
+
 export interface YouTubeIngestionTarget extends SocialIngestionTargetBase {
   channelId: string;
 }
@@ -48,6 +52,33 @@ function parseTwitterTargets(raw: string | undefined): TwitterIngestionTarget[] 
       if (!accountId || !seasonId || !handle) {
         throw new Error(
           `Invalid SOCIAL_INGESTION_TWITTER_TARGETS entry "${entry}". Expected format accountId:seasonId:handle[:teamId][:teamSeasonId]`,
+        );
+      }
+
+      return {
+        accountId: BigInt(accountId),
+        seasonId: BigInt(seasonId),
+        handle: handle.replace(/^@/, ''),
+        teamId: teamId ? BigInt(teamId) : undefined,
+        teamSeasonId: teamSeasonId ? BigInt(teamSeasonId) : undefined,
+      };
+    });
+}
+
+function parseBlueskyTargets(raw: string | undefined): BlueskyIngestionTarget[] {
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const [accountId, seasonId, handle, teamId, teamSeasonId] = entry.split(':');
+      if (!accountId || !seasonId || !handle) {
+        throw new Error(
+          `Invalid SOCIAL_INGESTION_BLUESKY_TARGETS entry "${entry}". Expected format accountId:seasonId:handle[:teamId][:teamSeasonId]`,
         );
       }
 
@@ -119,12 +150,17 @@ function parseDiscordTargets(raw: string | undefined): DiscordIngestionTarget[] 
 }
 
 const twitterTargets = parseTwitterTargets(process.env.SOCIAL_INGESTION_TWITTER_TARGETS);
+const blueskyTargets = parseBlueskyTargets(process.env.SOCIAL_INGESTION_BLUESKY_TARGETS);
 const youtubeTargets = parseYouTubeTargets(process.env.SOCIAL_INGESTION_YOUTUBE_TARGETS);
 const discordTargets = parseDiscordTargets(process.env.SOCIAL_INGESTION_DISCORD_CHANNELS);
 
 const twitterEnabled = parseBoolean(
   process.env.SOCIAL_INGESTION_TWITTER_ENABLED,
   twitterTargets.length > 0,
+);
+const blueskyEnabled = parseBoolean(
+  process.env.SOCIAL_INGESTION_BLUESKY_ENABLED,
+  blueskyTargets.length > 0,
 );
 const youtubeEnabled = parseBoolean(
   process.env.SOCIAL_INGESTION_YOUTUBE_ENABLED,
@@ -135,7 +171,8 @@ const discordEnabled = parseBoolean(
   discordTargets.length > 0,
 );
 
-const connectorsEnabledByDefault = twitterEnabled || youtubeEnabled || discordEnabled;
+const connectorsEnabledByDefault =
+  twitterEnabled || blueskyEnabled || youtubeEnabled || discordEnabled;
 
 export const socialIngestionConfig = {
   enabled: parseBoolean(process.env.SOCIAL_INGESTION_ENABLED, connectorsEnabledByDefault),
@@ -145,6 +182,12 @@ export const socialIngestionConfig = {
     intervalMs: parseInterval(process.env.SOCIAL_INGESTION_TWITTER_INTERVAL_MS, 5 * 60 * 1000),
     maxResults: parseInterval(process.env.SOCIAL_INGESTION_TWITTER_MAX_RESULTS, 20),
     targets: twitterTargets,
+  },
+  bluesky: {
+    enabled: blueskyEnabled,
+    intervalMs: parseInterval(process.env.SOCIAL_INGESTION_BLUESKY_INTERVAL_MS, 5 * 60 * 1000),
+    maxResults: parseInterval(process.env.SOCIAL_INGESTION_BLUESKY_MAX_RESULTS, 20),
+    targets: blueskyTargets,
   },
   youtube: {
     enabled: youtubeEnabled,

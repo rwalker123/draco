@@ -8,6 +8,7 @@ import type { AccountSettingKey, AccountType } from '@draco/shared-schemas';
 import AccountPageHeader from '@/components/AccountPageHeader';
 import { DiscordIntegrationAdminWidget } from '@/components/account/settings/DiscordIntegrationAdminWidget';
 import { SocialMediaWidget } from '@/components/account/settings/SocialMediaWidget';
+import { BlueskyIntegrationAdminWidget } from '@/components/account/settings/BlueskyIntegrationAdminWidget';
 import { TwitterIntegrationAdminWidget } from '@/components/account/settings/TwitterIntegrationAdminWidget';
 import DiscordGameResultsSyncCard from '@/components/discord/DiscordGameResultsSyncCard';
 import { useAuth } from '@/context/AuthContext';
@@ -114,6 +115,14 @@ const SocialMediaManagement: React.FC = () => {
     [accountSettings.settings],
   );
 
+  const postResultsBlueskySetting = useMemo(
+    () =>
+      accountSettings.settings?.find(
+        (setting) => setting.definition.key === 'PostGameResultsToBluesky',
+      ),
+    [accountSettings.settings],
+  );
+
   const updatePostResultsSetting = useCallback(
     async (settingKey: AccountSettingKey, value: boolean) => {
       await accountSettings.updateSetting?.(settingKey, value);
@@ -176,7 +185,7 @@ const SocialMediaManagement: React.FC = () => {
             Social Media Management
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.8 }}>
-            Configure YouTube, Discord, and social integrations for your organization.
+            Configure YouTube, Discord, Bluesky, and Twitter integrations for your organization.
           </Typography>
         </Box>
       </AccountPageHeader>
@@ -193,7 +202,8 @@ const SocialMediaManagement: React.FC = () => {
             >
               <Tab label="YouTube" {...a11yProps(0)} />
               <Tab label="Discord" {...a11yProps(1)} />
-              <Tab label="Twitter" {...a11yProps(2)} />
+              <Tab label="Bluesky" {...a11yProps(2)} />
+              <Tab label="Twitter" {...a11yProps(3)} />
             </Tabs>
           </Box>
 
@@ -224,6 +234,18 @@ const SocialMediaManagement: React.FC = () => {
           </TabPanel>
 
           <TabPanel value={tabValue} index={2}>
+            <BlueskyIntegrationAdminWidget
+              account={account}
+              onAccountUpdate={setAccount}
+              postGameResultsSetting={postResultsBlueskySetting}
+              postGameResultsUpdating={accountSettings.updatingKey === 'PostGameResultsToBluesky'}
+              onUpdatePostGameResults={(enabled) =>
+                updatePostResultsSetting('PostGameResultsToBluesky', enabled)
+              }
+            />
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={3}>
             <TwitterIntegrationAdminWidget
               account={account}
               onAccountUpdate={setAccount}
