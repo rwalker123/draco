@@ -75,7 +75,8 @@ export class AccountResponseFormatter {
       },
       socials: {
         autoPlayVideo: account.autoplayvideo,
-        twitterAccountName: account.twitteraccountname,
+        twitterAccountName: account.accounttwittercredentials?.handle ?? undefined,
+        twitterConnected: Boolean(account.accounttwittercredentials?.useraccesstoken),
         blueskyHandle: account.blueskyhandle || undefined,
         facebookFanPage: account.facebookfanpage ?? undefined,
         youtubeUserId: account.youtubeuserid,

@@ -90,6 +90,7 @@ export const AccountAffiliationSchema = z.object({
 export const AccountSocialsSchema = z.object({
   twitterAccountName: z.string().optional(),
   blueskyHandle: z.string().optional(),
+  twitterConnected: z.boolean().default(false),
   facebookFanPage: z.string().optional(),
   youtubeUserId: z.string().nullable().optional(),
   defaultVideo: z.string().nullable().optional(),
@@ -103,9 +104,17 @@ export const AccountDiscordIntegrationSchema = z.object({
 
 export const AccountTwitterSettingsSchema = z.object({
   twitterAccountName: z.string().trim().optional(),
-  twitterOauthToken: z.string().trim().optional(),
-  twitterOauthSecretKey: z.string().trim().optional(),
-  twitterWidgetScript: z.string().trim().optional(),
+  twitterClientId: z.string().trim().optional(),
+  twitterClientSecret: z.string().trim().optional(),
+  twitterIngestionBearerToken: z.string().trim().optional(),
+});
+
+export const AccountTwitterOAuthStartSchema = z.object({
+  returnUrl: z.string().trim().url().optional(),
+});
+
+export const AccountTwitterAuthorizationUrlSchema = z.object({
+  authorizationUrl: z.string().trim().url(),
 });
 
 export const AccountBlueskySettingsSchema = z.object({

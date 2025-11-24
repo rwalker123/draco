@@ -15,6 +15,8 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     AccountWithSeasonsSchemaRef,
     AccountBlueskySettingsSchemaRef,
     AccountTwitterSettingsSchemaRef,
+    AccountTwitterOAuthStartSchemaRef,
+    AccountTwitterAuthorizationUrlSchemaRef,
     AccountSettingsStateListSchemaRef,
     AccountSettingStateSchemaRef,
     AccountSettingUpdateRequestSchemaRef,
@@ -1033,6 +1035,88 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
         content: {
           'application/json': {
             schema: AccountSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // POST /api/accounts/{accountId}/twitter/oauth/url
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/twitter/oauth/url',
+    operationId: 'createTwitterAuthorizationUrl',
+    summary: 'Create Twitter OAuth authorization URL',
+    description:
+      'Generate a Twitter OAuth URL for user-context posting using configured client credentials.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: AccountTwitterOAuthStartSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Authorization URL generated successfully',
+        content: {
+          'application/json': {
+            schema: AccountTwitterAuthorizationUrlSchemaRef,
           },
         },
       },

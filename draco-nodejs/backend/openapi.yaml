@@ -3221,6 +3221,9 @@ components:
               type: string
             blueskyHandle:
               type: string
+            twitterConnected:
+              type: boolean
+              default: false
             facebookFanPage:
               type: string
             youtubeUserId:
@@ -3440,6 +3443,9 @@ components:
                   type: string
                 blueskyHandle:
                   type: string
+                twitterConnected:
+                  type: boolean
+                  default: false
                 facebookFanPage:
                   type: string
                 youtubeUserId:
@@ -3767,6 +3773,9 @@ components:
               type: string
             blueskyHandle:
               type: string
+            twitterConnected:
+              type: boolean
+              default: false
             facebookFanPage:
               type: string
             youtubeUserId:
@@ -3935,12 +3944,26 @@ components:
       properties:
         twitterAccountName:
           type: string
-        twitterOauthToken:
+        twitterClientId:
           type: string
-        twitterOauthSecretKey:
+        twitterClientSecret:
           type: string
-        twitterWidgetScript:
+        twitterIngestionBearerToken:
           type: string
+    AccountTwitterOAuthStart:
+      type: object
+      properties:
+        returnUrl:
+          type: string
+          format: uri
+    AccountTwitterAuthorizationUrl:
+      type: object
+      properties:
+        authorizationUrl:
+          type: string
+          format: uri
+      required:
+        - authorizationUrl
     AccountSettingsStateList:
       type: array
       items:
@@ -15464,6 +15487,9 @@ paths:
                       type: string
                     blueskyHandle:
                       type: string
+                    twitterConnected:
+                      type: boolean
+                      default: false
                     facebookFanPage:
                       type: string
                     youtubeUserId:
@@ -15828,6 +15854,65 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Account"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/twitter/oauth/url:
+    post:
+      operationId: createTwitterAuthorizationUrl
+      summary: Create Twitter OAuth authorization URL
+      description: Generate a Twitter OAuth URL for user-context posting using
+        configured client credentials.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountTwitterOAuthStart"
+      responses:
+        "200":
+          description: Authorization URL generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountTwitterAuthorizationUrl"
         "400":
           description: Validation error
           content:
