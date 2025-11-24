@@ -3,14 +3,18 @@ import { BaseSocialIngestionConnector } from './baseConnector.js';
 import { BlueskyConnectorOptions } from '../ingestionTypes.js';
 import { ISocialContentRepository } from '../../../repositories/interfaces/ISocialContentRepository.js';
 import { BlueskyIntegrationService } from '../../blueskyIntegrationService.js';
+import { SocialFeedCache } from './feedCache.js';
 
 export class BlueskyConnector extends BaseSocialIngestionConnector {
+  private readonly feedCache: SocialFeedCache;
+
   constructor(
     private readonly repository: ISocialContentRepository,
     private readonly integrationService: BlueskyIntegrationService,
     private readonly options: BlueskyConnectorOptions,
   ) {
     super('bluesky', options.enabled, options.intervalMs);
+    this.feedCache = new SocialFeedCache(this.repository);
   }
 
   protected async runIngestion(): Promise<void> {
@@ -40,7 +44,9 @@ export class BlueskyConnector extends BaseSocialIngestionConnector {
         authorname: post.authorName ?? null,
         authorhandle: post.authorHandle ?? null,
         content: post.content,
-        media: post.media ? (JSON.parse(JSON.stringify(post.media)) as Prisma.InputJsonValue) : undefined,
+        media: post.media
+          ? (JSON.parse(JSON.stringify(post.media)) as Prisma.InputJsonValue)
+          : undefined,
         metadata: post.metadata
           ? (JSON.parse(JSON.stringify(post.metadata)) as Prisma.InputJsonValue)
           : undefined,
@@ -48,8 +54,23 @@ export class BlueskyConnector extends BaseSocialIngestionConnector {
         permalink: post.permalink ?? null,
       }));
 
-      await this.repository.createFeedItems(payload);
-      console.info(`[bluesky] Ingested ${payload.length} posts for @${target.handle}`);
+      const freshPayload = await this.feedCache.filterNewItems(
+        {
+          source: 'bluesky',
+          accountId: target.accountId,
+          seasonId: target.seasonId,
+          teamId: target.teamId,
+          teamSeasonId: target.teamSeasonId,
+        },
+        payload,
+      );
+
+      if (!freshPayload.length) {
+        continue;
+      }
+
+      await this.repository.createFeedItems(freshPayload);
+      console.info(`[bluesky] Ingested ${freshPayload.length} posts for @${target.handle}`);
     }
   }
 }
