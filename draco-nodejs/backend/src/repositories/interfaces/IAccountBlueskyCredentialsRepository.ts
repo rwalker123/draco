@@ -8,5 +8,4 @@ export interface IAccountBlueskyCredentialsRepository
     accountId: bigint,
     data: Partial<accountblueskycredentials>,
   ): Promise<accountblueskycredentials>;
-  findAllWithIngestionToken(): Promise<accountblueskycredentials[]>;
 }

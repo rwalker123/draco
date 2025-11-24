@@ -9,8 +9,9 @@ import { AccountType } from '@draco/shared-schemas';
 import AccountOptional from '../account/AccountOptional';
 import XLogo from '../icons/XLogo';
 import DiscordLogo from '../icons/DiscordLogo';
+import BlueskyLogo from '../icons/BlueskyLogo';
 
-const sanitizeTwitterHandle = (handle?: string | null): string | null => {
+const sanitizeHandle = (handle?: string | null): string | null => {
   if (!handle) {
     return null;
   }
@@ -22,12 +23,16 @@ const sanitizeTwitterHandle = (handle?: string | null): string | null => {
 const buildTwitterFollowUrl = (handle: string): string =>
   `https://x.com/intent/follow?screen_name=${encodeURIComponent(handle)}`;
 
+const buildBlueskyProfileUrl = (handle: string): string =>
+  `https://bsky.app/profile/${encodeURIComponent(handle)}`;
+
 interface ContactLeagueSectionProps {
   account: AccountType;
 }
 
 const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) => {
-  const twitterHandle = sanitizeTwitterHandle(account.socials?.twitterAccountName);
+  const twitterHandle = sanitizeHandle(account.socials?.twitterAccountName);
+  const blueskyHandle = sanitizeHandle(account.socials?.blueskyHandle);
   const playerClassifiedsHref = `/account/${account.id.toString()}/player-classifieds?tab=teams-wanted`;
   const guildId = account.discordIntegration?.guildId ?? null;
   const discordServerUrl = guildId ? `https://discord.com/channels/${guildId}` : null;
@@ -83,6 +88,24 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
                   color="primary"
                 >
                   Follow us on X
+                </Button>
+              )}
+
+              {blueskyHandle && (
+                <Button
+                  variant="outlined"
+                  href={buildBlueskyProfileUrl(blueskyHandle)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  startIcon={<BlueskyLogo size={20} />}
+                  fullWidth
+                  sx={{
+                    py: 1.25,
+                    textTransform: 'none',
+                  }}
+                  color="primary"
+                >
+                  Follow us on Bluesky
                 </Button>
               )}
 

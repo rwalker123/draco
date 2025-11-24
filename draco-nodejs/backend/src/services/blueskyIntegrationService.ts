@@ -11,6 +11,7 @@ import { fetchJson, HttpError } from '../utils/fetchJson.js';
 import { deterministicUuid } from '../utils/deterministicUuid.js';
 import { AccountSettingsService } from './accountSettingsService.js';
 import type { BlueskyIngestionTarget } from '../config/socialIngestion.js';
+import { composeGameResultMessage } from './socialGameResultFormatter.js';
 
 interface BlueskyFeedItem {
   post?: {
@@ -185,10 +186,8 @@ export class BlueskyIntegrationService {
         thumbnailUrl: image.thumb || image.fullsize || null,
       })) ?? [];
 
-    const postedAt =
-      post.record?.createdAt || post.indexedAt
-        ? new Date(post.record?.createdAt ?? post.indexedAt)
-        : new Date();
+    const postedAtRaw = post.record?.createdAt ?? post.indexedAt ?? new Date().toISOString();
+    const postedAt = new Date(postedAtRaw);
     const rkey = this.extractRkey(post.uri);
 
     return {
@@ -321,7 +320,7 @@ export class BlueskyIntegrationService {
   }
 
   private async getAccountCredentials(accountId: bigint): Promise<AccountBlueskyCredentials> {
-    const account = await this.accountBlueskyCredentialsRepository.findById(accountId);
+    const account = await this.accountBlueskyCredentialsRepository.findByAccountId(accountId);
 
     if (!account) {
       throw new NotFoundError('Account not found');
@@ -335,7 +334,7 @@ export class BlueskyIntegrationService {
     }
 
     return {
-      accountId: account.id,
+      accountId: account.accountid,
       handle: handle.replace(/^@/, ''),
       appPassword: appPassword || undefined,
     };
@@ -380,100 +379,6 @@ export class BlueskyIntegrationService {
   }
 
   private composeGameResultPost(payload: BlueskyGameResultPayload): string | null {
-    const trimLine = (value?: string | null, max = 60) => {
-      const safe = value?.trim();
-      if (!safe) {
-        return '';
-      }
-      return safe.length > max ? `${safe.slice(0, max - 1)}…` : safe;
-    };
-
-    const trimName = (name?: string) => {
-      const safe = name?.trim() || '';
-      if (!safe) {
-        return safe;
-      }
-      return safe.length > 30 ? `${safe.slice(0, 27)}...` : safe;
-    };
-
-    const isRainout = payload.gameStatus === 2;
-    const hasScores =
-      !isRainout &&
-      payload.homeScore !== undefined &&
-      payload.homeScore !== null &&
-      payload.visitorScore !== undefined &&
-      payload.visitorScore !== null;
-
-    const homeName = trimName(payload.homeTeamName) || 'Home';
-    const visitorName = trimName(payload.visitorTeamName) || 'Visitor';
-
-    const nameColumnWidth = Math.min(Math.max(visitorName.length, homeName.length, 10), 40);
-    const scoreColumnWidth = 5;
-
-    const topBorder = `┌${'─'.repeat(nameColumnWidth + 2)}┬${'─'.repeat(scoreColumnWidth + 2)}┐`;
-    const middleBorder = `├${'─'.repeat(nameColumnWidth + 2)}┼${'─'.repeat(scoreColumnWidth + 2)}┤`;
-    const bottomBorder = `└${'─'.repeat(nameColumnWidth + 2)}┴${'─'.repeat(scoreColumnWidth + 2)}┘`;
-
-    const formatRow = (name: string, score?: number | null) => {
-      const scoreValue = score ?? ' ';
-      return `│ ${name.padEnd(nameColumnWidth, ' ')} │ ${String(scoreValue).padStart(scoreColumnWidth, ' ')} │`;
-    };
-
-    const scoreLines = [
-      topBorder,
-      formatRow(visitorName, hasScores ? payload.visitorScore : undefined),
-      middleBorder,
-      formatRow(homeName, hasScores ? payload.homeScore : undefined),
-      bottomBorder,
-    ];
-
-    const statusLabel = this.describeGameStatus(payload.gameStatus);
-    const formattedDate = payload.gameDate ? payload.gameDate.toISOString().split('T')[0] : null;
-
-    const header = [trimLine(payload.leagueName), trimLine(payload.seasonName)]
-      .filter(Boolean)
-      .join(' • ');
-
-    const details = [
-      statusLabel ? `Status: ${statusLabel}` : null,
-      formattedDate ? `Date: ${formattedDate}` : null,
-    ]
-      .filter((segment): segment is string => Boolean(segment))
-      .join(' • ');
-
-    const table = ['```', ...scoreLines, '```'].join('\n');
-
-    const parts = [header || null, table, details || null].filter((segment): segment is string =>
-      Boolean(segment),
-    );
-
-    let message = parts.join('\n');
-
-    if (message.length > 295 && details) {
-      message = [header || null, table]
-        .filter((segment): segment is string => Boolean(segment))
-        .join('\n');
-    }
-
-    return message.length <= 300 ? message : message.slice(0, 300);
-  }
-
-  private describeGameStatus(gameStatus?: number | null): string | null {
-    switch (gameStatus) {
-      case 1:
-        return 'Final';
-      case 2:
-        return 'Rainout';
-      case 3:
-        return 'Postponed';
-      case 4:
-        return 'Forfeit';
-      case 5:
-        return 'Did Not Report';
-      case 0:
-        return 'Scheduled';
-      default:
-        return null;
-    }
+    return composeGameResultMessage(payload, { characterLimit: 300 });
   }
 }

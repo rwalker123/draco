@@ -27,6 +27,7 @@ import {
   dbGlobalRoles,
   ISeasonsRepository,
   IAccountTwitterCredentialsRepository,
+  IAccountBlueskyCredentialsRepository,
 } from '../repositories/index.js';
 import {
   AccountOwnerDetailsByAccount,
@@ -58,6 +59,7 @@ export class AccountsService {
   private readonly seasonRepository: ISeasonsRepository;
   private readonly discordIntegrationService: DiscordIntegrationService;
   private readonly accountTwitterCredentialsRepository: IAccountTwitterCredentialsRepository;
+  private readonly accountBlueskyCredentialsRepository: IAccountBlueskyCredentialsRepository;
 
   constructor() {
     this.accountRepository = RepositoryFactory.getAccountRepository();
@@ -68,6 +70,8 @@ export class AccountsService {
     this.discordIntegrationService = new DiscordIntegrationService();
     this.accountTwitterCredentialsRepository =
       RepositoryFactory.getAccountTwitterCredentialsRepository();
+    this.accountBlueskyCredentialsRepository =
+      RepositoryFactory.getAccountBlueskyCredentialsRepository();
   }
 
   async getAccountsForUser(userId: string): Promise<AccountType[]> {
@@ -597,6 +601,15 @@ export class AccountsService {
     accountId: bigint,
     blueskySettings: AccountBlueskySettingsType,
   ): Promise<AccountType> {
+    const normalizeHandle = (value?: string): string | null | undefined => {
+      if (value === undefined) {
+        return undefined;
+      }
+
+      const trimmed = value.trim().replace(/^@+/, '');
+      return trimmed ? trimmed : null;
+    };
+
     const encryptSecretValue = (value?: string): string | undefined => {
       if (value === undefined) {
         return undefined;
@@ -636,7 +649,16 @@ export class AccountsService {
       updateData.blueskyapppassword = encryptedAppPassword;
     }
 
-    await this.accountRepository.update(accountId, updateData);
+    const normalizedHandle = normalizeHandle(blueskySettings.blueskyHandle);
+
+    if (normalizedHandle !== undefined) {
+      updateData.blueskyhandle = normalizedHandle ?? '';
+    }
+
+    await this.accountBlueskyCredentialsRepository.upsertForAccount(accountId, {
+      ...updateData,
+      accountid: accountId,
+    });
 
     const { account, affiliationMap, ownerContact, ownerUser } =
       await this.loadAccountContext(accountId);

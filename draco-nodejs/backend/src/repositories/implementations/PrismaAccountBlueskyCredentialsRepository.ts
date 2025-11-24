@@ -59,17 +59,4 @@ export class PrismaAccountBlueskyCredentialsRepository
       accountid: BigInt(accountId),
     });
   }
-
-  findAllWithIngestionToken(): Promise<accountblueskycredentials[]> {
-    return this.prisma.accountblueskycredentials.findMany({
-      where: {
-        ingestionbearertoken: {
-          not: null,
-        },
-        handle: {
-          notIn: [''],
-        },
-      },
-    });
-  }
 }
