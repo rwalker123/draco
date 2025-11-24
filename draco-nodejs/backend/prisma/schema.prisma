@@ -27,8 +27,6 @@ model accounts {
   twitteraccountname        String                      @db.VarChar(50)
   twitteroauthtoken         String                      @db.Text
   twitteroauthsecretkey     String                      @db.Text
-  blueskyhandle             String                      @default("") @db.VarChar(75)
-  blueskyapppassword        String                      @default("") @db.Text
   youtubeuserid             String?                     @db.VarChar(50)
   facebookfanpage           String?                     @db.VarChar(50)
   twitterwidgetscript       String?                     @db.VarChar(512)
