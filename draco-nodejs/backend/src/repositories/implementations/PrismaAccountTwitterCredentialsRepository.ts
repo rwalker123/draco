@@ -67,7 +67,6 @@ export class PrismaAccountTwitterCredentialsRepository
           not: null,
         },
         handle: {
-          not: null,
           notIn: [''],
         },
       },
