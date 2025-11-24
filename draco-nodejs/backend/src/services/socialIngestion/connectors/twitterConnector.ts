@@ -34,13 +34,14 @@ interface TwitterApiResponse {
 }
 
 export class TwitterConnector extends BaseSocialIngestionConnector {
+  private readonly rateLimitUntilByHandle = new Map<string, number>();
+
   constructor(
     private readonly repository: ISocialContentRepository,
     private readonly options: TwitterConnectorOptions,
   ) {
     super('twitter', options.enabled, options.intervalMs);
   }
-  private readonly rateLimitUntilByHandle = new Map<string, number>();
 
   protected async runIngestion(): Promise<void> {
     const targets = await this.options.targetsProvider();
@@ -162,7 +163,7 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
 
         const userMap = new Map(response.includes?.users?.map((user) => [user.id, user]) ?? []);
 
-        const tweets = response.data.map((tweet) => {
+        return response.data.map((tweet) => {
           const mediaEntries =
             (tweet.attachments?.media_keys
               ?.map((key) => mediaMap.get(key))
@@ -193,9 +194,6 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
               : undefined,
           };
         });
-
-        const selfHandle = `@${handle.toLowerCase()}`;
-        return tweets.filter((tweet) => tweet.authorHandle?.toLowerCase() !== selfHandle);
       } catch (error) {
         const status = (error as { status?: number }).status;
         if (status === 429 && attempt < maxAttempts) {
@@ -231,9 +229,7 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  private computeRetryAfter(
-    error: unknown,
-  ): {
+  private computeRetryAfter(error: unknown): {
     untilMs: number;
     hint: string;
     limit?: number | null;

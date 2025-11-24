@@ -66,6 +66,10 @@ export class PrismaAccountTwitterCredentialsRepository
         ingestionbearertoken: {
           not: null,
         },
+        handle: {
+          not: null,
+          notIn: [''],
+        },
       },
     });
   }

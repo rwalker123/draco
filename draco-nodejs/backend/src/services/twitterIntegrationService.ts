@@ -137,9 +137,10 @@ export class TwitterIntegrationService {
   }> {
     const { accountId, codeVerifier, returnUrl } = this.decryptOAuthState(state);
 
-    const credentials = await this.accountTwitterCredentialsRepository.findByAccountId(
-      BigInt(accountId),
-    );
+    const accountIdBigInt = BigInt(accountId);
+
+    const credentials =
+      await this.accountTwitterCredentialsRepository.findByAccountId(accountIdBigInt);
 
     if (!credentials?.clientid || !credentials.clientsecret) {
       throw new ValidationError('Twitter client credentials are not configured');
@@ -161,10 +162,8 @@ export class TwitterIntegrationService {
       throw new ValidationError('Twitter did not return an access token');
     }
 
-    const accessToken =
-      tokenResponse.access_token ?? (tokenResponse as { accessToken?: string }).accessToken;
-    const refreshToken =
-      tokenResponse.refresh_token ?? (tokenResponse as { refreshToken?: string }).refreshToken;
+    const accessToken = tokenResponse.access_token;
+    const refreshToken = tokenResponse.refresh_token;
     const expiresAt = tokenResponse.expires_in
       ? new Date(Date.now() + tokenResponse.expires_in * 1000)
       : null;
@@ -180,10 +179,12 @@ export class TwitterIntegrationService {
     const derivedHandle = currentUser?.data?.username?.trim() ?? credentials.handle?.trim() ?? '';
 
     if (!derivedHandle) {
-      throw new ValidationError('Twitter handle could not be determined from the OAuth response.');
+      throw new ValidationError(
+        'Twitter handle could not be determined from OAuth response or existing credentials.',
+      );
     }
 
-    await this.accountTwitterCredentialsRepository.upsertForAccount(BigInt(accountId), {
+    await this.accountTwitterCredentialsRepository.upsertForAccount(accountIdBigInt, {
       clientid: credentials.clientid,
       clientsecret: credentials.clientsecret,
       ingestionbearertoken: credentials.ingestionbearertoken,
@@ -191,12 +192,12 @@ export class TwitterIntegrationService {
       useraccesstoken: encryptSecret(accessToken),
       userrefreshtoken: refreshToken ? encryptSecret(refreshToken) : null,
       useraccesstokenexpiresat: expiresAt,
-      scope: tokenResponse.scope ?? (tokenResponse as { scope?: string }).scope ?? null,
+      scope: tokenResponse.scope ?? null,
     });
 
     return {
-      accountId: BigInt(accountId),
-      redirectUrl: this.buildResultUrl(BigInt(accountId), 'success', undefined, returnUrl),
+      accountId: accountIdBigInt,
+      redirectUrl: this.buildResultUrl(accountIdBigInt, 'success', undefined, returnUrl),
     };
   }
 
@@ -423,18 +424,30 @@ export class TwitterIntegrationService {
         verb = 'tied';
       }
 
-      const parts = [
-        dateText,
-        statusLabel,
-        ':',
-        league,
-        winner,
-        verb,
-        loser,
-        `${winnerScore} - ${loserScore}`,
-      ].filter(Boolean);
+      let message: string;
+      if (verb === 'tied') {
+        const tieParts = [
+          dateText,
+          statusLabel,
+          ':',
+          league,
+          `${home} and ${visitor} tied ${homeScore} - ${visitorScore}`,
+        ].filter(Boolean);
+        message = tieParts.join(' ').replace(/\s+/g, ' ');
+      } else {
+        const parts = [
+          dateText,
+          statusLabel,
+          ':',
+          league,
+          winner,
+          verb,
+          loser,
+          `${winnerScore} - ${loserScore}`,
+        ].filter(Boolean);
+        message = parts.join(' ').replace(/\s+/g, ' ');
+      }
 
-      const message = parts.join(' ').replace(/\s+/g, ' ');
       return message.length <= 280 ? message : message.slice(0, 280);
     }
 
@@ -556,10 +569,23 @@ export class TwitterIntegrationService {
     }
 
     const refreshed = await this.refreshUserAccessToken(credentials);
-    const accessToken = refreshed.access_token ?? credentials.userAccessToken;
+    if (!refreshed.access_token) {
+      throw new Error(
+        '[twitter] Failed to refresh user access token: no access_token returned from refresh endpoint.',
+      );
+    }
+    const accessToken = refreshed.access_token;
     const refreshToken = refreshed.refresh_token ?? credentials.userRefreshToken;
     const expiresIn = refreshed.expires_in;
-    const scope = refreshed.scope ?? credentials.scope ?? null;
+    let scope: string | null;
+    if (typeof refreshed.scope === 'undefined' || refreshed.scope === null) {
+      console.warn(
+        `[twitter] Refresh response missing scope for account ${credentials.accountId}; falling back to previous scope: ${credentials.scope ?? 'none'}. This may indicate a scope mismatch if the OAuth app's permissions have changed.`,
+      );
+      scope = credentials.scope ?? null;
+    } else {
+      scope = refreshed.scope;
+    }
     const nextExpiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000) : null;
 
     await this.accountTwitterCredentialsRepository.upsertForAccount(credentials.accountId, {
