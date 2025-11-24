@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Skeleton, Typography, Button } from '@mui/material';
+import { Alert, Box, Skeleton, Button } from '@mui/material';
 import type { SocialFeedItemType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
