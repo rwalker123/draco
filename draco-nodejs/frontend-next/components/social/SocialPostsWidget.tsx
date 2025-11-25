@@ -22,7 +22,7 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
   limit = 4,
   viewAllHref,
 }) => {
-  const { fetchFeed, deleteFeedItem, restoreFeedItem } = useSocialHubService({
+  const { fetchFeed, deleteFeedItem } = useSocialHubService({
     accountId,
     seasonId,
   });
@@ -34,7 +34,6 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
     completedKey: string;
   }>({ items: [], error: null, completedKey: '' });
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [restoringId, setRestoringId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<SocialFeedItemType | null>(null);
 
   const canFetch = useMemo(() => Boolean(accountId && seasonId), [accountId, seasonId]);
@@ -68,7 +67,7 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [canFetch, fetchFeed, limit, requestKey, canManage]);
+  }, [canFetch, fetchFeed, limit, requestKey]);
 
   if (!canFetch) {
     return null;
@@ -110,11 +109,7 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
             await deleteFeedItem(item.id);
             setState((prev) => ({
               ...prev,
-              items: prev.items.map((existing) =>
-                existing.id === item.id
-                  ? { ...existing, deletedAt: new Date().toISOString() }
-                  : existing,
-              ),
+              items: prev.items.filter((existing) => existing.id !== item.id),
             }));
           } catch (err) {
             const message = err instanceof Error ? err.message : 'Unable to delete social post.';
@@ -142,25 +137,6 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
                 item={item}
                 canDelete={canManage}
                 deleting={deletingId === item.id}
-                restoring={restoringId === item.id}
-                onRestore={async (id) => {
-                  setRestoringId(id);
-                  try {
-                    await restoreFeedItem(id);
-                    setState((prev) => ({
-                      ...prev,
-                      items: prev.items.map((existing) =>
-                        existing.id === id ? { ...existing, deletedAt: null } : existing,
-                      ),
-                    }));
-                  } catch (err) {
-                    const message =
-                      err instanceof Error ? err.message : 'Unable to restore social post.';
-                    setState((prev) => ({ ...prev, error: message }));
-                  } finally {
-                    setRestoringId(null);
-                  }
-                }}
                 confirmDelete={setPendingDelete}
               />
             </Box>

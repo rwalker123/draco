@@ -20,7 +20,7 @@ import type {
   CommunityChannelType,
   CommunityChannelQueryType,
 } from '@draco/shared-schemas';
-import { unwrapApiResult } from '../utils/apiResult';
+import { unwrapApiResult, assertNoApiError } from '../utils/apiResult';
 
 interface SocialHubServiceConfig {
   accountId?: string;
@@ -78,11 +78,7 @@ export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceCon
         throwOnError: false,
       });
 
-      const payload = unwrapApiResult(result, 'Failed to delete social post');
-      if (payload !== undefined) {
-        // successful delete returns empty body
-        return;
-      }
+      assertNoApiError(result, 'Failed to delete social post');
     },
     [apiClient, ensureContext],
   );
@@ -100,7 +96,7 @@ export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceCon
         throwOnError: false,
       });
 
-      unwrapApiResult(result, 'Failed to restore social post');
+      assertNoApiError(result, 'Failed to restore social post');
     },
     [apiClient, ensureContext],
   );

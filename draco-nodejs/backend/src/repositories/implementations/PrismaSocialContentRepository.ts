@@ -56,6 +56,7 @@ export class PrismaSocialContentRepository implements ISocialContentRepository {
       },
       data: {
         deletedat: new Date(),
+        updatedat: new Date(),
       },
     });
 

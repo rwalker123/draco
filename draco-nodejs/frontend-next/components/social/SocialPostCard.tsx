@@ -20,7 +20,6 @@ import { formatRelativeTime } from './utils';
 interface SocialPostCardProps {
   item: SocialFeedItemType;
   canDelete?: boolean;
-  onDelete?: (id: string) => void;
   deleting?: boolean;
   confirmDelete?: (item: SocialFeedItemType) => void;
   onRestore?: (id: string) => void;
@@ -41,7 +40,6 @@ const SourceIcon: React.FC<{ source: string }> = ({ source }) => {
 export const SocialPostCard: React.FC<SocialPostCardProps> = ({
   item,
   canDelete,
-  onDelete,
   deleting = false,
   confirmDelete,
   onRestore,
@@ -78,14 +76,12 @@ export const SocialPostCard: React.FC<SocialPostCardProps> = ({
               <OpenInNew fontSize="small" />
             </IconButton>
           ) : null}
-          {canDelete && (onDelete || confirmDelete) && !isDeleted ? (
+          {canDelete && confirmDelete && !isDeleted ? (
             <Tooltip title="Delete from local feed">
               <IconButton
                 size="small"
                 color="error"
-                onClick={() =>
-                  confirmDelete ? confirmDelete(item) : onDelete ? onDelete(item.id) : undefined
-                }
+                onClick={() => confirmDelete(item)}
                 disabled={deleting}
                 aria-label="Delete social post"
                 sx={{ ml: item.permalink ? 1 : 'auto' }}
