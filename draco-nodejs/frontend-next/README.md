@@ -35,6 +35,11 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 ## Environment Variables
 
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` – Cloudflare Turnstile site key used to render the human-verification challenge for account creation and new user registration. Leave unset in local environments to disable the challenge.
+- `NEXT_PUBLIC_ENABLE_ADSENSE` – Set to `true` to render Google AdSense inventory in the account header. Keep unset/`false` locally unless you need to validate ad rendering.
+- `NEXT_PUBLIC_ADSENSE_CLIENT_ID` – The `ca-pub-XXXX` publisher identifier provided by Google. Required when AdSense is enabled.
+- `NEXT_PUBLIC_ADSENSE_ACCOUNT_HEADER_SLOT` – Ad slot ID used for the Account page header placement. Pair with auto-format and responsive sizing for optimal monetization.
+- `ADSENSE_PUBLISHER_ID` – The `pub-XXXX` publisher ID used to expose `/ads.txt`. The handler strips an optional `ca-` prefix and adds `pub-` if missing so you can reuse the same identifier you provide to Google.
+- `ADSENSE_ACCOUNT_RELATIONSHIP` – Optional relationship value for `/ads.txt`; defaults to `DIRECT`. Set to `RESELLER` only if your AdSense configuration requires it.
 
 ## Learn More
 
