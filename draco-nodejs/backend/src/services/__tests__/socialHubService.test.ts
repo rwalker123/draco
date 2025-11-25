@@ -92,6 +92,8 @@ describe('SocialHubService', () => {
     socialContentRepository = {
       listFeedItems: vi.fn().mockResolvedValue([]),
       createFeedItems: vi.fn(),
+      deleteFeedItem: vi.fn(),
+      restoreFeedItem: vi.fn(),
       listVideos: vi.fn().mockResolvedValue([]),
       upsertVideo: vi.fn(),
       listCommunityMessages: vi.fn().mockResolvedValue([]),

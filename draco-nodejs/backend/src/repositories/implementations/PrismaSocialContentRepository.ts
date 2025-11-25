@@ -15,7 +15,16 @@ export class PrismaSocialContentRepository implements ISocialContentRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async listFeedItems(query: SocialFeedQuery): Promise<dbSocialFeedItem[]> {
-    const { accountId, seasonId, teamId, teamSeasonId, sources, before, limit = 25 } = query;
+    const {
+      accountId,
+      seasonId,
+      teamId,
+      teamSeasonId,
+      sources,
+      before,
+      includeDeleted,
+      limit = 25,
+    } = query;
 
     return this.prisma.socialfeeditems.findMany({
       where: {
@@ -25,11 +34,54 @@ export class PrismaSocialContentRepository implements ISocialContentRepository {
         ...(teamId ? { teamid: teamId } : {}),
         ...(sources?.length ? { source: { in: sources } } : {}),
         ...(before ? { postedat: { lt: before } } : {}),
+        ...(includeDeleted ? {} : { deletedat: null }),
       },
       include: this.feedInclude,
       orderBy: [{ postedat: 'desc' }, { id: 'desc' }],
       take: limit,
     });
+  }
+
+  async deleteFeedItem(params: {
+    id: string;
+    accountId: bigint;
+    seasonId: bigint;
+  }): Promise<number> {
+    const result = await this.prisma.socialfeeditems.updateMany({
+      where: {
+        id: params.id,
+        accountid: params.accountId,
+        seasonid: params.seasonId,
+        deletedat: null,
+      },
+      data: {
+        deletedat: new Date(),
+        updatedat: new Date(),
+      },
+    });
+
+    return result.count;
+  }
+
+  async restoreFeedItem(params: {
+    id: string;
+    accountId: bigint;
+    seasonId: bigint;
+  }): Promise<number> {
+    const result = await this.prisma.socialfeeditems.updateMany({
+      where: {
+        id: params.id,
+        accountid: params.accountId,
+        seasonid: params.seasonId,
+        deletedat: { not: null },
+      },
+      data: {
+        deletedat: null,
+        updatedat: new Date(),
+      },
+    });
+
+    return result.count;
   }
 
   async createFeedItems(items: CreateSocialFeedItemInput[]): Promise<void> {

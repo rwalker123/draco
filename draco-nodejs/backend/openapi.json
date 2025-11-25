@@ -17123,6 +17123,12 @@
             "nullable": true,
             "format": "uri"
           },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
+          },
           "metadata": {
             "type": "object",
             "properties": {
@@ -17275,6 +17281,12 @@
                   "nullable": true,
                   "format": "uri"
                 },
+                "deletedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
                 "metadata": {
                   "type": "object",
                   "properties": {
@@ -17346,6 +17358,10 @@
               "description": "Originating platform for a social feed item."
             },
             "minItems": 1
+          },
+          "includeDeleted": {
+            "type": "boolean",
+            "default": false
           },
           "before": {
             "type": "string",
@@ -41551,6 +41567,15 @@
           },
           {
             "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "required": false,
+            "name": "includeDeleted",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "string",
               "format": "date-time",
               "example": "2024-03-01T18:30:00Z",
@@ -41616,6 +41641,182 @@
           },
           "500": {
             "description": "Unexpected error retrieving feed items.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/social/feed/{feedItemId}": {
+      "delete": {
+        "summary": "Delete social feed item",
+        "description": "Delete an ingested social feed item for the account/season.",
+        "operationId": "deleteSocialFeedItem",
+        "tags": [
+          "Social"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "feedItemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Feed item deleted."
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User does not have access to this account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feed item not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error deleting feed item.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/social/feed/{feedItemId}/restore": {
+      "post": {
+        "summary": "Restore a deleted social feed item",
+        "description": "Marks a soft-deleted social feed item as active again.",
+        "operationId": "restoreSocialFeedItem",
+        "tags": [
+          "Social"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "feedItemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Feed item restored."
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User does not have access to this account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feed item not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error restoring feed item.",
             "content": {
               "application/json": {
                 "schema": {

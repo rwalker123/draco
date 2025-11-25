@@ -886,6 +886,7 @@ model socialfeeditems {
   metadata     Json?
   postedat     DateTime     @db.Timestamptz(6)
   permalink    String?      @db.VarChar(512)
+  deletedat    DateTime?    @db.Timestamptz(6)
   createdat    DateTime     @default(now()) @db.Timestamptz(6)
   updatedat    DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
   accounts     accounts     @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_socialfeeditems_accounts")

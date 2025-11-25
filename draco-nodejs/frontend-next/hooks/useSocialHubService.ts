@@ -7,6 +7,8 @@ import {
   listSocialVideos,
   listCommunityMessages,
   listSocialCommunityChannels,
+  deleteSocialFeedItem,
+  restoreSocialFeedItem,
 } from '@draco/shared-api-client';
 import type {
   SocialFeedItemType,
@@ -18,7 +20,7 @@ import type {
   CommunityChannelType,
   CommunityChannelQueryType,
 } from '@draco/shared-schemas';
-import { unwrapApiResult } from '../utils/apiResult';
+import { unwrapApiResult, assertNoApiError } from '../utils/apiResult';
 
 interface SocialHubServiceConfig {
   accountId?: string;
@@ -59,6 +61,42 @@ export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceCon
 
       const payload = unwrapApiResult(result, 'Failed to load social feed');
       return payload.feed;
+    },
+    [apiClient, ensureContext],
+  );
+
+  const deleteFeedItem = useCallback(
+    async (feedItemId: string): Promise<void> => {
+      const context = ensureContext();
+      const result = await deleteSocialFeedItem({
+        client: apiClient,
+        path: {
+          accountId: context.accountId,
+          seasonId: context.seasonId,
+          feedItemId,
+        },
+        throwOnError: false,
+      });
+
+      assertNoApiError(result, 'Failed to delete social post');
+    },
+    [apiClient, ensureContext],
+  );
+
+  const restoreFeedItem = useCallback(
+    async (feedItemId: string): Promise<void> => {
+      const context = ensureContext();
+      const result = await restoreSocialFeedItem({
+        client: apiClient,
+        path: {
+          accountId: context.accountId,
+          seasonId: context.seasonId,
+          feedItemId,
+        },
+        throwOnError: false,
+      });
+
+      assertNoApiError(result, 'Failed to restore social post');
     },
     [apiClient, ensureContext],
   );
@@ -120,5 +158,7 @@ export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceCon
     fetchVideos,
     fetchCommunityMessages,
     fetchCommunityChannels,
+    deleteFeedItem,
+    restoreFeedItem,
   };
 };
