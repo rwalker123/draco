@@ -23,6 +23,10 @@ export interface DiscordIngestionTarget extends SocialIngestionTargetBase {
   guildId?: string;
 }
 
+export interface InstagramIngestionTarget extends SocialIngestionTargetBase {
+  instagramUserId: string;
+}
+
 function parseBoolean(value: string | undefined, fallback = false): boolean {
   if (value === undefined) {
     return fallback;
@@ -149,10 +153,38 @@ function parseDiscordTargets(raw: string | undefined): DiscordIngestionTarget[] 
     });
 }
 
+function parseInstagramTargets(raw: string | undefined): InstagramIngestionTarget[] {
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const [accountId, seasonId, instagramUserId, teamId, teamSeasonId] = entry.split(':');
+      if (!accountId || !seasonId || !instagramUserId) {
+        throw new Error(
+          `Invalid SOCIAL_INGESTION_INSTAGRAM_TARGETS entry "${entry}". Expected format accountId:seasonId:instagramUserId[:teamId][:teamSeasonId]`,
+        );
+      }
+
+      return {
+        accountId: BigInt(accountId),
+        seasonId: BigInt(seasonId),
+        instagramUserId,
+        teamId: teamId ? BigInt(teamId) : undefined,
+        teamSeasonId: teamSeasonId ? BigInt(teamSeasonId) : undefined,
+      } satisfies InstagramIngestionTarget;
+    });
+}
+
 const twitterTargets = parseTwitterTargets(process.env.SOCIAL_INGESTION_TWITTER_TARGETS);
 const blueskyTargets = parseBlueskyTargets(process.env.SOCIAL_INGESTION_BLUESKY_TARGETS);
 const youtubeTargets = parseYouTubeTargets(process.env.SOCIAL_INGESTION_YOUTUBE_TARGETS);
 const discordTargets = parseDiscordTargets(process.env.SOCIAL_INGESTION_DISCORD_CHANNELS);
+const instagramTargets = parseInstagramTargets(process.env.SOCIAL_INGESTION_INSTAGRAM_TARGETS);
 
 const twitterEnabled = parseBoolean(
   process.env.SOCIAL_INGESTION_TWITTER_ENABLED,
@@ -170,9 +202,13 @@ const discordEnabled = parseBoolean(
   process.env.SOCIAL_INGESTION_DISCORD_ENABLED,
   discordTargets.length > 0,
 );
+const instagramEnabled = parseBoolean(
+  process.env.SOCIAL_INGESTION_INSTAGRAM_ENABLED,
+  instagramTargets.length > 0,
+);
 
 const connectorsEnabledByDefault =
-  twitterEnabled || blueskyEnabled || youtubeEnabled || discordEnabled;
+  twitterEnabled || blueskyEnabled || youtubeEnabled || discordEnabled || instagramEnabled;
 
 export const socialIngestionConfig = {
   enabled: parseBoolean(process.env.SOCIAL_INGESTION_ENABLED, connectorsEnabledByDefault),
@@ -201,5 +237,12 @@ export const socialIngestionConfig = {
     intervalMs: parseInterval(process.env.SOCIAL_INGESTION_DISCORD_INTERVAL_MS, 60 * 1000),
     limit: parseInterval(process.env.SOCIAL_INGESTION_DISCORD_LIMIT, 25),
     targets: discordTargets,
+  },
+  instagram: {
+    enabled: instagramEnabled,
+    intervalMs: parseInterval(process.env.SOCIAL_INGESTION_INSTAGRAM_INTERVAL_MS, 10 * 60 * 1000),
+    maxResults: parseInterval(process.env.SOCIAL_INGESTION_INSTAGRAM_MAX_RESULTS, 15),
+    targets: instagramTargets,
+    accessToken: process.env.SOCIAL_INGESTION_INSTAGRAM_ACCESS_TOKEN,
   },
 } as const;

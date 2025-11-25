@@ -31,6 +31,7 @@ model accounts {
   owneruserid               String?                     @db.VarChar(128)
   accountblueskycredentials accountblueskycredentials?
   accounttwittercredentials accounttwittercredentials?
+  accountinstagramcredentials accountinstagramcredentials?
   accounthandouts           accounthandouts[]
   aspnetusers               aspnetusers?                @relation(fields: [owneruserid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounts_aspnetusers")
   accounttypes              accounttypes                @relation(fields: [accounttypeid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounttypes_accounts")
@@ -56,6 +57,7 @@ model accounts {
   socialfeeditems           socialfeeditems[]
   socialvideos              socialvideos[]
   discordmessages           discordmessages[]
+  instagramingestion        instagramingestion[]
   photogallery              photogallery[]
   photogallerysubmission    photogallerysubmission[]
   playerswantedclassified   playerswantedclassified[]
@@ -98,6 +100,21 @@ model accounttwittercredentials {
   createdat                  DateTime @default(now()) @db.Timestamptz(6)
   updatedat                  DateTime @updatedAt @db.Timestamptz(6)
   accounts                   accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accounttwittercredentials_accounts")
+}
+
+model accountinstagramcredentials {
+  id                   BigInt   @id @default(autoincrement())
+  accountid            BigInt   @unique
+  instagramuserid      String?  @db.VarChar(64)
+  username             String?  @db.VarChar(100)
+  appid                String?  @db.VarChar(128)
+  appsecret            String?  @db.Text
+  accesstoken          String?  @db.Text
+  refreshtoken         String?  @db.Text
+  accesstokenexpiresat DateTime? @db.Timestamptz(6)
+  createdat            DateTime @default(now()) @db.Timestamptz(6)
+  updatedat            DateTime @updatedAt @db.Timestamptz(6)
+  accounts             accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountinstagramcredentials_accounts")
 }
 
 model accountsettings {
@@ -937,6 +954,22 @@ model discordmessages {
   @@index([postedat], map: "idx_discordmessages_postedat")
 }
 
+model instagramingestion {
+  id         BigInt    @id @default(autoincrement())
+  accountid  BigInt
+  externalid String    @db.VarChar(100)
+  photoid    BigInt
+  postedat   DateTime? @db.Timestamptz(6)
+  permalink  String?   @db.VarChar(512)
+  createdat  DateTime  @default(now()) @db.Timestamptz(6)
+  updatedat  DateTime  @updatedAt @db.Timestamptz(6)
+  accounts   accounts  @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_instagramingestion_accounts")
+  photogallery photogallery @relation(fields: [photoid], references: [id], onDelete: Cascade, map: "fk_instagramingestion_photogallery")
+
+  @@index([accountid], map: "idx_instagramingestion_accountid")
+  @@unique([accountid, externalid], map: "uq_instagramingestion_account_externalid")
+}
+
 model leaguefaq {
   id        BigInt   @id @default(autoincrement())
   accountid BigInt
@@ -1086,6 +1119,7 @@ model photogallery {
   accounts               accounts                 @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_photogallery_accounts")
   photogalleryalbum      photogalleryalbum?       @relation(fields: [albumid], references: [id], map: "fk_photogallery_albumid")
   photogallerysubmission photogallerysubmission[]
+  instagramingestion     instagramingestion[]
 }
 
 model photogalleryalbum {
@@ -1094,6 +1128,7 @@ model photogalleryalbum {
   title                  String                   @db.VarChar(25)
   parentalbumid          BigInt
   teamid                 BigInt
+  issystem               Boolean                  @default(false)
   photogallery           photogallery[]
   photogallerysubmission photogallerysubmission[]
 }

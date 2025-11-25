@@ -1511,12 +1511,29 @@ export type dbAccountTwitterCredentials = Prisma.accounttwittercredentialsGetPay
   };
 }>;
 
+export type dbAccountInstagramCredentials = Prisma.accountinstagramcredentialsGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    instagramuserid: true;
+    username: true;
+    appid: true;
+    appsecret: true;
+    accesstoken: true;
+    refreshtoken: true;
+    accesstokenexpiresat: true;
+    createdat: true;
+    updatedat: true;
+  };
+}>;
+
 export type dbAccount = Prisma.accountsGetPayload<{
   include: {
     accounttypes: true;
     accountsurl: true;
     accounttwittercredentials: true;
     accountblueskycredentials: true;
+    accountinstagramcredentials: true;
   };
 }>;
 
@@ -1935,6 +1952,7 @@ export type dbPhotoGalleryAlbum = Prisma.photogalleryalbumGetPayload<{
     accountid: true;
     teamid: true;
     parentalbumid: true;
+    issystem: true;
     title: true;
   };
 }>;
@@ -1945,6 +1963,7 @@ export type dbPhotoGalleryAlbumWithCount = Prisma.photogalleryalbumGetPayload<{
     accountid: true;
     teamid: true;
     parentalbumid: true;
+    issystem: true;
     title: true;
     _count: {
       select: {
@@ -1959,12 +1978,14 @@ export interface dbCreatePhotoGalleryAlbumInput {
   title: string;
   teamid: bigint;
   parentalbumid: bigint;
+  issystem?: boolean;
 }
 
 export interface dbUpdatePhotoGalleryAlbumInput {
   title?: string;
   teamid?: bigint;
   parentalbumid?: bigint;
+  issystem?: boolean;
 }
 
 export interface dbCreatePhotoSubmissionInput {
@@ -2110,6 +2131,17 @@ export type dbPhotoGalleryEntry = Prisma.photogalleryGetPayload<{
       };
       take: 1;
     };
+  };
+}>;
+
+export type dbInstagramIngestionRecord = Prisma.instagramingestionGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    externalid: true;
+    photoid: true;
+    postedat: true;
+    permalink: true;
   };
 }>;
 
