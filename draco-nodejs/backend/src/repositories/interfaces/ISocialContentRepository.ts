@@ -8,6 +8,7 @@ export interface SocialFeedQuery {
   teamSeasonId?: bigint;
   sources?: string[];
   before?: Date;
+  includeDeleted?: boolean;
   limit?: number;
 }
 
@@ -44,6 +45,8 @@ export type UpsertCommunityMessageInput = Prisma.discordmessagesUncheckedCreateI
 export interface ISocialContentRepository {
   listFeedItems(query: SocialFeedQuery): Promise<dbSocialFeedItem[]>;
   createFeedItems(items: CreateSocialFeedItemInput[]): Promise<void>;
+  deleteFeedItem(params: { id: string; accountId: bigint; seasonId: bigint }): Promise<number>;
+  restoreFeedItem(params: { id: string; accountId: bigint; seasonId: bigint }): Promise<number>;
   listVideos(query: SocialVideoQuery): Promise<dbSocialVideo[]>;
   upsertVideo(data: UpsertSocialVideoInput): Promise<dbSocialVideo>;
   listCommunityMessages(query: CommunityMessageQuery): Promise<dbDiscordMessagePreview[]>;

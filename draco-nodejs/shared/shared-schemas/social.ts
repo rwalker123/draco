@@ -100,6 +100,7 @@ export const SocialFeedItemSchema = z
     media: SocialMediaAttachmentSchema.array().optional(),
     postedAt: isoDateTimeSchema,
     permalink: z.string().trim().url().nullable().optional(),
+    deletedAt: isoDateTimeSchema.nullable().optional(),
     metadata: SocialFeedItemMetadataSchema.optional(),
   })
   .openapi({
@@ -122,6 +123,7 @@ export const SocialFeedQuerySchema = z
     teamId: optionalBigintStringSchema,
     teamSeasonId: optionalBigintStringSchema,
     sources: socialSourceListSchema,
+    includeDeleted: booleanQueryParam.optional().default(false),
     before: z
       .preprocess(trimToUndefined, isoDateTimeSchema)
       .optional()

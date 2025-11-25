@@ -4,6 +4,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { ThemeProvider } from '@mui/material/styles';
 import SocialHubExperience from '../SocialHubExperience';
 import { dracoTheme } from '../../../theme';
+import { RoleProvider } from '@/context/RoleContext';
+import { AuthProvider } from '@/context/AuthContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { vi } from 'vitest';
 
 const fetchFeedMock = vi.fn();
 const fetchVideosMock = vi.fn();
@@ -44,8 +48,29 @@ vi.mock('@/components/social/MemberBusinessSpotlightWidget', () => ({
   default: () => <div data-testid="member-business-widget" />,
 }));
 
-const renderWithTheme = (component: React.ReactElement) => {
-  return render(<ThemeProvider theme={dracoTheme}>{component}</ThemeProvider>);
+vi.mock('next/navigation', () => ({
+  useParams: () => ({ accountId: '1', seasonId: '1' }),
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+const renderWithProviders = (component: React.ReactElement) => {
+  const queryClient = new QueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RoleProvider>
+          <ThemeProvider theme={dracoTheme}>{component}</ThemeProvider>
+        </RoleProvider>
+      </AuthProvider>
+    </QueryClientProvider>,
+  );
 };
 
 describe('SocialHubExperience', () => {
@@ -105,7 +130,7 @@ describe('SocialHubExperience', () => {
   });
 
   it('renders discord rich content with emoji and gif attachments', async () => {
-    renderWithTheme(<SocialHubExperience accountId="1" seasonId="1" isAccountMember />);
+    renderWithProviders(<SocialHubExperience accountId="1" seasonId="1" isAccountMember />);
 
     await waitFor(() => {
       expect(fetchCommunityMessagesMock).toHaveBeenCalled();

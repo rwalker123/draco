@@ -83,6 +83,88 @@ export default ({ registry, schemaRefs }: RegisterContext) => {
   });
 
   registry.registerPath({
+    method: 'delete',
+    path: `${BASE_PATH}/feed/{feedItemId}`,
+    summary: 'Delete social feed item',
+    description: 'Delete an ingested social feed item for the account/season.',
+    operationId: 'deleteSocialFeedItem',
+    tags: ['Social'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      accountIdParameter,
+      seasonIdParameter,
+      {
+        name: 'feedItemId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string' },
+      },
+    ],
+    responses: {
+      204: {
+        description: 'Feed item deleted.',
+      },
+      401: {
+        description: 'Authentication required.',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'User does not have access to this account.',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Feed item not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Unexpected error deleting feed item.',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: `${BASE_PATH}/feed/{feedItemId}/restore`,
+    summary: 'Restore a deleted social feed item',
+    description: 'Marks a soft-deleted social feed item as active again.',
+    operationId: 'restoreSocialFeedItem',
+    tags: ['Social'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      accountIdParameter,
+      seasonIdParameter,
+      {
+        name: 'feedItemId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string' },
+      },
+    ],
+    responses: {
+      204: {
+        description: 'Feed item restored.',
+      },
+      401: {
+        description: 'Authentication required.',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'User does not have access to this account.',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Feed item not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Unexpected error restoring feed item.',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
     method: 'get',
     path: `${BASE_PATH}/videos`,
     summary: 'List social videos',

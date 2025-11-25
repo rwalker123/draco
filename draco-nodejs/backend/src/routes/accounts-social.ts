@@ -12,6 +12,7 @@ import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractSeasonParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import { AuthenticationError } from '../utils/customErrors.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -23,8 +24,51 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
     const query = SocialFeedQuerySchema.parse(req.query);
+
+    if (query.includeDeleted) {
+      if (!req.user) {
+        throw new AuthenticationError('Authentication required');
+      }
+      await new Promise<void>((resolve, reject) =>
+        routeProtection.enforceAccountBoundary()(req, res, (err?: unknown) =>
+          err ? reject(err) : resolve(),
+        ),
+      );
+      await new Promise<void>((resolve, reject) =>
+        routeProtection.requirePermission('account.manage')(req, res, (err?: unknown) =>
+          err ? reject(err) : resolve(),
+        ),
+      );
+    }
+
     const feed = await socialHubService.listFeedItems(accountId, seasonId, query);
     res.json({ feed });
+  }),
+);
+
+router.delete(
+  '/:accountId/seasons/:seasonId/social/feed/:feedItemId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractSeasonParams(req.params);
+    const { feedItemId } = req.params;
+    await socialHubService.deleteFeedItem(accountId, seasonId, feedItemId);
+    res.status(204).send();
+  }),
+);
+
+router.post(
+  '/:accountId/seasons/:seasonId/social/feed/:feedItemId/restore',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractSeasonParams(req.params);
+    const { feedItemId } = req.params;
+    await socialHubService.restoreFeedItem(accountId, seasonId, feedItemId);
+    res.status(204).send();
   }),
 );
 
