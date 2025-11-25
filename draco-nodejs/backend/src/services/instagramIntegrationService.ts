@@ -40,6 +40,10 @@ export class InstagramIntegrationService {
   private readonly photoGalleryRepository: IPhotoGalleryAdminRepository;
   private readonly seasonsRepository: ISeasonsRepository;
   private readonly assetService: PhotoGalleryAssetService;
+  private readonly ingestionCache = new Map<
+    string,
+    { seenIds: Set<string>; latestPostedAt?: number }
+  >();
 
   constructor(
     credentialsRepository?: IAccountInstagramCredentialsRepository,
@@ -88,17 +92,24 @@ export class InstagramIntegrationService {
   }
 
   async ingestRecentMedia(target: InstagramIngestionTargetWithAlbum, limit: number): Promise<void> {
-    const mediaItems = await this.fetchRecentMedia(target, limit);
+    const cache = await this.ensureCache(target);
+    const mediaItems = await this.fetchRecentMedia(target, limit, cache.latestPostedAt);
     if (!mediaItems.length) {
       return;
     }
 
-    const existingIds = await this.ingestionRepository.findExistingExternalIds(
-      target.accountId,
-      mediaItems.map((item) => item.id),
-    );
+    const freshMedia = mediaItems.filter((item) => {
+      if (cache.seenIds.has(item.id)) {
+        return false;
+      }
 
-    const freshMedia = mediaItems.filter((item) => !existingIds.includes(item.id));
+      const postedAtMs = item.timestamp ? new Date(item.timestamp).getTime() : undefined;
+      if (cache.latestPostedAt !== undefined && postedAtMs !== undefined) {
+        return postedAtMs > cache.latestPostedAt;
+      }
+
+      return true;
+    });
 
     for (const item of freshMedia) {
       if (!this.isImage(item)) {
@@ -126,6 +137,15 @@ export class InstagramIntegrationService {
           postedAt: item.timestamp ? new Date(item.timestamp) : null,
           permalink: item.permalink ?? null,
         });
+
+        cache.seenIds.add(item.id);
+        const postedAtMs = item.timestamp ? new Date(item.timestamp).getTime() : undefined;
+        if (postedAtMs !== undefined) {
+          cache.latestPostedAt =
+            cache.latestPostedAt !== undefined
+              ? Math.max(cache.latestPostedAt, postedAtMs)
+              : postedAtMs;
+        }
       } catch (error) {
         await this.photoGalleryRepository.deletePhoto(created.id).catch(() => undefined);
         throw error;
@@ -229,6 +249,7 @@ export class InstagramIntegrationService {
   private async fetchRecentMedia(
     target: InstagramIngestionTargetWithAlbum,
     limit: number,
+    latestKnownPostedAt?: number,
   ): Promise<InstagramMediaItem[]> {
     const media: InstagramMediaItem[] = [];
     const toAuthorizedUrl = (url: string): string => {
@@ -259,10 +280,51 @@ export class InstagramIntegrationService {
       if (media.length >= limit) {
         break;
       }
+
+      if (latestKnownPostedAt !== undefined) {
+        const hasNewer = itemsToAdd.some((item) => {
+          if (!item.timestamp) {
+            return true;
+          }
+          const postedAtMs = new Date(item.timestamp).getTime();
+          return postedAtMs > latestKnownPostedAt;
+        });
+
+        if (!hasNewer) {
+          break;
+        }
+      }
       nextUrl = payload.paging?.next;
     }
 
     return media.slice(0, limit);
+  }
+
+  private async ensureCache(
+    target: InstagramIngestionTargetWithAlbum,
+  ): Promise<{ seenIds: Set<string>; latestPostedAt?: number }> {
+    const cacheKey = target.accountId.toString();
+    const existing = this.ingestionCache.get(cacheKey);
+    if (existing) {
+      return existing;
+    }
+
+    const seenIds = new Set<string>();
+    let latestPostedAt: number | undefined;
+
+    const records = await this.ingestionRepository.listRecentIngestions(target.accountId, 500);
+    for (const record of records) {
+      seenIds.add(record.externalid);
+      const postedMs = record.postedat?.getTime();
+      if (postedMs !== undefined) {
+        latestPostedAt =
+          latestPostedAt !== undefined ? Math.max(latestPostedAt, postedMs) : postedMs;
+      }
+    }
+
+    const cache = { seenIds, latestPostedAt };
+    this.ingestionCache.set(cacheKey, cache);
+    return cache;
   }
 
   private isImage(item: InstagramMediaItem): boolean {

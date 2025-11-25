@@ -10,6 +10,7 @@ import { DiscordIntegrationAdminWidget } from '@/components/account/settings/Dis
 import { SocialMediaWidget } from '@/components/account/settings/SocialMediaWidget';
 import { BlueskyIntegrationAdminWidget } from '@/components/account/settings/BlueskyIntegrationAdminWidget';
 import { TwitterIntegrationAdminWidget } from '@/components/account/settings/TwitterIntegrationAdminWidget';
+import { InstagramIntegrationAdminWidget } from '@/components/account/settings/InstagramIntegrationAdminWidget';
 import DiscordGameResultsSyncCard from '@/components/discord/DiscordGameResultsSyncCard';
 import { useAuth } from '@/context/AuthContext';
 import { useRole } from '@/context/RoleContext';
@@ -123,6 +124,14 @@ const SocialMediaManagement: React.FC = () => {
     [accountSettings.settings],
   );
 
+  const syncInstagramToGallerySetting = useMemo(
+    () =>
+      accountSettings.settings?.find(
+        (setting) => setting.definition.key === 'SyncInstagramToGallery',
+      ),
+    [accountSettings.settings],
+  );
+
   const updatePostResultsSetting = useCallback(
     async (settingKey: AccountSettingKey, value: boolean) => {
       await accountSettings.updateSetting?.(settingKey, value);
@@ -185,7 +194,8 @@ const SocialMediaManagement: React.FC = () => {
             Social Media Management
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.8 }}>
-            Configure YouTube, Discord, Bluesky, and Twitter integrations for your organization.
+            Configure YouTube, Discord, Bluesky, Twitter, and Instagram integrations for your
+            organization.
           </Typography>
         </Box>
       </AccountPageHeader>
@@ -204,6 +214,7 @@ const SocialMediaManagement: React.FC = () => {
               <Tab label="Discord" {...a11yProps(1)} />
               <Tab label="Bluesky" {...a11yProps(2)} />
               <Tab label="Twitter" {...a11yProps(3)} />
+              <Tab label="Instagram" {...a11yProps(4)} />
             </Tabs>
           </Box>
 
@@ -253,6 +264,18 @@ const SocialMediaManagement: React.FC = () => {
               postGameResultsUpdating={accountSettings.updatingKey === 'PostGameResultsToTwitter'}
               onUpdatePostGameResults={(enabled) =>
                 updatePostResultsSetting('PostGameResultsToTwitter', enabled)
+              }
+            />
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={4}>
+            <InstagramIntegrationAdminWidget
+              account={account}
+              onAccountUpdate={setAccount}
+              syncToGallerySetting={syncInstagramToGallerySetting}
+              syncToGalleryUpdating={accountSettings.updatingKey === 'SyncInstagramToGallery'}
+              onUpdateSyncToGallery={(enabled) =>
+                updatePostResultsSetting('SyncInstagramToGallery', enabled)
               }
             />
           </TabPanel>

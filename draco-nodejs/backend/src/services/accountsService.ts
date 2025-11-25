@@ -7,6 +7,7 @@ import {
   AccountUrlType,
   AccountTwitterSettingsType,
   AccountBlueskySettingsType,
+  AccountInstagramSettingsType,
   AccountWithSeasonsType,
   CreateAccountType,
   CreateAccountUrlType,
@@ -28,6 +29,7 @@ import {
   ISeasonsRepository,
   IAccountTwitterCredentialsRepository,
   IAccountBlueskyCredentialsRepository,
+  IAccountInstagramCredentialsRepository,
 } from '../repositories/index.js';
 import {
   AccountOwnerDetailsByAccount,
@@ -60,6 +62,7 @@ export class AccountsService {
   private readonly discordIntegrationService: DiscordIntegrationService;
   private readonly accountTwitterCredentialsRepository: IAccountTwitterCredentialsRepository;
   private readonly accountBlueskyCredentialsRepository: IAccountBlueskyCredentialsRepository;
+  private readonly accountInstagramCredentialsRepository: IAccountInstagramCredentialsRepository;
 
   constructor() {
     this.accountRepository = RepositoryFactory.getAccountRepository();
@@ -72,6 +75,8 @@ export class AccountsService {
       RepositoryFactory.getAccountTwitterCredentialsRepository();
     this.accountBlueskyCredentialsRepository =
       RepositoryFactory.getAccountBlueskyCredentialsRepository();
+    this.accountInstagramCredentialsRepository =
+      RepositoryFactory.getAccountInstagramCredentialsRepository();
   }
 
   async getAccountsForUser(userId: string): Promise<AccountType[]> {
@@ -587,6 +592,79 @@ export class AccountsService {
             userrefreshtoken: null,
             useraccesstokenexpiresat: null,
             scope: null,
+          }
+        : {}),
+    });
+
+    const { account, affiliationMap, ownerContact, ownerUser } =
+      await this.loadAccountContext(accountId);
+
+    return AccountResponseFormatter.formatAccount(account, affiliationMap, ownerContact, ownerUser);
+  }
+
+  async updateAccountInstagramSettings(
+    accountId: bigint,
+    instagramSettings: AccountInstagramSettingsType,
+  ): Promise<AccountType> {
+    const normalizePlain = (value?: string): string | null | undefined => {
+      if (value === undefined) {
+        return undefined;
+      }
+      const trimmed = value.trim();
+      return trimmed ? trimmed : null;
+    };
+
+    const normalizeSecret = (value?: string): string | null | undefined => {
+      if (value === undefined) {
+        return undefined;
+      }
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+      try {
+        return encryptSecret(trimmed);
+      } catch (error) {
+        console.error('Failed to encrypt Instagram credential', error);
+        throw new ValidationError('Unable to store Instagram credentials securely');
+      }
+    };
+
+    const hasUpdates = Object.values(instagramSettings).some(
+      (value) => value !== undefined && value !== null,
+    );
+
+    if (!hasUpdates) {
+      throw new ValidationError('At least one Instagram field to update is required');
+    }
+
+    await this.ensureAccountExists(accountId);
+
+    const existing = await this.accountInstagramCredentialsRepository.findByAccountId(accountId);
+
+    const normalizedUserId = normalizePlain(instagramSettings.instagramUserId);
+    const normalizedUsername = normalizePlain(instagramSettings.instagramUsername);
+    const normalizedAppId = normalizePlain(instagramSettings.instagramAppId);
+    const normalizedAppSecret = normalizeSecret(instagramSettings.instagramAppSecret);
+
+    const userIdToUse = normalizedUserId ?? existing?.instagramuserid;
+    if (!existing && !userIdToUse) {
+      throw new ValidationError('Instagram Business/User ID is required to save credentials');
+    }
+
+    const shouldClearTokens =
+      instagramSettings.instagramAppId === '' || instagramSettings.instagramAppSecret === '';
+
+    await this.accountInstagramCredentialsRepository.upsertForAccount(accountId, {
+      instagramuserid: userIdToUse ?? undefined,
+      username: normalizedUsername ?? undefined,
+      appid: normalizedAppId ?? undefined,
+      appsecret: normalizedAppSecret ?? undefined,
+      ...(shouldClearTokens
+        ? {
+            accesstoken: null,
+            refreshtoken: null,
+            accesstokenexpiresat: null,
           }
         : {}),
     });

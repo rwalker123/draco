@@ -3954,6 +3954,17 @@ components:
           type: string
         blueskyAppPassword:
           type: string
+    AccountInstagramSettings:
+      type: object
+      properties:
+        instagramUserId:
+          type: string
+        instagramUsername:
+          type: string
+        instagramAppId:
+          type: string
+        instagramAppSecret:
+          type: string
     AccountTwitterSettings:
       type: object
       properties:
@@ -4007,6 +4018,7 @@ components:
                   - PostGameResultsToDiscord
                   - PostGameResultsToTwitter
                   - PostGameResultsToBluesky
+                  - SyncInstagramToGallery
               label:
                 type: string
               description:
@@ -4063,6 +4075,7 @@ components:
                         - PostGameResultsToDiscord
                         - PostGameResultsToTwitter
                         - PostGameResultsToBluesky
+                        - SyncInstagramToGallery
                     value:
                       anyOf:
                         - type: boolean
@@ -4155,6 +4168,7 @@ components:
                 - PostGameResultsToDiscord
                 - PostGameResultsToTwitter
                 - PostGameResultsToBluesky
+                - SyncInstagramToGallery
             label:
               type: string
             description:
@@ -4211,6 +4225,7 @@ components:
                       - PostGameResultsToDiscord
                       - PostGameResultsToTwitter
                       - PostGameResultsToBluesky
+                      - SyncInstagramToGallery
                   value:
                     anyOf:
                       - type: boolean
@@ -4306,6 +4321,7 @@ components:
         - PostGameResultsToDiscord
         - PostGameResultsToTwitter
         - PostGameResultsToBluesky
+        - SyncInstagramToGallery
     Sponsor:
       type: object
       properties:
@@ -15917,6 +15933,64 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/instagram:
+    put:
+      operationId: updateAccountInstagramSettings
+      summary: Update account Instagram settings
+      description: Update the Instagram integration settings for an account.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountInstagramSettings"
+      responses:
+        "200":
+          description: Updated account details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/twitter/oauth/url:
     post:
       operationId: createTwitterAuthorizationUrl
@@ -17479,6 +17553,7 @@ paths:
               - PostGameResultsToDiscord
               - PostGameResultsToTwitter
               - PostGameResultsToBluesky
+              - SyncInstagramToGallery
       requestBody:
         content:
           application/json:

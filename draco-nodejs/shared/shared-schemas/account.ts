@@ -111,6 +111,13 @@ export const AccountTwitterSettingsSchema = z.object({
   twitterIngestionBearerToken: z.string().trim().optional(),
 });
 
+export const AccountInstagramSettingsSchema = z.object({
+  instagramUserId: z.string().trim().optional(),
+  instagramUsername: z.string().trim().optional(),
+  instagramAppId: z.string().trim().optional(),
+  instagramAppSecret: z.string().trim().optional(),
+});
+
 export const AccountTwitterOAuthStartSchema = z.object({
   returnUrl: z.string().trim().url().optional(),
 });
@@ -185,6 +192,7 @@ export type AccountAffiliationType = z.infer<typeof AccountAffiliationSchema>;
 export type AccountUrlType = z.infer<typeof AccountUrlSchema>;
 export type CreateAccountUrlType = z.infer<typeof CreateAccountUrlSchema>;
 export type AccountTwitterSettingsType = z.infer<typeof AccountTwitterSettingsSchema>;
+export type AccountInstagramSettingsType = z.infer<typeof AccountInstagramSettingsSchema>;
 export type AccountBlueskySettingsType = z.infer<typeof AccountBlueskySettingsSchema>;
 export type AccountTypeReference = z.infer<typeof AccountTypeSchema>;
 export type AccountSearchQueryParamType = z.infer<typeof AccountSearchQueryParamSchema>;

@@ -21,6 +21,7 @@ export const ACCOUNT_SETTING_KEYS = [
   'PostGameResultsToDiscord',
   'PostGameResultsToTwitter',
   'PostGameResultsToBluesky',
+  'SyncInstagramToGallery',
 ] as const;
 
 export const AccountSettingKeySchema = z.enum(ACCOUNT_SETTING_KEYS);
@@ -268,6 +269,15 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
     sortOrder: 95,
+  }),
+  booleanSetting({
+    key: 'SyncInstagramToGallery',
+    label: 'Sync Instagram photos to gallery',
+    description:
+      'When enabled, newly ingested Instagram media is added to your Photo Gallery albums.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 96,
   }),
   booleanSetting({
     key: 'TrackWaiver',

@@ -14,6 +14,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     AccountUrlSchemaRef,
     AccountWithSeasonsSchemaRef,
     AccountBlueskySettingsSchemaRef,
+    AccountInstagramSettingsSchemaRef,
     AccountTwitterSettingsSchemaRef,
     AccountTwitterOAuthStartSchemaRef,
     AccountTwitterAuthorizationUrlSchemaRef,
@@ -1025,6 +1026,87 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
         content: {
           'application/json': {
             schema: AccountTwitterSettingsSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated account details',
+        content: {
+          'application/json': {
+            schema: AccountSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // PUT /api/accounts/{accountId}/instagram
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/instagram',
+    operationId: 'updateAccountInstagramSettings',
+    summary: 'Update account Instagram settings',
+    description: 'Update the Instagram integration settings for an account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: AccountInstagramSettingsSchemaRef,
           },
         },
       },
