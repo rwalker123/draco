@@ -1,8 +1,17 @@
 'use client';
 
 import React from 'react';
-import { Avatar, Box, Card, CardContent, IconButton, Typography } from '@mui/material';
-import { OpenInNew } from '@mui/icons-material';
+import {
+  Avatar,
+  Box,
+  Card,
+  CardContent,
+  IconButton,
+  Typography,
+  Tooltip,
+  Chip,
+} from '@mui/material';
+import { OpenInNew, Close, Undo } from '@mui/icons-material';
 import { Twitter } from '@mui/icons-material';
 import type { SocialFeedItemType } from '@draco/shared-schemas';
 import BlueskyLogo from '../icons/BlueskyLogo';
@@ -10,6 +19,12 @@ import { formatRelativeTime } from './utils';
 
 interface SocialPostCardProps {
   item: SocialFeedItemType;
+  canDelete?: boolean;
+  onDelete?: (id: string) => void;
+  deleting?: boolean;
+  confirmDelete?: (item: SocialFeedItemType) => void;
+  onRestore?: (id: string) => void;
+  restoring?: boolean;
 }
 
 const SourceIcon: React.FC<{ source: string }> = ({ source }) => {
@@ -23,13 +38,22 @@ const SourceIcon: React.FC<{ source: string }> = ({ source }) => {
   }
 };
 
-export const SocialPostCard: React.FC<SocialPostCardProps> = ({ item }) => {
+export const SocialPostCard: React.FC<SocialPostCardProps> = ({
+  item,
+  canDelete,
+  onDelete,
+  deleting = false,
+  confirmDelete,
+  onRestore,
+  restoring = false,
+}) => {
   const postedLabel = formatRelativeTime(item.postedAt);
   const authorDisplay = item.authorName ?? item.channelName ?? 'Social';
   const handleDisplay = item.authorHandle ?? item.channelName ?? '';
   const initial = authorDisplay.charAt(0).toUpperCase();
   const mediaAttachment = item.media?.[0];
   const mediaUrl = mediaAttachment?.thumbnailUrl ?? mediaAttachment?.url;
+  const isDeleted = Boolean(item.deletedAt);
 
   return (
     <Card variant="outlined" sx={{ height: '100%' }}>
@@ -39,6 +63,9 @@ export const SocialPostCard: React.FC<SocialPostCardProps> = ({ item }) => {
           <Typography variant="caption" color="text.secondary">
             {postedLabel}
           </Typography>
+          {isDeleted ? (
+            <Chip label="Deleted on site" size="small" color="error" variant="outlined" />
+          ) : null}
           {item.permalink ? (
             <IconButton
               size="small"
@@ -50,6 +77,36 @@ export const SocialPostCard: React.FC<SocialPostCardProps> = ({ item }) => {
             >
               <OpenInNew fontSize="small" />
             </IconButton>
+          ) : null}
+          {canDelete && (onDelete || confirmDelete) && !isDeleted ? (
+            <Tooltip title="Delete from local feed">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() =>
+                  confirmDelete ? confirmDelete(item) : onDelete ? onDelete(item.id) : undefined
+                }
+                disabled={deleting}
+                aria-label="Delete social post"
+                sx={{ ml: item.permalink ? 1 : 'auto' }}
+              >
+                <Close fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : null}
+          {canDelete && onRestore && isDeleted ? (
+            <Tooltip title="Restore on site">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => onRestore(item.id)}
+                disabled={restoring}
+                aria-label="Restore social post"
+                sx={{ ml: item.permalink ? 1 : 'auto' }}
+              >
+                <Undo fontSize="small" />
+              </IconButton>
+            </Tooltip>
           ) : null}
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

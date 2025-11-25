@@ -6,6 +6,8 @@ import type { SocialFeedItemType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
 import SocialPostCard from './SocialPostCard';
+import { useRole } from '@/context/RoleContext';
+import ConfirmDeleteDialog from './ConfirmDeleteDialog';
 
 interface SocialPostsWidgetProps {
   accountId?: string;
@@ -20,12 +22,20 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
   limit = 4,
   viewAllHref,
 }) => {
-  const { fetchFeed } = useSocialHubService({ accountId, seasonId });
+  const { fetchFeed, deleteFeedItem, restoreFeedItem } = useSocialHubService({
+    accountId,
+    seasonId,
+  });
+  const { hasPermission } = useRole();
+  const canManage = hasPermission('account.manage', accountId ? { accountId } : undefined);
   const [state, setState] = useState<{
     items: SocialFeedItemType[];
     error: string | null;
     completedKey: string;
   }>({ items: [], error: null, completedKey: '' });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<SocialFeedItemType | null>(null);
 
   const canFetch = useMemo(() => Boolean(accountId && seasonId), [accountId, seasonId]);
   const requestKey = canFetch ? `${accountId}:${seasonId}:${limit}` : '';
@@ -38,7 +48,11 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
       return;
     }
     let isMounted = true;
-    fetchFeed({ sources: ['twitter', 'bluesky'], limit })
+    fetchFeed({
+      sources: ['twitter', 'bluesky'],
+      limit,
+      includeDeleted: false,
+    })
       .then((items) => {
         if (!isMounted) return;
         setState({ items, error: null, completedKey: requestKey });
@@ -54,7 +68,7 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [canFetch, fetchFeed, limit, requestKey]);
+  }, [canFetch, fetchFeed, limit, requestKey, canManage]);
 
   if (!canFetch) {
     return null;
@@ -84,6 +98,34 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
       subtitle="Latest posts mirrored for this account."
       accent="info"
     >
+      <ConfirmDeleteDialog
+        open={Boolean(pendingDelete)}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={async () => {
+          const item = pendingDelete;
+          if (!item) return;
+          setPendingDelete(null);
+          setDeletingId(item.id);
+          try {
+            await deleteFeedItem(item.id);
+            setState((prev) => ({
+              ...prev,
+              items: prev.items.map((existing) =>
+                existing.id === item.id
+                  ? { ...existing, deletedAt: new Date().toISOString() }
+                  : existing,
+              ),
+            }));
+          } catch (err) {
+            const message = err instanceof Error ? err.message : 'Unable to delete social post.';
+            setState((prev) => ({ ...prev, error: message }));
+          } finally {
+            setDeletingId(null);
+          }
+        }}
+        message="This removes the post from this site only. It does not delete the original content on Twitter or Bluesky."
+        title="Delete social post?"
+      />
       {!canFetch ? (
         <Alert severity="info">Select an account and season to view posts.</Alert>
       ) : state.error ? (
@@ -96,7 +138,31 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           {state.items.slice(0, limit).map((item) => (
             <Box key={item.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}>
-              <SocialPostCard item={item} />
+              <SocialPostCard
+                item={item}
+                canDelete={canManage}
+                deleting={deletingId === item.id}
+                restoring={restoringId === item.id}
+                onRestore={async (id) => {
+                  setRestoringId(id);
+                  try {
+                    await restoreFeedItem(id);
+                    setState((prev) => ({
+                      ...prev,
+                      items: prev.items.map((existing) =>
+                        existing.id === id ? { ...existing, deletedAt: null } : existing,
+                      ),
+                    }));
+                  } catch (err) {
+                    const message =
+                      err instanceof Error ? err.message : 'Unable to restore social post.';
+                    setState((prev) => ({ ...prev, error: message }));
+                  } finally {
+                    setRestoringId(null);
+                  }
+                }}
+                confirmDelete={setPendingDelete}
+              />
             </Box>
           ))}
         </Box>

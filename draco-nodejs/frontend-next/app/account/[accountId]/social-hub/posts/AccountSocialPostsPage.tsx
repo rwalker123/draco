@@ -19,6 +19,8 @@ import AccountPageHeader from '@/components/AccountPageHeader';
 import SocialPostCard from '@/components/social/SocialPostCard';
 import { useCurrentSeason } from '@/hooks/useCurrentSeason';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
+import { useRole } from '@/context/RoleContext';
+import ConfirmDeleteDialog from '@/components/social/ConfirmDeleteDialog';
 
 const PAGE_SIZE = 50;
 const SOURCES = ['twitter', 'bluesky'] as const;
@@ -35,16 +37,21 @@ const AccountSocialPostsPage: React.FC = () => {
     fetchCurrentSeason,
   } = useCurrentSeason(accountId || '');
 
-  const { fetchFeed } = useSocialHubService({
+  const { fetchFeed, deleteFeedItem, restoreFeedItem } = useSocialHubService({
     accountId,
     seasonId: currentSeasonId ?? undefined,
   });
+  const { hasPermission } = useRole();
+  const canManage = hasPermission('account.manage', accountId ? { accountId } : undefined);
 
   const [posts, setPosts] = React.useState<SocialFeedItemType[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const beforeCursorRef = React.useRef<string | undefined>(undefined);
   const [hasMore, setHasMore] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [restoringId, setRestoringId] = React.useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = React.useState<SocialFeedItemType | null>(null);
 
   React.useEffect(() => {
     if (!accountId) {
@@ -72,6 +79,7 @@ const AccountSocialPostsPage: React.FC = () => {
         const result = await fetchFeed({
           sources: [...SOURCES],
           limit: PAGE_SIZE,
+          includeDeleted: canManage,
           ...(cursor ? { before: cursor } : {}),
         });
 
@@ -86,7 +94,7 @@ const AccountSocialPostsPage: React.FC = () => {
         setLoading(false);
       }
     },
-    [accountId, currentSeasonId, fetchFeed],
+    [accountId, currentSeasonId, fetchFeed, canManage],
   );
 
   React.useEffect(() => {
@@ -135,9 +143,57 @@ const AccountSocialPostsPage: React.FC = () => {
 
     return (
       <Stack spacing={3}>
+        <ConfirmDeleteDialog
+          open={Boolean(pendingDelete)}
+          onClose={() => setPendingDelete(null)}
+          title="Delete social post?"
+          message="This removes the post from this site only. It does not delete the original content on Twitter or Bluesky."
+          onConfirm={async () => {
+            const item = pendingDelete;
+            if (!item) return;
+            setPendingDelete(null);
+            setDeletingId(item.id);
+            try {
+              await deleteFeedItem(item.id);
+              setPosts((prev) =>
+                prev.map((post) =>
+                  post.id === item.id ? { ...post, deletedAt: new Date().toISOString() } : post,
+                ),
+              );
+            } catch (err) {
+              const message = err instanceof Error ? err.message : 'Unable to delete social post.';
+              setError(message);
+            } finally {
+              setDeletingId(null);
+            }
+          }}
+        />
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
           {posts.map((item) => (
-            <SocialPostCard key={item.id} item={item} />
+            <SocialPostCard
+              key={item.id}
+              item={item}
+              canDelete={canManage}
+              deleting={deletingId === item.id}
+              restoring={restoringId === item.id}
+              onRestore={async (id) => {
+                setRestoringId(id);
+                setError(null);
+                try {
+                  await restoreFeedItem(id);
+                  setPosts((prev) =>
+                    prev.map((post) => (post.id === id ? { ...post, deletedAt: null } : post)),
+                  );
+                } catch (err) {
+                  const message =
+                    err instanceof Error ? err.message : 'Unable to restore social post.';
+                  setError(message);
+                } finally {
+                  setRestoringId(null);
+                }
+              }}
+              confirmDelete={setPendingDelete}
+            />
           ))}
         </Box>
         {hasMore ? (

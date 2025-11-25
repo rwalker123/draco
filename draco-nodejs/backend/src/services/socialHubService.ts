@@ -71,8 +71,35 @@ export class SocialHubService {
       limit: query?.limit,
     };
 
-    const records = await this.socialContentRepository.listFeedItems(repositoryQuery);
+    const records = await this.socialContentRepository.listFeedItems({
+      ...repositoryQuery,
+      includeDeleted: query?.includeDeleted ?? false,
+    });
     return SocialFeedResponseFormatter.formatFeedItems(records);
+  }
+
+  async deleteFeedItem(accountId: bigint, seasonId: bigint, feedItemId: string): Promise<void> {
+    const deletedCount = await this.socialContentRepository.deleteFeedItem({
+      id: feedItemId,
+      accountId,
+      seasonId,
+    });
+
+    if (deletedCount === 0) {
+      throw new NotFoundError('Social feed item not found');
+    }
+  }
+
+  async restoreFeedItem(accountId: bigint, seasonId: bigint, feedItemId: string): Promise<void> {
+    const restored = await this.socialContentRepository.restoreFeedItem({
+      id: feedItemId,
+      accountId,
+      seasonId,
+    });
+
+    if (restored === 0) {
+      throw new NotFoundError('Social feed item not found');
+    }
   }
 
   async listVideos(accountId: bigint, query?: SocialVideoQueryType): Promise<SocialVideoType[]> {

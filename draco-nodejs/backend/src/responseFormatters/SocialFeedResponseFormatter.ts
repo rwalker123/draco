@@ -30,6 +30,7 @@ export class SocialFeedResponseFormatter {
       media: this.parseAttachments(record.media),
       postedAt: record.postedat.toISOString(),
       permalink: record.permalink ?? null,
+      deletedAt: record.deletedat ? record.deletedat.toISOString() : null,
       metadata: this.parseMetadata(record.metadata),
     }));
   }
