@@ -36,4 +36,10 @@ describe('AccountPageHeader', () => {
     render(<AccountPageHeader accountId="test-account" />);
     expect(await screen.findByText('Test Title')).toBeInTheDocument();
   });
+
+  it('does not render ads when AdSense is disabled', () => {
+    render(<AccountPageHeader accountId="test-account" />);
+
+    expect(screen.queryByLabelText('Advertisement')).not.toBeInTheDocument();
+  });
 });
