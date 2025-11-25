@@ -4360,6 +4360,13 @@
                 "type": "boolean",
                 "default": false
               },
+              "instagramHandle": {
+                "type": "string"
+              },
+              "instagramConnected": {
+                "type": "boolean",
+                "default": false
+              },
               "facebookFanPage": {
                 "type": "string"
               },
@@ -4663,6 +4670,13 @@
                     "type": "string"
                   },
                   "twitterConnected": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "instagramHandle": {
+                    "type": "string"
+                  },
+                  "instagramConnected": {
                     "type": "boolean",
                     "default": false
                   },
@@ -5117,6 +5131,13 @@
                 "type": "string"
               },
               "twitterConnected": {
+                "type": "boolean",
+                "default": false
+              },
+              "instagramHandle": {
+                "type": "string"
+              },
+              "instagramConnected": {
                 "type": "boolean",
                 "default": false
               },
@@ -20854,6 +20875,13 @@
                         "type": "string"
                       },
                       "twitterConnected": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "instagramHandle": {
+                        "type": "string"
+                      },
+                      "instagramConnected": {
                         "type": "boolean",
                         "default": false
                       },

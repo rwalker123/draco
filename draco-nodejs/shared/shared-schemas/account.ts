@@ -91,6 +91,8 @@ export const AccountSocialsSchema = z.object({
   twitterAccountName: z.string().optional(),
   blueskyHandle: z.string().optional(),
   twitterConnected: z.boolean().default(false),
+  instagramHandle: z.string().optional(),
+  instagramConnected: z.boolean().default(false),
   facebookFanPage: z.string().optional(),
   youtubeUserId: z.string().nullable().optional(),
   defaultVideo: z.string().nullable().optional(),

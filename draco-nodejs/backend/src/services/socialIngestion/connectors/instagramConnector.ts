@@ -16,7 +16,7 @@ export class InstagramConnector extends BaseSocialIngestionConnector {
       return;
     }
 
-    for (const target of targets.slice(0, this.options.maxResults)) {
+    for (const target of targets) {
       await this.integrationService
         .ingestRecentMedia(target, this.options.maxResults)
         .catch((error) =>

@@ -91,6 +91,7 @@ export interface DiscordConnectorOptions {
 
 export interface InstagramIngestionTargetWithAuth extends InstagramIngestionTarget {
   accessToken: string;
+  albumId: bigint;
 }
 
 export interface InstagramConnectorOptions {

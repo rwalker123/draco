@@ -50,7 +50,8 @@ export class InstagramIntegrationService {
   ) {
     this.credentialsRepository =
       credentialsRepository ?? RepositoryFactory.getAccountInstagramCredentialsRepository();
-    this.ingestionRepository = ingestionRepository ?? RepositoryFactory.getInstagramIngestionRepository();
+    this.ingestionRepository =
+      ingestionRepository ?? RepositoryFactory.getInstagramIngestionRepository();
     this.photoGalleryRepository =
       photoGalleryRepository ?? RepositoryFactory.getPhotoGalleryAdminRepository();
     this.seasonsRepository = seasonsRepository ?? RepositoryFactory.getSeasonsRepository();
@@ -132,7 +133,11 @@ export class InstagramIntegrationService {
     }
   }
 
-  async uploadPhotoFromGallery(accountId: bigint, photoId: bigint, caption?: string): Promise<void> {
+  async uploadPhotoFromGallery(
+    accountId: bigint,
+    photoId: bigint,
+    caption?: string,
+  ): Promise<void> {
     const credentials = await this.credentialsRepository.findByAccountId(accountId);
     if (!credentials?.instagramuserid || !credentials.accesstoken) {
       return;
@@ -159,15 +164,38 @@ export class InstagramIntegrationService {
     }
 
     const imageUrl = new URL(submission.originalfilepath, publicUrlBase).toString();
-    const request = new URL(`https://graph.facebook.com/v18.0/${credentials.instagramuserid}/media`);
-    request.searchParams.set('image_url', imageUrl);
+    const createRequest = new URL(
+      `https://graph.facebook.com/v18.0/${credentials.instagramuserid}/media`,
+    );
+    createRequest.searchParams.set('image_url', imageUrl);
     if (caption) {
-      request.searchParams.set('caption', caption);
+      createRequest.searchParams.set('caption', caption);
     }
-    request.searchParams.set('access_token', accessToken);
 
     try {
-      await fetchJson(request, { method: 'POST' });
+      const createResponse = await fetchJson<{ id?: string }>(createRequest, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      const creationId = createResponse?.id;
+      if (!creationId) {
+        console.error('[instagram] Missing creation_id when creating media container', {
+          accountId: accountId.toString(),
+          photoId: photoId.toString(),
+        });
+        return;
+      }
+
+      const publishRequest = new URL(
+        `https://graph.facebook.com/v18.0/${credentials.instagramuserid}/media_publish`,
+      );
+      publishRequest.searchParams.set('creation_id', creationId);
+
+      await fetchJson(publishRequest, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
     } catch (error) {
       console.error('[instagram] Failed to publish photo', {
         accountId: accountId.toString(),
@@ -203,15 +231,34 @@ export class InstagramIntegrationService {
     limit: number,
   ): Promise<InstagramMediaItem[]> {
     const media: InstagramMediaItem[] = [];
-    let nextUrl: string | undefined = `https://graph.instagram.com/${target.instagramUserId}/media?fields=id,caption,media_type,media_url,permalink,timestamp,thumbnail_url&access_token=${encodeURIComponent(target.accessToken)}`;
+    const toAuthorizedUrl = (url: string): string => {
+      const parsed = new URL(url);
+      parsed.searchParams.delete('access_token');
+      return parsed.toString();
+    };
+
+    let nextUrl: string | undefined =
+      `https://graph.instagram.com/${target.instagramUserId}/media?fields=id,caption,media_type,media_url,permalink,timestamp,thumbnail_url`;
 
     while (nextUrl && media.length < limit) {
-      const payload = await fetchJson<InstagramMediaResponse>(nextUrl);
+      const authorizedUrl = toAuthorizedUrl(nextUrl);
+      const payload: InstagramMediaResponse = await fetchJson<InstagramMediaResponse>(
+        authorizedUrl,
+        {
+          headers: { Authorization: `Bearer ${target.accessToken}` },
+        },
+      );
       if (!payload.data?.length) {
         break;
       }
 
-      media.push(...payload.data);
+      const remainingCapacity = limit - media.length;
+      const itemsToAdd = payload.data.slice(0, remainingCapacity);
+      media.push(...itemsToAdd);
+
+      if (media.length >= limit) {
+        break;
+      }
       nextUrl = payload.paging?.next;
     }
 
@@ -227,12 +274,6 @@ export class InstagramIntegrationService {
     if (caption) {
       return caption.slice(0, 50);
     }
-
-    const permalink = item.permalink?.trim();
-    if (permalink) {
-      return 'Instagram Photo';
-    }
-
     return 'Instagram Photo';
   }
 

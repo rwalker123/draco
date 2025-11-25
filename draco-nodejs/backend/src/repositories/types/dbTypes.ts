@@ -2050,6 +2050,7 @@ export type dbPhotoSubmissionWithRelations = Prisma.photogallerysubmissionGetPay
       select: {
         id: true;
         accountid: true;
+        issystem: true;
         teamid: true;
         parentalbumid: true;
         title: true;
