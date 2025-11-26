@@ -34,6 +34,18 @@ type VideoState = {
   error: string | null;
 };
 
+const truncateText = (text: string | null | undefined, maxLength = 150) => {
+  if (!text) {
+    return text;
+  }
+
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return `${text.slice(0, maxLength).trimEnd()}...`;
+};
+
 const FeaturedVideosWidget: React.FC<FeaturedVideosWidgetProps> = ({
   accountId,
   seasonId,
@@ -100,11 +112,18 @@ const FeaturedVideosWidget: React.FC<FeaturedVideosWidgetProps> = ({
             renderSkeletons(3)
           ) : displayedVideos.length > 0 ? (
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              {displayedVideos.map((video) => (
-                <Box key={video.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}>
-                  <SocialVideoCard video={video} />
-                </Box>
-              ))}
+              {displayedVideos.map((video) => {
+                const truncatedVideo = {
+                  ...video,
+                  description: truncateText(video.description),
+                };
+
+                return (
+                  <Box key={video.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}>
+                    <SocialVideoCard video={truncatedVideo} />
+                  </Box>
+                );
+              })}
             </Box>
           ) : (
             <Alert severity="info">No connected video streams yet.</Alert>
