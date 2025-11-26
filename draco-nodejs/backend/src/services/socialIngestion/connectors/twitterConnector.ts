@@ -52,6 +52,7 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
       return;
     }
 
+    const shouldLogVerbose = this.isDevelopmentEnvironment();
     const requestsPerWindowBudget = 400; // stay safely below typical 450/15m limit
     const windowMs = 15 * 60 * 1000;
     const allowedPerRun = Math.max(
@@ -87,7 +88,7 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
         continue;
       }
 
-      if (process.env.NODE_ENV !== 'production') {
+      if (shouldLogVerbose) {
         console.info('[twitter] Starting ingestion', {
           accountId: target.accountId.toString(),
           handle: target.handle,
@@ -95,7 +96,7 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
       }
 
       const tweets = await this.fetchRecentTweets(target);
-      if (process.env.NODE_ENV !== 'production') {
+      if (shouldLogVerbose) {
         console.info('[twitter] Finished ingestion', {
           accountId: target.accountId.toString(),
           handle: target.handle,
@@ -143,7 +144,9 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
       }
 
       await this.repository.createFeedItems(freshPayload);
-      console.info(`[twitter] Ingested ${freshPayload.length} posts for @${target.handle}`);
+      if (shouldLogVerbose) {
+        console.info(`[twitter] Ingested ${freshPayload.length} posts for @${target.handle}`);
+      }
     }
   }
 

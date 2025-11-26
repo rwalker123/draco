@@ -23,5 +23,9 @@ export abstract class BaseSocialIngestionConnector implements SocialIngestionCon
     }
   }
 
+  protected isDevelopmentEnvironment(): boolean {
+    return process.env.NODE_ENV === 'development';
+  }
+
   protected abstract runIngestion(): Promise<void>;
 }

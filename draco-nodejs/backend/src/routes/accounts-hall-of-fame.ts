@@ -19,6 +19,8 @@ import {
   UpdateHofNominationSetupType,
   UpdateHofNominationSchema,
   UpdateHofNominationType,
+  HofRandomMembersQuerySchema,
+  HofRandomMembersQueryType,
 } from '@draco/shared-schemas';
 import { ValidationError } from '../utils/customErrors.js';
 
@@ -67,8 +69,12 @@ router.get(
   '/:accountId/hall-of-fame/random-member',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const member = await hallOfFameService.getRandomMember(accountId);
-    res.json(member);
+    const query: HofRandomMembersQueryType = HofRandomMembersQuerySchema.parse({
+      count: req.query.count,
+    });
+
+    const members = await hallOfFameService.getRandomMembers(accountId, query);
+    res.json(members);
   }),
 );
 

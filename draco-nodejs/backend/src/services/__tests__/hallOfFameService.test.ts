@@ -15,7 +15,7 @@ describe('HallOfFameService', () => {
     hallRepositoryMock = {
       listClasses: vi.fn(),
       listMembersByYear: vi.fn(),
-      getRandomMember: vi.fn(),
+      getRandomMembers: vi.fn(),
       findMemberById: vi.fn(),
       findMemberByContact: vi.fn(),
       createMember: vi.fn(),

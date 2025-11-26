@@ -12317,6 +12317,17 @@
         ],
         "description": "Paginated list of contacts eligible to be inducted into the Hall of Fame."
       },
+      "HofRandomMembersQuery": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5
+          }
+        },
+        "description": "Query parameters for retrieving random Hall of Fame inductees for spotlight experiences."
+      },
       "CreateHofMember": {
         "type": "object",
         "properties": {
@@ -31588,8 +31599,8 @@
     "/api/accounts/{accountId}/hall-of-fame/random-member": {
       "get": {
         "operationId": "getAccountHallOfFameRandomMember",
-        "summary": "Retrieve a random Hall of Fame member",
-        "description": "Returns a random Hall of Fame inductee for spotlight experiences.",
+        "summary": "Retrieve random Hall of Fame members",
+        "description": "Returns one or more random Hall of Fame inductees for spotlight experiences. Defaults to a single inductee when no count is provided.",
         "tags": [
           "Hall of Fame"
         ],
@@ -31602,15 +31613,28 @@
               "type": "string",
               "format": "number"
             }
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 5
+            },
+            "required": false,
+            "name": "count",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
-            "description": "Randomly selected Hall of Fame member.",
+            "description": "Randomly selected Hall of Fame members.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HofMember"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HofMember"
+                  }
                 }
               }
             }

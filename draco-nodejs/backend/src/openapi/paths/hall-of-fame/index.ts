@@ -7,6 +7,7 @@ export const registerHallOfFameEndpoints = ({ registry, schemaRefs }: RegisterCo
     HofMemberSchemaRef,
     HofEligibleContactsQuerySchemaRef,
     HofEligibleContactsResponseSchemaRef,
+    HofRandomMembersQuerySchemaRef,
     CreateHofMemberSchemaRef,
     UpdateHofMemberSchemaRef,
     SubmitHofNominationSchemaRef,
@@ -113,8 +114,9 @@ export const registerHallOfFameEndpoints = ({ registry, schemaRefs }: RegisterCo
     method: 'get',
     path: '/api/accounts/{accountId}/hall-of-fame/random-member',
     operationId: 'getAccountHallOfFameRandomMember',
-    summary: 'Retrieve a random Hall of Fame member',
-    description: 'Returns a random Hall of Fame inductee for spotlight experiences.',
+    summary: 'Retrieve random Hall of Fame members',
+    description:
+      'Returns one or more random Hall of Fame inductees for spotlight experiences. Defaults to a single inductee when no count is provided.',
     tags: ['Hall of Fame'],
     parameters: [
       {
@@ -124,12 +126,15 @@ export const registerHallOfFameEndpoints = ({ registry, schemaRefs }: RegisterCo
         schema: { type: 'string', format: 'number' },
       },
     ],
+    request: {
+      query: HofRandomMembersQuerySchemaRef,
+    },
     responses: {
       200: {
-        description: 'Randomly selected Hall of Fame member.',
+        description: 'Randomly selected Hall of Fame members.',
         content: {
           'application/json': {
-            schema: HofMemberSchemaRef,
+            schema: HofMemberSchemaRef.array(),
           },
         },
       },

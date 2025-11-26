@@ -42,6 +42,7 @@ const criteriaTextSchema = z
   .optional();
 
 const currentYear = new Date().getFullYear();
+export const MAX_RANDOM_HOF_MEMBERS = 5;
 const MAX_ELIGIBLE_CONTACTS_PAGE_SIZE = 50;
 
 const yearInductedSchema = z
@@ -138,6 +139,15 @@ export const HofEligibleContactsQuerySchema = z
   .openapi({
     description:
       'Query parameters for locating contacts eligible for Hall of Fame induction. Results are paginated.',
+  });
+
+export const HofRandomMembersQuerySchema = z
+  .object({
+    count: numberQueryParam({ min: 1, max: MAX_RANDOM_HOF_MEMBERS }).optional(),
+  })
+  .openapi({
+    description:
+      'Query parameters for retrieving random Hall of Fame inductees for spotlight experiences.',
   });
 
 export const HofEligibleContactsResponseSchema = z
@@ -272,3 +282,4 @@ export type HofNominationSetupType = z.infer<typeof HofNominationSetupSchema>;
 export type UpdateHofNominationSetupType = z.infer<typeof UpdateHofNominationSetupSchema>;
 export type UpdateHofNominationType = z.infer<typeof UpdateHofNominationSchema>;
 export type HofNominationInductType = z.infer<typeof HofNominationInductSchema>;
+export type HofRandomMembersQueryType = z.infer<typeof HofRandomMembersQuerySchema>;
