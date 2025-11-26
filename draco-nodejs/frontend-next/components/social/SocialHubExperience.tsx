@@ -82,7 +82,7 @@ export default function SocialHubExperience({
           <Box sx={{ mb: 3 }}>
             {accountId ? (
               <AccountOptional accountId={accountId} componentId="account.home.hallOfFame">
-                <HofSpotlightWidget accountId={accountId} />
+                <HofSpotlightWidget accountId={accountId} count={3} />
               </AccountOptional>
             ) : null}
           </Box>

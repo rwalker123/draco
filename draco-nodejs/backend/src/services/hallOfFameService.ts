@@ -5,6 +5,8 @@ import {
   HofEligibleContactsQueryType,
   HofEligibleContactsResponseType,
   HofMemberType,
+  HofRandomMembersQueryType,
+  MAX_RANDOM_HOF_MEMBERS,
   UpdateHofMemberType,
 } from '@draco/shared-schemas';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
@@ -45,13 +47,19 @@ export class HallOfFameService {
     return HallOfFameResponseFormatter.formatClassWithMembers(accountId, classSummary, members);
   }
 
-  async getRandomMember(accountId: bigint): Promise<HofMemberType> {
-    const member = await this.hallOfFameRepository.getRandomMember(accountId);
-    if (!member) {
+  async getRandomMembers(
+    accountId: bigint,
+    query: HofRandomMembersQueryType | undefined,
+  ): Promise<HofMemberType[]> {
+    const requestedCount = query?.count && query.count > 0 ? query.count : 1;
+    const limit = Math.min(MAX_RANDOM_HOF_MEMBERS, requestedCount);
+
+    const members = await this.hallOfFameRepository.getRandomMembers(accountId, limit);
+    if (!members || members.length === 0) {
       throw new NotFoundError('No Hall of Fame members found.');
     }
 
-    return HallOfFameResponseFormatter.formatMember(accountId, member);
+    return members.map((member) => HallOfFameResponseFormatter.formatMember(accountId, member));
   }
 
   async createMember(accountId: bigint, payload: CreateHofMemberType): Promise<HofMemberType> {

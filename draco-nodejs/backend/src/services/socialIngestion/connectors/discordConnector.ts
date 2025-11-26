@@ -107,9 +107,12 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
       return;
     }
 
+    const shouldLogVerbose = this.isDevelopmentEnvironment();
     const targets = await this.options.targetsProvider();
     if (!targets.length) {
-      console.info('[discord] No Discord channel mappings configured. Skipping run.');
+      if (shouldLogVerbose) {
+        console.info('[discord] No Discord channel mappings configured. Skipping run.');
+      }
       return;
     }
 
@@ -153,19 +156,23 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
       const deletedCount = await this.removeDeletedMessages(target, messages);
 
       if (ingestedCount > 0) {
-        console.info(
-          `[discord] Ingested ${ingestedCount} messages for channel ${target.channelId}`,
-        );
+        if (shouldLogVerbose) {
+          console.info(
+            `[discord] Ingested ${ingestedCount} messages for channel ${target.channelId}`,
+          );
+        }
       } else if (deletedCount > 0) {
-        console.info(
-          `[discord] Removed ${deletedCount} deleted messages for channel ${target.channelId}`,
-        );
-      } else {
+        if (shouldLogVerbose) {
+          console.info(
+            `[discord] Removed ${deletedCount} deleted messages for channel ${target.channelId}`,
+          );
+        }
+      } else if (shouldLogVerbose) {
         noChangeCount += 1;
       }
     }
 
-    if (noChangeCount > 0) {
+    if (shouldLogVerbose && noChangeCount > 0) {
       console.info(
         `[discord] No changes for ${noChangeCount} channel${noChangeCount === 1 ? '' : 's'}`,
       );

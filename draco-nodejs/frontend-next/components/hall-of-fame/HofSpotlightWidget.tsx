@@ -9,7 +9,7 @@ import {
   getAccountHallOfFameRandomMember,
   listAccountHallOfFameClasses,
 } from '@draco/shared-api-client';
-import { HofMemberSchema, type HofMemberType } from '@draco/shared-schemas';
+import { HofMemberSchema, MAX_RANDOM_HOF_MEMBERS, type HofMemberType } from '@draco/shared-schemas';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult, ApiClientError } from '@/utils/apiResult';
 import HofMemberCard from './HofMemberCard';
@@ -18,6 +18,7 @@ import WidgetShell from '../ui/WidgetShell';
 export interface HofSpotlightWidgetProps {
   accountId: string;
   hideCta?: boolean;
+  count?: number;
 }
 
 const normalizeId = (value: unknown): unknown =>
@@ -50,13 +51,23 @@ const coerceMember = (member: unknown): HofMemberType | null => {
   }
 };
 
-const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hideCta }) => {
+const normalizeCount = (value: number | undefined): number => {
+  if (typeof value !== 'number' || Number.isNaN(value) || value <= 0) {
+    return 1;
+  }
+
+  return Math.min(Math.floor(value), MAX_RANDOM_HOF_MEMBERS);
+};
+
+const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hideCta, count }) => {
   const apiClient = useApiClient();
   const router = useRouter();
   const theme = useTheme();
 
+  const memberCount = normalizeCount(count);
+
   const [hasHallOfFame, setHasHallOfFame] = React.useState(false);
-  const [hallOfFameMember, setHallOfFameMember] = React.useState<HofMemberType | null>(null);
+  const [hallOfFameMembers, setHallOfFameMembers] = React.useState<HofMemberType[]>([]);
   const [hallOfFameLoading, setHallOfFameLoading] = React.useState(false);
   const [hallOfFameError, setHallOfFameError] = React.useState<string | null>(null);
 
@@ -92,18 +103,22 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
             const randomResult = await getAccountHallOfFameRandomMember({
               client: apiClient,
               path: { accountId },
+              query: memberCount > 1 ? { count: memberCount } : undefined,
               throwOnError: false,
             });
 
-            const member = unwrapApiResult(randomResult, 'Unable to load Hall of Fame spotlight.');
+            const members = unwrapApiResult(randomResult, 'Unable to load Hall of Fame spotlight.');
 
             if (isMounted) {
-              const normalizedMember = coerceMember(member);
-              if (normalizedMember) {
-                setHallOfFameMember(normalizedMember);
+              const normalizedMembers = (Array.isArray(members) ? members : [members])
+                .map(coerceMember)
+                .filter(Boolean) as HofMemberType[];
+
+              if (normalizedMembers.length > 0) {
+                setHallOfFameMembers(normalizedMembers);
               } else {
                 setHallOfFameError('Unable to load Hall of Fame spotlight.');
-                setHallOfFameMember(null);
+                setHallOfFameMembers([]);
               }
             }
           } catch (error) {
@@ -113,11 +128,11 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
                   ? error.message
                   : 'Unable to load Hall of Fame spotlight.';
               setHallOfFameError(message);
-              setHallOfFameMember(null);
+              setHallOfFameMembers([]);
             }
           }
         } else {
-          setHallOfFameMember(null);
+          setHallOfFameMembers([]);
         }
       } catch (error) {
         if (!isMounted) {
@@ -128,7 +143,7 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
           error instanceof ApiClientError ? error.message : 'Unable to load Hall of Fame data.';
         setHallOfFameError(message);
         setHasHallOfFame(false);
-        setHallOfFameMember(null);
+        setHallOfFameMembers([]);
       } finally {
         if (isMounted) {
           setHallOfFameLoading(false);
@@ -141,7 +156,7 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
     return () => {
       isMounted = false;
     };
-  }, [accountId, apiClient]);
+  }, [accountId, apiClient, memberCount]);
 
   if (!hasHallOfFame) {
     return null;
@@ -171,8 +186,12 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
           </Box>
         ) : hallOfFameError ? (
           <Alert severity="error">{hallOfFameError}</Alert>
-        ) : hallOfFameMember ? (
-          <HofMemberCard member={hallOfFameMember} />
+        ) : hallOfFameMembers.length > 0 ? (
+          <Stack spacing={2} sx={{ width: '100%' }}>
+            {hallOfFameMembers.map((member) => (
+              <HofMemberCard key={member.id} member={member} />
+            ))}
+          </Stack>
         ) : (
           <Alert severity="info">Hall of Fame inductees will appear here soon.</Alert>
         )}

@@ -65,12 +65,15 @@ export class YouTubeConnector extends BaseSocialIngestionConnector {
       return;
     }
 
+    const shouldLogVerbose = this.isDevelopmentEnvironment();
     const targets = await this.resolveTargets();
 
     this.scheduleNextRun(targets.length);
 
     if (!targets.length) {
-      console.info('[youtube] No ingestion targets configured.');
+      if (shouldLogVerbose) {
+        console.info('[youtube] No ingestion targets configured.');
+      }
       return;
     }
 
@@ -111,7 +114,11 @@ export class YouTubeConnector extends BaseSocialIngestionConnector {
             : undefined,
         });
       }
-      console.info(`[youtube] Ingested ${newVideos.length} videos for channel ${target.channelId}`);
+      if (shouldLogVerbose) {
+        console.info(
+          `[youtube] Ingested ${newVideos.length} videos for channel ${target.channelId}`,
+        );
+      }
 
       if (updatedCache) {
         this.recentVideoCache.set(target.channelId, updatedCache);

@@ -65,7 +65,7 @@ export class PrismaHallOfFameRepository implements IHallOfFameRepository {
     });
   }
 
-  async getRandomMember(accountId: bigint): Promise<dbHofMemberWithContact | null> {
+  async getRandomMembers(accountId: bigint, limit: number): Promise<dbHofMemberWithContact[]> {
     const total = await this.prisma.hof.count({
       where: {
         accountid: accountId,
@@ -73,20 +73,23 @@ export class PrismaHallOfFameRepository implements IHallOfFameRepository {
     });
 
     if (total === 0) {
-      return null;
+      return [];
     }
 
-    const offset = Math.floor(Math.random() * total);
+    const safeLimit = Math.max(1, Math.min(limit, total));
+    const maxOffset = Math.max(total - safeLimit, 0);
+    const offset = maxOffset > 0 ? Math.floor(Math.random() * (maxOffset + 1)) : 0;
 
-    return this.prisma.hof.findFirst({
+    return this.prisma.hof.findMany({
       where: {
         accountid: accountId,
       },
       include: MEMBER_INCLUDE,
-      skip: offset,
       orderBy: {
         id: 'asc',
       },
+      skip: offset,
+      take: safeLimit,
     });
   }
 

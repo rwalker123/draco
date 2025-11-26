@@ -1,14 +1,16 @@
 {
-  "baseUrl": "http://localhost:3000",
+  "baseUrl": "https://ezrecsports.com",
   "memberCount": 1200,
   "durationMinutes": 60,
   "maxConcurrentRequests": 20,
   "requestTimeoutMs": 8000,
   "logSummaryEverySeconds": 30,
-  "dryRun": true,
+  "dryRun": false,
   "accountId": 1,
+  "seasonId": 65,
+  "teamSeasonId": 2322,
   "usernameEnvVar": "LOAD_TEST_USERNAME",
-  "passwordEnvVar": "LOAD_TEST_PASSWORD",
+  "passwordEnvVar": "LOAD_TEST_PASSWORD", // pragma: allowlist secret
   "hourlyVisitProfile": [
     0.0003,
     0.0003,
@@ -19,9 +21,9 @@
     0.0033,
     0.0055,
     0.0077,
-    0.0097,
-    0.0097,
-    0.0088,
+    0.097,
+    0.097,
+    0.088,
     0.0083,
     0.0083,
     0.0088,
@@ -47,10 +49,11 @@
   "pages": [
     { "path": "/login", "weight": 2 },
     { "path": "/", "weight": 5 },
-    { "path": "/schedule", "weight": 9 },
-    { "path": "/teams", "weight": 7 },
-    { "path": "/standings", "weight": 6 },
+    { "path": "/account/{accountId}/schedule", "weight": 9 },
+    { "path": "/account/{accountId}/seasons/{seasonId}/teams", "weight": 7 },
+    { "path": "/account/{accountId}/seasons/{seasonId}/standings", "weight": 6 },
     { "path": "/account/{accountId}/home", "weight": 12 },
-    { "path": "/account/{accountId}/statistics", "weight": 6 }
+    { "path": "/account/{accountId}/statistics", "weight": 6 },
+    { "path": "/account/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}", "weight": 6}
   ]
 }

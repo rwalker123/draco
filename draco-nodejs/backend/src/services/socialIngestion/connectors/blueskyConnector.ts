@@ -23,6 +23,7 @@ export class BlueskyConnector extends BaseSocialIngestionConnector {
       return;
     }
 
+    const shouldLogVerbose = this.isDevelopmentEnvironment();
     for (const target of targets) {
       const posts = await this.integrationService.fetchRecentPostsForTarget(
         target,
@@ -70,7 +71,9 @@ export class BlueskyConnector extends BaseSocialIngestionConnector {
       }
 
       await this.repository.createFeedItems(freshPayload);
-      console.info(`[bluesky] Ingested ${freshPayload.length} posts for @${target.handle}`);
+      if (shouldLogVerbose) {
+        console.info(`[bluesky] Ingested ${freshPayload.length} posts for @${target.handle}`);
+      }
     }
   }
 }

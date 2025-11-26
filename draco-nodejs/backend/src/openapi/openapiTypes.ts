@@ -74,6 +74,7 @@ import {
   HofNominationSetupSchema,
   HofEligibleContactsQuerySchema,
   HofEligibleContactsResponseSchema,
+  HofRandomMembersQuerySchema,
   HofNominationQuerySchema,
   PlayerCareerStatisticsSchema,
   PlayerPitchingStatsSchema,
@@ -757,6 +758,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'HofEligibleContactsResponse',
     HofEligibleContactsResponseSchema,
   );
+  const HofRandomMembersQuerySchemaRef = registry.register(
+    'HofRandomMembersQuery',
+    HofRandomMembersQuerySchema,
+  );
   const CreateHofMemberSchemaRef = registry.register('CreateHofMember', CreateHofMemberSchema);
   const UpdateHofMemberSchemaRef = registry.register('UpdateHofMember', UpdateHofMemberSchema);
   const SubmitHofNominationSchemaRef = registry.register(
@@ -1153,6 +1158,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     HofClassWithMembersSchemaRef,
     HofEligibleContactsQuerySchemaRef,
     HofEligibleContactsResponseSchemaRef,
+    HofRandomMembersQuerySchemaRef,
     CreateHofMemberSchemaRef,
     UpdateHofMemberSchemaRef,
     SubmitHofNominationSchemaRef,

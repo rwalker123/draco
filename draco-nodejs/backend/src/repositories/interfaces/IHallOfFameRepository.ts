@@ -23,7 +23,7 @@ export interface HallOfFameEligibleContactsResult {
 export interface IHallOfFameRepository {
   listClasses(accountId: bigint): Promise<dbHofClassSummary[]>;
   listMembersByYear(accountId: bigint, year: number): Promise<dbHofMemberWithContact[]>;
-  getRandomMember(accountId: bigint): Promise<dbHofMemberWithContact | null>;
+  getRandomMembers(accountId: bigint, limit: number): Promise<dbHofMemberWithContact[]>;
   findMemberById(accountId: bigint, memberId: bigint): Promise<dbHofMemberWithContact | null>;
   findMemberByContact(accountId: bigint, contactId: bigint): Promise<dbHofMemberWithContact | null>;
   createMember(

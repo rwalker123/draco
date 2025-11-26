@@ -13,7 +13,11 @@ const MIN_INTERVAL_MS = 5;
 const DAYS_IN_WEEK = 7;
 
 function loadJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  const raw = fs.readFileSync(filePath, 'utf8');
+  // Allow inline allowlist comments for detect-secrets without breaking JSON parsing.
+  const sanitized = raw.replace(/\s*\/\/\s*pragma: allowlist secret/g, '');
+
+  return JSON.parse(sanitized);
 }
 
 function resolveConfigPath(cliPath) {
@@ -117,6 +121,26 @@ function resolveAccountId(rawConfig) {
   return Number(accountId);
 }
 
+function resolveSeasonId(rawConfig) {
+  const seasonId = rawConfig.seasonId ?? 1;
+
+  if (Number.isNaN(Number(seasonId)) || Number(seasonId) <= 0) {
+    throw new Error('seasonId must be a positive number.');
+  }
+
+  return Number(seasonId);
+}
+
+function resolveTeamSeasonId(rawConfig) {
+  const teamSeasonId = rawConfig.teamSeasonId ?? 1;
+
+  if (Number.isNaN(Number(teamSeasonId)) || Number(teamSeasonId) <= 0) {
+    throw new Error('teamSeasonId must be a positive number.');
+  }
+
+  return Number(teamSeasonId);
+}
+
 function resolveCredentials(rawConfig) {
   const usernameEnvVar = rawConfig.usernameEnvVar ?? rawConfig.auth?.usernameEnvVar;
   const passwordEnvVar = rawConfig.passwordEnvVar ?? rawConfig.auth?.passwordEnvVar;
@@ -142,8 +166,11 @@ function resolveCredentials(rawConfig) {
   };
 }
 
-function resolvePagePath(pathTemplate, accountId) {
-  return pathTemplate.replace(/\{accountId\}/g, accountId);
+function resolvePagePath(pathTemplate, ids) {
+  return pathTemplate
+    .replace(/\{accountId\}/g, ids.accountId)
+    .replace(/\{seasonId\}/g, ids.seasonId)
+    .replace(/\{teamSeasonId\}/g, ids.teamSeasonId);
 }
 
 function normalizeDayOfWeekMultipliers(rawMultipliers) {
@@ -168,6 +195,8 @@ function normalizeDayOfWeekMultipliers(rawMultipliers) {
 
 function normalizeConfig(rawConfig, overrides) {
   const accountId = resolveAccountId(rawConfig);
+  const seasonId = resolveSeasonId(rawConfig);
+  const teamSeasonId = resolveTeamSeasonId(rawConfig);
   const credentials = resolveCredentials(rawConfig);
 
   const config = {
@@ -183,6 +212,8 @@ function normalizeConfig(rawConfig, overrides) {
     requestTimeoutMs: rawConfig.requestTimeoutMs ?? DEFAULT_TIMEOUT_MS,
     logSummaryEverySeconds: rawConfig.logSummaryEverySeconds ?? DEFAULT_LOG_INTERVAL_SECONDS,
     accountId,
+    seasonId,
+    teamSeasonId,
     credentials,
   };
 
@@ -207,7 +238,7 @@ function normalizeConfig(rawConfig, overrides) {
     dayOfWeekMultipliers: normalizeDayOfWeekMultipliers(config.dayOfWeekMultipliers),
     pages: config.pages.map((page) => ({
       ...page,
-      resolvedPath: resolvePagePath(page.path, accountId),
+      resolvedPath: resolvePagePath(page.path, { accountId, seasonId, teamSeasonId }),
     })),
   };
 }
@@ -254,6 +285,7 @@ function millisToNextHour(nowMs) {
 async function runRequest(config, state, page) {
   const url = new URL(page.resolvedPath || page.path, config.baseUrl).toString();
   const started = Date.now();
+  const method = page.method || 'GET';
 
   if (config.dryRun) {
     const simulatedLatency = 50 + Math.random() * 150;
@@ -280,7 +312,7 @@ async function runRequest(config, state, page) {
     }
 
     const response = await fetch(url, {
-      method: page.method || 'GET',
+      method,
       headers,
       signal: controller.signal,
     });
@@ -289,11 +321,41 @@ async function runRequest(config, state, page) {
     state.stats.totalLatencyMs += latency;
 
     if (!response.ok) {
+      let responseBody = '';
+      try {
+        responseBody = await response.text();
+      } catch (bodyError) {
+        responseBody = `<<failed to read response body: ${
+          bodyError instanceof Error ? bodyError.message : String(bodyError)
+        }>>`;
+      }
+
+      const trimmedBody =
+        responseBody && responseBody.length > 500
+          ? `${responseBody.slice(0, 500)}...`
+          : responseBody;
+
+      console.error(
+        `[${new Date().toISOString()}] Request failed ${method} ${url} -> ${
+          response.status
+        } ${response.statusText}${
+          trimmedBody ? ` body="${trimmedBody.replace(/\s+/g, ' ').trim()}"` : ''
+        }`,
+      );
       state.stats.failed += 1;
     } else {
       state.stats.completed += 1;
     }
   } catch (error) {
+    const reason =
+      error && error.name === 'AbortError'
+        ? 'timeout'
+        : error instanceof Error
+          ? error.message
+          : String(error);
+    console.error(
+      `[${new Date().toISOString()}] Request error ${method} ${url} -> ${reason}`,
+    );
     state.stats.failed += 1;
   } finally {
     clearTimeout(timeout);
