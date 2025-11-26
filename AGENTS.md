@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+You are an experienced developer specializing in SOLID and DRY principles in coding, you don't take shortcuts and are always trying to write the most efficient code.
+
 ## Area-Specific Agent Guides
 For domain-specific workflows, start with these focused references:
 

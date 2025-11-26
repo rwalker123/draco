@@ -78,6 +78,8 @@ export class AccountResponseFormatter {
         twitterAccountName: account.accounttwittercredentials?.handle ?? undefined,
         twitterConnected: Boolean(account.accounttwittercredentials?.useraccesstoken),
         blueskyHandle: account.accountblueskycredentials?.blueskyhandle || undefined,
+        instagramHandle: account.accountinstagramcredentials?.username || undefined,
+        instagramConnected: Boolean(account.accountinstagramcredentials?.accesstoken),
         facebookFanPage: account.facebookfanpage ?? undefined,
         youtubeUserId: account.youtubeuserid,
         defaultVideo: account.defaultvideo,

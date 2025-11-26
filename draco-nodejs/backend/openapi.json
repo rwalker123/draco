@@ -4360,6 +4360,13 @@
                 "type": "boolean",
                 "default": false
               },
+              "instagramHandle": {
+                "type": "string"
+              },
+              "instagramConnected": {
+                "type": "boolean",
+                "default": false
+              },
               "facebookFanPage": {
                 "type": "string"
               },
@@ -4663,6 +4670,13 @@
                     "type": "string"
                   },
                   "twitterConnected": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "instagramHandle": {
+                    "type": "string"
+                  },
+                  "instagramConnected": {
                     "type": "boolean",
                     "default": false
                   },
@@ -5120,6 +5134,13 @@
                 "type": "boolean",
                 "default": false
               },
+              "instagramHandle": {
+                "type": "string"
+              },
+              "instagramConnected": {
+                "type": "boolean",
+                "default": false
+              },
               "facebookFanPage": {
                 "type": "string"
               },
@@ -5351,6 +5372,23 @@
           }
         }
       },
+      "AccountInstagramSettings": {
+        "type": "object",
+        "properties": {
+          "instagramUserId": {
+            "type": "string"
+          },
+          "instagramUsername": {
+            "type": "string"
+          },
+          "instagramAppId": {
+            "type": "string"
+          },
+          "instagramAppSecret": {
+            "type": "string"
+          }
+        }
+      },
       "AccountTwitterSettings": {
         "type": "object",
         "properties": {
@@ -5416,7 +5454,8 @@
                     "EditContactInfo",
                     "PostGameResultsToDiscord",
                     "PostGameResultsToTwitter",
-                    "PostGameResultsToBluesky"
+                    "PostGameResultsToBluesky",
+                    "SyncInstagramToGallery"
                   ]
                 },
                 "label": {
@@ -5492,7 +5531,8 @@
                           "EditContactInfo",
                           "PostGameResultsToDiscord",
                           "PostGameResultsToTwitter",
-                          "PostGameResultsToBluesky"
+                          "PostGameResultsToBluesky",
+                          "SyncInstagramToGallery"
                         ]
                       },
                       "value": {
@@ -5635,7 +5675,8 @@
                   "EditContactInfo",
                   "PostGameResultsToDiscord",
                   "PostGameResultsToTwitter",
-                  "PostGameResultsToBluesky"
+                  "PostGameResultsToBluesky",
+                  "SyncInstagramToGallery"
                 ]
               },
               "label": {
@@ -5711,7 +5752,8 @@
                         "EditContactInfo",
                         "PostGameResultsToDiscord",
                         "PostGameResultsToTwitter",
-                        "PostGameResultsToBluesky"
+                        "PostGameResultsToBluesky",
+                        "SyncInstagramToGallery"
                       ]
                     },
                     "value": {
@@ -5865,7 +5907,8 @@
           "EditContactInfo",
           "PostGameResultsToDiscord",
           "PostGameResultsToTwitter",
-          "PostGameResultsToBluesky"
+          "PostGameResultsToBluesky",
+          "SyncInstagramToGallery"
         ]
       },
       "Sponsor": {
@@ -20857,6 +20900,13 @@
                         "type": "boolean",
                         "default": false
                       },
+                      "instagramHandle": {
+                        "type": "string"
+                      },
+                      "instagramConnected": {
+                        "type": "boolean",
+                        "default": false
+                      },
                       "facebookFanPage": {
                         "type": "string"
                       },
@@ -21421,6 +21471,103 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AccountTwitterSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated account details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/instagram": {
+      "put": {
+        "operationId": "updateAccountInstagramSettings",
+        "summary": "Update account Instagram settings",
+        "description": "Update the Instagram integration settings for an account.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountInstagramSettings"
               }
             }
           }
@@ -24005,7 +24152,8 @@
                 "EditContactInfo",
                 "PostGameResultsToDiscord",
                 "PostGameResultsToTwitter",
-                "PostGameResultsToBluesky"
+                "PostGameResultsToBluesky",
+                "SyncInstagramToGallery"
               ]
             }
           }

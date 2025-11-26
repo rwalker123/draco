@@ -3,6 +3,7 @@ import { PhotoSubmissionService } from './photoSubmissionService.js';
 import { PhotoGalleryApprovalService } from './photoGalleryApprovalService.js';
 import { PhotoSubmissionAssetService } from './photoSubmissionAssetService.js';
 import { PhotoSubmissionNotificationService } from './photoSubmissionNotificationService.js';
+import { InstagramIntegrationService } from './instagramIntegrationService.js';
 import type { PhotoSubmissionDetailType, PhotoSubmissionRecordType } from '@draco/shared-schemas';
 import { ValidationError, PhotoSubmissionNotificationError } from '../utils/customErrors.js';
 import { photoSubmissionMetrics } from '../metrics/photoSubmissionMetrics.js';
@@ -14,6 +15,7 @@ export class PhotoSubmissionModerationService {
     private readonly galleryService: PhotoGalleryApprovalService = ServiceFactory.getPhotoGalleryApprovalService(),
     private readonly assetService: PhotoSubmissionAssetService = ServiceFactory.getPhotoSubmissionAssetService(),
     private readonly notificationService: PhotoSubmissionNotificationService = ServiceFactory.getPhotoSubmissionNotificationService(),
+    private readonly instagramIntegrationService: InstagramIntegrationService = ServiceFactory.getInstagramIntegrationService(),
   ) {}
 
   async listAccountPending(accountId: bigint): Promise<PhotoSubmissionDetailType[]> {
@@ -79,6 +81,15 @@ export class PhotoSubmissionModerationService {
       try {
         await this.assetService.promoteSubmissionAssets(updatedSubmission, photo.id);
         await this.assetService.deleteSubmissionAssets(updatedSubmission);
+        await this.uploadToInstagram(accountId, photo.id, detail?.caption ?? undefined).catch(
+          (error) => {
+            console.error('[instagram] Failed to mirror approved submission', {
+              accountId: accountId.toString(),
+              photoId: photo.id.toString(),
+              error,
+            });
+          },
+        );
       } catch (error) {
         const rollbackErrors: unknown[] = [];
 
@@ -179,5 +190,9 @@ export class PhotoSubmissionModerationService {
       }
       throw error;
     }
+  }
+
+  private async uploadToInstagram(accountId: bigint, photoId: bigint, caption?: string): Promise<void> {
+    await this.instagramIntegrationService.uploadPhotoFromGallery(accountId, photoId, caption);
   }
 }

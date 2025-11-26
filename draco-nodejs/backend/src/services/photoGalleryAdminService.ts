@@ -20,6 +20,7 @@ import { PhotoGalleryAssetService } from './photoGalleryAssetService.js';
 import { ALBUM_PHOTO_LIMIT } from './photoGalleryLimits.js';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { buildGalleryAssetPaths } from '../utils/photoSubmissionPaths.js';
+import { InstagramIntegrationService } from './instagramIntegrationService.js';
 
 const GALLERY_EXTENSION = '.jpg';
 type AdminCreatePhotoPayload = Omit<CreatePhotoGalleryPhotoType, 'photo'>;
@@ -37,6 +38,7 @@ export class PhotoGalleryAdminService {
   constructor(
     private readonly repository: IPhotoGalleryAdminRepository = RepositoryFactory.getPhotoGalleryAdminRepository(),
     private readonly assetService: PhotoGalleryAssetService = new PhotoGalleryAssetService(),
+    private readonly instagramIntegrationService: InstagramIntegrationService = new InstagramIntegrationService(),
   ) {}
 
   async listGalleryEntries(
@@ -76,6 +78,13 @@ export class PhotoGalleryAdminService {
     }
 
     const entry = await this.requirePhoto(accountId, created.id);
+    await this.uploadToInstagram(accountId, created.id, caption).catch((error) => {
+      console.error('[instagram] Failed to mirror photo upload', {
+        accountId: accountId.toString(),
+        photoId: created.id.toString(),
+        error,
+      });
+    });
     return this.formatPhoto(entry);
   }
 
@@ -383,6 +392,10 @@ export class PhotoGalleryAdminService {
     }
 
     throw new ConflictError('An album with this title already exists');
+  }
+
+  private async uploadToInstagram(accountId: bigint, photoId: bigint, caption?: string): Promise<void> {
+    await this.instagramIntegrationService.uploadPhotoFromGallery(accountId, photoId, caption);
   }
 
   private formatPhoto(entry: dbPhotoGalleryEntry): PhotoGalleryPhotoType {

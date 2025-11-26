@@ -140,6 +140,7 @@ const createAlbum = (overrides: Partial<dbPhotoGalleryAlbum> = {}): dbPhotoGalle
   accountid: 1n,
   teamid: 0n,
   parentalbumid: 0n,
+  issystem: false,
   title: 'Main Album',
   ...overrides,
 });
@@ -149,7 +150,14 @@ const createSubmissionWithRelations = (
 ): dbPhotoSubmissionWithRelations => ({
   ...createDbSubmission(),
   accounts: { id: 1n, name: 'Example Account' },
-  photogalleryalbum: { id: 2n, accountid: 1n, teamid: 0n, parentalbumid: 0n, title: 'Main Album' },
+  photogalleryalbum: {
+    id: 2n,
+    accountid: 1n,
+    teamid: 0n,
+    parentalbumid: 0n,
+    issystem: false,
+    title: 'Main Album',
+  },
   photogallery: null,
   submitter: { id: 4n, firstname: 'Sam', lastname: 'Submitter', email: 'sam@example.com' },
   moderator: null,

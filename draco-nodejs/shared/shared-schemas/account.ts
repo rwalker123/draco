@@ -91,6 +91,8 @@ export const AccountSocialsSchema = z.object({
   twitterAccountName: z.string().optional(),
   blueskyHandle: z.string().optional(),
   twitterConnected: z.boolean().default(false),
+  instagramHandle: z.string().optional(),
+  instagramConnected: z.boolean().default(false),
   facebookFanPage: z.string().optional(),
   youtubeUserId: z.string().nullable().optional(),
   defaultVideo: z.string().nullable().optional(),
@@ -107,6 +109,13 @@ export const AccountTwitterSettingsSchema = z.object({
   twitterClientId: z.string().trim().optional(),
   twitterClientSecret: z.string().trim().optional(),
   twitterIngestionBearerToken: z.string().trim().optional(),
+});
+
+export const AccountInstagramSettingsSchema = z.object({
+  instagramUserId: z.string().trim().optional(),
+  instagramUsername: z.string().trim().optional(),
+  instagramAppId: z.string().trim().optional(),
+  instagramAppSecret: z.string().trim().optional(),
 });
 
 export const AccountTwitterOAuthStartSchema = z.object({
@@ -183,6 +192,7 @@ export type AccountAffiliationType = z.infer<typeof AccountAffiliationSchema>;
 export type AccountUrlType = z.infer<typeof AccountUrlSchema>;
 export type CreateAccountUrlType = z.infer<typeof CreateAccountUrlSchema>;
 export type AccountTwitterSettingsType = z.infer<typeof AccountTwitterSettingsSchema>;
+export type AccountInstagramSettingsType = z.infer<typeof AccountInstagramSettingsSchema>;
 export type AccountBlueskySettingsType = z.infer<typeof AccountBlueskySettingsSchema>;
 export type AccountTypeReference = z.infer<typeof AccountTypeSchema>;
 export type AccountSearchQueryParamType = z.infer<typeof AccountSearchQueryParamSchema>;

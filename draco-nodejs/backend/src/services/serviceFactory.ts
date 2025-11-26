@@ -68,10 +68,12 @@ import { TwitterConnector } from './socialIngestion/connectors/twitterConnector.
 import { BlueskyConnector } from './socialIngestion/connectors/blueskyConnector.js';
 import { YouTubeConnector } from './socialIngestion/connectors/youtubeConnector.js';
 import { DiscordConnector } from './socialIngestion/connectors/discordConnector.js';
+import { InstagramConnector } from './socialIngestion/connectors/instagramConnector.js';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { YouTubeIntegrationService } from './youtubeIntegrationService.js';
 import { TwitterIntegrationService } from './twitterIntegrationService.js';
 import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
+import { InstagramIntegrationService } from './instagramIntegrationService.js';
 import { WelcomeMessageService } from './welcomeMessageService.js';
 
 /**
@@ -137,6 +139,7 @@ export class ServiceFactory {
   private static youtubeIntegrationService: YouTubeIntegrationService;
   private static twitterIntegrationService: TwitterIntegrationService;
   private static blueskyIntegrationService: BlueskyIntegrationService;
+  private static instagramIntegrationService: InstagramIntegrationService;
   private static welcomeMessageService: WelcomeMessageService;
 
   static getRoleService(): IRoleService {
@@ -465,6 +468,14 @@ export class ServiceFactory {
     return this.blueskyIntegrationService;
   }
 
+  static getInstagramIntegrationService(): InstagramIntegrationService {
+    if (!this.instagramIntegrationService) {
+      this.instagramIntegrationService = new InstagramIntegrationService();
+    }
+
+    return this.instagramIntegrationService;
+  }
+
   static getWelcomeMessageService(): WelcomeMessageService {
     if (!this.welcomeMessageService) {
       const welcomeMessageRepository = RepositoryFactory.getWelcomeMessageRepository();
@@ -497,6 +508,7 @@ export class ServiceFactory {
       const discordIntegrationService = this.getDiscordIntegrationService();
       const twitterIntegrationService = this.getTwitterIntegrationService();
       const blueskyIntegrationService = this.getBlueskyIntegrationService();
+      const instagramIntegrationService = this.getInstagramIntegrationService();
 
       if (socialIngestionConfig.twitter.enabled) {
         const staticTargets = socialIngestionConfig.twitter.targets.map((target) => ({
@@ -574,6 +586,43 @@ export class ServiceFactory {
         );
       }
 
+      if (socialIngestionConfig.instagram.enabled) {
+        const targetsProvider = async () => {
+          const dbTargets = await instagramIntegrationService.listIngestionTargets();
+
+          const staticTargets = await Promise.all(
+            socialIngestionConfig.instagram.targets.map(async (target) => {
+              if (!socialIngestionConfig.instagram.accessToken) {
+                return null;
+              }
+
+              const album = await instagramIntegrationService.ensureInstagramAlbum(target.accountId);
+              return {
+                ...target,
+                albumId: album.id,
+                accessToken: socialIngestionConfig.instagram.accessToken,
+              };
+            }),
+          );
+
+          return [
+            ...dbTargets,
+            ...staticTargets.filter(
+              (target): target is NonNullable<(typeof staticTargets)[number]> => Boolean(target),
+            ),
+          ];
+        };
+
+        connectors.push(
+          new InstagramConnector(instagramIntegrationService, {
+            maxResults: socialIngestionConfig.instagram.maxResults,
+            targetsProvider,
+            intervalMs: socialIngestionConfig.instagram.intervalMs,
+            enabled: socialIngestionConfig.instagram.enabled,
+          }),
+        );
+      }
+
       this.socialIngestionService = new SocialIngestionService(connectors);
     }
 
@@ -600,7 +649,12 @@ export class ServiceFactory {
     if (!this.photoGalleryAdminService) {
       const repository = RepositoryFactory.getPhotoGalleryAdminRepository();
       const assetService = this.getPhotoGalleryAssetService();
-      this.photoGalleryAdminService = new PhotoGalleryAdminService(repository, assetService);
+      const instagramIntegrationService = this.getInstagramIntegrationService();
+      this.photoGalleryAdminService = new PhotoGalleryAdminService(
+        repository,
+        assetService,
+        instagramIntegrationService,
+      );
     }
 
     return this.photoGalleryAdminService;
