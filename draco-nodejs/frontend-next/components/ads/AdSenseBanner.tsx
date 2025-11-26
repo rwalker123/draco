@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import Script from 'next/script';
 import Box from '@mui/material/Box';
 
 const ADSENSE_CLIENT_ID = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
@@ -12,11 +11,13 @@ const IS_DEV = process.env.NODE_ENV !== 'production';
 declare global {
   interface Window {
     adsbygoogle?: Array<Record<string, unknown>>;
+    __dracoHeaderAdRequested?: boolean;
   }
 }
 
 const AdSenseBanner: React.FC = () => {
   const adUnitRef = useRef<HTMLElement>(null);
+  const hasRequestedAd = useRef(false);
   const shouldRenderAd = Boolean(ADSENSE_ENABLED && ADSENSE_CLIENT_ID && ACCOUNT_HEADER_AD_SLOT);
 
   useEffect(() => {
@@ -24,9 +25,27 @@ const AdSenseBanner: React.FC = () => {
       return;
     }
 
+    // Prevent multiple pushes across remounts (React strict dev cycles) by using a window-scoped flag.
+    if (typeof window !== 'undefined' && window.__dracoHeaderAdRequested) {
+      return;
+    }
+
+    const adElement = adUnitRef.current;
+
+    // Avoid pushing twice in dev/StrictMode or fast refresh if the unit is already initialized
+    if (hasRequestedAd.current || adElement.getAttribute('data-adsbygoogle-status')) {
+      return;
+    }
+
+    hasRequestedAd.current = true;
+
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
+      if (typeof window !== 'undefined') {
+        window.__dracoHeaderAdRequested = true;
+      }
     } catch (error) {
+      hasRequestedAd.current = false;
       console.error('Adsense error', error);
     }
   }, [shouldRenderAd]);
@@ -37,13 +56,6 @@ const AdSenseBanner: React.FC = () => {
 
   return (
     <>
-      <Script
-        id="google-adsense-script"
-        strategy="afterInteractive"
-        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
-        async
-        crossOrigin="anonymous"
-      />
       <Box
         sx={{
           width: '100%',
