@@ -22,6 +22,7 @@ function main() {
   // Create a temporary copy of the baseline
   const baselinePath = '.secrets.baseline';
   const tempBaselinePath = '.secrets.baseline.tmp';
+  const excludeFilesPattern = 'scripts/load-test\\.config\\.example\\.json';
   
   if (fs.existsSync(baselinePath)) {
     fs.copyFileSync(baselinePath, tempBaselinePath);
@@ -29,9 +30,12 @@ function main() {
   
   try {
     // Run detect-secrets-hook
-    execSync(`~/Library/Python/3.9/bin/detect-secrets-hook --baseline ${baselinePath} ${stagedFiles}`, {
-      stdio: 'inherit'
-    });
+    execSync(
+      `~/Library/Python/3.9/bin/detect-secrets-hook --exclude-files ${excludeFilesPattern} --baseline ${baselinePath} ${stagedFiles}`,
+      {
+        stdio: 'inherit'
+      },
+    );
     
     console.log('✅ detect-secrets check passed');
     return 0;

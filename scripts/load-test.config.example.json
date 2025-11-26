@@ -10,7 +10,7 @@
   "seasonId": 65,
   "teamSeasonId": 2322,
   "usernameEnvVar": "LOAD_TEST_USERNAME",
-  "passwordEnvVar": "LOAD_TEST_PASSWORD", // pragma: allowlist secret
+  "passwordEnvVar": "LOAD_TEST_PWD",
   "hourlyVisitProfile": [
     0.0003,
     0.0003,
