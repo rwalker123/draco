@@ -7,6 +7,7 @@ import NextLink from 'next/link';
 import WidgetShell from '../ui/WidgetShell';
 import SocialVideoCard from './SocialVideoCard';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
+import { truncateText } from '@/utils/emailUtils';
 import type { SocialVideoType } from '@draco/shared-schemas';
 
 interface FeaturedVideosWidgetProps {
@@ -32,18 +33,6 @@ type VideoState = {
   items: SocialVideoType[];
   loading: boolean;
   error: string | null;
-};
-
-const truncateText = (text: string | null | undefined, maxLength = 150) => {
-  if (!text) {
-    return text;
-  }
-
-  if (text.length <= maxLength) {
-    return text;
-  }
-
-  return `${text.slice(0, maxLength).trimEnd()}...`;
 };
 
 const FeaturedVideosWidget: React.FC<FeaturedVideosWidgetProps> = ({

@@ -73,28 +73,6 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   const router = useRouter();
   const theme = useTheme();
 
-  const tileStyles = React.useMemo(() => {
-    const baseColor = theme.palette.primary.main;
-    const surface = theme.palette.widget.surface;
-    const highlightStart = alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12);
-    const highlightMid = alpha(surface, theme.palette.mode === 'dark' ? 0.92 : 0.98);
-    const highlightEnd = alpha(surface, theme.palette.mode === 'dark' ? 0.85 : 0.94);
-    const overlay = `radial-gradient(circle at 18% 22%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.28 : 0.16)} 0%, ${alpha(baseColor, 0)} 55%),
-      radial-gradient(circle at 78% 28%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12)} 0%, ${alpha(baseColor, 0)} 58%),
-      radial-gradient(circle at 48% 82%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.18 : 0.1)} 0%, ${alpha(baseColor, 0)} 70%)`;
-
-    return {
-      background: `linear-gradient(135deg, ${highlightStart} 0%, ${highlightMid} 42%, ${highlightEnd} 100%)`,
-      overlay,
-      border: theme.palette.widget.border,
-      shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
-      detailBackdrop: alpha(
-        theme.palette.text.primary,
-        theme.palette.mode === 'dark' ? 0.18 : 0.06,
-      ),
-    };
-  }, [theme]);
-
   // Use provided values if available, otherwise use internal state
   const displayAccounts: AccountType[] = providedOrganizations || accounts;
   const displayLoading = providedLoading !== undefined ? providedLoading : loading;
@@ -220,17 +198,16 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       <Paper
         key={account.id}
         variant="outlined"
-        sx={{
+        sx={(themeArg) => ({
           minWidth: isScrollable ? 320 : 280,
           maxWidth: isScrollable ? undefined : 360,
           flex: isScrollable ? '0 0 320px' : '0 1 360px',
           height: '100%',
-          borderRadius: 2,
+          borderRadius: 3,
           p: { xs: 1.75, sm: 2.25 },
-          border: '1px solid',
-          borderColor: tileStyles.border,
-          boxShadow: tileStyles.shadow,
-          background: tileStyles.background,
+          border: `1px solid ${themeArg.palette.widget.border}`,
+          boxShadow: themeArg.shadows[themeArg.palette.mode === 'dark' ? 6 : 2],
+          backgroundColor: themeArg.palette.widget.surface,
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
@@ -240,20 +217,11 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
           scrollSnapAlign: isScrollable ? 'start' : undefined,
           '&:hover': {
             transform: 'translateY(-4px)',
-            boxShadow: theme.shadows[theme.palette.mode === 'dark' ? 12 : 6],
-            borderColor: theme.palette.primary.main,
+            boxShadow: themeArg.shadows[themeArg.palette.mode === 'dark' ? 10 : 6],
+            borderColor: themeArg.palette.primary.main,
           },
-        }}
+        })}
       >
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: 'none',
-            backgroundImage: tileStyles.overlay,
-            opacity: theme.palette.mode === 'dark' ? 0.7 : 0.55,
-          }}
-        />
         <Box
           sx={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}
         >
