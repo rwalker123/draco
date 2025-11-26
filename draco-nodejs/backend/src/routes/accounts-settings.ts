@@ -8,6 +8,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import {
   AccountBlueskySettingsSchema,
+  AccountInstagramSettingsSchema,
   AccountTwitterSettingsSchema,
   CreateAccountUrlSchema,
   AccountSettingUpdateRequestSchema,
@@ -115,6 +116,27 @@ router.put(
 
     return accountsService
       .updateAccountTwitterSettings(accountId, twitterSettings)
+      .then((updatedAccount) => {
+        res.json(updatedAccount);
+      });
+  }),
+);
+
+/**
+ * PUT /api/accounts/:accountId/instagram
+ * Update Instagram settings (Account Admin or Administrator)
+ */
+router.put(
+  '/:accountId/instagram',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const instagramSettings = AccountInstagramSettingsSchema.parse(req.body);
+
+    return accountsService
+      .updateAccountInstagramSettings(accountId, instagramSettings)
       .then((updatedAccount) => {
         res.json(updatedAccount);
       });

@@ -46,6 +46,8 @@ import {
   IWelcomeMessageRepository,
   IAccountTwitterCredentialsRepository,
   IAccountBlueskyCredentialsRepository,
+  IAccountInstagramCredentialsRepository,
+  IInstagramIngestionRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -93,6 +95,8 @@ import {
   PrismaWelcomeMessageRepository,
   PrismaAccountTwitterCredentialsRepository,
   PrismaAccountBlueskyCredentialsRepository,
+  PrismaAccountInstagramCredentialsRepository,
+  PrismaInstagramIngestionRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -147,6 +151,8 @@ export class RepositoryFactory {
   private static welcomeMessageRepository: IWelcomeMessageRepository;
   private static accountTwitterCredentialsRepository: IAccountTwitterCredentialsRepository;
   private static accountBlueskyCredentialsRepository: IAccountBlueskyCredentialsRepository;
+  private static accountInstagramCredentialsRepository: IAccountInstagramCredentialsRepository;
+  private static instagramIngestionRepository: IInstagramIngestionRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -477,5 +483,22 @@ export class RepositoryFactory {
       );
     }
     return this.accountBlueskyCredentialsRepository;
+  }
+
+  static getAccountInstagramCredentialsRepository(): IAccountInstagramCredentialsRepository {
+    if (!this.accountInstagramCredentialsRepository) {
+      this.accountInstagramCredentialsRepository =
+        new PrismaAccountInstagramCredentialsRepository(prisma);
+    }
+
+    return this.accountInstagramCredentialsRepository;
+  }
+
+  static getInstagramIngestionRepository(): IInstagramIngestionRepository {
+    if (!this.instagramIngestionRepository) {
+      this.instagramIngestionRepository = new PrismaInstagramIngestionRepository(prisma);
+    }
+
+    return this.instagramIngestionRepository;
   }
 }

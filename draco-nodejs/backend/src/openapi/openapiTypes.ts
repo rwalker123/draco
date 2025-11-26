@@ -13,6 +13,7 @@ import {
   AccountUrlSchema,
   CreateAccountUrlSchema,
   AccountBlueskySettingsSchema,
+  AccountInstagramSettingsSchema,
   AccountTwitterSettingsSchema,
   AccountTwitterAuthorizationUrlSchema,
   AccountTwitterOAuthStartSchema,
@@ -403,6 +404,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const AccountBlueskySettingsSchemaRef = registry.register(
     'AccountBlueskySettings',
     AccountBlueskySettingsSchema,
+  );
+  const AccountInstagramSettingsSchemaRef = registry.register(
+    'AccountInstagramSettings',
+    AccountInstagramSettingsSchema,
   );
   const AccountTwitterSettingsSchemaRef = registry.register(
     'AccountTwitterSettings',
@@ -1075,6 +1080,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     AccountUrlSchemaRef,
     CreateAccountUrlSchemaRef,
     AccountBlueskySettingsSchemaRef,
+    AccountInstagramSettingsSchemaRef,
     AccountTwitterSettingsSchemaRef,
     AccountTwitterOAuthStartSchemaRef,
     AccountTwitterAuthorizationUrlSchemaRef,

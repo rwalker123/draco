@@ -48,6 +48,10 @@ describe('PhotoSubmissionModerationService', () => {
       vi.fn<(detail: PhotoSubmissionDetailType) => Promise<boolean>>(),
   };
 
+  const instagramIntegrationService = {
+    uploadPhotoFromGallery: vi.fn(),
+  };
+
   const baseDetail: PhotoSubmissionDetailType = {
     id: '10',
     accountId: '1',
@@ -120,11 +124,13 @@ describe('PhotoSubmissionModerationService', () => {
     notificationService.sendSubmissionDeniedNotification.mockReset();
     notificationService.sendSubmissionApprovedNotification.mockResolvedValue(true);
     notificationService.sendSubmissionDeniedNotification.mockResolvedValue(true);
+    instagramIntegrationService.uploadPhotoFromGallery.mockResolvedValue(undefined);
     service = new PhotoSubmissionModerationService(
       submissionService as never,
       galleryService as never,
       assetService as never,
       notificationService as never,
+      instagramIntegrationService as never,
     );
   });
 

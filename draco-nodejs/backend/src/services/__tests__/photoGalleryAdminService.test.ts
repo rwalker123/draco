@@ -47,11 +47,20 @@ describe('PhotoGalleryAdminService', () => {
     deleteGalleryAssets: vi.fn(),
   };
 
+  const instagramIntegrationService = {
+    uploadPhotoFromGallery: vi.fn(),
+  };
+
   let service: PhotoGalleryAdminService;
 
   beforeEach(() => {
     vi.resetAllMocks();
-    service = new PhotoGalleryAdminService(repository as never, assetService as never);
+    instagramIntegrationService.uploadPhotoFromGallery.mockResolvedValue(undefined);
+    service = new PhotoGalleryAdminService(
+      repository as never,
+      assetService as never,
+      instagramIntegrationService as never,
+    );
   });
 
   it('creates a gallery photo and saves assets', async () => {

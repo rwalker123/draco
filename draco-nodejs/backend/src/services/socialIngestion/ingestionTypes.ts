@@ -9,6 +9,7 @@ import {
   BlueskyIngestionTarget,
   YouTubeIngestionTarget,
   DiscordIngestionTarget,
+  InstagramIngestionTarget,
 } from '../../config/socialIngestion.js';
 
 export interface SocialFeedIngestionRecord {
@@ -84,6 +85,18 @@ export interface DiscordConnectorOptions {
   botToken?: string;
   limit: number;
   targetsProvider: () => Promise<DiscordIngestionTarget[]>;
+  intervalMs: number;
+  enabled: boolean;
+}
+
+export interface InstagramIngestionTargetWithAuth extends InstagramIngestionTarget {
+  accessToken: string;
+  albumId: bigint;
+}
+
+export interface InstagramConnectorOptions {
+  maxResults: number;
+  targetsProvider: () => Promise<InstagramIngestionTargetWithAuth[]>;
   intervalMs: number;
   enabled: boolean;
 }

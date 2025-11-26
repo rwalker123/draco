@@ -42,6 +42,7 @@ const submissionInclude = {
     select: {
       id: true,
       accountid: true,
+      issystem: true,
       title: true,
       parentalbumid: true,
       teamid: true,
@@ -177,6 +178,7 @@ export class PrismaPhotoSubmissionRepository implements IPhotoSubmissionReposito
         accountid: true,
         teamid: true,
         parentalbumid: true,
+        issystem: true,
         title: true,
       },
     });

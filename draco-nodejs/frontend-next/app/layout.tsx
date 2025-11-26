@@ -5,10 +5,13 @@ import { RoleProvider } from '../context/RoleContext';
 import { AccountProvider } from '../context/AccountContext';
 import ThemeClientProvider from '../components/ThemeClientProvider';
 import React from 'react';
+import Script from 'next/script';
 import { cookies } from 'next/headers';
 import { DEFAULT_DESCRIPTION, DEFAULT_KEYWORDS, DEFAULT_SITE_NAME } from '../lib/seoMetadata';
 
 const publicSiteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL;
+const ADSENSE_CLIENT_ID = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+const ADSENSE_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ADSENSE === 'true';
 
 export const metadata: Metadata = {
   metadataBase: publicSiteUrl ? new URL(publicSiteUrl) : undefined,
@@ -63,6 +66,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       data-theme={initialTheme}
     >
       <body style={{ backgroundColor: bodyBackground, color: bodyColor }}>
+        {ADSENSE_ENABLED && ADSENSE_CLIENT_ID ? (
+          <Script
+            id="google-adsense-script"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+            strategy="beforeInteractive"
+            crossOrigin="anonymous"
+          />
+        ) : null}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <AuthProvider>
           <RoleProvider>

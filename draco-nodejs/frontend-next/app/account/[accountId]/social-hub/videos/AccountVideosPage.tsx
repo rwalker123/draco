@@ -166,8 +166,10 @@ const AccountVideosPage: React.FC = () => {
     return null;
   }
 
+  const showFullPageLoader = (seasonLoading || loading) && !videos.length;
+
   const renderContent = () => {
-    if (seasonLoading || loading) {
+    if (showFullPageLoader) {
       return (
         <Box display="flex" justifyContent="center" py={6}>
           <CircularProgress />
@@ -210,8 +212,13 @@ const AccountVideosPage: React.FC = () => {
         </Box>
         {hasMore ? (
           <Box mt={3} textAlign="center">
-            <Button variant="contained" onClick={() => setLimit((prev) => prev + PAGE_SIZE)}>
-              Load more videos
+            <Button
+              variant="contained"
+              onClick={() => setLimit((prev) => prev + PAGE_SIZE)}
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={20} /> : undefined}
+            >
+              {loading ? 'Loading...' : 'Load more videos'}
             </Button>
           </Box>
         ) : null}

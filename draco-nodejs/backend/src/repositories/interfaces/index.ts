@@ -44,3 +44,5 @@ export * from './IDiscordIntegrationRepository.js';
 export * from './IWelcomeMessageRepository.js';
 export * from './IAccountTwitterCredentialsRepository.js';
 export * from './IAccountBlueskyCredentialsRepository.js';
+export * from './IAccountInstagramCredentialsRepository.js';
+export * from './IInstagramIngestionRepository.js';

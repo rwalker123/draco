@@ -109,6 +109,7 @@ export class PrismaPhotoGalleryRepository
           select: {
             id: true,
             title: true,
+            issystem: true,
             teamid: true,
           },
         },
@@ -150,6 +151,7 @@ export class PrismaPhotoGalleryRepository
           select: {
             id: true,
             title: true,
+            issystem: true,
             teamid: true,
           },
         },
@@ -199,6 +201,7 @@ export class PrismaPhotoGalleryRepository
         teamid: true,
         parentalbumid: true,
         title: true,
+        issystem: true,
         _count: {
           select: {
             photogallery: true,
@@ -218,6 +221,7 @@ export class PrismaPhotoGalleryRepository
         title: data.title,
         teamid: data.teamid,
         parentalbumid: data.parentalbumid,
+        issystem: data.issystem ?? false,
       },
       select: {
         id: true,
@@ -225,6 +229,7 @@ export class PrismaPhotoGalleryRepository
         teamid: true,
         parentalbumid: true,
         title: true,
+        issystem: true,
         _count: {
           select: {
             photogallery: true,
@@ -252,6 +257,10 @@ export class PrismaPhotoGalleryRepository
       updateData.parentalbumid = data.parentalbumid;
     }
 
+    if (data.issystem !== undefined) {
+      updateData.issystem = data.issystem;
+    }
+
     return this.prisma.photogalleryalbum.update({
       where: { id: albumId },
       data: updateData,
@@ -261,6 +270,7 @@ export class PrismaPhotoGalleryRepository
         teamid: true,
         parentalbumid: true,
         title: true,
+        issystem: true,
         _count: {
           select: {
             photogallery: true,
@@ -288,6 +298,7 @@ export class PrismaPhotoGalleryRepository
         teamid: true,
         parentalbumid: true,
         title: true,
+        issystem: true,
       },
     });
   }
@@ -307,6 +318,7 @@ export class PrismaPhotoGalleryRepository
         teamid: true,
         parentalbumid: true,
         title: true,
+        issystem: true,
       },
     });
   }

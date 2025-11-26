@@ -7,6 +7,7 @@ import NextLink from 'next/link';
 import WidgetShell from '../ui/WidgetShell';
 import SocialVideoCard from './SocialVideoCard';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
+import { truncateText } from '@/utils/emailUtils';
 import type { SocialVideoType } from '@draco/shared-schemas';
 
 interface FeaturedVideosWidgetProps {
@@ -100,11 +101,18 @@ const FeaturedVideosWidget: React.FC<FeaturedVideosWidgetProps> = ({
             renderSkeletons(3)
           ) : displayedVideos.length > 0 ? (
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              {displayedVideos.map((video) => (
-                <Box key={video.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}>
-                  <SocialVideoCard video={video} />
-                </Box>
-              ))}
+              {displayedVideos.map((video) => {
+                const truncatedVideo = {
+                  ...video,
+                  description: truncateText(video.description),
+                };
+
+                return (
+                  <Box key={video.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}>
+                    <SocialVideoCard video={truncatedVideo} />
+                  </Box>
+                );
+              })}
             </Box>
           ) : (
             <Alert severity="info">No connected video streams yet.</Alert>
