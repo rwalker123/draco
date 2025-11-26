@@ -41,14 +41,23 @@ function parseArgs(argv) {
 
     switch (arg) {
       case '--config':
+        if (!next || next.startsWith('--')) {
+          throw new Error('--config requires a value');
+        }
         args.configPath = next;
         i += 1;
         break;
       case '--duration':
+        if (!next || Number.isNaN(Number(next))) {
+          throw new Error('--duration requires a numeric value');
+        }
         args.durationMinutes = Number(next);
         i += 1;
         break;
       case '--base-url':
+        if (!next || next.startsWith('--')) {
+          throw new Error('--base-url requires a value');
+        }
         args.baseUrl = next;
         i += 1;
         break;
@@ -56,10 +65,16 @@ function parseArgs(argv) {
         args.dryRun = true;
         break;
       case '--max-requests':
+        if (!next || Number.isNaN(Number(next))) {
+          throw new Error('--max-requests requires a numeric value');
+        }
         args.maxRequests = Number(next);
         i += 1;
         break;
       case '--member-count':
+        if (!next || Number.isNaN(Number(next))) {
+          throw new Error('--member-count requires a numeric value');
+        }
         args.memberCount = Number(next);
         i += 1;
         break;
@@ -278,7 +293,8 @@ function sampleIntervalMs(ratePerMinute) {
 function millisToNextHour(nowMs) {
   const now = new Date(nowMs);
   const nextHour = new Date(now);
-  nextHour.setMinutes(60, 0, 0);
+  // Move to the top of the next hour while zeroing smaller units.
+  nextHour.setHours(now.getHours() + 1, 0, 0, 0);
   return nextHour.getTime() - nowMs;
 }
 

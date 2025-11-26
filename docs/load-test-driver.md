@@ -24,7 +24,6 @@ Update the JSON config (copy the example to `scripts/load-test.config.json` to k
 | `dayOfWeekMultipliers` (optional) | Seven weights (Sunday → Saturday) to reflect weekday vs. weekend traffic; defaults to all 1s. |
 | `pages` | Weighted list of paths (and optional `method`/`headers`) to visit; `{accountId}` placeholders are resolved from the config. |
 | `maxRequests` (optional) | Cap on the total number of requests to enqueue for short smoke runs. |
-| `memberCount` CLI override | Use `--member-count <number>` to adjust the modeled population without editing the JSON. |
 
 ## Running the driver
 ```
@@ -36,6 +35,8 @@ node scripts/load-test-driver.js --config scripts/load-test.config.example.json 
 ```
 
 Progress logs include in-flight and pending counts plus the current hourly rate. The final summary shows how many requests were scheduled, finished, and failed, along with average latency and the concurrency cap used.
+
+You can override most config values at the command line. For example, use `--member-count <number>` to adjust the modeled population without editing the JSON file.
 
 ### Offseason profile based on recent page views
 
