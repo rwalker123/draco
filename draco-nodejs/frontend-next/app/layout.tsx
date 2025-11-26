@@ -5,6 +5,7 @@ import { RoleProvider } from '../context/RoleContext';
 import { AccountProvider } from '../context/AccountContext';
 import ThemeClientProvider from '../components/ThemeClientProvider';
 import React from 'react';
+import Script from 'next/script';
 import { cookies } from 'next/headers';
 import { DEFAULT_DESCRIPTION, DEFAULT_KEYWORDS, DEFAULT_SITE_NAME } from '../lib/seoMetadata';
 
@@ -64,16 +65,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={initialTheme === 'dark' ? 'dark' : undefined}
       data-theme={initialTheme}
     >
-      <head>
+      <body style={{ backgroundColor: bodyBackground, color: bodyColor }}>
         {ADSENSE_ENABLED && ADSENSE_CLIENT_ID ? (
-          <script
-            async
+          <Script
+            id="google-adsense-script"
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+            strategy="beforeInteractive"
             crossOrigin="anonymous"
           />
         ) : null}
-      </head>
-      <body style={{ backgroundColor: bodyBackground, color: bodyColor }}>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <AuthProvider>
           <RoleProvider>

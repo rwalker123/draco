@@ -11,7 +11,6 @@ const IS_DEV = process.env.NODE_ENV !== 'production';
 declare global {
   interface Window {
     adsbygoogle?: Array<Record<string, unknown>>;
-    __dracoHeaderAdRequested?: boolean;
   }
 }
 
@@ -22,11 +21,6 @@ const AdSenseBanner: React.FC = () => {
 
   useEffect(() => {
     if (!shouldRenderAd || !adUnitRef.current) {
-      return;
-    }
-
-    // Prevent multiple pushes across remounts (React strict dev cycles) by using a window-scoped flag.
-    if (typeof window !== 'undefined' && window.__dracoHeaderAdRequested) {
       return;
     }
 
@@ -41,9 +35,6 @@ const AdSenseBanner: React.FC = () => {
 
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
-      if (typeof window !== 'undefined') {
-        window.__dracoHeaderAdRequested = true;
-      }
     } catch (error) {
       hasRequestedAd.current = false;
       console.error('Adsense error', error);
