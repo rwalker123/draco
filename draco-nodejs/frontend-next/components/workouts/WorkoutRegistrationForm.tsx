@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Box,
   TextField,
@@ -10,7 +10,6 @@ import {
   MenuItem,
   Typography,
   Paper,
-  Alert,
   CircularProgress,
 } from '@mui/material';
 import {
@@ -18,8 +17,11 @@ import {
   WorkoutRegistrationType,
   WorkoutSourcesType,
 } from '@draco/shared-schemas';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { createWorkoutRegistration, getSources } from '../../services/workoutService';
-import { formatPhoneNumber } from '../../utils/phoneNumber';
+import { formatPhoneInput } from '../../utils/phoneNumber';
 import { getApiErrorMessage } from '../../utils/apiResult';
 
 interface WorkoutRegistrationFormProps {
@@ -33,7 +35,41 @@ interface WorkoutRegistrationFormProps {
   onCancel: () => void;
   isLoading?: boolean;
   closeOnSuccess?: boolean;
+  formId?: string;
+  onDirtyChange?: (isDirty: boolean) => void;
+  onRemove?: () => void;
+  removeDisabled?: boolean;
 }
+
+type FormValues = {
+  name: string;
+  email: string;
+  age: string;
+  phone1?: string;
+  phone2?: string;
+  phone3?: string;
+  phone4?: string;
+  positions: string;
+  isManager: boolean;
+  whereHeard: string;
+};
+
+const formSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required'),
+  email: z.string().trim().email('Valid email is required'),
+  age: z
+    .string()
+    .trim()
+    .regex(/^\d+$/, 'Age must be a number')
+    .refine((val) => parseInt(val, 10) > 0, 'Age must be greater than 0'),
+  phone1: z.string().trim().max(50).optional(),
+  phone2: z.string().trim().max(50).optional(),
+  phone3: z.string().trim().max(50).optional(),
+  phone4: z.string().trim().max(50).optional(),
+  positions: z.string().trim().min(1, 'Positions are required'),
+  isManager: z.boolean(),
+  whereHeard: z.string().trim().min(1, 'Where heard is required'),
+});
 
 export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = ({
   accountId,
@@ -46,39 +82,50 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
   onCancel,
   isLoading = false,
   closeOnSuccess,
+  formId,
+  onDirtyChange,
+  onRemove,
+  removeDisabled,
 }) => {
-  const [formData, setFormData] = useState<WorkoutRegistrationType>({
-    id: '',
-    workoutId: '',
-    name: '',
-    email: '',
-    age: 0,
-    phone1: '',
-    phone2: '',
-    phone3: '',
-    phone4: '',
-    positions: '',
-    isManager: false,
-    whereHeard: '',
-    dateRegistered: '',
-  });
-
   const [sources, setSources] = useState<WorkoutSourcesType>({ options: [] });
   const [loadingSources, setLoadingSources] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
   const isEditMode = !!registration;
   const shouldAutoClose = closeOnSuccess ?? !isEditMode;
 
+  const formResolver = useMemo(() => zodResolver<FormValues, unknown, FormValues>(formSchema), []);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting, isDirty },
+    reset,
+    setValue,
+    watch,
+    setError,
+    clearErrors,
+  } = useForm<FormValues>({
+    resolver: formResolver,
+    defaultValues: {
+      name: '',
+      email: '',
+      age: '',
+      phone1: '',
+      phone2: '',
+      phone3: '',
+      phone4: '',
+      positions: '',
+      isManager: false,
+      whereHeard: '',
+    },
+  });
+
   useEffect(() => {
     if (registration) {
-      setFormData({
-        id: registration.id,
-        workoutId: registration.workoutId,
+      reset({
         name: registration.name,
         email: registration.email,
-        age: registration.age,
+        age: registration.age.toString(),
         phone1: registration.phone1 || '',
         phone2: registration.phone2 || '',
         phone3: registration.phone3 || '',
@@ -86,10 +133,11 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
         positions: registration.positions,
         isManager: registration.isManager,
         whereHeard: registration.whereHeard,
-        dateRegistered: registration.dateRegistered,
       });
+    } else {
+      reset();
     }
-  }, [registration]);
+  }, [registration, reset]);
 
   useEffect(() => {
     const fetchSources = async () => {
@@ -99,105 +147,25 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
         setSources(sourcesData);
       } catch (err) {
         console.error('Error fetching sources:', err);
-        setError('Failed to load "where heard" options');
+        setError('root', { type: 'manual', message: 'Failed to load "where heard" options' });
       } finally {
         setLoadingSources(false);
       }
     };
 
     fetchSources();
-  }, [accountId]);
+  }, [accountId, setError]);
 
-  const handleTextChange = useCallback(
-    (field: keyof UpsertWorkoutRegistrationType) =>
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData((prev) => ({
-          ...prev,
-          [field]: event.target.value,
-        }));
-      },
-    [],
+  const handlePhoneChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const formattedValue = formatPhoneInput(event.target.value);
+      setValue('phone1', formattedValue, { shouldDirty: true });
+    },
+    [setValue],
   );
 
-  const handleNumberChange = useCallback(
-    (field: keyof UpsertWorkoutRegistrationType) =>
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        const value = parseInt(event.target.value) || 0;
-        setFormData((prev) => ({
-          ...prev,
-          [field]: value,
-        }));
-      },
-    [],
-  );
-
-  const handleCheckboxChange = useCallback(
-    (field: keyof UpsertWorkoutRegistrationType) =>
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData((prev) => ({
-          ...prev,
-          [field]: event.target.checked,
-        }));
-      },
-    [],
-  );
-
-  const handlePhoneChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-
-    // Only format if it looks like a complete phone number
-    const formattedValue = value.length >= 10 ? formatPhoneNumber(value) : value;
-
-    setFormData((prev) => ({
-      ...prev,
-      phone1: formattedValue,
-    }));
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-
-    // Basic validation
-    if (!formData.name.trim()) {
-      setError('Name is required');
-      setSubmitting(false);
-      return;
-    }
-    if (!formData.email.trim()) {
-      setError('Email is required');
-      setSubmitting(false);
-      return;
-    }
-    if (formData.age <= 0) {
-      setError('Age must be greater than 0');
-      setSubmitting(false);
-      return;
-    }
-    if (!formData.positions.trim()) {
-      setError('Positions are required');
-      setSubmitting(false);
-      return;
-    }
-    if (!formData.whereHeard.trim()) {
-      setError('Where heard is required');
-      setSubmitting(false);
-      return;
-    }
-
-    const payload: UpsertWorkoutRegistrationType = {
-      name: formData.name,
-      email: formData.email,
-      age: formData.age,
-      phone1: formData.phone1,
-      phone2: formData.phone2,
-      phone3: formData.phone3,
-      phone4: formData.phone4,
-      positions: formData.positions,
-      isManager: formData.isManager,
-      whereHeard: formData.whereHeard,
-    };
+  const onSubmitHandler = handleSubmit(async (data) => {
+    clearErrors('root');
 
     const successMessage = isEditMode
       ? 'Registration updated.'
@@ -206,11 +174,24 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
       ? 'Failed to update registration'
       : 'Failed to submit registration';
 
+    const payload: UpsertWorkoutRegistrationType = {
+      name: data.name.trim(),
+      email: data.email.trim(),
+      age: parseInt(data.age, 10),
+      phone1: data.phone1?.trim() ?? '',
+      phone2: data.phone2?.trim() ?? '',
+      phone3: data.phone3?.trim() ?? '',
+      phone4: data.phone4?.trim() ?? '',
+      positions: data.positions.trim(),
+      isManager: data.isManager,
+      whereHeard: data.whereHeard.trim(),
+    };
+
     try {
       const submitFn =
         onSubmit ??
-        (async (data: UpsertWorkoutRegistrationType) =>
-          createWorkoutRegistration(accountId, workoutId, data, token));
+        (async (payloadData: UpsertWorkoutRegistrationType) =>
+          createWorkoutRegistration(accountId, workoutId, payloadData, token));
 
       const result = (await submitFn(payload)) as WorkoutRegistrationType | void;
 
@@ -220,14 +201,22 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
       }
     } catch (submitError) {
       const message = getApiErrorMessage(submitError, defaultError);
-      setError(message);
+      setError('root', { type: 'manual', message });
       onError?.(message);
-    } finally {
-      setSubmitting(false);
     }
-  };
+  });
 
-  const isBusy = isLoading || submitting;
+  const isBusy = isLoading || isSubmitting;
+  const watchIsManager = watch('isManager');
+  const watchWhereHeard = watch('whereHeard') ?? '';
+  const watchAge = watch('age') ?? '';
+  const watchPhone = watch('phone1') ?? '';
+  const formElementId = formId || 'workout-registration-form';
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+  const rootError = errors.root?.message;
 
   return (
     <Paper sx={{ p: 3 }}>
@@ -235,13 +224,13 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
         {isEditMode ? 'Edit Registration' : 'Register for Workout'}
       </Typography>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+      {rootError && (
+        <Typography color="error" variant="body2" sx={{ mb: 2 }}>
+          {rootError}
+        </Typography>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form id={formElementId} onSubmit={onSubmitHandler} noValidate>
         <Box
           sx={{
             display: 'grid',
@@ -254,10 +243,11 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
             <TextField
               fullWidth
               label="Name"
-              value={formData.name}
-              onChange={handleTextChange('name')}
+              {...register('name')}
               required
               disabled={isBusy}
+              error={!!errors.name}
+              helperText={errors.name?.message ?? ''}
             />
           </Box>
           <Box>
@@ -265,10 +255,11 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
               fullWidth
               label="Email"
               type="email"
-              value={formData.email}
-              onChange={handleTextChange('email')}
+              {...register('email')}
               required
               disabled={isBusy}
+              error={!!errors.email}
+              helperText={errors.email?.message ?? ''}
             />
           </Box>
 
@@ -278,22 +269,25 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
               fullWidth
               label="Age"
               type="number"
-              value={formData.age || ''}
-              onChange={handleNumberChange('age')}
+              {...register('age')}
+              value={watchAge}
               required
               disabled={isBusy}
               inputProps={{ min: 1, max: 100 }}
+              error={!!errors.age}
+              helperText={errors.age?.message ?? ''}
             />
           </Box>
           <Box>
             <TextField
               fullWidth
               label="Positions"
-              value={formData.positions}
-              onChange={handleTextChange('positions')}
+              {...register('positions')}
               required
               disabled={isBusy}
               placeholder="e.g., Pitcher, Outfield"
+              error={!!errors.positions}
+              helperText={errors.positions?.message ?? ''}
             />
           </Box>
 
@@ -302,10 +296,13 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
             <TextField
               fullWidth
               label="Phone"
-              value={formData.phone1}
+              {...register('phone1')}
+              value={watchPhone}
               onChange={handlePhoneChange}
               disabled={isBusy}
               placeholder="(555) 123-4567"
+              error={!!errors.phone1}
+              helperText={errors.phone1?.message ?? ''}
             />
           </Box>
 
@@ -315,13 +312,17 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
               fullWidth
               select
               label="Where Heard"
-              value={formData.whereHeard}
-              onChange={handleTextChange('whereHeard')}
+              {...register('whereHeard')}
+              value={watchWhereHeard}
               required
               disabled={isBusy || loadingSources}
               helperText={
-                loadingSources ? 'Loading options...' : 'Select where you heard about this workout'
+                errors.whereHeard?.message ??
+                (loadingSources
+                  ? 'Loading options...'
+                  : 'Select where you heard about this workout')
               }
+              error={!!errors.whereHeard}
             >
               {sources.options.map((option) => (
                 <MenuItem key={option} value={option}>
@@ -336,11 +337,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
             <FormControl>
               <FormControlLabel
                 control={
-                  <Switch
-                    checked={formData.isManager}
-                    onChange={handleCheckboxChange('isManager')}
-                    disabled={isBusy}
-                  />
+                  <Switch checked={!!watchIsManager} {...register('isManager')} disabled={isBusy} />
                 }
                 label="Open to Managing a Team"
               />
@@ -349,18 +346,39 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
         </Box>
 
         {/* Action Buttons */}
-        <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'flex-end' }}>
-          <Button variant="outlined" onClick={onCancel} disabled={isBusy}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={isBusy}
-            startIcon={isBusy ? <CircularProgress size={20} /> : null}
-          >
-            {isBusy ? 'Saving...' : isEditMode ? 'Update Registration' : 'Add Registration'}
-          </Button>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            mt: 3,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          {isEditMode && (
+            <Button
+              variant="contained"
+              color="error"
+              onClick={onRemove}
+              disabled={isBusy || removeDisabled}
+            >
+              Remove Registration
+            </Button>
+          )}
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <Button variant="outlined" onClick={onCancel} disabled={isBusy}>
+              Home
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={isBusy || !isDirty}
+              startIcon={isBusy ? <CircularProgress size={20} /> : null}
+            >
+              {isBusy ? 'Saving...' : isEditMode ? 'Update Registration' : 'Add Registration'}
+            </Button>
+          </Box>
         </Box>
       </form>
     </Paper>

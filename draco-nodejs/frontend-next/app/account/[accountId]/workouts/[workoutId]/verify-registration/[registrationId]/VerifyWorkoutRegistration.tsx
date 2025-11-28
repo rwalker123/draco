@@ -11,6 +11,11 @@ import {
   CircularProgress,
   Container,
   Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
 import { validateAccessCode } from '../../../../../../../utils/accessCodeValidation';
@@ -55,12 +60,15 @@ export default function VerifyWorkoutRegistration({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const validatedAccessCode = useMemo(() => {
     if (!accessCode) return null;
     const validation = validateAccessCode(accessCode);
     return validation.isValid ? validation.sanitizedValue : null;
   }, [accessCode]);
+  const formId = 'verify-registration-form';
 
   useEffect(() => {
     const verify = async () => {
@@ -118,7 +126,9 @@ export default function VerifyWorkoutRegistration({
         const message =
           status === 404
             ? 'Registration not found for this account and workout.'
-            : 'Unable to verify your access code.';
+            : status === 429
+              ? getApiErrorMessage(error, 'Too many verification attempts. Please try again soon.')
+              : 'Unable to verify your access code.';
         setState({
           loading: false,
           error: message,
@@ -166,6 +176,37 @@ export default function VerifyWorkoutRegistration({
 
   const goHome = () => {
     router.push(`/account/${accountId}`);
+  };
+
+  const handleDelete = async () => {
+    if (!state.accessCode) {
+      setSaveError('Access code missing. Please reopen your verification link.');
+      return;
+    }
+    setDeleting(true);
+    setSaveError(null);
+    try {
+      const response = await fetch(
+        `/api/accounts/${accountId}/workouts/${workoutId}/registrations/${registrationId}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessCode: state.accessCode }),
+        },
+      );
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || 'Failed to remove registration');
+      }
+
+      router.push(`/account/${accountId}`);
+    } catch (error) {
+      setSaveError(getApiErrorMessage(error, 'Failed to remove registration.'));
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
   };
 
   return (
@@ -225,6 +266,9 @@ export default function VerifyWorkoutRegistration({
                   onSubmit={handleUpdate}
                   onCancel={goHome}
                   isLoading={saving}
+                  formId={formId}
+                  onRemove={() => setDeleteDialogOpen(true)}
+                  removeDisabled={saving || deleting}
                 />
                 {validatedAccessCode && (
                   <Typography variant="body2" color="text.secondary">
@@ -236,6 +280,23 @@ export default function VerifyWorkoutRegistration({
           </CardContent>
         </Card>
       </Container>
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Remove Registration</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to remove this registration? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error" disabled={deleting}>
+            {deleting ? 'Removing...' : 'Remove'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </main>
   );
 }

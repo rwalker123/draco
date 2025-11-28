@@ -20,12 +20,32 @@ const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const service = ServiceFactory.getWorkoutService();
 
+const rateLimitHandler: NonNullable<Parameters<typeof rateLimit>[0]>['handler'] = (req, res) => {
+  const rateLimitInfo = (req as Request & { rateLimit?: { resetTime?: Date } }).rateLimit;
+  const retryMs =
+    typeof rateLimitInfo?.resetTime?.getTime === 'function'
+      ? Math.max(rateLimitInfo.resetTime.getTime() - Date.now(), 0)
+      : undefined;
+  const retrySeconds = retryMs ? Math.ceil(retryMs / 1000) : undefined;
+  res.status(429).json({
+    message: retrySeconds
+      ? `Too many requests. Please try again in ${retrySeconds} seconds.`
+      : 'Too many requests. Please try again later.',
+  });
+};
+
 const registrationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  message: {
-    message: 'Too many registration attempts. Please try again later.',
-  },
+  handler: rateLimitHandler,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const accessCodeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  handler: rateLimitHandler,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -186,7 +206,7 @@ router.post(
 
 router.post(
   '/:accountId/workouts/:workoutId/registrations/:registrationId/verify',
-  registrationLimiter,
+  accessCodeLimiter,
   asyncHandler(async (req: Request, res: Response) => {
     const { accountId } = extractAccountParams(req.params);
     const { workoutId, registrationId } = extractBigIntParams(
@@ -209,7 +229,7 @@ router.post(
 
 router.post(
   '/:accountId/workouts/:workoutId/registrations/access-code',
-  registrationLimiter,
+  accessCodeLimiter,
   asyncHandler(async (req: Request, res: Response) => {
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');
