@@ -13,6 +13,7 @@ import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import UserAvatar from '@/components/users/UserAvatar';
+import ContactPhotoUploadDialog from '@/components/users/ContactPhotoUploadDialog';
 import { useRosterDataManager } from '@/hooks/useRosterDataManager';
 import { useAccountSettings } from '@/hooks/useAccountSettings';
 import { getContactDisplayName } from '@/utils/contactUtils';
@@ -27,15 +28,19 @@ import { getPublicTeamRosterMembers } from '@draco/shared-api-client';
 import WidgetShell from '@/components/ui/WidgetShell';
 import type {
   AccountSettingKey,
+  BaseContactType,
+  ContactType,
   PublicRosterMemberType,
   PublicTeamRosterResponseType,
 } from '@draco/shared-schemas';
+import PhotoDeleteDialog from '@/components/users/PhotoDeleteDialog';
 
 interface TeamRosterWidgetProps {
   accountId: string;
   seasonId: string;
   teamSeasonId: string;
   canViewSensitiveDetails?: boolean;
+  canEditPhotos?: boolean;
 }
 
 const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
@@ -43,21 +48,33 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   seasonId,
   teamSeasonId,
   canViewSensitiveDetails = false,
+  canEditPhotos = false,
 }) => {
-  const { rosterData, managers, loading, error, fetchRosterData, fetchManagers } =
-    useRosterDataManager({
-      accountId,
-      seasonId,
-      teamSeasonId,
-    });
+  const {
+    rosterData,
+    managers,
+    loading,
+    error,
+    fetchRosterData,
+    fetchManagers,
+    setError: setRosterError,
+  } = useRosterDataManager({
+    accountId,
+    seasonId,
+    teamSeasonId,
+  });
   const { settings: accountSettings } = useAccountSettings(accountId);
   const apiClient = useApiClient();
   const { token } = useAuth();
   const isAuthenticated = Boolean(token);
   const hasPrivateAccess = isAuthenticated && canViewSensitiveDetails;
+  const allowPhotoEdit = Boolean(canEditPhotos);
   const [publicRoster, setPublicRoster] = React.useState<PublicTeamRosterResponseType | null>(null);
   const [publicLoading, setPublicLoading] = React.useState(false);
   const [publicError, setPublicError] = React.useState<string | null>(null);
+  const [photoDialogOpen, setPhotoDialogOpen] = React.useState(false);
+  const [selectedContact, setSelectedContact] = React.useState<BaseContactType | null>(null);
+  const [deleteContactId, setDeleteContactId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!hasPrivateAccess) {
@@ -175,6 +192,52 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
     return new Set(managers.map((manager) => manager.contact.id));
   }, [managers]);
 
+  const openPhotoDialog = React.useCallback(
+    (contact: BaseContactType) => {
+      if (!allowPhotoEdit) {
+        return;
+      }
+      setSelectedContact(contact);
+      setPhotoDialogOpen(true);
+    },
+    [allowPhotoEdit],
+  );
+
+  const closePhotoDialog = React.useCallback(() => {
+    setPhotoDialogOpen(false);
+    setSelectedContact(null);
+  }, []);
+
+  const handlePhotoUpdated = React.useCallback(
+    async (_updatedContact: ContactType) => {
+      await fetchRosterData();
+      await fetchManagers();
+      closePhotoDialog();
+    },
+    [closePhotoDialog, fetchManagers, fetchRosterData],
+  );
+
+  const openDeletePhotoDialog = React.useCallback(
+    (contact: BaseContactType) => {
+      if (!allowPhotoEdit) {
+        return;
+      }
+      setSelectedContact(contact);
+      setDeleteContactId(contact.id);
+    },
+    [allowPhotoEdit],
+  );
+
+  const closeDeletePhotoDialog = React.useCallback(() => {
+    setDeleteContactId(null);
+  }, []);
+
+  const handlePhotoDeleted = React.useCallback(async () => {
+    await fetchRosterData();
+    await fetchManagers();
+    closeDeletePhotoDialog();
+  }, [closeDeletePhotoDialog, fetchManagers, fetchRosterData]);
+
   const renderPrivateTable = () => (
     <TableContainer sx={{ width: 'fit-content', maxWidth: '100%' }}>
       <Table size="small" sx={{ width: 'auto' }}>
@@ -201,7 +264,22 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
                 <TableCell>{member.playerNumber || '-'}</TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <UserAvatar user={user} size={32} />
+                    <UserAvatar
+                      user={user}
+                      size={32}
+                      onClick={
+                        allowPhotoEdit ? () => openPhotoDialog(member.player.contact) : undefined
+                      }
+                      showHoverEffects={allowPhotoEdit}
+                      enablePhotoActions={allowPhotoEdit}
+                      onPhotoDelete={
+                        allowPhotoEdit
+                          ? async () => {
+                              openDeletePhotoDialog(member.player.contact);
+                            }
+                          : undefined
+                      }
+                    />
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="body2" fontWeight={600}>
                         {getContactDisplayName(member.player.contact)}
@@ -321,36 +399,62 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   const totalPlayers = hasPrivateAccess ? activePlayers.length : publicPlayers.length;
 
   return (
-    <WidgetShell accent="primary" sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-      <Box
-        sx={(theme) => ({
-          p: 3,
-          borderBottom: 1,
-          borderColor: theme.palette.divider,
-          backgroundColor: theme.palette.widget.surface,
-          borderRadius: 2,
-        })}
+    <>
+      <WidgetShell
+        accent="primary"
+        sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}
       >
-        <Typography variant="h6" fontWeight={700} color="text.primary">
-          Team Roster
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Active Players ({totalPlayers})
-        </Typography>
-      </Box>
-      <Box
-        sx={(theme) => ({
-          p: 3,
-          borderRadius: 2,
-          backgroundColor:
-            theme.palette.mode === 'dark'
-              ? theme.palette.grey[900]
-              : theme.palette.background.paper,
-        })}
-      >
-        {renderContent()}
-      </Box>
-    </WidgetShell>
+        <Box
+          sx={(theme) => ({
+            p: 3,
+            borderBottom: 1,
+            borderColor: theme.palette.divider,
+            backgroundColor: theme.palette.widget.surface,
+            borderRadius: 2,
+          })}
+        >
+          <Typography variant="h6" fontWeight={700} color="text.primary">
+            Team Roster
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Active Players ({totalPlayers})
+          </Typography>
+        </Box>
+        <Box
+          sx={(theme) => ({
+            p: 3,
+            borderRadius: 2,
+            backgroundColor:
+              theme.palette.mode === 'dark'
+                ? theme.palette.grey[900]
+                : theme.palette.background.paper,
+          })}
+        >
+          {renderContent()}
+        </Box>
+      </WidgetShell>
+      {photoDialogOpen && selectedContact ? (
+        <ContactPhotoUploadDialog
+          open={photoDialogOpen}
+          accountId={accountId}
+          contact={selectedContact}
+          canEdit={allowPhotoEdit}
+          onClose={closePhotoDialog}
+          onPhotoUpdated={handlePhotoUpdated}
+          onError={setRosterError}
+        />
+      ) : null}
+      {deleteContactId ? (
+        <PhotoDeleteDialog
+          open
+          contactId={deleteContactId}
+          contact={selectedContact}
+          onClose={closeDeletePhotoDialog}
+          onSuccess={handlePhotoDeleted}
+          accountId={accountId}
+        />
+      ) : null}
+    </>
   );
 };
 

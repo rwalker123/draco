@@ -25,6 +25,7 @@ import { formatPhoneInput } from '../../utils/phoneNumber';
 import { US_STATES } from '../../constants/usStates';
 import ContactPhotoUpload from '../ContactPhotoUpload';
 import { validateContactPhotoFile } from '../../config/contacts';
+import { buildInitialContactValues, createEmptyContactValues } from '../../utils/contactFormUtils';
 
 import {
   BaseContactType,
@@ -35,6 +36,7 @@ import {
 import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useContactOperations } from '../../hooks/useContactOperations';
+import { useContactPhotoUpload } from '@/hooks/useContactPhotoUpload';
 
 const parseDateOnly = (value: string): Date | null => {
   if (!value) {
@@ -76,50 +78,6 @@ interface EditContactDialogProps {
  * EditContactDialog Component
  * Self-contained dialog for editing contact information with internal API calls and error handling
  */
-const EMPTY_CONTACT_DETAILS: NonNullable<CreateContactType['contactDetails']> = {
-  phone1: '',
-  phone2: '',
-  phone3: '',
-  streetAddress: '',
-  city: '',
-  state: '',
-  zip: '',
-  dateOfBirth: '',
-};
-
-const EMPTY_CONTACT_VALUES: CreateContactType = {
-  firstName: '',
-  lastName: '',
-  middleName: '',
-  email: '',
-  contactDetails: EMPTY_CONTACT_DETAILS,
-};
-
-const createEmptyContactValues = (): CreateContactType => ({
-  ...EMPTY_CONTACT_VALUES,
-  contactDetails: { ...EMPTY_CONTACT_DETAILS },
-});
-
-const mapContactToCreateValues = (contact: BaseContactType | null): CreateContactType => ({
-  firstName: contact?.firstName ?? '',
-  lastName: contact?.lastName ?? '',
-  middleName: contact?.middleName ?? '',
-  email: contact?.email ?? '',
-  contactDetails: {
-    phone1: contact?.contactDetails?.phone1 ?? '',
-    phone2: contact?.contactDetails?.phone2 ?? '',
-    phone3: contact?.contactDetails?.phone3 ?? '',
-    streetAddress: contact?.contactDetails?.streetAddress ?? '',
-    city: contact?.contactDetails?.city ?? '',
-    state: contact?.contactDetails?.state ?? '',
-    zip: contact?.contactDetails?.zip ?? '',
-    dateOfBirth: contact?.contactDetails?.dateOfBirth ?? '',
-  },
-});
-
-const buildInitialValues = (mode: 'create' | 'edit', contact: BaseContactType | null) =>
-  mode === 'edit' && contact ? mapContactToCreateValues(contact) : createEmptyContactValues();
-
 const EditContactDialog: React.FC<EditContactDialogProps> = ({ open, ...rest }) => {
   if (!open) {
     return null;
@@ -147,7 +105,10 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
   onSuccess,
   onRosterSignup,
 }) => {
-  const initialValues = useMemo(() => buildInitialValues(mode, contact), [mode, contact]);
+  const initialValues = useMemo(
+    () => buildInitialContactValues(mode, contact),
+    [mode, contact],
+  );
 
   const {
     register,
@@ -163,6 +124,7 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
 
   // Use the contact operations hook
   const { createContact, updateContact, loading } = useContactOperations(accountId);
+  const { uploadContactPhoto } = useContactPhotoUpload(accountId);
 
   const [saveError, setSaveError] = useState<string>('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -206,39 +168,41 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
 
   const handleSave = handleSubmit(async (data: CreateContactType) => {
     try {
-      // Clear any previous errors
       setSaveError('');
 
-      let dataToSave: CreateContactType | null = data;
+      const hasDataChanges = isDirty;
+      if (mode === 'edit' && contact && photoFile && !hasDataChanges) {
+        const photoOnlyResult = await uploadContactPhoto(contact, photoFile);
 
-      // For edit mode, check if this is a photo-only update
-      if (mode === 'edit' && contact) {
-        const hasDataChanges = isDirty;
-        // For photo-only updates, send minimal data
-        if (!hasDataChanges && !!photoFile) {
-          dataToSave = null;
+        if (photoOnlyResult.success && photoOnlyResult.contact) {
+          onSuccess?.({
+            message: photoOnlyResult.message || 'Contact updated successfully',
+            contact: photoOnlyResult.contact,
+            isCreate: false,
+          });
+          onClose();
+        } else {
+          setSaveError(photoOnlyResult.error || `Failed to ${mode} contact`);
         }
+        return;
       }
 
-      // Call the appropriate operation based on mode
       const result =
         mode === 'create'
           ? await createContact({
-              contactData: dataToSave!,
+              contactData: data,
               photoFile,
             })
           : await updateContact(contact!.id, {
-              contactData: dataToSave!,
+              contactData: data,
               photoFile,
             });
 
       if (result.success && result.contact) {
-        // Notify parent about roster signup (for any additional logic)
         if (showRosterSignup && onRosterSignup) {
           onRosterSignup(rosterSignup);
         }
 
-        // Notify parent of successful operation
         onSuccess?.({
           message:
             result.message || `Contact ${mode === 'create' ? 'created' : 'updated'} successfully`,
@@ -247,14 +211,11 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
         });
 
         if (mode === 'create' && createMultiplePlayers) {
-          // Keep dialog open and reset form for next player
           resetFormForNextPlayer();
         } else {
-          // Close dialog as usual
           onClose();
         }
       } else {
-        // Handle error internally
         setSaveError(result.error || `Failed to ${mode} contact`);
       }
     } catch (error) {
