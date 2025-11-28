@@ -13,6 +13,7 @@ import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import UserAvatar from '@/components/users/UserAvatar';
+import EditableContactAvatar from '@/components/users/EditableContactAvatar';
 import { useRosterDataManager } from '@/hooks/useRosterDataManager';
 import { useAccountSettings } from '@/hooks/useAccountSettings';
 import { getContactDisplayName } from '@/utils/contactUtils';
@@ -36,6 +37,7 @@ interface TeamRosterWidgetProps {
   seasonId: string;
   teamSeasonId: string;
   canViewSensitiveDetails?: boolean;
+  canEditPhotos?: boolean;
 }
 
 const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
@@ -43,18 +45,27 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   seasonId,
   teamSeasonId,
   canViewSensitiveDetails = false,
+  canEditPhotos = false,
 }) => {
-  const { rosterData, managers, loading, error, fetchRosterData, fetchManagers } =
-    useRosterDataManager({
-      accountId,
-      seasonId,
-      teamSeasonId,
-    });
+  const {
+    rosterData,
+    managers,
+    loading,
+    error,
+    fetchRosterData,
+    fetchManagers,
+    setError: setRosterError,
+  } = useRosterDataManager({
+    accountId,
+    seasonId,
+    teamSeasonId,
+  });
   const { settings: accountSettings } = useAccountSettings(accountId);
   const apiClient = useApiClient();
   const { token } = useAuth();
   const isAuthenticated = Boolean(token);
   const hasPrivateAccess = isAuthenticated && canViewSensitiveDetails;
+  const allowPhotoEdit = Boolean(hasPrivateAccess && canEditPhotos && isAuthenticated);
   const [publicRoster, setPublicRoster] = React.useState<PublicTeamRosterResponseType | null>(null);
   const [publicLoading, setPublicLoading] = React.useState(false);
   const [publicError, setPublicError] = React.useState<string | null>(null);
@@ -175,6 +186,11 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
     return new Set(managers.map((manager) => manager.contact.id));
   }, [managers]);
 
+  const handlePhotoUpdated = React.useCallback(async () => {
+    await fetchRosterData();
+    await fetchManagers();
+  }, [fetchRosterData, fetchManagers]);
+
   const renderPrivateTable = () => (
     <TableContainer sx={{ width: 'fit-content', maxWidth: '100%' }}>
       <Table size="small" sx={{ width: 'auto' }}>
@@ -201,7 +217,18 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
                 <TableCell>{member.playerNumber || '-'}</TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <UserAvatar user={user} size={32} />
+                    {allowPhotoEdit ? (
+                      <EditableContactAvatar
+                        accountId={accountId}
+                        contact={member.player.contact}
+                        size={32}
+                        canEdit={allowPhotoEdit}
+                        onPhotoUpdated={handlePhotoUpdated}
+                        onError={setRosterError}
+                      />
+                    ) : (
+                      <UserAvatar user={user} size={32} />
+                    )}
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="body2" fontWeight={600}>
                         {getContactDisplayName(member.player.contact)}

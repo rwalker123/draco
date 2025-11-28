@@ -206,6 +206,16 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
 
+  const canEditPlayerPhotos = React.useMemo(() => {
+    return (
+      hasRole('Administrator') ||
+      hasRoleInAccount('AccountAdmin', accountId) ||
+      hasRoleInAccount('AccountPhotoAdmin', accountId) ||
+      hasRoleInTeam('TeamAdmin', teamSeasonId) ||
+      hasRoleInTeam('TeamPhotoAdmin', teamSeasonId)
+    );
+  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+
   const canViewRosterDetails = React.useMemo(() => {
     return (
       hasRole('Administrator') ||
@@ -645,6 +655,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               teamSeasonId={teamSeasonId}
               teamName={teamData?.teamName ?? null}
               canViewContactInfo={canViewManagerContacts}
+              canEditPhotos={canEditPlayerPhotos}
             />
 
             {teamData?.teamId && (isTeamMember || teamMembershipLoading) ? (
@@ -745,6 +756,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               seasonId={seasonId}
               teamSeasonId={teamSeasonId}
               canViewSensitiveDetails={canViewRosterDetails}
+              canEditPhotos={canEditPlayerPhotos}
             />
 
             {shouldShowTeamSponsors ? (
