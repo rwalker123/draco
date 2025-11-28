@@ -11,13 +11,17 @@ import {
   CircularProgress,
   Alert,
   Stack,
+  Box,
 } from '@mui/material';
 import { Delete as DeleteIcon, Photo as PhotoIcon } from '@mui/icons-material';
 import { usePhotoOperations } from '../../hooks/usePhotoOperations';
+import UserAvatar from './UserAvatar';
+import type { BaseContactType } from '@draco/shared-schemas';
 
 interface PhotoDeleteDialogProps {
   open: boolean;
   contactId: string | null;
+  contact?: Pick<BaseContactType, 'id' | 'firstName' | 'lastName' | 'photoUrl'> | null;
   onClose: () => void;
   onSuccess?: (result: { message: string; contactId: string }) => void;
   accountId: string;
@@ -30,6 +34,7 @@ interface PhotoDeleteDialogProps {
 const PhotoDeleteDialog: React.FC<PhotoDeleteDialogProps> = ({
   open,
   contactId,
+  contact,
   onClose,
   onSuccess,
   accountId,
@@ -69,9 +74,18 @@ const PhotoDeleteDialog: React.FC<PhotoDeleteDialogProps> = ({
     return null; // Don't render if missing required data
   }
 
+  const avatarUser = contact
+    ? {
+        id: contact.id,
+        firstName: contact.firstName ?? 'User',
+        lastName: contact.lastName ?? 'Member',
+        photoUrl: contact.photoUrl ?? undefined,
+      }
+    : null;
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Delete Photo</DialogTitle>
+      <DialogTitle sx={{ color: (theme) => theme.palette.text.primary }}>Delete Photo</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           {/* Error display */}
@@ -81,8 +95,25 @@ const PhotoDeleteDialog: React.FC<PhotoDeleteDialogProps> = ({
             </Alert>
           )}
 
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <PhotoIcon color="action" />
+          <Stack direction="row" alignItems="center" spacing={2}>
+            {avatarUser ? (
+              <UserAvatar user={avatarUser} size={48} />
+            ) : (
+              <Box
+                sx={(theme) => ({
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: theme.palette.action.hover,
+                  color: theme.palette.text.secondary,
+                })}
+              >
+                <PhotoIcon fontSize="small" />
+              </Box>
+            )}
             <Typography variant="body1">
               Are you sure you want to delete this photo? This action cannot be undone.
             </Typography>

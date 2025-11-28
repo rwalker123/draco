@@ -12,7 +12,9 @@ import { useApiClient } from '@/hooks/useApiClient';
 import { useAuth } from '@/context/AuthContext';
 import { getContactDisplayName } from '@/utils/contactUtils';
 import { formatPhoneNumber } from '@/utils/phoneNumber';
-import EditableContactAvatar from '@/components/users/EditableContactAvatar';
+import UserAvatar from '@/components/users/UserAvatar';
+import ContactPhotoUploadDialog from '@/components/users/ContactPhotoUploadDialog';
+import PhotoDeleteDialog from '@/components/users/PhotoDeleteDialog';
 import { ContactTransformationService } from '@/services/contactTransformationService';
 
 interface TeamManagersWidgetProps {
@@ -38,6 +40,11 @@ const TeamManagersWidget: React.FC<TeamManagersWidgetProps> = ({
   const [managers, setManagers] = React.useState<TeamManagerType[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [photoDialogOpen, setPhotoDialogOpen] = React.useState(false);
+  const [selectedContact, setSelectedContact] = React.useState<TeamManagerType['contact'] | null>(
+    null,
+  );
+  const [deleteContactId, setDeleteContactId] = React.useState<string | null>(null);
 
   const loadManagers = React.useCallback(
     async (signal?: AbortSignal) => {
@@ -96,6 +103,47 @@ const TeamManagersWidget: React.FC<TeamManagersWidgetProps> = ({
     [accountId, apiClient, seasonId, teamSeasonId, token],
   );
 
+  const openPhotoDialog = React.useCallback(
+    (contact: TeamManagerType['contact']) => {
+      if (!canEditPhotos || !token) {
+        return;
+      }
+      setSelectedContact(contact);
+      setPhotoDialogOpen(true);
+    },
+    [canEditPhotos, token],
+  );
+
+  const closePhotoDialog = React.useCallback(() => {
+    setSelectedContact(null);
+    setPhotoDialogOpen(false);
+  }, []);
+
+  const handlePhotoUpdated = React.useCallback(async () => {
+    await loadManagers();
+    closePhotoDialog();
+  }, [closePhotoDialog, loadManagers]);
+
+  const openDeletePhotoDialog = React.useCallback(
+    (contact: TeamManagerType['contact']) => {
+      if (!canEditPhotos || !token) {
+        return;
+      }
+      setSelectedContact(contact);
+      setDeleteContactId(contact.id);
+    },
+    [canEditPhotos, token],
+  );
+
+  const closeDeletePhotoDialog = React.useCallback(() => {
+    setDeleteContactId(null);
+  }, []);
+
+  const handlePhotoDeleted = React.useCallback(async () => {
+    await loadManagers();
+    closeDeletePhotoDialog();
+  }, [closeDeletePhotoDialog, loadManagers]);
+
   React.useEffect(() => {
     const controller = new AbortController();
 
@@ -138,13 +186,24 @@ const TeamManagersWidget: React.FC<TeamManagersWidgetProps> = ({
     return (
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <EditableContactAvatar
-            accountId={accountId}
-            contact={contact}
+          <UserAvatar
+            user={{
+              id: contact.id,
+              firstName: contact.firstName ?? 'User',
+              lastName: contact.lastName ?? 'Member',
+              photoUrl: contact.photoUrl ?? undefined,
+            }}
             size={40}
-            canEdit={canEditManagerPhoto}
-            onPhotoUpdated={() => loadManagers()}
-            onError={setError}
+            onClick={canEditManagerPhoto ? () => openPhotoDialog(contact) : undefined}
+            showHoverEffects={canEditManagerPhoto}
+            enablePhotoActions={canEditManagerPhoto}
+            onPhotoDelete={
+              canEditManagerPhoto
+                ? async () => {
+                    openDeletePhotoDialog(contact);
+                  }
+                : undefined
+            }
           />
           <Box>
             <Typography variant="subtitle1" fontWeight={600}>
@@ -241,17 +300,40 @@ const TeamManagersWidget: React.FC<TeamManagersWidgetProps> = ({
   };
 
   return (
-    <WidgetShell
-      title="Team Managers"
-      subtitle={
-        teamName
-          ? `Direct contact details for the ${teamName} staff`
-          : 'Direct contact details for this staff'
-      }
-      accent="info"
-    >
-      {renderContent()}
-    </WidgetShell>
+    <>
+      <WidgetShell
+        title="Team Managers"
+        subtitle={
+          teamName
+            ? `Direct contact details for the ${teamName} staff`
+            : 'Direct contact details for this staff'
+        }
+        accent="info"
+      >
+        {renderContent()}
+      </WidgetShell>
+      {photoDialogOpen && selectedContact ? (
+        <ContactPhotoUploadDialog
+          open={photoDialogOpen}
+          accountId={accountId}
+          contact={selectedContact}
+          canEdit={Boolean(canEditPhotos && token)}
+          onClose={closePhotoDialog}
+          onPhotoUpdated={handlePhotoUpdated}
+          onError={setError}
+        />
+      ) : null}
+      {deleteContactId ? (
+        <PhotoDeleteDialog
+          open
+          contactId={deleteContactId}
+          contact={selectedContact}
+          onClose={closeDeletePhotoDialog}
+          onSuccess={handlePhotoDeleted}
+          accountId={accountId}
+        />
+      ) : null}
+    </>
   );
 };
 
