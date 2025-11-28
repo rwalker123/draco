@@ -40,7 +40,10 @@ import { fetchJson } from '../utils/fetchJson.js';
 import type { dbTeamSeasonWithLeaguesAndTeams } from '../repositories/types/dbTypes.js';
 import type { DiscordIngestionTarget } from '../config/socialIngestion.js';
 import { AccountSettingsService } from './accountSettingsService.js';
-import { composeWorkoutAnnouncementMessage, type WorkoutPostPayload } from './socialWorkoutFormatter.js';
+import {
+  composeWorkoutAnnouncementMessage,
+  type WorkoutPostPayload,
+} from './socialWorkoutFormatter.js';
 
 type DiscordLinkStatePayload =
   | {
@@ -111,6 +114,7 @@ type DiscordWorkoutPayload = WorkoutPostPayload;
 const SUPPORTED_FEATURES: readonly DiscordFeatureSyncFeatureType[] = [
   'announcements',
   'gameResults',
+  'workouts',
 ] as const;
 
 export class DiscordIntegrationService {
@@ -1582,7 +1586,7 @@ export class DiscordIntegrationService {
         return;
       }
 
-      const featureRecord = await this.discordRepository.getFeatureSync(accountId, 'gameResults');
+      const featureRecord = await this.discordRepository.getFeatureSync(accountId, 'workouts');
       if (!featureRecord || !featureRecord.enabled || !featureRecord.discordchannelid) {
         return;
       }
@@ -1594,7 +1598,7 @@ export class DiscordIntegrationService {
 
       await this.postDiscordMessage(featureRecord.discordchannelid, content);
       await this.discordRepository.upsertFeatureSync(accountId, {
-        feature: 'gameResults',
+        feature: 'workouts',
         enabled: true,
         discordChannelId: featureRecord.discordchannelid,
         discordChannelName: featureRecord.discordchannelname ?? null,

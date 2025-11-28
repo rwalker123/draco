@@ -63,6 +63,10 @@ const createRegistrationAuthMiddleware = () => {
 
     const fallbackToAccessCode = () => {
       try {
+        // Clear any partially authenticated user to avoid bypassing access-code checks
+        // when bearer auth failed account boundary/permission requirements.
+        // Access-code flows must behave as fully unauthenticated.
+        (req as Request & { user?: unknown }).user = undefined;
         requireAccessCodeForRequest(req);
         next();
       } catch (error) {
@@ -79,14 +83,18 @@ const createRegistrationAuthMiddleware = () => {
       if (!authError) {
         routeProtection.enforceAccountBoundary()(req, res, (boundaryError?: unknown) => {
           if (!boundaryError) {
-            routeProtection.requirePermission('workout.manage')(req, res, (permissionError?: unknown) => {
-              if (!permissionError) {
-                next();
-                return;
-              }
+            routeProtection.requirePermission('workout.manage')(
+              req,
+              res,
+              (permissionError?: unknown) => {
+                if (!permissionError) {
+                  next();
+                  return;
+                }
 
-              fallbackToAccessCode();
-            });
+                fallbackToAccessCode();
+              },
+            );
             return;
           }
 
@@ -229,11 +237,11 @@ router.put(
     );
     const payload = UpsertWorkoutRegistrationSchema.parse(req.body);
 
-    if (!req.user && !payload.accessCode) {
+    if (!req.user && (!payload.accessCode || !payload.accessCode.trim())) {
       throw new ValidationError('Access code is required for unauthenticated requests');
     }
 
-    const effectiveAccessCode = req.user ? '' : payload.accessCode ?? '';
+    const effectiveAccessCode = req.user ? '' : (payload.accessCode?.trim() ?? '');
     return service
       .updateRegistration(accountId, workoutId, registrationId, payload, effectiveAccessCode)
       .then((registration) => {

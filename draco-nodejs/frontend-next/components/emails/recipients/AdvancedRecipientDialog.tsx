@@ -1128,12 +1128,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       // Create simplified state for the compose page
       const validContactsCount = allSelectedContactDetails.filter((c) => c.hasValidEmail).length;
       const totalRecipients = allSelectedContactDetails.length + totalWorkoutSelected;
+      const validWorkoutCount = totalWorkoutSelected; // assume workout registrants already filtered to valid emails server-side
       const simplifiedState: SimplifiedRecipientSelectionState = {
         selectedGroups: mergedContactGroups,
         selectedWorkoutRecipients: workoutSelections,
         totalRecipients,
-        validEmailCount: validContactsCount + totalWorkoutSelected,
-        invalidEmailCount: totalRecipients - (validContactsCount + totalWorkoutSelected),
+        validEmailCount: validContactsCount + validWorkoutCount,
+        invalidEmailCount: totalRecipients - (validContactsCount + validWorkoutCount),
         searchQuery: '',
         activeTab: 'contacts',
         expandedSections: new Set(),

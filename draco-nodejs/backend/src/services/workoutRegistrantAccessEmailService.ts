@@ -7,6 +7,7 @@ import validator from 'validator';
 interface WorkoutRegistrationAccessEmail {
   accountId: bigint;
   accountName: string;
+  accountTimeZone?: string | null;
   workoutId: bigint;
   registrationId: bigint;
   accessCode: string;
@@ -28,15 +29,18 @@ export class WorkoutRegistrantAccessEmailService {
     const baseUrl = this.getBaseUrl().replace(/\/$/, '');
     const verificationUrl = `${baseUrl}/account/${payload.accountId.toString()}/workouts/${payload.workoutId.toString()}/verify-registration/${payload.registrationId.toString()}?code=${payload.accessCode}`;
 
-    const formattedDate =
-      DateUtils.formatDateTimeForResponse(payload.workoutDate) ?? payload.workoutDate.toISOString();
+    const formattedDateLocal =
+      DateUtils.formatDateTimeInTimeZone(payload.workoutDate, payload.accountTimeZone) ??
+      DateUtils.formatDateTimeForResponse(payload.workoutDate) ??
+      payload.workoutDate.toISOString();
 
     const accountName = this.escapeHtml(payload.accountName || 'Your account');
     const workoutDesc = this.escapeHtml(payload.workoutDesc);
     const greetingName = this.escapeHtml(payload.recipient.name?.trim() || 'there');
     const sanitizedVerificationUrl = this.escapeHtml(verificationUrl);
     const sanitizedAccessCode = this.escapeHtml(payload.accessCode);
-    const sanitizedDate = this.escapeHtml(formattedDate);
+    const sanitizedDate = this.escapeHtml(formattedDateLocal);
+    const linkHref = verificationUrl;
 
     const htmlBody = `
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f5f7fb; padding: 24px;">
@@ -50,7 +54,7 @@ export class WorkoutRegistrantAccessEmailService {
             <p style="margin: 0 0 12px;">Registration successful for <strong>${workoutDesc}</strong> at ${accountName}.</p>
             <p style="margin: 0 0 12px;">You can view, edit, or cancel your registration using this secure link:</p>
             <p style="margin: 0 0 16px;">
-              <a href="${sanitizedVerificationUrl}" style="background: #1f7ae0; color: #ffffff; padding: 12px 18px; border-radius: 8px; text-decoration: none; display: inline-block; font-weight: 600;">Manage registration</a>
+              <a href="${linkHref}" style="background: #1f7ae0; color: #ffffff; padding: 12px 18px; border-radius: 8px; text-decoration: none; display: inline-block; font-weight: 600;">Manage registration</a>
             </p>
             <p style="margin: 0 0 16px; color: #1f7ae0; word-break: break-all;">${sanitizedVerificationUrl}</p>
             <div style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin: 0 0 16px;">
@@ -73,10 +77,16 @@ export class WorkoutRegistrantAccessEmailService {
       verificationUrl,
       '',
       `Access code: ${payload.accessCode}`,
-      `Workout date and time: ${formattedDate}`,
+      `Workout date and time: ${formattedDateLocal}`,
       '',
       `If you did not request this, you can ignore this email.`,
     ].join('\n');
+
+    const calendarAttachment = this.buildCalendarAttachment({
+      payload,
+      baseUrl,
+      verificationUrl,
+    });
 
     try {
       await provider.sendEmail({
@@ -87,6 +97,7 @@ export class WorkoutRegistrantAccessEmailService {
         from: settings.fromEmail,
         fromName: settings.fromName,
         replyTo: settings.replyTo,
+        attachments: calendarAttachment ? [calendarAttachment] : undefined,
       });
     } catch (error) {
       logSecurely('error', 'Failed to send workout registration access email', {
@@ -94,6 +105,60 @@ export class WorkoutRegistrantAccessEmailService {
         registrationId: payload.registrationId.toString(),
       });
     }
+  }
+
+  private buildCalendarAttachment({
+    payload,
+    baseUrl,
+    verificationUrl,
+  }: {
+    payload: WorkoutRegistrationAccessEmail;
+    baseUrl: string;
+    verificationUrl: string;
+  }): { filename: string; content: Buffer; contentType: string } | null {
+    if (!payload.workoutDate) {
+      return null;
+    }
+
+    const formatIcsDate = (date: Date) =>
+      date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+    const start = payload.workoutDate;
+    const end = new Date(start.getTime() + 60 * 60 * 1000); // default 1 hour
+
+    const uid = `workout-${payload.workoutId.toString()}-reg-${payload.registrationId.toString()}@ezrecsports`;
+    const summary = `${payload.accountName} - ${payload.workoutDesc}`;
+    const descriptionLines = [`Manage: ${verificationUrl}`, `Access code: ${payload.accessCode}`];
+
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Draco Sports Manager//Workout Registration//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:${uid}`,
+      `DTSTAMP:${formatIcsDate(new Date())}`,
+      `DTSTART:${formatIcsDate(start)}`,
+      `DTEND:${formatIcsDate(end)}`,
+      `SUMMARY:${this.escapeText(summary)}`,
+      `DESCRIPTION:${this.escapeText(descriptionLines.join('\\n'))}`,
+      `URL:${this.escapeText(verificationUrl)}`,
+      `LOCATION:${this.escapeText(baseUrl)}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+      '',
+    ].join('\r\n');
+
+    return {
+      filename: 'workout-registration.ics',
+      content: Buffer.from(ics, 'utf-8'),
+      contentType: 'text/calendar',
+    };
+  }
+
+  private escapeText(value: string): string {
+    return value.replace(/([,;])/g, '\\$1').replace(/\n/g, '\\n');
   }
 
   private escapeHtml(value: string): string {

@@ -246,7 +246,7 @@ export const DiscordOAuthCallbackSchema = z.object({
 
 export type DiscordOAuthCallbackType = z.infer<typeof DiscordOAuthCallbackSchema>;
 
-export const DiscordFeatureSyncFeatureEnum = z.enum(['announcements', 'gameResults']);
+export const DiscordFeatureSyncFeatureEnum = z.enum(['announcements', 'gameResults', 'workouts']);
 
 export type DiscordFeatureSyncFeatureType = z.infer<typeof DiscordFeatureSyncFeatureEnum>;
 

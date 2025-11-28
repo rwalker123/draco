@@ -151,16 +151,31 @@ export class WorkoutService {
     const data = this.mapRegistrationData(payload, hashedAccessCode);
     const registration = await this.createRegistrationOrThrowConflict(workoutId, data);
 
-    await this.registrantAccessEmailService.sendAccessEmail({
-      accountId,
-      accountName: account?.name ?? 'Your account',
-      workoutId,
-      registrationId: registration.id,
-      accessCode,
-      recipient: { name: payload.name, email: payload.email },
-      workoutDesc: workout.workoutdesc,
-      workoutDate: workout.workoutdate,
-    });
+    try {
+      await this.registrantAccessEmailService.sendAccessEmail({
+        accountId,
+        accountName: account?.name ?? 'Your account',
+        accountTimeZone: account?.timezoneid ?? undefined,
+        workoutId,
+        registrationId: registration.id,
+        accessCode,
+        recipient: { name: payload.name, email: payload.email },
+        workoutDesc: workout.workoutdesc,
+        workoutDate: workout.workoutdate,
+      });
+    } catch (error) {
+      console.error(
+        '[workout] Failed to send registration access email, rolling back registration',
+        {
+          accountId: accountId.toString(),
+          workoutId: workoutId.toString(),
+          registrationId: registration.id.toString(),
+          error,
+        },
+      );
+      await this.workoutRepository.deleteRegistration(accountId, workoutId, registration.id);
+      throw error;
+    }
 
     return WorkoutResponseFormatter.formatRegistration(registration);
   }

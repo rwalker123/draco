@@ -36,7 +36,7 @@ import { createEmailService } from '../../../services/emailService';
 import { sendWorkoutRegistrationEmails } from '../../../services/workoutService';
 import { useAuth } from '../../../context/AuthContext';
 import { useApiClient } from '../../../hooks/useApiClient';
-import { safeAsync, logError } from '../../../utils/errorHandling';
+import { safeAsync, logError, normalizeError } from '../../../utils/errorHandling';
 
 // Action types for state management
 type ComposeAction =
@@ -268,10 +268,7 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
         action.workoutRecipients ?? recipientState.selectedWorkoutRecipients;
 
       // Calculate total recipients from unified groups
-      const totalRecipients = calculateTotalRecipients(
-        action.payload,
-        workoutRecipients,
-      );
+      const totalRecipients = calculateTotalRecipients(action.payload, workoutRecipients);
 
       // For now, assume all recipients are valid (this will be refined later)
       const validEmailCount = totalRecipients;
@@ -712,7 +709,8 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
             type: 'ADD_ERROR',
             payload: {
               field: 'recipients',
-              message: 'No recipients selected. Please choose contacts, groups, or workout registrants.',
+              message:
+                'No recipients selected. Please choose contacts, groups, or workout registrants.',
               severity: 'error',
             },
           });
@@ -809,7 +807,32 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
             dispatch({ type: 'SET_SENDING', payload: { isSending: true, progress: 50 } });
           }
 
-          await Promise.all(workoutRequests);
+          const workoutResults = await Promise.allSettled(workoutRequests);
+
+          const failedWorkouts: string[] = [];
+          const succeededWorkouts: string[] = [];
+
+          workoutResults.forEach((result, idx) => {
+            const workoutId = selectedWorkoutRecipients[idx]?.workoutId ?? 'unknown';
+            if (result.status === 'fulfilled') {
+              succeededWorkouts.push(workoutId);
+            } else {
+              failedWorkouts.push(workoutId);
+              logError(normalizeError(result.reason), 'sendWorkoutRegistrationEmails');
+            }
+          });
+
+          if (failedWorkouts.length > 0) {
+            dispatch({
+              type: 'ADD_ERROR',
+              payload: {
+                field: 'recipients',
+                message: `Failed to send emails to workouts: ${failedWorkouts.join(', ')}`,
+                severity: 'error',
+              },
+            });
+            throw new Error(`Failed to send workout emails to: ${failedWorkouts.join(', ')}`);
+          }
         }
 
         dispatch({ type: 'SET_SENDING', payload: { isSending: true, progress: 100 } });
@@ -879,10 +902,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
   }, []);
 
   const updateSelectedGroups = useCallback(
-    (
-      groups: Map<GroupType, ContactGroup[]>,
-      workoutRecipients?: WorkoutRecipientSelection[],
-    ) => {
+    (groups: Map<GroupType, ContactGroup[]>, workoutRecipients?: WorkoutRecipientSelection[]) => {
       dispatch({ type: 'UPDATE_SELECTED_GROUPS', payload: groups, workoutRecipients });
     },
     [],

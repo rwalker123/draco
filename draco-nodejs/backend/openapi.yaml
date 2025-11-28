@@ -5139,6 +5139,7 @@ components:
           enum:
             - announcements
             - gameResults
+            - workouts
         enabled:
           type: boolean
         guildConfigured:
@@ -5228,6 +5229,7 @@ components:
       enum:
         - announcements
         - gameResults
+        - workouts
     DiscordTeamForumList:
       type: object
       properties:
@@ -18325,9 +18327,10 @@ paths:
           required: true
           schema:
             type: string
-            enum:
+            enum: &a1
               - announcements
               - gameResults
+              - workouts
       responses:
         "200":
           description: Discord sync status for the feature.
@@ -18365,9 +18368,7 @@ paths:
           required: true
           schema:
             type: string
-            enum:
-              - announcements
-              - gameResults
+            enum: *a1
       requestBody:
         required: true
         content:
@@ -18982,14 +18983,14 @@ paths:
       tags:
         - Announcements
       parameters:
-        - &a1
+        - &a2
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a3
+        - &a4
           name: limit
           in: query
           required: false
@@ -18998,7 +18999,7 @@ paths:
             minimum: 1
             maximum: 25
           description: Maximum number of announcement summaries to return (default 10).
-        - &a4
+        - &a5
           name: includeSpecialOnly
           in: query
           required: false
@@ -19026,7 +19027,7 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a1
+        - *a2
       responses:
         "200":
           description: Announcements published for the account.
@@ -19050,7 +19051,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a1
+        - *a2
       requestBody:
         content:
           application/json:
@@ -19095,8 +19096,8 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a1
-        - &a2
+        - *a2
+        - &a3
           name: announcementId
           in: path
           required: true
@@ -19131,8 +19132,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a1
         - *a2
+        - *a3
       requestBody:
         content:
           application/json:
@@ -19184,8 +19185,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a1
         - *a2
+        - *a3
       responses:
         "204":
           description: Announcement deleted.
@@ -19222,16 +19223,16 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a1
-        - &a5
+        - *a2
+        - &a6
           name: teamId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - *a3
         - *a4
+        - *a5
       responses:
         "200":
           description: Team announcement summaries for the specified account.
@@ -19260,8 +19261,8 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a1
-        - *a5
+        - *a2
+        - *a6
       responses:
         "200":
           description: Team announcements for the specified account.
@@ -19290,8 +19291,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a1
-        - *a5
+        - *a2
+        - *a6
       requestBody:
         content:
           application/json:
@@ -19342,9 +19343,9 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a1
-        - *a5
         - *a2
+        - *a6
+        - *a3
       responses:
         "200":
           description: Team announcement.
@@ -19373,9 +19374,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a1
-        - *a5
         - *a2
+        - *a6
+        - *a3
       requestBody:
         content:
           application/json:
@@ -19427,9 +19428,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a1
-        - *a5
         - *a2
+        - *a6
+        - *a3
       responses:
         "204":
           description: Team announcement deleted.
@@ -23465,7 +23466,7 @@ paths:
       tags:
         - League FAQ
       parameters:
-        - &a6
+        - &a7
           name: accountId
           in: path
           required: true
@@ -23494,7 +23495,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a6
+        - *a7
       requestBody:
         content:
           application/json:
@@ -23540,8 +23541,8 @@ paths:
       tags:
         - League FAQ
       parameters:
-        - *a6
-        - &a7
+        - *a7
+        - &a8
           name: faqId
           in: path
           required: true
@@ -23576,8 +23577,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a6
         - *a7
+        - *a8
       requestBody:
         content:
           application/json:
@@ -23629,8 +23630,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a6
         - *a7
+        - *a8
       responses:
         "204":
           description: League FAQ entry deleted
@@ -25206,7 +25207,7 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - &a8
+        - &a9
           name: accountId
           in: path
           required: true
@@ -25257,7 +25258,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
+        - *a9
       requestBody:
         content:
           application/json:
@@ -25314,8 +25315,8 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - *a8
-        - &a9
+        - *a9
+        - &a10
           name: memberBusinessId
           in: path
           required: true
@@ -25350,8 +25351,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
         - *a9
+        - *a10
       requestBody:
         content:
           application/json:
@@ -25409,8 +25410,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
         - *a9
+        - *a10
       responses:
         "204":
           description: Member business entry deleted
@@ -26366,7 +26367,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a10
+        - &a11
           name: accountId
           in: path
           required: true
@@ -26410,7 +26411,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
+        - *a11
       requestBody:
         content:
           application/json:
@@ -26457,8 +26458,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - &a11
+        - *a11
+        - &a12
           name: categoryId
           in: path
           required: true
@@ -26517,8 +26518,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
         - *a11
+        - *a12
       responses:
         "204":
           description: Survey category deleted successfully.
@@ -26557,8 +26558,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
         - *a11
+        - *a12
       requestBody:
         content:
           application/json:
@@ -26611,8 +26612,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - &a12
+        - *a11
+        - &a13
           name: questionId
           in: path
           required: true
@@ -26670,8 +26671,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - *a12
+        - *a11
+        - *a13
       responses:
         "204":
           description: Survey question deleted successfully.
@@ -26708,7 +26709,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a10
+        - *a11
         - schema:
             type: integer
             minimum: 1
@@ -26759,8 +26760,8 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a10
-        - &a13
+        - *a11
+        - &a14
           name: playerId
           in: path
           required: true
@@ -26798,9 +26799,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
+        - *a11
+        - *a14
         - *a13
-        - *a12
       requestBody:
         content:
           application/json:
@@ -26853,9 +26854,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
+        - *a11
+        - *a14
         - *a13
-        - *a12
       responses:
         "204":
           description: Survey answer deleted successfully.
@@ -26892,7 +26893,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a10
+        - *a11
       responses:
         "200":
           description: Player survey spotlight result.
@@ -26921,7 +26922,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a10
+        - *a11
         - name: teamSeasonId
           in: path
           required: true
@@ -28352,14 +28353,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a14
+        - &a15
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a15
+        - &a16
           name: seasonId
           in: path
           required: true
@@ -28465,8 +28466,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
         - *a15
+        - *a16
         - name: feedItemId
           in: path
           required: true
@@ -28509,8 +28510,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
         - *a15
+        - *a16
         - name: feedItemId
           in: path
           required: true
@@ -28553,8 +28554,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
         - *a15
+        - *a16
         - schema:
             type: string
             pattern: ^\d+$
@@ -28621,8 +28622,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
         - *a15
+        - *a16
         - schema:
             type: string
             pattern: ^\d+$
@@ -28688,8 +28689,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
         - *a15
+        - *a16
         - schema:
             type: string
             nullable: true
@@ -28733,8 +28734,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
         - *a15
+        - *a16
         - schema:
             type: string
             pattern: ^\d+$
@@ -28801,8 +28802,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
         - *a15
+        - *a16
       requestBody:
         content:
           application/json:
@@ -28855,9 +28856,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
         - *a15
-        - &a16
+        - *a16
+        - &a17
           name: liveEventId
           in: path
           required: true
@@ -28904,9 +28905,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
         - *a15
         - *a16
+        - *a17
       requestBody:
         content:
           application/json:
@@ -28958,9 +28959,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
         - *a15
         - *a16
+        - *a17
       responses:
         "204":
           description: Live event deleted.
@@ -30198,23 +30199,23 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a18
+        - &a19
           name: accountId
           in: path
           required: true
-          schema: &a17
+          schema: &a18
             type: string
             format: number
-        - &a19
+        - &a20
           name: seasonId
           in: path
           required: true
-          schema: *a17
-        - &a20
+          schema: *a18
+        - &a21
           name: teamSeasonId
           in: path
           required: true
-          schema: *a17
+          schema: *a18
       responses:
         "200":
           description: Completed games retrieved.
@@ -30260,14 +30261,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
         - *a19
         - *a20
-        - &a21
+        - *a21
+        - &a22
           name: gameId
           in: path
           required: true
-          schema: *a17
+          schema: *a18
       responses:
         "200":
           description: Batting stats retrieved.
@@ -30312,10 +30313,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
         - *a19
         - *a20
         - *a21
+        - *a22
       requestBody:
         required: true
         content:
@@ -30373,15 +30374,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
         - *a19
         - *a20
         - *a21
-        - &a22
+        - *a22
+        - &a23
           name: statId
           in: path
           required: true
-          schema: *a17
+          schema: *a18
       requestBody:
         required: true
         content:
@@ -30432,11 +30433,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
         - *a19
         - *a20
         - *a21
         - *a22
+        - *a23
       responses:
         "204":
           description: Batting stat deleted.
@@ -30478,10 +30479,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
         - *a19
         - *a20
         - *a21
+        - *a22
       responses:
         "200":
           description: Pitching stats retrieved.
@@ -30526,10 +30527,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
         - *a19
         - *a20
         - *a21
+        - *a22
       requestBody:
         required: true
         content:
@@ -30587,11 +30588,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
         - *a19
         - *a20
         - *a21
         - *a22
+        - *a23
       requestBody:
         required: true
         content:
@@ -30642,11 +30643,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
         - *a19
         - *a20
         - *a21
         - *a22
+        - *a23
       responses:
         "204":
           description: Pitching stat deleted.
@@ -30688,10 +30689,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
         - *a19
         - *a20
         - *a21
+        - *a22
       responses:
         "200":
           description: Attendance retrieved.
@@ -30736,10 +30737,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
         - *a19
         - *a20
         - *a21
+        - *a22
       requestBody:
         required: true
         content:
@@ -32089,7 +32090,7 @@ paths:
       tags:
         - Accounts
       parameters:
-        - &a23
+        - &a24
           name: accountId
           in: path
           required: true
@@ -32114,7 +32115,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a23
+        - *a24
       requestBody:
         content:
           application/json:
@@ -32153,8 +32154,8 @@ paths:
       tags:
         - Accounts
       parameters:
-        - *a23
-        - &a24
+        - *a24
+        - &a25
           name: messageId
           in: path
           required: true
@@ -32183,8 +32184,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a23
         - *a24
+        - *a25
       requestBody:
         content:
           application/json:
@@ -32230,8 +32231,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a23
         - *a24
+        - *a25
       responses:
         "204":
           description: Welcome message deleted successfully.
@@ -32262,8 +32263,8 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a23
-        - &a25
+        - *a24
+        - &a26
           name: teamSeasonId
           in: path
           required: true
@@ -32292,8 +32293,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a23
-        - *a25
+        - *a24
+        - *a26
       requestBody:
         content:
           application/json:
@@ -32338,9 +32339,9 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a23
-        - *a25
         - *a24
+        - *a26
+        - *a25
       responses:
         "200":
           description: Team welcome message retrieved successfully.
@@ -32363,9 +32364,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a23
-        - *a25
         - *a24
+        - *a26
+        - *a25
       requestBody:
         content:
           application/json:
@@ -32411,9 +32412,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a23
-        - *a25
         - *a24
+        - *a26
+        - *a25
       responses:
         "204":
           description: Team welcome message deleted successfully.

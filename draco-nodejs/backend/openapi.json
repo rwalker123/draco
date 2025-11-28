@@ -7010,7 +7010,8 @@
             "type": "string",
             "enum": [
               "announcements",
-              "gameResults"
+              "gameResults",
+              "workouts"
             ]
           },
           "enabled": {
@@ -7140,7 +7141,8 @@
         "type": "string",
         "enum": [
           "announcements",
-          "gameResults"
+          "gameResults",
+          "workouts"
         ]
       },
       "DiscordTeamForumList": {
@@ -25395,7 +25397,8 @@
               "type": "string",
               "enum": [
                 "announcements",
-                "gameResults"
+                "gameResults",
+                "workouts"
               ]
             }
           }
@@ -25459,7 +25462,8 @@
               "type": "string",
               "enum": [
                 "announcements",
-                "gameResults"
+                "gameResults",
+                "workouts"
               ]
             }
           }

@@ -1,5 +1,5 @@
 import { RegisterContext } from '../../openapiTypes.js';
-import { ACCOUNT_SETTING_KEYS } from '@draco/shared-schemas';
+import { ACCOUNT_SETTING_KEYS, DiscordFeatureSyncFeatureEnum } from '@draco/shared-schemas';
 
 export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterContext) => {
   const {
@@ -3738,7 +3738,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
         required: true,
         schema: {
           type: 'string',
-          enum: ['announcements', 'gameResults'],
+          enum: DiscordFeatureSyncFeatureEnum.options,
         },
       },
     ],
@@ -3777,7 +3777,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
         required: true,
         schema: {
           type: 'string',
-          enum: ['announcements', 'gameResults'],
+          enum: DiscordFeatureSyncFeatureEnum.options,
         },
       },
     ],
