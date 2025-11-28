@@ -8,14 +8,14 @@ export async function generateMetadata({
 }: {
   params: MetadataParams<{ accountId: string; workoutId: string; registrationId: string }>;
 }) {
-  const { accountId } = await resolveRouteParams(params);
+  const { accountId, workoutId, registrationId } = await resolveRouteParams(params);
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
   const description = `${accountName} workout registration verification and editing.`;
 
   return buildSeoMetadata({
     title: `${accountName} - Verify Workout Registration`,
     description,
-    path: `/account/${accountId}/workouts/${params.workoutId}/verify-registration/${params.registrationId}`,
+    path: `/account/${accountId}/workouts/${workoutId}/verify-registration/${registrationId}`,
     icon: iconUrl,
     index: false,
   });

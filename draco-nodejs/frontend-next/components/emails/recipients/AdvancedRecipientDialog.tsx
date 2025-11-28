@@ -301,6 +301,14 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     [selectedGroups],
   );
 
+  const workoutSelectionCount = useMemo(() => {
+    let total = 0;
+    selectedWorkoutRegistrantIds.forEach((ids) => {
+      total += ids.size;
+    });
+    return total;
+  }, [selectedWorkoutRegistrantIds]);
+
   const getTotalSelected = useCallback((): number => {
     let total = 0;
 
@@ -866,14 +874,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     isInSearchMode,
   ]);
 
-  const workoutSelectionCount = useMemo(() => {
-    let total = 0;
-    selectedWorkoutRegistrantIds.forEach((ids) => {
-      total += ids.size;
-    });
-    return total;
-  }, [selectedWorkoutRegistrantIds]);
-
   const totalWorkoutRegistrants = useMemo(
     () => activeWorkouts.reduce((sum, workout) => sum + workout.registrants.length, 0),
     [activeWorkouts],
@@ -890,10 +890,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
   // Determine overall loading state - include pagination loading
   const isGeneralLoading =
-    loading ||
-    paginationLoading ||
-    workoutsLoading ||
-    Object.values(loadingState).some(Boolean);
+    loading || paginationLoading || workoutsLoading || Object.values(loadingState).some(Boolean);
 
   useEffect(() => {
     if (currentTab === 'season' && !seasonId) {
@@ -1400,8 +1397,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
               No Recipients Available
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              There are no contacts, workouts, teams, or roles available for selection. This might be
-              because:
+              There are no contacts, workouts, teams, or roles available for selection. This might
+              be because:
             </Typography>
             <Box component="ul" sx={{ textAlign: 'left', maxWidth: 400, mx: 'auto' }}>
               <li>No contacts have been added to your account yet</li>
