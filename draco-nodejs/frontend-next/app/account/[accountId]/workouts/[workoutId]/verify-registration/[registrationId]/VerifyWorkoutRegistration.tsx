@@ -164,8 +164,8 @@ export default function VerifyWorkoutRegistration({
     }
   };
 
-  const goBack = () => {
-    router.push(`/account/${accountId}/workouts`);
+  const goHome = () => {
+    router.push(`/account/${accountId}`);
   };
 
   return (
@@ -196,8 +196,8 @@ export default function VerifyWorkoutRegistration({
                 <Alert severity="error" sx={{ mb: 3 }}>
                   {state.error}
                 </Alert>
-                <Button variant="contained" onClick={goBack}>
-                  Go to Workouts
+                <Button variant="contained" onClick={goHome}>
+                  Go Home
                 </Button>
               </Box>
             )}
@@ -223,7 +223,7 @@ export default function VerifyWorkoutRegistration({
                   workoutId={workoutId}
                   registration={state.registration}
                   onSubmit={handleUpdate}
-                  onCancel={goBack}
+                  onCancel={goHome}
                   isLoading={saving}
                 />
                 {validatedAccessCode && (
