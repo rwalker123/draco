@@ -18,7 +18,7 @@ import {
   WorkoutRegistrationType,
   WorkoutSourcesType,
 } from '@draco/shared-schemas';
-import { getSources } from '../../services/workoutService';
+import { createWorkoutRegistration, getSources } from '../../services/workoutService';
 import { formatPhoneNumber } from '../../utils/phoneNumber';
 import { getApiErrorMessage } from '../../utils/apiResult';
 
@@ -26,18 +26,26 @@ interface WorkoutRegistrationFormProps {
   accountId: string;
   workoutId: string;
   registration?: WorkoutRegistrationType | null;
-  onSubmit: (data: UpsertWorkoutRegistrationType) => Promise<void>;
+  token?: string;
+  onSubmit?: (data: UpsertWorkoutRegistrationType) => Promise<WorkoutRegistrationType | void>;
+  onSuccess?: (result: { message: string; registration?: WorkoutRegistrationType }) => void;
+  onError?: (message: string) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  closeOnSuccess?: boolean;
 }
 
 export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = ({
   accountId,
-  workoutId: _workoutId, // Prefix with underscore to indicate it's intentionally unused
+  workoutId,
   registration,
+  token,
   onSubmit,
+  onSuccess,
+  onError,
   onCancel,
   isLoading = false,
+  closeOnSuccess,
 }) => {
   const [formData, setFormData] = useState<WorkoutRegistrationType>({
     id: '',
@@ -58,8 +66,10 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
   const [sources, setSources] = useState<WorkoutSourcesType>({ options: [] });
   const [loadingSources, setLoadingSources] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const isEditMode = !!registration;
+  const shouldAutoClose = closeOnSuccess ?? !isEditMode;
 
   useEffect(() => {
     if (registration) {
@@ -147,26 +157,32 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSubmitting(true);
 
     // Basic validation
     if (!formData.name.trim()) {
       setError('Name is required');
+      setSubmitting(false);
       return;
     }
     if (!formData.email.trim()) {
       setError('Email is required');
+      setSubmitting(false);
       return;
     }
     if (formData.age <= 0) {
       setError('Age must be greater than 0');
+      setSubmitting(false);
       return;
     }
     if (!formData.positions.trim()) {
       setError('Positions are required');
+      setSubmitting(false);
       return;
     }
     if (!formData.whereHeard.trim()) {
       setError('Where heard is required');
+      setSubmitting(false);
       return;
     }
 
@@ -183,21 +199,40 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
       whereHeard: formData.whereHeard,
     };
 
+    const successMessage = isEditMode
+      ? 'Registration updated.'
+      : 'Registration submitted. Check your email for your access code.';
+    const defaultError = isEditMode
+      ? 'Failed to update registration'
+      : 'Failed to submit registration';
+
     try {
-      await onSubmit(payload);
+      const submitFn =
+        onSubmit ??
+        (async (data: UpsertWorkoutRegistrationType) =>
+          createWorkoutRegistration(accountId, workoutId, data, token));
+
+      const result = (await submitFn(payload)) as WorkoutRegistrationType | void;
+
+      onSuccess?.({ message: successMessage, registration: result ?? undefined });
+      if (shouldAutoClose) {
+        onCancel();
+      }
     } catch (submitError) {
-      const message = getApiErrorMessage(
-        submitError,
-        'Failed to save registration',
-      );
+      const message = getApiErrorMessage(submitError, defaultError);
       setError(message);
+      onError?.(message);
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  const isBusy = isLoading || submitting;
 
   return (
     <Paper sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>
-        {isEditMode ? 'Edit Registration' : 'Add New Registration'}
+        {isEditMode ? 'Edit Registration' : 'Register for Workout'}
       </Typography>
 
       {error && (
@@ -222,7 +257,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
               value={formData.name}
               onChange={handleTextChange('name')}
               required
-              disabled={isLoading}
+              disabled={isBusy}
             />
           </Box>
           <Box>
@@ -233,7 +268,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
               value={formData.email}
               onChange={handleTextChange('email')}
               required
-              disabled={isLoading}
+              disabled={isBusy}
             />
           </Box>
 
@@ -246,7 +281,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
               value={formData.age || ''}
               onChange={handleNumberChange('age')}
               required
-              disabled={isLoading}
+              disabled={isBusy}
               inputProps={{ min: 1, max: 100 }}
             />
           </Box>
@@ -257,7 +292,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
               value={formData.positions}
               onChange={handleTextChange('positions')}
               required
-              disabled={isLoading}
+              disabled={isBusy}
               placeholder="e.g., Pitcher, Outfield"
             />
           </Box>
@@ -269,7 +304,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
               label="Phone"
               value={formData.phone1}
               onChange={handlePhoneChange}
-              disabled={isLoading}
+              disabled={isBusy}
               placeholder="(555) 123-4567"
             />
           </Box>
@@ -283,7 +318,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
               value={formData.whereHeard}
               onChange={handleTextChange('whereHeard')}
               required
-              disabled={isLoading || loadingSources}
+              disabled={isBusy || loadingSources}
               helperText={
                 loadingSources ? 'Loading options...' : 'Select where you heard about this workout'
               }
@@ -304,7 +339,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
                   <Switch
                     checked={formData.isManager}
                     onChange={handleCheckboxChange('isManager')}
-                    disabled={isLoading}
+                    disabled={isBusy}
                   />
                 }
                 label="Open to Managing a Team"
@@ -315,16 +350,16 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
 
         {/* Action Buttons */}
         <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'flex-end' }}>
-          <Button variant="outlined" onClick={onCancel} disabled={isLoading}>
+          <Button variant="outlined" onClick={onCancel} disabled={isBusy}>
             Cancel
           </Button>
           <Button
             type="submit"
             variant="contained"
-            disabled={isLoading}
-            startIcon={isLoading ? <CircularProgress size={20} /> : null}
+            disabled={isBusy}
+            startIcon={isBusy ? <CircularProgress size={20} /> : null}
           >
-            {isLoading ? 'Saving...' : isEditMode ? 'Update Registration' : 'Add Registration'}
+            {isBusy ? 'Saving...' : isEditMode ? 'Update Registration' : 'Add Registration'}
           </Button>
         </Box>
       </form>

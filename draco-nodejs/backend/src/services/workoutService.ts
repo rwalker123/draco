@@ -138,12 +138,9 @@ export class WorkoutService {
     payload: UpsertWorkoutRegistrationType,
   ): Promise<WorkoutRegistrationType> {
     const workout = await this.ensureWorkoutExists(accountId, workoutId);
+    const account = await this.accountRepository.findById(accountId);
 
-    await this.assertRegistrationEmailIsUnique(
-      accountId,
-      workoutId,
-      payload.email,
-    );
+    await this.assertRegistrationEmailIsUnique(accountId, workoutId, payload.email);
 
     const accessCode = randomUUID();
     const hashedAccessCode = await bcrypt.hash(
@@ -156,6 +153,7 @@ export class WorkoutService {
 
     await this.registrantAccessEmailService.sendAccessEmail({
       accountId,
+      accountName: account?.name ?? 'Your account',
       workoutId,
       registrationId: registration.id,
       accessCode,
@@ -235,12 +233,7 @@ export class WorkoutService {
       }
     }
 
-    await this.assertRegistrationEmailIsUnique(
-      accountId,
-      workoutId,
-      payload.email,
-      registrationId,
-    );
+    await this.assertRegistrationEmailIsUnique(accountId, workoutId, payload.email, registrationId);
 
     const data = this.mapRegistrationData(payload);
     const registration = await this.updateRegistrationOrThrowConflict(registrationId, data);
@@ -497,10 +490,7 @@ export class WorkoutService {
     return `${this.getBaseUrl()}/account/${accountId.toString()}/workouts/${workoutId.toString()}`;
   }
 
-  private async syncWorkoutToSocial(
-    accountId: bigint,
-    workout: dbWorkoutWithField,
-  ): Promise<void> {
+  private async syncWorkoutToSocial(accountId: bigint, workout: dbWorkoutWithField): Promise<void> {
     try {
       const account = await this.accountRepository.findById(accountId);
       const payload = {
