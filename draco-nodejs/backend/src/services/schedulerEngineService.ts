@@ -1,0 +1,497 @@
+import {
+  SchedulerAssignment,
+  SchedulerConstraints,
+  SchedulerFieldSlot,
+  SchedulerGameRequest,
+  SchedulerHardConstraints,
+  SchedulerProblemSpec,
+  SchedulerSolveResult,
+  SchedulerTeamBlackout,
+  SchedulerUmpireAvailability,
+  SchedulerUnscheduledReason,
+} from '../types/scheduler.js';
+import { ValidationError } from '../utils/customErrors.js';
+
+interface Interval {
+  start: Date;
+  end: Date;
+}
+
+interface GameCandidateContext {
+  game: SchedulerGameRequest;
+  durationMinutes: number;
+}
+
+export class SchedulerEngineService {
+  solve(problemSpec: SchedulerProblemSpec): SchedulerSolveResult {
+    this.validateProblemSpec(problemSpec);
+
+    const runId = problemSpec.runId ?? `sched_run_${Date.now()}`;
+    const assignments: SchedulerAssignment[] = [];
+    const unscheduled: SchedulerUnscheduledReason[] = [];
+
+    const hard = this.withDefaultHardConstraints(problemSpec.constraints);
+    const availability = this.groupUmpireAvailability(
+      problemSpec.umpireAvailability,
+      problemSpec.umpires,
+      problemSpec.season,
+    );
+    const teamBlackouts = this.groupTeamBlackouts(problemSpec.teamBlackouts);
+
+    const slotIndex = this.buildFieldSlotIndex(problemSpec.fieldSlots);
+    const teamSchedule: Map<string | number, Interval[]> = new Map();
+    const fieldSchedule: Map<string | number, Interval[]> = new Map();
+    const umpireSchedule: Map<string | number, Interval[]> = new Map();
+    const teamDailyCounts: Map<string | number, Map<string, number>> = new Map();
+    const umpireDailyCounts: Map<string | number, Map<string, number>> = new Map();
+
+    const sortedGames = [...problemSpec.games].sort((a, b) => {
+      const aStart = a.earliestStart ? new Date(a.earliestStart).getTime() : 0;
+      const bStart = b.earliestStart ? new Date(b.earliestStart).getTime() : 0;
+      if (aStart === bStart) {
+        return String(a.id).localeCompare(String(b.id));
+      }
+      return aStart - bStart;
+    });
+
+    const sortedSlots = [...problemSpec.fieldSlots].sort((a, b) => {
+      const aStart = new Date(a.startTime).getTime();
+      const bStart = new Date(b.startTime).getTime();
+      if (aStart === bStart) {
+        return String(a.fieldId).localeCompare(String(b.fieldId));
+      }
+      return aStart - bStart;
+    });
+
+    for (const game of sortedGames) {
+      const durationMinutes = this.resolveGameDuration(game, problemSpec.season);
+      const candidate: GameCandidateContext = { game, durationMinutes };
+      const assignment = this.findAssignment(
+        candidate,
+        sortedSlots,
+        hard,
+        availability,
+        teamBlackouts,
+        {
+          teamSchedule,
+          fieldSchedule,
+          umpireSchedule,
+          teamDailyCounts,
+          umpireDailyCounts,
+        },
+        slotIndex,
+      );
+
+      if (assignment) {
+        assignments.push(assignment);
+      } else {
+        unscheduled.push({
+          gameId: game.id,
+          reason: 'No valid slot found given hard constraints',
+        });
+      }
+    }
+
+    const metrics = {
+      totalGames: problemSpec.games.length,
+      scheduledGames: assignments.length,
+      unscheduledGames: unscheduled.length,
+      objectiveValue: assignments.length,
+    };
+
+    const status: SchedulerSolveResult['status'] =
+      metrics.scheduledGames === metrics.totalGames
+        ? 'completed'
+        : metrics.scheduledGames > 0
+          ? 'partial'
+          : 'infeasible';
+
+    return {
+      runId,
+      status,
+      metrics,
+      assignments,
+      unscheduled,
+    };
+  }
+
+  private withDefaultHardConstraints(constraints?: SchedulerConstraints): SchedulerHardConstraints {
+    const defaults: SchedulerHardConstraints = {
+      respectFieldSlots: true,
+      respectTeamBlackouts: true,
+      respectUmpireAvailability: true,
+      maxGamesPerTeamPerDay: undefined,
+      maxGamesPerUmpirePerDay: undefined,
+      noFieldOverlap: true,
+      noTeamOverlap: true,
+      noUmpireOverlap: true,
+    };
+
+    return { ...defaults, ...(constraints?.hard ?? {}) };
+  }
+
+  private validateProblemSpec(problemSpec: SchedulerProblemSpec): void {
+    if (!problemSpec.season) {
+      throw new ValidationError('Season information is required');
+    }
+
+    if (!Array.isArray(problemSpec.games) || problemSpec.games.length === 0) {
+      throw new ValidationError('At least one game is required');
+    }
+
+    if (!Array.isArray(problemSpec.fieldSlots) || problemSpec.fieldSlots.length === 0) {
+      throw new ValidationError('At least one field slot is required');
+    }
+
+    const dateFields: Array<{ value?: string; name: string }> = [
+      { value: problemSpec.season.startDate, name: 'season:startDate' },
+      { value: problemSpec.season.endDate, name: 'season:endDate' },
+    ];
+    problemSpec.games.forEach((game) => {
+      dateFields.push({ value: game.earliestStart, name: `game:${game.id}:earliestStart` });
+      dateFields.push({ value: game.latestEnd, name: `game:${game.id}:latestEnd` });
+    });
+    problemSpec.fieldSlots.forEach((slot) => {
+      dateFields.push({ value: slot.startTime, name: `fieldSlot:${slot.id}:start` });
+      dateFields.push({ value: slot.endTime, name: `fieldSlot:${slot.id}:end` });
+    });
+
+    dateFields.forEach(({ value, name }) => {
+      if (value) {
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+          throw new ValidationError(`Invalid date for ${name}`);
+        }
+      }
+    });
+
+    const seasonStart = new Date(problemSpec.season.startDate);
+    const seasonEnd = new Date(problemSpec.season.endDate);
+    if (seasonStart > seasonEnd) {
+      throw new ValidationError('Season startDate must be before endDate');
+    }
+  }
+
+  private resolveGameDuration(
+    game: SchedulerGameRequest,
+    season: SchedulerProblemSpec['season'],
+  ): number {
+    if (game.durationMinutes && game.durationMinutes > 0) {
+      return game.durationMinutes;
+    }
+
+    const baseDuration = season.gameDurations?.defaultMinutes ?? 60;
+    if (!game.earliestStart) {
+      return baseDuration;
+    }
+
+    const date = new Date(game.earliestStart);
+    const day = date.getUTCDay();
+    const isWeekend = day === 0 || day === 6;
+    if (isWeekend && season.gameDurations?.weekendMinutes) {
+      return season.gameDurations.weekendMinutes;
+    }
+
+    if (!isWeekend && season.gameDurations?.weekdayMinutes) {
+      return season.gameDurations.weekdayMinutes;
+    }
+
+    return baseDuration;
+  }
+
+  private buildFieldSlotIndex(fieldSlots: SchedulerFieldSlot[]): Map<string | number, SchedulerFieldSlot[]> {
+    const index = new Map<string | number, SchedulerFieldSlot[]>();
+    for (const slot of fieldSlots) {
+      const list = index.get(slot.fieldId) ?? [];
+      list.push(slot);
+      index.set(slot.fieldId, list);
+    }
+    return index;
+  }
+
+  private groupUmpireAvailability(
+    availability: SchedulerUmpireAvailability[] | undefined,
+    umpires: Array<{ id: string | number }>,
+    season: SchedulerProblemSpec['season'],
+  ): Map<string | number, Interval[]> {
+    const map = new Map<string | number, Interval[]>();
+    const windows = availability && availability.length
+      ? availability
+      : umpires.map((umpire) => ({
+          umpireId: umpire.id,
+          startTime: season.startDate,
+          endTime: season.endDate,
+        }));
+
+    windows.forEach((slot) => {
+      const parsed = this.toInterval(slot.startTime, slot.endTime);
+      const list = map.get(slot.umpireId) ?? [];
+      list.push(parsed);
+      map.set(slot.umpireId, list);
+    });
+    return map;
+  }
+
+  private groupTeamBlackouts(blackouts?: SchedulerTeamBlackout[]): Map<string | number, Interval[]> {
+    const map = new Map<string | number, Interval[]>();
+    (blackouts ?? []).forEach((slot) => {
+      const parsed = this.toInterval(slot.startTime, slot.endTime);
+      const list = map.get(slot.teamSeasonId) ?? [];
+      list.push(parsed);
+      map.set(slot.teamSeasonId, list);
+    });
+    return map;
+  }
+
+  private toInterval(start: string, end: string): Interval {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      throw new ValidationError('Invalid date in interval');
+    }
+
+    return { start: startDate, end: endDate };
+  }
+
+  private findAssignment(
+    candidate: GameCandidateContext,
+    sortedSlots: SchedulerFieldSlot[],
+    constraints: SchedulerHardConstraints,
+    availability: Map<string | number, Interval[]>,
+    teamBlackouts: Map<string | number, Interval[]>,
+    schedules: {
+      teamSchedule: Map<string | number, Interval[]>;
+      fieldSchedule: Map<string | number, Interval[]>;
+      umpireSchedule: Map<string | number, Interval[]>;
+      teamDailyCounts: Map<string | number, Map<string, number>>;
+      umpireDailyCounts: Map<string | number, Map<string, number>>;
+    },
+    slotIndex: Map<string | number, SchedulerFieldSlot[]>,
+  ): SchedulerAssignment | undefined {
+    const preferredFields = candidate.game.preferredFieldIds ?? [];
+    const slotsToEvaluate = preferredFields.length
+      ? preferredFields.flatMap((fieldId) => slotIndex.get(fieldId) ?? [])
+      : sortedSlots;
+
+    for (const slot of slotsToEvaluate) {
+      const start = new Date(slot.startTime);
+      const end = new Date(slot.endTime);
+
+      if (!this.slotWithinGameWindow(candidate.game, start, end)) {
+        continue;
+      }
+
+      const durationEnd = new Date(start.getTime() + candidate.durationMinutes * 60000);
+      if (durationEnd > end) {
+        continue;
+      }
+
+      if (
+        constraints.respectTeamBlackouts &&
+        this.intersectsBlackout(candidate.game, start, durationEnd, teamBlackouts)
+      ) {
+        continue;
+      }
+
+      if (constraints.noFieldOverlap && this.hasConflict(slot.fieldId, start, durationEnd, schedules.fieldSchedule)) {
+        continue;
+      }
+
+      if (
+        constraints.noTeamOverlap &&
+        (this.hasConflict(candidate.game.homeTeamSeasonId, start, durationEnd, schedules.teamSchedule) ||
+          this.hasConflict(candidate.game.visitorTeamSeasonId, start, durationEnd, schedules.teamSchedule))
+      ) {
+        continue;
+      }
+
+      const umpireIds = this.selectUmpires(
+        candidate.game,
+        start,
+        durationEnd,
+        constraints,
+        availability,
+        schedules.umpireSchedule,
+        schedules.umpireDailyCounts,
+      );
+
+      if (!umpireIds) {
+        continue;
+      }
+
+      if (
+        constraints.maxGamesPerTeamPerDay !== undefined &&
+        !this.withinDailyLimit(
+          candidate.game.homeTeamSeasonId,
+          start,
+          constraints.maxGamesPerTeamPerDay,
+          schedules.teamDailyCounts,
+        )
+      ) {
+        continue;
+      }
+
+      if (
+        constraints.maxGamesPerTeamPerDay !== undefined &&
+        !this.withinDailyLimit(
+          candidate.game.visitorTeamSeasonId,
+          start,
+          constraints.maxGamesPerTeamPerDay,
+          schedules.teamDailyCounts,
+        )
+      ) {
+        continue;
+      }
+
+      this.addBooking(slot.fieldId, start, durationEnd, schedules.fieldSchedule);
+      this.addBooking(candidate.game.homeTeamSeasonId, start, durationEnd, schedules.teamSchedule);
+      this.addBooking(candidate.game.visitorTeamSeasonId, start, durationEnd, schedules.teamSchedule);
+      this.incrementDailyCount(candidate.game.homeTeamSeasonId, start, schedules.teamDailyCounts);
+      this.incrementDailyCount(candidate.game.visitorTeamSeasonId, start, schedules.teamDailyCounts);
+
+      for (const umpireId of umpireIds) {
+        this.addBooking(umpireId, start, durationEnd, schedules.umpireSchedule);
+        this.incrementDailyCount(umpireId, start, schedules.umpireDailyCounts);
+      }
+
+      return {
+        gameId: candidate.game.id,
+        fieldId: slot.fieldId,
+        startTime: start.toISOString(),
+        endTime: durationEnd.toISOString(),
+        umpireIds,
+      };
+    }
+
+    return undefined;
+  }
+
+  private slotWithinGameWindow(game: SchedulerGameRequest, slotStart: Date, slotEnd: Date): boolean {
+    if (game.earliestStart) {
+      const earliest = new Date(game.earliestStart);
+      if (slotStart < earliest) {
+        return false;
+      }
+    }
+
+    if (game.latestEnd) {
+      const latest = new Date(game.latestEnd);
+      if (slotEnd > latest) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private intersectsBlackout(
+    game: SchedulerGameRequest,
+    start: Date,
+    end: Date,
+    teamBlackouts: Map<string | number, Interval[]>,
+  ): boolean {
+    const teams = [game.homeTeamSeasonId, game.visitorTeamSeasonId];
+    for (const team of teams) {
+      const blocks = teamBlackouts.get(team) ?? [];
+      if (blocks.some((block) => this.overlaps(block, { start, end }))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private selectUmpires(
+    game: SchedulerGameRequest,
+    start: Date,
+    end: Date,
+    constraints: SchedulerHardConstraints,
+    availability: Map<string | number, Interval[]>,
+    umpireSchedule: Map<string | number, Interval[]>,
+    umpireDailyCounts: Map<string | number, Map<string, number>>,
+  ): Array<string | number> | undefined {
+    const required = game.requiredUmpires ?? 1;
+    if (required === 0) {
+      return [];
+    }
+
+    const availableUmpires: Array<string | number> = [];
+    for (const [umpireId, slots] of availability.entries()) {
+      const hasAvailability =
+        !constraints.respectUmpireAvailability || slots.some((slot) => this.contains(slot, { start, end }));
+      if (!hasAvailability) {
+        continue;
+      }
+
+      if (constraints.noUmpireOverlap && this.hasConflict(umpireId, start, end, umpireSchedule)) {
+        continue;
+      }
+
+      const maxGamesPerDay = constraints.maxGamesPerUmpirePerDay;
+      if (
+        maxGamesPerDay !== undefined &&
+        !this.withinDailyLimit(umpireId, start, maxGamesPerDay, umpireDailyCounts)
+      ) {
+        continue;
+      }
+
+      availableUmpires.push(umpireId);
+      if (availableUmpires.length === required) {
+        break;
+      }
+    }
+
+    return availableUmpires.length === required ? availableUmpires : undefined;
+  }
+
+  private hasConflict(
+    key: string | number,
+    start: Date,
+    end: Date,
+    schedule: Map<string | number, Interval[]>,
+  ): boolean {
+    const bookings = schedule.get(key) ?? [];
+    return bookings.some((existing) => this.overlaps(existing, { start, end }));
+  }
+
+  private overlaps(a: Interval, b: Interval): boolean {
+    return a.start < b.end && b.start < a.end;
+  }
+
+  private contains(container: Interval, target: Interval): boolean {
+    return container.start <= target.start && container.end >= target.end;
+  }
+
+  private addBooking(
+    key: string | number,
+    start: Date,
+    end: Date,
+    schedule: Map<string | number, Interval[]>,
+  ): void {
+    const bookings = schedule.get(key) ?? [];
+    bookings.push({ start, end });
+    schedule.set(key, bookings);
+  }
+
+  private incrementDailyCount(
+    key: string | number,
+    date: Date,
+    counts: Map<string | number, Map<string, number>>,
+  ): void {
+    const dayKey = date.toISOString().slice(0, 10);
+    const current = counts.get(key) ?? new Map<string, number>();
+    current.set(dayKey, (current.get(dayKey) ?? 0) + 1);
+    counts.set(key, current);
+  }
+
+  private withinDailyLimit(
+    key: string | number,
+    date: Date,
+    maxPerDay: number,
+    counts: Map<string | number, Map<string, number>>,
+  ): boolean {
+    const dayKey = date.toISOString().slice(0, 10);
+    const existing = counts.get(key)?.get(dayKey) ?? 0;
+    return existing < maxPerDay;
+  }
+}
