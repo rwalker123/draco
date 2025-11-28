@@ -28,6 +28,9 @@ interface DiscordGameResultsSyncCardProps {
   postGameResultsEnabled?: boolean;
   postGameResultsUpdating?: boolean;
   onTogglePostGameResults?: (enabled: boolean) => Promise<void>;
+  postWorkoutsEnabled?: boolean;
+  postWorkoutsUpdating?: boolean;
+  onTogglePostWorkouts?: (enabled: boolean) => Promise<void>;
 }
 
 const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
@@ -36,6 +39,9 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
   postGameResultsEnabled = false,
   postGameResultsUpdating = false,
   onTogglePostGameResults,
+  postWorkoutsEnabled = false,
+  postWorkoutsUpdating = false,
+  onTogglePostWorkouts,
 }) => {
   const { fetchStatus, updateStatus } = useDiscordFeatureSync();
   const { fetchAvailableChannels } = useAccountDiscordAdmin();
@@ -51,6 +57,9 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
   const [settingSaving, setSettingSaving] = React.useState(false);
   const [postResultsEnabled, setPostResultsEnabled] = React.useState<boolean>(
     Boolean(postGameResultsEnabled),
+  );
+  const [postWorkoutsEnabledState, setPostWorkoutsEnabledState] = React.useState<boolean>(
+    Boolean(postWorkoutsEnabled),
   );
 
   const loadStatus = React.useCallback(async () => {
@@ -78,6 +87,10 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
   React.useEffect(() => {
     setPostResultsEnabled(Boolean(postGameResultsEnabled));
   }, [postGameResultsEnabled]);
+
+  React.useEffect(() => {
+    setPostWorkoutsEnabledState(Boolean(postWorkoutsEnabled));
+  }, [postWorkoutsEnabled]);
 
   const openChannelDialog = React.useCallback(async () => {
     setDialogOpen(true);
@@ -108,7 +121,7 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
     if (!status) {
       return;
     }
-    if (!postResultsEnabled) {
+    if (!postResultsEnabled && !postWorkoutsEnabledState) {
       return;
     }
     setSaving(true);
@@ -170,6 +183,40 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
     }
   };
 
+  const handlePostWorkoutsToggle = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ): Promise<void> => {
+    if (!onTogglePostWorkouts) {
+      return;
+    }
+
+    const nextValue = event.target.checked;
+    const previousValue = postWorkoutsEnabledState;
+
+    setSettingSaving(true);
+    setError(null);
+
+    try {
+      await onTogglePostWorkouts(nextValue);
+      setPostWorkoutsEnabledState(nextValue);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to update Discord settings.';
+      setError(message);
+      setPostWorkoutsEnabledState(previousValue);
+    } finally {
+      setSettingSaving(false);
+    }
+  };
+
+  const postingEnabled = postResultsEnabled || postWorkoutsEnabledState;
+
+  const postingLabel = [
+    postResultsEnabled ? 'game results' : null,
+    postWorkoutsEnabledState ? 'workouts' : null,
+  ]
+    .filter(Boolean)
+    .join(' and ');
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -187,12 +234,12 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
       );
     }
 
-    if (!postResultsEnabled) {
+    if (!postingEnabled) {
       return (
         <Stack spacing={2}>
           <Alert severity="info">
-            Posting game results to Discord is turned off for this account. Enable posting to
-            configure channels for automated updates.
+            Posting to Discord is turned off for this account. Enable posting for game results or
+            workouts to configure channels for automated updates.
           </Alert>
         </Stack>
       );
@@ -218,15 +265,17 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
       return (
         <Stack spacing={2} alignItems="flex-start">
           <Alert severity="info">
-            Post final scores to Discord with a dedicated Game Results channel and cross-post
-            updates into each team&apos;s channel.
+            Post game results and workouts to Discord with a dedicated channel and mirror updates
+            into each team&apos;s channel.
           </Alert>
           <Button
             variant="contained"
             onClick={openChannelDialog}
-            disabled={saving || settingSaving || postGameResultsUpdating}
+            disabled={
+              saving || settingSaving || postGameResultsUpdating || postWorkoutsUpdating
+            }
           >
-            Configure Game Results Channel
+            Configure Discord Channel
           </Button>
         </Stack>
       );
@@ -239,7 +288,7 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
     return (
       <Stack spacing={2}>
         <Alert severity="success">
-          Game results will be posted to <strong>{channelLabel}</strong>
+          {(postingLabel || 'Updates')} will be posted to <strong>{channelLabel}</strong>
           {status.channel?.channelType ? ` (${status.channel.channelType})` : ''} and mirrored into
           team channels.
         </Alert>
@@ -247,7 +296,9 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
           <Button
             variant="outlined"
             onClick={openChannelDialog}
-            disabled={saving || settingSaving || postGameResultsUpdating}
+            disabled={
+              saving || settingSaving || postGameResultsUpdating || postWorkoutsUpdating
+            }
           >
             Change Channel
           </Button>
@@ -255,7 +306,9 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
             variant="outlined"
             color="error"
             onClick={handleDisableSync}
-            disabled={saving || settingSaving || postGameResultsUpdating}
+            disabled={
+              saving || settingSaving || postGameResultsUpdating || postWorkoutsUpdating
+            }
           >
             Disable Posting
           </Button>
@@ -267,8 +320,8 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
   return (
     <>
       <WidgetShell
-        title="Post Game Results to Discord"
-        subtitle="Share final scores automatically with your Discord community."
+        title="Post Game Results & Workouts to Discord"
+        subtitle="Share final scores and workout announcements automatically with your Discord community."
         accent="info"
       >
         <Stack spacing={2} sx={{ mb: 2 }}>
@@ -277,10 +330,30 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
               <Switch
                 checked={postResultsEnabled}
                 onChange={handlePostResultsToggle}
-                disabled={settingSaving || postGameResultsUpdating || !onTogglePostGameResults}
+                disabled={
+                  settingSaving ||
+                  postGameResultsUpdating ||
+                  postWorkoutsUpdating ||
+                  !onTogglePostGameResults
+                }
               />
             }
             label="Post game results to Discord"
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={postWorkoutsEnabledState}
+                onChange={handlePostWorkoutsToggle}
+                disabled={
+                  settingSaving ||
+                  postGameResultsUpdating ||
+                  postWorkoutsUpdating ||
+                  !onTogglePostWorkouts
+                }
+              />
+            }
+            label="Post workouts to Discord"
           />
         </Stack>
         {renderContent()}

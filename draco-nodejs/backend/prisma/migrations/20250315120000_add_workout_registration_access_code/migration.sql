@@ -1,0 +1,2 @@
+ALTER TABLE "workoutregistration"
+ADD COLUMN IF NOT EXISTS "accesscode" VARCHAR(255) NOT NULL DEFAULT '';

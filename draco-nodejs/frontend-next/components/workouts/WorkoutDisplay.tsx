@@ -15,13 +15,13 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import { getWorkout } from '../../services/workoutService';
+import { createWorkoutRegistration, getWorkout } from '../../services/workoutService';
 import { WorkoutType } from '@draco/shared-schemas';
 import { WorkoutRegistrationForm } from './WorkoutRegistrationForm';
 import { Event } from '@mui/icons-material';
 import { listAccountFields } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
-import { unwrapApiResult } from '../../utils/apiResult';
+import { getApiErrorMessage, unwrapApiResult } from '../../utils/apiResult';
 import { FieldDetailsCard, type FieldDetails } from '../fields/FieldDetailsCard';
 import ButtonBase from '@mui/material/ButtonBase';
 import RichTextContent from '../common/RichTextContent';
@@ -47,6 +47,8 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [registrationOpen, setRegistrationOpen] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState<string | null>(null);
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, FieldDetails>>({});
   const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
@@ -241,6 +243,16 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
 
   return (
     <>
+      {registrationSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setRegistrationSuccess(null)}>
+          {registrationSuccess}
+        </Alert>
+      )}
+      {registrationError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setRegistrationError(null)}>
+          {registrationError}
+        </Alert>
+      )}
       <Paper sx={{ p: compact ? 2 : 4 }}>
         {/* Title and Calendar Button */}
         <Box
@@ -358,23 +370,31 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
           fullWidth
         >
           <DialogTitle>Register for Workout</DialogTitle>
-          <DialogContent>
-            <WorkoutRegistrationForm
-              accountId={accountId}
-              workoutId={workout.id}
-              onSubmit={async (_data) => {
+            <DialogContent>
+              <WorkoutRegistrationForm
+                accountId={accountId}
+                workoutId={workout.id}
+              onSubmit={async (data) => {
                 try {
-                  // This will be implemented when we add the createRegistration service call
-                  console.log('Registration data:', _data);
+                  await createWorkoutRegistration(accountId, workout.id, data, token);
                   setRegistrationOpen(false);
-                } catch (error) {
-                  console.error('Failed to register:', error);
+                  setRegistrationSuccess(
+                    'Registration submitted. Check your email for your access code.',
+                  );
+                  setRegistrationError(null);
+                } catch (submitError) {
+                  console.error('Failed to register:', submitError);
+                  const message = getApiErrorMessage(
+                    submitError,
+                    'Failed to submit registration',
+                  );
+                  setRegistrationError(message);
                 }
               }}
-              onCancel={() => setRegistrationOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+                onCancel={() => setRegistrationOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
       )}
 
       <FieldDetailsDialog

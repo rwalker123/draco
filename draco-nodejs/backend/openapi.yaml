@@ -4018,6 +4018,9 @@ components:
                   - PostGameResultsToDiscord
                   - PostGameResultsToTwitter
                   - PostGameResultsToBluesky
+                  - PostWorkoutsToDiscord
+                  - PostWorkoutsToTwitter
+                  - PostWorkoutsToBluesky
                   - SyncInstagramToGallery
               label:
                 type: string
@@ -4075,6 +4078,9 @@ components:
                         - PostGameResultsToDiscord
                         - PostGameResultsToTwitter
                         - PostGameResultsToBluesky
+                        - PostWorkoutsToDiscord
+                        - PostWorkoutsToTwitter
+                        - PostWorkoutsToBluesky
                         - SyncInstagramToGallery
                     value:
                       anyOf:
@@ -4168,6 +4174,9 @@ components:
                 - PostGameResultsToDiscord
                 - PostGameResultsToTwitter
                 - PostGameResultsToBluesky
+                - PostWorkoutsToDiscord
+                - PostWorkoutsToTwitter
+                - PostWorkoutsToBluesky
                 - SyncInstagramToGallery
             label:
               type: string
@@ -4225,6 +4234,9 @@ components:
                       - PostGameResultsToDiscord
                       - PostGameResultsToTwitter
                       - PostGameResultsToBluesky
+                      - PostWorkoutsToDiscord
+                      - PostWorkoutsToTwitter
+                      - PostWorkoutsToBluesky
                       - SyncInstagramToGallery
                   value:
                     anyOf:
@@ -4321,6 +4333,9 @@ components:
         - PostGameResultsToDiscord
         - PostGameResultsToTwitter
         - PostGameResultsToBluesky
+        - PostWorkoutsToDiscord
+        - PostWorkoutsToTwitter
+        - PostWorkoutsToBluesky
         - SyncInstagramToGallery
     Sponsor:
       type: object
@@ -9757,6 +9772,10 @@ components:
     WorkoutRegistrationUpsert:
       type: object
       properties:
+        accessCode:
+          type: string
+          minLength: 10
+          maxLength: 1000
         name:
           type: string
           minLength: 1
@@ -9800,6 +9819,17 @@ components:
         - whereHeard
       title: WorkoutRegistrationUpsert
       description: Payload to create or update a workout registration
+    WorkoutRegistrationAccessCode:
+      type: object
+      properties:
+        accessCode:
+          type: string
+          minLength: 10
+          maxLength: 1000
+      required:
+        - accessCode
+      title: WorkoutRegistrationAccessCode
+      description: Access code used to authenticate workout registration edits
     WorkoutSources:
       type: object
       properties:
@@ -17562,6 +17592,9 @@ paths:
               - PostGameResultsToDiscord
               - PostGameResultsToTwitter
               - PostGameResultsToBluesky
+              - PostWorkoutsToDiscord
+              - PostWorkoutsToTwitter
+              - PostWorkoutsToBluesky
               - SyncInstagramToGallery
       requestBody:
         content:
@@ -32855,6 +32888,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Registration already exists for this workout and email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
         "500":
           description: Internal server error
           content:
@@ -32922,6 +32961,100 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/workouts/{workoutId}/registrations/{registrationId}/verify:
+    post:
+      operationId: verifyWorkoutRegistration
+      summary: Verify workout registration access code
+      description: Validate a workout registration access code for editing.
+      tags:
+        - Workouts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: workoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: registrationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutRegistrationAccessCode"
+      responses:
+        "200":
+          description: Access verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutRegistration"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Registration not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+  /api/accounts/{accountId}/workouts/{workoutId}/registrations/access-code:
+    post:
+      operationId: findWorkoutRegistrationByAccessCode
+      summary: Lookup registration by access code
+      description: Retrieve a workout registration using only the access code.
+      tags:
+        - Workouts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: workoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutRegistrationAccessCode"
+      responses:
+        "200":
+          description: Registration located
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutRegistration"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Registration not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
   /api/accounts/{accountId}/workouts/{workoutId}/registrations/{registrationId}:
     put:
       operationId: updateWorkoutRegistration
@@ -32986,6 +33119,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Registration already exists for this workout and email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
         "500":
           description: Internal server error
           content:

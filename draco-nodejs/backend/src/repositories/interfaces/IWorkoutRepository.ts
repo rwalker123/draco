@@ -4,6 +4,7 @@ import type {
   dbWorkoutWithField,
   dbWorkoutWithRegistrationCount,
   dbWorkoutRegistration,
+  dbWorkoutRegistrationWithAccessCode,
 } from '../types/dbTypes.js';
 import type {
   dbWorkoutCreateData,
@@ -47,6 +48,11 @@ export interface IWorkoutRepository
     workoutId: bigint,
     registrationId: bigint,
   ): Promise<workoutregistration | null>;
+  findRegistrationByEmail(
+    accountId: bigint,
+    workoutId: bigint,
+    email: string,
+  ): Promise<dbWorkoutRegistration | null>;
   createRegistration(
     workoutId: bigint,
     data: dbWorkoutRegistrationUpsertData,
@@ -56,4 +62,8 @@ export interface IWorkoutRepository
     data: dbWorkoutRegistrationUpsertData,
   ): Promise<dbWorkoutRegistration>;
   deleteRegistration(accountId: bigint, workoutId: bigint, registrationId: bigint): Promise<number>;
+  findRegistrationsForWorkout(
+    accountId: bigint,
+    workoutId: bigint,
+  ): Promise<dbWorkoutRegistrationWithAccessCode[]>;
 }

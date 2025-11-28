@@ -32,6 +32,9 @@ interface TwitterIntegrationAdminWidgetProps {
   postGameResultsSetting?: AccountSettingState;
   postGameResultsUpdating?: boolean;
   onUpdatePostGameResults?: (enabled: boolean) => Promise<void>;
+  postWorkoutSetting?: AccountSettingState;
+  postWorkoutUpdating?: boolean;
+  onUpdatePostWorkout?: (enabled: boolean) => Promise<void>;
 }
 
 export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidgetProps> = ({
@@ -40,6 +43,9 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
   postGameResultsSetting,
   postGameResultsUpdating = false,
   onUpdatePostGameResults,
+  postWorkoutSetting,
+  postWorkoutUpdating = false,
+  onUpdatePostWorkout,
 }) => {
   const apiClient = useApiClient();
   const [handle, setHandle] = useState(account.socials?.twitterAccountName ?? '');
@@ -49,12 +55,15 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
   const [postGameResults, setPostGameResults] = useState(
     Boolean(postGameResultsSetting?.effectiveValue ?? postGameResultsSetting?.value ?? false),
   );
+  const [postWorkouts, setPostWorkouts] = useState(
+    Boolean(postWorkoutSetting?.effectiveValue ?? postWorkoutSetting?.value ?? false),
+  );
   const [authorizing, setAuthorizing] = useState(false);
   const [clearCredentials, setClearCredentials] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const formDisabled = saving || postGameResultsUpdating;
+  const formDisabled = saving || postGameResultsUpdating || postWorkoutUpdating;
   const searchParams = useSearchParams();
   const authStatus = searchParams.get('twitterAuth');
   const authMessage = searchParams.get('message');
@@ -65,10 +74,13 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
     setPostGameResults(
       Boolean(postGameResultsSetting?.effectiveValue ?? postGameResultsSetting?.value ?? false),
     );
+    setPostWorkouts(Boolean(postWorkoutSetting?.effectiveValue ?? postWorkoutSetting?.value ?? false));
   }, [
     account.socials?.twitterAccountName,
     postGameResultsSetting?.effectiveValue,
     postGameResultsSetting?.value,
+    postWorkoutSetting?.effectiveValue,
+    postWorkoutSetting?.value,
   ]);
 
   const hasPendingChanges = useMemo(() => {
@@ -80,7 +92,8 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
       ingestionBearerToken.trim().length > 0 ||
       clearCredentials ||
       postGameResults !==
-        Boolean(postGameResultsSetting?.effectiveValue ?? postGameResultsSetting?.value)
+        Boolean(postGameResultsSetting?.effectiveValue ?? postGameResultsSetting?.value) ||
+      postWorkouts !== Boolean(postWorkoutSetting?.effectiveValue ?? postWorkoutSetting?.value)
     );
   }, [
     account.socials?.twitterAccountName,
@@ -91,7 +104,10 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
     ingestionBearerToken,
     postGameResultsSetting?.effectiveValue,
     postGameResultsSetting?.value,
+    postWorkoutSetting?.effectiveValue,
+    postWorkoutSetting?.value,
     postGameResults,
+    postWorkouts,
   ]);
 
   const handleSubmit = useCallback(
@@ -158,6 +174,14 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
           await onUpdatePostGameResults(postGameResults);
         }
 
+        if (postWorkouts !== Boolean(postWorkoutSetting?.effectiveValue ?? postWorkoutSetting?.value)) {
+          if (!onUpdatePostWorkout) {
+            throw new Error('Post workouts setting handler is not available.');
+          }
+
+          await onUpdatePostWorkout(postWorkouts);
+        }
+
         setSuccess('Twitter settings saved. Secrets are encrypted and never shown here.');
         setClientId('');
         setClientSecret('');
@@ -182,8 +206,12 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
       ingestionBearerToken,
       postGameResultsSetting?.effectiveValue,
       postGameResultsSetting?.value,
+      postWorkoutSetting?.effectiveValue,
+      postWorkoutSetting?.value,
       postGameResults,
+      postWorkouts,
       onUpdatePostGameResults,
+      onUpdatePostWorkout,
       onAccountUpdate,
     ],
   );
@@ -345,6 +373,21 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
               <Typography variant="body2" color="text.secondary">
                 When enabled, game results will be posted to this Twitter account once scores are
                 finalized.
+              </Typography>
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={postWorkouts}
+                    onChange={(event) => setPostWorkouts(event.target.checked)}
+                    disabled={formDisabled}
+                  />
+                }
+                label="Post workouts to Twitter"
+              />
+              <Typography variant="body2" color="text.secondary">
+                When enabled, workout announcements will be posted with the date, time, and a link to view
+                full details.
               </Typography>
             </Stack>
           </Box>

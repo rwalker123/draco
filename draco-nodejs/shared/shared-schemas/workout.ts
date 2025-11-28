@@ -54,6 +54,7 @@ export const UpsertWorkoutSchema = z
   });
 
 const phoneSchema = z.string().trim().max(14).optional();
+const accessCodeSchema = z.string().trim().min(10).max(1000);
 
 export const WorkoutRegistrationSchema = z
   .object({
@@ -78,6 +79,7 @@ export const WorkoutRegistrationSchema = z
 
 export const UpsertWorkoutRegistrationSchema = z
   .object({
+    accessCode: accessCodeSchema.optional(),
     name: z.string().trim().min(1).max(100),
     email: z.string().trim().email().max(100),
     age: z.coerce.number().int().nonnegative(),
@@ -92,6 +94,15 @@ export const UpsertWorkoutRegistrationSchema = z
   .openapi({
     title: 'WorkoutRegistrationUpsert',
     description: 'Payload to create or update a workout registration',
+  });
+
+export const WorkoutRegistrationAccessCodeSchema = z
+  .object({
+    accessCode: accessCodeSchema,
+  })
+  .openapi({
+    title: 'WorkoutRegistrationAccessCode',
+    description: 'Access code used to authenticate workout registration edits',
   });
 
 export const WorkoutRegistrationsSchema = z
@@ -184,4 +195,7 @@ export type WorkoutListQueryType = z.infer<typeof WorkoutListQuerySchema>;
 export type WorkoutRegistrationsQueryType = z.infer<typeof WorkoutRegistrationsQuerySchema>;
 export type WorkoutRegistrationsEmailRequestType = z.infer<
   typeof WorkoutRegistrationsEmailRequestSchema
+>;
+export type WorkoutRegistrationAccessCodeType = z.infer<
+  typeof WorkoutRegistrationAccessCodeSchema
 >;

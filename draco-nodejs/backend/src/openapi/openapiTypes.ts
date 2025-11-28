@@ -151,6 +151,7 @@ import {
   UpsertEmailTemplateSchema,
   UpsertTeamsWantedClassifiedSchema,
   UpsertWorkoutRegistrationSchema,
+  WorkoutRegistrationAccessCodeSchema,
   UpdateHofNominationSchema,
   UpdateHofNominationSetupSchema,
   UpsertWorkoutSchema,
@@ -808,6 +809,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'WorkoutRegistrationUpsert',
     UpsertWorkoutRegistrationSchema,
   );
+  const WorkoutRegistrationAccessCodeSchemaRef = registry.register(
+    'WorkoutRegistrationAccessCode',
+    WorkoutRegistrationAccessCodeSchema,
+  );
   const WorkoutSourcesSchemaRef = registry.register('WorkoutSources', WorkoutSourcesSchema);
   const WorkoutSourceOptionPayloadSchemaRef = registry.register(
     'WorkoutSourceOptionPayload',
@@ -1175,6 +1180,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     WorkoutRegistrationSchemaRef,
     WorkoutRegistrationsSchemaRef,
     UpsertWorkoutRegistrationSchemaRef,
+    WorkoutRegistrationAccessCodeSchemaRef,
     WorkoutSourcesSchemaRef,
     WorkoutSourceOptionPayloadSchemaRef,
     WorkoutListQuerySchemaRef,

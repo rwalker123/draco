@@ -1,3 +1,5 @@
+import bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import {
   UpsertWorkoutType,
   WorkoutType,
@@ -22,17 +24,30 @@ import {
   WorkoutNotFoundError,
   WorkoutRegistrationNotFoundError,
   WorkoutUnauthorizedError,
+  ConflictError,
 } from '../utils/customErrors.js';
 import {
   dbWorkoutCreateData,
+  dbWorkoutRegistration,
   dbWorkoutRegistrationUpsertData,
   dbWorkoutUpdateData,
+  dbWorkoutWithField,
 } from '../repositories/index.js';
 import { WorkoutRegistrationEmailService } from './workoutRegistrationEmailService.js';
+import { BCRYPT_CONSTANTS } from '../config/playerClassifiedConstants.js';
+import { WorkoutRegistrantAccessEmailService } from './workoutRegistrantAccessEmailService.js';
+import { DiscordIntegrationService } from './discordIntegrationService.js';
+import { TwitterIntegrationService } from './twitterIntegrationService.js';
+import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
 
 export class WorkoutService {
   private readonly workoutRepository = RepositoryFactory.getWorkoutRepository();
+  private readonly accountRepository = RepositoryFactory.getAccountRepository();
   private readonly workoutEmailService = new WorkoutRegistrationEmailService();
+  private readonly registrantAccessEmailService = new WorkoutRegistrantAccessEmailService();
+  private readonly discordIntegrationService = new DiscordIntegrationService();
+  private readonly twitterIntegrationService = new TwitterIntegrationService();
+  private readonly blueskyIntegrationService = new BlueskyIntegrationService();
 
   async listWorkouts(
     accountId: bigint,
@@ -66,6 +81,8 @@ export class WorkoutService {
   async createWorkout(accountId: bigint, payload: UpsertWorkoutType): Promise<WorkoutType> {
     const createData = this.mapWorkoutCreateData(payload);
     const workout = await this.workoutRepository.createWorkout(accountId, createData);
+
+    void this.syncWorkoutToSocial(accountId, workout);
 
     return WorkoutResponseFormatter.formatWorkout(workout);
   }
@@ -120,12 +137,78 @@ export class WorkoutService {
     workoutId: bigint,
     payload: UpsertWorkoutRegistrationType,
   ): Promise<WorkoutRegistrationType> {
-    await this.ensureWorkoutExists(accountId, workoutId);
+    const workout = await this.ensureWorkoutExists(accountId, workoutId);
 
-    const data = this.mapRegistrationData(payload);
-    const registration = await this.workoutRepository.createRegistration(workoutId, data);
+    await this.assertRegistrationEmailIsUnique(
+      accountId,
+      workoutId,
+      payload.email,
+    );
+
+    const accessCode = randomUUID();
+    const hashedAccessCode = await bcrypt.hash(
+      accessCode,
+      BCRYPT_CONSTANTS.ACCESS_CODE_SALT_ROUNDS,
+    );
+
+    const data = this.mapRegistrationData(payload, hashedAccessCode);
+    const registration = await this.createRegistrationOrThrowConflict(workoutId, data);
+
+    await this.registrantAccessEmailService.sendAccessEmail({
+      accountId,
+      workoutId,
+      registrationId: registration.id,
+      accessCode,
+      recipient: { name: payload.name, email: payload.email },
+      workoutDesc: workout.workoutdesc,
+      workoutDate: workout.workoutdate,
+    });
 
     return WorkoutResponseFormatter.formatRegistration(registration);
+  }
+
+  async verifyRegistrationAccess(
+    accountId: bigint,
+    workoutId: bigint,
+    registrationId: bigint,
+    accessCode: string,
+  ): Promise<WorkoutRegistrationType> {
+    const registration = await this.workoutRepository.findRegistration(
+      accountId,
+      workoutId,
+      registrationId,
+    );
+
+    if (!registration) {
+      throw new WorkoutRegistrationNotFoundError(registrationId.toString());
+    }
+
+    const isValid = await bcrypt.compare(accessCode, registration.accesscode ?? '');
+    if (!isValid) {
+      throw new WorkoutUnauthorizedError('Invalid access code');
+    }
+
+    return WorkoutResponseFormatter.formatRegistration(registration);
+  }
+
+  async findRegistrationByAccessCode(
+    accountId: bigint,
+    workoutId: bigint,
+    accessCode: string,
+  ): Promise<WorkoutRegistrationType> {
+    const registrations = await this.workoutRepository.findRegistrationsForWorkout(
+      accountId,
+      workoutId,
+    );
+
+    for (const registration of registrations) {
+      const isValid = await bcrypt.compare(accessCode, registration.accesscode ?? '');
+      if (isValid) {
+        return WorkoutResponseFormatter.formatRegistration(registration);
+      }
+    }
+
+    throw new WorkoutRegistrationNotFoundError('No registration matches this access code');
   }
 
   async updateRegistration(
@@ -133,6 +216,7 @@ export class WorkoutService {
     workoutId: bigint,
     registrationId: bigint,
     payload: UpsertWorkoutRegistrationType,
+    accessCode = '',
   ): Promise<WorkoutRegistrationType> {
     const existing = await this.workoutRepository.findRegistration(
       accountId,
@@ -144,8 +228,22 @@ export class WorkoutService {
       throw new WorkoutRegistrationNotFoundError(registrationId.toString());
     }
 
+    if (accessCode && accessCode.trim()) {
+      const isValid = await bcrypt.compare(accessCode, existing.accesscode ?? '');
+      if (!isValid) {
+        throw new WorkoutUnauthorizedError('Invalid access code');
+      }
+    }
+
+    await this.assertRegistrationEmailIsUnique(
+      accountId,
+      workoutId,
+      payload.email,
+      registrationId,
+    );
+
     const data = this.mapRegistrationData(payload);
-    const registration = await this.workoutRepository.updateRegistration(registrationId, data);
+    const registration = await this.updateRegistrationOrThrowConflict(registrationId, data);
 
     return WorkoutResponseFormatter.formatRegistration(registration);
   }
@@ -154,7 +252,25 @@ export class WorkoutService {
     accountId: bigint,
     workoutId: bigint,
     registrationId: bigint,
+    accessCode = '',
   ): Promise<void> {
+    if (accessCode && accessCode.trim()) {
+      const registration = await this.workoutRepository.findRegistration(
+        accountId,
+        workoutId,
+        registrationId,
+      );
+
+      if (!registration) {
+        throw new WorkoutRegistrationNotFoundError(registrationId.toString());
+      }
+
+      const isValid = await bcrypt.compare(accessCode, registration.accesscode ?? '');
+      if (!isValid) {
+        throw new WorkoutUnauthorizedError('Invalid access code');
+      }
+    }
+
     const deleted = await this.workoutRepository.deleteRegistration(
       accountId,
       workoutId,
@@ -232,12 +348,14 @@ export class WorkoutService {
     return { options: Array.from(new Set(cleaned)) };
   }
 
-  private async ensureWorkoutExists(accountId: bigint, workoutId: bigint): Promise<void> {
+  private async ensureWorkoutExists(accountId: bigint, workoutId: bigint) {
     const workout = await this.workoutRepository.findWorkout(accountId, workoutId);
 
     if (!workout) {
       throw new WorkoutNotFoundError(workoutId.toString());
     }
+
+    return workout;
   }
 
   private mapWorkoutCreateData(payload: UpsertWorkoutType): dbWorkoutCreateData {
@@ -273,6 +391,7 @@ export class WorkoutService {
 
   private mapRegistrationData(
     payload: UpsertWorkoutRegistrationType,
+    hashedAccessCode?: string,
   ): dbWorkoutRegistrationUpsertData {
     const normalize = (value?: string | null) => (value ? value.trim() : undefined);
 
@@ -287,7 +406,72 @@ export class WorkoutService {
       positions: payload.positions.trim(),
       ismanager: payload.isManager,
       whereheard: payload.whereHeard.trim(),
+      ...(hashedAccessCode ? { accesscode: hashedAccessCode } : {}),
     };
+  }
+
+  private async assertRegistrationEmailIsUnique(
+    accountId: bigint,
+    workoutId: bigint,
+    email: string,
+    registrationIdToExclude?: bigint,
+  ): Promise<void> {
+    const normalizedEmail = email.trim();
+
+    const existing = await this.workoutRepository.findRegistrationByEmail(
+      accountId,
+      workoutId,
+      normalizedEmail,
+    );
+
+    if (existing && existing.id !== registrationIdToExclude) {
+      throw this.registrationConflictError();
+    }
+  }
+
+  private async createRegistrationOrThrowConflict(
+    workoutId: bigint,
+    data: dbWorkoutRegistrationUpsertData,
+  ): Promise<dbWorkoutRegistration> {
+    try {
+      return await this.workoutRepository.createRegistration(workoutId, data);
+    } catch (error) {
+      this.handleRegistrationWriteError(error);
+      throw error;
+    }
+  }
+
+  private async updateRegistrationOrThrowConflict(
+    registrationId: bigint,
+    data: dbWorkoutRegistrationUpsertData,
+  ): Promise<dbWorkoutRegistration> {
+    try {
+      return await this.workoutRepository.updateRegistration(registrationId, data);
+    } catch (error) {
+      this.handleRegistrationWriteError(error);
+      throw error;
+    }
+  }
+
+  private handleRegistrationWriteError(error: unknown): never {
+    if (this.isPrismaUniqueConstraintError(error)) {
+      throw this.registrationConflictError();
+    }
+
+    throw error;
+  }
+
+  private isPrismaUniqueConstraintError(error: unknown): error is { code: string } {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: unknown }).code === 'P2002'
+    );
+  }
+
+  private registrationConflictError(): ConflictError {
+    return new ConflictError('A registration for this workout already exists with this email.');
   }
 
   private parseFieldId(fieldId: string | null | undefined): bigint | null {
@@ -302,6 +486,54 @@ export class WorkoutService {
     }
 
     return BigInt(trimmed);
+  }
+
+  private getBaseUrl(): string {
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  }
+
+  private buildWorkoutUrl(accountId: bigint, workoutId: bigint): string {
+    return `${this.getBaseUrl()}/account/${accountId.toString()}/workouts/${workoutId.toString()}`;
+  }
+
+  private async syncWorkoutToSocial(
+    accountId: bigint,
+    workout: dbWorkoutWithField,
+  ): Promise<void> {
+    try {
+      const account = await this.accountRepository.findById(accountId);
+      const payload = {
+        workoutId: workout.id,
+        workoutDesc: workout.workoutdesc,
+        workoutDate: workout.workoutdate,
+        workoutUrl: this.buildWorkoutUrl(accountId, workout.id),
+        accountName: account?.name ?? null,
+      } as const;
+
+      const results = await Promise.allSettled([
+        this.discordIntegrationService.publishWorkoutAnnouncement(accountId, payload),
+        this.twitterIntegrationService.publishWorkout(accountId, payload),
+        this.blueskyIntegrationService.publishWorkout(accountId, payload),
+      ]);
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const target = ['discord', 'twitter', 'bluesky'][index] ?? 'social';
+          console.error(`[${target}] Failed to publish workout`, {
+            accountId: accountId.toString(),
+            workoutId: workout.id.toString(),
+            error: result.reason,
+          });
+        }
+      });
+    } catch (error) {
+      console.error('[social] Failed to sync workout announcement', {
+        accountId: accountId.toString(),
+        workoutId: workout.id.toString(),
+        error,
+      });
+    }
   }
 
   async emailRegistrants(

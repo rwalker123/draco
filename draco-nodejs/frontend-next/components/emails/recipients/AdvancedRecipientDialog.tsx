@@ -18,6 +18,12 @@ import {
   Alert,
   AlertTitle,
   CircularProgress,
+  Checkbox,
+  List,
+  ListItem,
+  ListItemText,
+  FormControlLabel,
+  Divider,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -26,6 +32,7 @@ import {
   Refresh as RefreshIcon,
   Warning as WarningIcon,
   Info as InfoIcon,
+  SportsMartialArts as SportsMartialArtsIcon,
 } from '@mui/icons-material';
 
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -44,11 +51,13 @@ import {
   HierarchicalSelectionItem,
   HierarchicalSelectionState,
   convertHierarchicalToContactGroups,
+  WorkoutRecipientSelection,
 } from '../../../types/emails/recipients';
 
 // Simplified RecipientSelectionState for backward compatibility
 interface SimplifiedRecipientSelectionState {
   selectedGroups?: Map<GroupType, ContactGroup[]>;
+  selectedWorkoutRecipients?: WorkoutRecipientSelection[];
   totalRecipients: number;
   validEmailCount: number;
   invalidEmailCount: number;
@@ -68,6 +77,10 @@ import { EmailRecipientError, EmailRecipientErrorCode } from '../../../types/err
 import { normalizeError, createEmailRecipientError, safeAsync } from '../../../utils/errorHandling';
 import { createEmailRecipientService } from '../../../services/emailRecipientService';
 import { useAuth } from '../../../context/AuthContext';
+import { listWorkouts, listWorkoutRegistrations } from '../../../services/workoutService';
+import { WorkoutRegistrationType, WorkoutSummaryType } from '@draco/shared-schemas';
+
+type WorkoutWithRegistrants = WorkoutSummaryType & { registrants: WorkoutRegistrationType[] };
 
 export interface AdvancedRecipientDialogProps {
   open: boolean;
@@ -84,6 +97,7 @@ export interface AdvancedRecipientDialogProps {
   error?: string | null;
   onRetry?: () => void;
   initialSelectedGroups?: Map<GroupType, ContactGroup[]>;
+  initialWorkoutRecipients?: WorkoutRecipientSelection[];
 }
 
 interface LoadingState {
@@ -106,7 +120,7 @@ interface SelectedContactCacheEntry {
   selectedTime: number;
 }
 
-type TabValue = 'contacts' | 'groups';
+type TabValue = 'contacts' | 'season' | 'workouts';
 
 /**
  * Wrapper component that provides the ManagerStateProvider context
@@ -136,6 +150,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   error = null,
   onRetry,
   initialSelectedGroups,
+  initialWorkoutRecipients,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -156,6 +171,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
   // UNIFIED GROUP SYSTEM - Single source of truth for all selections
   const [selectedGroups, setSelectedGroups] = useState<Map<GroupType, ContactGroup[]>>(new Map());
+
+  const [selectedWorkoutRegistrantIds, setSelectedWorkoutRegistrantIds] = useState<
+    Map<string, Set<string>>
+  >(new Map());
+  const [activeWorkouts, setActiveWorkouts] = useState<WorkoutWithRegistrants[]>([]);
+  const [workoutsLoading, setWorkoutsLoading] = useState(false);
+  const [workoutsError, setWorkoutsError] = useState<string | null>(null);
 
   // Hierarchical selection state for shared data model
   const [hierarchicalSelectedIds, setHierarchicalSelectedIds] = useState<
@@ -301,8 +323,10 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       }
     }
 
+    total += workoutSelectionCount;
+
     return total;
-  }, [selectedGroups, hierarchicalSelectedIds, seasonId]);
+  }, [selectedGroups, hierarchicalSelectedIds, seasonId, workoutSelectionCount]);
 
   // Hierarchical selection change handler
   const handleHierarchicalSelectionChange = useCallback(
@@ -530,6 +554,43 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     }
   }, [open, seasonId]);
 
+  const loadActiveWorkouts = useCallback(async () => {
+    if (!accountId) {
+      return;
+    }
+
+    setWorkoutsLoading(true);
+    setWorkoutsError(null);
+
+    try {
+      const workouts = await listWorkouts(accountId, true, token ?? undefined, 'upcoming');
+      const workoutsWithRegistrants = await Promise.all(
+        workouts.map(async (workout) => {
+          const registrants = await listWorkoutRegistrations(
+            accountId,
+            workout.id,
+            token ?? undefined,
+          );
+
+          return { ...workout, registrants } satisfies WorkoutWithRegistrants;
+        }),
+      );
+
+      setActiveWorkouts(workoutsWithRegistrants);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load workouts';
+      setWorkoutsError(message);
+    } finally {
+      setWorkoutsLoading(false);
+    }
+  }, [accountId, token]);
+
+  useEffect(() => {
+    if (open) {
+      loadActiveWorkouts();
+    }
+  }, [open, loadActiveWorkouts]);
+
   const [currentTab, setCurrentTab] = useState<TabValue>('contacts');
 
   // Initialize unified groups when dialog opens
@@ -538,6 +599,10 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       // Initialize with provided groups or empty if none provided
       setSelectedGroups(initialSelectedGroups || new Map());
 
+      if (!initialSelectedGroups || initialSelectedGroups.size === 0) {
+        setSelectedWorkoutRegistrantIds(new Map());
+      }
+
       // Reset hierarchical selections when parent state is cleared
       if (!initialSelectedGroups || initialSelectedGroups.size === 0) {
         setHierarchicalSelectedIds(new Map());
@@ -545,6 +610,36 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       }
     }
   }, [open, initialSelectedGroups]);
+
+  useEffect(() => {
+    if (!open || !initialWorkoutRecipients || initialWorkoutRecipients.length === 0) {
+      return;
+    }
+
+    setSelectedWorkoutRegistrantIds((prev) => {
+      if (prev.size > 0 && !activeWorkouts.length) {
+        return prev;
+      }
+
+      const next = new Map<string, Set<string>>();
+
+      initialWorkoutRecipients.forEach((selection) => {
+        const workout = activeWorkouts.find((item) => item.id === selection.workoutId);
+        if (!workout || workout.registrants.length === 0) {
+          return;
+        }
+
+        const ids =
+          selection.registrationIds && selection.registrationIds.size > 0
+            ? new Set(Array.from(selection.registrationIds))
+            : new Set(workout.registrants.map((registrant) => registrant.id));
+
+        next.set(workout.id, ids);
+      });
+
+      return next;
+    });
+  }, [open, initialWorkoutRecipients, activeWorkouts]);
 
   // State for loading and error handling
   const [loadingState, setLoadingState] = useState<LoadingState>({
@@ -587,6 +682,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         setSelectedGroups(new Map());
         setHierarchicalSelectedIds(new Map()); // Clear hierarchical selections
         setHierarchicalManagersOnly(false); // Reset managers-only toggle
+        setSelectedWorkoutRegistrantIds(new Map());
       },
 
       isContactSelected: (contactId: string): boolean => {
@@ -609,6 +705,69 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       getTotalSelected,
       selectedGroups,
     ],
+  );
+
+  const handleToggleAllWorkouts = useCallback(
+    (checked: boolean) => {
+      if (!checked) {
+        setSelectedWorkoutRegistrantIds(new Map());
+        return;
+      }
+
+      const next = new Map<string, Set<string>>();
+      activeWorkouts.forEach((workout) => {
+        if (workout.registrants.length > 0) {
+          next.set(workout.id, new Set(workout.registrants.map((registrant) => registrant.id)));
+        }
+      });
+      setSelectedWorkoutRegistrantIds(next);
+    },
+    [activeWorkouts],
+  );
+
+  const handleToggleWorkout = useCallback(
+    (workoutId: string, checked: boolean) => {
+      setSelectedWorkoutRegistrantIds((prev) => {
+        const next = new Map(prev);
+        const workout = activeWorkouts.find((item) => item.id === workoutId);
+        if (!workout) {
+          return prev;
+        }
+
+        if (checked) {
+          next.set(workoutId, new Set(workout.registrants.map((registrant) => registrant.id)));
+        } else {
+          next.delete(workoutId);
+        }
+
+        return next;
+      });
+    },
+    [activeWorkouts],
+  );
+
+  const handleToggleRegistrant = useCallback(
+    (workoutId: string, registrantId: string, checked: boolean) => {
+      setSelectedWorkoutRegistrantIds((prev) => {
+        const next = new Map(prev);
+        const ids = new Set(next.get(workoutId) ?? []);
+
+        if (checked) {
+          ids.add(registrantId);
+        } else {
+          ids.delete(registrantId);
+        }
+
+        if (ids.size > 0) {
+          next.set(workoutId, ids);
+        } else {
+          next.delete(workoutId);
+        }
+
+        return next;
+      });
+    },
+    [],
   );
 
   // Local actions that modify local state only
@@ -707,16 +866,42 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     isInSearchMode,
   ]);
 
+  const workoutSelectionCount = useMemo(() => {
+    let total = 0;
+    selectedWorkoutRegistrantIds.forEach((ids) => {
+      total += ids.size;
+    });
+    return total;
+  }, [selectedWorkoutRegistrantIds]);
+
+  const totalWorkoutRegistrants = useMemo(
+    () => activeWorkouts.reduce((sum, workout) => sum + workout.registrants.length, 0),
+    [activeWorkouts],
+  );
+
+  const hasWorkouts = useMemo(() => activeWorkouts.length > 0, [activeWorkouts]);
+
   // Data availability checks - use server-loaded contacts
   const hasContacts = useMemo(
     () => Array.isArray(currentPageContacts) && currentPageContacts.length > 0,
     [currentPageContacts],
   );
-  const hasAnyData = hasContacts;
+  const hasAnyData = hasContacts || hasWorkouts;
 
   // Determine overall loading state - include pagination loading
   const isGeneralLoading =
-    loading || paginationLoading || Object.values(loadingState).some(Boolean);
+    loading ||
+    paginationLoading ||
+    workoutsLoading ||
+    Object.values(loadingState).some(Boolean);
+
+  useEffect(() => {
+    if (currentTab === 'season' && !seasonId) {
+      setCurrentTab(hasWorkouts ? 'workouts' : 'contacts');
+    } else if (currentTab === 'workouts' && !hasWorkouts) {
+      setCurrentTab(seasonId ? 'season' : 'contacts');
+    }
+  }, [currentTab, seasonId, hasWorkouts]);
 
   // Handle tab changes
   const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: TabValue) => {
@@ -757,8 +942,10 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       onRetry();
     }
 
+    loadActiveWorkouts();
+
     showNotification('Retrying...', 'info');
-  }, [retryCount, maxRetries, onRetry, showNotification]);
+  }, [retryCount, maxRetries, onRetry, showNotification, loadActiveWorkouts]);
 
   // Clear specific errors
   const clearError = useCallback((errorType: keyof ErrorState) => {
@@ -856,6 +1043,27 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   const handleApply = useCallback(() => {
     const totalSelected = getTotalSelected();
 
+    const workoutSelections: WorkoutRecipientSelection[] = [];
+    selectedWorkoutRegistrantIds.forEach((ids, workoutId) => {
+      const workout = activeWorkouts.find((item) => item.id === workoutId);
+      if (!workout) {
+        return;
+      }
+
+      workoutSelections.push({
+        workoutId,
+        workoutDesc: workout.workoutDesc,
+        workoutDate: workout.workoutDate,
+        totalSelected: ids.size,
+        registrationIds: ids.size === workout.registrants.length ? undefined : new Set(ids),
+      });
+    });
+
+    const totalWorkoutSelected = workoutSelections.reduce(
+      (sum, selection) => sum + selection.totalSelected,
+      0,
+    );
+
     // Convert hierarchical selections to ContactGroups and merge with manual selections
     const hierarchicalContactGroups = convertHierarchicalSelectionsToContactGroups();
 
@@ -921,11 +1129,14 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       });
 
       // Create simplified state for the compose page
+      const validContactsCount = allSelectedContactDetails.filter((c) => c.hasValidEmail).length;
+      const totalRecipients = allSelectedContactDetails.length + totalWorkoutSelected;
       const simplifiedState: SimplifiedRecipientSelectionState = {
         selectedGroups: mergedContactGroups,
-        totalRecipients: allSelectedContactDetails.length,
-        validEmailCount: allSelectedContactDetails.filter((c) => c.hasValidEmail).length,
-        invalidEmailCount: allSelectedContactDetails.filter((c) => !c.hasValidEmail).length,
+        selectedWorkoutRecipients: workoutSelections,
+        totalRecipients,
+        validEmailCount: validContactsCount + totalWorkoutSelected,
+        invalidEmailCount: totalRecipients - (validContactsCount + totalWorkoutSelected),
         searchQuery: '',
         activeTab: 'contacts',
         expandedSections: new Set(),
@@ -949,6 +1160,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     getContactDetails,
     showNotification,
     onClose,
+    selectedWorkoutRegistrantIds,
+    activeWorkouts,
   ]);
 
   // Effect to handle external error prop
@@ -1013,7 +1226,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   }, []);
 
   // Show loading dialog if completely loading
-  if (loading && !hasAnyData) {
+  if (isGeneralLoading && !hasAnyData) {
     return (
       <Dialog
         open={open}
@@ -1138,7 +1351,17 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           textColor="primary"
         >
           <Tab icon={<PersonIcon />} label="Contacts" value="contacts" iconPosition="start" />
-          <Tab icon={<GroupsIcon />} label="Groups" value="groups" iconPosition="start" />
+          {seasonId ? (
+            <Tab icon={<GroupsIcon />} label="Season" value="season" iconPosition="start" />
+          ) : null}
+          {hasWorkouts ? (
+            <Tab
+              icon={<SportsMartialArtsIcon />}
+              label="Workouts"
+              value="workouts"
+              iconPosition="start"
+            />
+          ) : null}
         </Tabs>
       </Box>
 
@@ -1169,16 +1392,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           </Box>
         )}
 
-        {/* Season Loading Indicator */}
-        {!seasonId && (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <CircularProgress size={24} sx={{ mr: 1 }} />
-            <Typography variant="body2" color="text.secondary">
-              Loading season data...
-            </Typography>
-          </Box>
-        )}
-
         {/* No Data Available */}
         {!hasAnyData && !isGeneralLoading && (
           <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -1187,11 +1400,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
               No Recipients Available
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              There are no contacts, teams, or roles available for selection. This might be because:
+              There are no contacts, workouts, teams, or roles available for selection. This might be
+              because:
             </Typography>
             <Box component="ul" sx={{ textAlign: 'left', maxWidth: 400, mx: 'auto' }}>
               <li>No contacts have been added to your account yet</li>
               <li>You do not have permission to view recipient data</li>
+              <li>There are no active workouts with registrants available</li>
               <li>The data is still loading</li>
             </Box>
             {onRetry && (
@@ -1235,8 +1450,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
                 />
               )}
 
-              {/* Groups Tab */}
-              {currentTab === 'groups' && (
+              {/* Season Tab */}
+              {currentTab === 'season' && (
                 <HierarchicalGroupSelection
                   accountId={accountId}
                   seasonId={seasonId || ''}
@@ -1244,6 +1459,18 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
                   managersOnly={hierarchicalManagersOnly}
                   onSelectionChange={handleHierarchicalSelectionChange}
                   loading={loadingState.teamGroups}
+                />
+              )}
+              {currentTab === 'workouts' && (
+                <WorkoutsTabContent
+                  workouts={activeWorkouts}
+                  totalRegistrants={totalWorkoutRegistrants}
+                  selectedWorkoutIds={selectedWorkoutRegistrantIds}
+                  onToggleAll={handleToggleAllWorkouts}
+                  onToggleWorkout={handleToggleWorkout}
+                  onToggleRegistrant={handleToggleRegistrant}
+                  loading={workoutsLoading}
+                  error={workoutsError}
                 />
               )}
             </Box>
@@ -1317,6 +1544,150 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         </Stack>
       </DialogActions>
     </Dialog>
+  );
+};
+
+// Workouts Tab Component
+interface WorkoutsTabContentProps {
+  workouts: WorkoutWithRegistrants[];
+  totalRegistrants: number;
+  selectedWorkoutIds: Map<string, Set<string>>;
+  onToggleAll: (checked: boolean) => void;
+  onToggleWorkout: (workoutId: string, checked: boolean) => void;
+  onToggleRegistrant: (workoutId: string, registrantId: string, checked: boolean) => void;
+  loading: boolean;
+  error?: string | null;
+}
+
+const WorkoutsTabContent: React.FC<WorkoutsTabContentProps> = ({
+  workouts,
+  totalRegistrants,
+  selectedWorkoutIds,
+  onToggleAll,
+  onToggleWorkout,
+  onToggleRegistrant,
+  loading,
+  error,
+}) => {
+  const selectedCount = useMemo(() => {
+    let total = 0;
+    selectedWorkoutIds.forEach((ids) => {
+      total += ids.size;
+    });
+    return total;
+  }, [selectedWorkoutIds]);
+
+  const allSelected = totalRegistrants > 0 && selectedCount === totalRegistrants;
+  const indeterminate = selectedCount > 0 && selectedCount < totalRegistrants;
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <CircularProgress size={32} />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Loading workouts...
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ p: 2, overflowY: 'auto', height: '100%' }}>
+      {error ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      ) : null}
+
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={allSelected}
+            indeterminate={indeterminate}
+            onChange={(event) => onToggleAll(event.target.checked)}
+            disabled={totalRegistrants === 0}
+          />
+        }
+        label={`All active workouts (${selectedCount}/${totalRegistrants})`}
+      />
+
+      <Divider sx={{ my: 2 }} />
+
+      {workouts.length === 0 ? (
+        <Typography variant="body2" color="text.secondary">
+          No active workouts with registrants are available.
+        </Typography>
+      ) : (
+        <Stack spacing={2}>
+          {workouts.map((workout) => {
+            const selectedIds = selectedWorkoutIds.get(workout.id) ?? new Set<string>();
+            const workoutSelected =
+              selectedIds.size > 0 && selectedIds.size === workout.registrants.length;
+            const workoutIndeterminate =
+              selectedIds.size > 0 && selectedIds.size < workout.registrants.length;
+
+            return (
+              <Box
+                key={workout.id}
+                sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 2 }}
+              >
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="flex-start"
+                  spacing={2}
+                >
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={workoutSelected}
+                        indeterminate={workoutIndeterminate}
+                        onChange={(event) => onToggleWorkout(workout.id, event.target.checked)}
+                      />
+                    }
+                    label={`${workout.workoutDesc} (${selectedIds.size}/${workout.registrants.length})`}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(workout.workoutDate).toLocaleString()}
+                  </Typography>
+                </Stack>
+
+                <List dense disablePadding>
+                  {workout.registrants.length === 0 ? (
+                    <ListItem>
+                      <ListItemText primary="No registrants yet" />
+                    </ListItem>
+                  ) : (
+                    workout.registrants.map((registrant) => (
+                      <ListItem key={registrant.id} disablePadding sx={{ pl: 1 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={selectedIds.has(registrant.id)}
+                              onChange={(event) =>
+                                onToggleRegistrant(workout.id, registrant.id, event.target.checked)
+                              }
+                            />
+                          }
+                          label={
+                            <Box>
+                              <Typography variant="body2">{registrant.name}</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {registrant.email}
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    ))
+                  )}
+                </List>
+              </Box>
+            );
+          })}
+        </Stack>
+      )}
+    </Box>
   );
 };
 

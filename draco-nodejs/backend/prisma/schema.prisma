@@ -1515,7 +1515,10 @@ model workoutregistration {
   workoutid           BigInt
   dateregistered      DateTime            @db.Timestamptz(6)
   whereheard          String              @db.VarChar(25)
+  accesscode          String              @db.VarChar(255) @default("")
   workoutannouncement workoutannouncement @relation(fields: [workoutid], references: [id], onDelete: Cascade, map: "fk_workoutregistration_workoutannouncement")
+
+  @@unique([workoutid, email], map: "uq_workoutregistration_workout_email")
 }
 
 model passwordresettokens {

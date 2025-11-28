@@ -4,12 +4,14 @@ import {
   createWorkoutRegistration as apiCreateWorkoutRegistration,
   deleteAccountWorkout,
   deleteWorkoutRegistration as apiDeleteWorkoutRegistration,
+  findWorkoutRegistrationByAccessCode as apiFindWorkoutRegistrationByAccessCode,
   getAccountWorkout,
   getWorkoutSources as apiGetWorkoutSources,
   listAccountWorkouts,
   listWorkoutRegistrations as apiListWorkoutRegistrations,
   updateAccountWorkout,
   updateWorkoutRegistration as apiUpdateWorkoutRegistration,
+  verifyWorkoutRegistration as apiVerifyWorkoutRegistration,
   updateWorkoutSources as apiUpdateWorkoutSources,
   emailWorkoutRegistrations as apiEmailWorkoutRegistrations,
   type WorkoutSummary as ApiWorkoutSummary,
@@ -221,9 +223,10 @@ export async function updateWorkoutRegistration(
   registrationId: string,
   dto: UpsertWorkoutRegistrationType,
   token?: string,
+  accessCode?: string,
 ): Promise<WorkoutRegistrationType> {
   const client = createClient(token);
-  const payload = toUpsertWorkoutRegistrationPayload(dto);
+  const payload = toUpsertWorkoutRegistrationPayload({ ...dto, accessCode });
   const result = await apiUpdateWorkoutRegistration({
     client,
     path: { accountId, workoutId, registrationId },
@@ -248,6 +251,39 @@ export async function deleteWorkoutRegistration(
   });
 
   assertNoApiError(result, 'Failed to delete registration');
+}
+
+export async function verifyWorkoutRegistrationAccess(
+  accountId: string,
+  workoutId: string,
+  registrationId: string,
+  accessCode: string,
+): Promise<WorkoutRegistrationType> {
+  const client = createClient();
+  const result = await apiVerifyWorkoutRegistration({
+    client,
+    path: { accountId, workoutId, registrationId },
+    body: { accessCode },
+    throwOnError: false,
+  });
+
+  return unwrapApiResult(result, 'Failed to verify registration');
+}
+
+export async function findWorkoutRegistrationByAccessCode(
+  accountId: string,
+  workoutId: string,
+  accessCode: string,
+): Promise<WorkoutRegistrationType> {
+  const client = createClient();
+  const result = await apiFindWorkoutRegistrationByAccessCode({
+    client,
+    path: { accountId, workoutId },
+    body: { accessCode },
+    throwOnError: false,
+  });
+
+  return unwrapApiResult(result, 'Failed to locate registration by access code');
 }
 
 export async function sendWorkoutRegistrationEmails(

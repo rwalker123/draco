@@ -21,6 +21,9 @@ export const ACCOUNT_SETTING_KEYS = [
   'PostGameResultsToDiscord',
   'PostGameResultsToTwitter',
   'PostGameResultsToBluesky',
+  'PostWorkoutsToDiscord',
+  'PostWorkoutsToTwitter',
+  'PostWorkoutsToBluesky',
   'SyncInstagramToGallery',
 ] as const;
 
@@ -269,6 +272,31 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
     sortOrder: 95,
+  }),
+  booleanSetting({
+    key: 'PostWorkoutsToDiscord',
+    label: 'Post workouts to Discord',
+    description:
+      'Automatically share workout announcements to the configured Discord channel when they are published.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 97,
+  }),
+  booleanSetting({
+    key: 'PostWorkoutsToTwitter',
+    label: 'Post workouts to Twitter',
+    description: 'Publish workout announcements to the connected Twitter account when they are created.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 98,
+  }),
+  booleanSetting({
+    key: 'PostWorkoutsToBluesky',
+    label: 'Post workouts to Bluesky',
+    description: 'Publish workout announcements to the connected Bluesky account when they are created.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 99,
   }),
   booleanSetting({
     key: 'SyncInstagramToGallery',

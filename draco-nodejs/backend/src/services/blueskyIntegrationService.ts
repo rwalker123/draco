@@ -12,6 +12,7 @@ import { deterministicUuid } from '../utils/deterministicUuid.js';
 import { AccountSettingsService } from './accountSettingsService.js';
 import type { BlueskyIngestionTarget } from '../config/socialIngestion.js';
 import { composeGameResultMessage } from './socialGameResultFormatter.js';
+import { composeWorkoutAnnouncementMessage, type WorkoutPostPayload } from './socialWorkoutFormatter.js';
 
 interface BlueskyFeedItem {
   post?: {
@@ -63,6 +64,8 @@ interface BlueskyGameResultPayload {
   leagueName?: string | null;
   seasonName?: string | null;
 }
+
+type BlueskyWorkoutPayload = WorkoutPostPayload;
 
 export class BlueskyIntegrationService {
   private readonly accountRepository: IAccountRepository;
@@ -167,6 +170,27 @@ export class BlueskyIntegrationService {
       console.error('[bluesky] Failed to publish game result', {
         accountId: accountId.toString(),
         gameId: payload.gameId.toString(),
+        error,
+      });
+    }
+  }
+
+  async publishWorkout(accountId: bigint, payload: BlueskyWorkoutPayload): Promise<void> {
+    try {
+      if (!(await this.shouldPostWorkouts(accountId))) {
+        return;
+      }
+
+      const content = composeWorkoutAnnouncementMessage(payload, { characterLimit: 300 });
+      if (!content) {
+        return;
+      }
+
+      await this.postUpdate(accountId, content);
+    } catch (error) {
+      console.error('[bluesky] Failed to publish workout', {
+        accountId: accountId.toString(),
+        workoutId: payload.workoutId.toString(),
         error,
       });
     }
@@ -376,6 +400,14 @@ export class BlueskyIntegrationService {
       (setting) => setting.definition.key === 'PostGameResultsToBluesky',
     );
     return Boolean(postResultsSetting?.effectiveValue);
+  }
+
+  private async shouldPostWorkouts(accountId: bigint): Promise<boolean> {
+    const settings = await this.accountSettingsService.getAccountSettings(accountId);
+    const postWorkoutsSetting = settings.find(
+      (setting) => setting.definition.key === 'PostWorkoutsToBluesky',
+    );
+    return Boolean(postWorkoutsSetting?.effectiveValue);
   }
 
   private composeGameResultPost(payload: BlueskyGameResultPayload): string | null {

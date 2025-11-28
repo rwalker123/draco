@@ -20,6 +20,7 @@ import {
 } from '@draco/shared-schemas';
 import { getSources } from '../../services/workoutService';
 import { formatPhoneNumber } from '../../utils/phoneNumber';
+import { getApiErrorMessage } from '../../utils/apiResult';
 
 interface WorkoutRegistrationFormProps {
   accountId: string;
@@ -169,10 +170,27 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
       return;
     }
 
+    const payload: UpsertWorkoutRegistrationType = {
+      name: formData.name,
+      email: formData.email,
+      age: formData.age,
+      phone1: formData.phone1,
+      phone2: formData.phone2,
+      phone3: formData.phone3,
+      phone4: formData.phone4,
+      positions: formData.positions,
+      isManager: formData.isManager,
+      whereHeard: formData.whereHeard,
+    };
+
     try {
-      await onSubmit(formData);
-    } catch {
-      setError('Failed to save registration');
+      await onSubmit(payload);
+    } catch (submitError) {
+      const message = getApiErrorMessage(
+        submitError,
+        'Failed to save registration',
+      );
+      setError(message);
     }
   };
 

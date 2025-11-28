@@ -18,6 +18,9 @@ interface BlueskyIntegrationAdminWidgetProps {
   postGameResultsSetting?: AccountSettingState;
   postGameResultsUpdating?: boolean;
   onUpdatePostGameResults?: (enabled: boolean) => Promise<void>;
+  postWorkoutSetting?: AccountSettingState;
+  postWorkoutUpdating?: boolean;
+  onUpdatePostWorkout?: (enabled: boolean) => Promise<void>;
 }
 
 export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidgetProps> = ({
@@ -26,6 +29,9 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
   postGameResultsSetting,
   postGameResultsUpdating = false,
   onUpdatePostGameResults,
+  postWorkoutSetting,
+  postWorkoutUpdating = false,
+  onUpdatePostWorkout,
 }) => {
   const apiClient = useApiClient();
   const [handle, setHandle] = useState(account.socials?.blueskyHandle ?? '');
@@ -33,18 +39,30 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
   const [postGameResults, setPostGameResults] = useState(
     Boolean(postGameResultsSetting?.effectiveValue ?? postGameResultsSetting?.value ?? false),
   );
+  const [postWorkouts, setPostWorkouts] = useState(
+    Boolean(postWorkoutSetting?.effectiveValue ?? postWorkoutSetting?.value ?? false),
+  );
   const [clearPassword, setClearPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const formDisabled = saving || postGameResultsUpdating;
+  const formDisabled = saving || postGameResultsUpdating || postWorkoutUpdating;
 
   useEffect(() => {
     setHandle(account.socials?.blueskyHandle ?? '');
     setPostGameResults(
       Boolean(postGameResultsSetting?.effectiveValue ?? postGameResultsSetting?.value ?? false),
     );
-  }, [account.socials?.blueskyHandle, postGameResultsSetting?.effectiveValue, postGameResultsSetting?.value]);
+    setPostWorkouts(
+      Boolean(postWorkoutSetting?.effectiveValue ?? postWorkoutSetting?.value ?? false),
+    );
+  }, [
+    account.socials?.blueskyHandle,
+    postGameResultsSetting?.effectiveValue,
+    postGameResultsSetting?.value,
+    postWorkoutSetting?.effectiveValue,
+    postWorkoutSetting?.value,
+  ]);
 
   const hasPendingChanges = useMemo(() => {
     return (
@@ -52,7 +70,8 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
       appPassword.trim().length > 0 ||
       clearPassword ||
       postGameResults !==
-        Boolean(postGameResultsSetting?.effectiveValue ?? postGameResultsSetting?.value)
+        Boolean(postGameResultsSetting?.effectiveValue ?? postGameResultsSetting?.value) ||
+      postWorkouts !== Boolean(postWorkoutSetting?.effectiveValue ?? postWorkoutSetting?.value)
     );
   }, [
     account.socials?.blueskyHandle,
@@ -61,7 +80,10 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
     handle,
     postGameResultsSetting?.effectiveValue,
     postGameResultsSetting?.value,
+    postWorkoutSetting?.effectiveValue,
+    postWorkoutSetting?.value,
     postGameResults,
+    postWorkouts,
   ]);
 
   const handleSubmit = useCallback(
@@ -115,6 +137,14 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
           await onUpdatePostGameResults(postGameResults);
         }
 
+        if (postWorkouts !== Boolean(postWorkoutSetting?.effectiveValue ?? postWorkoutSetting?.value)) {
+          if (!onUpdatePostWorkout) {
+            throw new Error('Post workouts setting handler is not available.');
+          }
+
+          await onUpdatePostWorkout(postWorkouts);
+        }
+
         setSuccess('Bluesky settings saved. App passwords are encrypted and never shown here.');
         setAppPassword('');
         setClearPassword(false);
@@ -135,8 +165,12 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
       hasPendingChanges,
       postGameResultsSetting?.effectiveValue,
       postGameResultsSetting?.value,
+      postWorkoutSetting?.effectiveValue,
+      postWorkoutSetting?.value,
       postGameResults,
+      postWorkouts,
       onUpdatePostGameResults,
+      onUpdatePostWorkout,
       onAccountUpdate,
     ],
   );
@@ -189,6 +223,21 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
           <Typography variant="body2" color="text.secondary">
             When enabled, game results will be posted to this Bluesky account by the server once scores are
             finalized.
+          </Typography>
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={postWorkouts}
+                onChange={(event) => setPostWorkouts(event.target.checked)}
+                disabled={formDisabled}
+              />
+            }
+            label="Post workouts to Bluesky"
+          />
+          <Typography variant="body2" color="text.secondary">
+            When enabled, workout announcements will be posted to this Bluesky account with the date, time, and
+            a link for more details.
           </Typography>
 
           <FormControlLabel

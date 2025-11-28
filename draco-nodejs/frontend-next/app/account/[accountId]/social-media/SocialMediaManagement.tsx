@@ -124,6 +124,30 @@ const SocialMediaManagement: React.FC = () => {
     [accountSettings.settings],
   );
 
+  const postWorkoutsDiscordSetting = useMemo(
+    () =>
+      accountSettings.settings?.find(
+        (setting) => setting.definition.key === 'PostWorkoutsToDiscord',
+      ),
+    [accountSettings.settings],
+  );
+
+  const postWorkoutsTwitterSetting = useMemo(
+    () =>
+      accountSettings.settings?.find(
+        (setting) => setting.definition.key === 'PostWorkoutsToTwitter',
+      ),
+    [accountSettings.settings],
+  );
+
+  const postWorkoutsBlueskySetting = useMemo(
+    () =>
+      accountSettings.settings?.find(
+        (setting) => setting.definition.key === 'PostWorkoutsToBluesky',
+      ),
+    [accountSettings.settings],
+  );
+
   const syncInstagramToGallerySetting = useMemo(
     () =>
       accountSettings.settings?.find(
@@ -240,6 +264,15 @@ const SocialMediaManagement: React.FC = () => {
                 onTogglePostGameResults={(enabled) =>
                   updatePostResultsSetting('PostGameResultsToDiscord', enabled)
                 }
+                postWorkoutsEnabled={
+                  (postWorkoutsDiscordSetting?.effectiveValue ??
+                    postWorkoutsDiscordSetting?.value ??
+                    false) as boolean
+                }
+                postWorkoutsUpdating={accountSettings.updatingKey === 'PostWorkoutsToDiscord'}
+                onTogglePostWorkouts={(enabled) =>
+                  updatePostResultsSetting('PostWorkoutsToDiscord', enabled)
+                }
               />
             </Stack>
           </TabPanel>
@@ -253,6 +286,11 @@ const SocialMediaManagement: React.FC = () => {
               onUpdatePostGameResults={(enabled) =>
                 updatePostResultsSetting('PostGameResultsToBluesky', enabled)
               }
+              postWorkoutSetting={postWorkoutsBlueskySetting}
+              postWorkoutUpdating={accountSettings.updatingKey === 'PostWorkoutsToBluesky'}
+              onUpdatePostWorkout={(enabled) =>
+                updatePostResultsSetting('PostWorkoutsToBluesky', enabled)
+              }
             />
           </TabPanel>
 
@@ -264,6 +302,11 @@ const SocialMediaManagement: React.FC = () => {
               postGameResultsUpdating={accountSettings.updatingKey === 'PostGameResultsToTwitter'}
               onUpdatePostGameResults={(enabled) =>
                 updatePostResultsSetting('PostGameResultsToTwitter', enabled)
+              }
+              postWorkoutSetting={postWorkoutsTwitterSetting}
+              postWorkoutUpdating={accountSettings.updatingKey === 'PostWorkoutsToTwitter'}
+              onUpdatePostWorkout={(enabled) =>
+                updatePostResultsSetting('PostWorkoutsToTwitter', enabled)
               }
             />
           </TabPanel>

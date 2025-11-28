@@ -254,9 +254,8 @@ class FileMigrationService {
 
     // Import and create storage service
     try {
-      const storageModule = await import(
-        '../draco-nodejs/backend/dist/src/services/storageService.js'
-      );
+      const storageModule =
+        await import('../draco-nodejs/backend/dist/src/services/storageService.js');
       this.storageService = storageModule.createStorageService();
       console.log('✅ Storage service initialized');
     } catch (error) {

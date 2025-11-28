@@ -395,9 +395,18 @@ export interface ComputedState {
 }
 
 // Combined state interface (maintaining backward compatibility)
+export interface WorkoutRecipientSelection {
+  workoutId: string;
+  workoutDesc: string;
+  workoutDate: string;
+  totalSelected: number;
+  registrationIds?: Set<string>;
+}
+
 export interface RecipientSelectionState {
   // Unified group-based selection system
   selectedGroups?: Map<GroupType, ContactGroup[]>;
+  selectedWorkoutRecipients?: WorkoutRecipientSelection[];
 
   // Computed properties
   totalRecipients: number;
@@ -573,6 +582,16 @@ export const getTotalRecipientsFromGroups = (
   return getContactIdsFromGroups(selectedGroups).size;
 };
 
+export const getTotalWorkoutRecipients = (
+  selectedWorkoutRecipients?: WorkoutRecipientSelection[],
+): number => {
+  if (!selectedWorkoutRecipients || selectedWorkoutRecipients.length === 0) {
+    return 0;
+  }
+
+  return selectedWorkoutRecipients.reduce((total, selection) => total + selection.totalSelected, 0);
+};
+
 /**
  * Creates complete default recipient selection state
  * Follows DRY principle by using factory functions
@@ -580,6 +599,7 @@ export const getTotalRecipientsFromGroups = (
 export const createDefaultRecipientSelectionState = (): RecipientSelectionState => ({
   // Unified group-based selection system
   selectedGroups: new Map<GroupType, ContactGroup[]>(),
+  selectedWorkoutRecipients: [],
 
   // Computed properties
   totalRecipients: 0,
@@ -605,7 +625,7 @@ export const createDefaultRecipientSelectionState = (): RecipientSelectionState 
 });
 
 // Tab types for the recipient selector
-export type RecipientSelectionTab = 'contacts' | 'groups';
+export type RecipientSelectionTab = 'contacts' | 'season' | 'workouts';
 
 // Group section types for the groups tab (updated)
 export type GroupSectionType =

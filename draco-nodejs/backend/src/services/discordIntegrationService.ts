@@ -40,6 +40,7 @@ import { fetchJson } from '../utils/fetchJson.js';
 import type { dbTeamSeasonWithLeaguesAndTeams } from '../repositories/types/dbTypes.js';
 import type { DiscordIngestionTarget } from '../config/socialIngestion.js';
 import { AccountSettingsService } from './accountSettingsService.js';
+import { composeWorkoutAnnouncementMessage, type WorkoutPostPayload } from './socialWorkoutFormatter.js';
 
 type DiscordLinkStatePayload =
   | {
@@ -104,6 +105,8 @@ interface DiscordGameResultPayload {
   leagueName?: string | null;
   seasonName?: string | null;
 }
+
+type DiscordWorkoutPayload = WorkoutPostPayload;
 
 const SUPPORTED_FEATURES: readonly DiscordFeatureSyncFeatureType[] = [
   'announcements',
@@ -1569,12 +1572,59 @@ export class DiscordIntegrationService {
     }
   }
 
+  async publishWorkoutAnnouncement(
+    accountId: bigint,
+    payload: DiscordWorkoutPayload,
+  ): Promise<void> {
+    try {
+      await this.ensureAccountExists(accountId);
+      if (!(await this.shouldPostWorkouts(accountId))) {
+        return;
+      }
+
+      const featureRecord = await this.discordRepository.getFeatureSync(accountId, 'gameResults');
+      if (!featureRecord || !featureRecord.enabled || !featureRecord.discordchannelid) {
+        return;
+      }
+
+      const content = composeWorkoutAnnouncementMessage(payload, { characterLimit: 1900 });
+      if (!content) {
+        return;
+      }
+
+      await this.postDiscordMessage(featureRecord.discordchannelid, content);
+      await this.discordRepository.upsertFeatureSync(accountId, {
+        feature: 'gameResults',
+        enabled: true,
+        discordChannelId: featureRecord.discordchannelid,
+        discordChannelName: featureRecord.discordchannelname ?? null,
+        channelType: featureRecord.channeltype ?? null,
+        autoCreated: featureRecord.autocreated ?? false,
+        lastSyncedAt: new Date(),
+      });
+    } catch (error) {
+      console.error('[discord] Failed to publish workout', {
+        accountId: accountId.toString(),
+        workoutId: payload.workoutId.toString(),
+        error,
+      });
+    }
+  }
+
   private async shouldPostGameResults(accountId: bigint): Promise<boolean> {
     const settings = await this.accountSettingsService.getAccountSettings(accountId);
     const postResultsSetting = settings.find(
       (setting) => setting.definition.key === 'PostGameResultsToDiscord',
     );
     return Boolean(postResultsSetting?.effectiveValue);
+  }
+
+  private async shouldPostWorkouts(accountId: bigint): Promise<boolean> {
+    const settings = await this.accountSettingsService.getAccountSettings(accountId);
+    const postWorkoutsSetting = settings.find(
+      (setting) => setting.definition.key === 'PostWorkoutsToDiscord',
+    );
+    return Boolean(postWorkoutsSetting?.effectiveValue);
   }
 
   async publishAnnouncement(accountId: bigint, announcement: AnnouncementType): Promise<void> {

@@ -12,6 +12,7 @@ import { fetchJson, HttpError } from '../utils/fetchJson.js';
 import { deterministicUuid } from '../utils/deterministicUuid.js';
 import { AccountSettingsService } from './accountSettingsService.js';
 import { composeGameResultMessage } from './socialGameResultFormatter.js';
+import { composeWorkoutAnnouncementMessage, type WorkoutPostPayload } from './socialWorkoutFormatter.js';
 import type { TwitterIngestionTarget } from '../config/socialIngestion.js';
 import { twitterOAuthConfig } from '../config/twitterOAuth.js';
 
@@ -86,6 +87,8 @@ interface TwitterGameResultPayload {
   leagueName?: string | null;
   seasonName?: string | null;
 }
+
+type TwitterWorkoutPayload = WorkoutPostPayload;
 
 export class TwitterIntegrationService {
   private readonly accountRepository: IAccountRepository;
@@ -376,12 +379,41 @@ export class TwitterIntegrationService {
     }
   }
 
+  async publishWorkout(accountId: bigint, payload: TwitterWorkoutPayload): Promise<void> {
+    try {
+      if (!(await this.shouldPostWorkouts(accountId))) {
+        return;
+      }
+
+      const content = composeWorkoutAnnouncementMessage(payload, { characterLimit: 280 });
+      if (!content) {
+        return;
+      }
+
+      await this.postTweet(accountId, content);
+    } catch (error) {
+      console.error('[twitter] Failed to publish workout', {
+        accountId: accountId.toString(),
+        workoutId: payload.workoutId.toString(),
+        error,
+      });
+    }
+  }
+
   private async shouldPostGameResults(accountId: bigint): Promise<boolean> {
     const settings = await this.accountSettingsService.getAccountSettings(accountId);
     const postResultsSetting = settings.find(
       (setting) => setting.definition.key === 'PostGameResultsToTwitter',
     );
     return Boolean(postResultsSetting?.effectiveValue);
+  }
+
+  private async shouldPostWorkouts(accountId: bigint): Promise<boolean> {
+    const settings = await this.accountSettingsService.getAccountSettings(accountId);
+    const postWorkoutsSetting = settings.find(
+      (setting) => setting.definition.key === 'PostWorkoutsToTwitter',
+    );
+    return Boolean(postWorkoutsSetting?.effectiveValue);
   }
 
   private composeGameResultTweet(payload: TwitterGameResultPayload): string | null {
