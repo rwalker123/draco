@@ -104,7 +104,7 @@ const TeamManagersWidget: React.FC<TeamManagersWidgetProps> = ({
     return () => {
       controller.abort();
     };
-  }, [accountId, apiClient, loadManagers, seasonId, teamSeasonId, token]);
+  }, [loadManagers]);
 
   const buildPhoneEntries = (manager: TeamManagerType) => {
     const contactDetails = manager.contact.contactDetails;

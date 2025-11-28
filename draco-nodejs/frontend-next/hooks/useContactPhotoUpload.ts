@@ -13,6 +13,12 @@ export interface ContactPhotoUploadResult {
   error?: string;
 }
 
+/**
+ * Hook for handling contact photo upload operations.
+ * Validates and uploads a photo file for a contact without requiring full contact data changes.
+ * @param accountId - The account ID for the contact.
+ * @returns Object with uploadContactPhoto function, loading state, error state, and clearError function.
+ */
 export const useContactPhotoUpload = (accountId: string) => {
   const { updateContact, loading } = useContactOperations(accountId);
   const [error, setError] = useState<string | null>(null);

@@ -15,6 +15,18 @@ interface EditableContactAvatarProps {
   onError?: (message: string) => void;
 }
 
+/**
+ * EditableContactAvatar Component.
+ * Displays a contact avatar with inline photo editing capability.
+ * Allows authorized users to upload photos by clicking on the avatar.
+ *
+ * @param props.accountId - Account ID associated with the contact.
+ * @param props.contact - Contact whose avatar is displayed and can be edited.
+ * @param props.size - Avatar size in pixels.
+ * @param props.canEdit - Whether the current user can edit the contact photo.
+ * @param props.onPhotoUpdated - Optional callback when the photo upload succeeds.
+ * @param props.onError - Optional callback when the photo upload fails.
+ */
 const EditableContactAvatar: React.FC<EditableContactAvatarProps> = ({
   accountId,
   contact,
@@ -69,6 +81,7 @@ const EditableContactAvatar: React.FC<EditableContactAvatarProps> = ({
         hidden
         accept="image/*"
         onChange={handleFileChange}
+        disabled={loading}
       />
       {loading ? (
         <Box
