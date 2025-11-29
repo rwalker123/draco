@@ -20,7 +20,8 @@ import { useDiscordFeatureSync } from '@/hooks/useDiscordFeatureSync';
 import { useAccountDiscordAdmin } from '@/hooks/useAccountDiscordAdmin';
 import DiscordFeatureChannelDialog from './DiscordFeatureChannelDialog';
 
-const FEATURE: DiscordFeatureSyncStatusType['feature'] = 'gameResults';
+const GAME_RESULTS_FEATURE: DiscordFeatureSyncStatusType['feature'] = 'gameResults';
+const ANNOUNCEMENTS_FEATURE: DiscordFeatureSyncStatusType['feature'] = 'announcements';
 
 interface DiscordGameResultsSyncCardProps {
   accountId: string;
@@ -46,6 +47,8 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
   const { fetchStatus, updateStatus } = useDiscordFeatureSync();
   const { fetchAvailableChannels } = useAccountDiscordAdmin();
   const [status, setStatus] = React.useState<DiscordFeatureSyncStatusType | null>(null);
+  const [announcementStatus, setAnnouncementStatus] =
+    React.useState<DiscordFeatureSyncStatusType | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -61,17 +64,24 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
   const [postWorkoutsEnabledState, setPostWorkoutsEnabledState] = React.useState<boolean>(
     Boolean(postWorkoutsEnabled),
   );
+  const [postAnnouncementsEnabled, setPostAnnouncementsEnabled] = React.useState<boolean>(false);
 
   const loadStatus = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchStatus(accountId, FEATURE);
-      setStatus(result);
+      const [resultsStatus, announcementSync] = await Promise.all([
+        fetchStatus(accountId, GAME_RESULTS_FEATURE),
+        fetchStatus(accountId, ANNOUNCEMENTS_FEATURE),
+      ]);
+      setStatus(resultsStatus);
+      setAnnouncementStatus(announcementSync);
+      setPostAnnouncementsEnabled(Boolean(announcementSync?.enabled));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to load Discord sync status.';
       setError(message);
       setStatus(null);
+      setAnnouncementStatus(null);
     } finally {
       setLoading(false);
     }
@@ -91,6 +101,10 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
   React.useEffect(() => {
     setPostWorkoutsEnabledState(Boolean(postWorkoutsEnabled));
   }, [postWorkoutsEnabled]);
+
+  React.useEffect(() => {
+    setPostAnnouncementsEnabled(Boolean(announcementStatus?.enabled));
+  }, [announcementStatus]);
 
   const openChannelDialog = React.useCallback(async () => {
     setDialogOpen(true);
@@ -118,17 +132,24 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
   }, [dialogSubmitting]);
 
   const handleDisableSync = async () => {
-    if (!status) {
+    if (!status && !announcementStatus) {
       return;
     }
-    if (!postResultsEnabled && !postWorkoutsEnabledState) {
+    if (!postResultsEnabled && !postWorkoutsEnabledState && !postAnnouncementsEnabled) {
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      const next = await updateStatus(accountId, FEATURE, { enabled: false });
-      setStatus(next);
+      const [nextResults, nextAnnouncements] = await Promise.all([
+        status ? updateStatus(accountId, GAME_RESULTS_FEATURE, { enabled: false }) : status,
+        announcementStatus
+          ? updateStatus(accountId, ANNOUNCEMENTS_FEATURE, { enabled: false })
+          : announcementStatus,
+      ]);
+      setStatus(nextResults ?? null);
+      setAnnouncementStatus(nextAnnouncements ?? null);
+      setPostAnnouncementsEnabled(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to disable Discord sync.';
       setError(message);
@@ -139,15 +160,17 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
 
   const handleChannelDialogSubmit = React.useCallback(
     async (channel: DiscordFeatureSyncChannelType) => {
-      if (!status) {
-        return;
-      }
       setDialogSubmitting(true);
       setChannelError(null);
       try {
-        const next = await updateStatus(accountId, FEATURE, { enabled: true, channel });
-        setStatus(next);
+        const [nextResults, nextAnnouncements] = await Promise.all([
+          updateStatus(accountId, GAME_RESULTS_FEATURE, { enabled: true, channel }),
+          updateStatus(accountId, ANNOUNCEMENTS_FEATURE, { enabled: true, channel }),
+        ]);
+        setStatus(nextResults);
+        setAnnouncementStatus(nextAnnouncements);
         setDialogOpen(false);
+        setPostAnnouncementsEnabled(true);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unable to enable Discord sync.';
         setChannelError(message);
@@ -155,7 +178,7 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
         setDialogSubmitting(false);
       }
     },
-    [accountId, status, updateStatus],
+    [accountId, updateStatus],
   );
 
   const handlePostResultsToggle = async (
@@ -208,11 +231,27 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
     }
   };
 
-  const postingEnabled = postResultsEnabled || postWorkoutsEnabledState;
+  const postingEnabled = postResultsEnabled || postWorkoutsEnabledState || postAnnouncementsEnabled;
+  const effectiveChannel = status?.channel || announcementStatus?.channel || null;
+
+  const normalizeExistingChannel = React.useCallback(():
+    | DiscordFeatureSyncChannelType
+    | undefined => {
+    if (!effectiveChannel) {
+      return undefined;
+    }
+    return {
+      mode: 'existing',
+      discordChannelId: effectiveChannel.discordChannelId,
+      discordChannelName: effectiveChannel.discordChannelName,
+      channelType: effectiveChannel.channelType ?? undefined,
+    };
+  }, [effectiveChannel]);
 
   const postingLabel = [
     postResultsEnabled ? 'game results' : null,
     postWorkoutsEnabledState ? 'workouts' : null,
+    postAnnouncementsEnabled ? 'announcements' : null,
   ]
     .filter(Boolean)
     .join(' and ');
@@ -245,7 +284,7 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
       );
     }
 
-    if (!status) {
+    if (!status && !announcementStatus) {
       return (
         <Alert severity="info" sx={{ mb: 2 }}>
           Discord sync status unavailable.
@@ -253,7 +292,7 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
       );
     }
 
-    if (!status.guildConfigured) {
+    if (!status?.guildConfigured && !announcementStatus?.guildConfigured) {
       return (
         <Alert severity="warning">
           Install the Draco Discord bot and configure your guild ID to enable Discord integration.
@@ -261,19 +300,17 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
       );
     }
 
-    if (!status.enabled) {
+    if (!status?.enabled && !announcementStatus?.enabled) {
       return (
         <Stack spacing={2} alignItems="flex-start">
           <Alert severity="info">
-            Post game results and workouts to Discord with a dedicated channel and mirror updates
-            into each team&apos;s channel.
+            Post game results, announcements, and workouts to Discord with a dedicated channel and
+            mirror updates into each team&apos;s channel.
           </Alert>
           <Button
             variant="contained"
             onClick={openChannelDialog}
-            disabled={
-              saving || settingSaving || postGameResultsUpdating || postWorkoutsUpdating
-            }
+            disabled={saving || settingSaving || postGameResultsUpdating || postWorkoutsUpdating}
           >
             Configure Discord Channel
           </Button>
@@ -281,24 +318,23 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
       );
     }
 
-    const channelLabel = status.channel
-      ? `${status.channel.discordChannelName} (#${status.channel.discordChannelId})`
+    const effectiveChannel = status?.channel || announcementStatus?.channel;
+    const channelLabel = effectiveChannel
+      ? `${effectiveChannel.discordChannelName} (#${effectiveChannel.discordChannelId})`
       : 'Unknown channel';
 
     return (
       <Stack spacing={2}>
         <Alert severity="success">
-          {(postingLabel || 'Updates')} will be posted to <strong>{channelLabel}</strong>
-          {status.channel?.channelType ? ` (${status.channel.channelType})` : ''} and mirrored into
-          team channels.
+          {postingLabel || 'Updates'} will be posted to <strong>{channelLabel}</strong>
+          {effectiveChannel?.channelType ? ` (${effectiveChannel.channelType})` : ''} and mirrored
+          into team channels.
         </Alert>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
           <Button
             variant="outlined"
             onClick={openChannelDialog}
-            disabled={
-              saving || settingSaving || postGameResultsUpdating || postWorkoutsUpdating
-            }
+            disabled={saving || settingSaving || postGameResultsUpdating || postWorkoutsUpdating}
           >
             Change Channel
           </Button>
@@ -306,9 +342,7 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
             variant="outlined"
             color="error"
             onClick={handleDisableSync}
-            disabled={
-              saving || settingSaving || postGameResultsUpdating || postWorkoutsUpdating
-            }
+            disabled={saving || settingSaving || postGameResultsUpdating || postWorkoutsUpdating}
           >
             Disable Posting
           </Button>
@@ -320,11 +354,45 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
   return (
     <>
       <WidgetShell
-        title="Post Game Results & Workouts to Discord"
-        subtitle="Share final scores and workout announcements automatically with your Discord community."
+        title="Post to Discord"
+        subtitle="Share announcements, game results, and workout updates automatically with your Discord community."
         accent="info"
       >
         <Stack spacing={2} sx={{ mb: 2 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={postAnnouncementsEnabled}
+                onChange={async (event) => {
+                  const nextValue = event.target.checked;
+                  const channelPayload = normalizeExistingChannel();
+                  if (nextValue && !channelPayload) {
+                    openChannelDialog().catch(() => {});
+                    return;
+                  }
+                  setSettingSaving(true);
+                  const previous = postAnnouncementsEnabled;
+                  try {
+                    const next = await updateStatus(accountId, ANNOUNCEMENTS_FEATURE, {
+                      enabled: nextValue,
+                      channel: channelPayload,
+                    });
+                    setAnnouncementStatus(next);
+                    setPostAnnouncementsEnabled(nextValue);
+                  } catch (err) {
+                    const message =
+                      err instanceof Error ? err.message : 'Unable to update Discord settings.';
+                    setError(message);
+                    setPostAnnouncementsEnabled(previous);
+                  } finally {
+                    setSettingSaving(false);
+                  }
+                }}
+                disabled={settingSaving || saving}
+              />
+            }
+            label="Post announcements to Discord"
+          />
           <FormControlLabel
             control={
               <Switch

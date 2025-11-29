@@ -5,7 +5,6 @@ import { Box, Container, Stack, Typography } from '@mui/material';
 import { useParams } from 'next/navigation';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
 import AnnouncementsManager from '../../../../../components/announcements/AnnouncementsManager';
-import AnnouncementsDiscordSyncCard from '../../../../../components/announcements/AnnouncementsDiscordSyncCard';
 
 const AccountAnnouncementsManagementPage: React.FC = () => {
   const params = useParams();
@@ -40,7 +39,6 @@ const AccountAnnouncementsManagementPage: React.FC = () => {
 
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Stack spacing={3}>
-          <AnnouncementsDiscordSyncCard accountId={accountId} />
           <AnnouncementsManager
             scope={{ type: 'account', accountId }}
             title="Account Announcements"
