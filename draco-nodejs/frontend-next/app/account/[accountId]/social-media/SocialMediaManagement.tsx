@@ -9,6 +9,7 @@ import AccountPageHeader from '@/components/AccountPageHeader';
 import { DiscordIntegrationAdminWidget } from '@/components/account/settings/DiscordIntegrationAdminWidget';
 import { SocialMediaWidget } from '@/components/account/settings/SocialMediaWidget';
 import { BlueskyIntegrationAdminWidget } from '@/components/account/settings/BlueskyIntegrationAdminWidget';
+import { BlueskyPostSettingsWidget } from '@/components/account/settings/BlueskyPostSettingsWidget';
 import { TwitterIntegrationAdminWidget } from '@/components/account/settings/TwitterIntegrationAdminWidget';
 import { InstagramIntegrationAdminWidget } from '@/components/account/settings/InstagramIntegrationAdminWidget';
 import DiscordGameResultsSyncCard from '@/components/discord/DiscordGameResultsSyncCard';
@@ -148,6 +149,14 @@ const SocialMediaManagement: React.FC = () => {
     [accountSettings.settings],
   );
 
+  const postAnnouncementsBlueskySetting = useMemo(
+    () =>
+      accountSettings.settings?.find(
+        (setting) => setting.definition.key === 'PostAnnouncementsToBluesky',
+      ),
+    [accountSettings.settings],
+  );
+
   const syncInstagramToGallerySetting = useMemo(
     () =>
       accountSettings.settings?.find(
@@ -278,20 +287,28 @@ const SocialMediaManagement: React.FC = () => {
           </TabPanel>
 
           <TabPanel value={tabValue} index={2}>
-            <BlueskyIntegrationAdminWidget
-              account={account}
-              onAccountUpdate={setAccount}
-              postGameResultsSetting={postResultsBlueskySetting}
-              postGameResultsUpdating={accountSettings.updatingKey === 'PostGameResultsToBluesky'}
-              onUpdatePostGameResults={(enabled) =>
-                updatePostResultsSetting('PostGameResultsToBluesky', enabled)
-              }
-              postWorkoutSetting={postWorkoutsBlueskySetting}
-              postWorkoutUpdating={accountSettings.updatingKey === 'PostWorkoutsToBluesky'}
-              onUpdatePostWorkout={(enabled) =>
-                updatePostResultsSetting('PostWorkoutsToBluesky', enabled)
-              }
-            />
+            <Stack spacing={3}>
+              <BlueskyIntegrationAdminWidget account={account} onAccountUpdate={setAccount} />
+              <BlueskyPostSettingsWidget
+                postGameResultsSetting={postResultsBlueskySetting}
+                postGameResultsUpdating={accountSettings.updatingKey === 'PostGameResultsToBluesky'}
+                onUpdatePostGameResults={(enabled) =>
+                  updatePostResultsSetting('PostGameResultsToBluesky', enabled)
+                }
+                postAnnouncementsSetting={postAnnouncementsBlueskySetting}
+                postAnnouncementsUpdating={
+                  accountSettings.updatingKey === 'PostAnnouncementsToBluesky'
+                }
+                onUpdatePostAnnouncements={(enabled) =>
+                  updatePostResultsSetting('PostAnnouncementsToBluesky', enabled)
+                }
+                postWorkoutSetting={postWorkoutsBlueskySetting}
+                postWorkoutUpdating={accountSettings.updatingKey === 'PostWorkoutsToBluesky'}
+                onUpdatePostWorkout={(enabled) =>
+                  updatePostResultsSetting('PostWorkoutsToBluesky', enabled)
+                }
+              />
+            </Stack>
           </TabPanel>
 
           <TabPanel value={tabValue} index={3}>

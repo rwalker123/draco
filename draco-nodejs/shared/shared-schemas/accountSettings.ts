@@ -21,6 +21,7 @@ export const ACCOUNT_SETTING_KEYS = [
   'PostGameResultsToDiscord',
   'PostGameResultsToTwitter',
   'PostGameResultsToBluesky',
+  'PostAnnouncementsToBluesky',
   'PostWorkoutsToDiscord',
   'PostWorkoutsToTwitter',
   'PostWorkoutsToBluesky',
@@ -274,6 +275,14 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
     sortOrder: 95,
   }),
   booleanSetting({
+    key: 'PostAnnouncementsToBluesky',
+    label: 'Post announcements to Bluesky',
+    description: 'Publish announcements to the connected Bluesky account when they are created.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 96,
+  }),
+  booleanSetting({
     key: 'PostWorkoutsToDiscord',
     label: 'Post workouts to Discord',
     description:
@@ -285,7 +294,8 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
   booleanSetting({
     key: 'PostWorkoutsToTwitter',
     label: 'Post workouts to Twitter',
-    description: 'Publish workout announcements to the connected Twitter account when they are created.',
+    description:
+      'Publish workout announcements to the connected Twitter account when they are created.',
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
     sortOrder: 98,
@@ -293,7 +303,8 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
   booleanSetting({
     key: 'PostWorkoutsToBluesky',
     label: 'Post workouts to Bluesky',
-    description: 'Publish workout announcements to the connected Bluesky account when they are created.',
+    description:
+      'Publish workout announcements to the connected Bluesky account when they are created.',
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
     sortOrder: 99,
@@ -305,7 +316,7 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
       'When enabled, newly ingested Instagram media is added to your Photo Gallery albums.',
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
-    sortOrder: 96,
+    sortOrder: 100,
   }),
   booleanSetting({
     key: 'TrackWaiver',

@@ -119,7 +119,7 @@ model accountinstagramcredentials {
 
 model accountsettings {
   accountid    BigInt
-  settingkey   String   @db.VarChar(25)
+  settingkey   String   @db.VarChar(40)
   settingvalue String   @db.VarChar(25)
   accounts     accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountsettings_accounts")
 

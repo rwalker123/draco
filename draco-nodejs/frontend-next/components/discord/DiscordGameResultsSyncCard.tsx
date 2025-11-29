@@ -22,6 +22,7 @@ import DiscordFeatureChannelDialog from './DiscordFeatureChannelDialog';
 
 const GAME_RESULTS_FEATURE: DiscordFeatureSyncStatusType['feature'] = 'gameResults';
 const ANNOUNCEMENTS_FEATURE: DiscordFeatureSyncStatusType['feature'] = 'announcements';
+const WORKOUTS_FEATURE: DiscordFeatureSyncStatusType['feature'] = 'workouts';
 
 interface DiscordGameResultsSyncCardProps {
   accountId: string;
@@ -49,6 +50,9 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
   const [status, setStatus] = React.useState<DiscordFeatureSyncStatusType | null>(null);
   const [announcementStatus, setAnnouncementStatus] =
     React.useState<DiscordFeatureSyncStatusType | null>(null);
+  const [workoutStatus, setWorkoutStatus] = React.useState<DiscordFeatureSyncStatusType | null>(
+    null,
+  );
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -70,18 +74,21 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const [resultsStatus, announcementSync] = await Promise.all([
+      const [resultsStatus, announcementSync, workoutsSync] = await Promise.all([
         fetchStatus(accountId, GAME_RESULTS_FEATURE),
         fetchStatus(accountId, ANNOUNCEMENTS_FEATURE),
+        fetchStatus(accountId, WORKOUTS_FEATURE),
       ]);
       setStatus(resultsStatus);
       setAnnouncementStatus(announcementSync);
+      setWorkoutStatus(workoutsSync);
       setPostAnnouncementsEnabled(Boolean(announcementSync?.enabled));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to load Discord sync status.';
       setError(message);
       setStatus(null);
       setAnnouncementStatus(null);
+      setWorkoutStatus(null);
     } finally {
       setLoading(false);
     }
@@ -132,7 +139,7 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
   }, [dialogSubmitting]);
 
   const handleDisableSync = async () => {
-    if (!status && !announcementStatus) {
+    if (!status && !announcementStatus && !workoutStatus) {
       return;
     }
     if (!postResultsEnabled && !postWorkoutsEnabledState && !postAnnouncementsEnabled) {
@@ -141,14 +148,18 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
     setSaving(true);
     setError(null);
     try {
-      const [nextResults, nextAnnouncements] = await Promise.all([
+      const [nextResults, nextAnnouncements, nextWorkouts] = await Promise.all([
         status ? updateStatus(accountId, GAME_RESULTS_FEATURE, { enabled: false }) : status,
         announcementStatus
           ? updateStatus(accountId, ANNOUNCEMENTS_FEATURE, { enabled: false })
           : announcementStatus,
+        workoutStatus
+          ? updateStatus(accountId, WORKOUTS_FEATURE, { enabled: false })
+          : workoutStatus,
       ]);
       setStatus(nextResults ?? null);
       setAnnouncementStatus(nextAnnouncements ?? null);
+      setWorkoutStatus(nextWorkouts ?? null);
       setPostAnnouncementsEnabled(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to disable Discord sync.';
@@ -163,12 +174,14 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
       setDialogSubmitting(true);
       setChannelError(null);
       try {
-        const [nextResults, nextAnnouncements] = await Promise.all([
+        const [nextResults, nextAnnouncements, nextWorkouts] = await Promise.all([
           updateStatus(accountId, GAME_RESULTS_FEATURE, { enabled: true, channel }),
           updateStatus(accountId, ANNOUNCEMENTS_FEATURE, { enabled: true, channel }),
+          updateStatus(accountId, WORKOUTS_FEATURE, { enabled: true, channel }),
         ]);
         setStatus(nextResults);
         setAnnouncementStatus(nextAnnouncements);
+        setWorkoutStatus(nextWorkouts);
         setDialogOpen(false);
         setPostAnnouncementsEnabled(true);
       } catch (err) {
@@ -232,7 +245,8 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
   };
 
   const postingEnabled = postResultsEnabled || postWorkoutsEnabledState || postAnnouncementsEnabled;
-  const effectiveChannel = status?.channel || announcementStatus?.channel || null;
+  const effectiveChannel =
+    status?.channel || announcementStatus?.channel || workoutStatus?.channel || null;
 
   const normalizeExistingChannel = React.useCallback(():
     | DiscordFeatureSyncChannelType
@@ -300,7 +314,7 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
       );
     }
 
-    if (!status?.enabled && !announcementStatus?.enabled) {
+    if (!status?.enabled && !announcementStatus?.enabled && !workoutStatus?.enabled) {
       return (
         <Stack spacing={2} alignItems="flex-start">
           <Alert severity="info">
@@ -318,7 +332,8 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
       );
     }
 
-    const effectiveChannel = status?.channel || announcementStatus?.channel;
+    const effectiveChannel =
+      status?.channel || announcementStatus?.channel || workoutStatus?.channel;
     const channelLabel = effectiveChannel
       ? `${effectiveChannel.discordChannelName} (#${effectiveChannel.discordChannelId})`
       : 'Unknown channel';
@@ -362,6 +377,21 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
           <FormControlLabel
             control={
               <Switch
+                checked={postResultsEnabled}
+                onChange={handlePostResultsToggle}
+                disabled={
+                  settingSaving ||
+                  postGameResultsUpdating ||
+                  postWorkoutsUpdating ||
+                  !onTogglePostGameResults
+                }
+              />
+            }
+            label="Post game results"
+          />
+          <FormControlLabel
+            control={
+              <Switch
                 checked={postAnnouncementsEnabled}
                 onChange={async (event) => {
                   const nextValue = event.target.checked;
@@ -391,22 +421,7 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
                 disabled={settingSaving || saving}
               />
             }
-            label="Post announcements to Discord"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={postResultsEnabled}
-                onChange={handlePostResultsToggle}
-                disabled={
-                  settingSaving ||
-                  postGameResultsUpdating ||
-                  postWorkoutsUpdating ||
-                  !onTogglePostGameResults
-                }
-              />
-            }
-            label="Post game results to Discord"
+            label="Post announcements"
           />
           <FormControlLabel
             control={
@@ -421,7 +436,7 @@ const DiscordGameResultsSyncCard: React.FC<DiscordGameResultsSyncCardProps> = ({
                 }
               />
             }
-            label="Post workouts to Discord"
+            label="Post workouts"
           />
         </Stack>
         {renderContent()}

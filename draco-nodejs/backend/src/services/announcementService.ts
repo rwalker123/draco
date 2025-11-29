@@ -13,6 +13,7 @@ import {
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
+import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
 import { sanitizeRichHtml } from '../utils/htmlSanitizer.js';
 
 interface NormalizedAnnouncementPayload {
@@ -31,12 +32,14 @@ export class AnnouncementService {
   private readonly announcementRepository: IAnnouncementRepository;
   private readonly teamRepository: ITeamRepository;
   private readonly discordIntegrationService: DiscordIntegrationService;
+  private readonly blueskyIntegrationService: BlueskyIntegrationService;
 
   constructor(announcementRepository?: IAnnouncementRepository, teamRepository?: ITeamRepository) {
     this.announcementRepository =
       announcementRepository ?? RepositoryFactory.getAnnouncementRepository();
     this.teamRepository = teamRepository ?? RepositoryFactory.getTeamRepository();
     this.discordIntegrationService = new DiscordIntegrationService();
+    this.blueskyIntegrationService = new BlueskyIntegrationService();
   }
 
   async listAccountAnnouncements(accountId: bigint): Promise<AnnouncementType[]> {
@@ -78,6 +81,7 @@ export class AnnouncementService {
     const record = await this.requireAccountAnnouncement(accountId, created.id);
     const announcement = AnnouncementResponseFormatter.formatAccountAnnouncement(record);
     void this.syncAnnouncementToDiscord(accountId, announcement);
+    void this.syncAnnouncementToBluesky(accountId, announcement);
     return announcement;
   }
 
@@ -267,6 +271,18 @@ export class AnnouncementService {
       await this.discordIntegrationService.publishAnnouncement(accountId, announcement);
     } catch (error) {
       console.error('[discord] Failed to sync announcement to Discord', {
+        accountId: accountId.toString(),
+        announcementId: announcement.id,
+        error,
+      });
+    }
+  }
+
+  private async syncAnnouncementToBluesky(accountId: bigint, announcement: AnnouncementType) {
+    try {
+      await this.blueskyIntegrationService.publishAnnouncement(accountId, announcement);
+    } catch (error) {
+      console.error('[bluesky] Failed to sync announcement', {
         accountId: accountId.toString(),
         announcementId: announcement.id,
         error,

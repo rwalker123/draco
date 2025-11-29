@@ -4018,6 +4018,7 @@ components:
                   - PostGameResultsToDiscord
                   - PostGameResultsToTwitter
                   - PostGameResultsToBluesky
+                  - PostAnnouncementsToBluesky
                   - PostWorkoutsToDiscord
                   - PostWorkoutsToTwitter
                   - PostWorkoutsToBluesky
@@ -4078,6 +4079,7 @@ components:
                         - PostGameResultsToDiscord
                         - PostGameResultsToTwitter
                         - PostGameResultsToBluesky
+                        - PostAnnouncementsToBluesky
                         - PostWorkoutsToDiscord
                         - PostWorkoutsToTwitter
                         - PostWorkoutsToBluesky
@@ -4174,6 +4176,7 @@ components:
                 - PostGameResultsToDiscord
                 - PostGameResultsToTwitter
                 - PostGameResultsToBluesky
+                - PostAnnouncementsToBluesky
                 - PostWorkoutsToDiscord
                 - PostWorkoutsToTwitter
                 - PostWorkoutsToBluesky
@@ -4234,6 +4237,7 @@ components:
                       - PostGameResultsToDiscord
                       - PostGameResultsToTwitter
                       - PostGameResultsToBluesky
+                      - PostAnnouncementsToBluesky
                       - PostWorkoutsToDiscord
                       - PostWorkoutsToTwitter
                       - PostWorkoutsToBluesky
@@ -4333,6 +4337,7 @@ components:
         - PostGameResultsToDiscord
         - PostGameResultsToTwitter
         - PostGameResultsToBluesky
+        - PostAnnouncementsToBluesky
         - PostWorkoutsToDiscord
         - PostWorkoutsToTwitter
         - PostWorkoutsToBluesky
@@ -17594,6 +17599,7 @@ paths:
               - PostGameResultsToDiscord
               - PostGameResultsToTwitter
               - PostGameResultsToBluesky
+              - PostAnnouncementsToBluesky
               - PostWorkoutsToDiscord
               - PostWorkoutsToTwitter
               - PostWorkoutsToBluesky

@@ -497,12 +497,12 @@ export class WorkoutService {
   }
 
   private getBaseUrl(): string {
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3000';
     return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   }
 
-  private buildWorkoutUrl(accountId: bigint, workoutId: bigint): string {
-    return `${this.getBaseUrl()}/account/${accountId.toString()}/workouts/${workoutId.toString()}`;
+  private buildWorkoutUrl(accountId: bigint): string {
+    return `${this.getBaseUrl()}/account/${accountId.toString()}/home`;
   }
 
   private async syncWorkoutToSocial(accountId: bigint, workout: dbWorkoutWithField): Promise<void> {
@@ -512,7 +512,7 @@ export class WorkoutService {
         workoutId: workout.id,
         workoutDesc: workout.workoutdesc,
         workoutDate: workout.workoutdate,
-        workoutUrl: this.buildWorkoutUrl(accountId, workout.id),
+        workoutUrl: this.buildWorkoutUrl(accountId),
         accountName: account?.name ?? null,
       } as const;
 
