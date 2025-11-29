@@ -1751,6 +1751,7 @@ const WorkoutsTabContent: React.FC<WorkoutsTabContentProps> = ({
             size="small"
             sx={{ p: 0.5 }}
           />
+          <GroupsIcon fontSize="small" color="primary" />
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
             All active workouts
           </Typography>
@@ -1803,6 +1804,7 @@ const WorkoutsTabContent: React.FC<WorkoutsTabContentProps> = ({
                           onChange={(event) => onToggleWorkout(workout.id, event.target.checked)}
                           size="small"
                         />
+                        <GroupsIcon fontSize="small" color="secondary" />
                         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                           {workout.workoutDesc}
                         </Typography>
@@ -1849,6 +1851,7 @@ const WorkoutsTabContent: React.FC<WorkoutsTabContentProps> = ({
                                     )
                                   }
                                 />
+                                <PersonIcon fontSize="small" color="action" />
                                 <Box sx={{ minWidth: 0 }}>
                                   <Typography variant="body2">{registrant.name}</Typography>
                                   <Typography variant="caption" color="text.secondary" noWrap>
