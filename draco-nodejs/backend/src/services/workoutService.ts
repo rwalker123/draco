@@ -105,6 +105,7 @@ export class WorkoutService {
     }
 
     const workout = await this.workoutRepository.updateWorkout(accountId, workoutId, updateData);
+    void this.syncWorkoutToSocial(accountId, workout);
 
     return WorkoutResponseFormatter.formatWorkout(workout);
   }

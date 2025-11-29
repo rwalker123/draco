@@ -105,7 +105,11 @@ export class AnnouncementService {
     });
 
     const updated = await this.requireAccountAnnouncement(accountId, announcementId);
-    return AnnouncementResponseFormatter.formatAccountAnnouncement(updated);
+    const announcement = AnnouncementResponseFormatter.formatAccountAnnouncement(updated);
+    void this.syncAnnouncementToDiscord(accountId, announcement);
+    void this.syncAnnouncementToBluesky(accountId, announcement);
+    void this.syncAnnouncementToTwitter(accountId, announcement);
+    return announcement;
   }
 
   async deleteAccountAnnouncement(accountId: bigint, announcementId: bigint): Promise<void> {
@@ -179,7 +183,11 @@ export class AnnouncementService {
     });
 
     const updated = await this.requireTeamAnnouncement(accountId, teamId, announcementId);
-    return AnnouncementResponseFormatter.formatTeamAnnouncement(updated, accountId);
+    const announcement = AnnouncementResponseFormatter.formatTeamAnnouncement(updated, accountId);
+    void this.syncAnnouncementToDiscord(accountId, announcement);
+    void this.syncAnnouncementToBluesky(accountId, announcement);
+    void this.syncAnnouncementToTwitter(accountId, announcement);
+    return announcement;
   }
 
   async deleteTeamAnnouncement(
