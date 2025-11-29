@@ -231,8 +231,10 @@ const ScheduleDialogContent: React.FC<ScheduleDialogContentProps> = ({
       >
         <DialogTitle>
           <Stack direction="row" spacing={1} alignItems="center">
-            <ScheduleIcon />
-            <Typography variant="h6">Schedule Email</Typography>
+            <ScheduleIcon color="primary" />
+            <Typography variant="h6" color="text.primary">
+              Schedule Email
+            </Typography>
           </Stack>
         </DialogTitle>
 

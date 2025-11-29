@@ -18,9 +18,9 @@ interface WorkoutEmailContext {
   recipients: EmailRecipient[];
 }
 
-const buildWorkoutUrl = (baseUrl: string, accountId: bigint) => {
+const buildAccountHomeUrl = (baseUrl: string, accountId: bigint) => {
   const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  return `${normalizedBase}/account/${accountId.toString()}/workouts`;
+  return `${normalizedBase}/account/${accountId.toString()}/home`;
 };
 
 export class WorkoutRegistrationEmailService {
@@ -35,9 +35,9 @@ export class WorkoutRegistrationEmailService {
     const provider = await this.getProvider();
     const settings = this.getEmailSettings();
     const baseUrl = this.getBaseUrl();
-    const workoutUrl = buildWorkoutUrl(baseUrl, context.accountId);
+    const accountHomeUrl = buildAccountHomeUrl(baseUrl, context.accountId);
 
-    const htmlFooter = `\n<hr style="margin:24px 0; border:none; border-top:1px solid #e0e0e0;"/>\n<p style="font-size:12px; color:#555;">This message was sent via Draco Sports Manager.<br/>View workouts: <a href="${workoutUrl}">${workoutUrl}</a></p>`;
+    const htmlFooter = `\n<hr style="margin:24px 0; border:none; border-top:1px solid #e0e0e0;"/>\n<p style="font-size:12px; color:#555;">This message was sent via Draco Sports Manager.<br/>Visit your account home: <a href="${accountHomeUrl}">${accountHomeUrl}</a></p>`;
 
     const sanitizedRecipients = context.recipients
       .map((recipient) => ({
@@ -56,7 +56,11 @@ export class WorkoutRegistrationEmailService {
       return;
     }
 
-    const textBody = [htmlToPlainText(context.bodyHtml), '', `View workouts: ${workoutUrl}`]
+    const textBody = [
+      htmlToPlainText(context.bodyHtml),
+      '',
+      `Visit your account home: ${accountHomeUrl}`,
+    ]
       .join('\n')
       .trim();
 

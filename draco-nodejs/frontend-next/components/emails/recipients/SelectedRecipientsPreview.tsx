@@ -8,6 +8,7 @@ import {
   CalendarMonth as SeasonIcon,
   EmojiEvents as LeagueIcon,
   Email as EmailIcon,
+  FitnessCenter as WorkoutIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
 
@@ -52,15 +53,8 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
 
   // Calculate summary data from selectedGroups Map
   const summaryData = useMemo(() => {
-    if (!state.recipientState?.selectedGroups) {
-      return {
-        groupSummaries: [],
-        invalidEmails: 0,
-        hasSelections: false,
-        isManagersOnly: false,
-      };
-    }
-
+    const selectedGroups = state.recipientState?.selectedGroups;
+    const selectedWorkouts = state.recipientState?.selectedWorkoutRecipients || [];
     const groupSummaries: Array<{
       groupType: GroupType;
       label: string;
@@ -68,11 +62,12 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
       icon: typeof PersonIcon;
       color: 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'default';
     }> = [];
+    const workoutSummaries: Array<{ workoutId: string; label: string; count: number }> = [];
 
     let isManagersOnly = false;
 
     // Process each group type in the selectedGroups Map
-    state.recipientState.selectedGroups.forEach((contactGroups, groupType) => {
+    selectedGroups?.forEach((contactGroups, groupType) => {
       contactGroups.forEach((contactGroup) => {
         if (contactGroup.totalCount > 0) {
           const config = getGroupConfig(groupType);
@@ -90,11 +85,23 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
       });
     });
 
+    selectedWorkouts.forEach((workout) => {
+      if (workout.totalSelected > 0) {
+        workoutSummaries.push({
+          workoutId: workout.workoutId,
+          label: workout.workoutDesc,
+          count: workout.totalSelected,
+        });
+      }
+    });
+
     return {
       groupSummaries,
-      invalidEmails: state.recipientState.invalidEmailCount || 0,
-      hasSelections: groupSummaries.length > 0,
+      workoutSummaries,
+      invalidEmails: state.recipientState?.invalidEmailCount || 0,
+      hasSelections: groupSummaries.length > 0 || workoutSummaries.length > 0,
       isManagersOnly,
+      workoutManagersOnly: state.recipientState?.workoutManagersOnly ?? false,
     };
   }, [state.recipientState]);
 
@@ -121,9 +128,28 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
     });
   }, [summaryData.groupSummaries, compact]);
 
+  const workoutChips = useMemo(() => {
+    return summaryData.workoutSummaries.map((workout) => (
+      <Chip
+        key={`workout-${workout.workoutId}`}
+        icon={<WorkoutIcon />}
+        label={`${workout.label} (${workout.count})`}
+        size={compact ? 'small' : 'medium'}
+        variant="outlined"
+        color="secondary"
+        sx={{
+          '& .MuiChip-icon': {
+            color: 'secondary.main',
+          },
+        }}
+      />
+    ));
+  }, [summaryData.workoutSummaries, compact]);
+
   // Determine visible and hidden chips
-  const visibleChips = groupChips.slice(0, maxVisibleChips);
-  const hiddenChipsCount = Math.max(0, groupChips.length - maxVisibleChips);
+  const allChips = [...groupChips, ...workoutChips];
+  const visibleChips = allChips.slice(0, maxVisibleChips);
+  const hiddenChipsCount = Math.max(0, allChips.length - maxVisibleChips);
 
   // If no selections, show empty state
   if (!summaryData.hasSelections) {
@@ -200,7 +226,19 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
               py: 0.5,
             }}
           >
-            Counts represent: {summaryData.isManagersOnly ? 'Managers' : 'Players'}
+            {summaryData.isManagersOnly
+              ? 'Group counts represent managers; workout counts represent registrants.'
+              : 'Group counts represent players; workout counts represent registrants.'}
+          </Typography>
+        )}
+
+        {summaryData.workoutManagersOnly && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ textAlign: 'center', fontSize: '0.75rem' }}
+          >
+            Workout selections are limited to registrants open to managing.
           </Typography>
         )}
 

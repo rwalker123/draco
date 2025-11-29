@@ -625,6 +625,7 @@ const EmailComposePageInternal: React.FC<
             onRetry={handleRetry}
             initialSelectedGroups={state.recipientState?.selectedGroups}
             initialWorkoutRecipients={state.recipientState?.selectedWorkoutRecipients}
+            initialWorkoutManagersOnly={state.recipientState?.workoutManagersOnly}
           />
         </ErrorBoundary>
 

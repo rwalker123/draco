@@ -400,6 +400,7 @@ export interface WorkoutRecipientSelection {
   workoutDesc: string;
   workoutDate: string;
   totalSelected: number;
+  managersOnly?: boolean;
   registrationIds?: Set<string>;
 }
 
@@ -407,6 +408,7 @@ export interface RecipientSelectionState {
   // Unified group-based selection system
   selectedGroups?: Map<GroupType, ContactGroup[]>;
   selectedWorkoutRecipients?: WorkoutRecipientSelection[];
+  workoutManagersOnly?: boolean;
 
   // Computed properties
   totalRecipients: number;
@@ -600,6 +602,7 @@ export const createDefaultRecipientSelectionState = (): RecipientSelectionState 
   // Unified group-based selection system
   selectedGroups: new Map<GroupType, ContactGroup[]>(),
   selectedWorkoutRecipients: [],
+  workoutManagersOnly: false,
 
   // Computed properties
   totalRecipients: 0,

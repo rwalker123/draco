@@ -9,6 +9,7 @@ import {
   Stack,
   Collapse,
   IconButton,
+  Chip,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -124,22 +125,16 @@ const HierarchicalTreeItem: React.FC<TreeItemProps> = ({
                 )}
               </Box>
               {(playerCount !== undefined || managerCount !== undefined) && (
-                <Typography
-                  variant="caption"
-                  color="primary"
-                  sx={{
-                    backgroundColor: 'primary.light',
-                    color: 'primary.contrastText',
-                    px: 1,
-                    py: 0.25,
-                    borderRadius: 1,
-                    fontWeight: 'medium',
-                  }}
-                >
-                  {managersOnly
-                    ? `${managerCount || 0} ${(managerCount || 0) === 1 ? 'manager' : 'managers'}`
-                    : `${playerCount || 0} ${(playerCount || 0) === 1 ? 'player' : 'players'}`}
-                </Typography>
+                <Chip
+                  label={
+                    managersOnly
+                      ? `${managerCount || 0} ${(managerCount || 0) === 1 ? 'manager' : 'managers'}`
+                      : `${playerCount || 0} ${(playerCount || 0) === 1 ? 'player' : 'players'}`
+                  }
+                  size="small"
+                  variant="outlined"
+                  sx={{ ml: 0.5 }}
+                />
               )}
             </Stack>
           }

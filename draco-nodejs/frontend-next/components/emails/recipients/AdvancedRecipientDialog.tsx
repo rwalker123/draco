@@ -19,11 +19,8 @@ import {
   AlertTitle,
   CircularProgress,
   Checkbox,
-  List,
-  ListItem,
-  ListItemText,
-  FormControlLabel,
-  Divider,
+  Switch,
+  Chip,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -33,6 +30,8 @@ import {
   Warning as WarningIcon,
   Info as InfoIcon,
   SportsMartialArts as SportsMartialArtsIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -58,6 +57,7 @@ import {
 interface SimplifiedRecipientSelectionState {
   selectedGroups?: Map<GroupType, ContactGroup[]>;
   selectedWorkoutRecipients?: WorkoutRecipientSelection[];
+  workoutManagersOnly?: boolean;
   totalRecipients: number;
   validEmailCount: number;
   invalidEmailCount: number;
@@ -98,6 +98,7 @@ export interface AdvancedRecipientDialogProps {
   onRetry?: () => void;
   initialSelectedGroups?: Map<GroupType, ContactGroup[]>;
   initialWorkoutRecipients?: WorkoutRecipientSelection[];
+  initialWorkoutManagersOnly?: boolean;
 }
 
 interface LoadingState {
@@ -151,6 +152,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   onRetry,
   initialSelectedGroups,
   initialWorkoutRecipients,
+  initialWorkoutManagersOnly,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -178,6 +180,9 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   const [activeWorkouts, setActiveWorkouts] = useState<WorkoutWithRegistrants[]>([]);
   const [workoutsLoading, setWorkoutsLoading] = useState(false);
   const [workoutsError, setWorkoutsError] = useState<string | null>(null);
+  const [workoutManagersOnly, setWorkoutManagersOnly] = useState<boolean>(
+    initialWorkoutManagersOnly ?? false,
+  );
 
   // Hierarchical selection state for shared data model
   const [hierarchicalSelectedIds, setHierarchicalSelectedIds] = useState<
@@ -649,6 +654,43 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     });
   }, [open, initialWorkoutRecipients, activeWorkouts]);
 
+  useEffect(() => {
+    if (open && initialWorkoutManagersOnly) {
+      setWorkoutManagersOnly(true);
+    }
+  }, [open, initialWorkoutManagersOnly]);
+
+  const visibleWorkouts = useMemo(() => {
+    if (!workoutManagersOnly) {
+      return activeWorkouts;
+    }
+    return activeWorkouts.map((workout) => ({
+      ...workout,
+      registrants: workout.registrants.filter((registrant) => registrant.isManager),
+    }));
+  }, [activeWorkouts, workoutManagersOnly]);
+
+  useEffect(() => {
+    if (!workoutManagersOnly) {
+      return;
+    }
+    setSelectedWorkoutRegistrantIds((prev) => {
+      const next = new Map<string, Set<string>>();
+      visibleWorkouts.forEach((workout) => {
+        if (workout.registrants.length === 0) {
+          return;
+        }
+        const existingIds = prev.get(workout.id) ?? new Set<string>();
+        const allowedIds = new Set(workout.registrants.map((registrant) => registrant.id));
+        const filteredIds = new Set(Array.from(existingIds).filter((id) => allowedIds.has(id)));
+        if (filteredIds.size > 0) {
+          next.set(workout.id, filteredIds);
+        }
+      });
+      return next;
+    });
+  }, [workoutManagersOnly, visibleWorkouts]);
+
   // State for loading and error handling
   const [loadingState, setLoadingState] = useState<LoadingState>({
     contacts: false,
@@ -723,21 +765,21 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       }
 
       const next = new Map<string, Set<string>>();
-      activeWorkouts.forEach((workout) => {
+      visibleWorkouts.forEach((workout) => {
         if (workout.registrants.length > 0) {
           next.set(workout.id, new Set(workout.registrants.map((registrant) => registrant.id)));
         }
       });
       setSelectedWorkoutRegistrantIds(next);
     },
-    [activeWorkouts],
+    [visibleWorkouts],
   );
 
   const handleToggleWorkout = useCallback(
     (workoutId: string, checked: boolean) => {
       setSelectedWorkoutRegistrantIds((prev) => {
         const next = new Map(prev);
-        const workout = activeWorkouts.find((item) => item.id === workoutId);
+        const workout = visibleWorkouts.find((item) => item.id === workoutId);
         if (!workout) {
           return prev;
         }
@@ -751,7 +793,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         return next;
       });
     },
-    [activeWorkouts],
+    [visibleWorkouts],
   );
 
   const handleToggleRegistrant = useCallback(
@@ -776,6 +818,34 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       });
     },
     [],
+  );
+
+  const handleWorkoutManagersOnlyToggle = useCallback(
+    (checked: boolean) => {
+      setWorkoutManagersOnly(checked);
+      if (checked) {
+        setSelectedWorkoutRegistrantIds((prev) => {
+          const next = new Map<string, Set<string>>();
+          visibleWorkouts.forEach((workout) => {
+            if (workout.registrants.length === 0) {
+              return;
+            }
+            const existingIds = prev.get(workout.id) ?? new Set<string>();
+            const allowedIds = new Set(
+              workout.registrants
+                .filter((registrant) => registrant.isManager)
+                .map((registrant) => registrant.id),
+            );
+            const filteredIds = new Set(Array.from(existingIds).filter((id) => allowedIds.has(id)));
+            if (filteredIds.size > 0) {
+              next.set(workout.id, filteredIds);
+            }
+          });
+          return next;
+        });
+      }
+    },
+    [visibleWorkouts],
   );
 
   // Local actions that modify local state only
@@ -875,8 +945,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   ]);
 
   const totalWorkoutRegistrants = useMemo(
-    () => activeWorkouts.reduce((sum, workout) => sum + workout.registrants.length, 0),
-    [activeWorkouts],
+    () => visibleWorkouts.reduce((sum, workout) => sum + workout.registrants.length, 0),
+    [visibleWorkouts],
   );
 
   const hasWorkouts = useMemo(() => activeWorkouts.length > 0, [activeWorkouts]);
@@ -1042,17 +1112,26 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
     const workoutSelections: WorkoutRecipientSelection[] = [];
     selectedWorkoutRegistrantIds.forEach((ids, workoutId) => {
-      const workout = activeWorkouts.find((item) => item.id === workoutId);
-      if (!workout) {
+      const workout =
+        visibleWorkouts.find((item) => item.id === workoutId) ||
+        activeWorkouts.find((item) => item.id === workoutId);
+      const baseWorkout = activeWorkouts.find((item) => item.id === workoutId);
+      if (!workout || !baseWorkout) {
         return;
       }
+
+      const totalInScope = workoutManagersOnly
+        ? baseWorkout.registrants.filter((registrant) => registrant.isManager).length
+        : baseWorkout.registrants.length;
+      const shouldOmitRegistrationIds = !workoutManagersOnly && ids.size === totalInScope;
 
       workoutSelections.push({
         workoutId,
         workoutDesc: workout.workoutDesc,
         workoutDate: workout.workoutDate,
         totalSelected: ids.size,
-        registrationIds: ids.size === workout.registrants.length ? undefined : new Set(ids),
+        managersOnly: workoutManagersOnly,
+        registrationIds: shouldOmitRegistrationIds ? undefined : new Set(ids),
       });
     });
 
@@ -1132,6 +1211,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       const simplifiedState: SimplifiedRecipientSelectionState = {
         selectedGroups: mergedContactGroups,
         selectedWorkoutRecipients: workoutSelections,
+        workoutManagersOnly,
         totalRecipients,
         validEmailCount: validContactsCount + validWorkoutCount,
         invalidEmailCount: totalRecipients - (validContactsCount + validWorkoutCount),
@@ -1160,6 +1240,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     onClose,
     selectedWorkoutRegistrantIds,
     activeWorkouts,
+    visibleWorkouts,
+    workoutManagersOnly,
   ]);
 
   // Effect to handle external error prop
@@ -1461,12 +1543,14 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
               )}
               {currentTab === 'workouts' && (
                 <WorkoutsTabContent
-                  workouts={activeWorkouts}
+                  workouts={visibleWorkouts}
                   totalRegistrants={totalWorkoutRegistrants}
                   selectedWorkoutIds={selectedWorkoutRegistrantIds}
                   onToggleAll={handleToggleAllWorkouts}
                   onToggleWorkout={handleToggleWorkout}
                   onToggleRegistrant={handleToggleRegistrant}
+                  managersOnly={workoutManagersOnly}
+                  onToggleManagersOnly={handleWorkoutManagersOnlyToggle}
                   loading={workoutsLoading}
                   error={workoutsError}
                 />
@@ -1553,6 +1637,8 @@ interface WorkoutsTabContentProps {
   onToggleAll: (checked: boolean) => void;
   onToggleWorkout: (workoutId: string, checked: boolean) => void;
   onToggleRegistrant: (workoutId: string, registrantId: string, checked: boolean) => void;
+  managersOnly: boolean;
+  onToggleManagersOnly: (checked: boolean) => void;
   loading: boolean;
   error?: string | null;
 }
@@ -1564,9 +1650,26 @@ const WorkoutsTabContent: React.FC<WorkoutsTabContentProps> = ({
   onToggleAll,
   onToggleWorkout,
   onToggleRegistrant,
+  managersOnly,
+  onToggleManagersOnly,
   loading,
   error,
 }) => {
+  const [rootExpanded, setRootExpanded] = useState(true);
+  const [collapsedWorkouts, setCollapsedWorkouts] = useState<Set<string>>(new Set());
+
+  const toggleExpand = useCallback((workoutId: string) => {
+    setCollapsedWorkouts((prev) => {
+      const next = new Set(prev);
+      if (next.has(workoutId)) {
+        next.delete(workoutId);
+      } else {
+        next.add(workoutId);
+      }
+      return next;
+    });
+  }, []);
+
   const selectedCount = useMemo(() => {
     let total = 0;
     selectedWorkoutIds.forEach((ids) => {
@@ -1589,102 +1692,182 @@ const WorkoutsTabContent: React.FC<WorkoutsTabContentProps> = ({
     );
   }
 
+  const formatDateTime = (value: string) =>
+    new Date(value).toLocaleString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+
   return (
-    <Box sx={{ p: 2, overflowY: 'auto', height: '100%' }}>
+    <Box sx={{ p: 0, overflowY: 'auto', height: '100%' }}>
       {error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 2, mx: 2 }}>
           {error}
         </Alert>
       ) : null}
 
-      <FormControlLabel
-        control={
+      <Box
+        sx={{
+          px: 2,
+          py: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Typography variant="h6" component="h3" color="text.primary">
+          Select Workouts & Registrants
+        </Typography>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Typography variant="body2" color="text.secondary">
+            Want to Manage only
+          </Typography>
+          <Switch
+            size="small"
+            checked={managersOnly}
+            onChange={(event) => onToggleManagersOnly(event.target.checked)}
+            inputProps={{ 'aria-label': 'Toggle registrants that would be willing to manager' }}
+          />
+        </Stack>
+      </Box>
+
+      <Stack spacing={1}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 0.25 }}>
+          <IconButton size="small" onClick={() => setRootExpanded((prev) => !prev)}>
+            {rootExpanded ? (
+              <ExpandLessIcon fontSize="small" />
+            ) : (
+              <ExpandMoreIcon fontSize="small" />
+            )}
+          </IconButton>
           <Checkbox
             checked={allSelected}
             indeterminate={indeterminate}
             onChange={(event) => onToggleAll(event.target.checked)}
             disabled={totalRegistrants === 0}
+            size="small"
+            sx={{ p: 0.5 }}
           />
-        }
-        label={`All active workouts (${selectedCount}/${totalRegistrants})`}
-      />
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            All active workouts
+          </Typography>
+          <Chip
+            label={`${selectedCount}/${totalRegistrants} players`}
+            size="small"
+            variant="outlined"
+            sx={{ ml: 1 }}
+          />
+        </Box>
 
-      <Divider sx={{ my: 2 }} />
+        {rootExpanded && (
+          <>
+            {workouts.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ px: 2, pb: 2 }}>
+                No active workouts with registrants are available.
+              </Typography>
+            ) : (
+              <Stack spacing={0}>
+                {workouts.map((workout) => {
+                  const selectedIds = selectedWorkoutIds.get(workout.id) ?? new Set<string>();
+                  const workoutSelected =
+                    selectedIds.size > 0 && selectedIds.size === workout.registrants.length;
+                  const workoutIndeterminate =
+                    selectedIds.size > 0 && selectedIds.size < workout.registrants.length;
+                  const isExpanded = !collapsedWorkouts.has(workout.id);
 
-      {workouts.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
-          No active workouts with registrants are available.
-        </Typography>
-      ) : (
-        <Stack spacing={2}>
-          {workouts.map((workout) => {
-            const selectedIds = selectedWorkoutIds.get(workout.id) ?? new Set<string>();
-            const workoutSelected =
-              selectedIds.size > 0 && selectedIds.size === workout.registrants.length;
-            const workoutIndeterminate =
-              selectedIds.size > 0 && selectedIds.size < workout.registrants.length;
-
-            return (
-              <Box
-                key={workout.id}
-                sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 2 }}
-              >
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="flex-start"
-                  spacing={2}
-                >
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={workoutSelected}
-                        indeterminate={workoutIndeterminate}
-                        onChange={(event) => onToggleWorkout(workout.id, event.target.checked)}
-                      />
-                    }
-                    label={`${workout.workoutDesc} (${selectedIds.size}/${workout.registrants.length})`}
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(workout.workoutDate).toLocaleString()}
-                  </Typography>
-                </Stack>
-
-                <List dense disablePadding>
-                  {workout.registrants.length === 0 ? (
-                    <ListItem>
-                      <ListItemText primary="No registrants yet" />
-                    </ListItem>
-                  ) : (
-                    workout.registrants.map((registrant) => (
-                      <ListItem key={registrant.id} disablePadding sx={{ pl: 1 }}>
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              checked={selectedIds.has(registrant.id)}
-                              onChange={(event) =>
-                                onToggleRegistrant(workout.id, registrant.id, event.target.checked)
-                              }
-                            />
-                          }
-                          label={
-                            <Box>
-                              <Typography variant="body2">{registrant.name}</Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {registrant.email}
-                              </Typography>
-                            </Box>
-                          }
+                  return (
+                    <Box key={workout.id} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          px: 2,
+                          py: 0.5,
+                          bgcolor: 'background.default',
+                        }}
+                      >
+                        <IconButton size="small" onClick={() => toggleExpand(workout.id)}>
+                          {isExpanded ? (
+                            <ExpandLessIcon fontSize="small" />
+                          ) : (
+                            <ExpandMoreIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                        <Checkbox
+                          checked={workoutSelected}
+                          indeterminate={workoutIndeterminate}
+                          onChange={(event) => onToggleWorkout(workout.id, event.target.checked)}
+                          size="small"
                         />
-                      </ListItem>
-                    ))
-                  )}
-                </List>
-              </Box>
-            );
-          })}
-        </Stack>
-      )}
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                          {workout.workoutDesc}
+                        </Typography>
+                        <Chip
+                          label={`${selectedIds.size}/${workout.registrants.length} players`}
+                          size="small"
+                          variant="outlined"
+                          sx={{ ml: 1 }}
+                        />
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
+                          {formatDateTime(workout.workoutDate)}
+                        </Typography>
+                      </Box>
+
+                      {isExpanded && (
+                        <Box sx={{ pl: 9, pr: 2, pb: 1 }}>
+                          {workout.registrants.length === 0 ? (
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ pl: 1, py: 0.5 }}
+                            >
+                              No registrants yet
+                            </Typography>
+                          ) : (
+                            workout.registrants.map((registrant) => (
+                              <Box
+                                key={registrant.id}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  py: 0.5,
+                                }}
+                              >
+                                <Checkbox
+                                  size="small"
+                                  checked={selectedIds.has(registrant.id)}
+                                  onChange={(event) =>
+                                    onToggleRegistrant(
+                                      workout.id,
+                                      registrant.id,
+                                      event.target.checked,
+                                    )
+                                  }
+                                />
+                                <Box sx={{ minWidth: 0 }}>
+                                  <Typography variant="body2">{registrant.name}</Typography>
+                                  <Typography variant="caption" color="text.secondary" noWrap>
+                                    {registrant.email}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            ))
+                          )}
+                        </Box>
+                      )}
+                    </Box>
+                  );
+                })}
+              </Stack>
+            )}
+          </>
+        )}
+      </Stack>
     </Box>
   );
 };
