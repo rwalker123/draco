@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { RegisterContext } from '../../openapiTypes.js';
 
 export const registerWorkoutsEndpoints = ({ registry, schemaRefs }: RegisterContext) => {
