@@ -21,6 +21,7 @@ export const ACCOUNT_SETTING_KEYS = [
   'PostGameResultsToDiscord',
   'PostGameResultsToTwitter',
   'PostGameResultsToBluesky',
+  'PostAnnouncementsToTwitter',
   'PostAnnouncementsToBluesky',
   'PostWorkoutsToDiscord',
   'PostWorkoutsToTwitter',
@@ -275,12 +276,20 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
     sortOrder: 95,
   }),
   booleanSetting({
+    key: 'PostAnnouncementsToTwitter',
+    label: 'Post announcements to Twitter',
+    description: 'Publish announcements to the connected Twitter account when they are created.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 96,
+  }),
+  booleanSetting({
     key: 'PostAnnouncementsToBluesky',
     label: 'Post announcements to Bluesky',
     description: 'Publish announcements to the connected Bluesky account when they are created.',
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
-    sortOrder: 96,
+    sortOrder: 97,
   }),
   booleanSetting({
     key: 'PostWorkoutsToDiscord',
@@ -289,7 +298,7 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
       'Automatically share workout announcements to the configured Discord channel when they are published.',
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
-    sortOrder: 97,
+    sortOrder: 98,
   }),
   booleanSetting({
     key: 'PostWorkoutsToTwitter',
@@ -298,7 +307,7 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
       'Publish workout announcements to the connected Twitter account when they are created.',
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
-    sortOrder: 98,
+    sortOrder: 99,
   }),
   booleanSetting({
     key: 'PostWorkoutsToBluesky',
@@ -307,7 +316,7 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
       'Publish workout announcements to the connected Bluesky account when they are created.',
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
-    sortOrder: 99,
+    sortOrder: 100,
   }),
   booleanSetting({
     key: 'SyncInstagramToGallery',
@@ -316,7 +325,7 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
       'When enabled, newly ingested Instagram media is added to your Photo Gallery albums.',
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
-    sortOrder: 100,
+    sortOrder: 101,
   }),
   booleanSetting({
     key: 'TrackWaiver',

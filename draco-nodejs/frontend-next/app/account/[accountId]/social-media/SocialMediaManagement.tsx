@@ -11,6 +11,7 @@ import { SocialMediaWidget } from '@/components/account/settings/SocialMediaWidg
 import { BlueskyIntegrationAdminWidget } from '@/components/account/settings/BlueskyIntegrationAdminWidget';
 import { BlueskyPostSettingsWidget } from '@/components/account/settings/BlueskyPostSettingsWidget';
 import { TwitterIntegrationAdminWidget } from '@/components/account/settings/TwitterIntegrationAdminWidget';
+import { TwitterPostSettingsWidget } from '@/components/account/settings/TwitterPostSettingsWidget';
 import { InstagramIntegrationAdminWidget } from '@/components/account/settings/InstagramIntegrationAdminWidget';
 import DiscordGameResultsSyncCard from '@/components/discord/DiscordGameResultsSyncCard';
 import { useAuth } from '@/context/AuthContext';
@@ -113,6 +114,14 @@ const SocialMediaManagement: React.FC = () => {
     () =>
       accountSettings.settings?.find(
         (setting) => setting.definition.key === 'PostGameResultsToTwitter',
+      ),
+    [accountSettings.settings],
+  );
+
+  const postAnnouncementsTwitterSetting = useMemo(
+    () =>
+      accountSettings.settings?.find(
+        (setting) => setting.definition.key === 'PostAnnouncementsToTwitter',
       ),
     [accountSettings.settings],
   );
@@ -312,20 +321,28 @@ const SocialMediaManagement: React.FC = () => {
           </TabPanel>
 
           <TabPanel value={tabValue} index={3}>
-            <TwitterIntegrationAdminWidget
-              account={account}
-              onAccountUpdate={setAccount}
-              postGameResultsSetting={postResultsTwitterSetting}
-              postGameResultsUpdating={accountSettings.updatingKey === 'PostGameResultsToTwitter'}
-              onUpdatePostGameResults={(enabled) =>
-                updatePostResultsSetting('PostGameResultsToTwitter', enabled)
-              }
-              postWorkoutSetting={postWorkoutsTwitterSetting}
-              postWorkoutUpdating={accountSettings.updatingKey === 'PostWorkoutsToTwitter'}
-              onUpdatePostWorkout={(enabled) =>
-                updatePostResultsSetting('PostWorkoutsToTwitter', enabled)
-              }
-            />
+            <Stack spacing={3}>
+              <TwitterIntegrationAdminWidget account={account} onAccountUpdate={setAccount} />
+              <TwitterPostSettingsWidget
+                postGameResultsSetting={postResultsTwitterSetting}
+                postGameResultsUpdating={accountSettings.updatingKey === 'PostGameResultsToTwitter'}
+                onUpdatePostGameResults={(enabled) =>
+                  updatePostResultsSetting('PostGameResultsToTwitter', enabled)
+                }
+                postAnnouncementsSetting={postAnnouncementsTwitterSetting}
+                postAnnouncementsUpdating={
+                  accountSettings.updatingKey === 'PostAnnouncementsToTwitter'
+                }
+                onUpdatePostAnnouncements={(enabled) =>
+                  updatePostResultsSetting('PostAnnouncementsToTwitter', enabled)
+                }
+                postWorkoutSetting={postWorkoutsTwitterSetting}
+                postWorkoutUpdating={accountSettings.updatingKey === 'PostWorkoutsToTwitter'}
+                onUpdatePostWorkout={(enabled) =>
+                  updatePostResultsSetting('PostWorkoutsToTwitter', enabled)
+                }
+              />
+            </Stack>
           </TabPanel>
 
           <TabPanel value={tabValue} index={4}>

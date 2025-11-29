@@ -14,6 +14,7 @@ import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
+import { TwitterIntegrationService } from './twitterIntegrationService.js';
 import { sanitizeRichHtml } from '../utils/htmlSanitizer.js';
 
 interface NormalizedAnnouncementPayload {
@@ -33,6 +34,7 @@ export class AnnouncementService {
   private readonly teamRepository: ITeamRepository;
   private readonly discordIntegrationService: DiscordIntegrationService;
   private readonly blueskyIntegrationService: BlueskyIntegrationService;
+  private readonly twitterIntegrationService: TwitterIntegrationService;
 
   constructor(announcementRepository?: IAnnouncementRepository, teamRepository?: ITeamRepository) {
     this.announcementRepository =
@@ -40,6 +42,7 @@ export class AnnouncementService {
     this.teamRepository = teamRepository ?? RepositoryFactory.getTeamRepository();
     this.discordIntegrationService = new DiscordIntegrationService();
     this.blueskyIntegrationService = new BlueskyIntegrationService();
+    this.twitterIntegrationService = new TwitterIntegrationService();
   }
 
   async listAccountAnnouncements(accountId: bigint): Promise<AnnouncementType[]> {
@@ -82,6 +85,7 @@ export class AnnouncementService {
     const announcement = AnnouncementResponseFormatter.formatAccountAnnouncement(record);
     void this.syncAnnouncementToDiscord(accountId, announcement);
     void this.syncAnnouncementToBluesky(accountId, announcement);
+    void this.syncAnnouncementToTwitter(accountId, announcement);
     return announcement;
   }
 
@@ -242,6 +246,18 @@ export class AnnouncementService {
     const team = await this.teamRepository.findTeamDefinition(teamId);
     if (!team || team.accountid !== accountId) {
       throw new NotFoundError('Team not found');
+    }
+  }
+
+  private async syncAnnouncementToTwitter(accountId: bigint, announcement: AnnouncementType) {
+    try {
+      await this.twitterIntegrationService.publishAnnouncement(accountId, announcement);
+    } catch (error) {
+      console.error('[twitter] Failed to sync announcement', {
+        accountId: accountId.toString(),
+        announcementId: announcement.id,
+        error,
+      });
     }
   }
 

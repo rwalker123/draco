@@ -4018,6 +4018,7 @@ components:
                   - PostGameResultsToDiscord
                   - PostGameResultsToTwitter
                   - PostGameResultsToBluesky
+                  - PostAnnouncementsToTwitter
                   - PostAnnouncementsToBluesky
                   - PostWorkoutsToDiscord
                   - PostWorkoutsToTwitter
@@ -4079,6 +4080,7 @@ components:
                         - PostGameResultsToDiscord
                         - PostGameResultsToTwitter
                         - PostGameResultsToBluesky
+                        - PostAnnouncementsToTwitter
                         - PostAnnouncementsToBluesky
                         - PostWorkoutsToDiscord
                         - PostWorkoutsToTwitter
@@ -4176,6 +4178,7 @@ components:
                 - PostGameResultsToDiscord
                 - PostGameResultsToTwitter
                 - PostGameResultsToBluesky
+                - PostAnnouncementsToTwitter
                 - PostAnnouncementsToBluesky
                 - PostWorkoutsToDiscord
                 - PostWorkoutsToTwitter
@@ -4237,6 +4240,7 @@ components:
                       - PostGameResultsToDiscord
                       - PostGameResultsToTwitter
                       - PostGameResultsToBluesky
+                      - PostAnnouncementsToTwitter
                       - PostAnnouncementsToBluesky
                       - PostWorkoutsToDiscord
                       - PostWorkoutsToTwitter
@@ -4337,6 +4341,7 @@ components:
         - PostGameResultsToDiscord
         - PostGameResultsToTwitter
         - PostGameResultsToBluesky
+        - PostAnnouncementsToTwitter
         - PostAnnouncementsToBluesky
         - PostWorkoutsToDiscord
         - PostWorkoutsToTwitter
@@ -17599,6 +17604,7 @@ paths:
               - PostGameResultsToDiscord
               - PostGameResultsToTwitter
               - PostGameResultsToBluesky
+              - PostAnnouncementsToTwitter
               - PostAnnouncementsToBluesky
               - PostWorkoutsToDiscord
               - PostWorkoutsToTwitter
