@@ -98,7 +98,8 @@ describe('EmailService rate limit handling', () => {
     expect(updateCalls).toHaveLength(1);
     expect(updateCalls[0][0]).toBe(job.emailId);
     expect(updateCalls[0][1]).toBe(job.recipients[0].contactId);
-    expect((updateCalls[0][2] as { status: string }).status).toBe('sent');
+    expect(updateCalls[0][2]).toBe(job.recipients[0].emailAddress);
+    expect((updateCalls[0][3] as { status: string }).status).toBe('sent');
 
     const queuedJobs = Array.from(
       (
@@ -214,8 +215,8 @@ describe('EmailService rate limit handling', () => {
       updateCalls.every(
         (call) =>
           call[0] === job.emailId &&
-          (call[2] as { status: string; error_message: string }).status === 'failed' &&
-          (call[2] as { error_message: string }).error_message.includes('Rate limit exceeded'),
+          (call[3] as { status: string; error_message: string }).status === 'failed' &&
+          (call[3] as { error_message: string }).error_message.includes('Rate limit exceeded'),
       ),
     ).toBe(true);
   });

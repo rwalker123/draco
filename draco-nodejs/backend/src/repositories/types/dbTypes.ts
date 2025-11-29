@@ -1874,7 +1874,7 @@ export type dbCreateEmailInput = {
 
 export type dbCreateEmailRecipientInput = {
   email_id: bigint;
-  contact_id: bigint;
+  contact_id?: bigint | null;
   email_address: string;
   contact_name: string;
   recipient_type: string;

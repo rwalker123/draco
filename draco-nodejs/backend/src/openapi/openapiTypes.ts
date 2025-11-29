@@ -161,7 +161,6 @@ import {
   WorkoutListQuerySchema,
   WorkoutRegistrationSchema,
   WorkoutRegistrationsQuerySchema,
-  WorkoutRegistrationsEmailRequestSchema,
   WorkoutRegistrationsSchema,
   WorkoutSchema,
   WorkoutSourceOptionPayloadSchema,
@@ -823,10 +822,6 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'WorkoutRegistrationsQuery',
     WorkoutRegistrationsQuerySchema,
   );
-  const WorkoutRegistrationsEmailRequestSchemaRef = registry.register(
-    'WorkoutRegistrationsEmailRequest',
-    WorkoutRegistrationsEmailRequestSchema,
-  );
   const DivisionSeasonSchemaRef = registry.register('DivisionSeason', DivisionSeasonSchema);
   const DivisionSeasonWithTeamsSchemaRef = registry.register(
     'DivisionSeasonWithTeams',
@@ -1185,7 +1180,6 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     WorkoutSourceOptionPayloadSchemaRef,
     WorkoutListQuerySchemaRef,
     WorkoutRegistrationsQuerySchemaRef,
-    WorkoutRegistrationsEmailRequestSchemaRef,
     DivisionSeasonSchemaRef,
     DivisionSeasonWithTeamsSchemaRef,
     LeagueSeasonQueryParamsSchemaRef,

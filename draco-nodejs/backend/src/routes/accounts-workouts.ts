@@ -7,7 +7,6 @@ import {
   UpsertWorkoutRegistrationSchema,
   WorkoutSourcesSchema,
   WorkoutSourceOptionPayloadSchema,
-  WorkoutRegistrationsEmailRequestSchema,
   WorkoutRegistrationAccessCodeSchema,
 } from '@draco/shared-schemas';
 import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
@@ -351,14 +350,11 @@ router.post(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('workout.manage'),
-  asyncHandler(async (req, res) => {
-    const { accountId } = extractAccountParams(req.params);
-    const { workoutId } = extractBigIntParams(req.params, 'workoutId');
-    const payload = WorkoutRegistrationsEmailRequestSchema.parse(req.body);
-
-    await service.emailRegistrants(accountId, workoutId, payload);
-
-    res.status(202).json({ status: 'queued' });
+  asyncHandler(async (_req, res) => {
+    res.status(410).json({
+      message:
+        'The workout registration email endpoint has been removed. Use compose email recipients instead.',
+    });
   }),
 );
 

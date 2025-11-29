@@ -7,5 +7,4 @@ export { WorkoutRegistrationForm } from './WorkoutRegistrationForm';
 export { WorkoutFormDialog } from './dialogs/WorkoutFormDialog';
 export { WorkoutPreviewDialog } from './dialogs/WorkoutPreviewDialog';
 export { WorkoutDetailsDialog } from './dialogs/WorkoutDetailsDialog';
-export { WorkoutEmailDialog } from './dialogs/WorkoutEmailDialog';
 export { WorkoutSourcesDialog } from './dialogs/WorkoutSourcesDialog';

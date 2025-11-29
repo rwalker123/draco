@@ -1585,7 +1585,7 @@ model email_templates {
 model email_recipients {
   id             BigInt         @id @default(autoincrement())
   email_id       BigInt
-  contact_id     BigInt
+  contact_id     BigInt?
   email_address  String         @db.VarChar(255)
   contact_name   String?        @db.VarChar(255)
   recipient_type String?        @db.VarChar(50)
@@ -1597,7 +1597,7 @@ model email_recipients {
   bounce_reason  String?
   error_message  String?
   events         email_events[]
-  contact        contacts       @relation(fields: [contact_id], references: [id])
+  contact        contacts?      @relation(fields: [contact_id], references: [id])
   email          emails         @relation(fields: [email_id], references: [id], onDelete: Cascade)
 
   @@index([email_id, status])

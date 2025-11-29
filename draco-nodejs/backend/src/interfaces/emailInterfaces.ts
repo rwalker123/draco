@@ -68,7 +68,7 @@ export type EmailStatus = 'draft' | 'sending' | 'sent' | 'failed' | 'scheduled' 
 export interface EmailRecipient {
   id: bigint;
   emailId: bigint;
-  contactId: bigint;
+  contactId: bigint | null;
   emailAddress: string;
   contactName?: string;
   recipientType?: string;
@@ -111,7 +111,7 @@ export interface IEmailTracker {
 
 // Recipient resolution interface
 export interface ResolvedRecipient {
-  contactId: bigint;
+  contactId?: bigint | null;
   emailAddress: string;
   contactName: string;
   recipientType: string;

@@ -7,24 +7,55 @@ extendZodWithOpenApi(z);
 
 // Request schemas
 export const EmailRecipientGroupsSchema = z.object({
-  season: z.boolean().optional().openapi({
-    description: 'Includes all contacts associated with the current season.',
-  }),
-  leagues: z.array(z.string()).optional().openapi({
-    description: 'Includes all contacts associated with the specified leagues.',
-  }),
-  divisions: z.array(z.string()).optional().openapi({
-    description: 'Includes all contacts associated with the specified divisions.',
-  }),
-  teams: z.array(z.string()).optional().openapi({
-    description: 'Includes all contacts associated with the specified teams.',
-  }),
   contacts: z.array(z.string()).optional().openapi({
     description: 'Includes the specified contact IDs.',
   }),
-  teamManagers: z.boolean().optional().openapi({
-    description: 'Includes only team managers.',
-  }),
+  seasonSelection: z
+    .object({
+      season: z.boolean().optional().openapi({
+        description: 'Includes all contacts associated with the current season.',
+      }),
+      leagues: z.array(z.string()).optional().openapi({
+        description: 'Includes all contacts associated with the specified leagues.',
+      }),
+      divisions: z.array(z.string()).optional().openapi({
+        description: 'Includes all contacts associated with the specified divisions.',
+      }),
+      teams: z.array(z.string()).optional().openapi({
+        description: 'Includes all contacts associated with the specified teams.',
+      }),
+      managersOnly: z.boolean().optional().openapi({
+        description: 'Includes only team managers for the selected groups.',
+      }),
+    })
+    .optional()
+    .openapi({
+      description:
+        'Structured season/league/division/team selection with optional managers-only filter.',
+    }),
+  workoutRecipients: z
+    .array(
+      z.object({
+        workoutId: z.string(),
+        registrationIds: z.array(z.string()).optional(),
+        managersOnly: z.boolean().optional(),
+      }),
+    )
+    .optional()
+    .openapi({
+      description:
+        'Workout registrant selections with optional explicit registration IDs and manager filter.',
+    }),
+  teamsWantedRecipients: z
+    .array(
+      z.object({
+        classifiedId: z.string(),
+      }),
+    )
+    .optional()
+    .openapi({
+      description: 'Teams Wanted classifieds to include as recipients.',
+    }),
 });
 
 export const EmailComposeSchema = z.object({

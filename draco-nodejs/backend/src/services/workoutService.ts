@@ -14,7 +14,6 @@ import {
   WORKOUT_REGISTRATIONS_MAX_EXPORT,
   WORKOUT_SOURCE_OPTION_MAX_LENGTH,
   WorkoutSummaryType,
-  WorkoutRegistrationsEmailRequestType,
 } from '@draco/shared-schemas';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { WorkoutListOptions } from '../repositories/interfaces/IWorkoutRepository.js';
@@ -33,7 +32,6 @@ import {
   dbWorkoutUpdateData,
   dbWorkoutWithField,
 } from '../repositories/index.js';
-import { WorkoutRegistrationEmailService } from './workoutRegistrationEmailService.js';
 import { BCRYPT_CONSTANTS } from '../config/playerClassifiedConstants.js';
 import { WorkoutRegistrantAccessEmailService } from './workoutRegistrantAccessEmailService.js';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
@@ -43,7 +41,6 @@ import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
 export class WorkoutService {
   private readonly workoutRepository = RepositoryFactory.getWorkoutRepository();
   private readonly accountRepository = RepositoryFactory.getAccountRepository();
-  private readonly workoutEmailService = new WorkoutRegistrationEmailService();
   private readonly registrantAccessEmailService = new WorkoutRegistrantAccessEmailService();
   private readonly discordIntegrationService = new DiscordIntegrationService();
   private readonly twitterIntegrationService = new TwitterIntegrationService();
@@ -540,48 +537,5 @@ export class WorkoutService {
         error,
       });
     }
-  }
-
-  async emailRegistrants(
-    accountId: bigint,
-    workoutId: bigint,
-    payload: WorkoutRegistrationsEmailRequestType,
-  ): Promise<void> {
-    const workout = await this.workoutRepository.findWorkout(accountId, workoutId);
-
-    if (!workout) {
-      throw new WorkoutNotFoundError(workoutId.toString());
-    }
-
-    const registrations = await this.workoutRepository.listRegistrations(
-      accountId,
-      workoutId,
-      WORKOUT_REGISTRATIONS_MAX_EXPORT,
-    );
-
-    let targetedRegistrations = registrations;
-
-    if (payload.registrationIds && payload.registrationIds.length > 0) {
-      const idSet = new Set(payload.registrationIds.map((id) => id.trim()));
-      targetedRegistrations = registrations.filter((registration) =>
-        idSet.has(registration.id.toString()),
-      );
-    }
-
-    if (targetedRegistrations.length === 0) {
-      throw new WorkoutRegistrationNotFoundError('No matching registrations found for email');
-    }
-
-    await this.workoutEmailService.sendEmails({
-      accountId,
-      workoutDescription: workout.workoutdesc,
-      workoutDate: workout.workoutdate,
-      subject: payload.subject,
-      bodyHtml: payload.body,
-      recipients: targetedRegistrations.map((registration) => ({
-        name: registration.name,
-        email: registration.email,
-      })),
-    });
   }
 }

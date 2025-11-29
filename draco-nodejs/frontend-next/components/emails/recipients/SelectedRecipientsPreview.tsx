@@ -63,6 +63,7 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
       color: 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'default';
     }> = [];
     const workoutSummaries: Array<{ workoutId: string; label: string; count: number }> = [];
+    const teamsWantedSummaries: Array<{ count: number }> = [];
 
     let isManagersOnly = false;
 
@@ -95,11 +96,18 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
       }
     });
 
+    const teamsWantedCount = (state.recipientState?.selectedTeamsWantedRecipients || []).length;
+    if (teamsWantedCount > 0) {
+      teamsWantedSummaries.push({ count: teamsWantedCount });
+    }
+
     return {
       groupSummaries,
       workoutSummaries,
+      teamsWantedSummaries,
       invalidEmails: state.recipientState?.invalidEmailCount || 0,
-      hasSelections: groupSummaries.length > 0 || workoutSummaries.length > 0,
+      hasSelections:
+        groupSummaries.length > 0 || workoutSummaries.length > 0 || teamsWantedSummaries.length > 0,
       isManagersOnly,
       workoutManagersOnly: state.recipientState?.workoutManagersOnly ?? false,
     };
@@ -146,8 +154,21 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
     ));
   }, [summaryData.workoutSummaries, compact]);
 
+  const teamsWantedChips = useMemo(() => {
+    return summaryData.teamsWantedSummaries.map((entry, index) => (
+      <Chip
+        key={`teamswanted-${index}`}
+        icon={<GroupIcon />}
+        label={`Teams Wanted (${entry.count})`}
+        size={compact ? 'small' : 'medium'}
+        variant="outlined"
+        color="default"
+      />
+    ));
+  }, [summaryData.teamsWantedSummaries, compact]);
+
   // Determine visible and hidden chips
-  const allChips = [...groupChips, ...workoutChips];
+  const allChips = [...groupChips, ...workoutChips, ...teamsWantedChips];
   const visibleChips = allChips.slice(0, maxVisibleChips);
   const hiddenChipsCount = Math.max(0, allChips.length - maxVisibleChips);
 

@@ -18,11 +18,14 @@ import {
   EmailRecipientGroupsType,
   EmailSendType,
   PagingType,
+  WORKOUT_REGISTRATIONS_MAX_EXPORT,
 } from '@draco/shared-schemas';
 import {
   RepositoryFactory,
   IEmailRepository,
   ISeasonsRepository,
+  IWorkoutRepository,
+  ITeamsWantedRepository,
   dbCreateEmailRecipientInput,
 } from '../repositories/index.js';
 import { EmailResponseFormatter } from '../responseFormatters/index.js';
@@ -116,6 +119,8 @@ export class EmailService {
   private teamService: TeamService;
   private teamManagerService: TeamManagerService;
   private contactService: ContactService;
+  private workoutRepository: IWorkoutRepository;
+  private teamsWantedRepository: ITeamsWantedRepository;
 
   // Provider-specific queue configuration
   private readonly PROVIDER_CONFIGS = {
@@ -173,6 +178,8 @@ export class EmailService {
     this.teamService = ServiceFactory.getTeamService();
     this.teamManagerService = ServiceFactory.getTeamManagerService();
     this.contactService = ServiceFactory.getContactService();
+    this.workoutRepository = RepositoryFactory.getWorkoutRepository();
+    this.teamsWantedRepository = RepositoryFactory.getTeamsWantedRepository();
 
     // Start queue processor
     this.startQueueProcessor();
@@ -927,20 +934,30 @@ export class EmailService {
         }
 
         if (result.success) {
-          await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
-            status: 'sent',
-            sent_at: new Date(),
-            error_message: null,
-          });
+          await this.emailRepository.updateRecipientStatus(
+            job.emailId,
+            recipient.contactId ?? null,
+            recipient.emailAddress,
+            {
+              status: 'sent',
+              sent_at: new Date(),
+              error_message: null,
+            },
+          );
           successCount++;
           if (result.previewUrl) {
             console.log(`📧 Email preview for ${recipient.emailAddress}: ${result.previewUrl}`);
           }
         } else {
-          await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
-            status: 'failed',
-            error_message: result.error || null,
-          });
+          await this.emailRepository.updateRecipientStatus(
+            job.emailId,
+            recipient.contactId ?? null,
+            recipient.emailAddress,
+            {
+              status: 'failed',
+              error_message: result.error || null,
+            },
+          );
           failureCount++;
           console.warn(`❌ Email failed for ${recipient.emailAddress}: ${result.error}`);
         }
@@ -956,10 +973,15 @@ export class EmailService {
         failureCount++;
         console.error(`💥 Error sending email to ${recipient.emailAddress}:`, error);
 
-        await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
-          status: 'failed',
-          error_message: error instanceof Error ? error.message : 'Unknown error',
-        });
+        await this.emailRepository.updateRecipientStatus(
+          job.emailId,
+          recipient.contactId ?? null,
+          recipient.emailAddress,
+          {
+            status: 'failed',
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+          },
+        );
       }
 
       await this.sleep(config.EMAIL_DELAY_MS);
@@ -1186,10 +1208,15 @@ export class EmailService {
       );
 
       for (const recipient of remainingRecipients) {
-        await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
-          status: 'failed',
-          error_message: `Rate limit exceeded: ${message}`,
-        });
+        await this.emailRepository.updateRecipientStatus(
+          job.emailId,
+          recipient.contactId ?? null,
+          recipient.emailAddress,
+          {
+            status: 'failed',
+            error_message: `Rate limit exceeded: ${message}`,
+          },
+        );
       }
 
       this.globalRateLimitUntil = backoffEnd;
@@ -1241,10 +1268,15 @@ export class EmailService {
 
       // Mark all recipients in this batch as failed
       for (const recipient of job.recipients) {
-        await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
-          status: 'failed',
-          error_message: 'Max retries exceeded',
-        });
+        await this.emailRepository.updateRecipientStatus(
+          job.emailId,
+          recipient.contactId ?? null,
+          recipient.emailAddress,
+          {
+            status: 'failed',
+            error_message: 'Max retries exceeded',
+          },
+        );
       }
 
       // Remove failed job
@@ -1359,9 +1391,9 @@ export class EmailService {
     seasonId: bigint | null,
     selection: EmailRecipientGroupsType,
   ): Promise<ResolvedRecipient[]> {
-    // Placeholder implementation - will be enhanced
     const recipients: ResolvedRecipient[] = [];
-    const useManagersOnly = selection.teamManagers === true;
+    const seasonSelection = selection.seasonSelection;
+    const useManagersOnly = seasonSelection?.managersOnly === true;
 
     // Add individual contacts
     if (selection.contacts && selection.contacts.length > 0) {
@@ -1378,7 +1410,7 @@ export class EmailService {
       );
     }
 
-    if (seasonId && selection.season) {
+    if (seasonId && seasonSelection?.season) {
       const seasonContacts = await this.seasonRepository.findSeasonParticipants(
         accountId,
         seasonId,
@@ -1395,8 +1427,8 @@ export class EmailService {
     }
 
     // add league members
-    if (seasonId && selection.leagues && selection.leagues.length > 0) {
-      const leagueIds = selection.leagues.map((id: string) => BigInt(id));
+    if (seasonId && seasonSelection?.leagues && seasonSelection.leagues.length > 0) {
+      const leagueIds = seasonSelection.leagues.map((id: string) => BigInt(id));
       for (const id of leagueIds) {
         // get the teams in a league for the season
         const leagueTeams = await this.teamService.getTeamsByLeagueSeasonId(
@@ -1437,8 +1469,8 @@ export class EmailService {
       }
     }
 
-    if (seasonId && selection.divisions && selection.divisions.length > 0) {
-      const divisionIds = selection.divisions.map((id: string) => BigInt(id));
+    if (seasonId && seasonSelection?.divisions && seasonSelection.divisions.length > 0) {
+      const divisionIds = seasonSelection.divisions.map((id: string) => BigInt(id));
       for (const id of divisionIds) {
         // get the teams in a division for the season
         const divisionTeams = await this.teamService.getTeamsByDivisionSeasonId(
@@ -1480,8 +1512,8 @@ export class EmailService {
     }
 
     // add team members
-    if (seasonId && selection.teams && selection.teams.length > 0) {
-      const teamIds = selection.teams.map((id: string) => BigInt(id));
+    if (seasonId && seasonSelection?.teams && seasonSelection.teams.length > 0) {
+      const teamIds = seasonSelection.teams.map((id: string) => BigInt(id));
       for (const id of teamIds) {
         if (useManagersOnly) {
           const teamManagers = await this.teamManagerService.listManagers(id);
@@ -1510,6 +1542,70 @@ export class EmailService {
             })),
           );
         }
+      }
+    }
+
+    if (selection.workoutRecipients && selection.workoutRecipients.length > 0) {
+      for (const workoutSelection of selection.workoutRecipients) {
+        const workoutId = BigInt(workoutSelection.workoutId);
+        const registrations = await this.workoutRepository.listRegistrations(
+          accountId,
+          workoutId,
+          WORKOUT_REGISTRATIONS_MAX_EXPORT,
+        );
+
+        const registrationFilter =
+          workoutSelection.registrationIds && workoutSelection.registrationIds.length > 0
+            ? new Set(workoutSelection.registrationIds)
+            : null;
+
+        const managersOnlyFlag = workoutSelection.managersOnly === true;
+
+        const targeted = registrations.filter((registration) => {
+          if (registrationFilter && !registrationFilter.has(registration.id.toString())) {
+            return false;
+          }
+          if (managersOnlyFlag && !registration.ismanager) {
+            return false;
+          }
+          return true;
+        });
+
+        targeted.forEach((registration) => {
+          recipients.push({
+            contactId: null,
+            emailAddress: registration.email,
+            contactName: registration.name,
+            recipientType: 'workoutRegistration',
+          });
+        });
+      }
+    }
+
+    if (selection.teamsWantedRecipients && selection.teamsWantedRecipients.length > 0) {
+      for (const classified of selection.teamsWantedRecipients) {
+        const classifiedId = BigInt(classified.classifiedId);
+        const contactInfo = await this.teamsWantedRepository.getTeamsWantedContactInfo(
+          classifiedId,
+          accountId,
+        );
+        const classifiedRecord = await this.teamsWantedRepository.findTeamsWantedById(
+          classifiedId,
+          accountId,
+        );
+
+        if (!contactInfo || !contactInfo.email) {
+          continue;
+        }
+
+        const name = classifiedRecord?.name ?? 'Teams Wanted Recipient';
+
+        recipients.push({
+          contactId: null,
+          emailAddress: contactInfo.email,
+          contactName: name,
+          recipientType: 'teamsWanted',
+        });
       }
     }
 

@@ -52,7 +52,6 @@ import { PhotoGalleryAssetService } from './photoGalleryAssetService.js';
 import { PhotoSubmissionModerationService } from './photoSubmissionModerationService.js';
 import { PhotoSubmissionAssetService } from './photoSubmissionAssetService.js';
 import { PhotoSubmissionNotificationService } from './photoSubmissionNotificationService.js';
-import { WorkoutRegistrationEmailService } from './workoutRegistrationEmailService.js';
 import { MemberBusinessService } from './memberBusinessService.js';
 import { HallOfFameService } from './hallOfFameService.js';
 import { HofNominationService } from './hofNominationService.js';
@@ -103,7 +102,6 @@ export class ServiceFactory {
   private static emailTemplateService: EmailTemplateService;
   private static emailAttachmentService: EmailAttachmentService;
   private static workoutService: WorkoutService;
-  private static workoutRegistrationEmailService: WorkoutRegistrationEmailService;
   private static accountsService: AccountsService;
   private static sponsorService: SponsorService;
   private static memberBusinessService: MemberBusinessService;
@@ -327,12 +325,6 @@ export class ServiceFactory {
     return this.workoutService;
   }
 
-  static getWorkoutRegistrationEmailService(): WorkoutRegistrationEmailService {
-    if (!this.workoutRegistrationEmailService) {
-      this.workoutRegistrationEmailService = new WorkoutRegistrationEmailService();
-    }
-    return this.workoutRegistrationEmailService;
-  }
   static getPlayerClassifiedEmailService(): PlayerClassifiedEmailService {
     if (!this.playerClassifiedEmailService) {
       this.playerClassifiedEmailService = new PlayerClassifiedEmailService();
@@ -596,7 +588,9 @@ export class ServiceFactory {
                 return null;
               }
 
-              const album = await instagramIntegrationService.ensureInstagramAlbum(target.accountId);
+              const album = await instagramIntegrationService.ensureInstagramAlbum(
+                target.accountId,
+              );
               return {
                 ...target,
                 albumId: album.id,

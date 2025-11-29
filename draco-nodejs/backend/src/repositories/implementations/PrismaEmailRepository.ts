@@ -80,7 +80,7 @@ export class PrismaEmailRepository implements IEmailRepository {
     await this.prisma.email_recipients.createMany({
       data: recipients.map((recipient) => ({
         email_id: recipient.email_id,
-        contact_id: recipient.contact_id,
+        contact_id: recipient.contact_id ?? null,
         email_address: recipient.email_address,
         contact_name: recipient.contact_name,
         recipient_type: recipient.recipient_type,
@@ -236,13 +236,18 @@ export class PrismaEmailRepository implements IEmailRepository {
 
   async updateRecipientStatus(
     emailId: bigint,
-    contactId: bigint,
+    contactId: bigint | null,
+    emailAddress: string,
     data: dbEmailRecipientUpdateData,
   ): Promise<void> {
+    const where: Prisma.email_recipientsWhereInput = {
+      email_id: emailId,
+      ...(contactId !== null ? { contact_id: contactId } : { email_address: emailAddress }),
+    };
+
     await this.prisma.email_recipients.updateMany({
       where: {
-        email_id: emailId,
-        contact_id: contactId,
+        ...where,
       },
       data,
     });

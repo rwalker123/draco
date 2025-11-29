@@ -30,7 +30,8 @@ export interface IEmailRepository {
   getEmailRecipients(emailId: bigint): Promise<dbEmailRecipient[]>;
   updateRecipientStatus(
     emailId: bigint,
-    contactId: bigint,
+    contactId: bigint | null,
+    emailAddress: string,
     data: dbEmailRecipientUpdateData,
   ): Promise<void>;
   updateRecipientsStatus(emailId: bigint, data: dbEmailRecipientBulkUpdateData): Promise<void>;

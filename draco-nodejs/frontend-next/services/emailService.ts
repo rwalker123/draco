@@ -168,52 +168,34 @@ const mapListResponse = (accountId: string, data: EmailListPagedType): EmailList
 const mapRecipients = (recipients: EmailComposeRequest['recipients']): EmailRecipientGroupsType => {
   const groups: EmailRecipientGroupsType = {};
 
-  if (recipients.contactIds.length > 0) {
-    groups.contacts = recipients.contactIds;
+  if (recipients.contacts && recipients.contacts.length > 0) {
+    groups.contacts = recipients.contacts;
   }
 
-  if (recipients.onlyManagers) {
-    groups.teamManagers = true;
+  if (recipients.seasonSelection) {
+    groups.seasonSelection = {
+      ...recipients.seasonSelection,
+      leagues: recipients.seasonSelection.leagues?.length
+        ? recipients.seasonSelection.leagues
+        : undefined,
+      divisions: recipients.seasonSelection.divisions?.length
+        ? recipients.seasonSelection.divisions
+        : undefined,
+      teams: recipients.seasonSelection.teams?.length
+        ? recipients.seasonSelection.teams
+        : undefined,
+    };
   }
 
-  const leagueIds = new Set<string>();
-  const divisionIds = new Set<string>();
-  const teamIds = new Set<string>();
-  let includeSeason = false;
-
-  recipients.groups.forEach((group) => {
-    switch (group.type) {
-      case 'season':
-        includeSeason = true;
-        break;
-      case 'league':
-        group.ids.forEach((id) => leagueIds.add(id));
-        break;
-      case 'division':
-        group.ids.forEach((id) => divisionIds.add(id));
-        break;
-      case 'teams':
-        group.ids.forEach((id) => teamIds.add(id));
-        break;
-      default:
-        break;
-    }
-  });
-
-  if (includeSeason) {
-    groups.season = true;
+  if (recipients.workoutRecipients && recipients.workoutRecipients.length > 0) {
+    groups.workoutRecipients = recipients.workoutRecipients.map((recipient) => ({
+      ...recipient,
+      registrationIds: recipient.registrationIds?.length ? recipient.registrationIds : undefined,
+    }));
   }
 
-  if (leagueIds.size > 0) {
-    groups.leagues = Array.from(leagueIds);
-  }
-
-  if (divisionIds.size > 0) {
-    groups.divisions = Array.from(divisionIds);
-  }
-
-  if (teamIds.size > 0) {
-    groups.teams = Array.from(teamIds);
+  if (recipients.teamsWantedRecipients && recipients.teamsWantedRecipients.length > 0) {
+    groups.teamsWantedRecipients = recipients.teamsWantedRecipients;
   }
 
   return groups;

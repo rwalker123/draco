@@ -13,7 +13,6 @@ import {
   updateWorkoutRegistration as apiUpdateWorkoutRegistration,
   verifyWorkoutRegistration as apiVerifyWorkoutRegistration,
   updateWorkoutSources as apiUpdateWorkoutSources,
-  emailWorkoutRegistrations as apiEmailWorkoutRegistrations,
   type WorkoutSummary as ApiWorkoutSummary,
   type Workout as ApiWorkout,
 } from '@draco/shared-api-client';
@@ -24,7 +23,6 @@ import type {
   WorkoutSourcesType,
   WorkoutSummaryType,
   WorkoutType,
-  WorkoutRegistrationsEmailRequestType,
   WorkoutStatusType,
 } from '@draco/shared-schemas';
 
@@ -91,10 +89,16 @@ export async function listWorkouts(
   includeRegistrationCounts = true,
   token?: string,
   status?: WorkoutStatusType,
+  options?: { after?: string; before?: string; limit?: number },
 ): Promise<WorkoutSummaryType[]> {
   const client = createClient(token);
-  const queryParams: Partial<{ includeRegistrationCounts: boolean; status: WorkoutStatusType }> =
-    {};
+  const queryParams: Partial<{
+    includeRegistrationCounts: boolean;
+    status: WorkoutStatusType;
+    after: string;
+    before: string;
+    limit: number;
+  }> = {};
 
   if (includeRegistrationCounts) {
     queryParams.includeRegistrationCounts = includeRegistrationCounts;
@@ -102,6 +106,18 @@ export async function listWorkouts(
 
   if (status) {
     queryParams.status = status;
+  }
+
+  if (options?.after) {
+    queryParams.after = options.after;
+  }
+
+  if (options?.before) {
+    queryParams.before = options.before;
+  }
+
+  if (options?.limit !== undefined) {
+    queryParams.limit = options.limit;
   }
 
   const result = await listAccountWorkouts({
@@ -284,24 +300,6 @@ export async function findWorkoutRegistrationByAccessCode(
   });
 
   return unwrapApiResult(result, 'Failed to locate registration by access code');
-}
-
-export async function sendWorkoutRegistrationEmails(
-  accountId: string,
-  workoutId: string,
-  dto: WorkoutRegistrationsEmailRequestType,
-  token?: string,
-): Promise<void> {
-  const client = createClient(token);
-
-  const result = await apiEmailWorkoutRegistrations({
-    client,
-    path: { accountId, workoutId },
-    body: dto,
-    throwOnError: false,
-  });
-
-  unwrapApiResult(result, 'Failed to send workout email');
 }
 
 export async function listRegistrations(

@@ -8,6 +8,7 @@ import type {
   ContactGroup,
   GroupType,
   WorkoutRecipientSelection,
+  TeamsWantedRecipientSelection,
 } from './recipients';
 import type { EmailAttachment } from './attachments';
 import type { EmailTemplate, EmailComposeRequest } from './email';
@@ -88,6 +89,7 @@ export interface EmailComposeActions {
   updateSelectedGroups: (
     groups: Map<GroupType, ContactGroup[]>,
     workoutRecipients?: WorkoutRecipientSelection[],
+    teamsWantedRecipients?: TeamsWantedRecipientSelection[],
   ) => void;
   clearAllRecipients: () => void;
   removeSpecificGroup: (groupType: GroupType, groupIndex: number) => void;

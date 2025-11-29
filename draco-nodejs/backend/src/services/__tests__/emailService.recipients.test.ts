@@ -70,7 +70,7 @@ describe('EmailService recipient resolution for team managers', () => {
         resolveRecipients(
           accountId: bigint,
           seasonId: bigint,
-          selection: { leagues: string[]; teamManagers: boolean },
+          selection: { seasonSelection: { leagues: string[]; managersOnly: boolean } },
         ): Promise<
           Array<{
             contactId: bigint;
@@ -80,7 +80,9 @@ describe('EmailService recipient resolution for team managers', () => {
           }>
         >;
       }
-    ).resolveRecipients(BigInt(1), BigInt(65), { leagues: ['264'], teamManagers: true });
+    ).resolveRecipients(BigInt(1), BigInt(65), {
+      seasonSelection: { leagues: ['264'], managersOnly: true },
+    });
 
     expect(recipients).toHaveLength(2);
     expect(recipients.every((r) => r.recipientType === 'teamManager')).toBe(true);
@@ -111,7 +113,7 @@ describe('EmailService recipient resolution for team managers', () => {
         resolveRecipients(
           accountId: bigint,
           seasonId: bigint,
-          selection: { leagues: string[] },
+          selection: { seasonSelection: { leagues: string[] } },
         ): Promise<
           Array<{
             contactId: bigint;
@@ -121,7 +123,7 @@ describe('EmailService recipient resolution for team managers', () => {
           }>
         >;
       }
-    ).resolveRecipients(BigInt(1), BigInt(65), { leagues: ['265'] });
+    ).resolveRecipients(BigInt(1), BigInt(65), { seasonSelection: { leagues: ['265'] } });
 
     expect(recipients).toHaveLength(1);
     expect(recipients[0].recipientType).toBe('league');

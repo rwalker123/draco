@@ -274,6 +274,7 @@ const EmailComposePageInternal: React.FC<
             actions.updateSelectedGroups(
               recipientState.selectedGroups,
               recipientState.selectedWorkoutRecipients,
+              recipientState.selectedTeamsWantedRecipients,
             );
           }
         } catch (err) {
@@ -626,6 +627,7 @@ const EmailComposePageInternal: React.FC<
             initialSelectedGroups={state.recipientState?.selectedGroups}
             initialWorkoutRecipients={state.recipientState?.selectedWorkoutRecipients}
             initialWorkoutManagersOnly={state.recipientState?.workoutManagersOnly}
+            initialTeamsWantedRecipients={state.recipientState?.selectedTeamsWantedRecipients}
           />
         </ErrorBoundary>
 

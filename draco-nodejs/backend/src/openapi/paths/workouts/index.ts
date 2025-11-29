@@ -15,7 +15,6 @@ export const registerWorkoutsEndpoints = ({ registry, schemaRefs }: RegisterCont
     WorkoutSourceOptionPayloadSchemaRef,
     WorkoutRegistrationSchemaRef,
     WorkoutRegistrationsSchemaRef,
-    WorkoutRegistrationsEmailRequestSchemaRef,
     WorkoutListQuerySchemaRef,
     WorkoutRegistrationsQuerySchemaRef,
     UpsertWorkoutSchemaRef,
@@ -676,101 +675,6 @@ export const registerWorkoutsEndpoints = ({ registry, schemaRefs }: RegisterCont
       },
       404: {
         description: 'Registration not found',
-        content: {
-          'application/json': {
-            schema: NotFoundErrorSchemaRef,
-          },
-        },
-      },
-      500: {
-        description: 'Internal server error',
-        content: {
-          'application/json': {
-            schema: InternalServerErrorSchemaRef,
-          },
-        },
-      },
-    },
-  });
-
-  registry.registerPath({
-    method: 'post',
-    path: '/api/accounts/{accountId}/workouts/{workoutId}/registrations/email',
-    operationId: 'emailWorkoutRegistrations',
-    summary: 'Email workout registrants',
-    description: 'Send an email to one or more workout registrants.',
-    tags: ['Workouts'],
-    security: [{ bearerAuth: [] }],
-    parameters: [
-      {
-        name: 'accountId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'workoutId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-    ],
-    request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: WorkoutRegistrationsEmailRequestSchemaRef,
-          },
-        },
-      },
-    },
-    responses: {
-      202: {
-        description: 'Email accepted for delivery',
-        content: {
-          'application/json': {
-            schema: z
-              .object({
-                status: z.enum(['queued']),
-              })
-              .openapi({
-                title: 'WorkoutEmailQueuedResponse',
-              }),
-          },
-        },
-      },
-      400: {
-        description: 'Validation error',
-        content: {
-          'application/json': {
-            schema: ValidationErrorSchemaRef,
-          },
-        },
-      },
-      401: {
-        description: 'Authentication required',
-        content: {
-          'application/json': {
-            schema: AuthenticationErrorSchemaRef,
-          },
-        },
-      },
-      403: {
-        description: 'Access denied',
-        content: {
-          'application/json': {
-            schema: AuthorizationErrorSchemaRef,
-          },
-        },
-      },
-      404: {
-        description: 'Workout or registrations not found',
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,
