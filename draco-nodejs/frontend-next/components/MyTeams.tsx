@@ -41,18 +41,8 @@ const MyTeams: React.FC<MyTeamsProps> = ({
   const hasTeams = Boolean(userTeams && userTeams.length > 0);
 
   const tileStyles = React.useMemo(() => {
-    const baseColor = theme.palette.primary.main;
-    const surface = theme.palette.widget.surface;
-    const highlightStart = alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12);
-    const highlightMid = alpha(surface, theme.palette.mode === 'dark' ? 0.92 : 0.98);
-    const highlightEnd = alpha(surface, theme.palette.mode === 'dark' ? 0.85 : 0.94);
-    const overlay = `radial-gradient(circle at 18% 22%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.28 : 0.16)} 0%, ${alpha(baseColor, 0)} 55%),
-      radial-gradient(circle at 78% 28%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12)} 0%, ${alpha(baseColor, 0)} 58%),
-      radial-gradient(circle at 48% 82%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.18 : 0.1)} 0%, ${alpha(baseColor, 0)} 70%)`;
-
     return {
-      background: `linear-gradient(135deg, ${highlightStart} 0%, ${highlightMid} 42%, ${highlightEnd} 100%)`,
-      overlay,
+      backgroundColor: theme.palette.background.paper,
       border: theme.palette.widget.border,
       shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
       detailBackdrop: alpha(
@@ -105,7 +95,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({
                 border: '1px solid',
                 borderColor: tileStyles.border,
                 boxShadow: tileStyles.shadow,
-                background: tileStyles.background,
+                backgroundColor: tileStyles.backgroundColor,
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
@@ -114,15 +104,6 @@ const MyTeams: React.FC<MyTeamsProps> = ({
                 minWidth: 260,
               }}
             >
-              <Box
-                sx={{
-                  position: 'absolute',
-                  inset: 0,
-                  pointerEvents: 'none',
-                  backgroundImage: tileStyles.overlay,
-                  opacity: theme.palette.mode === 'dark' ? 0.7 : 0.55,
-                }}
-              />
               <Box
                 sx={{
                   display: 'flex',

@@ -40,6 +40,7 @@ import {
   deleteAccountTeam as apiDeleteAccountTeam,
   createLeagueSeasonTeam as apiCreateLeagueSeasonTeam,
   listSeasonLeagueSeasons,
+  getAccountSeason,
   addDivisionToLeagueSeason as apiAddDivisionToLeagueSeason,
   deleteLeagueSeasonDivision as apiDeleteLeagueSeasonDivision,
   updateLeagueSeasonDivision as apiUpdateLeagueSeasonDivision,
@@ -60,18 +61,17 @@ import type {
 import { createApiClient } from '../../../../../../lib/apiClientFactory';
 import { assertNoApiError, unwrapApiResult } from '../../../../../../utils/apiResult';
 import { mapLeagueSetup } from '../../../../../../utils/leagueSeasonMapper';
+import { useAuth } from '../../../../../../context/AuthContext';
 
 interface LeagueSeasonManagementProps {
   accountId: string;
-  season: SeasonType;
-  token: string;
+  seasonId: string;
   onClose: () => void;
 }
 
 const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   accountId,
-  season,
-  token,
+  seasonId,
   onClose,
 }) => {
   const [leagueSeasons, setLeagueSeasons] = useState<
@@ -83,7 +83,36 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const router = useRouter();
+  const { token } = useAuth();
   const apiClient = useMemo(() => createApiClient({ token: token || undefined }), [token]);
+  const [season, setSeason] = useState<SeasonType | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchSeason = async () => {
+      try {
+        const result = await getAccountSeason({
+          client: apiClient,
+          path: { accountId, seasonId },
+          throwOnError: false,
+        });
+
+        const seasonResult = unwrapApiResult(result, 'Failed to fetch season');
+        if (!isMounted) return;
+        setSeason(seasonResult);
+      } catch {
+        if (!isMounted) return;
+        setError((prev) => prev ?? 'Failed to load season details.');
+      }
+    };
+
+    void fetchSeason();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accountId, seasonId, apiClient]);
 
   // Division management state
   const [addDivisionDialogOpen, setAddDivisionDialogOpen] = useState(false);
@@ -121,6 +150,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     null,
   );
   const [newTeamName, setNewTeamName] = useState('');
+  const seasonName = season?.name ?? 'Season';
 
   // Edit division state
   const [editDivisionDialogOpen, setEditDivisionDialogOpen] = useState(false);
@@ -153,13 +183,13 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
   // Fetch league seasons with divisions and teams
   const fetchLeagueSeasons = useCallback(async () => {
-    if (!accountId) return;
+    if (!accountId || !seasonId) return;
 
     setLoading(true);
     try {
       const result = await listSeasonLeagueSeasons({
         client: apiClient,
-        path: { accountId, seasonId: season.id },
+        path: { accountId, seasonId },
         query: { includeTeams: true, includeUnassignedTeams: true },
         throwOnError: false,
       });
@@ -173,7 +203,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [accountId, apiClient, season.id]);
+  }, [accountId, apiClient, seasonId]);
 
   // Targeted update functions for better UX
   const removeLeagueSeasonFromState = useCallback((leagueSeasonId: string) => {
@@ -306,7 +336,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       // Initial fetch for divisions is now handled per league season
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountId, season.id]);
+  }, [accountId, seasonId]);
 
   // Handler to open add division dialog
   const openAddDivisionDialog = (leagueSeason: LeagueSeasonType) => {
@@ -327,7 +357,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         client: apiClient,
         path: {
           accountId,
-          seasonId: season.id,
+          seasonId,
           leagueSeasonId: selectedLeagueSeason.id,
         },
         body: {
@@ -373,7 +403,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         client: apiClient,
         path: {
           accountId,
-          seasonId: season.id,
+          seasonId,
           leagueSeasonId: leagueSeason.id,
           divisionSeasonId: divisionSeason.id,
         },
@@ -404,7 +434,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         client: apiClient,
         path: {
           accountId,
-          seasonId: season.id,
+          seasonId,
           leagueSeasonId: selectedLeagueSeason.id,
         },
         body: {
@@ -455,7 +485,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         client: apiClient,
         path: {
           accountId,
-          seasonId: season.id,
+          seasonId,
           leagueSeasonId: leagueSeason.id,
           teamSeasonId: teamSeason.id,
         },
@@ -497,7 +527,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         client: apiClient,
         path: {
           accountId,
-          seasonId: season.id,
+          seasonId,
           leagueSeasonId: selectedTeamLeagueSeason.id,
           teamSeasonId: selectedTeamSeason.id,
         },
@@ -551,7 +581,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         client: apiClient,
         path: {
           accountId,
-          seasonId: season.id,
+          seasonId,
           leagueSeasonId: leagueSeason.id,
           teamSeasonId: teamSeason.id,
         },
@@ -579,7 +609,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
   // Handler to navigate to team roster management
   const handleManageRoster = (teamSeason: TeamSeasonType) => {
-    router.push(`/account/${accountId}/seasons/${season.id}/teams/${teamSeason.id}/roster`);
+    router.push(`/account/${accountId}/seasons/${seasonId}/teams/${teamSeason.id}/roster`);
   };
 
   // Handler to open delete league dialog
@@ -597,7 +627,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     try {
       const removeResult = await apiRemoveLeagueFromSeason({
         client: apiClient,
-        path: { accountId, seasonId: season.id, leagueSeasonId: leagueToDelete.id },
+        path: { accountId, seasonId, leagueSeasonId: leagueToDelete.id },
         throwOnError: false,
       });
 
@@ -673,7 +703,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setFormLoading(true);
     try {
       const removeResult = await apiDeleteSeasonTeam({
-        path: { accountId, seasonId: season.id, teamSeasonId: teamToDelete.id },
+        path: { accountId, seasonId, teamSeasonId: teamToDelete.id },
         client: apiClient,
         throwOnError: false,
       });
@@ -739,7 +769,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setFormLoading(true);
     try {
       const createResult = await apiCreateLeagueSeasonTeam({
-        path: { accountId, seasonId: season.id, leagueSeasonId: teamToCreateLeagueSeason.id },
+        path: { accountId, seasonId, leagueSeasonId: teamToCreateLeagueSeason.id },
         client: apiClient,
         body: { name: newTeamName.trim() },
         throwOnError: false,
@@ -780,7 +810,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         client: apiClient,
         path: {
           accountId,
-          seasonId: season.id,
+          seasonId,
           leagueSeasonId: leagueSeasonForEdit.id,
           divisionSeasonId: divisionToEdit.id,
         },
@@ -849,7 +879,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Season: {season.name}
+              Season: {seasonName}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Manage leagues, divisions, and team assignments for this season
