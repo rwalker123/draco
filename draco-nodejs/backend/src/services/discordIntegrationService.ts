@@ -3,6 +3,7 @@ import type {
   accountdiscordsettings,
   accountdiscordchannels,
   accountdiscordteamforums,
+  userdiscordaccounts,
 } from '#prisma/client';
 import { z } from 'zod';
 import {
@@ -29,6 +30,7 @@ import {
   DiscordTeamForumQueryType,
   DiscordTeamForumRepairResultType,
   DiscordTeamForumCleanupModeEnum,
+  DiscordTeamForumSyncRequestType,
 } from '@draco/shared-schemas';
 import { RepositoryFactory } from '../repositories/index.js';
 import type { DiscordAccountConfigUpsertInput } from '../repositories/interfaces/IDiscordIntegrationRepository.js';
@@ -88,6 +90,11 @@ interface DiscordGuildChannelResponse {
   type?: number;
 }
 
+interface DiscordGuildRoleResponse {
+  id: string;
+  name: string;
+}
+
 interface CreatedDiscordChannel {
   id: string;
   name: string;
@@ -122,7 +129,10 @@ export class DiscordIntegrationService {
   private readonly accountRepository = RepositoryFactory.getAccountRepository();
   private readonly seasonsRepository = RepositoryFactory.getSeasonsRepository();
   private readonly teamRepository = RepositoryFactory.getTeamRepository();
+  private readonly rosterRepository = RepositoryFactory.getRosterRepository();
+  private readonly contactRepository = RepositoryFactory.getContactRepository();
   private readonly accountSettingsService = new AccountSettingsService();
+  private readonly roleRateLimits = new Map<string, number>();
   private channelIngestionTargetsCache: DiscordIngestionTarget[] | null = null;
   private getBotToken(): string {
     const token = process.env.DISCORD_BOT_TOKEN;
@@ -260,6 +270,250 @@ export class DiscordIntegrationService {
   async repairTeamForums(accountId: bigint): Promise<DiscordTeamForumRepairResultType> {
     await this.ensureAccountExists(accountId);
     return this.syncTeamForums(accountId);
+  }
+
+  async syncTeamForumMembers(
+    accountId: bigint,
+    payload: DiscordTeamForumSyncRequestType,
+  ): Promise<DiscordTeamForumRepairResultType> {
+    await this.ensureAccountExists(accountId);
+    const config = await this.getOrCreateAccountConfigRecord(accountId);
+    if (!config.teamforumenabled) {
+      return { created: 0, repaired: 0, skipped: 0, message: 'Team forums are disabled.' };
+    }
+
+    this.ensureGuildConfigured(config);
+
+    const currentSeason = await this.seasonsRepository.findCurrentSeason(accountId);
+    if (!currentSeason) {
+      throw new ValidationError('Set a current season before syncing Discord team forums.');
+    }
+
+    const targetTeamSeasons =
+      payload.teamIds && payload.teamIds.length
+        ? (
+            await Promise.all(
+              payload.teamIds.map((id) =>
+                this.teamRepository.findTeamSeasonByTeamId(BigInt(id), currentSeason.id, accountId),
+              ),
+            )
+          ).filter((teamSeason): teamSeason is NonNullable<typeof teamSeason> =>
+            Boolean(teamSeason),
+          )
+        : (await this.teamRepository.findBySeasonId(currentSeason.id, accountId)).filter(
+            (teamSeason) =>
+              Boolean(teamSeason.divisionseasonid) && Boolean(teamSeason.leagueseason),
+          );
+
+    if (!targetTeamSeasons.length) {
+      console.info('[discord] syncTeamForumMembers skipped: no target teams', {
+        accountId: accountId.toString(),
+        teamIds: payload.teamIds,
+        userId: payload.userId,
+      });
+      return { created: 0, repaired: 0, skipped: 0, message: 'No teams to synchronize.' };
+    }
+
+    const [forums, linkedAccounts] = await Promise.all([
+      this.discordRepository.listTeamForums(accountId),
+      this.discordRepository.listLinkedAccounts(accountId),
+    ]);
+
+    const forumByTeamSeason = new Map(
+      forums.map((forum) => [forum.teamseasonid.toString(), forum]),
+    );
+    const linkedByUserId = new Map(linkedAccounts.map((link) => [link.userid, link]));
+    let added = 0;
+    let removed = 0;
+    let skipped = 0;
+
+    let teamSeasonsToProcess = targetTeamSeasons;
+
+    if (payload.userId) {
+      // Narrow to only teams where this user is on the active roster
+      const filtered: typeof targetTeamSeasons = [];
+      for (const teamSeason of targetTeamSeasons) {
+        const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(
+          teamSeason.id,
+        );
+        const isMember =
+          rosterMembers.find(
+            (member) => member.roster.contacts?.userid === payload.userId && !member.inactive,
+          ) !== undefined;
+        if (isMember) {
+          filtered.push(teamSeason);
+        }
+      }
+      teamSeasonsToProcess = filtered;
+      if (!teamSeasonsToProcess.length) {
+        console.info('[discord] syncTeamForumMembers skip (user not on any current-season team)', {
+          accountId: accountId.toString(),
+          userId: payload.userId,
+        });
+        return { created: 0, repaired: 0, skipped: 0, message: 'No teams to synchronize.' };
+      }
+      console.info('[discord] syncTeamForumMembers targeting user teams', {
+        accountId: accountId.toString(),
+        userId: payload.userId,
+        teamSeasonIds: teamSeasonsToProcess.map((t) => t.id.toString()),
+      });
+    }
+
+    for (const teamSeason of teamSeasonsToProcess) {
+      const forum = forumByTeamSeason.get(teamSeason.id.toString());
+      if (!forum || !forum.discordroleid) {
+        console.info('[discord] syncTeamForumMembers skipping team (no forum/role)', {
+          accountId: accountId.toString(),
+          teamSeasonId: teamSeason.id.toString(),
+          teamId: teamSeason.teamid?.toString(),
+          hasForum: Boolean(forum),
+          hasRole: Boolean(forum?.discordroleid),
+        });
+        skipped += 1;
+        continue;
+      }
+
+      const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(
+        teamSeason.id,
+      );
+      const activeRosterUserIds = new Set(
+        rosterMembers
+          .filter((member) => !member.inactive)
+          .map((member) => member.roster.contacts?.userid)
+          .filter((id): id is string => Boolean(id)),
+      );
+
+      if (payload.userId) {
+        const link = linkedByUserId.get(payload.userId);
+        if (!link?.discorduserid) {
+          console.info('[discord] syncTeamForumMembers skipping user (no link)', {
+            accountId: accountId.toString(),
+            teamSeasonId: teamSeason.id.toString(),
+            userId: payload.userId,
+          });
+          continue;
+        }
+
+        if (activeRosterUserIds.has(payload.userId)) {
+          const ensured = await this.ensureGuildMemberFromLink(config.guildid as string, link);
+          if (!ensured) {
+            console.warn('[discord] syncTeamForumMembers user not in guild', {
+              accountId: accountId.toString(),
+              teamSeasonId: teamSeason.id.toString(),
+              userId: payload.userId,
+              discordUserId: link.discorduserid,
+            });
+            continue;
+          }
+          await this.addRoleToMember(
+            config.guildid as string,
+            link.discorduserid,
+            forum.discordroleid,
+          );
+          added += 1;
+        } else {
+          await this.removeRoleFromMember(
+            config.guildid as string,
+            link.discorduserid,
+            forum.discordroleid,
+          );
+          removed += 1;
+        }
+        continue;
+      }
+
+      for (const userId of Array.from(activeRosterUserIds)) {
+        const link = linkedByUserId.get(userId);
+        if (!link?.discorduserid) {
+          console.info('[discord] syncTeamForumMembers skipping user (no link)', {
+            accountId: accountId.toString(),
+            teamSeasonId: teamSeason.id.toString(),
+            userId,
+          });
+          continue;
+        }
+        const ensured = await this.ensureGuildMemberFromLink(config.guildid as string, link);
+        if (!ensured) {
+          console.warn('[discord] syncTeamForumMembers user not in guild', {
+            accountId: accountId.toString(),
+            teamSeasonId: teamSeason.id.toString(),
+            userId,
+            discordUserId: link.discorduserid,
+          });
+          continue;
+        }
+        await this.addRoleToMember(
+          config.guildid as string,
+          link.discorduserid,
+          forum.discordroleid,
+        );
+        added += 1;
+      }
+
+      for (const link of linkedAccounts) {
+        if (!link.discorduserid || activeRosterUserIds.has(link.userid)) {
+          continue;
+        }
+        await this.removeRoleFromMember(
+          config.guildid as string,
+          link.discorduserid,
+          forum.discordroleid,
+        );
+        removed += 1;
+      }
+    }
+
+    return {
+      created: added,
+      repaired: removed,
+      skipped,
+      message: 'Team forum memberships synchronized.',
+    };
+  }
+
+  async removeTeamForum(accountId: bigint, teamId: bigint): Promise<void> {
+    await this.ensureAccountExists(accountId);
+    const [config, forums, channelMappings, linkedAccounts] = await Promise.all([
+      this.getOrCreateAccountConfigRecord(accountId),
+      this.discordRepository.listTeamForums(accountId),
+      this.discordRepository.listChannelMappings(accountId),
+      this.discordRepository.listLinkedAccounts(accountId),
+    ]);
+
+    const forum = forums.find((item) => item.teamid === teamId);
+    if (!forum) {
+      throw new NotFoundError('Team forum not found.');
+    }
+
+    if (config.guildid) {
+      await this.deleteDiscordChannel(config.guildid, forum.discordchannelid);
+      if (forum.discordroleid) {
+        await Promise.all(
+          linkedAccounts
+            .filter((link) => Boolean(link.discorduserid))
+            .map((link) =>
+              this.removeRoleFromMember(
+                config.guildid as string,
+                link.discorduserid,
+                forum.discordroleid as string,
+              ),
+            ),
+        );
+      }
+    }
+
+    const mapping = channelMappings.find(
+      (item) => item.teamseasonid?.toString() === forum.teamseasonid.toString(),
+    );
+    if (mapping) {
+      await this.discordRepository.deleteChannelMapping(accountId, mapping.id);
+      this.invalidateChannelIngestionTargetsCache();
+    }
+
+    await this.discordRepository.deleteTeamForum(forum.id);
+    await this.discordRepository.updateAccountConfig(accountId, {
+      teamForumLastSyncedAt: new Date(),
+    });
   }
 
   async listCommunityChannels(
@@ -578,6 +832,7 @@ export class DiscordIntegrationService {
 
     const guildChannels = await this.fetchGuildChannels(config.guildid as string);
     const guildChannelById = new Map(guildChannels.map((channel) => [channel.id, channel]));
+    const guildRoles = await this.fetchGuildRoles(config.guildid as string);
     const leagueCategoryCache = new Map<string, string | null>();
 
     let created = 0;
@@ -606,6 +861,7 @@ export class DiscordIntegrationService {
             teamSeason,
             categoryId,
             mappingByTeamSeason,
+            guildRoles,
           });
           forumsByTeamSeason.set(key, createdForum);
           created += 1;
@@ -621,10 +877,24 @@ export class DiscordIntegrationService {
               forum: existingForum,
               categoryId,
               mappingByTeamSeason,
+              guildRoles,
             });
             forumsByTeamSeason.set(key, updatedForum);
             repaired += 1;
           } else {
+            if (!existingForum.discordroleid) {
+              const roleId = await this.ensureTeamRole(
+                config.guildid as string,
+                teamSeason.name ?? teamSeason.leagueseason?.league?.name ?? null,
+                existingForum.discordroleid ?? undefined,
+                guildRoles,
+              );
+              await this.discordRepository.updateTeamForum(existingForum.id, {
+                discordRoleId: roleId,
+                lastSyncedAt: new Date(),
+                status: 'provisioned',
+              });
+            }
             const label = this.buildTeamForumLabel(teamSeason.name, currentSeason.name);
             await this.ensureTeamChannelMapping(
               accountId,
@@ -672,6 +942,7 @@ export class DiscordIntegrationService {
     teamSeason,
     categoryId,
     mappingByTeamSeason,
+    guildRoles,
   }: {
     accountId: bigint;
     config: accountdiscordsettings;
@@ -680,10 +951,17 @@ export class DiscordIntegrationService {
     teamSeason: dbTeamSeasonWithLeaguesAndTeams;
     categoryId: string | null;
     mappingByTeamSeason: Map<string, accountdiscordchannels>;
+    guildRoles: DiscordGuildRoleResponse[];
   }): Promise<accountdiscordteamforums> {
     if (!teamSeason.teamid) {
       throw new ValidationError('Team season is missing a team identifier.');
     }
+    const roleId = await this.ensureTeamRole(
+      config.guildid as string,
+      teamSeason.name ?? teamSeason.leagueseason?.league?.name ?? null,
+      null,
+      guildRoles,
+    );
     const channelName = this.buildTeamForumChannelName(
       teamSeason.name ?? null,
       teamSeason.leagueseason?.league?.name ?? null,
@@ -701,6 +979,7 @@ export class DiscordIntegrationService {
       discordChannelId: createdChannel.id,
       discordChannelName: createdChannel.name,
       channelType: createdChannel.type ?? 'forum',
+      discordRoleId: roleId,
       status: 'provisioned',
       autoCreated: true,
       lastSyncedAt: new Date(),
@@ -722,6 +1001,7 @@ export class DiscordIntegrationService {
     forum,
     categoryId,
     mappingByTeamSeason,
+    guildRoles,
   }: {
     accountId: bigint;
     config: accountdiscordsettings;
@@ -731,10 +1011,17 @@ export class DiscordIntegrationService {
     forum: accountdiscordteamforums;
     categoryId: string | null;
     mappingByTeamSeason: Map<string, accountdiscordchannels>;
+    guildRoles: DiscordGuildRoleResponse[];
   }): Promise<accountdiscordteamforums> {
     if (!teamSeason.teamid) {
       throw new ValidationError('Team season is missing a team identifier.');
     }
+    const roleId = await this.ensureTeamRole(
+      config.guildid as string,
+      teamSeason.name ?? teamSeason.leagueseason?.league?.name ?? null,
+      forum.discordroleid ?? undefined,
+      guildRoles,
+    );
     await this.deleteDiscordChannel(config.guildid as string, forum.discordchannelid);
     const channelName = this.buildTeamForumChannelName(
       teamSeason.name ?? null,
@@ -750,6 +1037,7 @@ export class DiscordIntegrationService {
       discordChannelId: createdChannel.id,
       discordChannelName: createdChannel.name,
       channelType: createdChannel.type ?? 'forum',
+      discordRoleId: roleId,
       status: 'provisioned',
       autoCreated: true,
       lastSyncedAt: new Date(),
@@ -1201,7 +1489,18 @@ export class DiscordIntegrationService {
     });
 
     const linkingEnabled = this.isLinkingEnabled(config);
-    return DiscordIntegrationResponseFormatter.formatLinkStatus(record, linkingEnabled);
+    const formatted = DiscordIntegrationResponseFormatter.formatLinkStatus(record, linkingEnabled);
+
+    // Best-effort role sync for current-season teams after linking
+    void this.syncUserTeams(accountId, userId, 'add').catch((error) =>
+      console.warn('[discord] Failed to sync team forums after link', {
+        accountId: accountId.toString(),
+        userId,
+        error,
+      }),
+    );
+
+    return formatted;
   }
 
   async completeGuildInstall(state: string, guildId?: string): Promise<void> {
@@ -1234,8 +1533,64 @@ export class DiscordIntegrationService {
     await this.ensureAccountExists(accountId);
     const config = await this.getOrCreateAccountConfigRecord(accountId);
     const linkingEnabled = this.isLinkingEnabled(config);
+    const existingLink = await this.discordRepository.findLinkedAccount(accountId, userId);
+
+    if (config.guildid && existingLink?.discorduserid) {
+      void this.syncUserTeams(accountId, userId, 'remove', existingLink.discorduserid).catch(
+        (error) =>
+          console.warn('[discord] Failed to remove team forum roles on unlink', {
+            accountId: accountId.toString(),
+            userId,
+            error,
+          }),
+      );
+    }
+
     await this.discordRepository.deleteLinkedAccount(accountId, userId);
     return DiscordIntegrationResponseFormatter.formatLinkStatus(null, linkingEnabled);
+  }
+
+  private async syncUserTeams(
+    accountId: bigint,
+    userId: string,
+    action: 'add' | 'remove',
+    discordUserId?: string,
+  ): Promise<void> {
+    const contacts = await this.contactRepository.findContactsByUserIds([userId]);
+    if (!contacts.length) {
+      console.info('[discord] syncUserTeams skip (no contacts for user)', {
+        accountId: accountId.toString(),
+        userId,
+        action,
+      });
+      return;
+    }
+
+    for (const contact of contacts) {
+      await this.syncContactTeams(accountId, contact.id, action, discordUserId);
+    }
+  }
+
+  async updateTeamForumMemberForContact(
+    accountId: bigint,
+    seasonId: bigint,
+    teamSeasonId: bigint,
+    contactId: bigint,
+    action: 'add' | 'remove',
+  ): Promise<void> {
+    if (action === 'add') {
+      await this.ensureTeamForumMembership(accountId, seasonId, teamSeasonId, contactId);
+      return;
+    }
+    const discordUserId = await this.resolveDiscordUserIdForContact(accountId, contactId);
+    if (!discordUserId) {
+      console.info('[discord] skip team forum removal (no linked discord user)', {
+        accountId: accountId.toString(),
+        contactId: contactId.toString(),
+      });
+      return;
+    }
+    await this.removeTeamForumMembership(accountId, seasonId, teamSeasonId, discordUserId);
   }
 
   private async ensureAccountExists(accountId: bigint): Promise<void> {
@@ -1454,6 +1809,24 @@ export class DiscordIntegrationService {
     }
   }
 
+  private async fetchGuildRoles(guildId: string): Promise<DiscordGuildRoleResponse[]> {
+    const botToken = this.getBotToken();
+    try {
+      return await fetchJson<DiscordGuildRoleResponse[]>(
+        `${getDiscordOAuthConfig().apiBaseUrl}/guilds/${guildId}/roles`,
+        {
+          headers: {
+            Authorization: `Bot ${botToken}`,
+          },
+          timeoutMs: 5000,
+        },
+      );
+    } catch (error) {
+      console.error('Unable to fetch Discord roles', error);
+      throw new ValidationError('Unable to load Discord roles. Please try again later.');
+    }
+  }
+
   private async createDiscordChannel(
     guildId: string,
     channelName: string,
@@ -1530,6 +1903,430 @@ export class DiscordIntegrationService {
     const slug = trimmed.replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '');
     const normalized = slug || 'draco-channel';
     return normalized.slice(0, 100);
+  }
+
+  private buildTeamRoleName(teamName?: string | null): string {
+    const base = teamName?.trim() || 'Team Forum';
+    const normalized = base.replace(/\s+/g, ' ').slice(0, 90);
+    return `Team - ${normalized}`;
+  }
+
+  private async ensureTeamRole(
+    guildId: string,
+    teamName: string | null | undefined,
+    existingRoleId: string | null | undefined,
+    guildRoles: DiscordGuildRoleResponse[],
+  ): Promise<string> {
+    const botToken = this.getBotToken();
+    const apiBase = getDiscordOAuthConfig().apiBaseUrl;
+
+    if (existingRoleId && guildRoles.some((role) => role.id === existingRoleId)) {
+      return existingRoleId;
+    }
+
+    const desiredName = this.buildTeamRoleName(teamName);
+    const existingByName = guildRoles.find((role) => role.name === desiredName);
+    if (existingByName) {
+      return existingByName.id;
+    }
+
+    try {
+      const created = await fetchJson<DiscordGuildRoleResponse>(
+        `${apiBase}/guilds/${guildId}/roles`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bot ${botToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: desiredName, mentionable: false }),
+          timeoutMs: 8000,
+        },
+      );
+      guildRoles.push(created);
+      return created.id;
+    } catch (error) {
+      console.error('Unable to create Discord role', { guildId, teamName, error });
+      throw new ValidationError('Unable to create Discord team role.');
+    }
+  }
+
+  private async ensureGuildMemberFromLink(
+    guildId: string,
+    link: userdiscordaccounts,
+  ): Promise<boolean> {
+    const oauthConfig = getDiscordOAuthConfig();
+    const botToken = this.getBotToken();
+    const memberResponse = await fetch(
+      `${oauthConfig.apiBaseUrl}/guilds/${guildId}/members/${link.discorduserid}`,
+      {
+        headers: { Authorization: `Bot ${botToken}` },
+      },
+    );
+
+    if (memberResponse.ok) {
+      return true;
+    }
+
+    if (memberResponse.status !== 404) {
+      const message = await memberResponse.text().catch(() => memberResponse.statusText);
+      console.warn('Unable to verify Discord guild membership', {
+        guildId,
+        discordUserId: link.discorduserid,
+        status: memberResponse.status,
+        message,
+      });
+      return false;
+    }
+
+    const accessToken =
+      link.accesstokenencrypted && (!link.tokenexpiresat || link.tokenexpiresat > new Date())
+        ? decryptSecret(link.accesstokenencrypted)
+        : null;
+
+    if (!accessToken) {
+      return false;
+    }
+
+    try {
+      return await this.addUserToGuild(
+        guildId,
+        link.discorduserid,
+        accessToken,
+        botToken,
+        oauthConfig,
+      );
+    } catch (error) {
+      console.warn('Unable to add Discord user to guild during sync', {
+        guildId,
+        discordUserId: link.discorduserid,
+        error,
+      });
+      return false;
+    }
+  }
+
+  private async requestWithRateLimit(options: {
+    guildId: string;
+    routeKey: string;
+    method: 'PUT' | 'DELETE';
+    url: string;
+    body?: Record<string, unknown>;
+    on429?: (retryMs: number) => void;
+    onError?: (response: Response) => Promise<void>;
+  }): Promise<'ok' | 'rate_limited' | 'skipped'> {
+    const botToken = this.getBotToken();
+    const key = `${options.guildId}:${options.routeKey}`;
+    const now = Date.now();
+    const resetAt = this.roleRateLimits.get(key);
+    if (resetAt && resetAt > now) {
+      console.info('[discord] role op skipped due to rate limit window', {
+        guildId: options.guildId,
+        routeKey: options.routeKey,
+        retryMs: resetAt - now,
+      });
+      options.on429?.(resetAt - now);
+      return 'skipped';
+    }
+
+    const response = await fetch(options.url, {
+      method: options.method,
+      headers: {
+        Authorization: `Bot ${botToken}`,
+        'Content-Type': options.body ? 'application/json' : undefined,
+      } as Record<string, string>,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+
+    if (response.status === 429) {
+      let retryAfterMs = 5000;
+      try {
+        const payload = (await response.json()) as { retry_after?: number };
+        if (payload.retry_after !== undefined) {
+          retryAfterMs =
+            payload.retry_after > 1000 ? payload.retry_after : payload.retry_after * 1000;
+        }
+      } catch {
+        // ignore parse errors
+      }
+      const nextAllowed = Date.now() + retryAfterMs;
+      this.roleRateLimits.set(key, nextAllowed);
+      console.warn('[discord] role op rate limited', {
+        guildId: options.guildId,
+        routeKey: options.routeKey,
+        retryMs: retryAfterMs,
+      });
+      options.on429?.(retryAfterMs);
+      return 'rate_limited';
+    }
+
+    if (!response.ok && response.status !== 204 && response.status !== 404) {
+      await options.onError?.(response);
+    } else if (response.ok || response.status === 204) {
+      console.info('[discord] role op success', {
+        guildId: options.guildId,
+        routeKey: options.routeKey,
+        method: options.method,
+      });
+    }
+    return 'ok';
+  }
+
+  private async addRoleToMember(guildId: string, discordUserId: string, roleId: string) {
+    const result = await this.requestWithRateLimit({
+      guildId,
+      routeKey: 'roles',
+      method: 'PUT',
+      url: `${getDiscordOAuthConfig().apiBaseUrl}/guilds/${guildId}/members/${discordUserId}/roles/${roleId}`,
+      on429: (retryMs) =>
+        console.warn('Unable to assign Discord role (rate limited)', {
+          guildId,
+          discordUserId,
+          roleId,
+          retryMs,
+        }),
+      onError: async (response) => {
+        const message = await response.text().catch(() => response.statusText);
+        console.warn('Unable to assign Discord role', {
+          guildId,
+          discordUserId,
+          roleId,
+          status: response.status,
+          message,
+        });
+      },
+    });
+    return result;
+  }
+
+  private async removeRoleFromMember(guildId: string, discordUserId: string, roleId: string) {
+    const result = await this.requestWithRateLimit({
+      guildId,
+      routeKey: 'roles',
+      method: 'DELETE',
+      url: `${getDiscordOAuthConfig().apiBaseUrl}/guilds/${guildId}/members/${discordUserId}/roles/${roleId}`,
+      on429: (retryMs) =>
+        console.warn('Unable to remove Discord role (rate limited)', {
+          guildId,
+          discordUserId,
+          roleId,
+          retryMs,
+        }),
+      onError: async (response) => {
+        const message = await response.text().catch(() => response.statusText);
+        console.warn('Unable to remove Discord role', {
+          guildId,
+          discordUserId,
+          roleId,
+          status: response.status,
+          message,
+        });
+      },
+    });
+    return result;
+  }
+
+  private async resolveDiscordUserIdForContact(
+    accountId: bigint,
+    contactId: bigint,
+  ): Promise<string | null> {
+    const contact = await this.contactRepository.findContactInAccount(contactId, accountId);
+    const userId = contact?.userid;
+    if (!userId) {
+      return null;
+    }
+    const link = await this.discordRepository.findLinkedAccount(accountId, userId);
+    return link?.discorduserid ?? null;
+  }
+
+  private async ensureTeamForumMembership(
+    accountId: bigint,
+    seasonId: bigint,
+    teamSeasonId: bigint,
+    contactId: bigint,
+  ): Promise<void> {
+    const currentSeason = await this.seasonsRepository.findCurrentSeason(accountId);
+    if (!currentSeason || currentSeason.id !== seasonId) {
+      console.info('[discord] skip team forum member update (not current season)', {
+        accountId: accountId.toString(),
+        seasonId: seasonId.toString(),
+        currentSeasonId: currentSeason?.id.toString(),
+        teamSeasonId: teamSeasonId.toString(),
+      });
+      return;
+    }
+
+    const teamSeason = await this.teamRepository.findTeamSeason(teamSeasonId, seasonId, accountId);
+    if (!teamSeason?.teamid) {
+      console.warn('[discord] skip team forum member update (team season missing team)', {
+        accountId: accountId.toString(),
+        seasonId: seasonId.toString(),
+        teamSeasonId: teamSeasonId.toString(),
+      });
+      return;
+    }
+
+    const forum = await this.discordRepository.findTeamForumByTeamSeasonId(accountId, teamSeasonId);
+    if (!forum || !forum.discordroleid) {
+      console.warn('[discord] skip team forum member update (forum/role missing)', {
+        accountId: accountId.toString(),
+        seasonId: seasonId.toString(),
+        teamSeasonId: teamSeasonId.toString(),
+      });
+      return;
+    }
+
+    const config = await this.getOrCreateAccountConfigRecord(accountId);
+    if (!config.guildid) {
+      console.warn('[discord] skip team forum member update (guild not configured)', {
+        accountId: accountId.toString(),
+      });
+      return;
+    }
+
+    const discordUserId = await this.resolveDiscordUserIdForContact(accountId, contactId);
+    if (!discordUserId) {
+      console.info('[discord] skip team forum member update (no linked discord user)', {
+        accountId: accountId.toString(),
+        contactId: contactId.toString(),
+      });
+      return;
+    }
+
+    const result = await this.addRoleToMember(config.guildid, discordUserId, forum.discordroleid);
+
+    if (result === 'rate_limited' || result === 'skipped') {
+      console.warn('[discord] team forum member update deferred due to rate limit', {
+        accountId: accountId.toString(),
+        seasonId: seasonId.toString(),
+        teamSeasonId: teamSeasonId.toString(),
+        action: 'add',
+      });
+    }
+  }
+
+  private async removeTeamForumMembership(
+    accountId: bigint,
+    seasonId: bigint,
+    teamSeasonId: bigint,
+    discordUserId: string,
+  ): Promise<void> {
+    const currentSeason = await this.seasonsRepository.findCurrentSeason(accountId);
+    if (!currentSeason || currentSeason.id !== seasonId) {
+      console.info('[discord] skip team forum removal (not current season)', {
+        accountId: accountId.toString(),
+        seasonId: seasonId.toString(),
+        currentSeasonId: currentSeason?.id.toString(),
+        teamSeasonId: teamSeasonId.toString(),
+      });
+      return;
+    }
+
+    const forum = await this.discordRepository.findTeamForumByTeamSeasonId(accountId, teamSeasonId);
+    if (!forum || !forum.discordroleid) {
+      console.warn('[discord] skip team forum removal (forum/role missing)', {
+        accountId: accountId.toString(),
+        seasonId: seasonId.toString(),
+        teamSeasonId: teamSeasonId.toString(),
+      });
+      return;
+    }
+
+    const config = await this.getOrCreateAccountConfigRecord(accountId);
+    if (!config.guildid) {
+      console.warn('[discord] skip team forum removal (guild not configured)', {
+        accountId: accountId.toString(),
+      });
+      return;
+    }
+
+    const result = await this.removeRoleFromMember(
+      config.guildid,
+      discordUserId,
+      forum.discordroleid,
+    );
+
+    if (result === 'rate_limited' || result === 'skipped') {
+      console.warn('[discord] team forum removal deferred due to rate limit', {
+        accountId: accountId.toString(),
+        seasonId: seasonId.toString(),
+        teamSeasonId: teamSeasonId.toString(),
+        action: 'remove',
+      });
+    }
+  }
+
+  private async syncContactTeams(
+    accountId: bigint,
+    contactId: bigint,
+    action: 'add' | 'remove',
+    discordUserIdOverride?: string,
+  ): Promise<void> {
+    const currentSeason = await this.seasonsRepository.findCurrentSeason(accountId);
+    if (!currentSeason) {
+      console.info('[discord] skip contact team sync (no current season)', {
+        accountId: accountId.toString(),
+        contactId: contactId.toString(),
+      });
+      return;
+    }
+
+    const rosterSeasons = await this.teamRepository.findContactTeams(
+      accountId,
+      contactId,
+      currentSeason.id,
+    );
+
+    if (!rosterSeasons.length) {
+      console.info('[discord] skip contact team sync (no teams for contact)', {
+        accountId: accountId.toString(),
+        contactId: contactId.toString(),
+        seasonId: currentSeason.id.toString(),
+      });
+      return;
+    }
+
+    console.info('[discord] contact team sync', {
+      accountId: accountId.toString(),
+      contactId: contactId.toString(),
+      seasonId: currentSeason.id.toString(),
+      action,
+      teamSeasonIds: rosterSeasons.map((rs) => rs.teamsseason?.id?.toString()).filter(Boolean),
+    });
+
+    for (const rosterSeason of rosterSeasons) {
+      const teamSeasonId = rosterSeason.teamsseason?.id;
+      if (!teamSeasonId) {
+        console.warn('[discord] skip contact team sync (missing teamSeason)', {
+          accountId: accountId.toString(),
+          contactId: contactId.toString(),
+          seasonId: currentSeason.id.toString(),
+          action,
+          rosterSeasonId: rosterSeason.id.toString(),
+        });
+        continue;
+      }
+      if (action === 'add') {
+        await this.ensureTeamForumMembership(accountId, currentSeason.id, teamSeasonId, contactId);
+      } else {
+        const discordUserId =
+          discordUserIdOverride ??
+          (await this.resolveDiscordUserIdForContact(accountId, contactId));
+        if (!discordUserId) {
+          console.info('[discord] skip contact team removal (no linked discord user)', {
+            accountId: accountId.toString(),
+            contactId: contactId.toString(),
+          });
+          continue;
+        }
+        await this.removeTeamForumMembership(
+          accountId,
+          currentSeason.id,
+          teamSeasonId,
+          discordUserId,
+        );
+      }
+    }
   }
 
   private ensureFeatureSupported(

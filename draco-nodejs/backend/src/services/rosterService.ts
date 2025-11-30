@@ -20,6 +20,7 @@ import {
   dbRosterSeasonContactReference,
   dbTeamSeason,
   dbTeamSeasonLeague,
+  ISeasonsRepository,
 } from '../repositories/index.js';
 import { ServiceFactory } from './serviceFactory.js';
 
@@ -28,9 +29,11 @@ export class RosterService {
     private rosterRepository: IRosterRepository,
     private teamRepository: ITeamRepository,
     private contactRepository: IContactRepository,
+    private seasonsRepository: ISeasonsRepository,
   ) {}
 
   private accountsService = ServiceFactory.getAccountsService();
+  private discordIntegrationService = ServiceFactory.getDiscordIntegrationService();
 
   async getTeamRosterMembers(
     teamSeasonId: bigint,
@@ -225,6 +228,22 @@ export class RosterService {
       submittedWaiver ?? false,
     );
 
+    console.info('[discord] roster add -> sync team forum members', {
+      accountId: accountId.toString(),
+      seasonId: seasonId.toString(),
+      teamSeasonId: teamSeasonId.toString(),
+      teamId: teamSeason.teamid?.toString(),
+      contactId: rosterPlayer.contactid.toString(),
+      userId: rosterPlayer.contacts.userid,
+    });
+    void this.discordIntegrationService.updateTeamForumMemberForContact(
+      accountId,
+      seasonId,
+      teamSeasonId,
+      rosterPlayer.contactid,
+      'add',
+    );
+
     return RosterResponseFormatter.formatRosterMemberResponse(rosterMember);
   }
 
@@ -293,6 +312,21 @@ export class RosterService {
       throw new ConflictError('Player is already active');
     }
 
+    // Remove Discord roles before flipping inactive to ensure removal runs
+    console.info('[discord] roster status change -> sync team forum members', {
+      accountId: accountId.toString(),
+      seasonId: seasonId.toString(),
+      teamSeasonId: teamSeasonId.toString(),
+      userId: rosterMember.roster.contacts.userid,
+    });
+    void this.discordIntegrationService.updateTeamForumMemberForContact(
+      accountId,
+      seasonId,
+      teamSeasonId,
+      rosterMember.roster.contactid,
+      inactive ? 'remove' : 'add',
+    );
+
     const updatedRosterMember = await this.rosterRepository.updateRosterSeasonEntry(
       rosterMemberId,
       undefined,
@@ -314,6 +348,20 @@ export class RosterService {
       teamSeasonId,
       seasonId,
       accountId,
+    );
+
+    console.info('[discord] roster delete -> sync team forum members', {
+      accountId: accountId.toString(),
+      seasonId: seasonId.toString(),
+      teamSeasonId: teamSeasonId.toString(),
+      userId: rosterMember.roster.contacts.userid,
+    });
+    void this.discordIntegrationService.updateTeamForumMemberForContact(
+      accountId,
+      seasonId,
+      teamSeasonId,
+      rosterMember.roster.contactid,
+      'remove',
     );
 
     const playerName = `${rosterMember.roster.contacts.firstname} ${rosterMember.roster.contacts.lastname}`;

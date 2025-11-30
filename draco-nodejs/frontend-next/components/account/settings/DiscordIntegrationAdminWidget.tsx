@@ -212,7 +212,7 @@ const getTeamForumStatusColor = (status: string): 'success' | 'warning' | 'defau
   if (status === 'provisioned') {
     return 'success';
   }
-  if (status === 'needsRepair') {
+  if (status === 'needsRepair' || status === 'missingChannel') {
     return 'warning';
   }
   return 'default';
@@ -222,6 +222,8 @@ const getTeamForumStatusLabel = (status: string): string => {
   switch (status) {
     case 'provisioned':
       return 'Provisioned';
+    case 'missingChannel':
+      return 'Missing channel';
     case 'needsRepair':
       return 'Needs repair';
     case 'disabled':

@@ -7304,6 +7304,7 @@
                   "enum": [
                     "provisioned",
                     "needsRepair",
+                    "missingChannel",
                     "disabled"
                   ]
                 },
@@ -7315,6 +7316,18 @@
                   "format": "date-time",
                   "example": "2024-03-01T18:30:00Z",
                   "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "teamName": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "seasonName": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "leagueName": {
+                  "type": "string",
+                  "nullable": true
                 },
                 "createdAt": {
                   "type": "string",
@@ -7410,6 +7423,36 @@
           "repaired",
           "skipped",
           "message"
+        ]
+      },
+      "DiscordTeamForumSyncRequest": {
+        "type": "object",
+        "properties": {
+          "teamIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "example": "12345"
+            }
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "DiscordTeamForumRemoveRequest": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          }
+        },
+        "required": [
+          "teamId"
         ]
       },
       "PlayersWantedClassified": {
@@ -25318,6 +25361,137 @@
           },
           "404": {
             "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/team-forums/sync-members": {
+      "post": {
+        "operationId": "syncAccountDiscordTeamForumMembers",
+        "summary": "Sync Discord team forum memberships",
+        "description": "Synchronizes Discord role memberships for team forums based on current season rosters or a specific user link/unlink event.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscordTeamForumSyncRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Membership synchronization summary.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordTeamForumRepairResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/team-forums/remove-team": {
+      "post": {
+        "operationId": "removeAccountDiscordTeamForum",
+        "summary": "Remove a Discord team forum",
+        "description": "Deletes the Discord team forum channel and revokes memberships for the specified team in the current season.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscordTeamForumRemoveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Removal completed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account or team forum not found.",
             "content": {
               "application/json": {
                 "schema": {

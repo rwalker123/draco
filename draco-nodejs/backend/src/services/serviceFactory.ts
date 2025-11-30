@@ -196,7 +196,13 @@ export class ServiceFactory {
       const rosterRepository = RepositoryFactory.getRosterRepository();
       const teamRepository = RepositoryFactory.getTeamRepository();
       const contactRepository = RepositoryFactory.getContactRepository();
-      this.rosterService = new RosterService(rosterRepository, teamRepository, contactRepository);
+      const seasonsRepository = RepositoryFactory.getSeasonsRepository();
+      this.rosterService = new RosterService(
+        rosterRepository,
+        teamRepository,
+        contactRepository,
+        seasonsRepository,
+      );
     }
     return this.rosterService;
   }

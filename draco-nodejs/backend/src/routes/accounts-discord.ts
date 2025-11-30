@@ -10,6 +10,8 @@ import {
   DiscordFeatureSyncFeatureEnum,
   DiscordFeatureSyncUpdateSchema,
   DiscordTeamForumQuerySchema,
+  DiscordTeamForumSyncRequestSchema,
+  DiscordTeamForumRemoveRequestSchema,
 } from '@draco/shared-schemas';
 import { AuthenticationError, ValidationError } from '../utils/customErrors.js';
 
@@ -222,6 +224,32 @@ router.post(
     const { accountId } = extractAccountParams(req.params);
     const result = await discordIntegrationService.repairTeamForums(accountId);
     res.json(result);
+  }),
+);
+
+router.post(
+  '/:accountId/discord/team-forums/sync-members',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.settings.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const payload = DiscordTeamForumSyncRequestSchema.parse(req.body);
+    const result = await discordIntegrationService.syncTeamForumMembers(accountId, payload);
+    res.json(result);
+  }),
+);
+
+router.post(
+  '/:accountId/discord/team-forums/remove-team',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.settings.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const payload = DiscordTeamForumRemoveRequestSchema.parse(req.body);
+    await discordIntegrationService.removeTeamForum(accountId, BigInt(payload.teamId));
+    res.json({ message: 'Team forum removed.' });
   }),
 );
 

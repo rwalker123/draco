@@ -143,6 +143,9 @@ export class DiscordIntegrationResponseFormatter {
       status: record.status as DiscordTeamForumType['status'],
       autoCreated: Boolean(record.autocreated),
       lastSyncedAt: record.lastsyncedat ? record.lastsyncedat.toISOString() : null,
+      teamName: null,
+      seasonName: null,
+      leagueName: null,
       createdAt: record.createdat.toISOString(),
       updatedAt: record.updatedat.toISOString(),
     };
