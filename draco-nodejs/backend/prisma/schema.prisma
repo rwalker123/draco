@@ -119,7 +119,7 @@ model accountinstagramcredentials {
 
 model accountsettings {
   accountid    BigInt
-  settingkey   String   @db.VarChar(25)
+  settingkey   String   @db.VarChar(40)
   settingvalue String   @db.VarChar(25)
   accounts     accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountsettings_accounts")
 
@@ -1515,7 +1515,10 @@ model workoutregistration {
   workoutid           BigInt
   dateregistered      DateTime            @db.Timestamptz(6)
   whereheard          String              @db.VarChar(25)
+  accesscode          String              @db.VarChar(255) @default("")
   workoutannouncement workoutannouncement @relation(fields: [workoutid], references: [id], onDelete: Cascade, map: "fk_workoutregistration_workoutannouncement")
+
+  @@unique([workoutid, email], map: "uq_workoutregistration_workout_email")
 }
 
 model passwordresettokens {
@@ -1582,7 +1585,7 @@ model email_templates {
 model email_recipients {
   id             BigInt         @id @default(autoincrement())
   email_id       BigInt
-  contact_id     BigInt
+  contact_id     BigInt?
   email_address  String         @db.VarChar(255)
   contact_name   String?        @db.VarChar(255)
   recipient_type String?        @db.VarChar(50)
@@ -1594,7 +1597,7 @@ model email_recipients {
   bounce_reason  String?
   error_message  String?
   events         email_events[]
-  contact        contacts       @relation(fields: [contact_id], references: [id])
+  contact        contacts?      @relation(fields: [contact_id], references: [id])
   email          emails         @relation(fields: [email_id], references: [id], onDelete: Cascade)
 
   @@index([email_id, status])

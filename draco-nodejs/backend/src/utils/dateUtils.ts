@@ -92,6 +92,33 @@ export class DateUtils {
   }
 
   /**
+   * Format a Date into a human-friendly string in the given time zone.
+   * Falls back to UTC ISO when invalid input or time zone issues occur.
+   */
+  static formatDateTimeInTimeZone(
+    date: Date | null | undefined,
+    timeZone?: string | null,
+    options: Intl.DateTimeFormatOptions = {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    },
+  ): string | null {
+    if (!date) return null;
+
+    const tz = timeZone?.trim() || 'UTC';
+    try {
+      return new Intl.DateTimeFormat('en-US', { ...options, timeZone: tz }).format(date);
+    } catch {
+      return DateUtils.formatDateTimeForResponse(date);
+    }
+  }
+
+  /**
    * Parse frontend date string to database value for general date fields
    * Returns null for null/empty values, parsed Date for valid strings
    * @param dateString - Date string from frontend or null

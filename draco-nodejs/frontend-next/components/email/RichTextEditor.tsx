@@ -123,7 +123,6 @@ function ToolbarPlugin({
   const lastSelectionRef = React.useRef<RangeSelection | null>(null);
   const [formatMenuAnchor, setFormatMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [alignmentMenuAnchor, setAlignmentMenuAnchor] = React.useState<null | HTMLElement>(null);
-  const [fontMenuAnchor, setFontMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [fontSizeMenuAnchor, setFontSizeMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [fontColorMenuAnchor, setFontColorMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [bgColorMenuAnchor, setBgColorMenuAnchor] = React.useState<null | HTMLElement>(null);
@@ -328,14 +327,6 @@ function ToolbarPlugin({
     setAlignmentMenuAnchor(null);
   };
 
-  const openFontMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setFontMenuAnchor(event.currentTarget);
-  };
-
-  const closeFontMenu = () => {
-    setFontMenuAnchor(null);
-  };
-
   const openFontSizeMenu = (event: React.MouseEvent<HTMLElement>) => {
     setFontSizeMenuAnchor(event.currentTarget);
   };
@@ -433,20 +424,6 @@ function ToolbarPlugin({
   const formatUnderline = () => {
     if (!disabled) {
       editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
-    }
-  };
-
-  const applyFontFamily = (family: string) => {
-    const value = family === 'default' ? '' : family;
-    setFontFamily(family);
-    closeFontMenu();
-    if (!disabled) {
-      editor.update(() => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          $patchStyleText(selection, { 'font-family': value });
-        }
-      });
     }
   };
 
@@ -727,7 +704,7 @@ function ToolbarPlugin({
 
       <Button
         size="small"
-        onClick={openFontMenu}
+        onClick={openFormatMenu}
         endIcon={<ArrowDropDown />}
         disabled={disabled}
         sx={{ textTransform: 'none', minWidth: 100 }}
@@ -736,28 +713,61 @@ function ToolbarPlugin({
           {fontFamily === 'default' ? 'Font' : fontFamily}
         </Typography>
       </Button>
-      <Menu anchorEl={fontMenuAnchor} open={Boolean(fontMenuAnchor)} onClose={closeFontMenu}>
-        <MenuItem selected={fontFamily === 'default'} onClick={() => applyFontFamily('default')}>
-          Default
-        </MenuItem>
-        <MenuItem selected={fontFamily === 'Arial'} onClick={() => applyFontFamily('Arial')}>
-          Arial
-        </MenuItem>
-        <MenuItem selected={fontFamily === 'Georgia'} onClick={() => applyFontFamily('Georgia')}>
-          Georgia
-        </MenuItem>
-        <MenuItem
-          selected={fontFamily === 'Times New Roman'}
-          onClick={() => applyFontFamily('Times New Roman')}
-        >
-          Times New Roman
-        </MenuItem>
-        <MenuItem
-          selected={fontFamily === 'Courier New'}
-          onClick={() => applyFontFamily('Courier New')}
-        >
-          Courier New
-        </MenuItem>
+      <Menu
+        anchorEl={overflowMenuAnchor}
+        open={Boolean(overflowMenuAnchor)}
+        onClose={closeOverflowMenu}
+      >
+        {isCompactToolbar
+          ? [
+              {
+                key: 'compact-bullet',
+                label: 'Bullet list',
+                ariaLabel: 'Insert bullet list',
+                onClick: () => {
+                  closeOverflowMenu();
+                  insertBulletList();
+                },
+              },
+              {
+                key: 'compact-numbered',
+                label: 'Numbered list',
+                ariaLabel: 'Insert numbered list',
+                onClick: () => {
+                  closeOverflowMenu();
+                  insertNumberedList();
+                },
+              },
+              {
+                key: 'compact-outdent',
+                label: 'Decrease indent',
+                ariaLabel: 'Decrease indent',
+                onClick: () => {
+                  closeOverflowMenu();
+                  outdentContent();
+                },
+              },
+              {
+                key: 'compact-indent',
+                label: 'Increase indent',
+                ariaLabel: 'Increase indent',
+                onClick: () => {
+                  closeOverflowMenu();
+                  indentContent();
+                },
+              },
+            ].map((item) => (
+              <MenuItem
+                key={item.key}
+                onClick={() => {
+                  item.onClick();
+                }}
+                aria-label={item.ariaLabel}
+              >
+                {item.label}
+              </MenuItem>
+            ))
+          : null}
       </Menu>
 
       <Button
@@ -1049,9 +1059,8 @@ function ToolbarPlugin({
         open={Boolean(overflowMenuAnchor)}
         onClose={closeOverflowMenu}
       >
-        {isCompactToolbar && (
-          <>
-            {[
+        {isCompactToolbar
+          ? [
               {
                 key: 'compact-bullet',
                 label: 'Bullet list',
@@ -1124,19 +1133,19 @@ function ToolbarPlugin({
                   applyAlignment('justify');
                 },
               },
-            ].map((item) => (
-              <MenuItem
-                key={item.key}
-                onClick={item.onClick}
-                disabled={disabled}
-                aria-label={item.ariaLabel}
-              >
-                {item.label}
-              </MenuItem>
-            ))}
-            <Divider />
-          </>
-        )}
+            ]
+              .map((item) => (
+                <MenuItem
+                  key={item.key}
+                  onClick={item.onClick}
+                  disabled={disabled}
+                  aria-label={item.ariaLabel}
+                >
+                  {item.label}
+                </MenuItem>
+              ))
+              .concat(<Divider key="compact-divider" />)
+          : null}
         <MenuItem
           onClick={() => {
             closeOverflowMenu();

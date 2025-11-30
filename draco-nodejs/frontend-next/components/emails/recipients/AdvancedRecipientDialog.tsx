@@ -18,6 +18,11 @@ import {
   Alert,
   AlertTitle,
   CircularProgress,
+  Checkbox,
+  Switch,
+  Chip,
+  TextField,
+  MenuItem,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -26,6 +31,9 @@ import {
   Refresh as RefreshIcon,
   Warning as WarningIcon,
   Info as InfoIcon,
+  SportsMartialArts as SportsMartialArtsIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -44,11 +52,16 @@ import {
   HierarchicalSelectionItem,
   HierarchicalSelectionState,
   convertHierarchicalToContactGroups,
+  WorkoutRecipientSelection,
+  TeamsWantedRecipientSelection,
 } from '../../../types/emails/recipients';
 
 // Simplified RecipientSelectionState for backward compatibility
 interface SimplifiedRecipientSelectionState {
   selectedGroups?: Map<GroupType, ContactGroup[]>;
+  selectedWorkoutRecipients?: WorkoutRecipientSelection[];
+  selectedTeamsWantedRecipients?: TeamsWantedRecipientSelection[];
+  workoutManagersOnly?: boolean;
   totalRecipients: number;
   validEmailCount: number;
   invalidEmailCount: number;
@@ -68,6 +81,20 @@ import { EmailRecipientError, EmailRecipientErrorCode } from '../../../types/err
 import { normalizeError, createEmailRecipientError, safeAsync } from '../../../utils/errorHandling';
 import { createEmailRecipientService } from '../../../services/emailRecipientService';
 import { useAuth } from '../../../context/AuthContext';
+import {
+  getWorkout,
+  listWorkouts,
+  listWorkoutRegistrations,
+} from '../../../services/workoutService';
+import { playerClassifiedService } from '../../../services/playerClassifiedService';
+import {
+  WorkoutRegistrationType,
+  WorkoutSummaryType,
+  TeamsWantedPublicClassifiedType,
+  WorkoutStatusType,
+} from '@draco/shared-schemas';
+
+type WorkoutWithRegistrants = WorkoutSummaryType & { registrants: WorkoutRegistrationType[] };
 
 export interface AdvancedRecipientDialogProps {
   open: boolean;
@@ -84,6 +111,9 @@ export interface AdvancedRecipientDialogProps {
   error?: string | null;
   onRetry?: () => void;
   initialSelectedGroups?: Map<GroupType, ContactGroup[]>;
+  initialWorkoutRecipients?: WorkoutRecipientSelection[];
+  initialWorkoutManagersOnly?: boolean;
+  initialTeamsWantedRecipients?: TeamsWantedRecipientSelection[];
 }
 
 interface LoadingState {
@@ -106,7 +136,7 @@ interface SelectedContactCacheEntry {
   selectedTime: number;
 }
 
-type TabValue = 'contacts' | 'groups';
+type TabValue = 'contacts' | 'season' | 'workouts' | 'teamsWanted';
 
 /**
  * Wrapper component that provides the ManagerStateProvider context
@@ -136,6 +166,9 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   error = null,
   onRetry,
   initialSelectedGroups,
+  initialWorkoutRecipients,
+  initialWorkoutManagersOnly,
+  initialTeamsWantedRecipients,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -156,6 +189,28 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
   // UNIFIED GROUP SYSTEM - Single source of truth for all selections
   const [selectedGroups, setSelectedGroups] = useState<Map<GroupType, ContactGroup[]>>(new Map());
+
+  const [selectedWorkoutRegistrantIds, setSelectedWorkoutRegistrantIds] = useState<
+    Map<string, Set<string>>
+  >(new Map());
+  const [selectedTeamsWantedIds, setSelectedTeamsWantedIds] = useState<Set<string>>(new Set());
+  const [activeWorkouts, setActiveWorkouts] = useState<WorkoutWithRegistrants[]>([]);
+  const [recentPastWorkouts, setRecentPastWorkouts] = useState<WorkoutWithRegistrants[]>([]);
+  const [loadedOlderWorkouts, setLoadedOlderWorkouts] = useState<WorkoutWithRegistrants[]>([]);
+  const [workoutsLoading, setWorkoutsLoading] = useState(false);
+  const [workoutsError, setWorkoutsError] = useState<string | null>(null);
+  const [workoutManagersOnly, setWorkoutManagersOnly] = useState<boolean>(
+    initialWorkoutManagersOnly ?? false,
+  );
+  const [pastWorkoutsLoading, setPastWorkoutsLoading] = useState(false);
+  const [pastWorkoutsError, setPastWorkoutsError] = useState<string | null>(null);
+  const [olderWorkoutsOptions, setOlderWorkoutsOptions] = useState<WorkoutSummaryType[]>([]);
+  const [olderWorkoutsLoading, setOlderWorkoutsLoading] = useState(false);
+  const [olderWorkoutsError, setOlderWorkoutsError] = useState<string | null>(null);
+  const [selectedOlderWorkoutId, setSelectedOlderWorkoutId] = useState('');
+  const [teamsWanted, setTeamsWanted] = useState<TeamsWantedPublicClassifiedType[]>([]);
+  const [teamsWantedLoading, setTeamsWantedLoading] = useState(false);
+  const [teamsWantedError, setTeamsWantedError] = useState<string | null>(null);
 
   // Hierarchical selection state for shared data model
   const [hierarchicalSelectedIds, setHierarchicalSelectedIds] = useState<
@@ -279,6 +334,19 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     [selectedGroups],
   );
 
+  const workoutSelectionCount = useMemo(() => {
+    let total = 0;
+    selectedWorkoutRegistrantIds.forEach((ids) => {
+      total += ids.size;
+    });
+    return total;
+  }, [selectedWorkoutRegistrantIds]);
+
+  const teamsWantedSelectionCount = useMemo(
+    () => selectedTeamsWantedIds.size,
+    [selectedTeamsWantedIds],
+  );
+
   const getTotalSelected = useCallback((): number => {
     let total = 0;
 
@@ -301,8 +369,17 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       }
     }
 
+    total += workoutSelectionCount;
+    total += teamsWantedSelectionCount;
+
     return total;
-  }, [selectedGroups, hierarchicalSelectedIds, seasonId]);
+  }, [
+    selectedGroups,
+    hierarchicalSelectedIds,
+    seasonId,
+    workoutSelectionCount,
+    teamsWantedSelectionCount,
+  ]);
 
   // Hierarchical selection change handler
   const handleHierarchicalSelectionChange = useCallback(
@@ -530,6 +607,169 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     }
   }, [open, seasonId]);
 
+  const fetchWorkoutsWithRegistrants = useCallback(
+    async (params: {
+      status: WorkoutStatusType;
+      after?: string;
+      before?: string;
+      limit?: number;
+    }): Promise<WorkoutWithRegistrants[]> => {
+      const workouts = await listWorkouts(accountId, true, token ?? undefined, params.status, {
+        after: params.after,
+        before: params.before,
+        limit: params.limit,
+      });
+
+      return Promise.all(
+        workouts.map(async (workout) => {
+          const registrants = await listWorkoutRegistrations(
+            accountId,
+            workout.id,
+            token ?? undefined,
+          );
+
+          return { ...workout, registrants } satisfies WorkoutWithRegistrants;
+        }),
+      );
+    },
+    [accountId, token],
+  );
+
+  const loadActiveWorkouts = useCallback(async () => {
+    if (!accountId) {
+      return;
+    }
+
+    setWorkoutsLoading(true);
+    setWorkoutsError(null);
+
+    try {
+      const workoutsWithRegistrants = await fetchWorkoutsWithRegistrants({ status: 'upcoming' });
+      setActiveWorkouts(workoutsWithRegistrants);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load workouts';
+      setWorkoutsError(message);
+    } finally {
+      setWorkoutsLoading(false);
+    }
+  }, [accountId, fetchWorkoutsWithRegistrants]);
+
+  const loadRecentPastWorkouts = useCallback(async () => {
+    if (!accountId) {
+      return;
+    }
+
+    setPastWorkoutsLoading(true);
+    setPastWorkoutsError(null);
+
+    try {
+      const twoWeeksAgo = new Date();
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+      const workoutsWithRegistrants = await fetchWorkoutsWithRegistrants({
+        status: 'past',
+        after: twoWeeksAgo.toISOString(),
+        limit: 25,
+      });
+      setRecentPastWorkouts(workoutsWithRegistrants);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load recent past workouts';
+      setPastWorkoutsError(message);
+    } finally {
+      setPastWorkoutsLoading(false);
+    }
+  }, [accountId, fetchWorkoutsWithRegistrants]);
+
+  const loadOlderWorkoutsOptions = useCallback(async () => {
+    if (!accountId) {
+      return;
+    }
+
+    setOlderWorkoutsLoading(true);
+    setOlderWorkoutsError(null);
+
+    try {
+      const twoWeeksAgo = new Date();
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+      const workouts = await listWorkouts(accountId, false, token ?? undefined, 'past', {
+        before: twoWeeksAgo.toISOString(),
+        limit: 100,
+      });
+      const sorted = [...workouts].sort(
+        (a, b) => new Date(b.workoutDate).getTime() - new Date(a.workoutDate).getTime(),
+      );
+      setOlderWorkoutsOptions(sorted);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load past workouts list';
+      setOlderWorkoutsError(message);
+    } finally {
+      setOlderWorkoutsLoading(false);
+    }
+  }, [accountId, token]);
+
+  const loadOlderWorkoutWithRegistrants = useCallback(
+    async (workoutId: string) => {
+      if (!accountId) {
+        return;
+      }
+
+      setOlderWorkoutsLoading(true);
+      setOlderWorkoutsError(null);
+
+      try {
+        const [workout, registrants] = await Promise.all([
+          getWorkout(accountId, workoutId, token ?? undefined),
+          listWorkoutRegistrations(accountId, workoutId, token ?? undefined),
+        ]);
+        const workoutWithRegistrants: WorkoutWithRegistrants = {
+          ...workout,
+          registrants,
+        };
+
+        setLoadedOlderWorkouts((prev) => {
+          const exists = prev.some((item) => item.id === workoutId);
+          if (exists) {
+            return prev;
+          }
+          return [...prev, workoutWithRegistrants];
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load past workout';
+        setOlderWorkoutsError(message);
+      } finally {
+        setOlderWorkoutsLoading(false);
+      }
+    },
+    [accountId, token],
+  );
+
+  const loadTeamsWanted = useCallback(async () => {
+    if (!accountId || !token) {
+      return;
+    }
+
+    setTeamsWantedLoading(true);
+    setTeamsWantedError(null);
+
+    try {
+      const result = await playerClassifiedService.getTeamsWanted(accountId, undefined, token);
+      setTeamsWanted(result.data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load Teams Wanted';
+      setTeamsWantedError(message);
+    } finally {
+      setTeamsWantedLoading(false);
+    }
+  }, [accountId, token]);
+
+  useEffect(() => {
+    if (open) {
+      loadActiveWorkouts();
+      loadTeamsWanted();
+      loadRecentPastWorkouts();
+      loadOlderWorkoutsOptions();
+    }
+  }, [open, loadActiveWorkouts, loadTeamsWanted, loadRecentPastWorkouts, loadOlderWorkoutsOptions]);
+
   const [currentTab, setCurrentTab] = useState<TabValue>('contacts');
 
   // Initialize unified groups when dialog opens
@@ -538,13 +778,108 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       // Initialize with provided groups or empty if none provided
       setSelectedGroups(initialSelectedGroups || new Map());
 
+      if (!initialSelectedGroups || initialSelectedGroups.size === 0) {
+        setSelectedWorkoutRegistrantIds(new Map());
+      }
+      if (initialTeamsWantedRecipients && initialTeamsWantedRecipients.length > 0) {
+        setSelectedTeamsWantedIds(
+          new Set(initialTeamsWantedRecipients.map((item) => item.classifiedId)),
+        );
+      } else {
+        setSelectedTeamsWantedIds(new Set());
+      }
+
       // Reset hierarchical selections when parent state is cleared
       if (!initialSelectedGroups || initialSelectedGroups.size === 0) {
         setHierarchicalSelectedIds(new Map());
         setHierarchicalManagersOnly(false);
       }
     }
-  }, [open, initialSelectedGroups]);
+  }, [open, initialSelectedGroups, initialTeamsWantedRecipients]);
+
+  useEffect(() => {
+    if (open && initialWorkoutManagersOnly) {
+      setWorkoutManagersOnly(true);
+    }
+  }, [open, initialWorkoutManagersOnly]);
+
+  const allWorkoutsMap = useMemo(() => {
+    const map = new Map<string, WorkoutWithRegistrants>();
+    [...recentPastWorkouts, ...activeWorkouts, ...loadedOlderWorkouts].forEach((workout) => {
+      if (!map.has(workout.id)) {
+        map.set(workout.id, workout);
+      }
+    });
+    return map;
+  }, [activeWorkouts, recentPastWorkouts, loadedOlderWorkouts]);
+
+  const allWorkouts = useMemo(
+    () =>
+      Array.from(allWorkoutsMap.values()).sort(
+        (a, b) => new Date(b.workoutDate).getTime() - new Date(a.workoutDate).getTime(),
+      ),
+    [allWorkoutsMap],
+  );
+  useEffect(() => {
+    if (!open || !initialWorkoutRecipients || initialWorkoutRecipients.length === 0) {
+      return;
+    }
+
+    setSelectedWorkoutRegistrantIds((prev) => {
+      if (prev.size > 0 && !allWorkouts.length) {
+        return prev;
+      }
+
+      const next = new Map<string, Set<string>>();
+
+      initialWorkoutRecipients.forEach((selection) => {
+        const workout = allWorkouts.find((item) => item.id === selection.workoutId);
+        if (!workout || workout.registrants.length === 0) {
+          return;
+        }
+
+        const ids =
+          selection.registrationIds && selection.registrationIds.size > 0
+            ? new Set(Array.from(selection.registrationIds))
+            : new Set(workout.registrants.map((registrant) => registrant.id));
+
+        next.set(workout.id, ids);
+      });
+
+      return next;
+    });
+  }, [open, initialWorkoutRecipients, allWorkouts]);
+
+  const visibleWorkouts = useMemo(() => {
+    if (!workoutManagersOnly) {
+      return allWorkouts;
+    }
+    return allWorkouts.map((workout) => ({
+      ...workout,
+      registrants: workout.registrants.filter((registrant) => registrant.isManager),
+    }));
+  }, [allWorkouts, workoutManagersOnly]);
+
+  useEffect(() => {
+    if (!workoutManagersOnly) {
+      return;
+    }
+    setSelectedWorkoutRegistrantIds((prev) => {
+      const next = new Map<string, Set<string>>();
+      visibleWorkouts.forEach((workout) => {
+        if (workout.registrants.length === 0) {
+          return;
+        }
+        const existingIds = prev.get(workout.id) ?? new Set<string>();
+        const allowedIds = new Set(workout.registrants.map((registrant) => registrant.id));
+        const filteredIds = new Set(Array.from(existingIds).filter((id) => allowedIds.has(id)));
+        if (filteredIds.size > 0) {
+          next.set(workout.id, filteredIds);
+        }
+      });
+      return next;
+    });
+  }, [workoutManagersOnly, visibleWorkouts]);
 
   // State for loading and error handling
   const [loadingState, setLoadingState] = useState<LoadingState>({
@@ -587,6 +922,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         setSelectedGroups(new Map());
         setHierarchicalSelectedIds(new Map()); // Clear hierarchical selections
         setHierarchicalManagersOnly(false); // Reset managers-only toggle
+        setSelectedWorkoutRegistrantIds(new Map());
+        setSelectedTeamsWantedIds(new Set());
       },
 
       isContactSelected: (contactId: string): boolean => {
@@ -609,6 +946,131 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       getTotalSelected,
       selectedGroups,
     ],
+  );
+
+  const handleToggleAllWorkouts = useCallback(
+    (checked: boolean) => {
+      if (!checked) {
+        setSelectedWorkoutRegistrantIds(new Map());
+        return;
+      }
+
+      const next = new Map<string, Set<string>>();
+      visibleWorkouts.forEach((workout) => {
+        if (workout.registrants.length > 0) {
+          next.set(workout.id, new Set(workout.registrants.map((registrant) => registrant.id)));
+        }
+      });
+      setSelectedWorkoutRegistrantIds(next);
+    },
+    [visibleWorkouts],
+  );
+
+  const handleToggleWorkout = useCallback(
+    (workoutId: string, checked: boolean) => {
+      setSelectedWorkoutRegistrantIds((prev) => {
+        const next = new Map(prev);
+        const workout = visibleWorkouts.find((item) => item.id === workoutId);
+        if (!workout) {
+          return prev;
+        }
+
+        if (checked) {
+          next.set(workoutId, new Set(workout.registrants.map((registrant) => registrant.id)));
+        } else {
+          next.delete(workoutId);
+        }
+
+        return next;
+      });
+    },
+    [visibleWorkouts],
+  );
+
+  const handleToggleRegistrant = useCallback(
+    (workoutId: string, registrantId: string, checked: boolean) => {
+      setSelectedWorkoutRegistrantIds((prev) => {
+        const next = new Map(prev);
+        const ids = new Set(next.get(workoutId) ?? []);
+
+        if (checked) {
+          ids.add(registrantId);
+        } else {
+          ids.delete(registrantId);
+        }
+
+        if (ids.size > 0) {
+          next.set(workoutId, ids);
+        } else {
+          next.delete(workoutId);
+        }
+
+        return next;
+      });
+    },
+    [],
+  );
+
+  const handleWorkoutManagersOnlyToggle = useCallback(
+    (checked: boolean) => {
+      setWorkoutManagersOnly(checked);
+      if (checked) {
+        setSelectedWorkoutRegistrantIds((prev) => {
+          const next = new Map<string, Set<string>>();
+          visibleWorkouts.forEach((workout) => {
+            if (workout.registrants.length === 0) {
+              return;
+            }
+            const existingIds = prev.get(workout.id) ?? new Set<string>();
+            const allowedIds = new Set(
+              workout.registrants
+                .filter((registrant) => registrant.isManager)
+                .map((registrant) => registrant.id),
+            );
+            const filteredIds = new Set(Array.from(existingIds).filter((id) => allowedIds.has(id)));
+            if (filteredIds.size > 0) {
+              next.set(workout.id, filteredIds);
+            }
+          });
+          return next;
+        });
+      }
+    },
+    [visibleWorkouts],
+  );
+
+  const handleToggleAllTeamsWanted = useCallback(
+    (checked: boolean) => {
+      if (!checked) {
+        setSelectedTeamsWantedIds(new Set());
+        return;
+      }
+      setSelectedTeamsWantedIds(new Set(teamsWanted.map((item) => item.id)));
+    },
+    [teamsWanted],
+  );
+
+  const handleToggleTeamsWanted = useCallback((classifiedId: string, checked: boolean) => {
+    setSelectedTeamsWantedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(classifiedId);
+      } else {
+        next.delete(classifiedId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleOlderWorkoutSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const workoutId = event.target.value;
+      setSelectedOlderWorkoutId(workoutId);
+      if (workoutId) {
+        void loadOlderWorkoutWithRegistrants(workoutId);
+      }
+    },
+    [loadOlderWorkoutWithRegistrants],
   );
 
   // Local actions that modify local state only
@@ -707,16 +1169,38 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     isInSearchMode,
   ]);
 
+  const totalWorkoutRegistrants = useMemo(
+    () => visibleWorkouts.reduce((sum, workout) => sum + workout.registrants.length, 0),
+    [visibleWorkouts],
+  );
+
+  const hasWorkouts = useMemo(() => allWorkouts.length > 0, [allWorkouts]);
+
   // Data availability checks - use server-loaded contacts
   const hasContacts = useMemo(
     () => Array.isArray(currentPageContacts) && currentPageContacts.length > 0,
     [currentPageContacts],
   );
-  const hasAnyData = hasContacts;
+  const hasTeamsWanted = useMemo(() => teamsWanted.length > 0, [teamsWanted]);
+  const hasAnyData = hasContacts || hasWorkouts || hasTeamsWanted;
 
   // Determine overall loading state - include pagination loading
   const isGeneralLoading =
-    loading || paginationLoading || Object.values(loadingState).some(Boolean);
+    loading ||
+    paginationLoading ||
+    workoutsLoading ||
+    teamsWantedLoading ||
+    Object.values(loadingState).some(Boolean);
+
+  useEffect(() => {
+    if (currentTab === 'season' && !seasonId) {
+      setCurrentTab(hasWorkouts ? 'workouts' : hasTeamsWanted ? 'teamsWanted' : 'contacts');
+    } else if (currentTab === 'workouts' && !hasWorkouts) {
+      setCurrentTab(seasonId ? 'season' : hasTeamsWanted ? 'teamsWanted' : 'contacts');
+    } else if (currentTab === 'teamsWanted' && !hasTeamsWanted) {
+      setCurrentTab(seasonId ? 'season' : hasWorkouts ? 'workouts' : 'contacts');
+    }
+  }, [currentTab, seasonId, hasWorkouts, hasTeamsWanted]);
 
   // Handle tab changes
   const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: TabValue) => {
@@ -757,8 +1241,20 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       onRetry();
     }
 
+    loadActiveWorkouts();
+    void loadRecentPastWorkouts();
+    void loadOlderWorkoutsOptions();
+
     showNotification('Retrying...', 'info');
-  }, [retryCount, maxRetries, onRetry, showNotification]);
+  }, [
+    retryCount,
+    maxRetries,
+    onRetry,
+    showNotification,
+    loadActiveWorkouts,
+    loadRecentPastWorkouts,
+    loadOlderWorkoutsOptions,
+  ]);
 
   // Clear specific errors
   const clearError = useCallback((errorType: keyof ErrorState) => {
@@ -856,6 +1352,47 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   const handleApply = useCallback(() => {
     const totalSelected = getTotalSelected();
 
+    const workoutSelections: WorkoutRecipientSelection[] = [];
+    selectedWorkoutRegistrantIds.forEach((ids, workoutId) => {
+      const workout =
+        visibleWorkouts.find((item) => item.id === workoutId) ||
+        allWorkouts.find((item) => item.id === workoutId);
+      const baseWorkout = allWorkouts.find((item) => item.id === workoutId);
+      if (!workout || !baseWorkout) {
+        return;
+      }
+
+      const totalInScope = workoutManagersOnly
+        ? baseWorkout.registrants.filter((registrant) => registrant.isManager).length
+        : baseWorkout.registrants.length;
+      const shouldOmitRegistrationIds = !workoutManagersOnly && ids.size === totalInScope;
+
+      workoutSelections.push({
+        workoutId,
+        workoutDesc: workout.workoutDesc,
+        workoutDate: workout.workoutDate,
+        totalSelected: ids.size,
+        managersOnly: workoutManagersOnly,
+        registrationIds: shouldOmitRegistrationIds ? undefined : new Set(ids),
+      });
+    });
+
+    const totalWorkoutSelected = workoutSelections.reduce(
+      (sum, selection) => sum + selection.totalSelected,
+      0,
+    );
+
+    const teamsWantedSelections: TeamsWantedRecipientSelection[] = [];
+    selectedTeamsWantedIds.forEach((id) => {
+      const classified = teamsWanted.find((item) => item.id === id);
+      teamsWantedSelections.push({
+        classifiedId: id,
+        name: classified?.name,
+      });
+    });
+
+    const totalTeamsWantedSelected = teamsWantedSelections.length;
+
     // Convert hierarchical selections to ContactGroups and merge with manual selections
     const hierarchicalContactGroups = convertHierarchicalSelectionsToContactGroups();
 
@@ -921,11 +1458,21 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       });
 
       // Create simplified state for the compose page
+      const validContactsCount = allSelectedContactDetails.filter((c) => c.hasValidEmail).length;
+      const totalRecipients = allSelectedContactDetails.length + totalWorkoutSelected;
+      const validWorkoutCount = totalWorkoutSelected; // assume workout registrants already filtered to valid emails server-side
+      const validTeamsWantedCount = totalTeamsWantedSelected; // assume resolved emails will be valid server-side
       const simplifiedState: SimplifiedRecipientSelectionState = {
         selectedGroups: mergedContactGroups,
-        totalRecipients: allSelectedContactDetails.length,
-        validEmailCount: allSelectedContactDetails.filter((c) => c.hasValidEmail).length,
-        invalidEmailCount: allSelectedContactDetails.filter((c) => !c.hasValidEmail).length,
+        selectedWorkoutRecipients: workoutSelections,
+        selectedTeamsWantedRecipients: teamsWantedSelections,
+        workoutManagersOnly,
+        totalRecipients: totalRecipients + totalTeamsWantedSelected,
+        validEmailCount: validContactsCount + validWorkoutCount + validTeamsWantedCount,
+        invalidEmailCount:
+          totalRecipients +
+          totalTeamsWantedSelected -
+          (validContactsCount + validWorkoutCount + validTeamsWantedCount),
         searchQuery: '',
         activeTab: 'contacts',
         expandedSections: new Set(),
@@ -949,6 +1496,12 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     getContactDetails,
     showNotification,
     onClose,
+    selectedWorkoutRegistrantIds,
+    allWorkouts,
+    visibleWorkouts,
+    workoutManagersOnly,
+    selectedTeamsWantedIds,
+    teamsWanted,
   ]);
 
   // Effect to handle external error prop
@@ -1013,7 +1566,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   }, []);
 
   // Show loading dialog if completely loading
-  if (loading && !hasAnyData) {
+  if (isGeneralLoading && !hasAnyData) {
     return (
       <Dialog
         open={open}
@@ -1138,7 +1691,25 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           textColor="primary"
         >
           <Tab icon={<PersonIcon />} label="Contacts" value="contacts" iconPosition="start" />
-          <Tab icon={<GroupsIcon />} label="Groups" value="groups" iconPosition="start" />
+          {seasonId ? (
+            <Tab icon={<GroupsIcon />} label="Season" value="season" iconPosition="start" />
+          ) : null}
+          {hasWorkouts ? (
+            <Tab
+              icon={<SportsMartialArtsIcon />}
+              label="Workouts"
+              value="workouts"
+              iconPosition="start"
+            />
+          ) : null}
+          {hasTeamsWanted ? (
+            <Tab
+              icon={<GroupsIcon />}
+              label="Teams Wanted"
+              value="teamsWanted"
+              iconPosition="start"
+            />
+          ) : null}
         </Tabs>
       </Box>
 
@@ -1169,16 +1740,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           </Box>
         )}
 
-        {/* Season Loading Indicator */}
-        {!seasonId && (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <CircularProgress size={24} sx={{ mr: 1 }} />
-            <Typography variant="body2" color="text.secondary">
-              Loading season data...
-            </Typography>
-          </Box>
-        )}
-
         {/* No Data Available */}
         {!hasAnyData && !isGeneralLoading && (
           <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -1187,11 +1748,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
               No Recipients Available
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              There are no contacts, teams, or roles available for selection. This might be because:
+              There are no contacts, workouts, teams, or roles available for selection. This might
+              be because:
             </Typography>
             <Box component="ul" sx={{ textAlign: 'left', maxWidth: 400, mx: 'auto' }}>
               <li>No contacts have been added to your account yet</li>
               <li>You do not have permission to view recipient data</li>
+              <li>There are no active workouts with registrants available</li>
               <li>The data is still loading</li>
             </Box>
             {onRetry && (
@@ -1235,8 +1798,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
                 />
               )}
 
-              {/* Groups Tab */}
-              {currentTab === 'groups' && (
+              {/* Season Tab */}
+              {currentTab === 'season' && (
                 <HierarchicalGroupSelection
                   accountId={accountId}
                   seasonId={seasonId || ''}
@@ -1244,6 +1807,73 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
                   managersOnly={hierarchicalManagersOnly}
                   onSelectionChange={handleHierarchicalSelectionChange}
                   loading={loadingState.teamGroups}
+                />
+              )}
+              {currentTab === 'workouts' && (
+                <Stack spacing={1} sx={{ height: '100%' }}>
+                  <Box
+                    sx={{
+                      px: 2,
+                      pt: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Showing upcoming workouts and the past 2 weeks.
+                    </Typography>
+                    <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <TextField
+                        select
+                        size="small"
+                        label="Load past workout"
+                        value={selectedOlderWorkoutId}
+                        onChange={handleOlderWorkoutSelect}
+                        sx={{ minWidth: 260 }}
+                        disabled={olderWorkoutsLoading || olderWorkoutsOptions.length === 0}
+                        helperText={
+                          olderWorkoutsError
+                            ? olderWorkoutsError
+                            : olderWorkoutsOptions.length === 0
+                              ? 'No older workouts available'
+                              : 'Select a completed workout (older than 2 weeks) to load registrants'
+                        }
+                      >
+                        {olderWorkoutsOptions.map((workout) => (
+                          <MenuItem key={workout.id} value={workout.id}>
+                            {`${workout.workoutDesc} — ${new Date(workout.workoutDate).toLocaleString()}`}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                      {olderWorkoutsLoading ? <CircularProgress size={18} /> : null}
+                    </Box>
+                  </Box>
+                  <Box sx={{ flex: 1, minHeight: 0 }}>
+                    <WorkoutsTabContent
+                      workouts={visibleWorkouts}
+                      totalRegistrants={totalWorkoutRegistrants}
+                      selectedWorkoutIds={selectedWorkoutRegistrantIds}
+                      onToggleAll={handleToggleAllWorkouts}
+                      onToggleWorkout={handleToggleWorkout}
+                      onToggleRegistrant={handleToggleRegistrant}
+                      managersOnly={workoutManagersOnly}
+                      onToggleManagersOnly={handleWorkoutManagersOnlyToggle}
+                      loading={workoutsLoading || pastWorkoutsLoading}
+                      error={workoutsError || pastWorkoutsError}
+                    />
+                  </Box>
+                </Stack>
+              )}
+              {currentTab === 'teamsWanted' && (
+                <TeamsWantedTabContent
+                  teamsWanted={teamsWanted}
+                  selectedIds={selectedTeamsWantedIds}
+                  onToggleAll={handleToggleAllTeamsWanted}
+                  onToggle={handleToggleTeamsWanted}
+                  loading={teamsWantedLoading}
+                  error={teamsWantedError}
                 />
               )}
             </Box>
@@ -1317,6 +1947,385 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         </Stack>
       </DialogActions>
     </Dialog>
+  );
+};
+
+// Workouts Tab Component
+interface WorkoutsTabContentProps {
+  workouts: WorkoutWithRegistrants[];
+  totalRegistrants: number;
+  selectedWorkoutIds: Map<string, Set<string>>;
+  onToggleAll: (checked: boolean) => void;
+  onToggleWorkout: (workoutId: string, checked: boolean) => void;
+  onToggleRegistrant: (workoutId: string, registrantId: string, checked: boolean) => void;
+  managersOnly: boolean;
+  onToggleManagersOnly: (checked: boolean) => void;
+  loading: boolean;
+  error?: string | null;
+}
+
+const WorkoutsTabContent: React.FC<WorkoutsTabContentProps> = ({
+  workouts,
+  totalRegistrants,
+  selectedWorkoutIds,
+  onToggleAll,
+  onToggleWorkout,
+  onToggleRegistrant,
+  managersOnly,
+  onToggleManagersOnly,
+  loading,
+  error,
+}) => {
+  const [rootExpanded, setRootExpanded] = useState(true);
+  const [collapsedWorkouts, setCollapsedWorkouts] = useState<Set<string>>(new Set());
+
+  const toggleExpand = useCallback((workoutId: string) => {
+    setCollapsedWorkouts((prev) => {
+      const next = new Set(prev);
+      if (next.has(workoutId)) {
+        next.delete(workoutId);
+      } else {
+        next.add(workoutId);
+      }
+      return next;
+    });
+  }, []);
+
+  const selectedCount = useMemo(() => {
+    let total = 0;
+    selectedWorkoutIds.forEach((ids) => {
+      total += ids.size;
+    });
+    return total;
+  }, [selectedWorkoutIds]);
+
+  const allSelected = totalRegistrants > 0 && selectedCount === totalRegistrants;
+  const indeterminate = selectedCount > 0 && selectedCount < totalRegistrants;
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <CircularProgress size={32} />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Loading workouts...
+        </Typography>
+      </Box>
+    );
+  }
+
+  const formatDateTime = (value: string) => {
+    const date = new Date(value);
+    const now = new Date();
+    const includeYear = date.getFullYear() !== now.getFullYear();
+
+    return date.toLocaleString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      ...(includeYear ? { year: 'numeric' } : {}),
+    });
+  };
+
+  return (
+    <Box sx={{ p: 0, overflowY: 'auto', height: '100%' }}>
+      {error ? (
+        <Alert severity="error" sx={{ mb: 2, mx: 2 }}>
+          {error}
+        </Alert>
+      ) : null}
+
+      <Box
+        sx={{
+          px: 2,
+          py: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Typography variant="h6" component="h3" color="text.primary">
+          Select Workouts & Registrants
+        </Typography>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Typography variant="body2" color="text.secondary">
+            Want to Manage only
+          </Typography>
+          <Switch
+            size="small"
+            checked={managersOnly}
+            onChange={(event) => onToggleManagersOnly(event.target.checked)}
+            inputProps={{ 'aria-label': 'Toggle registrants that would be willing to manager' }}
+          />
+        </Stack>
+      </Box>
+
+      <Stack spacing={1}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 0.25 }}>
+          <IconButton size="small" onClick={() => setRootExpanded((prev) => !prev)}>
+            {rootExpanded ? (
+              <ExpandLessIcon fontSize="small" />
+            ) : (
+              <ExpandMoreIcon fontSize="small" />
+            )}
+          </IconButton>
+          <Checkbox
+            checked={allSelected}
+            indeterminate={indeterminate}
+            onChange={(event) => onToggleAll(event.target.checked)}
+            disabled={totalRegistrants === 0}
+            size="small"
+            sx={{ p: 0.5 }}
+          />
+          <GroupsIcon fontSize="small" color="primary" />
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            All displayed workouts
+          </Typography>
+          <Chip
+            label={`${selectedCount}/${totalRegistrants} players`}
+            size="small"
+            variant="outlined"
+            sx={{ ml: 1 }}
+          />
+        </Box>
+
+        {rootExpanded && (
+          <>
+            {workouts.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ px: 2, pb: 2 }}>
+                No active workouts with registrants are available.
+              </Typography>
+            ) : (
+              <Stack spacing={0}>
+                {workouts.map((workout) => {
+                  const selectedIds = selectedWorkoutIds.get(workout.id) ?? new Set<string>();
+                  const workoutSelected =
+                    selectedIds.size > 0 && selectedIds.size === workout.registrants.length;
+                  const workoutIndeterminate =
+                    selectedIds.size > 0 && selectedIds.size < workout.registrants.length;
+                  const isExpanded = !collapsedWorkouts.has(workout.id);
+
+                  return (
+                    <Box key={workout.id} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          px: 2,
+                          py: 0.5,
+                          bgcolor: 'background.default',
+                        }}
+                      >
+                        <IconButton size="small" onClick={() => toggleExpand(workout.id)}>
+                          {isExpanded ? (
+                            <ExpandLessIcon fontSize="small" />
+                          ) : (
+                            <ExpandMoreIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                        <Checkbox
+                          checked={workoutSelected}
+                          indeterminate={workoutIndeterminate}
+                          onChange={(event) => onToggleWorkout(workout.id, event.target.checked)}
+                          size="small"
+                        />
+                        <GroupsIcon fontSize="small" color="secondary" />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                          {workout.workoutDesc}
+                        </Typography>
+                        <Chip
+                          label={`${selectedIds.size}/${workout.registrants.length} players`}
+                          size="small"
+                          variant="outlined"
+                          sx={{ ml: 1 }}
+                        />
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
+                          {formatDateTime(workout.workoutDate)}
+                        </Typography>
+                      </Box>
+
+                      {isExpanded && (
+                        <Box sx={{ pl: 9, pr: 2, pb: 1 }}>
+                          {workout.registrants.length === 0 ? (
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ pl: 1, py: 0.5 }}
+                            >
+                              No registrants yet
+                            </Typography>
+                          ) : (
+                            workout.registrants.map((registrant) => (
+                              <Box
+                                key={registrant.id}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  py: 0.5,
+                                }}
+                              >
+                                <Checkbox
+                                  size="small"
+                                  checked={selectedIds.has(registrant.id)}
+                                  onChange={(event) =>
+                                    onToggleRegistrant(
+                                      workout.id,
+                                      registrant.id,
+                                      event.target.checked,
+                                    )
+                                  }
+                                />
+                                <PersonIcon fontSize="small" color="action" />
+                                <Box sx={{ minWidth: 0 }}>
+                                  <Typography variant="body2">{registrant.name}</Typography>
+                                  <Typography variant="caption" color="text.secondary" noWrap>
+                                    {registrant.email}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            ))
+                          )}
+                        </Box>
+                      )}
+                    </Box>
+                  );
+                })}
+              </Stack>
+            )}
+          </>
+        )}
+      </Stack>
+    </Box>
+  );
+};
+
+interface TeamsWantedTabContentProps {
+  teamsWanted: TeamsWantedPublicClassifiedType[];
+  selectedIds: Set<string>;
+  onToggleAll: (checked: boolean) => void;
+  onToggle: (id: string, checked: boolean) => void;
+  loading: boolean;
+  error?: string | null;
+}
+
+const TeamsWantedTabContent: React.FC<TeamsWantedTabContentProps> = ({
+  teamsWanted,
+  selectedIds,
+  onToggleAll,
+  onToggle,
+  loading,
+  error,
+}) => {
+  const selectedCount = selectedIds.size;
+  const allSelected = teamsWanted.length > 0 && selectedCount === teamsWanted.length;
+  const indeterminate = selectedCount > 0 && selectedCount < teamsWanted.length;
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <CircularProgress size={32} />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Loading Teams Wanted...
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ p: 0, overflowY: 'auto', height: '100%' }}>
+      {error ? (
+        <Alert severity="error" sx={{ mb: 2, mx: 2 }}>
+          {error}
+        </Alert>
+      ) : null}
+
+      <Box
+        sx={{
+          px: 2,
+          py: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Typography variant="h6" component="h3" color="text.primary">
+          Select Teams Wanted Registrants
+        </Typography>
+      </Box>
+
+      <Stack spacing={1}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 0.25 }}>
+          <Checkbox
+            checked={allSelected}
+            indeterminate={indeterminate}
+            onChange={(event) => onToggleAll(event.target.checked)}
+            disabled={teamsWanted.length === 0}
+            size="small"
+            sx={{ p: 0.5 }}
+          />
+          <GroupsIcon fontSize="small" color="primary" />
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            All Teams Wanted
+          </Typography>
+          <Chip
+            label={`${selectedCount}/${teamsWanted.length} players`}
+            size="small"
+            variant="outlined"
+            sx={{ ml: 1 }}
+          />
+        </Box>
+
+        {teamsWanted.length === 0 ? (
+          <Typography variant="body2" color="text.secondary" sx={{ px: 2, pb: 2 }}>
+            No Teams Wanted classifieds are available.
+          </Typography>
+        ) : (
+          <Stack spacing={0}>
+            {teamsWanted.map((classified) => (
+              <Box
+                key={classified.id}
+                sx={{
+                  borderBottom: 1,
+                  borderColor: 'divider',
+                  px: 2,
+                  py: 0.75,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                <Checkbox
+                  size="small"
+                  checked={selectedIds.has(classified.id)}
+                  onChange={(event) => onToggle(classified.id, event.target.checked)}
+                />
+                <PersonIcon fontSize="small" color="action" />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    {classified.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    {classified.positionsPlayed}
+                  </Typography>
+                </Box>
+                <Chip
+                  label={classified.experience}
+                  size="small"
+                  variant="outlined"
+                  sx={{ ml: 'auto' }}
+                />
+                {classified.age ? (
+                  <Chip label={`Age ${classified.age}`} size="small" variant="outlined" />
+                ) : null}
+              </Box>
+            ))}
+          </Stack>
+        )}
+      </Stack>
+    </Box>
   );
 };
 

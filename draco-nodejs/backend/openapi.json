@@ -3169,31 +3169,6 @@
           "recipients": {
             "type": "object",
             "properties": {
-              "season": {
-                "type": "boolean",
-                "description": "Includes all contacts associated with the current season."
-              },
-              "leagues": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Includes all contacts associated with the specified leagues."
-              },
-              "divisions": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Includes all contacts associated with the specified divisions."
-              },
-              "teams": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Includes all contacts associated with the specified teams."
-              },
               "contacts": {
                 "type": "array",
                 "items": {
@@ -3201,9 +3176,79 @@
                 },
                 "description": "Includes the specified contact IDs."
               },
-              "teamManagers": {
-                "type": "boolean",
-                "description": "Includes only team managers."
+              "seasonSelection": {
+                "type": "object",
+                "properties": {
+                  "season": {
+                    "type": "boolean",
+                    "description": "Includes all contacts associated with the current season."
+                  },
+                  "leagues": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Includes all contacts associated with the specified leagues."
+                  },
+                  "divisions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Includes all contacts associated with the specified divisions."
+                  },
+                  "teams": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Includes all contacts associated with the specified teams."
+                  },
+                  "managersOnly": {
+                    "type": "boolean",
+                    "description": "Includes only team managers for the selected groups."
+                  }
+                },
+                "description": "Structured season/league/division/team selection with optional managers-only filter."
+              },
+              "workoutRecipients": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "workoutId": {
+                      "type": "string"
+                    },
+                    "registrationIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "managersOnly": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "workoutId"
+                  ]
+                },
+                "description": "Workout registrant selections with optional explicit registration IDs and manager filter."
+              },
+              "teamsWantedRecipients": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "classifiedId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "classifiedId"
+                  ]
+                },
+                "description": "Teams Wanted classifieds to include as recipients."
               }
             }
           },
@@ -3249,31 +3294,6 @@
           "recipients": {
             "type": "object",
             "properties": {
-              "season": {
-                "type": "boolean",
-                "description": "Includes all contacts associated with the current season."
-              },
-              "leagues": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Includes all contacts associated with the specified leagues."
-              },
-              "divisions": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Includes all contacts associated with the specified divisions."
-              },
-              "teams": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Includes all contacts associated with the specified teams."
-              },
               "contacts": {
                 "type": "array",
                 "items": {
@@ -3281,9 +3301,79 @@
                 },
                 "description": "Includes the specified contact IDs."
               },
-              "teamManagers": {
-                "type": "boolean",
-                "description": "Includes only team managers."
+              "seasonSelection": {
+                "type": "object",
+                "properties": {
+                  "season": {
+                    "type": "boolean",
+                    "description": "Includes all contacts associated with the current season."
+                  },
+                  "leagues": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Includes all contacts associated with the specified leagues."
+                  },
+                  "divisions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Includes all contacts associated with the specified divisions."
+                  },
+                  "teams": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Includes all contacts associated with the specified teams."
+                  },
+                  "managersOnly": {
+                    "type": "boolean",
+                    "description": "Includes only team managers for the selected groups."
+                  }
+                },
+                "description": "Structured season/league/division/team selection with optional managers-only filter."
+              },
+              "workoutRecipients": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "workoutId": {
+                      "type": "string"
+                    },
+                    "registrationIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "managersOnly": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "workoutId"
+                  ]
+                },
+                "description": "Workout registrant selections with optional explicit registration IDs and manager filter."
+              },
+              "teamsWantedRecipients": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "classifiedId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "classifiedId"
+                  ]
+                },
+                "description": "Teams Wanted classifieds to include as recipients."
               }
             }
           },
@@ -5455,6 +5545,11 @@
                     "PostGameResultsToDiscord",
                     "PostGameResultsToTwitter",
                     "PostGameResultsToBluesky",
+                    "PostAnnouncementsToTwitter",
+                    "PostAnnouncementsToBluesky",
+                    "PostWorkoutsToDiscord",
+                    "PostWorkoutsToTwitter",
+                    "PostWorkoutsToBluesky",
                     "SyncInstagramToGallery"
                   ]
                 },
@@ -5532,6 +5627,11 @@
                           "PostGameResultsToDiscord",
                           "PostGameResultsToTwitter",
                           "PostGameResultsToBluesky",
+                          "PostAnnouncementsToTwitter",
+                          "PostAnnouncementsToBluesky",
+                          "PostWorkoutsToDiscord",
+                          "PostWorkoutsToTwitter",
+                          "PostWorkoutsToBluesky",
                           "SyncInstagramToGallery"
                         ]
                       },
@@ -5676,6 +5776,11 @@
                   "PostGameResultsToDiscord",
                   "PostGameResultsToTwitter",
                   "PostGameResultsToBluesky",
+                  "PostAnnouncementsToTwitter",
+                  "PostAnnouncementsToBluesky",
+                  "PostWorkoutsToDiscord",
+                  "PostWorkoutsToTwitter",
+                  "PostWorkoutsToBluesky",
                   "SyncInstagramToGallery"
                 ]
               },
@@ -5753,6 +5858,11 @@
                         "PostGameResultsToDiscord",
                         "PostGameResultsToTwitter",
                         "PostGameResultsToBluesky",
+                        "PostAnnouncementsToTwitter",
+                        "PostAnnouncementsToBluesky",
+                        "PostWorkoutsToDiscord",
+                        "PostWorkoutsToTwitter",
+                        "PostWorkoutsToBluesky",
                         "SyncInstagramToGallery"
                       ]
                     },
@@ -5908,6 +6018,11 @@
           "PostGameResultsToDiscord",
           "PostGameResultsToTwitter",
           "PostGameResultsToBluesky",
+          "PostAnnouncementsToTwitter",
+          "PostAnnouncementsToBluesky",
+          "PostWorkoutsToDiscord",
+          "PostWorkoutsToTwitter",
+          "PostWorkoutsToBluesky",
           "SyncInstagramToGallery"
         ]
       },
@@ -6995,7 +7110,8 @@
             "type": "string",
             "enum": [
               "announcements",
-              "gameResults"
+              "gameResults",
+              "workouts"
             ]
           },
           "enabled": {
@@ -7125,7 +7241,8 @@
         "type": "string",
         "enum": [
           "announcements",
-          "gameResults"
+          "gameResults",
+          "workouts"
         ]
       },
       "DiscordTeamForumList": {
@@ -13105,6 +13222,11 @@
       "WorkoutRegistrationUpsert": {
         "type": "object",
         "properties": {
+          "accessCode": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 1000
+          },
           "name": {
             "type": "string",
             "minLength": 1,
@@ -13160,6 +13282,21 @@
         ],
         "title": "WorkoutRegistrationUpsert",
         "description": "Payload to create or update a workout registration"
+      },
+      "WorkoutRegistrationAccessCode": {
+        "type": "object",
+        "properties": {
+          "accessCode": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "accessCode"
+        ],
+        "title": "WorkoutRegistrationAccessCode",
+        "description": "Access code used to authenticate workout registration edits"
       },
       "WorkoutSources": {
         "type": "object",
@@ -13248,32 +13385,6 @@
         },
         "title": "WorkoutRegistrationsQuery",
         "description": "Query parameters to paginate workout registrations"
-      },
-      "WorkoutRegistrationsEmailRequest": {
-        "type": "object",
-        "properties": {
-          "subject": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255
-          },
-          "body": {
-            "type": "string",
-            "minLength": 1
-          },
-          "registrationIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "subject",
-          "body"
-        ],
-        "title": "WorkoutRegistrationsEmailRequest",
-        "description": "Payload to email workout registrants"
       },
       "DivisionSeason": {
         "type": "object",
@@ -24164,6 +24275,11 @@
                 "PostGameResultsToDiscord",
                 "PostGameResultsToTwitter",
                 "PostGameResultsToBluesky",
+                "PostAnnouncementsToTwitter",
+                "PostAnnouncementsToBluesky",
+                "PostWorkoutsToDiscord",
+                "PostWorkoutsToTwitter",
+                "PostWorkoutsToBluesky",
                 "SyncInstagramToGallery"
               ]
             }
@@ -25357,7 +25473,8 @@
               "type": "string",
               "enum": [
                 "announcements",
-                "gameResults"
+                "gameResults",
+                "workouts"
               ]
             }
           }
@@ -25421,7 +25538,8 @@
               "type": "string",
               "enum": [
                 "announcements",
-                "gameResults"
+                "gameResults",
+                "workouts"
               ]
             }
           }
@@ -49496,6 +49614,16 @@
               }
             }
           },
+          "409": {
+            "description": "Registration already exists for this workout and email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal server error",
             "content": {
@@ -49605,6 +49733,157 @@
         }
       }
     },
+    "/api/accounts/{accountId}/workouts/{workoutId}/registrations/{registrationId}/verify": {
+      "post": {
+        "operationId": "verifyWorkoutRegistration",
+        "summary": "Verify workout registration access code",
+        "description": "Validate a workout registration access code for editing.",
+        "tags": [
+          "Workouts"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "workoutId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkoutRegistrationAccessCode"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Access verified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutRegistration"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registration not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/workouts/{workoutId}/registrations/access-code": {
+      "post": {
+        "operationId": "findWorkoutRegistrationByAccessCode",
+        "summary": "Lookup registration by access code",
+        "description": "Retrieve a workout registration using only the access code.",
+        "tags": [
+          "Workouts"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "workoutId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkoutRegistrationAccessCode"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registration located",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutRegistration"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registration not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/workouts/{workoutId}/registrations/{registrationId}": {
       "put": {
         "operationId": "updateWorkoutRegistration",
@@ -49707,6 +49986,16 @@
               }
             }
           },
+          "409": {
+            "description": "Registration already exists for this workout and email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal server error",
             "content": {
@@ -49786,124 +50075,6 @@
           },
           "404": {
             "description": "Registration not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/accounts/{accountId}/workouts/{workoutId}/registrations/email": {
-      "post": {
-        "operationId": "emailWorkoutRegistrations",
-        "summary": "Email workout registrants",
-        "description": "Send an email to one or more workout registrants.",
-        "tags": [
-          "Workouts"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "workoutId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/WorkoutRegistrationsEmailRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "202": {
-            "description": "Email accepted for delivery",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "queued"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "status"
-                  ],
-                  "title": "WorkoutEmailQueuedResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Access denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Workout or registrations not found",
             "content": {
               "application/json": {
                 "schema": {

@@ -29,6 +29,10 @@ import {
   ContactGroup,
   GroupType,
   getTotalRecipientsFromGroups,
+  getTotalWorkoutRecipients,
+  getTotalTeamsWantedRecipients,
+  WorkoutRecipientSelection,
+  TeamsWantedRecipientSelection,
 } from '../../../types/emails/recipients';
 import { createEmailService } from '../../../services/emailService';
 import { useAuth } from '../../../context/AuthContext';
@@ -57,7 +61,12 @@ type ComposeAction =
   | { type: 'SET_UNSAVED_CHANGES'; payload: boolean }
   | { type: 'RESET' }
   | { type: 'UPDATE_RECIPIENT_STATE'; payload: RecipientSelectionState }
-  | { type: 'UPDATE_SELECTED_GROUPS'; payload: Map<GroupType, ContactGroup[]> }
+  | {
+      type: 'UPDATE_SELECTED_GROUPS';
+      payload: Map<GroupType, ContactGroup[]>;
+      workoutRecipients?: WorkoutRecipientSelection[];
+      teamsWantedRecipients?: TeamsWantedRecipientSelection[];
+    }
   | { type: 'CLEAR_ALL_RECIPIENTS' }
   | { type: 'REMOVE_SPECIFIC_GROUP'; payload: { groupType: GroupType; groupIndex: number } }
   | { type: 'SET_RECIPIENT_SEARCH_QUERY'; payload: string }
@@ -98,6 +107,18 @@ const getRecipientState = (state: EmailComposeState): RecipientSelectionState =>
 // Helper function to extract group IDs from ContactGroup
 const extractGroupIds = (group: ContactGroup): string[] => {
   return Array.from(group.ids);
+};
+
+const calculateTotalRecipients = (
+  groups: Map<GroupType, ContactGroup[]>,
+  workoutRecipients?: WorkoutRecipientSelection[],
+  teamsWantedRecipients?: TeamsWantedRecipientSelection[],
+): number => {
+  return (
+    getTotalRecipientsFromGroups(groups) +
+    getTotalWorkoutRecipients(workoutRecipients) +
+    getTotalTeamsWantedRecipients(teamsWantedRecipients)
+  );
 };
 
 // Reducer function
@@ -250,8 +271,17 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
     case 'UPDATE_SELECTED_GROUPS': {
       const recipientState = getRecipientState(state);
 
+      const workoutRecipients =
+        action.workoutRecipients ?? recipientState.selectedWorkoutRecipients;
+      const teamsWantedRecipients =
+        action.teamsWantedRecipients ?? recipientState.selectedTeamsWantedRecipients;
+
       // Calculate total recipients from unified groups
-      const totalRecipients = getTotalRecipientsFromGroups(action.payload);
+      const totalRecipients = calculateTotalRecipients(
+        action.payload,
+        workoutRecipients,
+        teamsWantedRecipients,
+      );
 
       // For now, assume all recipients are valid (this will be refined later)
       const validEmailCount = totalRecipients;
@@ -261,6 +291,8 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
         recipientState: {
           ...recipientState,
           selectedGroups: action.payload,
+          selectedWorkoutRecipients: workoutRecipients,
+          selectedTeamsWantedRecipients: teamsWantedRecipients,
           totalRecipients,
           validEmailCount,
           invalidEmailCount: totalRecipients - validEmailCount,
@@ -305,7 +337,11 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
       }
 
       // Recalculate totals
-      const totalRecipients = getTotalRecipientsFromGroups(newSelectedGroups);
+      const totalRecipients = calculateTotalRecipients(
+        newSelectedGroups,
+        recipientState.selectedWorkoutRecipients,
+        recipientState.selectedTeamsWantedRecipients,
+      );
       const validEmailCount = totalRecipients; // Assume all valid for now
 
       return {
@@ -313,6 +349,8 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
         recipientState: {
           ...recipientState,
           selectedGroups: newSelectedGroups,
+          selectedWorkoutRecipients: recipientState.selectedWorkoutRecipients,
+          selectedTeamsWantedRecipients: recipientState.selectedTeamsWantedRecipients,
           totalRecipients,
           validEmailCount,
           invalidEmailCount: totalRecipients - validEmailCount,
@@ -468,10 +506,10 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
         // Create draft request (will be used for API call when draft saving is implemented)
         const draftRequest: EmailComposeRequest = {
           recipients: {
-            // TODO: Update this when unified groups system is fully implemented in the API
-            contactIds: [],
-            groups: [],
-            onlyManagers: false,
+            contacts: [],
+            seasonSelection: {},
+            workoutRecipients: [],
+            teamsWantedRecipients: [],
           },
           subject: state.subject,
           body: state.content,
@@ -676,43 +714,50 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     const result = await safeAsync(
       async () => {
         // Prepare email request
-
-        // Validate and process recipient groups
         const selectedGroups = state.recipientState?.selectedGroups;
-        if (!selectedGroups || selectedGroups.size === 0) {
-          // Instead of throwing, dispatch error and return early
+        const selectedWorkoutRecipients = state.recipientState?.selectedWorkoutRecipients || [];
+        const selectedTeamsWantedRecipients =
+          state.recipientState?.selectedTeamsWantedRecipients || [];
+
+        const hasGroupRecipients = selectedGroups && selectedGroups.size > 0;
+        const hasWorkoutRecipients = selectedWorkoutRecipients.length > 0;
+        const hasTeamsWantedRecipients = selectedTeamsWantedRecipients.length > 0;
+
+        if (!hasGroupRecipients && !hasWorkoutRecipients && !hasTeamsWantedRecipients) {
           dispatch({
             type: 'ADD_ERROR',
             payload: {
               field: 'recipients',
-              message: 'No recipient groups selected. Please select at least one recipient.',
+              message:
+                'No recipients selected. Please choose contacts, groups, workout registrants, or Teams Wanted.',
               severity: 'error',
             },
           });
-          return Promise.reject(new Error('No recipient groups selected'));
+          return Promise.reject(new Error('No recipients selected'));
         }
 
-        // Extract individual contact IDs if present
-        const individualsGroup = selectedGroups.get('individuals');
-        const contactIds: string[] = [];
-        if (individualsGroup) {
-          individualsGroup.forEach((grp) => {
-            grp.ids.forEach((contactId) => {
-              contactIds.push(contactId);
-            });
-          });
-        }
+        const bodyContent = editorRef?.current?.getSanitizedContent?.() || state.content;
 
-        // Process all non-individual groups into an array
-        const groups: Array<{ type: 'season' | 'league' | 'division' | 'teams'; ids: string[] }> =
-          [];
-        let onlyManagers = false;
+        const contacts =
+          selectedGroups && selectedGroups.size > 0
+            ? Array.from(
+                selectedGroups.get('individuals')?.flatMap((grp) => Array.from(grp.ids)) ?? [],
+              )
+            : [];
 
-        // Process all group types except individuals
-        for (const [groupType, groupList] of selectedGroups) {
-          if (groupType !== 'individuals') {
+        let managersOnly = false;
+        const leagues = new Set<string>();
+        const divisions = new Set<string>();
+        const teams = new Set<string>();
+        let includeSeason = false;
+
+        if (selectedGroups && selectedGroups.size > 0) {
+          for (const [groupType, groupList] of selectedGroups) {
+            if (groupType === 'individuals') {
+              continue;
+            }
+
             if (!['season', 'league', 'division', 'teams'].includes(groupType)) {
-              // Instead of throwing, dispatch error and return early
               dispatch({
                 type: 'ADD_ERROR',
                 payload: {
@@ -724,39 +769,62 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
               return Promise.reject(new Error(`Invalid group type: ${groupType}`));
             }
 
-            // Process all groups of this type
             for (const group of groupList) {
-              groups.push({
-                type: groupType as 'season' | 'league' | 'division' | 'teams',
-                ids: extractGroupIds(group),
-              });
-
-              // Extract onlyManagers flag (consistent across all groups)
-              onlyManagers = group.managersOnly;
+              managersOnly = group.managersOnly;
+              if (groupType === 'season') {
+                includeSeason = true;
+              }
+              if (groupType === 'league') {
+                extractGroupIds(group).forEach((id) => leagues.add(id));
+              }
+              if (groupType === 'division') {
+                extractGroupIds(group).forEach((id) => divisions.add(id));
+              }
+              if (groupType === 'teams') {
+                extractGroupIds(group).forEach((id) => teams.add(id));
+              }
             }
           }
         }
 
         const emailRequest: EmailComposeRequest = {
           recipients: {
-            contactIds,
-            groups,
-            onlyManagers,
+            contacts,
+            seasonSelection:
+              includeSeason || leagues.size || divisions.size || teams.size
+                ? {
+                    season: includeSeason || undefined,
+                    leagues: leagues.size ? Array.from(leagues) : undefined,
+                    divisions: divisions.size ? Array.from(divisions) : undefined,
+                    teams: teams.size ? Array.from(teams) : undefined,
+                    managersOnly: managersOnly || undefined,
+                  }
+                : undefined,
+            workoutRecipients: selectedWorkoutRecipients.map((selection) => ({
+              workoutId: selection.workoutId,
+              registrationIds: selection.registrationIds
+                ? Array.from(selection.registrationIds)
+                : undefined,
+              managersOnly: selection.managersOnly,
+            })),
+            teamsWantedRecipients: selectedTeamsWantedRecipients.map((selection) => ({
+              classifiedId: selection.classifiedId,
+            })),
           },
           subject: state.subject,
-          body: editorRef?.current?.getSanitizedContent?.() || state.content,
+          body: bodyContent,
           templateId: state.selectedTemplate?.id,
           attachments: state.attachments.filter((a) => a.status === 'uploaded').map((a) => a.url!),
           scheduledSend: state.isScheduled ? state.scheduledDate : undefined,
           seasonId,
         };
 
-        // Send email with progress updates
         dispatch({ type: 'SET_SENDING', payload: { isSending: true, progress: 50 } });
         const emailId = await emailServiceRef.current!.composeEmail(accountId, emailRequest);
+
         dispatch({ type: 'SET_SENDING', payload: { isSending: true, progress: 100 } });
 
-        return { emailId };
+        return { emailId: emailId ?? 'workout-email' };
       },
       {
         accountId,
@@ -820,9 +888,21 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     dispatch({ type: 'UPDATE_RECIPIENT_STATE', payload: recipientState });
   }, []);
 
-  const updateSelectedGroups = useCallback((groups: Map<GroupType, ContactGroup[]>) => {
-    dispatch({ type: 'UPDATE_SELECTED_GROUPS', payload: groups });
-  }, []);
+  const updateSelectedGroups = useCallback(
+    (
+      groups: Map<GroupType, ContactGroup[]>,
+      workoutRecipients?: WorkoutRecipientSelection[],
+      teamsWantedRecipients?: TeamsWantedRecipientSelection[],
+    ) => {
+      dispatch({
+        type: 'UPDATE_SELECTED_GROUPS',
+        payload: groups,
+        workoutRecipients,
+        teamsWantedRecipients,
+      });
+    },
+    [],
+  );
 
   const clearAllRecipients = useCallback(() => {
     dispatch({ type: 'CLEAR_ALL_RECIPIENTS' });

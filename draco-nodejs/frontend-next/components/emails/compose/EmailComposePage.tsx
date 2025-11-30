@@ -271,7 +271,11 @@ const EmailComposePageInternal: React.FC<
 
           // Update selected groups if they exist (unified group architecture)
           if (recipientState.selectedGroups) {
-            actions.updateSelectedGroups(recipientState.selectedGroups);
+            actions.updateSelectedGroups(
+              recipientState.selectedGroups,
+              recipientState.selectedWorkoutRecipients,
+              recipientState.selectedTeamsWantedRecipients,
+            );
           }
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to update recipients';
@@ -621,6 +625,9 @@ const EmailComposePageInternal: React.FC<
             error={componentState.errors.teams || componentState.errors.roles}
             onRetry={handleRetry}
             initialSelectedGroups={state.recipientState?.selectedGroups}
+            initialWorkoutRecipients={state.recipientState?.selectedWorkoutRecipients}
+            initialWorkoutManagersOnly={state.recipientState?.workoutManagersOnly}
+            initialTeamsWantedRecipients={state.recipientState?.selectedTeamsWantedRecipients}
           />
         </ErrorBoundary>
 

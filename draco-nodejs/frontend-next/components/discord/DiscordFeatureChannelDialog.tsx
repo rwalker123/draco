@@ -21,7 +21,6 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { DiscordFeatureSyncChannelType, DiscordGuildChannelType } from '@draco/shared-schemas';
-import { DiscordChannelCreateTypeEnum } from '@draco/shared-schemas';
 
 const CHANNEL_NAME_PATTERN = /^[a-z0-9][a-z0-9-_]*$/;
 
@@ -29,7 +28,6 @@ const BaseSchema = z.object({
   mode: z.enum(['existing', 'autoCreate']),
   discordChannelId: z.string().optional(),
   newChannelName: z.string().trim().optional(),
-  newChannelType: DiscordChannelCreateTypeEnum,
 });
 
 type FormValues = z.infer<typeof BaseSchema>;
@@ -97,7 +95,6 @@ const DEFAULT_VALUES: FormValues = {
   mode: 'existing',
   discordChannelId: '',
   newChannelName: '',
-  newChannelType: 'text',
 };
 
 const DiscordFeatureChannelDialog: React.FC<DiscordFeatureChannelDialogProps> = ({
@@ -154,7 +151,7 @@ const DiscordFeatureChannelDialog: React.FC<DiscordFeatureChannelDialogProps> = 
       payload = {
         mode: 'autoCreate',
         newChannelName: (values.newChannelName ?? '').trim().toLowerCase(),
-        newChannelType: values.newChannelType ?? 'text',
+        newChannelType: 'text',
       };
     }
     await onSubmit(payload);
@@ -193,9 +190,7 @@ const DiscordFeatureChannelDialog: React.FC<DiscordFeatureChannelDialogProps> = 
                   error={Boolean(errors.discordChannelId)}
                   helperText={
                     errors.discordChannelId?.message ??
-                    (sortedChannels.length
-                      ? 'Select an existing text or announcement channel.'
-                      : '')
+                    (sortedChannels.length ? 'Select an existing text channel.' : '')
                   }
                 >
                   {loading ? (
@@ -207,12 +202,14 @@ const DiscordFeatureChannelDialog: React.FC<DiscordFeatureChannelDialogProps> = 
                       No channels available.
                     </MenuItem>
                   ) : (
-                    sortedChannels.map((channel) => (
-                      <MenuItem key={channel.id} value={channel.id}>
-                        {channel.name}
-                        {channel.type ? ` (${channel.type})` : ''}
-                      </MenuItem>
-                    ))
+                    sortedChannels
+                      .filter((channel) => !channel.type || channel.type === 'text')
+                      .map((channel) => (
+                        <MenuItem key={channel.id} value={channel.id}>
+                          {channel.name}
+                          {channel.type ? ` (${channel.type})` : ''}
+                        </MenuItem>
+                      ))
                   )}
                 </TextField>
               )}
@@ -233,25 +230,6 @@ const DiscordFeatureChannelDialog: React.FC<DiscordFeatureChannelDialogProps> = 
                       'Use lowercase letters, numbers, hyphens, or underscores only.'
                     }
                   />
-                )}
-              />
-              <Controller
-                control={control}
-                name="newChannelType"
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    select
-                    label="Channel Type"
-                    value={field.value ?? 'text'}
-                    error={Boolean(errors.newChannelType)}
-                    helperText={
-                      errors.newChannelType?.message ?? 'Select the channel type to create.'
-                    }
-                  >
-                    <MenuItem value="text">Text channel</MenuItem>
-                    <MenuItem value="announcement">Announcement channel</MenuItem>
-                  </TextField>
                 )}
               />
             </>

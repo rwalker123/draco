@@ -5,7 +5,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AdminDashboard from '../AdminDashboard';
 import type { AdminAnalyticsSummary } from '@/services/adminAnalyticsService';
 
-let mockFetchSummary: ReturnType<typeof vi.fn>;
+const mockFetchSummary = vi.fn();
 
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'user-1', username: 'admin' } }),
@@ -169,7 +169,8 @@ const createSummary = (): AdminAnalyticsSummary => ({
 
 describe('AdminDashboard photo metrics', () => {
   beforeEach(() => {
-    mockFetchSummary = vi.fn().mockResolvedValue(createSummary());
+    mockFetchSummary.mockReset();
+    mockFetchSummary.mockResolvedValue(createSummary());
   });
 
   it('renders photo issue metrics and recent events', async () => {

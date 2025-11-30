@@ -1,4 +1,8 @@
-import { SocialFeedItemType, SocialMediaAttachmentType } from '@draco/shared-schemas';
+import {
+  AnnouncementType,
+  SocialFeedItemType,
+  SocialMediaAttachmentType,
+} from '@draco/shared-schemas';
 import {
   RepositoryFactory,
   IAccountRepository,
@@ -12,6 +16,11 @@ import { deterministicUuid } from '../utils/deterministicUuid.js';
 import { AccountSettingsService } from './accountSettingsService.js';
 import type { BlueskyIngestionTarget } from '../config/socialIngestion.js';
 import { composeGameResultMessage } from './socialGameResultFormatter.js';
+import {
+  composeWorkoutAnnouncementMessage,
+  type WorkoutPostPayload,
+} from './socialWorkoutFormatter.js';
+import { stripHtml } from '../utils/emailContent.js';
 
 interface BlueskyFeedItem {
   post?: {
@@ -64,6 +73,21 @@ interface BlueskyGameResultPayload {
   seasonName?: string | null;
 }
 
+type BlueskyWorkoutPayload = WorkoutPostPayload;
+type BlueskyEmbed = {
+  $type: 'app.bsky.embed.external';
+  external: {
+    uri: string;
+    title: string;
+    description?: string;
+    thumb?: string;
+  };
+};
+type BlueskyPostPayload = {
+  text: string;
+  embed?: BlueskyEmbed;
+};
+
 export class BlueskyIntegrationService {
   private readonly accountRepository: IAccountRepository;
   private readonly seasonsRepository: ISeasonsRepository;
@@ -114,7 +138,11 @@ export class BlueskyIntegrationService {
       );
   }
 
-  async postUpdate(accountId: bigint, content: string): Promise<SocialFeedItemType> {
+  async postUpdate(
+    accountId: bigint,
+    content: string,
+    embed?: BlueskyEmbed,
+  ): Promise<SocialFeedItemType> {
     const normalizedContent = content.trim();
 
     if (!normalizedContent) {
@@ -134,7 +162,7 @@ export class BlueskyIntegrationService {
       throw new ValidationError('Bluesky did not return a valid session');
     }
 
-    const postUri = await this.createPost(normalizedContent, session.accessJwt, session.did);
+    const postUri = await this.createPost(normalizedContent, session.accessJwt, session.did, embed);
     const season = await this.seasonsRepository.findCurrentSeason(accountId);
     const seasonId = season?.id ?? accountId;
 
@@ -167,6 +195,48 @@ export class BlueskyIntegrationService {
       console.error('[bluesky] Failed to publish game result', {
         accountId: accountId.toString(),
         gameId: payload.gameId.toString(),
+        error,
+      });
+    }
+  }
+
+  async publishWorkout(accountId: bigint, payload: BlueskyWorkoutPayload): Promise<void> {
+    try {
+      if (!(await this.shouldPostWorkouts(accountId))) {
+        return;
+      }
+
+      const postPayload = this.composeWorkoutPost(payload);
+      if (!postPayload) {
+        return;
+      }
+
+      await this.postUpdate(accountId, postPayload.text, postPayload.embed);
+    } catch (error) {
+      console.error('[bluesky] Failed to publish workout', {
+        accountId: accountId.toString(),
+        workoutId: payload.workoutId.toString(),
+        error,
+      });
+    }
+  }
+
+  async publishAnnouncement(accountId: bigint, announcement: AnnouncementType): Promise<void> {
+    try {
+      if (!(await this.shouldPostAnnouncements(accountId))) {
+        return;
+      }
+
+      const payload = await this.composeAnnouncementPost(accountId, announcement);
+      if (!payload) {
+        return;
+      }
+
+      await this.postUpdate(accountId, payload.text, payload.embed);
+    } catch (error) {
+      console.error('[bluesky] Failed to publish announcement', {
+        accountId: accountId.toString(),
+        announcementId: announcement.id,
         error,
       });
     }
@@ -250,11 +320,17 @@ export class BlueskyIntegrationService {
     }
   }
 
-  private async createPost(content: string, accessJwt: string, repo: string): Promise<string> {
+  private async createPost(
+    content: string,
+    accessJwt: string,
+    repo: string,
+    embed?: BlueskyEmbed,
+  ): Promise<string> {
     const record = {
       $type: 'app.bsky.feed.post',
       text: content,
       createdAt: new Date().toISOString(),
+      ...(embed ? { embed } : {}),
     };
 
     try {
@@ -378,7 +454,127 @@ export class BlueskyIntegrationService {
     return Boolean(postResultsSetting?.effectiveValue);
   }
 
+  private async shouldPostWorkouts(accountId: bigint): Promise<boolean> {
+    const settings = await this.accountSettingsService.getAccountSettings(accountId);
+    const postWorkoutsSetting = settings.find(
+      (setting) => setting.definition.key === 'PostWorkoutsToBluesky',
+    );
+    return Boolean(postWorkoutsSetting?.effectiveValue);
+  }
+
+  private async shouldPostAnnouncements(accountId: bigint): Promise<boolean> {
+    const settings = await this.accountSettingsService.getAccountSettings(accountId);
+    const postAnnouncementsSetting = settings.find(
+      (setting) => setting.definition.key === 'PostAnnouncementsToBluesky',
+    );
+    return Boolean(postAnnouncementsSetting?.effectiveValue);
+  }
+
   private composeGameResultPost(payload: BlueskyGameResultPayload): string | null {
     return composeGameResultMessage(payload, { characterLimit: 300 });
+  }
+
+  private composeWorkoutPost(payload: BlueskyWorkoutPayload): BlueskyPostPayload | null {
+    // Reuse existing formatter but omit inline link; keep character budget for text only.
+    const text =
+      composeWorkoutAnnouncementMessage(
+        { ...payload, workoutUrl: undefined },
+        { characterLimit: 300 },
+      ) ??
+      payload.workoutDesc?.trim() ??
+      'Workout update';
+
+    const workoutUrl = payload.workoutUrl?.trim();
+    const heading =
+      [payload.accountName?.trim(), payload.workoutDesc?.trim()].filter(Boolean).join(' • ') ||
+      payload.workoutDesc?.trim() ||
+      'Workout details';
+    const when = payload.workoutDate ? this.formatWorkoutDateTime(payload.workoutDate) : null;
+
+    const embed: BlueskyEmbed | undefined = workoutUrl
+      ? {
+          $type: 'app.bsky.embed.external',
+          external: {
+            uri: workoutUrl,
+            title: heading,
+            description: this.truncateDescription(
+              [when ? `When: ${when}` : '', payload.accountName?.trim()]
+                .filter(Boolean)
+                .join(' • '),
+              200,
+            ),
+          },
+        }
+      : undefined;
+
+    return { text, embed };
+  }
+
+  private async composeAnnouncementPost(
+    accountId: bigint,
+    announcement: AnnouncementType,
+  ): Promise<BlueskyPostPayload | null> {
+    const title = announcement.title?.trim();
+    const body = stripHtml(announcement.body ?? '').trim();
+    const announcementUrl = this.buildAnnouncementUrl(accountId);
+    const baseText = [title, body].filter(Boolean).join(': ').trim();
+
+    if (!baseText && !announcementUrl) {
+      return null;
+    }
+
+    const maxChars = 300;
+    const ellipsis = '…';
+    const text =
+      baseText.length > maxChars
+        ? `${baseText.slice(0, Math.max(maxChars - ellipsis.length, 0))}${ellipsis}`
+        : baseText;
+
+    const embed: BlueskyEmbed | undefined = announcementUrl
+      ? {
+          $type: 'app.bsky.embed.external',
+          external: {
+            uri: announcementUrl,
+            title: title || 'View announcement',
+            description: this.truncateDescription(body || baseText, 200),
+          },
+        }
+      : undefined;
+
+    return { text, embed };
+  }
+
+  private truncateDescription(value: string, max: number): string | undefined {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    if (trimmed.length <= max) {
+      return trimmed;
+    }
+    return `${trimmed.slice(0, Math.max(max - 1, 0))}…`;
+  }
+
+  private formatWorkoutDateTime(value?: Date | null): string | null {
+    if (!value) {
+      return null;
+    }
+
+    return value.toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+
+  private getBaseUrl(): string {
+    const baseUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3000';
+    return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  }
+
+  private buildAnnouncementUrl(accountId: bigint): string {
+    return `${this.getBaseUrl()}/account/${accountId.toString()}/announcements`;
   }
 }

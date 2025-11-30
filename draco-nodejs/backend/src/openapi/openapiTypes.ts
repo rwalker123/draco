@@ -151,6 +151,7 @@ import {
   UpsertEmailTemplateSchema,
   UpsertTeamsWantedClassifiedSchema,
   UpsertWorkoutRegistrationSchema,
+  WorkoutRegistrationAccessCodeSchema,
   UpdateHofNominationSchema,
   UpdateHofNominationSetupSchema,
   UpsertWorkoutSchema,
@@ -160,7 +161,6 @@ import {
   WorkoutListQuerySchema,
   WorkoutRegistrationSchema,
   WorkoutRegistrationsQuerySchema,
-  WorkoutRegistrationsEmailRequestSchema,
   WorkoutRegistrationsSchema,
   WorkoutSchema,
   WorkoutSourceOptionPayloadSchema,
@@ -808,6 +808,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'WorkoutRegistrationUpsert',
     UpsertWorkoutRegistrationSchema,
   );
+  const WorkoutRegistrationAccessCodeSchemaRef = registry.register(
+    'WorkoutRegistrationAccessCode',
+    WorkoutRegistrationAccessCodeSchema,
+  );
   const WorkoutSourcesSchemaRef = registry.register('WorkoutSources', WorkoutSourcesSchema);
   const WorkoutSourceOptionPayloadSchemaRef = registry.register(
     'WorkoutSourceOptionPayload',
@@ -817,10 +821,6 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const WorkoutRegistrationsQuerySchemaRef = registry.register(
     'WorkoutRegistrationsQuery',
     WorkoutRegistrationsQuerySchema,
-  );
-  const WorkoutRegistrationsEmailRequestSchemaRef = registry.register(
-    'WorkoutRegistrationsEmailRequest',
-    WorkoutRegistrationsEmailRequestSchema,
   );
   const DivisionSeasonSchemaRef = registry.register('DivisionSeason', DivisionSeasonSchema);
   const DivisionSeasonWithTeamsSchemaRef = registry.register(
@@ -1175,11 +1175,11 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     WorkoutRegistrationSchemaRef,
     WorkoutRegistrationsSchemaRef,
     UpsertWorkoutRegistrationSchemaRef,
+    WorkoutRegistrationAccessCodeSchemaRef,
     WorkoutSourcesSchemaRef,
     WorkoutSourceOptionPayloadSchemaRef,
     WorkoutListQuerySchemaRef,
     WorkoutRegistrationsQuerySchemaRef,
-    WorkoutRegistrationsEmailRequestSchemaRef,
     DivisionSeasonSchemaRef,
     DivisionSeasonWithTeamsSchemaRef,
     LeagueSeasonQueryParamsSchemaRef,

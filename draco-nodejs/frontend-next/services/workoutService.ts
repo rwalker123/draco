@@ -4,14 +4,15 @@ import {
   createWorkoutRegistration as apiCreateWorkoutRegistration,
   deleteAccountWorkout,
   deleteWorkoutRegistration as apiDeleteWorkoutRegistration,
+  findWorkoutRegistrationByAccessCode as apiFindWorkoutRegistrationByAccessCode,
   getAccountWorkout,
   getWorkoutSources as apiGetWorkoutSources,
   listAccountWorkouts,
   listWorkoutRegistrations as apiListWorkoutRegistrations,
   updateAccountWorkout,
   updateWorkoutRegistration as apiUpdateWorkoutRegistration,
+  verifyWorkoutRegistration as apiVerifyWorkoutRegistration,
   updateWorkoutSources as apiUpdateWorkoutSources,
-  emailWorkoutRegistrations as apiEmailWorkoutRegistrations,
   type WorkoutSummary as ApiWorkoutSummary,
   type Workout as ApiWorkout,
 } from '@draco/shared-api-client';
@@ -22,7 +23,6 @@ import type {
   WorkoutSourcesType,
   WorkoutSummaryType,
   WorkoutType,
-  WorkoutRegistrationsEmailRequestType,
   WorkoutStatusType,
 } from '@draco/shared-schemas';
 
@@ -89,10 +89,16 @@ export async function listWorkouts(
   includeRegistrationCounts = true,
   token?: string,
   status?: WorkoutStatusType,
+  options?: { after?: string; before?: string; limit?: number },
 ): Promise<WorkoutSummaryType[]> {
   const client = createClient(token);
-  const queryParams: Partial<{ includeRegistrationCounts: boolean; status: WorkoutStatusType }> =
-    {};
+  const queryParams: Partial<{
+    includeRegistrationCounts: boolean;
+    status: WorkoutStatusType;
+    after: string;
+    before: string;
+    limit: number;
+  }> = {};
 
   if (includeRegistrationCounts) {
     queryParams.includeRegistrationCounts = includeRegistrationCounts;
@@ -100,6 +106,18 @@ export async function listWorkouts(
 
   if (status) {
     queryParams.status = status;
+  }
+
+  if (options?.after) {
+    queryParams.after = options.after;
+  }
+
+  if (options?.before) {
+    queryParams.before = options.before;
+  }
+
+  if (options?.limit !== undefined) {
+    queryParams.limit = options.limit;
   }
 
   const result = await listAccountWorkouts({
@@ -221,9 +239,10 @@ export async function updateWorkoutRegistration(
   registrationId: string,
   dto: UpsertWorkoutRegistrationType,
   token?: string,
+  accessCode?: string,
 ): Promise<WorkoutRegistrationType> {
   const client = createClient(token);
-  const payload = toUpsertWorkoutRegistrationPayload(dto);
+  const payload = toUpsertWorkoutRegistrationPayload({ ...dto, accessCode });
   const result = await apiUpdateWorkoutRegistration({
     client,
     path: { accountId, workoutId, registrationId },
@@ -250,22 +269,37 @@ export async function deleteWorkoutRegistration(
   assertNoApiError(result, 'Failed to delete registration');
 }
 
-export async function sendWorkoutRegistrationEmails(
+export async function verifyWorkoutRegistrationAccess(
   accountId: string,
   workoutId: string,
-  dto: WorkoutRegistrationsEmailRequestType,
-  token?: string,
-): Promise<void> {
-  const client = createClient(token);
-
-  const result = await apiEmailWorkoutRegistrations({
+  registrationId: string,
+  accessCode: string,
+): Promise<WorkoutRegistrationType> {
+  const client = createClient();
+  const result = await apiVerifyWorkoutRegistration({
     client,
-    path: { accountId, workoutId },
-    body: dto,
+    path: { accountId, workoutId, registrationId },
+    body: { accessCode },
     throwOnError: false,
   });
 
-  unwrapApiResult(result, 'Failed to send workout email');
+  return unwrapApiResult(result, 'Failed to verify registration');
+}
+
+export async function findWorkoutRegistrationByAccessCode(
+  accountId: string,
+  workoutId: string,
+  accessCode: string,
+): Promise<WorkoutRegistrationType> {
+  const client = createClient();
+  const result = await apiFindWorkoutRegistrationByAccessCode({
+    client,
+    path: { accountId, workoutId },
+    body: { accessCode },
+    throwOnError: false,
+  });
+
+  return unwrapApiResult(result, 'Failed to locate registration by access code');
 }
 
 export async function listRegistrations(

@@ -21,6 +21,7 @@ import CampaignIcon from '@mui/icons-material/Campaign';
 import CreateIcon from '@mui/icons-material/Create';
 import DescriptionIcon from '@mui/icons-material/Description';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import MenuIcon from '@mui/icons-material/Menu';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { DarkMode as DarkModeIcon, LightMode as LightModeIcon } from '@mui/icons-material';
@@ -58,6 +59,34 @@ interface TeamAnnouncementSection {
   teamName: string;
   announcements: AnnouncementSummaryItem[];
 }
+
+const ComposeEmailIcon: React.FC<{ size?: 'inherit' | 'small' | 'medium' | 'large' }> = ({
+  size = 'small',
+}) => {
+  const theme = useTheme();
+  const foregroundColor =
+    theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main;
+
+  return (
+    <Box sx={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+      <MailOutlineIcon fontSize={size} color="inherit" />
+      <CreateIcon
+        fontSize={size}
+        htmlColor={foregroundColor}
+        sx={{
+          position: 'absolute',
+          right: -4,
+          bottom: -4,
+          bgcolor: theme.palette.background.paper,
+          borderRadius: '50%',
+          border: `1px solid ${theme.palette.divider}`,
+          fontSize: size === 'small' ? 14 : undefined,
+          boxShadow: theme.shadows[1],
+        }}
+      />
+    </Box>
+  );
+};
 
 const menuPaperStyles = {
   sx: {
@@ -1192,7 +1221,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
                 href={composeHref}
                 aria-label="Compose email"
               >
-                <CreateIcon fontSize="small" />
+                <ComposeEmailIcon size="small" />
               </IconButton>
             </Tooltip>
           ) : null}
@@ -1230,7 +1259,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
         {shouldShowComposeAction && composeHref ? (
           <MenuItem dense component={NextLink} href={composeHref} onClick={handleCompactMenuClose}>
             <ListItemIcon sx={{ minWidth: 32 }}>
-              <CreateIcon fontSize="small" />
+              <ComposeEmailIcon size="small" />
             </ListItemIcon>
             <ListItemText primary="Compose email" />
           </MenuItem>

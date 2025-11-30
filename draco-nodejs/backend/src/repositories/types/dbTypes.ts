@@ -1443,6 +1443,26 @@ export type dbWorkoutRegistration = Prisma.workoutregistrationGetPayload<{
     ismanager: true;
     whereheard: true;
     dateregistered: true;
+    accesscode: true;
+  };
+}>;
+
+export type dbWorkoutRegistrationWithAccessCode = Prisma.workoutregistrationGetPayload<{
+  select: {
+    id: true;
+    workoutid: true;
+    name: true;
+    email: true;
+    age: true;
+    phone1: true;
+    phone2: true;
+    phone3: true;
+    phone4: true;
+    positions: true;
+    ismanager: true;
+    whereheard: true;
+    dateregistered: true;
+    accesscode: true;
   };
 }>;
 
@@ -1468,6 +1488,7 @@ export type dbWorkoutRegistrationUpsertData = Pick<
   | 'positions'
   | 'ismanager'
   | 'whereheard'
+  | 'accesscode'
 >;
 
 export type dbAuthResponse = {
@@ -1853,7 +1874,7 @@ export type dbCreateEmailInput = {
 
 export type dbCreateEmailRecipientInput = {
   email_id: bigint;
-  contact_id: bigint;
+  contact_id?: bigint | null;
   email_address: string;
   contact_name: string;
   recipient_type: string;

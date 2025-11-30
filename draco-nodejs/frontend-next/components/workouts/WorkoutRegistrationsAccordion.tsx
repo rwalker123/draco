@@ -30,7 +30,6 @@ import {
   PersonAddAlt1 as PersonAddIcon,
   Visibility as VisibilityIcon,
   People as PeopleIcon,
-  EmailOutlined as EmailOutlinedIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import type { WorkoutSummaryType } from '@draco/shared-schemas';
@@ -38,7 +37,6 @@ import { deleteWorkout, listWorkouts } from '../../services/workoutService';
 import ConfirmationDialog from '../common/ConfirmationDialog';
 import { UI_TIMEOUTS } from '../../constants/timeoutConstants';
 import { WorkoutDetailsDialog } from './dialogs/WorkoutDetailsDialog';
-import { WorkoutEmailDialog } from './dialogs/WorkoutEmailDialog';
 import ButtonBase from '@mui/material/ButtonBase';
 import { listAccountFields } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
@@ -85,10 +83,6 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
     workout: WorkoutSummaryType | null;
     initialAction: 'createRegistration' | null;
   }>({ open: false, workout: null, initialAction: null });
-  const [emailDialogState, setEmailDialogState] = useState<{
-    open: boolean;
-    workout: WorkoutSummaryType | null;
-  }>({ open: false, workout: null });
   const [fieldDialogState, setFieldDialogState] = useState<{
     open: boolean;
     fieldId: string | null;
@@ -219,14 +213,6 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
   const handleDeleteAction = useCallback((workout: WorkoutSummaryType) => {
     setWorkoutToDelete(workout);
     setDeleteDialogOpen(true);
-  }, []);
-
-  const handleEmailAction = useCallback((workout: WorkoutSummaryType) => {
-    setEmailDialogState({ open: true, workout });
-  }, []);
-
-  const handleCloseEmailDialog = useCallback(() => {
-    setEmailDialogState({ open: false, workout: null });
   }, []);
 
   const getFieldDetails = useCallback(
@@ -382,15 +368,6 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                       </Badge>
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Email registrants">
-                    <IconButton
-                      size="small"
-                      sx={{ ml: 1 }}
-                      onClick={() => handleEmailAction(workout)}
-                    >
-                      <EmailOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
                 </TableCell>
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                   <Tooltip title="Preview workout">
@@ -455,7 +432,6 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
     handleAddRegistrationAction,
     handleDeleteAction,
     handleOpenDetails,
-    handleEmailAction,
     handleFieldDialogOpen,
     getFieldDetails,
     getFieldName,
@@ -502,15 +478,6 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
         onError={showErrorMessage}
         onRegistrationsChange={handleRegistrationsChange}
         initialAction={detailsDialogState.initialAction ?? undefined}
-      />
-
-      <WorkoutEmailDialog
-        accountId={accountId}
-        workout={emailDialogState.workout}
-        open={emailDialogState.open}
-        onClose={handleCloseEmailDialog}
-        onSuccess={showSuccessMessage}
-        onError={showErrorMessage}
       />
 
       <Dialog open={fieldDialogState.open} onClose={handleFieldDialogClose} fullWidth maxWidth="sm">

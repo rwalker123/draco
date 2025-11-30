@@ -6,6 +6,7 @@ import {
   dbWorkoutWithRegistrationCount,
   dbWorkoutRegistrationUpsertData,
   dbWorkoutUpdateData,
+  dbWorkoutRegistrationWithAccessCode,
   dbWorkoutCreateData,
 } from '../types/dbTypes.js';
 
@@ -23,6 +24,7 @@ const REGISTRATION_SELECT = {
   ismanager: true,
   whereheard: true,
   dateregistered: true,
+  accesscode: true,
 } as const;
 
 const FIELD_SELECT = {
@@ -182,6 +184,21 @@ export class PrismaWorkoutRepository implements IWorkoutRepository {
     });
   }
 
+  async findRegistrationByEmail(
+    accountId: bigint,
+    workoutId: bigint,
+    email: string,
+  ): Promise<dbWorkoutRegistration | null> {
+    return this.prisma.workoutregistration.findFirst({
+      where: {
+        workoutid: workoutId,
+        email,
+        workoutannouncement: { accountid: accountId },
+      },
+      select: REGISTRATION_SELECT,
+    });
+  }
+
   async createRegistration(
     workoutId: bigint,
     data: dbWorkoutRegistrationUpsertData,
@@ -200,6 +217,7 @@ export class PrismaWorkoutRepository implements IWorkoutRepository {
         ismanager: data.ismanager,
         whereheard: data.whereheard,
         dateregistered: new Date(),
+        accesscode: data.accesscode ?? '',
       },
       select: REGISTRATION_SELECT,
     });
@@ -222,6 +240,7 @@ export class PrismaWorkoutRepository implements IWorkoutRepository {
         positions: data.positions,
         ismanager: data.ismanager,
         whereheard: data.whereheard,
+        ...(data.accesscode ? { accesscode: data.accesscode } : {}),
       },
       select: REGISTRATION_SELECT,
     });
@@ -241,5 +260,18 @@ export class PrismaWorkoutRepository implements IWorkoutRepository {
     });
 
     return result.count;
+  }
+
+  async findRegistrationsForWorkout(
+    accountId: bigint,
+    workoutId: bigint,
+  ): Promise<dbWorkoutRegistrationWithAccessCode[]> {
+    return this.prisma.workoutregistration.findMany({
+      where: {
+        workoutid: workoutId,
+        workoutannouncement: { accountid: accountId },
+      },
+      select: REGISTRATION_SELECT,
+    });
   }
 }

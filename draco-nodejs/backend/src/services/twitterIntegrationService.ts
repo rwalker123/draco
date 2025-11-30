@@ -1,5 +1,9 @@
 import crypto from 'node:crypto';
-import { SocialFeedItemType, SocialMediaAttachmentType } from '@draco/shared-schemas';
+import {
+  AnnouncementType,
+  SocialFeedItemType,
+  SocialMediaAttachmentType,
+} from '@draco/shared-schemas';
 import {
   RepositoryFactory,
   IAccountRepository,
@@ -12,8 +16,13 @@ import { fetchJson, HttpError } from '../utils/fetchJson.js';
 import { deterministicUuid } from '../utils/deterministicUuid.js';
 import { AccountSettingsService } from './accountSettingsService.js';
 import { composeGameResultMessage } from './socialGameResultFormatter.js';
+import {
+  composeWorkoutAnnouncementMessage,
+  type WorkoutPostPayload,
+} from './socialWorkoutFormatter.js';
 import type { TwitterIngestionTarget } from '../config/socialIngestion.js';
 import { twitterOAuthConfig } from '../config/twitterOAuth.js';
+import { stripHtml } from '../utils/emailContent.js';
 
 interface TwitterUserResponse {
   data?: {
@@ -86,6 +95,8 @@ interface TwitterGameResultPayload {
   leagueName?: string | null;
   seasonName?: string | null;
 }
+
+type TwitterWorkoutPayload = WorkoutPostPayload;
 
 export class TwitterIntegrationService {
   private readonly accountRepository: IAccountRepository;
@@ -376,6 +387,48 @@ export class TwitterIntegrationService {
     }
   }
 
+  async publishWorkout(accountId: bigint, payload: TwitterWorkoutPayload): Promise<void> {
+    try {
+      if (!(await this.shouldPostWorkouts(accountId))) {
+        return;
+      }
+
+      const content = composeWorkoutAnnouncementMessage(payload, { characterLimit: 280 });
+      if (!content) {
+        return;
+      }
+
+      await this.postTweet(accountId, content);
+    } catch (error) {
+      console.error('[twitter] Failed to publish workout', {
+        accountId: accountId.toString(),
+        workoutId: payload.workoutId.toString(),
+        error,
+      });
+    }
+  }
+
+  async publishAnnouncement(accountId: bigint, announcement: AnnouncementType): Promise<void> {
+    try {
+      if (!(await this.shouldPostAnnouncements(accountId))) {
+        return;
+      }
+
+      const content = this.composeAnnouncementTweet(accountId, announcement);
+      if (!content) {
+        return;
+      }
+
+      await this.postTweet(accountId, content);
+    } catch (error) {
+      console.error('[twitter] Failed to publish announcement', {
+        accountId: accountId.toString(),
+        announcementId: announcement.id,
+        error,
+      });
+    }
+  }
+
   private async shouldPostGameResults(accountId: bigint): Promise<boolean> {
     const settings = await this.accountSettingsService.getAccountSettings(accountId);
     const postResultsSetting = settings.find(
@@ -384,8 +437,64 @@ export class TwitterIntegrationService {
     return Boolean(postResultsSetting?.effectiveValue);
   }
 
+  private async shouldPostWorkouts(accountId: bigint): Promise<boolean> {
+    const settings = await this.accountSettingsService.getAccountSettings(accountId);
+    const postWorkoutsSetting = settings.find(
+      (setting) => setting.definition.key === 'PostWorkoutsToTwitter',
+    );
+    return Boolean(postWorkoutsSetting?.effectiveValue);
+  }
+
+  private async shouldPostAnnouncements(accountId: bigint): Promise<boolean> {
+    const settings = await this.accountSettingsService.getAccountSettings(accountId);
+    const postAnnouncementsSetting = settings.find(
+      (setting) => setting.definition.key === 'PostAnnouncementsToTwitter',
+    );
+    return Boolean(postAnnouncementsSetting?.effectiveValue);
+  }
+
   private composeGameResultTweet(payload: TwitterGameResultPayload): string | null {
     return composeGameResultMessage(payload, { characterLimit: 280 });
+  }
+
+  private composeAnnouncementTweet(
+    accountId: bigint,
+    announcement: AnnouncementType,
+  ): string | null {
+    const title = announcement.title?.trim();
+    const body = stripHtml(announcement.body ?? '').trim();
+    const url = this.buildAnnouncementUrl(accountId);
+    const separator = url ? ' ' : '';
+    const maxChars = 280;
+    const urlLength = url ? url.length : 0;
+    const availableForText = url ? Math.max(maxChars - urlLength - separator.length, 0) : maxChars;
+
+    const baseText = [title, body].filter(Boolean).join(': ').trim();
+    if (!baseText && !url) {
+      return null;
+    }
+
+    const ellipsis = '…';
+    const text =
+      baseText.length > availableForText && availableForText > 0
+        ? `${baseText.slice(0, Math.max(availableForText - ellipsis.length, 0))}${ellipsis}`
+        : baseText.slice(0, availableForText);
+
+    const tweet = [text, url].filter(Boolean).join(separator);
+    if (!tweet) {
+      return null;
+    }
+
+    return tweet.length > maxChars ? tweet.slice(0, maxChars) : tweet;
+  }
+
+  private getBaseUrl(): string {
+    const baseUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3000';
+    return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  }
+
+  private buildAnnouncementUrl(accountId: bigint): string {
+    return `${this.getBaseUrl()}/account/${accountId.toString()}/announcements`;
   }
 
   private decryptSecretValue(value?: string | null): string | undefined {

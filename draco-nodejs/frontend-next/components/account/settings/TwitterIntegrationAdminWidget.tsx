@@ -16,11 +16,7 @@ import {
   updateAccountTwitterSettings,
   createTwitterAuthorizationUrl,
 } from '@draco/shared-api-client';
-import type {
-  AccountSettingState,
-  AccountTwitterSettingsType,
-  AccountType,
-} from '@draco/shared-schemas';
+import type { AccountTwitterSettingsType, AccountType } from '@draco/shared-schemas';
 import WidgetShell from '../../ui/WidgetShell';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
@@ -29,32 +25,23 @@ import { useSearchParams } from 'next/navigation';
 interface TwitterIntegrationAdminWidgetProps {
   account: AccountType;
   onAccountUpdate?: (account: AccountType) => void;
-  postGameResultsSetting?: AccountSettingState;
-  postGameResultsUpdating?: boolean;
-  onUpdatePostGameResults?: (enabled: boolean) => Promise<void>;
 }
 
 export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidgetProps> = ({
   account,
   onAccountUpdate,
-  postGameResultsSetting,
-  postGameResultsUpdating = false,
-  onUpdatePostGameResults,
 }) => {
   const apiClient = useApiClient();
   const [handle, setHandle] = useState(account.socials?.twitterAccountName ?? '');
   const [clientId, setClientId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
   const [ingestionBearerToken, setIngestionBearerToken] = useState('');
-  const [postGameResults, setPostGameResults] = useState(
-    Boolean(postGameResultsSetting?.effectiveValue ?? postGameResultsSetting?.value ?? false),
-  );
   const [authorizing, setAuthorizing] = useState(false);
   const [clearCredentials, setClearCredentials] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const formDisabled = saving || postGameResultsUpdating;
+  const formDisabled = saving;
   const searchParams = useSearchParams();
   const authStatus = searchParams.get('twitterAuth');
   const authMessage = searchParams.get('message');
@@ -62,14 +49,7 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
 
   useEffect(() => {
     setHandle(account.socials?.twitterAccountName ?? '');
-    setPostGameResults(
-      Boolean(postGameResultsSetting?.effectiveValue ?? postGameResultsSetting?.value ?? false),
-    );
-  }, [
-    account.socials?.twitterAccountName,
-    postGameResultsSetting?.effectiveValue,
-    postGameResultsSetting?.value,
-  ]);
+  }, [account.socials?.twitterAccountName]);
 
   const hasPendingChanges = useMemo(() => {
     const normalizedHandle = (account.socials?.twitterAccountName ?? '').trim();
@@ -78,9 +58,7 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
       clientId.trim().length > 0 ||
       clientSecret.trim().length > 0 ||
       ingestionBearerToken.trim().length > 0 ||
-      clearCredentials ||
-      postGameResults !==
-        Boolean(postGameResultsSetting?.effectiveValue ?? postGameResultsSetting?.value)
+      clearCredentials
     );
   }, [
     account.socials?.twitterAccountName,
@@ -89,9 +67,6 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
     clientSecret,
     handle,
     ingestionBearerToken,
-    postGameResultsSetting?.effectiveValue,
-    postGameResultsSetting?.value,
-    postGameResults,
   ]);
 
   const handleSubmit = useCallback(
@@ -147,17 +122,6 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
           onAccountUpdate?.(updated);
         }
 
-        if (
-          postGameResults !==
-          Boolean(postGameResultsSetting?.effectiveValue ?? postGameResultsSetting?.value)
-        ) {
-          if (!onUpdatePostGameResults) {
-            throw new Error('Post game results setting handler is not available.');
-          }
-
-          await onUpdatePostGameResults(postGameResults);
-        }
-
         setSuccess('Twitter settings saved. Secrets are encrypted and never shown here.');
         setClientId('');
         setClientSecret('');
@@ -180,10 +144,6 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
       handle,
       hasPendingChanges,
       ingestionBearerToken,
-      postGameResultsSetting?.effectiveValue,
-      postGameResultsSetting?.value,
-      postGameResults,
-      onUpdatePostGameResults,
       onAccountUpdate,
     ],
   );
@@ -328,24 +288,9 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
                 <Typography variant="body2" color="text.secondary">
                   {account.socials?.twitterConnected
                     ? 'Connected: tweet.write is authorized.'
-                    : 'Starts the OAuth flow to grant tweet.write permissions for posting game results.'}
+                    : 'Starts the OAuth flow to grant tweet.write permissions for posting updates.'}
                 </Typography>
               </Box>
-
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={postGameResults}
-                    onChange={(event) => setPostGameResults(event.target.checked)}
-                    disabled={formDisabled}
-                  />
-                }
-                label="Post game results to Twitter"
-              />
-              <Typography variant="body2" color="text.secondary">
-                When enabled, game results will be posted to this Twitter account once scores are
-                finalized.
-              </Typography>
             </Stack>
           </Box>
 

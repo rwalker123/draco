@@ -7,7 +7,6 @@ import { dracoTheme } from '../../../theme';
 import { RoleProvider } from '@/context/RoleContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { vi } from 'vitest';
 
 const fetchFeedMock = vi.fn();
 const fetchVideosMock = vi.fn();

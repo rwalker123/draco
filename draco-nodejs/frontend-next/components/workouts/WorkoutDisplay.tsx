@@ -47,6 +47,7 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [registrationOpen, setRegistrationOpen] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, FieldDetails>>({});
   const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
@@ -241,6 +242,11 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
 
   return (
     <>
+      {registrationSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setRegistrationSuccess(null)}>
+          {registrationSuccess}
+        </Alert>
+      )}
       <Paper sx={{ p: compact ? 2 : 4 }}>
         {/* Title and Calendar Button */}
         <Box
@@ -362,15 +368,8 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
             <WorkoutRegistrationForm
               accountId={accountId}
               workoutId={workout.id}
-              onSubmit={async (_data) => {
-                try {
-                  // This will be implemented when we add the createRegistration service call
-                  console.log('Registration data:', _data);
-                  setRegistrationOpen(false);
-                } catch (error) {
-                  console.error('Failed to register:', error);
-                }
-              }}
+              token={token}
+              onSuccess={({ message }) => setRegistrationSuccess(message)}
               onCancel={() => setRegistrationOpen(false)}
             />
           </DialogContent>

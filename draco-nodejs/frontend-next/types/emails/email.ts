@@ -1,11 +1,21 @@
 // Email types for frontend
 export interface EmailRecipientSelection {
-  contactIds: string[];
-  groups: Array<{
-    type: 'season' | 'league' | 'division' | 'teams';
-    ids: string[];
-  }>;
-  onlyManagers: boolean;
+  contacts?: string[];
+  seasonSelection?: {
+    season?: boolean;
+    leagues?: string[];
+    divisions?: string[];
+    teams?: string[];
+    managersOnly?: boolean;
+  };
+  workoutRecipients?: {
+    workoutId: string;
+    registrationIds?: string[];
+    managersOnly?: boolean;
+  }[];
+  teamsWantedRecipients?: {
+    classifiedId: string;
+  }[];
 }
 
 export interface EmailComposeRequest {
