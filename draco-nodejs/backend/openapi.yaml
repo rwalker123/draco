@@ -4081,11 +4081,14 @@ components:
                   - EditContactInfo
                   - PostGameResultsToDiscord
                   - PostGameResultsToTwitter
+                  - PostGameResultsToFacebook
                   - PostGameResultsToBluesky
                   - PostAnnouncementsToTwitter
+                  - PostAnnouncementsToFacebook
                   - PostAnnouncementsToBluesky
                   - PostWorkoutsToDiscord
                   - PostWorkoutsToTwitter
+                  - PostWorkoutsToFacebook
                   - PostWorkoutsToBluesky
                   - SyncInstagramToGallery
               label:
@@ -4143,11 +4146,14 @@ components:
                         - EditContactInfo
                         - PostGameResultsToDiscord
                         - PostGameResultsToTwitter
+                        - PostGameResultsToFacebook
                         - PostGameResultsToBluesky
                         - PostAnnouncementsToTwitter
+                        - PostAnnouncementsToFacebook
                         - PostAnnouncementsToBluesky
                         - PostWorkoutsToDiscord
                         - PostWorkoutsToTwitter
+                        - PostWorkoutsToFacebook
                         - PostWorkoutsToBluesky
                         - SyncInstagramToGallery
                     value:
@@ -4241,11 +4247,14 @@ components:
                 - EditContactInfo
                 - PostGameResultsToDiscord
                 - PostGameResultsToTwitter
+                - PostGameResultsToFacebook
                 - PostGameResultsToBluesky
                 - PostAnnouncementsToTwitter
+                - PostAnnouncementsToFacebook
                 - PostAnnouncementsToBluesky
                 - PostWorkoutsToDiscord
                 - PostWorkoutsToTwitter
+                - PostWorkoutsToFacebook
                 - PostWorkoutsToBluesky
                 - SyncInstagramToGallery
             label:
@@ -4303,11 +4312,14 @@ components:
                       - EditContactInfo
                       - PostGameResultsToDiscord
                       - PostGameResultsToTwitter
+                      - PostGameResultsToFacebook
                       - PostGameResultsToBluesky
                       - PostAnnouncementsToTwitter
+                      - PostAnnouncementsToFacebook
                       - PostAnnouncementsToBluesky
                       - PostWorkoutsToDiscord
                       - PostWorkoutsToTwitter
+                      - PostWorkoutsToFacebook
                       - PostWorkoutsToBluesky
                       - SyncInstagramToGallery
                   value:
@@ -4404,11 +4416,14 @@ components:
         - EditContactInfo
         - PostGameResultsToDiscord
         - PostGameResultsToTwitter
+        - PostGameResultsToFacebook
         - PostGameResultsToBluesky
         - PostAnnouncementsToTwitter
+        - PostAnnouncementsToFacebook
         - PostAnnouncementsToBluesky
         - PostWorkoutsToDiscord
         - PostWorkoutsToTwitter
+        - PostWorkoutsToFacebook
         - PostWorkoutsToBluesky
         - SyncInstagramToGallery
     Sponsor:
@@ -17648,11 +17663,14 @@ paths:
               - EditContactInfo
               - PostGameResultsToDiscord
               - PostGameResultsToTwitter
+              - PostGameResultsToFacebook
               - PostGameResultsToBluesky
               - PostAnnouncementsToTwitter
+              - PostAnnouncementsToFacebook
               - PostAnnouncementsToBluesky
               - PostWorkoutsToDiscord
               - PostWorkoutsToTwitter
+              - PostWorkoutsToFacebook
               - PostWorkoutsToBluesky
               - SyncInstagramToGallery
       requestBody:

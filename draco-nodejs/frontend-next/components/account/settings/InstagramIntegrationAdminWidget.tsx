@@ -41,12 +41,9 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
   const [instagramUsername, setInstagramUsername] = useState(
     account.socials?.instagramHandle ?? '',
   );
-  const [instagramAppId, setInstagramAppId] = useState('');
-  const [instagramAppSecret, setInstagramAppSecret] = useState('');
   const [syncToGallery, setSyncToGallery] = useState(
     Boolean(syncToGallerySetting?.effectiveValue ?? syncToGallerySetting?.value ?? false),
   );
-  const [clearCredentials, setClearCredentials] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -67,16 +64,10 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
     return (
       instagramUserId.trim().length > 0 ||
       instagramUsername.trim() !== normalizedHandle ||
-      instagramAppId.trim().length > 0 ||
-      instagramAppSecret.trim().length > 0 ||
-      clearCredentials ||
       syncToGallery !== Boolean(syncToGallerySetting?.effectiveValue ?? syncToGallerySetting?.value)
     );
   }, [
     account.socials?.instagramHandle,
-    clearCredentials,
-    instagramAppId,
-    instagramAppSecret,
     instagramUserId,
     instagramUsername,
     syncToGallery,
@@ -101,8 +92,6 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
         const payload: AccountInstagramSettingsType = {};
         const normalizedUserId = instagramUserId.trim();
         const normalizedUsername = instagramUsername.trim();
-        const normalizedAppId = instagramAppId.trim();
-        const normalizedAppSecret = instagramAppSecret.trim();
         const currentHandle = (account.socials?.instagramHandle ?? '').trim();
 
         if (normalizedUserId) {
@@ -111,18 +100,6 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
 
         if (normalizedUsername !== currentHandle) {
           payload.instagramUsername = normalizedUsername;
-        }
-
-        if (clearCredentials) {
-          payload.instagramAppId = '';
-          payload.instagramAppSecret = '';
-        } else {
-          if (normalizedAppId) {
-            payload.instagramAppId = normalizedAppId;
-          }
-          if (normalizedAppSecret) {
-            payload.instagramAppSecret = normalizedAppSecret;
-          }
         }
 
         if (Object.keys(payload).length > 0) {
@@ -148,11 +125,8 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
           await onUpdateSyncToGallery(syncToGallery);
         }
 
-        setSuccess('Instagram settings saved. Secrets are encrypted and never shown here.');
-        setInstagramAppId('');
-        setInstagramAppSecret('');
+        setSuccess('Instagram settings saved.');
         setInstagramUserId('');
-        setClearCredentials(false);
       } catch (err) {
         console.error('Failed to save Instagram settings', err);
         setError('Unable to save Instagram settings. Please try again.');
@@ -164,10 +138,7 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
       account.id,
       account.socials?.instagramHandle,
       apiClient,
-      clearCredentials,
       hasPendingChanges,
-      instagramAppId,
-      instagramAppSecret,
       instagramUserId,
       instagramUsername,
       onAccountUpdate,
@@ -188,12 +159,11 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
         <Stack spacing={3}>
           <Alert severity="info">
             Instagram setup requires a Business/Creator account connected to a Facebook App. Provide
-            the Business Instagram User ID and App credentials; access/refresh tokens are obtained
-            via OAuth (not entered here). Secrets are stored server-side and never shown.
+            the Business Instagram User ID and username; App credentials are configured in the
+            Facebook Integration widget. Secrets are stored server-side and never shown.
             <br />
             <strong>Where to find values:</strong> Business Manager → Instagram Accounts → copy the
-            Instagram User ID; Instagram username is your @ handle. Meta App Dashboard → Basic → App
-            ID / App Secret.
+            Instagram User ID; Instagram username is your @ handle.
           </Alert>
 
           {error && <Alert severity="error">{error}</Alert>}
@@ -218,26 +188,6 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
               fullWidth
             />
 
-            <TextField
-              label="Facebook App ID"
-              value={instagramAppId}
-              onChange={(event) => setInstagramAppId(event.target.value)}
-              placeholder="123456789012345"
-              helperText="Meta App Dashboard → Basic → App ID."
-              fullWidth
-              autoComplete="off"
-            />
-
-            <TextField
-              label="Facebook App Secret"
-              type="password"
-              value={instagramAppSecret}
-              onChange={(event) => setInstagramAppSecret(event.target.value)}
-              helperText="Meta App Dashboard → Basic → App Secret."
-              fullWidth
-              autoComplete="off"
-            />
-
             <FormControlLabel
               control={
                 <Switch
@@ -252,17 +202,6 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
               When enabled, newly ingested Instagram media will be added to your Photo Gallery
               Instagram album.
             </Typography>
-
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={clearCredentials}
-                  onChange={(event) => setClearCredentials(event.target.checked)}
-                  disabled={saving}
-                />
-              }
-              label="Clear stored Instagram credentials (App ID/Secret and tokens)"
-            />
           </Stack>
 
           <Box display="flex" justifyContent="flex-end">

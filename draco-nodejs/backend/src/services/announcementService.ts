@@ -15,6 +15,7 @@ import { DateUtils } from '../utils/dateUtils.js';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
 import { TwitterIntegrationService } from './twitterIntegrationService.js';
+import { FacebookIntegrationService } from './facebookIntegrationService.js';
 import { sanitizeRichHtml } from '../utils/htmlSanitizer.js';
 
 interface NormalizedAnnouncementPayload {
@@ -35,6 +36,7 @@ export class AnnouncementService {
   private readonly discordIntegrationService: DiscordIntegrationService;
   private readonly blueskyIntegrationService: BlueskyIntegrationService;
   private readonly twitterIntegrationService: TwitterIntegrationService;
+  private readonly facebookIntegrationService: FacebookIntegrationService;
 
   constructor(announcementRepository?: IAnnouncementRepository, teamRepository?: ITeamRepository) {
     this.announcementRepository =
@@ -43,6 +45,7 @@ export class AnnouncementService {
     this.discordIntegrationService = new DiscordIntegrationService();
     this.blueskyIntegrationService = new BlueskyIntegrationService();
     this.twitterIntegrationService = new TwitterIntegrationService();
+    this.facebookIntegrationService = new FacebookIntegrationService();
   }
 
   async listAccountAnnouncements(accountId: bigint): Promise<AnnouncementType[]> {
@@ -86,6 +89,7 @@ export class AnnouncementService {
     void this.syncAnnouncementToDiscord(accountId, announcement);
     void this.syncAnnouncementToBluesky(accountId, announcement);
     void this.syncAnnouncementToTwitter(accountId, announcement);
+    void this.syncAnnouncementToFacebook(accountId, announcement);
     return announcement;
   }
 
@@ -109,6 +113,7 @@ export class AnnouncementService {
     void this.syncAnnouncementToDiscord(accountId, announcement);
     void this.syncAnnouncementToBluesky(accountId, announcement);
     void this.syncAnnouncementToTwitter(accountId, announcement);
+    void this.syncAnnouncementToFacebook(accountId, announcement);
     return announcement;
   }
 
@@ -187,6 +192,7 @@ export class AnnouncementService {
     void this.syncAnnouncementToDiscord(accountId, announcement);
     void this.syncAnnouncementToBluesky(accountId, announcement);
     void this.syncAnnouncementToTwitter(accountId, announcement);
+    void this.syncAnnouncementToFacebook(accountId, announcement);
     return announcement;
   }
 
@@ -307,6 +313,18 @@ export class AnnouncementService {
       await this.blueskyIntegrationService.publishAnnouncement(accountId, announcement);
     } catch (error) {
       console.error('[bluesky] Failed to sync announcement', {
+        accountId: accountId.toString(),
+        announcementId: announcement.id,
+        error,
+      });
+    }
+  }
+
+  private async syncAnnouncementToFacebook(accountId: bigint, announcement: AnnouncementType) {
+    try {
+      await this.facebookIntegrationService.publishAnnouncement(accountId, announcement);
+    } catch (error) {
+      console.error('[facebook] Failed to sync announcement', {
         accountId: accountId.toString(),
         announcementId: announcement.id,
         error,

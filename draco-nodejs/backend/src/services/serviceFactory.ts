@@ -72,6 +72,7 @@ import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { YouTubeIntegrationService } from './youtubeIntegrationService.js';
 import { TwitterIntegrationService } from './twitterIntegrationService.js';
 import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
+import { FacebookIntegrationService } from './facebookIntegrationService.js';
 import { InstagramIntegrationService } from './instagramIntegrationService.js';
 import { WelcomeMessageService } from './welcomeMessageService.js';
 
@@ -137,6 +138,7 @@ export class ServiceFactory {
   private static youtubeIntegrationService: YouTubeIntegrationService;
   private static twitterIntegrationService: TwitterIntegrationService;
   private static blueskyIntegrationService: BlueskyIntegrationService;
+  private static facebookIntegrationService: FacebookIntegrationService;
   private static instagramIntegrationService: InstagramIntegrationService;
   private static welcomeMessageService: WelcomeMessageService;
 
@@ -458,6 +460,14 @@ export class ServiceFactory {
     }
 
     return this.blueskyIntegrationService;
+  }
+
+  static getFacebookIntegrationService(): FacebookIntegrationService {
+    if (!this.facebookIntegrationService) {
+      this.facebookIntegrationService = new FacebookIntegrationService();
+    }
+
+    return this.facebookIntegrationService;
   }
 
   static getInstagramIntegrationService(): InstagramIntegrationService {

@@ -20,11 +20,14 @@ export const ACCOUNT_SETTING_KEYS = [
   'EditContactInfo',
   'PostGameResultsToDiscord',
   'PostGameResultsToTwitter',
+  'PostGameResultsToFacebook',
   'PostGameResultsToBluesky',
   'PostAnnouncementsToTwitter',
+  'PostAnnouncementsToFacebook',
   'PostAnnouncementsToBluesky',
   'PostWorkoutsToDiscord',
   'PostWorkoutsToTwitter',
+  'PostWorkoutsToFacebook',
   'PostWorkoutsToBluesky',
   'SyncInstagramToGallery',
 ] as const;
@@ -268,6 +271,14 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
     sortOrder: 90,
   }),
   booleanSetting({
+    key: 'PostGameResultsToFacebook',
+    label: 'Post game results to Facebook',
+    description: 'Publish final scores to the connected Facebook account when games are completed.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 92,
+  }),
+  booleanSetting({
     key: 'PostGameResultsToBluesky',
     label: 'Post game results to Bluesky',
     description: 'Publish final scores to the connected Bluesky account when games are completed.',
@@ -284,12 +295,20 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
     sortOrder: 96,
   }),
   booleanSetting({
+    key: 'PostAnnouncementsToFacebook',
+    label: 'Post announcements to Facebook',
+    description: 'Publish announcements to the connected Facebook account when they are created.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 97,
+  }),
+  booleanSetting({
     key: 'PostAnnouncementsToBluesky',
     label: 'Post announcements to Bluesky',
     description: 'Publish announcements to the connected Bluesky account when they are created.',
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
-    sortOrder: 97,
+    sortOrder: 98,
   }),
   booleanSetting({
     key: 'PostWorkoutsToDiscord',
@@ -310,13 +329,22 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
     sortOrder: 99,
   }),
   booleanSetting({
+    key: 'PostWorkoutsToFacebook',
+    label: 'Post workouts to Facebook',
+    description:
+      'Publish workout announcements to the connected Facebook account when they are created.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 100,
+  }),
+  booleanSetting({
     key: 'PostWorkoutsToBluesky',
     label: 'Post workouts to Bluesky',
     description:
       'Publish workout announcements to the connected Bluesky account when they are created.',
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
-    sortOrder: 100,
+    sortOrder: 101,
   }),
   booleanSetting({
     key: 'SyncInstagramToGallery',
