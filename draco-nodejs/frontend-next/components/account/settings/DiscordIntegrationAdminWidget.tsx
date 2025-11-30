@@ -51,6 +51,7 @@ import { useAccountDiscordAdmin } from '@/hooks/useAccountDiscordAdmin';
 import AddDiscordChannelMappingDialog from './AddDiscordChannelMappingDialog';
 import ConfirmDiscordDisconnectDialog from './ConfirmDiscordDisconnectDialog';
 import { ROLE_DISPLAY_NAMES, ROLE_NAME_TO_ID } from '@/utils/roleUtils';
+import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
 
 interface DiscordIntegrationAdminWidgetProps {
   accountId: string | null;
@@ -266,6 +267,12 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
   const [error, setError] = useState<string | null>(null);
   const [roleMappingError, setRoleMappingError] = useState<string | null>(null);
   const [roleMappingBusyId, setRoleMappingBusyId] = useState<string | null>(null);
+  const [roleMappingToDelete, setRoleMappingToDelete] = useState<DiscordRoleMappingType | null>(
+    null,
+  );
+  const [channelMappingToDelete, setChannelMappingToDelete] =
+    useState<DiscordChannelMappingType | null>(null);
+  const [channelMappingBusyId, setChannelMappingBusyId] = useState<string | null>(null);
   const [channelDialogOpen, setChannelDialogOpen] = useState(false);
   const [channelError, setChannelError] = useState<string | null>(null);
   const [installing, setInstalling] = useState(false);
@@ -450,7 +457,7 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
       if (result?.message) {
         setTeamForumSuccess(result.message);
       }
-      await loadTeamForums();
+      await Promise.all([loadTeamForums(), loadChannelMappings()]);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to repair Discord team forums.';
       setTeamForumsError(message);
@@ -458,7 +465,7 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
       setTeamForumActionBusy(false);
       setTeamForumOperation(null);
     }
-  }, [accountId, loadTeamForums, repairTeamForums]);
+  }, [accountId, loadChannelMappings, loadTeamForums, repairTeamForums]);
 
   const confirmDisableTeamForums = useCallback(async () => {
     setTeamForumDialogOpen(false);
@@ -611,31 +618,28 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
     }
   });
 
-  const handleDeleteRoleMapping = useCallback(
-    async (mapping: DiscordRoleMappingType) => {
-      if (!accountId) {
-        return;
-      }
-      const confirmed = window.confirm(
-        `Remove Discord role mapping "${mapping.discordRoleName}"? This will revoke the associated Draco roles.`,
-      );
-      if (!confirmed) {
-        return;
-      }
-      setRoleMappingBusyId(mapping.id);
-      try {
-        await deleteRoleMapping(accountId, mapping.id);
-        await loadRoleMappingsData();
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Unable to delete the Discord role mapping.';
-        setRoleMappingError(message);
-      } finally {
-        setRoleMappingBusyId(null);
-      }
-    },
-    [accountId, deleteRoleMapping, loadRoleMappingsData],
-  );
+  const handleDeleteRoleMapping = useCallback((mapping: DiscordRoleMappingType) => {
+    setRoleMappingError(null);
+    setRoleMappingToDelete(mapping);
+  }, []);
+
+  const confirmDeleteRoleMapping = useCallback(async () => {
+    if (!accountId || !roleMappingToDelete) {
+      return;
+    }
+    setRoleMappingBusyId(roleMappingToDelete.id);
+    try {
+      await deleteRoleMapping(accountId, roleMappingToDelete.id);
+      await loadRoleMappingsData();
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to delete the Discord role mapping.';
+      setRoleMappingError(message);
+    } finally {
+      setRoleMappingBusyId(null);
+      setRoleMappingToDelete(null);
+    }
+  }, [accountId, deleteRoleMapping, loadRoleMappingsData, roleMappingToDelete]);
 
   const openChannelDialog = useCallback(() => {
     setChannelError(null);
@@ -646,29 +650,27 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
     await loadChannelMappings();
   }, [loadChannelMappings]);
 
-  const handleDeleteChannelMapping = useCallback(
-    async (mapping: DiscordChannelMappingType) => {
-      if (!accountId) {
-        return;
-      }
-      const confirmed = window.confirm(
-        `Remove ingestion mapping for channel "${mapping.discordChannelName}"?`,
-      );
-      if (!confirmed) {
-        return;
-      }
-      setChannelError(null);
-      try {
-        await deleteChannelMapping(accountId, mapping.id);
-        await loadChannelMappings();
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Unable to delete the channel mapping.';
-        setChannelError(message);
-      }
-    },
-    [accountId, deleteChannelMapping, loadChannelMappings],
-  );
+  const handleDeleteChannelMapping = useCallback((mapping: DiscordChannelMappingType) => {
+    setChannelError(null);
+    setChannelMappingToDelete(mapping);
+  }, []);
+
+  const confirmDeleteChannelMapping = useCallback(async () => {
+    if (!accountId || !channelMappingToDelete) {
+      return;
+    }
+    setChannelMappingBusyId(channelMappingToDelete.id);
+    try {
+      await deleteChannelMapping(accountId, channelMappingToDelete.id);
+      await loadChannelMappings();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to delete the channel mapping.';
+      setChannelError(message);
+    } finally {
+      setChannelMappingBusyId(null);
+      setChannelMappingToDelete(null);
+    }
+  }, [accountId, channelMappingToDelete, deleteChannelMapping, loadChannelMappings]);
 
   const guildDisplayName = useMemo(() => {
     if (!config?.guildId) {
@@ -837,8 +839,13 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
                           size="small"
                           color="error"
                           onClick={() => handleDeleteChannelMapping(mapping)}
+                          disabled={channelMappingBusyId === mapping.id}
                         >
-                          <DeleteIcon fontSize="small" />
+                          {channelMappingBusyId === mapping.id ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <DeleteIcon fontSize="small" />
+                          )}
                         </IconButton>
                       </span>
                     </Tooltip>
@@ -1157,6 +1164,30 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDeleteDialog
+        open={Boolean(roleMappingToDelete)}
+        title="Delete Discord Role Mapping?"
+        message={
+          roleMappingToDelete
+            ? `Remove Discord role mapping "${roleMappingToDelete.discordRoleName}"? This will revoke the associated Draco roles.`
+            : ''
+        }
+        onClose={() => setRoleMappingToDelete(null)}
+        onConfirm={() => void confirmDeleteRoleMapping()}
+      />
+
+      <ConfirmDeleteDialog
+        open={Boolean(channelMappingToDelete)}
+        title="Delete Channel Mapping?"
+        message={
+          channelMappingToDelete
+            ? `Remove ingestion mapping for channel "${channelMappingToDelete.discordChannelName}"?`
+            : ''
+        }
+        onClose={() => setChannelMappingToDelete(null)}
+        onConfirm={() => void confirmDeleteChannelMapping()}
+      />
 
       <AddDiscordChannelMappingDialog
         open={channelDialogOpen}

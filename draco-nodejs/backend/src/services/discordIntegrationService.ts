@@ -132,6 +132,9 @@ export class DiscordIntegrationService {
   private readonly contactRepository = RepositoryFactory.getContactRepository();
   private readonly accountSettingsService = new AccountSettingsService();
   private readonly roleRateLimits = new Map<string, number>();
+  private async sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
   private channelIngestionTargetsCache: DiscordIngestionTarget[] | null = null;
   private getBotToken(): string {
     const token = process.env.DISCORD_BOT_TOKEN;
@@ -273,11 +276,10 @@ export class DiscordIntegrationService {
 
   async removeTeamForum(accountId: bigint, teamId: bigint): Promise<void> {
     await this.ensureAccountExists(accountId);
-    const [config, forums, channelMappings, linkedAccounts] = await Promise.all([
+    const [config, forums, channelMappings] = await Promise.all([
       this.getOrCreateAccountConfigRecord(accountId),
       this.discordRepository.listTeamForums(accountId),
       this.discordRepository.listChannelMappings(accountId),
-      this.discordRepository.listLinkedAccounts(accountId),
     ]);
 
     const forum = forums.find((item) => item.teamid === teamId);
@@ -288,29 +290,15 @@ export class DiscordIntegrationService {
     if (config.guildid) {
       await this.deleteDiscordChannel(config.guildid, forum.discordchannelid);
       if (forum.discordroleid) {
-        const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(
-          forum.teamseasonid,
-        );
-        const desiredUserIds = new Set(
-          rosterMembers
-            .filter((member) => !member.inactive)
-            .map((member) => member.roster.contacts?.userid)
-            .filter((id): id is string => Boolean(id)),
-        );
-        const linkedByUserId = new Map(linkedAccounts.map((link) => [link.userid, link]));
-
-        await Promise.all(
-          Array.from(desiredUserIds)
-            .map((userId) => linkedByUserId.get(userId))
-            .filter((link): link is userdiscordaccounts => Boolean(link?.discorduserid))
-            .map((link) =>
-              this.removeRoleFromMember(
-                config.guildid as string,
-                link.discorduserid,
-                forum.discordroleid as string,
-              ),
-            ),
-        );
+        const roleMembersByRoleId = await this.getGuildRoleMembersMap(config.guildid as string);
+        const memberIds = roleMembersByRoleId.get(forum.discordroleid) ?? new Set();
+        for (const discordUserId of memberIds) {
+          await this.removeRoleFromMember(
+            config.guildid as string,
+            discordUserId,
+            forum.discordroleid as string,
+          );
+        }
       }
     }
 
@@ -628,11 +616,25 @@ export class DiscordIntegrationService {
       };
     }
 
+    const desiredTeamSeasonIds = new Set(
+      assignedTeams.map((teamSeason) => teamSeason.id.toString()),
+    );
+
     const [existingForums, channelMappings, linkedAccounts] = await Promise.all([
       this.discordRepository.listTeamForums(accountId),
       this.discordRepository.listChannelMappings(accountId),
       this.discordRepository.listLinkedAccounts(accountId),
     ]);
+
+    for (const forum of existingForums) {
+      if (!desiredTeamSeasonIds.has(forum.teamseasonid.toString())) {
+        await this.removeTeamForum(accountId, forum.teamid);
+      }
+    }
+
+    const inScopeForums = existingForums.filter((forum) =>
+      desiredTeamSeasonIds.has(forum.teamseasonid.toString()),
+    );
 
     const mappingByTeamSeason = new Map(
       channelMappings
@@ -640,12 +642,13 @@ export class DiscordIntegrationService {
         .map((mapping) => [mapping.teamseasonid!.toString(), mapping]),
     );
     const forumsByTeamSeason = new Map(
-      existingForums.map((forum) => [forum.teamseasonid.toString(), forum]),
+      inScopeForums.map((forum) => [forum.teamseasonid.toString(), forum]),
     );
 
     const guildChannels = await this.fetchGuildChannels(config.guildid as string);
     const guildChannelById = new Map(guildChannels.map((channel) => [channel.id, channel]));
     const guildRoles = await this.fetchGuildRoles(config.guildid as string);
+    const roleMembersByRoleId = await this.getGuildRoleMembersMap(config.guildid as string);
     const leagueCategoryCache = new Map<string, string | null>();
 
     let created = 0;
@@ -708,7 +711,11 @@ export class DiscordIntegrationService {
                 status: 'provisioned',
               });
             }
-            const label = this.buildTeamForumLabel(teamSeason.name, currentSeason.name);
+            const label = this.buildTeamForumLabel(
+              teamSeason.name,
+              currentSeason.name,
+              teamSeason.leagueseason?.league?.name ?? null,
+            );
             await this.ensureTeamChannelMapping(
               accountId,
               existingForum,
@@ -726,6 +733,7 @@ export class DiscordIntegrationService {
             currentSeason.id,
             forum,
             linkedAccounts,
+            roleMembersByRoleId,
           );
         }
       } catch (error) {
@@ -909,6 +917,7 @@ export class DiscordIntegrationService {
     seasonId: bigint,
     forum: accountdiscordteamforums,
     linkedAccounts: userdiscordaccounts[],
+    roleMembersByRoleId: Map<string, Set<string>>,
   ): Promise<void> {
     const config = await this.getOrCreateAccountConfigRecord(accountId);
     if (!config.guildid || !forum.discordroleid) {
@@ -926,20 +935,26 @@ export class DiscordIntegrationService {
     );
 
     const linkedByUserId = new Map(linkedAccounts.map((link) => [link.userid, link]));
+    const desiredDiscordIds = new Set(
+      Array.from(desiredUserIds)
+        .map((userId) => linkedByUserId.get(userId)?.discorduserid)
+        .filter((id): id is string => Boolean(id)),
+    );
 
-    for (const userId of desiredUserIds) {
-      const link = linkedByUserId.get(userId);
-      if (!link?.discorduserid) {
+    const actualDiscordIds = new Set(roleMembersByRoleId.get(forum.discordroleid) ?? []);
+
+    for (const discordUserId of desiredDiscordIds) {
+      if (actualDiscordIds.has(discordUserId)) {
         continue;
       }
-      await this.addRoleToMember(config.guildid, link.discorduserid, forum.discordroleid);
+      await this.addRoleToMember(config.guildid, discordUserId, forum.discordroleid);
     }
 
-    for (const link of linkedAccounts) {
-      if (!link.discorduserid || desiredUserIds.has(link.userid)) {
+    for (const discordUserId of actualDiscordIds) {
+      if (desiredDiscordIds.has(discordUserId)) {
         continue;
       }
-      await this.removeRoleFromMember(config.guildid, link.discorduserid, forum.discordroleid);
+      await this.removeRoleFromMember(config.guildid, discordUserId, forum.discordroleid);
     }
   }
 
@@ -1689,6 +1704,102 @@ export class DiscordIntegrationService {
     }
   }
 
+  private async fetchGuildMembers(guildId: string): Promise<{ id: string; roles: string[] }[]> {
+    const botToken = this.getBotToken();
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    const members: { id: string; roles: string[] }[] = [];
+    let after: string | undefined;
+
+    while (true) {
+      const url = new URL(`${getDiscordOAuthConfig().apiBaseUrl}/guilds/${guildId}/members`);
+      url.searchParams.set('limit', '1000');
+      if (after) {
+        url.searchParams.set('after', after);
+      }
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          Authorization: `Bot ${botToken}`,
+        },
+      });
+
+      if (response.status === 429) {
+        let retryAfterMs = 5000;
+        try {
+          const payload = (await response.json()) as { retry_after?: number };
+          if (payload.retry_after !== undefined) {
+            retryAfterMs =
+              payload.retry_after > 1000 ? payload.retry_after : payload.retry_after * 1000;
+          }
+        } catch {
+          // ignore parse errors
+        }
+        console.warn('[discord] guild member fetch rate limited', {
+          guildId,
+          retryMs: retryAfterMs,
+        });
+        await wait(retryAfterMs);
+        continue;
+      }
+
+      if (response.status === 403) {
+        throw new ValidationError(
+          'Unable to load Discord members (Server Members intent or permissions missing).',
+        );
+      }
+
+      if (!response.ok) {
+        const message = await response.text().catch(() => response.statusText);
+        console.error('Unable to fetch Discord members', { status: response.status, message });
+        throw new ValidationError('Unable to load Discord members. Please try again later.');
+      }
+
+      const page = (await response.json()) as { user?: { id?: string }; roles?: string[] }[];
+      const pageMembers = page
+        .map((item) => ({
+          id: item.user?.id,
+          roles: item.roles ?? [],
+        }))
+        .filter((item): item is { id: string; roles: string[] } => Boolean(item.id));
+
+      members.push(...pageMembers);
+
+      console.info('[discord] fetched guild members page', {
+        guildId,
+        pageCount: pageMembers.length,
+        totalSoFar: members.length,
+        after: after ?? null,
+      });
+
+      if (pageMembers.length < 1000) {
+        break;
+      }
+      after = pageMembers[pageMembers.length - 1].id;
+    }
+
+    return members;
+  }
+
+  private async getGuildRoleMembersMap(guildId: string): Promise<Map<string, Set<string>>> {
+    const members = await this.fetchGuildMembers(guildId);
+    const map = new Map<string, Set<string>>();
+    for (const member of members) {
+      for (const roleId of member.roles) {
+        if (!map.has(roleId)) {
+          map.set(roleId, new Set());
+        }
+        map.get(roleId)!.add(member.id);
+      }
+    }
+    console.info('[discord] built guild role membership map', {
+      guildId,
+      memberCount: members.length,
+      roleCount: map.size,
+    });
+    return map;
+  }
+
   private async createDiscordChannel(
     guildId: string,
     channelName: string,
@@ -1874,64 +1985,78 @@ export class DiscordIntegrationService {
     method: 'PUT' | 'DELETE';
     url: string;
     body?: Record<string, unknown>;
+    waitOnRateLimit?: boolean;
     on429?: (retryMs: number) => void;
     onError?: (response: Response) => Promise<void>;
   }): Promise<'ok' | 'rate_limited' | 'skipped'> {
     const botToken = this.getBotToken();
     const key = `${options.guildId}:${options.routeKey}`;
-    const now = Date.now();
-    const resetAt = this.roleRateLimits.get(key);
-    if (resetAt && resetAt > now) {
-      console.info('[discord] role op skipped due to rate limit window', {
-        guildId: options.guildId,
-        routeKey: options.routeKey,
-        retryMs: resetAt - now,
-      });
-      options.on429?.(resetAt - now);
-      return 'skipped';
-    }
+    const wait = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    const response = await fetch(options.url, {
-      method: options.method,
-      headers: {
-        Authorization: `Bot ${botToken}`,
-        'Content-Type': options.body ? 'application/json' : undefined,
-      } as Record<string, string>,
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
-
-    if (response.status === 429) {
-      let retryAfterMs = 5000;
-      try {
-        const payload = (await response.json()) as { retry_after?: number };
-        if (payload.retry_after !== undefined) {
-          retryAfterMs =
-            payload.retry_after > 1000 ? payload.retry_after : payload.retry_after * 1000;
+    while (true) {
+      const now = Date.now();
+      const resetAt = this.roleRateLimits.get(key);
+      if (resetAt && resetAt > now) {
+        const retryMs = resetAt - now;
+        console.info('[discord] role op skipped due to rate limit window', {
+          guildId: options.guildId,
+          routeKey: options.routeKey,
+          retryMs,
+        });
+        options.on429?.(retryMs);
+        if (options.waitOnRateLimit) {
+          await wait(retryMs);
+        } else {
+          return 'skipped';
         }
-      } catch {
-        // ignore parse errors
       }
-      const nextAllowed = Date.now() + retryAfterMs;
-      this.roleRateLimits.set(key, nextAllowed);
-      console.warn('[discord] role op rate limited', {
-        guildId: options.guildId,
-        routeKey: options.routeKey,
-        retryMs: retryAfterMs,
-      });
-      options.on429?.(retryAfterMs);
-      return 'rate_limited';
-    }
 
-    if (!response.ok && response.status !== 204 && response.status !== 404) {
-      await options.onError?.(response);
-    } else if (response.ok || response.status === 204) {
-      console.info('[discord] role op success', {
-        guildId: options.guildId,
-        routeKey: options.routeKey,
+      const response = await fetch(options.url, {
         method: options.method,
+        headers: {
+          Authorization: `Bot ${botToken}`,
+          'Content-Type': options.body ? 'application/json' : undefined,
+        } as Record<string, string>,
+        body: options.body ? JSON.stringify(options.body) : undefined,
       });
+
+      if (response.status === 429) {
+        let retryAfterMs = 5000;
+        try {
+          const payload = (await response.json()) as { retry_after?: number };
+          if (payload.retry_after !== undefined) {
+            retryAfterMs =
+              payload.retry_after > 1000 ? payload.retry_after : payload.retry_after * 1000;
+          }
+        } catch {
+          // ignore parse errors
+        }
+        const nextAllowed = Date.now() + retryAfterMs;
+        this.roleRateLimits.set(key, nextAllowed);
+        console.warn('[discord] role op rate limited', {
+          guildId: options.guildId,
+          routeKey: options.routeKey,
+          retryMs: retryAfterMs,
+        });
+        options.on429?.(retryAfterMs);
+        if (options.waitOnRateLimit) {
+          await wait(retryAfterMs);
+          continue;
+        }
+        return 'rate_limited';
+      }
+
+      if (!response.ok && response.status !== 204 && response.status !== 404) {
+        await options.onError?.(response);
+      } else if (response.ok || response.status === 204) {
+        console.info('[discord] role op success', {
+          guildId: options.guildId,
+          routeKey: options.routeKey,
+          method: options.method,
+        });
+      }
+      return 'ok';
     }
-    return 'ok';
   }
 
   private async addRoleToMember(guildId: string, discordUserId: string, roleId: string) {
@@ -1940,6 +2065,7 @@ export class DiscordIntegrationService {
       routeKey: `roles:${discordUserId}:${roleId}`,
       method: 'PUT',
       url: `${getDiscordOAuthConfig().apiBaseUrl}/guilds/${guildId}/members/${discordUserId}/roles/${roleId}`,
+      waitOnRateLimit: true,
       on429: (retryMs) =>
         console.warn('Unable to assign Discord role (rate limited)', {
           guildId,
@@ -1967,6 +2093,7 @@ export class DiscordIntegrationService {
       routeKey: `roles:${discordUserId}:${roleId}`,
       method: 'DELETE',
       url: `${getDiscordOAuthConfig().apiBaseUrl}/guilds/${guildId}/members/${discordUserId}/roles/${roleId}`,
+      waitOnRateLimit: true,
       on429: (retryMs) =>
         console.warn('Unable to remove Discord role (rate limited)', {
           guildId,
