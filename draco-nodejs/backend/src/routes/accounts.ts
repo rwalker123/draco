@@ -24,6 +24,7 @@ import accountsSocialRouter from './accounts-social.js';
 import accountsDiscordRouter from './accounts-discord.js';
 import accountsTwitterRouter from './accounts-twitter.js';
 import accountsBlueskyRouter from './accounts-bluesky.js';
+import accountsFacebookRouter from './accounts-facebook.js';
 
 const router = Router({ mergeParams: true });
 
@@ -57,6 +58,9 @@ router.use('/', accountsTwitterRouter);
 
 // Bluesky integration endpoints
 router.use('/', accountsBlueskyRouter);
+
+// Facebook integration endpoints
+router.use('/', accountsFacebookRouter);
 
 // Assets endpoints (logo management)
 router.use('/', accountsAssetsRouter);

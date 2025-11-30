@@ -45,6 +45,7 @@ import {
   IDiscordIntegrationRepository,
   IWelcomeMessageRepository,
   IAccountTwitterCredentialsRepository,
+  IAccountFacebookCredentialsRepository,
   IAccountBlueskyCredentialsRepository,
   IAccountInstagramCredentialsRepository,
   IInstagramIngestionRepository,
@@ -94,6 +95,7 @@ import {
   PrismaDiscordIntegrationRepository,
   PrismaWelcomeMessageRepository,
   PrismaAccountTwitterCredentialsRepository,
+  PrismaAccountFacebookCredentialsRepository,
   PrismaAccountBlueskyCredentialsRepository,
   PrismaAccountInstagramCredentialsRepository,
   PrismaInstagramIngestionRepository,
@@ -150,6 +152,7 @@ export class RepositoryFactory {
   private static discordIntegrationRepository: IDiscordIntegrationRepository;
   private static welcomeMessageRepository: IWelcomeMessageRepository;
   private static accountTwitterCredentialsRepository: IAccountTwitterCredentialsRepository;
+  private static accountFacebookCredentialsRepository: IAccountFacebookCredentialsRepository;
   private static accountBlueskyCredentialsRepository: IAccountBlueskyCredentialsRepository;
   private static accountInstagramCredentialsRepository: IAccountInstagramCredentialsRepository;
   private static instagramIngestionRepository: IInstagramIngestionRepository;
@@ -252,6 +255,15 @@ export class RepositoryFactory {
       );
     }
     return this.accountTwitterCredentialsRepository;
+  }
+
+  static getAccountFacebookCredentialsRepository(): IAccountFacebookCredentialsRepository {
+    if (!this.accountFacebookCredentialsRepository) {
+      this.accountFacebookCredentialsRepository = new PrismaAccountFacebookCredentialsRepository(
+        prisma,
+      );
+    }
+    return this.accountFacebookCredentialsRepository;
   }
 
   private static ensurePhotoGalleryRepository(): PrismaPhotoGalleryRepository {
@@ -487,8 +499,9 @@ export class RepositoryFactory {
 
   static getAccountInstagramCredentialsRepository(): IAccountInstagramCredentialsRepository {
     if (!this.accountInstagramCredentialsRepository) {
-      this.accountInstagramCredentialsRepository =
-        new PrismaAccountInstagramCredentialsRepository(prisma);
+      this.accountInstagramCredentialsRepository = new PrismaAccountInstagramCredentialsRepository(
+        prisma,
+      );
     }
 
     return this.accountInstagramCredentialsRepository;
