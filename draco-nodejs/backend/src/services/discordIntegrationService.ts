@@ -30,7 +30,6 @@ import {
   DiscordTeamForumQueryType,
   DiscordTeamForumRepairResultType,
   DiscordTeamForumCleanupModeEnum,
-  DiscordTeamForumSyncRequestType,
 } from '@draco/shared-schemas';
 import { RepositoryFactory } from '../repositories/index.js';
 import type { DiscordAccountConfigUpsertInput } from '../repositories/interfaces/IDiscordIntegrationRepository.js';
@@ -272,205 +271,6 @@ export class DiscordIntegrationService {
     return this.syncTeamForums(accountId);
   }
 
-  async syncTeamForumMembers(
-    accountId: bigint,
-    payload: DiscordTeamForumSyncRequestType,
-  ): Promise<DiscordTeamForumRepairResultType> {
-    await this.ensureAccountExists(accountId);
-    const config = await this.getOrCreateAccountConfigRecord(accountId);
-    if (!config.teamforumenabled) {
-      return { created: 0, repaired: 0, skipped: 0, message: 'Team forums are disabled.' };
-    }
-
-    this.ensureGuildConfigured(config);
-
-    const currentSeason = await this.seasonsRepository.findCurrentSeason(accountId);
-    if (!currentSeason) {
-      throw new ValidationError('Set a current season before syncing Discord team forums.');
-    }
-
-    const targetTeamSeasons =
-      payload.teamIds && payload.teamIds.length
-        ? (
-            await Promise.all(
-              payload.teamIds.map((id) =>
-                this.teamRepository.findTeamSeasonByTeamId(BigInt(id), currentSeason.id, accountId),
-              ),
-            )
-          ).filter((teamSeason): teamSeason is NonNullable<typeof teamSeason> =>
-            Boolean(teamSeason),
-          )
-        : (await this.teamRepository.findBySeasonId(currentSeason.id, accountId)).filter(
-            (teamSeason) =>
-              Boolean(teamSeason.divisionseasonid) && Boolean(teamSeason.leagueseason),
-          );
-
-    if (!targetTeamSeasons.length) {
-      console.info('[discord] syncTeamForumMembers skipped: no target teams', {
-        accountId: accountId.toString(),
-        teamIds: payload.teamIds,
-        userId: payload.userId,
-      });
-      return { created: 0, repaired: 0, skipped: 0, message: 'No teams to synchronize.' };
-    }
-
-    const [forums, linkedAccounts] = await Promise.all([
-      this.discordRepository.listTeamForums(accountId),
-      this.discordRepository.listLinkedAccounts(accountId),
-    ]);
-
-    const forumByTeamSeason = new Map(
-      forums.map((forum) => [forum.teamseasonid.toString(), forum]),
-    );
-    const linkedByUserId = new Map(linkedAccounts.map((link) => [link.userid, link]));
-    let added = 0;
-    let removed = 0;
-    let skipped = 0;
-
-    let teamSeasonsToProcess = targetTeamSeasons;
-
-    if (payload.userId) {
-      // Narrow to only teams where this user is on the active roster
-      const filtered: typeof targetTeamSeasons = [];
-      for (const teamSeason of targetTeamSeasons) {
-        const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(
-          teamSeason.id,
-        );
-        const isMember =
-          rosterMembers.find(
-            (member) => member.roster.contacts?.userid === payload.userId && !member.inactive,
-          ) !== undefined;
-        if (isMember) {
-          filtered.push(teamSeason);
-        }
-      }
-      teamSeasonsToProcess = filtered;
-      if (!teamSeasonsToProcess.length) {
-        console.info('[discord] syncTeamForumMembers skip (user not on any current-season team)', {
-          accountId: accountId.toString(),
-          userId: payload.userId,
-        });
-        return { created: 0, repaired: 0, skipped: 0, message: 'No teams to synchronize.' };
-      }
-      console.info('[discord] syncTeamForumMembers targeting user teams', {
-        accountId: accountId.toString(),
-        userId: payload.userId,
-        teamSeasonIds: teamSeasonsToProcess.map((t) => t.id.toString()),
-      });
-    }
-
-    for (const teamSeason of teamSeasonsToProcess) {
-      const forum = forumByTeamSeason.get(teamSeason.id.toString());
-      if (!forum || !forum.discordroleid) {
-        console.info('[discord] syncTeamForumMembers skipping team (no forum/role)', {
-          accountId: accountId.toString(),
-          teamSeasonId: teamSeason.id.toString(),
-          teamId: teamSeason.teamid?.toString(),
-          hasForum: Boolean(forum),
-          hasRole: Boolean(forum?.discordroleid),
-        });
-        skipped += 1;
-        continue;
-      }
-
-      const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(
-        teamSeason.id,
-      );
-      const activeRosterUserIds = new Set(
-        rosterMembers
-          .filter((member) => !member.inactive)
-          .map((member) => member.roster.contacts?.userid)
-          .filter((id): id is string => Boolean(id)),
-      );
-
-      if (payload.userId) {
-        const link = linkedByUserId.get(payload.userId);
-        if (!link?.discorduserid) {
-          console.info('[discord] syncTeamForumMembers skipping user (no link)', {
-            accountId: accountId.toString(),
-            teamSeasonId: teamSeason.id.toString(),
-            userId: payload.userId,
-          });
-          continue;
-        }
-
-        if (activeRosterUserIds.has(payload.userId)) {
-          const ensured = await this.ensureGuildMemberFromLink(config.guildid as string, link);
-          if (!ensured) {
-            console.warn('[discord] syncTeamForumMembers user not in guild', {
-              accountId: accountId.toString(),
-              teamSeasonId: teamSeason.id.toString(),
-              userId: payload.userId,
-              discordUserId: link.discorduserid,
-            });
-            continue;
-          }
-          await this.addRoleToMember(
-            config.guildid as string,
-            link.discorduserid,
-            forum.discordroleid,
-          );
-          added += 1;
-        } else {
-          await this.removeRoleFromMember(
-            config.guildid as string,
-            link.discorduserid,
-            forum.discordroleid,
-          );
-          removed += 1;
-        }
-        continue;
-      }
-
-      for (const userId of Array.from(activeRosterUserIds)) {
-        const link = linkedByUserId.get(userId);
-        if (!link?.discorduserid) {
-          console.info('[discord] syncTeamForumMembers skipping user (no link)', {
-            accountId: accountId.toString(),
-            teamSeasonId: teamSeason.id.toString(),
-            userId,
-          });
-          continue;
-        }
-        const ensured = await this.ensureGuildMemberFromLink(config.guildid as string, link);
-        if (!ensured) {
-          console.warn('[discord] syncTeamForumMembers user not in guild', {
-            accountId: accountId.toString(),
-            teamSeasonId: teamSeason.id.toString(),
-            userId,
-            discordUserId: link.discorduserid,
-          });
-          continue;
-        }
-        await this.addRoleToMember(
-          config.guildid as string,
-          link.discorduserid,
-          forum.discordroleid,
-        );
-        added += 1;
-      }
-
-      for (const link of linkedAccounts) {
-        if (!link.discorduserid || activeRosterUserIds.has(link.userid)) {
-          continue;
-        }
-        await this.removeRoleFromMember(
-          config.guildid as string,
-          link.discorduserid,
-          forum.discordroleid,
-        );
-        removed += 1;
-      }
-    }
-
-    return {
-      created: added,
-      repaired: removed,
-      skipped,
-      message: 'Team forum memberships synchronized.',
-    };
-  }
-
   async removeTeamForum(accountId: bigint, teamId: bigint): Promise<void> {
     await this.ensureAccountExists(accountId);
     const [config, forums, channelMappings, linkedAccounts] = await Promise.all([
@@ -488,9 +288,21 @@ export class DiscordIntegrationService {
     if (config.guildid) {
       await this.deleteDiscordChannel(config.guildid, forum.discordchannelid);
       if (forum.discordroleid) {
+        const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(
+          forum.teamseasonid,
+        );
+        const desiredUserIds = new Set(
+          rosterMembers
+            .filter((member) => !member.inactive)
+            .map((member) => member.roster.contacts?.userid)
+            .filter((id): id is string => Boolean(id)),
+        );
+        const linkedByUserId = new Map(linkedAccounts.map((link) => [link.userid, link]));
+
         await Promise.all(
-          linkedAccounts
-            .filter((link) => Boolean(link.discorduserid))
+          Array.from(desiredUserIds)
+            .map((userId) => linkedByUserId.get(userId))
+            .filter((link): link is userdiscordaccounts => Boolean(link?.discorduserid))
             .map((link) =>
               this.removeRoleFromMember(
                 config.guildid as string,
@@ -816,9 +628,10 @@ export class DiscordIntegrationService {
       };
     }
 
-    const [existingForums, channelMappings] = await Promise.all([
+    const [existingForums, channelMappings, linkedAccounts] = await Promise.all([
       this.discordRepository.listTeamForums(accountId),
       this.discordRepository.listChannelMappings(accountId),
+      this.discordRepository.listLinkedAccounts(accountId),
     ]);
 
     const mappingByTeamSeason = new Map(
@@ -904,6 +717,16 @@ export class DiscordIntegrationService {
             );
             skipped += 1;
           }
+        }
+
+        const forum = forumsByTeamSeason.get(key);
+        if (forum?.discordroleid) {
+          await this.reconcileTeamForumMembership(
+            accountId,
+            currentSeason.id,
+            forum,
+            linkedAccounts,
+          );
         }
       } catch (error) {
         console.error('[discord] Failed to synchronize team forum', {
@@ -1079,6 +902,45 @@ export class DiscordIntegrationService {
     });
     mappingByTeamSeason.set(key, createdMapping);
     this.invalidateChannelIngestionTargetsCache();
+  }
+
+  private async reconcileTeamForumMembership(
+    accountId: bigint,
+    seasonId: bigint,
+    forum: accountdiscordteamforums,
+    linkedAccounts: userdiscordaccounts[],
+  ): Promise<void> {
+    const config = await this.getOrCreateAccountConfigRecord(accountId);
+    if (!config.guildid || !forum.discordroleid) {
+      return;
+    }
+
+    const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(
+      forum.teamseasonid,
+    );
+    const desiredUserIds = new Set(
+      rosterMembers
+        .filter((member) => !member.inactive)
+        .map((member) => member.roster.contacts?.userid)
+        .filter((id): id is string => Boolean(id)),
+    );
+
+    const linkedByUserId = new Map(linkedAccounts.map((link) => [link.userid, link]));
+
+    for (const userId of desiredUserIds) {
+      const link = linkedByUserId.get(userId);
+      if (!link?.discorduserid) {
+        continue;
+      }
+      await this.addRoleToMember(config.guildid, link.discorduserid, forum.discordroleid);
+    }
+
+    for (const link of linkedAccounts) {
+      if (!link.discorduserid || desiredUserIds.has(link.userid)) {
+        continue;
+      }
+      await this.removeRoleFromMember(config.guildid, link.discorduserid, forum.discordroleid);
+    }
   }
 
   private async disableTeamForums(accountId: bigint, mode: TeamForumCleanupMode): Promise<void> {
@@ -1907,8 +1769,8 @@ export class DiscordIntegrationService {
 
   private buildTeamRoleName(teamName?: string | null): string {
     const base = teamName?.trim() || 'Team Forum';
-    const normalized = base.replace(/\s+/g, ' ').slice(0, 90);
-    return `Team - ${normalized}`;
+    const normalized = base.replace(/\s+/g, ' ');
+    return `Team - ${normalized}`.slice(0, 100);
   }
 
   private async ensureTeamRole(
@@ -2075,7 +1937,7 @@ export class DiscordIntegrationService {
   private async addRoleToMember(guildId: string, discordUserId: string, roleId: string) {
     const result = await this.requestWithRateLimit({
       guildId,
-      routeKey: 'roles',
+      routeKey: `roles:${discordUserId}:${roleId}`,
       method: 'PUT',
       url: `${getDiscordOAuthConfig().apiBaseUrl}/guilds/${guildId}/members/${discordUserId}/roles/${roleId}`,
       on429: (retryMs) =>
@@ -2102,7 +1964,7 @@ export class DiscordIntegrationService {
   private async removeRoleFromMember(guildId: string, discordUserId: string, roleId: string) {
     const result = await this.requestWithRateLimit({
       guildId,
-      routeKey: 'roles',
+      routeKey: `roles:${discordUserId}:${roleId}`,
       method: 'DELETE',
       url: `${getDiscordOAuthConfig().apiBaseUrl}/guilds/${guildId}/members/${discordUserId}/roles/${roleId}`,
       on429: (retryMs) =>

@@ -236,13 +236,23 @@ export class RosterService {
       contactId: rosterPlayer.contactid.toString(),
       userId: rosterPlayer.contacts.userid,
     });
-    void this.discordIntegrationService.updateTeamForumMemberForContact(
-      accountId,
-      seasonId,
-      teamSeasonId,
-      rosterPlayer.contactid,
-      'add',
-    );
+    void this.discordIntegrationService
+      .updateTeamForumMemberForContact(
+        accountId,
+        seasonId,
+        teamSeasonId,
+        rosterPlayer.contactid,
+        'add',
+      )
+      .catch((error) =>
+        console.warn('[discord] Failed to add team forum role after roster add', {
+          accountId: accountId.toString(),
+          seasonId: seasonId.toString(),
+          teamSeasonId: teamSeasonId.toString(),
+          contactId: rosterPlayer.contactid.toString(),
+          error,
+        }),
+      );
 
     return RosterResponseFormatter.formatRosterMemberResponse(rosterMember);
   }
@@ -319,13 +329,24 @@ export class RosterService {
       teamSeasonId: teamSeasonId.toString(),
       userId: rosterMember.roster.contacts.userid,
     });
-    void this.discordIntegrationService.updateTeamForumMemberForContact(
-      accountId,
-      seasonId,
-      teamSeasonId,
-      rosterMember.roster.contactid,
-      inactive ? 'remove' : 'add',
-    );
+    void this.discordIntegrationService
+      .updateTeamForumMemberForContact(
+        accountId,
+        seasonId,
+        teamSeasonId,
+        rosterMember.roster.contactid,
+        inactive ? 'remove' : 'add',
+      )
+      .catch((error) =>
+        console.warn('[discord] Failed to update team forum role after roster status change', {
+          accountId: accountId.toString(),
+          seasonId: seasonId.toString(),
+          teamSeasonId: teamSeasonId.toString(),
+          contactId: rosterMember.roster.contactid.toString(),
+          inactive,
+          error,
+        }),
+      );
 
     const updatedRosterMember = await this.rosterRepository.updateRosterSeasonEntry(
       rosterMemberId,
@@ -356,13 +377,23 @@ export class RosterService {
       teamSeasonId: teamSeasonId.toString(),
       userId: rosterMember.roster.contacts.userid,
     });
-    void this.discordIntegrationService.updateTeamForumMemberForContact(
-      accountId,
-      seasonId,
-      teamSeasonId,
-      rosterMember.roster.contactid,
-      'remove',
-    );
+    void this.discordIntegrationService
+      .updateTeamForumMemberForContact(
+        accountId,
+        seasonId,
+        teamSeasonId,
+        rosterMember.roster.contactid,
+        'remove',
+      )
+      .catch((error) =>
+        console.warn('[discord] Failed to remove team forum role after roster delete', {
+          accountId: accountId.toString(),
+          seasonId: seasonId.toString(),
+          teamSeasonId: teamSeasonId.toString(),
+          contactId: rosterMember.roster.contactid.toString(),
+          error,
+        }),
+      );
 
     const playerName = `${rosterMember.roster.contacts.firstname} ${rosterMember.roster.contacts.lastname}`;
 

@@ -197,9 +197,6 @@ export const DiscordTeamForumSchema = z.object({
   status: DiscordTeamForumStatusEnum,
   autoCreated: z.boolean(),
   lastSyncedAt: isoDateTimeSchema.nullable(),
-  teamName: z.string().trim().nullable().optional(),
-  seasonName: z.string().trim().nullable().optional(),
-  leagueName: z.string().trim().nullable().optional(),
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
 });
@@ -227,17 +224,6 @@ export const DiscordTeamForumRepairResultSchema = z.object({
 });
 
 export type DiscordTeamForumRepairResultType = z.infer<typeof DiscordTeamForumRepairResultSchema>;
-
-export const DiscordTeamForumSyncRequestSchema = z
-  .object({
-    teamIds: z.array(bigintToStringSchema).optional(),
-    userId: z.string().trim().min(1).optional(),
-  })
-  .refine((value) => value.teamIds?.length || value.userId, {
-    message: 'Provide at least a userId or one teamId.',
-  });
-
-export type DiscordTeamForumSyncRequestType = z.infer<typeof DiscordTeamForumSyncRequestSchema>;
 
 export const DiscordTeamForumRemoveRequestSchema = z.object({
   teamId: bigintToStringSchema,
