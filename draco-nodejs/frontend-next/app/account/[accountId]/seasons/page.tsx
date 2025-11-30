@@ -12,7 +12,7 @@ export async function generateMetadata({
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
   const description = `Create seasons, configure divisions, and manage competition settings for ${accountName}.`;
   return buildSeoMetadata({
-    title: `Season Management - ${accountName}`,
+    title: `${accountName} Season Management`,
     description,
     path: `/account/${accountId}/seasons`,
     icon: iconUrl,
