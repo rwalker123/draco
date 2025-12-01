@@ -1723,7 +1723,6 @@ export class DiscordIntegrationService {
 
   private async fetchGuildMembers(guildId: string): Promise<{ id: string; roles: string[] }[]> {
     const botToken = this.getBotToken();
-    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
     const members: { id: string; roles: string[] }[] = [];
     let after: string | undefined;
 
@@ -1756,7 +1755,7 @@ export class DiscordIntegrationService {
           guildId,
           retryMs: retryAfterMs,
         });
-        await wait(retryAfterMs);
+        await this.sleep(retryAfterMs);
         continue;
       }
 

@@ -288,7 +288,7 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
               >
                 Open Discord
               </Button>
-              {accountId ? (
+              {Boolean(accountId) ? (
                 <Button
                   size="small"
                   variant="text"
