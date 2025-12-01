@@ -1,19 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from '@mui/material';
+import { Alert } from '@mui/material';
 import type { MemberBusinessType } from '@draco/shared-schemas';
 import { deleteMemberBusiness } from '@draco/shared-api-client';
 import { useApiClient } from '@/hooks/useApiClient';
 import { assertNoApiError } from '@/utils/apiResult';
+import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
 
 export type MemberBusinessDeleteResult = {
   message: string;
@@ -83,29 +76,36 @@ const MemberBusinessDeleteDialog: React.FC<MemberBusinessDeleteDialogProps> = ({
     }
   };
 
+  const handleClose = () => {
+    if (submitting) {
+      return;
+    }
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={submitting ? undefined : onClose}>
-      <DialogTitle>Delete Member Business</DialogTitle>
-      <DialogContent dividers>
-        <Typography>
+    <ConfirmDeleteDialog
+      open={open}
+      title="Delete Member Business"
+      message={
+        <>
           Are you sure you want to remove <strong>{memberBusiness?.name}</strong> from your member
           business listings?
-        </Typography>
-        {error && (
+        </>
+      }
+      content={
+        error ? (
           <Alert severity="error" sx={{ mt: 2 }}>
             {error}
           </Alert>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={submitting}>
-          Cancel
-        </Button>
-        <Button color="error" variant="contained" onClick={handleConfirm} disabled={submitting}>
-          Delete
-        </Button>
-      </DialogActions>
-    </Dialog>
+        ) : null
+      }
+      onConfirm={handleConfirm}
+      onClose={handleClose}
+      confirmButtonProps={{ disabled: submitting }}
+      cancelButtonProps={{ disabled: submitting }}
+      dialogContentProps={{ dividers: true }}
+    />
   );
 };
 

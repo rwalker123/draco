@@ -18,6 +18,7 @@ import { Delete as DeleteIcon } from '@mui/icons-material';
 import { useAuth } from '../../../context/AuthContext';
 import { getSources, putSources } from '../../../services/workoutService';
 import type { WorkoutSourcesType } from '@draco/shared-schemas';
+import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
 
 interface WorkoutSourcesDialogProps {
   accountId: string;
@@ -42,6 +43,7 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
   const [newOption, setNewOption] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [pendingOption, setPendingOption] = useState<string | null>(null);
 
   const options = useMemo(() => sources.options ?? [], [sources.options]);
 
@@ -127,6 +129,7 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
     setNewOption('');
     setError(null);
     setSuccessMessage(null);
+    setPendingOption(null);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -135,89 +138,111 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
   }, [onClose, resetDialogState]);
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>Manage Where Heard Options</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={3}>
-          {error ? (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          ) : null}
-          {successMessage ? (
-            <Alert severity="success" onClose={() => setSuccessMessage(null)}>
-              {successMessage}
-            </Alert>
-          ) : null}
+    <>
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+        <DialogTitle>Manage Where Heard Options</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={3}>
+            {error ? (
+              <Alert severity="error" onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            ) : null}
+            {successMessage ? (
+              <Alert severity="success" onClose={() => setSuccessMessage(null)}>
+                {successMessage}
+              </Alert>
+            ) : null}
 
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              Add New Option
-            </Typography>
-            <Stack direction="row" spacing={2} alignItems="flex-end">
-              <TextField
-                fullWidth
-                label="New Option"
-                value={newOption}
-                onChange={(event) => setNewOption(event.target.value)}
-                inputProps={{ maxLength: 25 }}
-                helperText={`${newOption.length}/25 characters`}
-                disabled={loading}
-              />
-              <Button
-                variant="contained"
-                onClick={handleAddOption}
-                disabled={loading || !newOption.trim() || newOption.length > 25}
-              >
-                Add
-              </Button>
-            </Stack>
-          </Box>
-
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              Current Options ({options.length})
-            </Typography>
-            {options.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                No options configured yet. Add some options above.
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Add New Option
               </Typography>
-            ) : (
-              <Stack spacing={1}>
-                {options.map((option) => (
-                  <Box
-                    key={option}
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      p: 2,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Typography>{option}</Typography>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleRemoveOption(option)}
-                      disabled={loading}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                ))}
+              <Stack direction="row" spacing={2} alignItems="flex-end">
+                <TextField
+                  fullWidth
+                  label="New Option"
+                  value={newOption}
+                  onChange={(event) => setNewOption(event.target.value)}
+                  inputProps={{ maxLength: 25 }}
+                  helperText={`${newOption.length}/25 characters`}
+                  disabled={loading}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleAddOption}
+                  disabled={loading || !newOption.trim() || newOption.length > 25}
+                >
+                  Add
+                </Button>
               </Stack>
-            )}
-          </Box>
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} color="inherit">
-          Close
-        </Button>
-      </DialogActions>
-    </Dialog>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Current Options ({options.length})
+              </Typography>
+              {options.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                  No options configured yet. Add some options above.
+                </Typography>
+              ) : (
+                <Stack spacing={1}>
+                  {options.map((option) => (
+                    <Box
+                      key={option}
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        p: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                      }}
+                    >
+                      <Typography>{option}</Typography>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => setPendingOption(option)}
+                        disabled={loading}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Stack>
+              )}
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} color="inherit">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <ConfirmDeleteDialog
+        open={Boolean(pendingOption)}
+        title="Delete Option"
+        message={
+          pendingOption
+            ? `Are you sure you want to delete the option "${pendingOption}"?`
+            : 'Are you sure you want to delete this option?'
+        }
+        onClose={() => setPendingOption(null)}
+        onConfirm={async () => {
+          if (!pendingOption) {
+            return;
+          }
+          await handleRemoveOption(pendingOption);
+          setPendingOption(null);
+        }}
+        confirmButtonProps={{ color: 'error', variant: 'contained', disabled: loading }}
+        cancelButtonProps={{ disabled: loading }}
+        dialogProps={{ maxWidth: 'xs', fullWidth: true }}
+      />
+    </>
   );
 };

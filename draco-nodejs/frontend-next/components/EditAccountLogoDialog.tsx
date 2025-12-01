@@ -19,6 +19,7 @@ import {
   Save as SaveIcon,
 } from '@mui/icons-material';
 import Image from 'next/image';
+import ConfirmDeleteDialog from './social/ConfirmDeleteDialog';
 import { addCacheBuster } from '../utils/addCacheBuster';
 import {
   AccountLogoOperationSuccess,
@@ -172,6 +173,13 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
     onError?.(result.error);
   };
 
+  const handleCloseDeleteDialog = () => {
+    if (deleting) {
+      return;
+    }
+    setConfirmDeleteOpen(false);
+  };
+
   return (
     <>
       <DialogTitle>Edit Account Logo</DialogTitle>
@@ -260,23 +268,21 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
           {uploading ? 'Saving...' : 'Save Changes'}
         </Button>
       </DialogActions>
-      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
-        <DialogTitle>Delete Logo</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete the account logo? This action is permanent and cannot be
-            undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={deleting}>
-            Cancel
-          </Button>
-          <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
-            {deleting ? <CircularProgress size={20} /> : 'Delete'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={confirmDeleteOpen}
+        title="Delete Logo"
+        message="Are you sure you want to delete the account logo? This action is permanent and cannot be undone."
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleDelete}
+        confirmLabel={deleting ? 'Deleting...' : 'Delete'}
+        confirmButtonProps={{
+          color: 'error',
+          variant: 'contained',
+          disabled: deleting,
+          startIcon: deleting ? <CircularProgress size={20} /> : undefined,
+        }}
+        cancelButtonProps={{ disabled: deleting }}
+      />
     </>
   );
 };

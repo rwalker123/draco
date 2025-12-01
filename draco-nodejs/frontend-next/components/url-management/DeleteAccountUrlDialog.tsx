@@ -1,17 +1,10 @@
 'use client';
 
 import React from 'react';
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from '@mui/material';
+import { Alert } from '@mui/material';
 import type { AccountUrlType } from '@draco/shared-schemas';
 import { AccountUrlDeleteResult, useAccountUrlsService } from '../../hooks/useAccountUrlsService';
+import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
 
 interface DeleteAccountUrlDialogProps {
   accountId: string;
@@ -60,14 +53,12 @@ const DeleteAccountUrlDialog: React.FC<DeleteAccountUrlDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ color: 'text.primary' }}>Delete URL</DialogTitle>
-      <DialogContent>
-        <Typography color="text.primary">
-          Are you sure you want to delete the URL &quot;{url?.url}&quot;? This action cannot be
-          undone.
-        </Typography>
-        {(localError || error) && (
+    <ConfirmDeleteDialog
+      open={open}
+      title="Delete URL"
+      message={`Are you sure you want to delete the URL "${url?.url}"? This action cannot be undone.`}
+      content={
+        localError || error ? (
           <Alert
             severity="error"
             sx={{ mt: 2 }}
@@ -78,17 +69,15 @@ const DeleteAccountUrlDialog: React.FC<DeleteAccountUrlDialogProps> = ({
           >
             {localError ?? error}
           </Alert>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button onClick={handleDelete} color="error" variant="contained" disabled={loading || !url}>
-          Delete URL
-        </Button>
-      </DialogActions>
-    </Dialog>
+        ) : null
+      }
+      onConfirm={handleDelete}
+      onClose={handleClose}
+      confirmLabel="Delete URL"
+      confirmButtonProps={{ color: 'error', variant: 'contained', disabled: loading || !url }}
+      cancelButtonProps={{ disabled: loading }}
+      dialogProps={{ maxWidth: 'xs', fullWidth: true }}
+    />
   );
 };
 

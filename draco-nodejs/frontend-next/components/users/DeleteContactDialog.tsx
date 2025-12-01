@@ -2,11 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   Typography,
   Box,
   Chip,
@@ -24,6 +19,7 @@ import { Warning as WarningIcon, Error as ErrorIcon, Info as InfoIcon } from '@m
 import { DependencyCheckResult } from '../../types/users';
 import { BaseContactType } from '@draco/shared-schemas';
 import { useContactDeletion } from '../../hooks/useContactDeletion';
+import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
 
 interface DeleteContactDialogProps {
   open: boolean;
@@ -142,172 +138,178 @@ const DeleteContactDialogInner: React.FC<DeleteContactDialogInnerProps> = ({
     }
   }, [contact, forceDelete, deleteContact, onSuccess, onClose]);
 
+  const handleClose = useCallback(() => {
+    if (loading) {
+      return;
+    }
+    onClose();
+  }, [loading, onClose]);
+
   const canProceed = checkingDependencies ? false : dependencyResult?.canDelete || forceDelete;
 
   return (
-    <Dialog open onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
+    <ConfirmDeleteDialog
+      open
+      title={
         <Box display="flex" alignItems="center" gap={1}>
           <ErrorIcon color="error" />
           <Typography variant="h6">Delete Contact</Typography>
         </Box>
-      </DialogTitle>
+      }
+      content={
+        <>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            {error && (
+              <Alert severity="error" onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            )}
 
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          {/* Error display */}
-          {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
+            <Box>
+              <Typography variant="body1" gutterBottom>
+                Contact:{' '}
+                <strong>
+                  {contact.firstName} {contact.lastName}
+                </strong>
+              </Typography>
+              {contact.email && (
+                <Typography variant="body2" color="text.secondary">
+                  {contact.email}
+                </Typography>
+              )}
+            </Box>
+          </Stack>
+
+          {checkingDependencies && (
+            <Box display="flex" alignItems="center" gap={2} sx={{ mt: 2, mb: 2 }}>
+              <CircularProgress size={20} />
+              <Typography>Checking dependencies...</Typography>
+            </Box>
           )}
 
-          <Box>
-            <Typography variant="body1" gutterBottom>
-              Contact:{' '}
-              <strong>
-                {contact.firstName} {contact.lastName}
-              </strong>
-            </Typography>
-            {contact.email && (
-              <Typography variant="body2" color="text.secondary">
-                {contact.email}
-              </Typography>
-            )}
-          </Box>
-        </Stack>
-
-        {checkingDependencies && (
-          <Box display="flex" alignItems="center" gap={2} sx={{ mt: 2, mb: 2 }}>
-            <CircularProgress size={20} />
-            <Typography>Checking dependencies...</Typography>
-          </Box>
-        )}
-
-        {dependencyResult && (
-          <Box sx={{ mt: 2 }}>
-            {dependencyResult.canDelete ? (
-              <Alert severity="success" sx={{ mb: 2 }}>
-                <Typography variant="body2">
-                  ✅ This contact can be safely deleted with no dependencies.
-                </Typography>
-              </Alert>
-            ) : (
-              <>
-                <Alert
-                  severity={
-                    dependencyResult.dependencies.some((d) => d.riskLevel === 'critical')
-                      ? 'error'
-                      : 'warning'
-                  }
-                  sx={{ mb: 2 }}
-                >
-                  <Typography variant="body2" gutterBottom>
-                    ⚠️ This contact has <strong>{dependencyResult.totalDependencies}</strong>{' '}
-                    dependencies that will be affected by deletion:
-                  </Typography>
-                </Alert>
-
-                <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
-                  Dependencies Found:
-                </Typography>
-
-                <List
-                  dense
-                  sx={{
-                    bgcolor: 'background.paper',
-                    border: 1,
-                    borderColor: 'divider',
-                    borderRadius: 1,
-                  }}
-                >
-                  {dependencyResult.dependencies.map((dep, index) => (
-                    <React.Fragment key={`${dep.table}-${index}`}>
-                      <ListItem>
-                        <ListItemText
-                          primary={
-                            <Box display="flex" alignItems="center" gap={1}>
-                              <Chip
-                                icon={getRiskLevelIcon(dep.riskLevel)}
-                                label={dep.riskLevel.toUpperCase()}
-                                color={
-                                  getRiskLevelColor(dep.riskLevel) as
-                                    | 'error'
-                                    | 'warning'
-                                    | 'info'
-                                    | 'success'
-                                    | 'default'
-                                }
-                                size="small"
-                                variant="outlined"
-                              />
-                              <Typography variant="body2" fontWeight="medium">
-                                {dep.description}
-                              </Typography>
-                              <Chip
-                                label={`${dep.count} record${dep.count !== 1 ? 's' : ''}`}
-                                size="small"
-                                variant="filled"
-                                color="default"
-                              />
-                            </Box>
-                          }
-                          secondary={`Table: ${dep.table}`}
-                        />
-                      </ListItem>
-                      {index < dependencyResult.dependencies.length - 1 && <Divider />}
-                    </React.Fragment>
-                  ))}
-                </List>
-
-                <Alert severity="warning" sx={{ mt: 2 }}>
+          {dependencyResult && (
+            <Box sx={{ mt: 2 }}>
+              {dependencyResult.canDelete ? (
+                <Alert severity="success" sx={{ mb: 2 }}>
                   <Typography variant="body2">
-                    Force deleting will permanently remove all related data. This action cannot be
-                    undone.
+                    ✅ This contact can be safely deleted with no dependencies.
                   </Typography>
                 </Alert>
-
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={forceDelete}
-                      onChange={(e) => setForceDelete(e.target.checked)}
-                      color="error"
-                      disabled={dependencyResult.dependencies.some(
-                        (d) => d.description === 'Account Owner',
-                      )}
-                    />
-                  }
-                  label={
-                    <Typography variant="body2">
-                      {dependencyResult.dependencies.some((d) => d.description === 'Account Owner')
-                        ? 'Account owners cannot be deleted'
-                        : 'I understand the risks and want to force delete this contact and all related data'}
+              ) : (
+                <>
+                  <Alert
+                    severity={
+                      dependencyResult.dependencies.some((d) => d.riskLevel === 'critical')
+                        ? 'error'
+                        : 'warning'
+                    }
+                    sx={{ mb: 2 }}
+                  >
+                    <Typography variant="body2" gutterBottom>
+                      ⚠️ This contact has <strong>{dependencyResult.totalDependencies}</strong>{' '}
+                      dependencies that will be affected by deletion:
                     </Typography>
-                  }
-                  sx={{ mt: 2 }}
-                />
-              </>
-            )}
-          </Box>
-        )}
-      </DialogContent>
+                  </Alert>
 
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleDelete}
-          disabled={loading || !canProceed}
-          variant="contained"
-          color="error"
-          startIcon={loading ? <CircularProgress size={16} /> : null}
-        >
-          {loading ? 'Deleting...' : forceDelete ? 'Force Delete' : 'Delete Contact'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+                  <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
+                    Dependencies Found:
+                  </Typography>
+
+                  <List
+                    dense
+                    sx={{
+                      bgcolor: 'background.paper',
+                      border: 1,
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                    }}
+                  >
+                    {dependencyResult.dependencies.map((dep, index) => (
+                      <React.Fragment key={`${dep.table}-${index}`}>
+                        <ListItem>
+                          <ListItemText
+                            primary={
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Chip
+                                  icon={getRiskLevelIcon(dep.riskLevel)}
+                                  label={dep.riskLevel.toUpperCase()}
+                                  color={
+                                    getRiskLevelColor(dep.riskLevel) as
+                                      | 'error'
+                                      | 'warning'
+                                      | 'info'
+                                      | 'success'
+                                      | 'default'
+                                  }
+                                  size="small"
+                                  variant="outlined"
+                                />
+                                <Typography variant="body2" fontWeight="medium">
+                                  {dep.description}
+                                </Typography>
+                                <Chip
+                                  label={`${dep.count} record${dep.count !== 1 ? 's' : ''}`}
+                                  size="small"
+                                  variant="filled"
+                                  color="default"
+                                />
+                              </Box>
+                            }
+                            secondary={`Table: ${dep.table}`}
+                          />
+                        </ListItem>
+                        {index < dependencyResult.dependencies.length - 1 && <Divider />}
+                      </React.Fragment>
+                    ))}
+                  </List>
+
+                  <Alert severity="warning" sx={{ mt: 2 }}>
+                    <Typography variant="body2">
+                      Force deleting will permanently remove all related data. This action cannot be
+                      undone.
+                    </Typography>
+                  </Alert>
+
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={forceDelete}
+                        onChange={(e) => setForceDelete(e.target.checked)}
+                        color="error"
+                        disabled={dependencyResult.dependencies.some(
+                          (d) => d.description === 'Account Owner',
+                        )}
+                      />
+                    }
+                    label={
+                      <Typography variant="body2">
+                        {dependencyResult.dependencies.some(
+                          (d) => d.description === 'Account Owner',
+                        )
+                          ? 'Account owners cannot be deleted'
+                          : 'I understand the risks and want to force delete this contact and all related data'}
+                      </Typography>
+                    }
+                    sx={{ mt: 2 }}
+                  />
+                </>
+              )}
+            </Box>
+          )}
+        </>
+      }
+      onClose={handleClose}
+      onConfirm={handleDelete}
+      confirmLabel={loading ? 'Deleting...' : forceDelete ? 'Force Delete' : 'Delete Contact'}
+      confirmButtonProps={{
+        color: 'error',
+        variant: 'contained',
+        disabled: loading || !canProceed,
+        startIcon: loading ? <CircularProgress size={16} /> : null,
+      }}
+      cancelButtonProps={{ disabled: loading }}
+      dialogProps={{ maxWidth: 'md', fullWidth: true }}
+    />
   );
 };
 

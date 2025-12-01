@@ -22,6 +22,7 @@ import { validateAccessCode } from '../../../../../../../utils/accessCodeValidat
 import {
   updateWorkoutRegistration,
   verifyWorkoutRegistrationAccess,
+  deleteWorkoutRegistrationByAccessCode,
 } from '../../../../../../../services/workoutService';
 import { WorkoutRegistrationForm } from '../../../../../../../components/workouts/WorkoutRegistrationForm';
 import { UpsertWorkoutRegistrationType, WorkoutRegistrationType } from '@draco/shared-schemas';
@@ -186,19 +187,12 @@ export default function VerifyWorkoutRegistration({
     setDeleting(true);
     setSaveError(null);
     try {
-      const response = await fetch(
-        `/api/accounts/${accountId}/workouts/${workoutId}/registrations/${registrationId}`,
-        {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accessCode: state.accessCode }),
-        },
+      await deleteWorkoutRegistrationByAccessCode(
+        accountId,
+        workoutId,
+        registrationId,
+        state.accessCode,
       );
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || 'Failed to remove registration');
-      }
 
       router.push(`/account/${accountId}`);
     } catch (error) {

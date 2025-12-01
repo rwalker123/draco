@@ -32,7 +32,7 @@ import {
   updateGalleryAlbumAdmin,
 } from '../../../services/photoGalleryAdminService';
 import { ApiClientError } from '../../../utils/apiResult';
-import ConfirmationDialog from '../../common/ConfirmationDialog';
+import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
 import PhotoGalleryAlbumSections, { PhotoGalleryAlbumEntry } from './PhotoGalleryAlbumSections';
 
 interface PhotoGalleryAlbumManagerDialogProps {
@@ -241,6 +241,13 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     }
   }, [accountId, onError, onSuccess, pendingDelete, token]);
 
+  const handleCloseDeleteDialog = useCallback(() => {
+    if (submitting) {
+      return;
+    }
+    setPendingDelete(null);
+  }, [submitting]);
+
   return (
     <>
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -411,18 +418,20 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
         </DialogActions>
       </Dialog>
 
-      <ConfirmationDialog
+      <ConfirmDeleteDialog
         open={Boolean(pendingDelete)}
         title="Delete Album"
         message={
           pendingDelete
-            ? `Are you sure you want to delete “${pendingDelete.title}”? This cannot be undone.`
+            ? `Are you sure you want to delete "${pendingDelete.title}"? This cannot be undone.`
             : ''
         }
-        confirmText="Delete Album"
-        confirmButtonColor="error"
-        onClose={() => setPendingDelete(null)}
+        onClose={handleCloseDeleteDialog}
         onConfirm={handleDelete}
+        confirmLabel="Delete Album"
+        confirmButtonProps={{ disabled: submitting }}
+        cancelButtonProps={{ disabled: submitting }}
+        dialogProps={{ maxWidth: 'sm', fullWidth: true }}
       />
     </>
   );

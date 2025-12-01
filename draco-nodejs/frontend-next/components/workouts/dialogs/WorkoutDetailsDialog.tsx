@@ -38,7 +38,7 @@ import {
   deleteWorkoutRegistration,
 } from '../../../services/workoutService';
 import { WorkoutRegistrationForm } from '../WorkoutRegistrationForm';
-import ConfirmationDialog from '../../common/ConfirmationDialog';
+import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
 import { formatPhoneNumber } from '../../../utils/phoneNumber';
 import { UI_TIMEOUTS } from '../../../constants/timeoutConstants';
 
@@ -298,6 +298,11 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
     registrations.length,
   ]);
 
+  const handleCloseDeleteDialog = useCallback(() => {
+    setDeleteDialogOpen(false);
+    setRegistrationToDelete(null);
+  }, []);
+
   const renderRegistrationList = () => {
     if (loading) {
       return (
@@ -469,14 +474,14 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
 
-      <ConfirmationDialog
+      <ConfirmDeleteDialog
         open={deleteDialogOpen}
         title="Delete Registration"
         message="Are you sure you want to delete this registration? This action cannot be undone."
-        confirmText="Delete"
-        confirmButtonColor="error"
         onConfirm={confirmDeleteRegistration}
-        onClose={() => setDeleteDialogOpen(false)}
+        onClose={handleCloseDeleteDialog}
+        confirmButtonProps={{ disabled: !registrationToDelete }}
+        dialogProps={{ maxWidth: 'sm', fullWidth: true }}
       />
 
       <Dialog
@@ -491,6 +496,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
             accountId={accountId}
             workoutId={workoutId ?? ''}
             registration={editingRegistration}
+            actionLayout="dialog"
             onSubmit={handleSaveRegistration}
             onCancel={handleCloseRegistrationDialog}
             isLoading={registrationSaving}

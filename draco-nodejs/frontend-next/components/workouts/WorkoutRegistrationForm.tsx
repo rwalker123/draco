@@ -29,6 +29,7 @@ interface WorkoutRegistrationFormProps {
   workoutId: string;
   registration?: WorkoutRegistrationType | null;
   token?: string;
+  actionLayout?: 'page' | 'dialog';
   onSubmit?: (data: UpsertWorkoutRegistrationType) => Promise<WorkoutRegistrationType | void>;
   onSuccess?: (result: { message: string; registration?: WorkoutRegistrationType }) => void;
   onError?: (message: string) => void;
@@ -76,6 +77,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
   workoutId,
   registration,
   token,
+  actionLayout = 'page',
   onSubmit,
   onSuccess,
   onError,
@@ -212,6 +214,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
   const watchAge = watch('age') ?? '';
   const watchPhone = watch('phone1') ?? '';
   const formElementId = formId || 'workout-registration-form';
+  const isDialogLayout = actionLayout === 'dialog';
 
   useEffect(() => {
     onDirtyChange?.(isDirty);
@@ -353,10 +356,10 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
             mt: 3,
             flexWrap: 'wrap',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: isDialogLayout ? 'flex-end' : 'space-between',
           }}
         >
-          {isEditMode && (
+          {!isDialogLayout && isEditMode && (
             <Button
               variant="contained"
               color="error"
@@ -368,7 +371,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
           )}
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <Button variant="outlined" onClick={onCancel} disabled={isBusy}>
-              Home
+              {isDialogLayout ? 'Cancel' : 'Home'}
             </Button>
             <Button
               type="submit"
@@ -376,7 +379,13 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
               disabled={isBusy || !isDirty}
               startIcon={isBusy ? <CircularProgress size={20} /> : null}
             >
-              {isBusy ? 'Saving...' : isEditMode ? 'Update Registration' : 'Add Registration'}
+              {isBusy
+                ? 'Saving...'
+                : isEditMode
+                  ? 'Update Registration'
+                  : isDialogLayout
+                    ? 'Register'
+                    : 'Add Registration'}
             </Button>
           </Box>
         </Box>

@@ -269,6 +269,23 @@ export async function deleteWorkoutRegistration(
   assertNoApiError(result, 'Failed to delete registration');
 }
 
+export async function deleteWorkoutRegistrationByAccessCode(
+  accountId: string,
+  workoutId: string,
+  registrationId: string,
+  accessCode: string,
+): Promise<void> {
+  const client = createClient();
+  const result = await apiDeleteWorkoutRegistration({
+    client,
+    path: { accountId, workoutId, registrationId },
+    body: { accessCode },
+    throwOnError: false,
+  });
+
+  assertNoApiError(result, 'Failed to delete registration');
+}
+
 export async function verifyWorkoutRegistrationAccess(
   accountId: string,
   workoutId: string,

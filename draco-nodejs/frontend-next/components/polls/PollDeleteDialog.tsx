@@ -1,16 +1,9 @@
 'use client';
 
 import React, { useCallback, useEffect } from 'react';
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from '@mui/material';
 import { AccountPollType } from '@draco/shared-schemas';
 import { usePollsService } from '@/hooks/usePollsService';
+import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
 
 export interface PollDeleteDialogProps {
   accountId: string;
@@ -53,23 +46,17 @@ const PollDeleteDialog: React.FC<PollDeleteDialogProps> = ({
   }, [deletePoll, onClose, onError, onSuccess, poll]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Delete Poll</DialogTitle>
-      <DialogContent>
-        <Typography>
-          Are you sure you want to delete the poll &quot;{poll?.question}&quot;? This action cannot
-          be undone.
-        </Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button onClick={handleDelete} color="error" disabled={loading}>
-          {loading ? 'Deleting…' : 'Delete'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <ConfirmDeleteDialog
+      open={open}
+      title="Delete Poll"
+      message={`Are you sure you want to delete the poll "${poll?.question}"? This action cannot be undone.`}
+      onConfirm={handleDelete}
+      onClose={onClose}
+      confirmLabel={loading ? 'Deleting…' : 'Delete'}
+      confirmButtonProps={{ disabled: loading }}
+      cancelButtonProps={{ disabled: loading }}
+      dialogProps={{ maxWidth: 'xs', fullWidth: true }}
+    />
   );
 };
 
