@@ -66,6 +66,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     DiscordTeamForumListSchemaRef,
     DiscordTeamForumQuerySchemaRef,
     DiscordTeamForumRepairResultSchemaRef,
+    DiscordTeamForumRemoveRequestSchemaRef,
     SocialFeedItemSchemaRef,
     SocialFeedListSchemaRef,
     SocialFeedQuerySchemaRef,
@@ -3649,6 +3650,51 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
       403: { description: 'Insufficient permissions to manage Discord settings.' },
       404: {
         description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/discord/team-forums/remove-team',
+    operationId: 'removeAccountDiscordTeamForum',
+    summary: 'Remove a Discord team forum',
+    description:
+      'Deletes the Discord team forum channel and revokes memberships for the specified team in the current season.',
+    tags: ['Discord'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': { schema: DiscordTeamForumRemoveRequestSchemaRef },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Removal completed.',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: { message: { type: 'string' } },
+            },
+          },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage Discord settings.' },
+      404: {
+        description: 'Account or team forum not found.',
         content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
       },
     },

@@ -119,11 +119,13 @@ export class SocialHubService {
     accountId: bigint,
     seasonId: bigint,
     query?: CommunityMessageQueryType,
+    options?: { userId?: string | null },
   ): Promise<CommunityMessagePreviewType[]> {
     const allowedChannels = await this.discordIntegrationService.listCommunityChannels(
       accountId,
       seasonId,
       query?.teamSeasonId ? { teamSeasonId: query.teamSeasonId } : undefined,
+      { userId: options?.userId },
     );
 
     if (!allowedChannels.length) {
@@ -149,33 +151,47 @@ export class SocialHubService {
       return [];
     }
 
-    const repositoryQuery: CommunityMessageQuery = {
-      accountId,
-      seasonId,
-      teamSeasonId: toOptionalBigInt(query?.teamSeasonId),
-      channelIds: resolvedChannelIds,
-      limit: query?.limit,
-    };
+    const perChannelLimit = query?.limit;
+    const aggregated: CommunityMessagePreviewType[] = [];
 
-    let records = await this.socialContentRepository.listCommunityMessages(repositoryQuery);
-
-    if (records.length === 0 && query?.teamSeasonId) {
-      const fallbackQuery: CommunityMessageQuery = {
-        ...repositoryQuery,
-        teamSeasonId: undefined,
+    for (const channel of allowedChannels) {
+      if (!resolvedChannelIds.includes(channel.discordChannelId)) {
+        continue;
+      }
+      const targetTeamSeasonId =
+        toOptionalBigInt(query?.teamSeasonId) ??
+        (channel.teamSeasonId ? BigInt(channel.teamSeasonId) : undefined);
+      const repositoryQuery: CommunityMessageQuery = {
+        accountId,
+        seasonId,
+        teamSeasonId: targetTeamSeasonId,
+        channelIds: [channel.discordChannelId],
+        limit: perChannelLimit,
       };
-      records = await this.socialContentRepository.listCommunityMessages(fallbackQuery);
+
+      let records = await this.socialContentRepository.listCommunityMessages(repositoryQuery);
+
+      if (records.length) {
+        aggregated.push(...SocialFeedResponseFormatter.formatCommunityMessages(records));
+      }
     }
 
-    return SocialFeedResponseFormatter.formatCommunityMessages(records);
+    // Preserve per-channel order (already desc per channel); overall order not guaranteed.
+    return aggregated;
   }
 
   async listCommunityChannels(
     accountId: bigint,
     seasonId: bigint,
     query?: CommunityChannelQueryType,
+    options?: { userId?: string | null },
   ): Promise<CommunityChannelType[]> {
-    return this.discordIntegrationService.listCommunityChannels(accountId, seasonId, query);
+    return this.discordIntegrationService.listCommunityChannels(
+      accountId,
+      seasonId,
+      query,
+      options,
+    );
   }
 
   async listLiveEvents(

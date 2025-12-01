@@ -177,7 +177,12 @@ export const DiscordChannelMappingCreateSchema = z
 
 export type DiscordChannelMappingCreateType = z.infer<typeof DiscordChannelMappingCreateSchema>;
 
-export const DiscordTeamForumStatusEnum = z.enum(['provisioned', 'needsRepair', 'disabled']);
+export const DiscordTeamForumStatusEnum = z.enum([
+  'provisioned',
+  'needsRepair',
+  'missingChannel',
+  'disabled',
+]);
 
 export const DiscordTeamForumSchema = z.object({
   id: bigintToStringSchema,
@@ -219,6 +224,12 @@ export const DiscordTeamForumRepairResultSchema = z.object({
 });
 
 export type DiscordTeamForumRepairResultType = z.infer<typeof DiscordTeamForumRepairResultSchema>;
+
+export const DiscordTeamForumRemoveRequestSchema = z.object({
+  teamId: bigintToStringSchema,
+});
+
+export type DiscordTeamForumRemoveRequestType = z.infer<typeof DiscordTeamForumRemoveRequestSchema>;
 
 export const DiscordLinkStatusSchema = z.object({
   linkingEnabled: z.boolean(),

@@ -180,6 +180,7 @@ import {
   DiscordTeamForumListSchema,
   DiscordTeamForumQuerySchema,
   DiscordTeamForumRepairResultSchema,
+  DiscordTeamForumRemoveRequestSchema,
   DiscordFeatureSyncFeatureEnum,
   WorkoutSourcesSchema,
   WorkoutSummarySchema,
@@ -521,6 +522,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const DiscordTeamForumRepairResultSchemaRef = registry.register(
     'DiscordTeamForumRepairResult',
     DiscordTeamForumRepairResultSchema,
+  );
+  const DiscordTeamForumRemoveRequestSchemaRef = registry.register(
+    'DiscordTeamForumRemoveRequest',
+    DiscordTeamForumRemoveRequestSchema,
   );
   const PlayersWantedClassifiedSchemaRef = registry.register(
     'PlayersWantedClassified',
@@ -1283,6 +1288,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     VerifyTokenRequestSchemaRef,
     ChangePasswordRequestSchemaRef,
     RoleCheckResponseSchemaRef,
+    DiscordTeamForumRemoveRequestSchemaRef,
   };
 };
 

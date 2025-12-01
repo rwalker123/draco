@@ -7304,6 +7304,7 @@
                   "enum": [
                     "provisioned",
                     "needsRepair",
+                    "missingChannel",
                     "disabled"
                   ]
                 },
@@ -7410,6 +7411,19 @@
           "repaired",
           "skipped",
           "message"
+        ]
+      },
+      "DiscordTeamForumRemoveRequest": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          }
+        },
+        "required": [
+          "teamId"
         ]
       },
       "PlayersWantedClassified": {
@@ -25318,6 +25332,74 @@
           },
           "404": {
             "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/team-forums/remove-team": {
+      "post": {
+        "operationId": "removeAccountDiscordTeamForum",
+        "summary": "Remove a Discord team forum",
+        "description": "Deletes the Discord team forum channel and revokes memberships for the specified team in the current season.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscordTeamForumRemoveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Removal completed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account or team forum not found.",
             "content": {
               "application/json": {
                 "schema": {

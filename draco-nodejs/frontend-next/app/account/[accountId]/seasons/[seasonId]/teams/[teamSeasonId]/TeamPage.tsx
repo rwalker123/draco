@@ -51,6 +51,7 @@ import TeamManagersWidget from '@/components/team/TeamManagersWidget';
 import TeamFeaturedVideosWidget from '../../../../../../../components/social/TeamFeaturedVideosWidget';
 import InformationWidget from '@/components/information/InformationWidget';
 import TeamForumWidget from '@/components/team/TeamForumWidget';
+import CommunityChatsWidget from '@/components/social/CommunityChatsWidget';
 
 interface TeamPageProps {
   accountId: string;
@@ -223,6 +224,15 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       hasRoleInTeam('TeamAdmin', teamSeasonId)
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+
+  const canViewCommunityChats = React.useMemo(() => {
+    return (
+      hasRole('Administrator') ||
+      hasRoleInAccount('AccountAdmin', accountId) ||
+      hasRoleInTeam('TeamAdmin', teamSeasonId) ||
+      isTeamMember
+    );
+  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, isTeamMember, teamSeasonId]);
 
   const shouldShowTeamPendingPanel = Boolean(
     token && canModerateTeamSubmissions && teamModerationTeamId,
@@ -666,6 +676,14 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 teamName={teamData?.teamName ?? null}
                 isTeamMember={isTeamMember}
                 membershipLoading={teamMembershipLoading}
+              />
+            ) : null}
+
+            {teamData?.teamId && canViewCommunityChats ? (
+              <CommunityChatsWidget
+                accountId={accountId}
+                seasonId={seasonId}
+                teamSeasonId={teamSeasonId}
               />
             ) : null}
 

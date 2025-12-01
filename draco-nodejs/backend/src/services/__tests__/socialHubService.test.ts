@@ -264,16 +264,26 @@ describe('SocialHubService', () => {
   it('filters community messages to allowed channels', async () => {
     listCommunityChannelsMock.mockResolvedValue([
       makeCommunityChannel({ discordChannelId: 'abc123' }),
+      makeCommunityChannel({ discordChannelId: 'def456' }),
     ]);
 
     await service.listCommunityMessages(accountId, seasonId, { limit: 5 });
 
-    expect(listCommunityChannelsMock).toHaveBeenCalledWith(accountId, seasonId, undefined);
-    expect(socialContentRepository.listCommunityMessages).toHaveBeenCalledWith({
+    expect(listCommunityChannelsMock).toHaveBeenCalledWith(accountId, seasonId, undefined, {
+      userId: undefined,
+    });
+    expect(socialContentRepository.listCommunityMessages).toHaveBeenNthCalledWith(1, {
       accountId,
       seasonId,
       teamSeasonId: undefined,
       channelIds: ['abc123'],
+      limit: 5,
+    });
+    expect(socialContentRepository.listCommunityMessages).toHaveBeenNthCalledWith(2, {
+      accountId,
+      seasonId,
+      teamSeasonId: undefined,
+      channelIds: ['def456'],
       limit: 5,
     });
   });
@@ -305,16 +315,11 @@ describe('SocialHubService', () => {
 
     await service.listCommunityMessages(accountId, seasonId, { teamSeasonId: '30', limit: 5 });
 
-    expect(repoMock).toHaveBeenNthCalledWith(1, {
+    expect(repoMock).toHaveBeenCalledTimes(1);
+    expect(repoMock).toHaveBeenCalledWith({
       accountId,
       seasonId,
       teamSeasonId: 30n,
-      channelIds: ['team-chan'],
-      limit: 5,
-    });
-    expect(repoMock).toHaveBeenNthCalledWith(2, {
-      accountId,
-      seasonId,
       channelIds: ['team-chan'],
       limit: 5,
     });
