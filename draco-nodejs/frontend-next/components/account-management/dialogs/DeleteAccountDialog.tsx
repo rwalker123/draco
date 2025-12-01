@@ -1,18 +1,10 @@
 'use client';
 
 import React from 'react';
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Stack } from '@mui/material';
 import type { AccountType as SharedAccountType } from '@draco/shared-schemas';
 import { useAccountManagementService } from '../../../hooks/useAccountManagementService';
+import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
 
 interface DeleteAccountDialogProps {
   open: boolean;
@@ -82,35 +74,30 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
   const accountName = account?.name ?? 'this account';
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Delete Account</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2}>
-          {error && (
+    <ConfirmDeleteDialog
+      open={open}
+      title="Delete Account"
+      message={`Are you sure you want to delete the account '${accountName}'? This action cannot be undone.`}
+      content={
+        error ? (
+          <Stack spacing={2}>
             <Alert severity="error" onClose={() => setError(null)}>
               {error}
             </Alert>
-          )}
-          <Typography>
-            Are you sure you want to delete the account {`'${accountName}'`}? This action cannot be
-            undone.
-          </Typography>
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} disabled={isDeleting}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleDelete}
-          color="error"
-          variant="contained"
-          disabled={isDeleting || !account}
-        >
-          {isDeleting ? 'Deleting...' : 'Delete'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          </Stack>
+        ) : null
+      }
+      onClose={handleClose}
+      onConfirm={handleDelete}
+      confirmLabel={isDeleting ? 'Deleting...' : 'Delete'}
+      confirmButtonProps={{
+        color: 'error',
+        variant: 'contained',
+        disabled: isDeleting || !account,
+      }}
+      cancelButtonProps={{ disabled: isDeleting }}
+      dialogProps={{ maxWidth: 'xs', fullWidth: true }}
+    />
   );
 };
 

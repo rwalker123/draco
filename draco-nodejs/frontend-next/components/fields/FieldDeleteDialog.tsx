@@ -1,17 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from '@mui/material';
+import { Alert, Typography } from '@mui/material';
 import type { FieldType } from '@draco/shared-schemas';
 import { useFieldService } from '../../hooks/useFieldService';
+import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
 
 interface FieldDeleteDialogProps {
   accountId: string;
@@ -67,32 +60,39 @@ export const FieldDeleteDialog: React.FC<FieldDeleteDialogProps> = ({
     }
   };
 
+  const handleClose = () => {
+    if (loading) {
+      return;
+    }
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={loading ? undefined : onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Delete Field</DialogTitle>
-      <DialogContent dividers>
-        <Typography gutterBottom>
-          {`Are you sure you want to delete ${field?.name ?? 'this field'}?`}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Deleting a field removes it from upcoming schedules and workouts. This action cannot be
-          undone.
-        </Typography>
-        {error ? (
-          <Alert severity="error" sx={{ mt: 2 }}>
-            {error}
-          </Alert>
-        ) : null}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading} color="inherit">
-          Cancel
-        </Button>
-        <Button onClick={handleDelete} color="error" disabled={loading}>
-          {loading ? 'Deleting…' : 'Delete Field'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <ConfirmDeleteDialog
+      open={open}
+      title="Delete Field"
+      message={`Are you sure you want to delete ${field?.name ?? 'this field'}?`}
+      content={
+        <>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Deleting a field removes it from upcoming schedules and workouts. This action cannot be
+            undone.
+          </Typography>
+          {error ? (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          ) : null}
+        </>
+      }
+      onConfirm={handleDelete}
+      onClose={handleClose}
+      confirmLabel={loading ? 'Deleting…' : 'Delete Field'}
+      confirmButtonProps={{ disabled: loading }}
+      cancelButtonProps={{ color: 'inherit', disabled: loading }}
+      dialogProps={{ maxWidth: 'sm', fullWidth: true }}
+      dialogContentProps={{ dividers: true }}
+    />
   );
 };
 

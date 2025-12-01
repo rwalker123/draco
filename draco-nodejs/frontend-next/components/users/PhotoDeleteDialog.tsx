@@ -1,22 +1,12 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-  CircularProgress,
-  Alert,
-  Stack,
-  Box,
-} from '@mui/material';
+import { Typography, CircularProgress, Alert, Stack, Box } from '@mui/material';
 import { Delete as DeleteIcon, Photo as PhotoIcon } from '@mui/icons-material';
 import { usePhotoOperations } from '../../hooks/usePhotoOperations';
 import UserAvatar from './UserAvatar';
 import type { BaseContactType } from '@draco/shared-schemas';
+import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
 
 interface PhotoDeleteDialogProps {
   open: boolean;
@@ -84,11 +74,11 @@ const PhotoDeleteDialog: React.FC<PhotoDeleteDialogProps> = ({
     : null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ color: (theme) => theme.palette.text.primary }}>Delete Photo</DialogTitle>
-      <DialogContent>
+    <ConfirmDeleteDialog
+      open={open}
+      title="Delete Photo"
+      content={
         <Stack spacing={2} sx={{ mt: 1 }}>
-          {/* Error display */}
           {error && (
             <Alert severity="error" onClose={() => setError(null)}>
               {error}
@@ -119,22 +109,19 @@ const PhotoDeleteDialog: React.FC<PhotoDeleteDialogProps> = ({
             </Typography>
           </Stack>
         </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleDeletePhoto}
-          variant="contained"
-          color="error"
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={20} /> : <DeleteIcon />}
-        >
-          Delete Photo
-        </Button>
-      </DialogActions>
-    </Dialog>
+      }
+      onClose={onClose}
+      onConfirm={handleDeletePhoto}
+      confirmLabel={loading ? 'Deleting...' : 'Delete Photo'}
+      confirmButtonProps={{
+        color: 'error',
+        variant: 'contained',
+        disabled: loading,
+        startIcon: loading ? <CircularProgress size={20} /> : <DeleteIcon />,
+      }}
+      cancelButtonProps={{ disabled: loading }}
+      dialogProps={{ maxWidth: 'sm', fullWidth: true }}
+    />
   );
 };
 

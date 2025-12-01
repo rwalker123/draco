@@ -620,7 +620,8 @@ export const registerWorkoutsEndpoints = ({ registry, schemaRefs }: RegisterCont
     path: '/api/accounts/{accountId}/workouts/{workoutId}/registrations/{registrationId}',
     operationId: 'deleteWorkoutRegistration',
     summary: 'Delete workout registration',
-    description: 'Delete a workout registration for an authenticated account member.',
+    description:
+      'Delete a workout registration using account authentication or a valid access code.',
     tags: ['Workouts'],
     security: [{ bearerAuth: [] }],
     parameters: [
@@ -652,6 +653,16 @@ export const registerWorkoutsEndpoints = ({ registry, schemaRefs }: RegisterCont
         },
       },
     ],
+    request: {
+      body: {
+        description: 'Access code required when the request is not authenticated.',
+        content: {
+          'application/json': {
+            schema: WorkoutRegistrationAccessCodeSchemaRef,
+          },
+        },
+      },
+    },
     responses: {
       204: {
         description: 'Registration deleted',

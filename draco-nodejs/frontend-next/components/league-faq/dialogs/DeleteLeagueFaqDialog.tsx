@@ -1,17 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from '@mui/material';
+import { Alert, Typography } from '@mui/material';
 import type { LeagueFaqType } from '@draco/shared-schemas';
 import type { LeagueFaqServiceResult } from '../../../hooks/useLeagueFaqService';
+import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
 
 interface DeleteLeagueFaqDialogProps {
   open: boolean;
@@ -67,40 +60,48 @@ export const DeleteLeagueFaqDialog: React.FC<DeleteLeagueFaqDialogProps> = ({
     }
   };
 
+  const handleClose = () => {
+    if (submitting) {
+      return;
+    }
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={submitting ? undefined : onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Delete FAQ</DialogTitle>
-      <DialogContent dividers>
-        {submitError && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {submitError}
-          </Alert>
-        )}
-        <Typography>
-          Are you sure you want to delete the FAQ
+    <ConfirmDeleteDialog
+      open={open}
+      title="Delete FAQ"
+      message={
+        <>
+          Are you sure you want to delete the FAQ{' '}
           {faq ? (
             <>
-              {' "'}
               <strong>{faq.question}</strong>
-              {'"'}?
             </>
           ) : (
-            ' ?'
+            '?'
           )}
-        </Typography>
-        <Typography sx={{ mt: 1 }} variant="body2" color="text.secondary">
-          This action cannot be undone.
-        </Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={submitting}>
-          Cancel
-        </Button>
-        <Button onClick={handleDelete} disabled={submitting} color="error" variant="contained">
-          Delete
-        </Button>
-      </DialogActions>
-    </Dialog>
+        </>
+      }
+      content={
+        <>
+          {submitError ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {submitError}
+            </Alert>
+          ) : null}
+          <Typography sx={{ mt: 1 }} variant="body2" color="text.secondary">
+            This action cannot be undone.
+          </Typography>
+        </>
+      }
+      onClose={handleClose}
+      onConfirm={handleDelete}
+      confirmButtonProps={{ color: 'error', variant: 'contained', disabled: submitting }}
+      cancelButtonProps={{ disabled: submitting }}
+      dialogProps={{ fullWidth: true, maxWidth: 'xs' }}
+      dialogContentProps={{ dividers: true }}
+    />
   );
 };
 

@@ -1,20 +1,12 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  Alert,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from '@mui/material';
+import { Alert, CircularProgress } from '@mui/material';
 import { deleteAccountEmail } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
 import type { EmailRecord } from '../../types/emails/email';
 import { assertNoApiError } from '../../utils/apiResult';
+import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
 
 interface DeleteEmailDialogProps {
   open: boolean;
@@ -79,37 +71,29 @@ const DeleteEmailDialog: React.FC<DeleteEmailDialogProps> = ({
   }, [loading, onClose]);
 
   return (
-    <Dialog open={open && Boolean(email)} onClose={handleCancel} maxWidth="xs" fullWidth>
-      <DialogTitle>Delete Email</DialogTitle>
-      <DialogContent>
-        {error && (
+    <ConfirmDeleteDialog
+      open={open && Boolean(email)}
+      title="Delete Email"
+      message={`Are you sure you want to delete "${email?.subject ?? 'this email'}"? This action cannot be undone.`}
+      content={
+        error ? (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
-        )}
-        <Typography>
-          Are you sure you want to delete{' '}
-          <Typography component="span" sx={{ fontWeight: 600 }}>
-            {email?.subject ?? 'this email'}
-          </Typography>
-          ? This action cannot be undone.
-        </Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleCancel} disabled={loading}>
-          Cancel
-        </Button>
-        <Button
-          variant="contained"
-          color="error"
-          onClick={handleDelete}
-          disabled={loading || !email}
-          startIcon={loading ? <CircularProgress size={18} color="inherit" /> : undefined}
-        >
-          Delete
-        </Button>
-      </DialogActions>
-    </Dialog>
+        ) : null
+      }
+      onClose={handleCancel}
+      onConfirm={handleDelete}
+      confirmLabel={loading ? 'Deleting...' : 'Delete'}
+      confirmButtonProps={{
+        color: 'error',
+        variant: 'contained',
+        disabled: loading || !email,
+        startIcon: loading ? <CircularProgress size={18} color="inherit" /> : undefined,
+      }}
+      cancelButtonProps={{ disabled: loading }}
+      dialogProps={{ maxWidth: 'xs', fullWidth: true }}
+    />
   );
 };
 

@@ -369,6 +369,7 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
               accountId={accountId}
               workoutId={workout.id}
               token={token}
+              actionLayout="dialog"
               onSuccess={({ message }) => setRegistrationSuccess(message)}
               onCancel={() => setRegistrationOpen(false)}
             />

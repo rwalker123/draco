@@ -33244,7 +33244,8 @@ paths:
     delete:
       operationId: deleteWorkoutRegistration
       summary: Delete workout registration
-      description: Delete a workout registration for an authenticated account member.
+      description: Delete a workout registration using account authentication or a
+        valid access code.
       tags:
         - Workouts
       security:
@@ -33268,6 +33269,12 @@ paths:
           schema:
             type: string
             format: number
+      requestBody:
+        description: Access code required when the request is not authenticated.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutRegistrationAccessCode"
       responses:
         "204":
           description: Registration deleted
