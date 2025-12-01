@@ -42,6 +42,12 @@ const ConfirmDeleteDialog: React.FC<ConfirmDeleteDialogProps> = ({
   dialogProps,
   dialogContentProps,
 }) => {
+  const mergedConfirmButtonProps: ButtonProps = {
+    color: 'error',
+    variant: 'contained',
+    ...confirmButtonProps,
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth {...dialogProps}>
       {title ? <DialogTitle>{title}</DialogTitle> : null}
@@ -55,7 +61,7 @@ const ConfirmDeleteDialog: React.FC<ConfirmDeleteDialogProps> = ({
         <Button onClick={onClose} {...cancelButtonProps}>
           {cancelLabel}
         </Button>
-        <Button color="error" variant="contained" onClick={onConfirm} {...confirmButtonProps}>
+        <Button onClick={onConfirm} {...mergedConfirmButtonProps}>
           {confirmLabel}
         </Button>
       </DialogActions>
