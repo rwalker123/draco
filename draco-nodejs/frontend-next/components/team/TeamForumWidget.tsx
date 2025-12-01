@@ -16,6 +16,7 @@ import ForumIcon from '@mui/icons-material/Forum';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import type { CommunityChannelType, CommunityMessagePreviewType } from '@draco/shared-schemas';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
+import NextLink from 'next/link';
 
 interface TeamForumWidgetProps {
   accountId: string;
@@ -192,16 +193,6 @@ const TeamForumWidget: React.FC<TeamForumWidgetProps> = ({
             <Box>
               <Typography variant="subtitle1">{channel.label ?? channel.name}</Typography>
             </Box>
-            {channel.url ? (
-              <Button
-                variant="outlined"
-                endIcon={<OpenInNewIcon fontSize="small" />}
-                onClick={handleOpenDiscord}
-                disabled={!isTeamMember}
-              >
-                Open in Discord
-              </Button>
-            ) : null}
           </Stack>
 
           {messages.length === 0 ? (
@@ -218,6 +209,28 @@ const TeamForumWidget: React.FC<TeamForumWidgetProps> = ({
               ))}
             </Stack>
           )}
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-start">
+            {channel.url ? (
+              <Button
+                size="small"
+                variant="text"
+                startIcon={<OpenInNewIcon fontSize="inherit" />}
+                onClick={handleOpenDiscord}
+                disabled={!isTeamMember}
+              >
+                Open Discord
+              </Button>
+            ) : null}
+            <Button
+              size="small"
+              variant="text"
+              component={NextLink}
+              href={`/account/${accountId}/social-hub/community`}
+              startIcon={<ForumIcon fontSize="inherit" />}
+            >
+              View all messages
+            </Button>
+          </Stack>
           {!isTeamMember ? (
             <Alert severity="info">
               You need team access to participate in Discord discussions. Contact your coach or

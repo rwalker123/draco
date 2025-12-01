@@ -37,7 +37,7 @@ import { DiscordIntegrationResponseFormatter } from '../responseFormatters/index
 import { encryptSecret, decryptSecret } from '../utils/secretEncryption.js';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { getDiscordOAuthConfig, type DiscordOAuthConfig } from '../config/discordIntegration.js';
-import { fetchJson } from '../utils/fetchJson.js';
+import { HttpError, fetchJson } from '../utils/fetchJson.js';
 import type { dbTeamSeasonWithLeaguesAndTeams } from '../repositories/types/dbTypes.js';
 import type { DiscordIngestionTarget } from '../config/socialIngestion.js';
 import { AccountSettingsService } from './accountSettingsService.js';
@@ -320,6 +320,7 @@ export class DiscordIntegrationService {
     accountId: bigint,
     seasonId: bigint,
     query?: CommunityChannelQueryType,
+    options?: { userId?: string | null },
   ): Promise<CommunityChannelType[]> {
     await this.ensureAccountExists(accountId);
     const config = await this.getOrCreateAccountConfigRecord(accountId);
@@ -329,6 +330,18 @@ export class DiscordIntegrationService {
 
     const mappings = await this.discordRepository.listChannelMappings(accountId);
     const teamSeasonFilter = this.parseOptionalBigInt(query?.teamSeasonId);
+    let allowedTeamSeasonIds: Set<string> | null = null;
+
+    if (!teamSeasonFilter && options?.userId) {
+      const userTeamSeasonIds = await this.rosterRepository.findActiveTeamSeasonIdsForUser(
+        accountId,
+        seasonId,
+        options.userId,
+      );
+      if (userTeamSeasonIds.length) {
+        allowedTeamSeasonIds = new Set(userTeamSeasonIds.map((id) => id.toString()));
+      }
+    }
 
     const filtered = mappings.filter((mapping) => {
       switch (mapping.scope) {
@@ -337,7 +350,14 @@ export class DiscordIntegrationService {
         case 'season':
           return !teamSeasonFilter && mapping.seasonid === seasonId;
         case 'teamSeason':
-          return Boolean(teamSeasonFilter && mapping.teamseasonid === teamSeasonFilter);
+          if (teamSeasonFilter) {
+            return mapping.teamseasonid === teamSeasonFilter;
+          }
+          return Boolean(
+            allowedTeamSeasonIds &&
+              mapping.teamseasonid &&
+              allowedTeamSeasonIds.has(mapping.teamseasonid.toString()),
+          );
         default:
           return false;
       }
@@ -1591,21 +1611,21 @@ export class DiscordIntegrationService {
     accessToken: string,
     oauthConfig: DiscordOAuthConfig,
   ): Promise<boolean> {
-    const response = await fetch(`${oauthConfig.apiBaseUrl}/users/@me/guilds/${guildId}/member`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-
-    if (response.status === 404) {
-      return false;
-    }
-
-    if (response.ok) {
+    try {
+      await fetchJson(`${oauthConfig.apiBaseUrl}/users/@me/guilds/${guildId}/member`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        timeoutMs: 5000,
+      });
       return true;
+    } catch (error) {
+      if (error instanceof HttpError && error.status === 404) {
+        return false;
+      }
+      const message =
+        error instanceof Error ? error.message : 'Unable to verify Discord guild membership.';
+      console.error('Discord guild membership lookup failed', message);
+      throw new ValidationError('Unable to verify Discord guild membership.');
     }
-
-    const message = await response.text().catch(() => response.statusText);
-    console.error('Discord guild membership lookup failed', response.status, message);
-    throw new ValidationError('Unable to verify Discord guild membership.');
   }
 
   private async addUserToGuild(
@@ -1615,9 +1635,8 @@ export class DiscordIntegrationService {
     botToken: string,
     oauthConfig: DiscordOAuthConfig,
   ): Promise<boolean> {
-    const response = await fetch(
-      `${oauthConfig.apiBaseUrl}/guilds/${guildId}/members/${discordUserId}`,
-      {
+    try {
+      await fetchJson(`${oauthConfig.apiBaseUrl}/guilds/${guildId}/members/${discordUserId}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bot ${botToken}`,
@@ -1626,18 +1645,16 @@ export class DiscordIntegrationService {
         body: JSON.stringify({
           access_token: accessToken,
         }),
-      },
-    );
-
-    if (response.ok || response.status === 201 || response.status === 204) {
+        timeoutMs: 5000,
+      });
       return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Discord guild join request failed', message);
+      throw new ValidationError(
+        'Unable to add Discord account to the guild, please contact an admin.',
+      );
     }
-
-    const message = await response.text().catch(() => response.statusText);
-    console.error('Discord guild join request failed', response.status, message);
-    throw new ValidationError(
-      'Unable to add Discord account to the guild, please contact an admin.',
-    );
   }
 
   private buildAvatarUrl(user: DiscordUserResponse): string | null {

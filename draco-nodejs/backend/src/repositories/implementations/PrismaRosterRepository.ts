@@ -73,6 +73,33 @@ export class PrismaRosterRepository implements IRosterRepository {
     });
   }
 
+  async findActiveTeamSeasonIdsForUser(
+    accountId: bigint,
+    seasonId: bigint,
+    userId: string,
+  ): Promise<bigint[]> {
+    const results = await this.prisma.rosterseason.findMany({
+      where: {
+        inactive: false,
+        teamsseason: {
+          leagueseason: {
+            seasonid: seasonId,
+            league: {
+              accountid: accountId,
+            },
+          },
+        },
+        roster: {
+          contacts: {
+            userid: userId,
+          },
+        },
+      },
+      select: { teamseasonid: true },
+    });
+    return results.map((row) => row.teamseasonid);
+  }
+
   async createRosterPlayer(
     contactId: bigint,
     submittedDriversLicense: boolean,

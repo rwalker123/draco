@@ -7,6 +7,11 @@ import {
 
 export interface IRosterRepository {
   findRosterMembersByTeamSeason(teamSeasonId: bigint): Promise<dbRosterSeason[]>;
+  findActiveTeamSeasonIdsForUser(
+    accountId: bigint,
+    seasonId: bigint,
+    userId: string,
+  ): Promise<bigint[]>;
   findActiveRosterContactsByLeagueSeason(
     leagueSeasonId: bigint,
   ): Promise<dbRosterSeasonContactReference[]>;

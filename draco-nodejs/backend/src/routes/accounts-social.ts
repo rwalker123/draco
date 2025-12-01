@@ -89,7 +89,9 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
     const query = CommunityMessageQuerySchema.parse(req.query);
-    const messages = await socialHubService.listCommunityMessages(accountId, seasonId, query);
+    const messages = await socialHubService.listCommunityMessages(accountId, seasonId, query, {
+      userId: req.user?.id ?? null,
+    });
     res.json({ messages });
   }),
 );
@@ -100,7 +102,9 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
     const query = CommunityChannelQuerySchema.parse(req.query);
-    const channels = await socialHubService.listCommunityChannels(accountId, seasonId, query);
+    const channels = await socialHubService.listCommunityChannels(accountId, seasonId, query, {
+      userId: req.user?.id ?? null,
+    });
     res.json({ channels });
   }),
 );

@@ -11,6 +11,7 @@ import { formatRelativeTime } from './utils';
 interface CommunityChatsWidgetProps {
   accountId?: string;
   seasonId?: string;
+  teamSeasonId?: string;
   maxMessages?: number;
 }
 
@@ -50,6 +51,7 @@ const createStore = <T,>(initial: T) => {
 const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
   accountId,
   seasonId,
+  teamSeasonId,
   maxMessages = DEFAULT_MESSAGE_LIMIT,
 }) => {
   const { fetchCommunityMessages, fetchCommunityChannels } = useSocialHubService({
@@ -108,7 +110,11 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
 
       try {
         const channelIds = selectedDiscordChannelId ? [selectedDiscordChannelId] : undefined;
-        const items = await fetchCommunityMessages({ limit: maxMessages, channelIds });
+        const items = await fetchCommunityMessages({
+          limit: maxMessages,
+          channelIds,
+          ...(teamSeasonId ? { teamSeasonId } : {}),
+        });
         if (!signal.cancelled) {
           communityStore.setSnapshot({ items, loading: false, error: null });
         }
@@ -123,7 +129,14 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
         }
       }
     },
-    [communityStore, contextMissing, fetchCommunityMessages, maxMessages, selectedDiscordChannelId],
+    [
+      communityStore,
+      contextMissing,
+      fetchCommunityMessages,
+      maxMessages,
+      selectedDiscordChannelId,
+      teamSeasonId,
+    ],
   );
 
   const loadCommunityChannels = useCallback(
@@ -136,7 +149,7 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
       channelStore.setSnapshot((prev) => ({ ...prev, loading: true, error: null }));
 
       try {
-        const channels = await fetchCommunityChannels();
+        const channels = await fetchCommunityChannels(teamSeasonId ? { teamSeasonId } : undefined);
         if (signal.cancelled) {
           return;
         }
@@ -152,7 +165,7 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
         }
       }
     },
-    [channelStore, contextMissing, fetchCommunityChannels],
+    [channelStore, contextMissing, fetchCommunityChannels, teamSeasonId],
   );
 
   useEffect(() => {
@@ -236,26 +249,6 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
                     </ToggleButton>
                   ))}
                 </ToggleButtonGroup>
-                <Button
-                  size="small"
-                  variant="text"
-                  startIcon={<OpenInNew fontSize="inherit" />}
-                  onClick={handleOpenDiscord}
-                  disabled={!channelState.channels.some((channel) => channel.url)}
-                >
-                  Open Discord
-                </Button>
-                {accountId ? (
-                  <Button
-                    size="small"
-                    variant="text"
-                    component={NextLink}
-                    href={`/account/${accountId}/social-hub/community`}
-                    startIcon={<Forum fontSize="inherit" />}
-                  >
-                    View all messages
-                  </Button>
-                ) : null}
               </Stack>
             ) : null}
           </Box>
@@ -278,6 +271,36 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
           ) : contextMissing ? null : (
             <Alert severity="info">No recent Discord activity yet.</Alert>
           )}
+          {contextMissing ? null : channelState.channels.length > 0 ? (
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              justifyContent="flex-start"
+              sx={{ mt: 1 }}
+            >
+              <Button
+                size="small"
+                variant="text"
+                startIcon={<OpenInNew fontSize="inherit" />}
+                onClick={handleOpenDiscord}
+                disabled={!channelState.channels.some((channel) => channel.url)}
+              >
+                Open Discord
+              </Button>
+              {accountId ? (
+                <Button
+                  size="small"
+                  variant="text"
+                  component={NextLink}
+                  href={`/account/${accountId}/social-hub/community`}
+                  startIcon={<Forum fontSize="inherit" />}
+                >
+                  View all messages
+                </Button>
+              ) : null}
+            </Stack>
+          ) : null}
         </>
       )}
     </WidgetShell>
