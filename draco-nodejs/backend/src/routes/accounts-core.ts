@@ -10,6 +10,7 @@ import {
   AccountDetailsQuerySchema,
   AccountSearchQuerySchema,
   CreateAccountSchema,
+  UpdateAccountSchema,
   ContactValidationWithSignInSchema,
 } from '@draco/shared-schemas';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -140,7 +141,7 @@ router.put(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const updateRequest = CreateAccountSchema.parse(req.body);
+    const updateRequest = UpdateAccountSchema.parse(req.body);
 
     const hasUpdates = Object.values(updateRequest).some((value) => value !== undefined);
 

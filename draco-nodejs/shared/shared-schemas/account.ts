@@ -144,7 +144,7 @@ export const AccountNameSchema = z.object({
 });
 
 export const AccountHeaderSchema = AccountNameSchema.extend({
-  accountLogoUrl: z.string(),
+  accountLogoUrl: z.string().optional(),
 });
 
 export const AccountSchema = AccountHeaderSchema.extend({
@@ -178,6 +178,13 @@ export const CreateAccountSchema = AccountSchema.omit({
   seasonName: z.string().max(25).default(''),
 });
 
+export const UpdateAccountSchema = CreateAccountSchema.partial().extend({
+  configuration: AccountConfigurationSchema.optional(),
+  urls: z.array(CreateAccountUrlSchema).optional(),
+  socials: AccountSocialsSchema.optional(),
+  discordIntegration: AccountDiscordIntegrationSchema.optional(),
+});
+
 export const AccountWithSeasonsSchema = z.object({
   account: AccountSchema,
   currentSeason: AccountCurrentSeasonSchema.nullable(),
@@ -197,6 +204,7 @@ export type AccountBlueskySettingsType = z.infer<typeof AccountBlueskySettingsSc
 export type AccountTypeReference = z.infer<typeof AccountTypeSchema>;
 export type AccountSearchQueryParamType = z.infer<typeof AccountSearchQueryParamSchema>;
 export type CreateAccountType = z.infer<typeof CreateAccountSchema>;
+export type UpdateAccountType = z.infer<typeof UpdateAccountSchema>;
 export type AccountWithSeasonsType = z.infer<typeof AccountWithSeasonsSchema>;
 export type AccountSeasonWithStatusType = z.infer<typeof AccountSeasonWithStatusSchema>;
 export type AccountCurrentSeasonType = z.infer<typeof AccountCurrentSeasonSchema>;

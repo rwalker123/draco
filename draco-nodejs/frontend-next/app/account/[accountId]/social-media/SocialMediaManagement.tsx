@@ -12,6 +12,9 @@ import { BlueskyIntegrationAdminWidget } from '@/components/account/settings/Blu
 import { BlueskyPostSettingsWidget } from '@/components/account/settings/BlueskyPostSettingsWidget';
 import { TwitterIntegrationAdminWidget } from '@/components/account/settings/TwitterIntegrationAdminWidget';
 import { TwitterPostSettingsWidget } from '@/components/account/settings/TwitterPostSettingsWidget';
+import { FacebookIntegrationAdminWidget } from '@/components/account/settings/FacebookIntegrationAdminWidget';
+import { FacebookPostSettingsWidget } from '@/components/account/settings/FacebookPostSettingsWidget';
+import { FacebookFanPageWidget } from '@/components/account/settings/FacebookFanPageWidget';
 import { InstagramIntegrationAdminWidget } from '@/components/account/settings/InstagramIntegrationAdminWidget';
 import DiscordGameResultsSyncCard from '@/components/discord/DiscordGameResultsSyncCard';
 import { useAuth } from '@/context/AuthContext';
@@ -118,10 +121,26 @@ const SocialMediaManagement: React.FC = () => {
     [accountSettings.settings],
   );
 
+  const postResultsFacebookSetting = useMemo(
+    () =>
+      accountSettings.settings?.find(
+        (setting) => setting.definition.key === 'PostGameResultsToFacebook',
+      ),
+    [accountSettings.settings],
+  );
+
   const postAnnouncementsTwitterSetting = useMemo(
     () =>
       accountSettings.settings?.find(
         (setting) => setting.definition.key === 'PostAnnouncementsToTwitter',
+      ),
+    [accountSettings.settings],
+  );
+
+  const postAnnouncementsFacebookSetting = useMemo(
+    () =>
+      accountSettings.settings?.find(
+        (setting) => setting.definition.key === 'PostAnnouncementsToFacebook',
       ),
     [accountSettings.settings],
   );
@@ -146,6 +165,14 @@ const SocialMediaManagement: React.FC = () => {
     () =>
       accountSettings.settings?.find(
         (setting) => setting.definition.key === 'PostWorkoutsToTwitter',
+      ),
+    [accountSettings.settings],
+  );
+
+  const postWorkoutsFacebookSetting = useMemo(
+    () =>
+      accountSettings.settings?.find(
+        (setting) => setting.definition.key === 'PostWorkoutsToFacebook',
       ),
     [accountSettings.settings],
   );
@@ -236,8 +263,8 @@ const SocialMediaManagement: React.FC = () => {
             Social Media Management
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.8 }}>
-            Configure YouTube, Discord, Bluesky, Twitter, and Instagram integrations for your
-            organization.
+            Configure YouTube, Discord, Bluesky, Twitter, and Facebook/Instagram integrations for
+            your organization.
           </Typography>
         </Box>
       </AccountPageHeader>
@@ -256,7 +283,7 @@ const SocialMediaManagement: React.FC = () => {
               <Tab label="Discord" {...a11yProps(1)} />
               <Tab label="Bluesky" {...a11yProps(2)} />
               <Tab label="Twitter" {...a11yProps(3)} />
-              <Tab label="Instagram" {...a11yProps(4)} />
+              <Tab label="Facebook/Instagram" {...a11yProps(4)} />
             </Tabs>
           </Box>
 
@@ -346,15 +373,40 @@ const SocialMediaManagement: React.FC = () => {
           </TabPanel>
 
           <TabPanel value={tabValue} index={4}>
-            <InstagramIntegrationAdminWidget
-              account={account}
-              onAccountUpdate={setAccount}
-              syncToGallerySetting={syncInstagramToGallerySetting}
-              syncToGalleryUpdating={accountSettings.updatingKey === 'SyncInstagramToGallery'}
-              onUpdateSyncToGallery={(enabled) =>
-                updatePostResultsSetting('SyncInstagramToGallery', enabled)
-              }
-            />
+            <Stack spacing={3}>
+              <FacebookIntegrationAdminWidget account={account} onAccountUpdate={setAccount} />
+              <FacebookPostSettingsWidget
+                postGameResultsSetting={postResultsFacebookSetting}
+                postGameResultsUpdating={
+                  accountSettings.updatingKey === 'PostGameResultsToFacebook'
+                }
+                onUpdatePostGameResults={(enabled) =>
+                  updatePostResultsSetting('PostGameResultsToFacebook', enabled)
+                }
+                postAnnouncementsSetting={postAnnouncementsFacebookSetting}
+                postAnnouncementsUpdating={
+                  accountSettings.updatingKey === 'PostAnnouncementsToFacebook'
+                }
+                onUpdatePostAnnouncements={(enabled) =>
+                  updatePostResultsSetting('PostAnnouncementsToFacebook', enabled)
+                }
+                postWorkoutSetting={postWorkoutsFacebookSetting}
+                postWorkoutUpdating={accountSettings.updatingKey === 'PostWorkoutsToFacebook'}
+                onUpdatePostWorkout={(enabled) =>
+                  updatePostResultsSetting('PostWorkoutsToFacebook', enabled)
+                }
+              />
+              <FacebookFanPageWidget account={account} onAccountUpdate={setAccount} />
+              <InstagramIntegrationAdminWidget
+                account={account}
+                onAccountUpdate={setAccount}
+                syncToGallerySetting={syncInstagramToGallerySetting}
+                syncToGalleryUpdating={accountSettings.updatingKey === 'SyncInstagramToGallery'}
+                onUpdateSyncToGallery={(enabled) =>
+                  updatePostResultsSetting('SyncInstagramToGallery', enabled)
+                }
+              />
+            </Stack>
           </TabPanel>
         </Paper>
       </Box>

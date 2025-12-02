@@ -16,6 +16,7 @@ import type {
   AccountSettingState,
   AccountInstagramSettingsType,
 } from '@draco/shared-schemas';
+import { updateAccountInstagramSettings } from '@draco/shared-api-client';
 import WidgetShell from '../../ui/WidgetShell';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
@@ -41,12 +42,9 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
   const [instagramUsername, setInstagramUsername] = useState(
     account.socials?.instagramHandle ?? '',
   );
-  const [instagramAppId, setInstagramAppId] = useState('');
-  const [instagramAppSecret, setInstagramAppSecret] = useState('');
   const [syncToGallery, setSyncToGallery] = useState(
     Boolean(syncToGallerySetting?.effectiveValue ?? syncToGallerySetting?.value ?? false),
   );
-  const [clearCredentials, setClearCredentials] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -62,21 +60,19 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
     syncToGallerySetting?.value,
   ]);
 
+  const [clearCredentials, setClearCredentials] = useState(false);
+
   const hasPendingChanges = useMemo(() => {
     const normalizedHandle = (account.socials?.instagramHandle ?? '').trim();
     return (
       instagramUserId.trim().length > 0 ||
       instagramUsername.trim() !== normalizedHandle ||
-      instagramAppId.trim().length > 0 ||
-      instagramAppSecret.trim().length > 0 ||
       clearCredentials ||
       syncToGallery !== Boolean(syncToGallerySetting?.effectiveValue ?? syncToGallerySetting?.value)
     );
   }, [
     account.socials?.instagramHandle,
     clearCredentials,
-    instagramAppId,
-    instagramAppSecret,
     instagramUserId,
     instagramUsername,
     syncToGallery,
@@ -101,9 +97,13 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
         const payload: AccountInstagramSettingsType = {};
         const normalizedUserId = instagramUserId.trim();
         const normalizedUsername = instagramUsername.trim();
-        const normalizedAppId = instagramAppId.trim();
-        const normalizedAppSecret = instagramAppSecret.trim();
         const currentHandle = (account.socials?.instagramHandle ?? '').trim();
+
+        if (clearCredentials && !normalizedUserId) {
+          setError('Instagram Business User ID is required to clear tokens.');
+          setSaving(false);
+          return;
+        }
 
         if (normalizedUserId) {
           payload.instagramUserId = normalizedUserId;
@@ -116,18 +116,12 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
         if (clearCredentials) {
           payload.instagramAppId = '';
           payload.instagramAppSecret = '';
-        } else {
-          if (normalizedAppId) {
-            payload.instagramAppId = normalizedAppId;
-          }
-          if (normalizedAppSecret) {
-            payload.instagramAppSecret = normalizedAppSecret;
-          }
         }
 
         if (Object.keys(payload).length > 0) {
-          const result = await apiClient.put({
-            url: `/api/accounts/${account.id}/instagram`,
+          const result = await updateAccountInstagramSettings({
+            client: apiClient,
+            path: { accountId: account.id },
             body: payload,
             throwOnError: false,
           });
@@ -148,9 +142,7 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
           await onUpdateSyncToGallery(syncToGallery);
         }
 
-        setSuccess('Instagram settings saved. Secrets are encrypted and never shown here.');
-        setInstagramAppId('');
-        setInstagramAppSecret('');
+        setSuccess('Instagram settings saved.');
         setInstagramUserId('');
         setClearCredentials(false);
       } catch (err) {
@@ -164,10 +156,7 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
       account.id,
       account.socials?.instagramHandle,
       apiClient,
-      clearCredentials,
       hasPendingChanges,
-      instagramAppId,
-      instagramAppSecret,
       instagramUserId,
       instagramUsername,
       onAccountUpdate,
@@ -188,12 +177,11 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
         <Stack spacing={3}>
           <Alert severity="info">
             Instagram setup requires a Business/Creator account connected to a Facebook App. Provide
-            the Business Instagram User ID and App credentials; access/refresh tokens are obtained
-            via OAuth (not entered here). Secrets are stored server-side and never shown.
+            the Business Instagram User ID and username; App credentials are configured in the
+            Facebook Integration widget. Secrets are stored server-side and never shown.
             <br />
             <strong>Where to find values:</strong> Business Manager → Instagram Accounts → copy the
-            Instagram User ID; Instagram username is your @ handle. Meta App Dashboard → Basic → App
-            ID / App Secret.
+            Instagram User ID; Instagram username is your @ handle.
           </Alert>
 
           {error && <Alert severity="error">{error}</Alert>}
@@ -216,26 +204,6 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
               placeholder="@draco"
               helperText="Public @username for the Instagram account."
               fullWidth
-            />
-
-            <TextField
-              label="Facebook App ID"
-              value={instagramAppId}
-              onChange={(event) => setInstagramAppId(event.target.value)}
-              placeholder="123456789012345"
-              helperText="Meta App Dashboard → Basic → App ID."
-              fullWidth
-              autoComplete="off"
-            />
-
-            <TextField
-              label="Facebook App Secret"
-              type="password"
-              value={instagramAppSecret}
-              onChange={(event) => setInstagramAppSecret(event.target.value)}
-              helperText="Meta App Dashboard → Basic → App Secret."
-              fullWidth
-              autoComplete="off"
             />
 
             <FormControlLabel
@@ -261,8 +229,12 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
                   disabled={saving}
                 />
               }
-              label="Clear stored Instagram credentials (App ID/Secret and tokens)"
+              label="Clear stored Instagram tokens"
             />
+            <Typography variant="body2" color="text.secondary">
+              Use this to revoke existing Instagram access/refresh tokens. Tokens will be cleared
+              server-side when you save.
+            </Typography>
           </Stack>
 
           <Box display="flex" justifyContent="flex-end">

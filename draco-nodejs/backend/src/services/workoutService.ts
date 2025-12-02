@@ -37,6 +37,7 @@ import { WorkoutRegistrantAccessEmailService } from './workoutRegistrantAccessEm
 import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { TwitterIntegrationService } from './twitterIntegrationService.js';
 import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
+import { FacebookIntegrationService } from './facebookIntegrationService.js';
 
 export class WorkoutService {
   private readonly workoutRepository = RepositoryFactory.getWorkoutRepository();
@@ -45,6 +46,7 @@ export class WorkoutService {
   private readonly discordIntegrationService = new DiscordIntegrationService();
   private readonly twitterIntegrationService = new TwitterIntegrationService();
   private readonly blueskyIntegrationService = new BlueskyIntegrationService();
+  private readonly facebookIntegrationService = new FacebookIntegrationService();
 
   async listWorkouts(
     accountId: bigint,
@@ -512,17 +514,19 @@ export class WorkoutService {
         workoutDate: workout.workoutdate,
         workoutUrl: this.buildWorkoutUrl(accountId),
         accountName: account?.name ?? null,
+        comments: workout.comments ?? null,
       } as const;
 
       const results = await Promise.allSettled([
         this.discordIntegrationService.publishWorkoutAnnouncement(accountId, payload),
         this.twitterIntegrationService.publishWorkout(accountId, payload),
         this.blueskyIntegrationService.publishWorkout(accountId, payload),
+        this.facebookIntegrationService.publishWorkout(accountId, payload),
       ]);
 
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          const target = ['discord', 'twitter', 'bluesky'][index] ?? 'social';
+          const target = ['discord', 'twitter', 'bluesky', 'facebook'][index] ?? 'social';
           console.error(`[${target}] Failed to publish workout`, {
             accountId: accountId.toString(),
             workoutId: workout.id.toString(),

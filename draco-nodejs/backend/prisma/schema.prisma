@@ -32,6 +32,7 @@ model accounts {
   accountblueskycredentials accountblueskycredentials?
   accounttwittercredentials accounttwittercredentials?
   accountinstagramcredentials accountinstagramcredentials?
+  accountfacebookcredentials accountfacebookcredentials?
   accounthandouts           accounthandouts[]
   aspnetusers               aspnetusers?                @relation(fields: [owneruserid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounts_aspnetusers")
   accounttypes              accounttypes                @relation(fields: [accounttypeid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounttypes_accounts")
@@ -115,6 +116,21 @@ model accountinstagramcredentials {
   createdat            DateTime @default(now()) @db.Timestamptz(6)
   updatedat            DateTime @updatedAt @db.Timestamptz(6)
   accounts             accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountinstagramcredentials_accounts")
+}
+
+model accountfacebookcredentials {
+  id                       BigInt    @id @default(autoincrement())
+  accountid                BigInt    @unique
+  pageid                   String?   @db.VarChar(64)
+  pagename                 String?   @db.VarChar(150)
+  appid                    String?   @db.VarChar(128)
+  appsecret                String?   @db.Text
+  useraccesstoken          String?   @db.Text
+  useraccesstokenexpiresat DateTime? @db.Timestamptz(6)
+  pagetoken                String?   @db.Text
+  createdat                DateTime  @default(now()) @db.Timestamptz(6)
+  updatedat                DateTime  @updatedAt @db.Timestamptz(6)
+  accounts                 accounts  @relation(fields: [accountid], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "fk_accountfacebookcredentials_accounts")
 }
 
 model accountsettings {

@@ -17,6 +17,12 @@ import {
   AccountTwitterSettingsSchema,
   AccountTwitterAuthorizationUrlSchema,
   AccountTwitterOAuthStartSchema,
+  AccountFacebookCredentialsSchema,
+  AccountFacebookOAuthStartSchema,
+  AccountFacebookAuthorizationUrlSchema,
+  FacebookPageListSchema,
+  FacebookPageSelectionSchema,
+  FacebookConnectionStatusSchema,
   AccountSettingsStateListSchema,
   AccountSettingStateSchema,
   AccountSettingUpdateRequestSchema,
@@ -415,6 +421,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'AccountTwitterSettings',
     AccountTwitterSettingsSchema,
   );
+  const AccountFacebookCredentialsSchemaRef = registry.register(
+    'AccountFacebookCredentials',
+    AccountFacebookCredentialsSchema,
+  );
   const AccountTwitterOAuthStartSchemaRef = registry.register(
     'AccountTwitterOAuthStart',
     AccountTwitterOAuthStartSchema,
@@ -422,6 +432,23 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const AccountTwitterAuthorizationUrlSchemaRef = registry.register(
     'AccountTwitterAuthorizationUrl',
     AccountTwitterAuthorizationUrlSchema,
+  );
+  const AccountFacebookOAuthStartSchemaRef = registry.register(
+    'AccountFacebookOAuthStart',
+    AccountFacebookOAuthStartSchema,
+  );
+  const AccountFacebookAuthorizationUrlSchemaRef = registry.register(
+    'AccountFacebookAuthorizationUrl',
+    AccountFacebookAuthorizationUrlSchema,
+  );
+  const FacebookPageSelectionSchemaRef = registry.register(
+    'FacebookPageSelection',
+    FacebookPageSelectionSchema,
+  );
+  const FacebookPageListSchemaRef = registry.register('FacebookPageList', FacebookPageListSchema);
+  const FacebookConnectionStatusSchemaRef = registry.register(
+    'FacebookConnectionStatus',
+    FacebookConnectionStatusSchema,
   );
   const AccountSettingsStateListSchemaRef = registry.register(
     'AccountSettingsStateList',
@@ -1092,8 +1119,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     AccountBlueskySettingsSchemaRef,
     AccountInstagramSettingsSchemaRef,
     AccountTwitterSettingsSchemaRef,
+    AccountFacebookCredentialsSchemaRef,
     AccountTwitterOAuthStartSchemaRef,
     AccountTwitterAuthorizationUrlSchemaRef,
+    AccountFacebookOAuthStartSchemaRef,
+    AccountFacebookAuthorizationUrlSchemaRef,
+    FacebookPageSelectionSchemaRef,
+    FacebookPageListSchemaRef,
+    FacebookConnectionStatusSchemaRef,
     AccountSettingsStateListSchemaRef,
     AccountSettingStateSchemaRef,
     AccountSettingUpdateRequestSchemaRef,

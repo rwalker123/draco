@@ -4,7 +4,10 @@ export interface WorkoutPostPayload {
   workoutDate?: Date | null;
   workoutUrl?: string | null;
   accountName?: string | null;
+  comments?: string | null;
 }
+
+import { stripHtml } from '../utils/emailContent.js';
 
 const formatWorkoutDateTime = (value?: Date | null): string | null => {
   if (!value) {
@@ -44,10 +47,11 @@ export const composeWorkoutAnnouncementMessage = (
   const heading = headingParts || payload.workoutDesc?.trim() || 'Workout';
   const when = formatWorkoutDateTime(payload.workoutDate);
   const link = payload.workoutUrl?.trim();
+  const comments = stripHtml(payload.comments ?? '').trim();
 
   const linkSegment = link ? `Details: ${link}` : '';
   const baseSegments = [heading, when ? `When: ${when}` : ''].filter(Boolean);
-  const segments = [...baseSegments, linkSegment].filter(Boolean);
+  const segments = [...baseSegments, comments, linkSegment].filter(Boolean);
 
   if (segments.length === 0) {
     return null;
@@ -79,4 +83,3 @@ export const composeWorkoutAnnouncementMessage = (
 
   return truncateText(message, characterLimit);
 };
-

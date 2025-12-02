@@ -26,6 +26,7 @@ import {
 import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { TwitterIntegrationService } from './twitterIntegrationService.js';
 import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
+import { FacebookIntegrationService } from './facebookIntegrationService.js';
 
 interface GameListFilters {
   startDate?: Date;
@@ -39,17 +40,21 @@ export class ScheduleService {
   private readonly discordIntegrationService: DiscordIntegrationService;
   private readonly twitterIntegrationService: TwitterIntegrationService;
   private readonly blueskyIntegrationService: BlueskyIntegrationService;
+  private readonly facebookIntegrationService: FacebookIntegrationService;
 
   constructor(
     scheduleRepository?: IScheduleRepository,
     discordIntegrationService?: DiscordIntegrationService,
     twitterIntegrationService?: TwitterIntegrationService,
     blueskyIntegrationService?: BlueskyIntegrationService,
+    facebookIntegrationService?: FacebookIntegrationService,
   ) {
     this.scheduleRepository = scheduleRepository ?? RepositoryFactory.getScheduleRepository();
     this.discordIntegrationService = discordIntegrationService ?? new DiscordIntegrationService();
     this.twitterIntegrationService = twitterIntegrationService ?? new TwitterIntegrationService();
     this.blueskyIntegrationService = blueskyIntegrationService ?? new BlueskyIntegrationService();
+    this.facebookIntegrationService =
+      facebookIntegrationService ?? new FacebookIntegrationService();
   }
 
   async updateGameResults(
@@ -111,11 +116,12 @@ export class ScheduleService {
         this.discordIntegrationService.publishGameResult(accountId, payload),
         this.twitterIntegrationService.publishGameResult(accountId, payload),
         this.blueskyIntegrationService.publishGameResult(accountId, payload),
+        this.facebookIntegrationService.publishGameResult(accountId, payload),
       ]);
 
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          const target = ['discord', 'twitter', 'bluesky'][index] ?? 'social';
+          const target = ['discord', 'twitter', 'bluesky', 'facebook'][index] ?? 'social';
           console.error(`[${target}] Failed to sync game result`, {
             accountId: accountId.toString(),
             gameId: game.id.toString(),
