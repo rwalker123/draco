@@ -11,6 +11,14 @@ import XLogo from '../icons/XLogo';
 import DiscordLogo from '../icons/DiscordLogo';
 import BlueskyLogo from '../icons/BlueskyLogo';
 
+const buildFacebookPageUrl = (value?: string | null): string | null => {
+  const trimmed = value?.trim().replace(/^@+/, '') ?? '';
+  if (!trimmed) {
+    return null;
+  }
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://www.facebook.com/${trimmed}`;
+};
+
 const sanitizeHandle = (handle?: string | null): string | null => {
   if (!handle) {
     return null;
@@ -33,6 +41,11 @@ interface ContactLeagueSectionProps {
 const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) => {
   const twitterHandle = sanitizeHandle(account.socials?.twitterAccountName);
   const blueskyHandle = sanitizeHandle(account.socials?.blueskyHandle);
+  const facebookPageUrl = buildFacebookPageUrl(account.socials?.facebookFanPage);
+  const facebookConnected =
+    account.socials && 'facebookConnected' in account.socials
+      ? Boolean((account.socials as { facebookConnected?: boolean }).facebookConnected)
+      : Boolean(facebookPageUrl);
   const playerClassifiedsHref = `/account/${account.id.toString()}/player-classifieds?tab=teams-wanted`;
   const guildId = account.discordIntegration?.guildId ?? null;
   const discordServerUrl = guildId ? `https://discord.com/channels/${guildId}` : null;
@@ -127,10 +140,10 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
                 </Button>
               )}
 
-              {account.socials?.facebookFanPage && (
+              {facebookConnected && facebookPageUrl && (
                 <Button
                   variant="outlined"
-                  href={account.socials.facebookFanPage}
+                  href={facebookPageUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   startIcon={<Facebook />}

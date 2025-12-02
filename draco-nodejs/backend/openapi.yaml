@@ -3318,7 +3318,6 @@ components:
       required:
         - id
         - name
-        - accountLogoUrl
     AccountSearchQuery:
       type: object
       properties:
@@ -3545,7 +3544,6 @@ components:
           required:
             - id
             - name
-            - accountLogoUrl
         currentSeason:
           type: object
           nullable: true
@@ -3943,7 +3941,6 @@ components:
           default: ""
       required:
         - name
-        - accountLogoUrl
     AccountName:
       type: object
       properties:
@@ -3966,7 +3963,6 @@ components:
       required:
         - id
         - name
-        - accountLogoUrl
     AccountAffiliation:
       type: object
       properties:

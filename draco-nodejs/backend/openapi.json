@@ -4493,8 +4493,7 @@
         },
         "required": [
           "id",
-          "name",
-          "accountLogoUrl"
+          "name"
         ]
       },
       "AccountSearchQuery": {
@@ -4806,8 +4805,7 @@
             },
             "required": [
               "id",
-              "name",
-              "accountLogoUrl"
+              "name"
             ]
           },
           "currentSeason": {
@@ -5348,8 +5346,7 @@
           }
         },
         "required": [
-          "name",
-          "accountLogoUrl"
+          "name"
         ]
       },
       "AccountName": {
@@ -5382,8 +5379,7 @@
         },
         "required": [
           "id",
-          "name",
-          "accountLogoUrl"
+          "name"
         ]
       },
       "AccountAffiliation": {

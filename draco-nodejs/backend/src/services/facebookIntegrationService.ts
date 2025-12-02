@@ -31,6 +31,7 @@ interface FacebookPageResponse {
 }
 
 export class FacebookIntegrationService {
+  private static readonly FACEBOOK_MESSAGE_CHARACTER_LIMIT = 10_000;
   private readonly accountSettingsService = new AccountSettingsService();
   private readonly credentialsRepository =
     RepositoryFactory.getAccountFacebookCredentialsRepository();
@@ -219,7 +220,9 @@ export class FacebookIntegrationService {
         return;
       }
 
-      const message = composeWorkoutAnnouncementMessage(payload, { characterLimit: 2000 });
+      const message = composeWorkoutAnnouncementMessage(payload, {
+        characterLimit: FacebookIntegrationService.FACEBOOK_MESSAGE_CHARACTER_LIMIT,
+      });
       if (!message) {
         return;
       }
@@ -263,7 +266,14 @@ export class FacebookIntegrationService {
     const pieces = [title, body].filter(Boolean).join(': ').trim();
     const message = [pieces, url].filter(Boolean).join(' ').trim();
 
-    return message || null;
+    if (!message) {
+      return null;
+    }
+
+    return this.truncateMessage(
+      message,
+      FacebookIntegrationService.FACEBOOK_MESSAGE_CHARACTER_LIMIT,
+    );
   }
 
   private buildAnnouncementUrl(accountId: bigint): string {
@@ -507,6 +517,18 @@ export class FacebookIntegrationService {
       }
       throw error;
     }
+  }
+
+  private truncateMessage(value: string, maxLength: number): string {
+    if (value.length <= maxLength) {
+      return value;
+    }
+
+    if (maxLength <= 1) {
+      return value.slice(0, maxLength);
+    }
+
+    return `${value.slice(0, maxLength - 1)}…`;
   }
 
   private decryptSecretValue(value?: string | null): string | undefined {

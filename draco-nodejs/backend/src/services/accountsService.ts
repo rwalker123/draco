@@ -14,6 +14,7 @@ import {
   CreateContactSchema,
   CreateContactType,
   AccountDiscordIntegrationType,
+  UpdateAccountType,
 } from '@draco/shared-schemas';
 import { accountblueskycredentials, accounts, contacts } from '#prisma/client';
 import {
@@ -342,7 +343,7 @@ export class AccountsService {
     );
   }
 
-  async updateAccount(accountId: bigint, payload: CreateAccountType): Promise<AccountType> {
+  async updateAccount(accountId: bigint, payload: UpdateAccountType): Promise<AccountType> {
     await this.ensureAccountExists(accountId);
 
     const updateData: Partial<accounts> = {};

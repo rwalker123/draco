@@ -514,6 +514,7 @@ export class WorkoutService {
         workoutDate: workout.workoutdate,
         workoutUrl: this.buildWorkoutUrl(accountId),
         accountName: account?.name ?? null,
+        comments: workout.comments ?? null,
       } as const;
 
       const results = await Promise.allSettled([
