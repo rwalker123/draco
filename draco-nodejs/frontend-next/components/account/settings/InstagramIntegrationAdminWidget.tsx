@@ -59,15 +59,19 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
     syncToGallerySetting?.value,
   ]);
 
+  const [clearCredentials, setClearCredentials] = useState(false);
+
   const hasPendingChanges = useMemo(() => {
     const normalizedHandle = (account.socials?.instagramHandle ?? '').trim();
     return (
       instagramUserId.trim().length > 0 ||
       instagramUsername.trim() !== normalizedHandle ||
+      clearCredentials ||
       syncToGallery !== Boolean(syncToGallerySetting?.effectiveValue ?? syncToGallerySetting?.value)
     );
   }, [
     account.socials?.instagramHandle,
+    clearCredentials,
     instagramUserId,
     instagramUsername,
     syncToGallery,
@@ -102,6 +106,11 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
           payload.instagramUsername = normalizedUsername;
         }
 
+        if (clearCredentials) {
+          payload.instagramAppId = '';
+          payload.instagramAppSecret = '';
+        }
+
         if (Object.keys(payload).length > 0) {
           const result = await apiClient.put({
             url: `/api/accounts/${account.id}/instagram`,
@@ -127,6 +136,7 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
 
         setSuccess('Instagram settings saved.');
         setInstagramUserId('');
+        setClearCredentials(false);
       } catch (err) {
         console.error('Failed to save Instagram settings', err);
         setError('Unable to save Instagram settings. Please try again.');
@@ -201,6 +211,21 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
             <Typography variant="body2" color="text.secondary">
               When enabled, newly ingested Instagram media will be added to your Photo Gallery
               Instagram album.
+            </Typography>
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={clearCredentials}
+                  onChange={(event) => setClearCredentials(event.target.checked)}
+                  disabled={saving}
+                />
+              }
+              label="Clear stored Instagram tokens"
+            />
+            <Typography variant="body2" color="text.secondary">
+              Use this to revoke existing Instagram access/refresh tokens. Tokens will be cleared
+              server-side when you save.
             </Typography>
           </Stack>
 
