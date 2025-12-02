@@ -130,7 +130,7 @@ model accountfacebookcredentials {
   pagetoken                String?   @db.Text
   createdat                DateTime  @default(now()) @db.Timestamptz(6)
   updatedat                DateTime  @updatedAt @db.Timestamptz(6)
-  accounts                 accounts  @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountfacebookcredentials_accounts")
+  accounts                 accounts  @relation(fields: [accountid], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "fk_accountfacebookcredentials_accounts")
 }
 
 model accountsettings {
