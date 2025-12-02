@@ -80,6 +80,7 @@ frontend-next/public/branding/*
 !frontend-next/public/branding/x-logo-dark.svg
 !frontend-next/public/branding/discord-logo-light.svg
 !frontend-next/public/branding/discord-logo-dark.svg
+!frontend-next/public/branding/bluesky-logo.svg
 
 # Storybook build outputs
 .out
