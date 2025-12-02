@@ -16,6 +16,7 @@ import type {
   AccountSettingState,
   AccountInstagramSettingsType,
 } from '@draco/shared-schemas';
+import { updateAccountInstagramSettings } from '@draco/shared-api-client';
 import WidgetShell from '../../ui/WidgetShell';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
@@ -98,6 +99,12 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
         const normalizedUsername = instagramUsername.trim();
         const currentHandle = (account.socials?.instagramHandle ?? '').trim();
 
+        if (clearCredentials && !normalizedUserId) {
+          setError('Instagram Business User ID is required to clear tokens.');
+          setSaving(false);
+          return;
+        }
+
         if (normalizedUserId) {
           payload.instagramUserId = normalizedUserId;
         }
@@ -112,8 +119,9 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
         }
 
         if (Object.keys(payload).length > 0) {
-          const result = await apiClient.put({
-            url: `/api/accounts/${account.id}/instagram`,
+          const result = await updateAccountInstagramSettings({
+            client: apiClient,
+            path: { accountId: account.id },
             body: payload,
             throwOnError: false,
           });
