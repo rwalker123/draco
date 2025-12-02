@@ -38,3 +38,20 @@ export const AccountFacebookCredentialsSchema = z.object({
 });
 
 export type AccountFacebookCredentialsType = z.infer<typeof AccountFacebookCredentialsSchema>;
+
+export const AccountFacebookAuthorizationUrlSchema = z.object({
+  authorizationUrl: z.string().url(),
+});
+
+export type AccountFacebookAuthorizationUrlType = z.infer<
+  typeof AccountFacebookAuthorizationUrlSchema
+>;
+
+export const FacebookConnectionStatusSchema = z.object({
+  appConfigured: z.boolean(),
+  pageConnected: z.boolean(),
+  pageId: z.string().nullable().optional(),
+  pageName: z.string().nullable().optional(),
+});
+
+export type FacebookConnectionStatusType = z.infer<typeof FacebookConnectionStatusSchema>;

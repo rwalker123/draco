@@ -15,11 +15,21 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import Link from 'next/link';
 import type { AccountType } from '@draco/shared-schemas';
 import WidgetShell from '../../ui/WidgetShell';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useSearchParams } from 'next/navigation';
 import { assertNoApiError, unwrapApiResult } from '@/utils/apiResult';
+import { useAuth } from '@/context/AuthContext';
+import {
+  createFacebookAuthorizationUrl,
+  disconnectAccountFacebook,
+  getAccountFacebookStatus,
+  listAccountFacebookPages,
+  saveAccountFacebookPage,
+  upsertAccountFacebookCredentials,
+} from '@draco/shared-api-client';
 
 interface FacebookIntegrationAdminWidgetProps {
   account: AccountType;
@@ -31,6 +41,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
   onAccountUpdate,
 }) => {
   const apiClient = useApiClient();
+  const { token } = useAuth();
   const searchParams = useSearchParams();
   const [facebookAppId, setFacebookAppId] = useState('');
   const [facebookAppSecret, setFacebookAppSecret] = useState('');
@@ -45,18 +56,33 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
   const [pageConnected, setPageConnected] = useState(false);
   const [pageName, setPageName] = useState<string | null>(null);
   const [appConfigured, setAppConfigured] = useState(false);
+  type FacebookStatusResponse = {
+    appConfigured: boolean;
+    pageConnected: boolean;
+    pageId?: string | null;
+    pageName?: string | null;
+  };
+
+  type FacebookPagesResponse = { pages?: Array<{ id: string; name: string }> };
 
   const authStatus = searchParams.get('facebookAuth');
   const authMessage = searchParams.get('message');
 
   const loadStatus = useCallback(async () => {
+    if (!token) {
+      return;
+    }
     try {
       setStatusLoading(true);
-      const response = await apiClient.get({
-        url: `/api/accounts/${account.id}/facebook/status`,
+      const response = await getAccountFacebookStatus({
+        client: apiClient,
+        path: { accountId: account.id },
         throwOnError: false,
       });
-      const body = unwrapApiResult(response, 'Unable to load Facebook status.');
+      const body = unwrapApiResult<FacebookStatusResponse>(
+        response,
+        'Unable to load Facebook status.',
+      );
       setAppConfigured(Boolean(body.appConfigured));
       setPageConnected(Boolean(body.pageConnected));
       setPageName(body.pageName ?? null);
@@ -67,16 +93,23 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
     } finally {
       setStatusLoading(false);
     }
-  }, [account.id, apiClient]);
+  }, [account.id, apiClient, token]);
 
   const loadPages = useCallback(async () => {
+    if (!token) {
+      return;
+    }
     try {
       setPagesLoading(true);
-      const response = await apiClient.get({
-        url: `/api/accounts/${account.id}/facebook/pages`,
+      const response = await listAccountFacebookPages({
+        client: apiClient,
+        path: { accountId: account.id },
         throwOnError: false,
       });
-      const body = unwrapApiResult(response, 'Unable to load Facebook Pages.');
+      const body = unwrapApiResult<FacebookPagesResponse>(
+        response,
+        'Unable to load Facebook Pages.',
+      );
       setPages(body.pages ?? []);
       if (body.pages?.length && !selectedPageId) {
         setSelectedPageId(body.pages[0].id);
@@ -87,7 +120,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
     } finally {
       setPagesLoading(false);
     }
-  }, [account.id, apiClient, selectedPageId]);
+  }, [account.id, apiClient, selectedPageId, token]);
 
   useEffect(() => {
     void loadStatus();
@@ -132,8 +165,9 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
           clearCredentials,
         };
 
-        const result = await apiClient.post({
-          url: `/api/accounts/${account.id}/facebook/credentials`,
+        const result = await upsertAccountFacebookCredentials({
+          client: apiClient,
+          path: { accountId: account.id },
           body: payload,
           throwOnError: false,
         });
@@ -165,11 +199,16 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
   const submitDisabled = saving || !hasPendingChanges;
 
   const handleConnect = useCallback(async () => {
+    if (!token) {
+      setError('You must be signed in to connect Facebook.');
+      return;
+    }
     try {
       setError(null);
       setSuccess(null);
-      const result = await apiClient.post({
-        url: `/api/accounts/${account.id}/facebook/oauth/url`,
+      const result = await createFacebookAuthorizationUrl({
+        client: apiClient,
+        path: { accountId: account.id },
         body: { returnUrl: typeof window !== 'undefined' ? window.location.href : undefined },
         throwOnError: false,
       });
@@ -185,9 +224,13 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       console.error('Failed to start Facebook authorization', err);
       setError('Unable to start Facebook authorization. Check app credentials and try again.');
     }
-  }, [account.id, apiClient]);
+  }, [account.id, apiClient, token]);
 
   const handleSavePage = useCallback(async () => {
+    if (!token) {
+      setError('You must be signed in to connect Facebook.');
+      return;
+    }
     if (!selectedPageId) {
       setError('Select a Facebook Page to complete connection.');
       return;
@@ -200,8 +243,9 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
     try {
       setError(null);
       setSuccess(null);
-      await apiClient.post({
-        url: `/api/accounts/${account.id}/facebook/page`,
+      await saveAccountFacebookPage({
+        client: apiClient,
+        path: { accountId: account.id },
         body: { pageId: selected.id, pageName: selected.name },
         throwOnError: false,
       });
@@ -212,14 +256,19 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       console.error('Failed to save Facebook Page selection', err);
       setError('Unable to save Facebook Page selection.');
     }
-  }, [account.id, apiClient, pages, selectedPageId]);
+  }, [account.id, apiClient, pages, selectedPageId, token]);
 
   const handleDisconnect = useCallback(async () => {
+    if (!token) {
+      setError('You must be signed in to disconnect Facebook.');
+      return;
+    }
     try {
       setError(null);
       setSuccess(null);
-      const result = await apiClient.delete({
-        url: `/api/accounts/${account.id}/facebook`,
+      const result = await disconnectAccountFacebook({
+        client: apiClient,
+        path: { accountId: account.id },
         throwOnError: false,
       });
       assertNoApiError(result, 'Unable to disconnect Facebook.');
@@ -232,7 +281,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       console.error('Failed to disconnect Facebook', err);
       setError('Unable to disconnect Facebook.');
     }
-  }, [account.id, apiClient]);
+  }, [account.id, apiClient, token]);
 
   return (
     <WidgetShell
@@ -244,8 +293,17 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
         <Stack spacing={3}>
           <Alert severity="info">
             Facebook credentials power both Instagram publishing and future Facebook posting.
-            Provide your Meta App ID and App Secret from the Meta App Dashboard. Secrets are stored
-            server-side and never displayed.
+            Provide your Meta App ID and App Secret from the{' '}
+            <Link
+              href="https://developers.facebook.com/apps"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Open Meta App Dashboard in a new tab"
+              style={{ fontWeight: 600, color: '#1976d2', textDecoration: 'underline' }}
+            >
+              Meta App Dashboard
+            </Link>
+            . Secrets are stored server-side and never displayed.
             <br />
             <strong>Where to find values:</strong> Meta App Dashboard → Basic → App ID / App Secret.
           </Alert>

@@ -1,7 +1,7 @@
 import { RegisterContext } from '../../openapiTypes.js';
 import { ACCOUNT_SETTING_KEYS, DiscordFeatureSyncFeatureEnum } from '@draco/shared-schemas';
 
-export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterContext) => {
+export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterContext) => {
   const {
     AccountAffiliationSchemaRef,
     AccountDetailsQuerySchemaRef,
@@ -18,6 +18,12 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     AccountTwitterSettingsSchemaRef,
     AccountTwitterOAuthStartSchemaRef,
     AccountTwitterAuthorizationUrlSchemaRef,
+    AccountFacebookCredentialsSchemaRef,
+    AccountFacebookOAuthStartSchemaRef,
+    AccountFacebookAuthorizationUrlSchemaRef,
+    FacebookPageSelectionSchemaRef,
+    FacebookPageListSchemaRef,
+    FacebookConnectionStatusSchemaRef,
     AccountSettingsStateListSchemaRef,
     AccountSettingStateSchemaRef,
     AccountSettingUpdateRequestSchemaRef,
@@ -111,6 +117,287 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
             schema: InternalServerErrorSchemaRef,
           },
         },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/facebook/credentials',
+    operationId: 'upsertAccountFacebookCredentials',
+    summary: 'Save Facebook App credentials for an account',
+    description:
+      'Saves the Meta App ID and App Secret for Facebook Page posting for the specified account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: AccountFacebookCredentialsSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      204: { description: 'Credentials saved' },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Forbidden',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Account not found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/facebook/oauth/url',
+    operationId: 'createFacebookAuthorizationUrl',
+    summary: 'Create Facebook OAuth authorization URL',
+    description: 'Generate a Facebook OAuth URL for connecting a Page to the specified account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: AccountFacebookOAuthStartSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Authorization URL generated successfully',
+        content: { 'application/json': { schema: AccountFacebookAuthorizationUrlSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Forbidden',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Account not found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/facebook/pages',
+    operationId: 'listAccountFacebookPages',
+    summary: "List Facebook Pages available for the account's connected user",
+    description: 'Lists Facebook Pages the connected user can manage, using the stored user token.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'List of Facebook Pages',
+        content: {
+          'application/json': {
+            schema: z.object({
+              pages: FacebookPageListSchemaRef.optional(),
+            }),
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Forbidden',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Account not found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/facebook/page',
+    operationId: 'saveAccountFacebookPage',
+    summary: 'Save the selected Facebook Page for an account',
+    description: 'Stores the selected Facebook Page and derived Page token for posting.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: FacebookPageSelectionSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      204: { description: 'Page selection saved' },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Forbidden',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Account not found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/facebook',
+    operationId: 'disconnectAccountFacebook',
+    summary: 'Disconnect Facebook integration for an account',
+    description: 'Clears stored Facebook credentials and page selection for the specified account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      204: { description: 'Integration disconnected' },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Forbidden',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Account not found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/facebook/status',
+    operationId: 'getAccountFacebookStatus',
+    summary: 'Get Facebook integration status for an account',
+    description: 'Returns whether app credentials are configured and whether a Page is connected.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Integration status',
+        content: { 'application/json': { schema: FacebookConnectionStatusSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Forbidden',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Account not found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
       },
     },
   });
