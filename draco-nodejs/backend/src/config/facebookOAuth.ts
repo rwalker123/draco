@@ -8,6 +8,8 @@ export const facebookOAuthConfig = {
     'pages_show_list',
     'pages_manage_posts',
     'pages_read_engagement',
+    'instagram_basic',
+    'instagram_content_publish',
   ].join(','),
   resultUrlTemplate:
     process.env.FACEBOOK_RESULT_URL_TEMPLATE ??

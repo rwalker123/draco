@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -11,6 +11,7 @@ import {
   ListSubheader,
   MenuItem,
   Select,
+  type SelectChangeEvent,
   TextField,
   Typography,
 } from '@mui/material';
@@ -22,7 +23,13 @@ import {
   type UpdateGalleryPhotoInput,
 } from '../../../services/photoGalleryAdminService';
 import { ApiClientError } from '../../../utils/apiResult';
-import PhotoGalleryAlbumSections from './PhotoGalleryAlbumSections';
+
+const normalizeEntityId = (value?: string | null): string | null => {
+  if (value === undefined || value === null || value === '' || value === '0') {
+    return null;
+  }
+  return value;
+};
 
 type PhotoDialogMode = 'create' | 'edit';
 
@@ -42,7 +49,7 @@ const getDefaultAlbumValue = (photo?: PhotoGalleryPhotoType): string => {
   if (!photo || !photo.albumId) {
     return '';
   }
-  return photo.albumId;
+  return String(photo.albumId);
 };
 
 export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialogProps> = ({
@@ -60,7 +67,50 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
   const [caption, setCaption] = useState('');
   const [albumId, setAlbumId] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const albumSections = useMemo(() => {
+    const accountAlbums: Array<{ id: string; title: string }> = [];
+    const teamAlbums: Array<{ id: string; title: string }> = [];
+
+    albums.forEach((album) => {
+      if (!album.id) {
+        return;
+      }
+
+      const normalizedTeamId = normalizeEntityId(album.teamId ?? null);
+      const albumAccountId = album.accountId ?? null;
+      const title = album.title?.trim() || 'Untitled Album';
+
+      const belongsToAccount = normalizedTeamId === null && albumAccountId === accountId;
+      const belongsToTeam = normalizedTeamId !== null && albumAccountId === accountId;
+
+      // Skip the global default album (accountId === '0'); the explicit default option maps to null.
+      const isGlobalDefault = albumAccountId === '0';
+
+      if (belongsToAccount && !isGlobalDefault) {
+        accountAlbums.push({ id: String(album.id), title });
+        return;
+      }
+
+      if (belongsToTeam) {
+        teamAlbums.push({ id: String(album.id), title });
+      }
+    });
+
+    accountAlbums.sort((a, b) => a.title.localeCompare(b.title));
+    teamAlbums.sort((a, b) => a.title.localeCompare(b.title));
+
+    return { accountAlbums, teamAlbums };
+  }, [accountId, albums]);
+
+  const albumTitleMap = useMemo(() => {
+    const map = new Map<string, string>();
+    albumSections.accountAlbums.forEach((album) => map.set(album.id, album.title));
+    albumSections.teamAlbums.forEach((album) => map.set(album.id, album.title));
+    return map;
+  }, [albumSections]);
 
   useEffect(() => {
     if (!open) {
@@ -68,6 +118,7 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
       setCaption('');
       setAlbumId('');
       setFile(null);
+      setPreviewSrc(null);
       setSubmitting(false);
       return;
     }
@@ -76,21 +127,50 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
       setTitle(photo.title);
       setCaption(photo.caption ?? '');
       setAlbumId(getDefaultAlbumValue(photo));
+      setPreviewSrc(photo.thumbnailUrl ?? null);
     } else {
       setTitle('');
       setCaption('');
       setAlbumId('');
       setFile(null);
+      setPreviewSrc(null);
     }
   }, [open, mode, photo]);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      setFile(event.target.files[0]);
+    const selected = event.target.files?.[0];
+    if (selected) {
+      setFile(selected);
+      const objectUrl = URL.createObjectURL(selected);
+      setPreviewSrc((previous) => {
+        if (previous?.startsWith('blob:')) {
+          URL.revokeObjectURL(previous);
+        }
+        return objectUrl;
+      });
     } else {
       setFile(null);
+      setPreviewSrc((previous) => {
+        if (previous?.startsWith('blob:')) {
+          URL.revokeObjectURL(previous);
+        }
+        return null;
+      });
     }
   }, []);
+
+  const handleAlbumChange = useCallback((event: SelectChangeEvent<string>) => {
+    setAlbumId(event.target.value);
+  }, []);
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (previewSrc?.startsWith('blob:')) {
+        URL.revokeObjectURL(previewSrc);
+      }
+    };
+  }, [previewSrc]);
 
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) {
@@ -179,36 +259,61 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
             helperText={`${caption.length}/255`}
           />
           <FormControl fullWidth disabled={submitting}>
-            <InputLabel id="photo-album-select-label">Album</InputLabel>
+            <InputLabel id="photo-album-select-label" shrink>
+              Album
+            </InputLabel>
             <Select
               labelId="photo-album-select-label"
               value={albumId}
               label="Album"
-              onChange={(event) => setAlbumId(event.target.value)}
+              onChange={handleAlbumChange}
+              displayEmpty
+              renderValue={(selected) => {
+                if (!selected) {
+                  return <em>Account Album (default)</em>;
+                }
+                return albumTitleMap.get(String(selected)) ?? '';
+              }}
             >
               <MenuItem value="">
                 <em>Account Album (default)</em>
               </MenuItem>
-              <PhotoGalleryAlbumSections
-                accountId={accountId}
-                albums={albums}
-                renderSectionHeader={(section) => (
-                  <ListSubheader
-                    component="div"
-                    disableSticky
-                    sx={{
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
-                      color: 'text.secondary',
-                    }}
-                  >
-                    {section.title}
-                  </ListSubheader>
-                )}
-                renderAlbum={(albumEntry) => (
-                  <MenuItem value={albumEntry.id}>{albumEntry.title}</MenuItem>
-                )}
-              />
+              {albumSections.accountAlbums.length > 0 ? (
+                <ListSubheader
+                  component="div"
+                  disableSticky
+                  sx={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'text.secondary',
+                  }}
+                >
+                  Account Albums
+                </ListSubheader>
+              ) : null}
+              {albumSections.accountAlbums.map((album) => (
+                <MenuItem key={album.id} value={album.id}>
+                  {album.title}
+                </MenuItem>
+              ))}
+              {albumSections.teamAlbums.length > 0 ? (
+                <ListSubheader
+                  component="div"
+                  disableSticky
+                  sx={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'text.secondary',
+                  }}
+                >
+                  Team Albums
+                </ListSubheader>
+              ) : null}
+              {albumSections.teamAlbums.map((album) => (
+                <MenuItem key={album.id} value={album.id}>
+                  {album.title}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
           {mode === 'create' ? (
@@ -222,6 +327,22 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
                 {file ? 'Replace Photo' : 'Upload Photo'}
                 <input type="file" accept="image/*" hidden onChange={handleFileChange} />
               </Button>
+              {previewSrc ? (
+                <Box
+                  component="img"
+                  src={previewSrc}
+                  alt={file?.name ?? 'Selected photo preview'}
+                  sx={{
+                    mt: 1.5,
+                    width: '100%',
+                    maxHeight: 240,
+                    objectFit: 'cover',
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                />
+              ) : null}
               {file ? (
                 <Typography
                   variant="caption"
