@@ -42,10 +42,7 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
   const twitterHandle = sanitizeHandle(account.socials?.twitterAccountName);
   const blueskyHandle = sanitizeHandle(account.socials?.blueskyHandle);
   const facebookPageUrl = buildFacebookPageUrl(account.socials?.facebookFanPage);
-  const facebookConnected =
-    account.socials && 'facebookConnected' in account.socials
-      ? Boolean((account.socials as { facebookConnected?: boolean }).facebookConnected)
-      : Boolean(facebookPageUrl);
+  const facebookConnected = Boolean(facebookPageUrl);
   const playerClassifiedsHref = `/account/${account.id.toString()}/player-classifieds?tab=teams-wanted`;
   const guildId = account.discordIntegration?.guildId ?? null;
   const discordServerUrl = guildId ? `https://discord.com/channels/${guildId}` : null;
