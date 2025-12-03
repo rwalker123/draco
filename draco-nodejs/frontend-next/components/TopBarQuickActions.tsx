@@ -101,7 +101,12 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   canViewAnnouncements = false,
 }) => {
   const theme = useTheme();
-  const isCompact = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
+  const [isHydrated, setIsHydrated] = React.useState(false);
+  const compactMediaQuery = useMediaQuery(theme.breakpoints.down('sm'));
+  React.useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+  const isCompact = isHydrated ? compactMediaQuery : false;
   const showHandouts = Boolean(canViewHandouts && accountId);
   const showAnnouncements = Boolean(canViewAnnouncements && accountId);
   const { user, token } = useAuth();

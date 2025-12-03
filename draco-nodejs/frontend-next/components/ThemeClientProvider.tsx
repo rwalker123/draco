@@ -44,7 +44,7 @@ type ThemeListener = () => void;
 
 const listeners = new Set<ThemeListener>();
 let unsubscribeExternal: (() => void) | null = null;
-let clientThemeSnapshot: ThemeName = 'light';
+let clientThemeSnapshot: ThemeName | null = null;
 
 const logThemeEvent = (...params: unknown[]) => {
   if (typeof console !== 'undefined') {
@@ -162,14 +162,10 @@ const getClientSnapshotFactory = (initialTheme: ThemeName) => () => {
   if (typeof window === 'undefined') {
     return initialTheme;
   }
-  const stored = readStoredTheme();
-  if (stored) {
-    clientThemeSnapshot = stored;
-    return stored;
+  if (!clientThemeSnapshot) {
+    clientThemeSnapshot = initialTheme;
   }
-  const systemTheme = readSystemTheme();
-  clientThemeSnapshot = systemTheme;
-  return systemTheme;
+  return clientThemeSnapshot;
 };
 
 const getServerSnapshotFactory = (initialTheme: ThemeName) => () => initialTheme;
@@ -213,6 +209,17 @@ export default function ThemeClientProvider({
   }, []);
 
   const currentTheme = useMemo(() => themesByName[themeName], [themeName]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const stored = readStoredTheme();
+    const nextTheme = stored ?? readSystemTheme();
+    if (nextTheme && nextTheme !== clientThemeSnapshot) {
+      setThemePreference(nextTheme);
+    }
+  }, [initialThemeName]);
 
   const value = useMemo(
     () => ({
