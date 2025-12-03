@@ -12,6 +12,8 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Divider,
+  CircularProgress,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -48,6 +50,7 @@ import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 import type { AccountType } from '@draco/shared-schemas';
+import type { BaseballOverflowItem } from './BaseballMenu';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -73,6 +76,8 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const [accountType, setAccountType] = React.useState<string | null>(null);
   const [currentAccount, setCurrentAccount] = React.useState<AccountType | null>(null);
   const [registrationOpen, setRegistrationOpen] = React.useState(false);
+  const [sportOverflowItems, setSportOverflowItems] = React.useState<BaseballOverflowItem[]>([]);
+  const [quickActionItems, setQuickActionItems] = React.useState<React.ReactNode[]>([]);
 
   // Check if user can access account management features
   const hasAccountManagementPrivileges = Boolean(user && hasManageableAccount);
@@ -141,13 +146,13 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     };
   }, [accountId, apiClient, setAccountContext]);
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+  const handleMenuOpen = React.useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-  };
+  }, []);
 
-  const handleMenuClose = () => {
+  const handleMenuClose = React.useCallback(() => {
     setAnchorEl(null);
-  };
+  }, []);
 
   const handleLogout = () => {
     clearAllContexts();
@@ -155,10 +160,13 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     handleMenuClose();
   };
 
-  const handleNavigation = (path: string) => {
-    router.push(path);
-    handleMenuClose();
-  };
+  const handleNavigation = React.useCallback(
+    (path: string) => {
+      router.push(path);
+      handleMenuClose();
+    },
+    [handleMenuClose, router],
+  );
 
   const handleLogin = () => {
     const params = new URLSearchParams();
@@ -227,34 +235,6 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
         >
           {/* Left side - Main navigation */}
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton
-              size="large"
-              edge="start"
-              color="inherit"
-              aria-label="menu"
-              sx={{ mr: 2 }}
-              onClick={handleMenuOpen}
-            >
-              {shouldShowAdminMenuIcon ? (
-                <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                  <MenuIcon />
-                  <KeyIcon
-                    sx={{
-                      position: 'absolute',
-                      top: -2,
-                      right: -2,
-                      fontSize: '0.7rem',
-                      color: 'primary.main',
-                      backgroundColor: 'background.paper',
-                      borderRadius: '50%',
-                      padding: '1px',
-                    }}
-                  />
-                </Box>
-              ) : (
-                <MenuIcon />
-              )}
-            </IconButton>
             <Box
               onClick={handleHomeClick}
               sx={{
@@ -284,16 +264,50 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           {/* Center - Baseball menu (only for baseball accounts) */}
           {accountType?.toLowerCase() === 'baseball' && accountId && (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <BaseballMenu accountId={accountId} />
+              <BaseballMenu
+                accountId={accountId}
+                useUnifiedMenu
+                onOverflowItemsChange={setSportOverflowItems}
+              />
             </Box>
           )}
 
           {/* Right side - User info and actions */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              onClick={handleMenuOpen}
+            >
+              {shouldShowAdminMenuIcon ? (
+                <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                  <MenuIcon />
+                  <KeyIcon
+                    sx={{
+                      position: 'absolute',
+                      top: -2,
+                      right: -2,
+                      fontSize: '0.7rem',
+                      color: 'primary.main',
+                      backgroundColor: 'background.paper',
+                      borderRadius: '50%',
+                      padding: '1px',
+                    }}
+                  />
+                </Box>
+              ) : (
+                <MenuIcon />
+              )}
+            </IconButton>
             <TopBarQuickActions
               accountId={accountId}
               canViewHandouts={Boolean(accountId)}
               canViewAnnouncements={isMember === true}
+              useUnifiedMenu
+              onCompactMenuItemsChange={setQuickActionItems}
+              onUnifiedMenuClose={handleMenuClose}
             />
             {user ? (
               <>
@@ -351,6 +365,24 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
       >
+        {sportOverflowItems.map((item) => (
+          <MenuItem
+            key={`baseball-overflow-${item.label}`}
+            onClick={() => {
+              item.onClick();
+              handleMenuClose();
+            }}
+            disabled={Boolean(item.busy)}
+          >
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText>
+              {item.busy ? <CircularProgress size={16} color="inherit" /> : item.label}
+            </ListItemText>
+          </MenuItem>
+        ))}
+        {sportOverflowItems.length > 0 ? <Divider sx={{ my: 1 }} /> : null}
+        {quickActionItems}
+        {quickActionItems.length > 0 ? <Divider sx={{ my: 1 }} /> : null}
         <MenuItem onClick={() => handleNavigation('/accounts')}>
           <ListItemIcon>
             <BusinessIcon fontSize="small" />
@@ -726,8 +758,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           }
           return null;
         })()}
-        {/* League Admin Only */}
-        {/* Team Admin Only */}
+        {quickActionItems.length > 0 && <Divider sx={{ my: 1 }} />}
       </Menu>
 
       <Container maxWidth={false} sx={{ flex: 1, py: 3, px: 4 }}>

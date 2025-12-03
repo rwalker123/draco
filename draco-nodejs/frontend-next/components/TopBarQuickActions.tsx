@@ -42,6 +42,9 @@ interface TopBarQuickActionsProps {
   accountId?: string | null;
   canViewHandouts?: boolean;
   canViewAnnouncements?: boolean;
+  useUnifiedMenu?: boolean;
+  onCompactMenuItemsChange?: (items: React.ReactNode[]) => void;
+  onUnifiedMenuClose?: () => void;
 }
 
 interface TeamHandoutSection {
@@ -99,6 +102,9 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   accountId,
   canViewHandouts = false,
   canViewAnnouncements = false,
+  useUnifiedMenu = false,
+  onCompactMenuItemsChange,
+  onUnifiedMenuClose,
 }) => {
   const theme = useTheme();
   const [isHydrated, setIsHydrated] = React.useState(false);
@@ -505,11 +511,11 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     setCompactAnchorEl(null);
   };
 
-  const handleThemeToggle = () => {
+  const handleThemeToggle = React.useCallback(() => {
     setCurrentThemeName(isDarkMode ? 'light' : 'dark');
-  };
+  }, [isDarkMode, setCurrentThemeName]);
 
-  const normalizeMenuContent = (content: React.ReactNode): React.ReactNode[] => {
+  const normalizeMenuContent = React.useCallback((content: React.ReactNode): React.ReactNode[] => {
     if (Array.isArray(content)) {
       return content;
     }
@@ -517,44 +523,47 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
       return [];
     }
     return [content];
-  };
+  }, []);
 
-  const buildMenuSection = (
-    items: React.ReactNode[],
-    keyPrefix: string,
-    title: string,
-    href?: string,
-  ): React.ReactNode[] | null => {
-    if (items.length === 0) {
-      return null;
-    }
+  const buildMenuSection = React.useCallback(
+    (
+      items: React.ReactNode[],
+      keyPrefix: string,
+      title: string,
+      href?: string,
+    ): React.ReactNode[] | null => {
+      if (items.length === 0) {
+        return null;
+      }
 
-    return [
-      href ? (
-        <MenuItem
-          key={`${keyPrefix}-title-link`}
-          dense
-          component={NextLink}
-          href={href}
-          onClick={(event) => {
-            event.stopPropagation();
-          }}
-          sx={{ px: 2, py: 1.25 }}
-        >
-          <ListItemText
-            primary={title}
-            primaryTypographyProps={{ variant: 'subtitle2', fontWeight: 600 }}
-          />
-        </MenuItem>
-      ) : (
-        <Typography key={`${keyPrefix}-title`} variant="subtitle2" sx={{ px: 2, pt: 1 }}>
-          {title}
-        </Typography>
-      ),
-      <Divider key={`${keyPrefix}-divider`} sx={{ my: 1 }} />,
-      ...items,
-    ];
-  };
+      return [
+        href ? (
+          <MenuItem
+            key={`${keyPrefix}-title-link`}
+            dense
+            component={NextLink}
+            href={href}
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+            sx={{ px: 2, py: 1.25 }}
+          >
+            <ListItemText
+              primary={title}
+              primaryTypographyProps={{ variant: 'subtitle2', fontWeight: 600 }}
+            />
+          </MenuItem>
+        ) : (
+          <Typography key={`${keyPrefix}-title`} variant="subtitle2" sx={{ px: 2, pt: 1 }}>
+            {title}
+          </Typography>
+        ),
+        <Divider key={`${keyPrefix}-divider`} sx={{ my: 1 }} />,
+        ...items,
+      ];
+    },
+    [],
+  );
 
   const handleHandoutDownload = React.useCallback(
     async (handout: HandoutType) => {
@@ -646,204 +655,60 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     setAnnouncementDetail(null);
   };
 
-  const renderAccountHandoutItems = (onClose: () => void): React.ReactNode[] => {
-    if (!showHandouts) {
-      return [];
-    }
-
-    if (accountHandoutsLoading && accountHandouts.length === 0 && !accountHandoutsError) {
-      return [
-        <MenuItem key="account-handouts-loading" disabled dense sx={{ gap: 1, opacity: 1 }}>
-          <CircularProgress size={18} />
-          <ListItemText
-            primary="Loading account handouts…"
-            primaryTypographyProps={{ variant: 'body2' }}
-          />
-        </MenuItem>,
-      ];
-    }
-
-    if (accountHandoutsError) {
-      return [
-        <MenuItem key="account-handouts-error" disabled dense sx={{ opacity: 1 }}>
-          <ListItemIcon sx={{ minWidth: 32 }}>
-            <ErrorOutlineIcon color="error" fontSize="small" />
-          </ListItemIcon>
-          <ListItemText
-            primary={accountHandoutsError}
-            primaryTypographyProps={{ variant: 'body2', color: 'error.main' }}
-          />
-        </MenuItem>,
-        <MenuItem
-          key="account-handouts-retry"
-          dense
-          onClick={() => {
-            onClose();
-            hasLoadedAccountHandoutsRef.current = false;
-            void loadAccountHandouts();
-          }}
-        >
-          <ListItemIcon sx={{ minWidth: 32 }}>
-            <RefreshIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Retry loading account handouts" />
-        </MenuItem>,
-      ];
-    }
-
-    if (accountHandouts.length === 0) {
-      return [];
-    }
-
-    return [
-      ...accountHandouts.map((handout) => (
-        <MenuItem
-          key={`account-${handout.id}`}
-          dense
-          onClick={async () => {
-            await handleHandoutDownload(handout);
-            onClose();
-          }}
-          disabled={downloadingHandoutId === handout.id}
-        >
-          <ListItemIcon sx={{ minWidth: 32 }}>
-            {downloadingHandoutId === handout.id ? (
-              <CircularProgress size={18} />
-            ) : (
-              <DescriptionIcon fontSize="small" />
-            )}
-          </ListItemIcon>
-          <ListItemText
-            primary={handout.fileName}
-            primaryTypographyProps={{
-              variant: 'body2',
-              sx: { whiteSpace: 'normal' },
-            }}
-          />
-        </MenuItem>
-      )),
-    ];
-  };
-
-  const renderAccountAnnouncementItems = (onClose: () => void): React.ReactNode[] => {
-    if (!showAnnouncements) {
-      return [];
-    }
-
-    if (
-      accountAnnouncementsLoading &&
-      accountAnnouncements.length === 0 &&
-      !accountAnnouncementsError
-    ) {
-      return [
-        <MenuItem key="account-announcements-loading" disabled dense sx={{ gap: 1, opacity: 1 }}>
-          <CircularProgress size={18} />
-          <ListItemText
-            primary="Loading account announcements…"
-            primaryTypographyProps={{ variant: 'body2' }}
-          />
-        </MenuItem>,
-      ];
-    }
-
-    if (accountAnnouncementsError) {
-      return [
-        <MenuItem key="account-announcements-error" disabled dense sx={{ opacity: 1 }}>
-          <ListItemIcon sx={{ minWidth: 32 }}>
-            <ErrorOutlineIcon color="error" fontSize="small" />
-          </ListItemIcon>
-          <ListItemText
-            primary={accountAnnouncementsError}
-            primaryTypographyProps={{ variant: 'body2', color: 'error.main' }}
-          />
-        </MenuItem>,
-        <MenuItem
-          key="account-announcements-retry"
-          dense
-          onClick={() => {
-            onClose();
-            hasLoadedAccountAnnouncementsRef.current = false;
-            void loadAccountAnnouncements();
-          }}
-        >
-          <ListItemIcon sx={{ minWidth: 32 }}>
-            <RefreshIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Retry loading account announcements" />
-        </MenuItem>,
-      ];
-    }
-
-    if (accountAnnouncements.length === 0) {
-      return [];
-    }
-
-    return accountAnnouncements.map((announcement) => {
-      const secondaryText = formatDateTime(announcement.publishedAt);
-
-      return (
-        <MenuItem
-          key={`account-announcement-${announcement.id}`}
-          dense
-          onClick={() => {
-            onClose();
-            void handleAnnouncementSelect(announcement, 'Account Announcement');
-          }}
-        >
-          <ListItemIcon sx={{ minWidth: 32 }}>
-            <CampaignIcon
-              fontSize="small"
-              color={announcement.isSpecial ? 'secondary' : 'inherit'}
-            />
-          </ListItemIcon>
-          <ListItemText
-            primary={announcement.title}
-            primaryTypographyProps={{
-              variant: 'body2',
-              sx: { fontWeight: announcement.isSpecial ? 600 : undefined, whiteSpace: 'normal' },
-            }}
-            secondary={secondaryText}
-            secondaryTypographyProps={{
-              variant: 'caption',
-              color: announcement.isSpecial ? 'secondary.main' : 'text.secondary',
-            }}
-          />
-        </MenuItem>
-      );
-    });
-  };
-
-  const renderTeamHandoutSections = (onClose: () => void): React.ReactNode[] => {
-    if (!showHandouts) {
-      return [];
-    }
-
-    if (teamHandoutsLoading && teamHandoutSections.length === 0 && !teamHandoutsError) {
-      const items = normalizeMenuContent(
-        <MenuItem key="team-handouts-loading" disabled dense sx={{ gap: 1, opacity: 1 }}>
-          <CircularProgress size={18} />
-          <ListItemText
-            primary="Loading your team handouts…"
-            primaryTypographyProps={{ variant: 'body2' }}
-          />
-        </MenuItem>,
-      );
-
-      const section = buildMenuSection(items, 'team-loading', 'Team Handouts');
-      return section ?? [];
-    }
-
-    const sections: React.ReactNode[] = [];
-
-    teamHandoutSections.forEach((section) => {
-      if (section.handouts.length === 0) {
-        return;
+  const renderAccountHandoutItems = React.useCallback(
+    (onClose: () => void): React.ReactNode[] => {
+      if (!showHandouts) {
+        return [];
       }
 
-      const items = normalizeMenuContent(
-        section.handouts.map((handout) => (
+      if (accountHandoutsLoading && accountHandouts.length === 0 && !accountHandoutsError) {
+        return [
+          <MenuItem key="account-handouts-loading" disabled dense sx={{ gap: 1, opacity: 1 }}>
+            <CircularProgress size={18} />
+            <ListItemText
+              primary="Loading account handouts…"
+              primaryTypographyProps={{ variant: 'body2' }}
+            />
+          </MenuItem>,
+        ];
+      }
+
+      if (accountHandoutsError) {
+        return [
+          <MenuItem key="account-handouts-error" disabled dense sx={{ opacity: 1 }}>
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <ErrorOutlineIcon color="error" fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary={accountHandoutsError}
+              primaryTypographyProps={{ variant: 'body2', color: 'error.main' }}
+            />
+          </MenuItem>,
           <MenuItem
-            key={`team-${section.teamId}-${handout.id}`}
+            key="account-handouts-retry"
+            dense
+            onClick={() => {
+              onClose();
+              hasLoadedAccountHandoutsRef.current = false;
+              void loadAccountHandouts();
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <RefreshIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="Retry loading account handouts" />
+          </MenuItem>,
+        ];
+      }
+
+      if (accountHandouts.length === 0) {
+        return [];
+      }
+
+      return [
+        ...accountHandouts.map((handout) => (
+          <MenuItem
+            key={`account-${handout.id}`}
             dense
             onClick={async () => {
               await handleHandoutDownload(handout);
@@ -867,211 +732,403 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
             />
           </MenuItem>
         )),
-      );
+      ];
+    },
+    [
+      accountHandouts,
+      accountHandoutsError,
+      accountHandoutsLoading,
+      downloadingHandoutId,
+      handleHandoutDownload,
+      loadAccountHandouts,
+      showHandouts,
+    ],
+  );
 
-      const sectionNodes = buildMenuSection(
-        items,
-        `team-${section.teamId}`,
-        `${section.teamName} Handouts`,
-        section.seasonId
-          ? `/account/${accountId}/seasons/${section.seasonId}/teams/${section.teamSeasonId}/handouts`
-          : `/account/${accountId}/teams/${section.teamId}/handouts`,
-      );
-
-      if (sectionNodes) {
-        sections.push(...sectionNodes);
+  const renderAccountAnnouncementItems = React.useCallback(
+    (onClose: () => void): React.ReactNode[] => {
+      if (!showAnnouncements) {
+        return [];
       }
-    });
 
-    if (!teamHandoutsLoading && sections.length === 0 && teamHandoutSections.length > 0) {
-      const emptySection = buildMenuSection(
-        normalizeMenuContent(
-          <MenuItem key="team-handouts-empty" disabled dense sx={{ opacity: 1 }}>
+      if (
+        accountAnnouncementsLoading &&
+        accountAnnouncements.length === 0 &&
+        !accountAnnouncementsError
+      ) {
+        return [
+          <MenuItem key="account-announcements-loading" disabled dense sx={{ gap: 1, opacity: 1 }}>
+            <CircularProgress size={18} />
             <ListItemText
-              primary="None of your teams have shared handouts yet."
+              primary="Loading account announcements…"
               primaryTypographyProps={{ variant: 'body2' }}
             />
           </MenuItem>,
-        ),
-        'team-empty',
-        'Team Handouts',
-      );
-
-      if (emptySection) {
-        sections.push(...emptySection);
+        ];
       }
-    }
 
-    if (teamHandoutsError) {
-      const errorSection = buildMenuSection(
-        [
-          <MenuItem key="team-handouts-error" disabled dense sx={{ opacity: 1 }}>
+      if (accountAnnouncementsError) {
+        return [
+          <MenuItem key="account-announcements-error" disabled dense sx={{ opacity: 1 }}>
             <ListItemIcon sx={{ minWidth: 32 }}>
               <ErrorOutlineIcon color="error" fontSize="small" />
             </ListItemIcon>
             <ListItemText
-              primary={teamHandoutsError}
+              primary={accountAnnouncementsError}
               primaryTypographyProps={{ variant: 'body2', color: 'error.main' }}
             />
           </MenuItem>,
           <MenuItem
-            key="team-handouts-retry"
+            key="account-announcements-retry"
             dense
             onClick={() => {
               onClose();
-              userTeamsCacheRef.current = null;
-              hasLoadedTeamHandoutsRef.current = false;
-              void loadTeamHandouts();
+              hasLoadedAccountAnnouncementsRef.current = false;
+              void loadAccountAnnouncements();
             }}
           >
             <ListItemIcon sx={{ minWidth: 32 }}>
               <RefreshIcon fontSize="small" />
             </ListItemIcon>
-            <ListItemText primary="Retry loading team handouts" />
+            <ListItemText primary="Retry loading account announcements" />
           </MenuItem>,
-        ],
-        'team-error',
-        'Team Handouts',
-      );
-
-      if (errorSection) {
-        sections.push(...errorSection);
-      }
-    }
-
-    return sections;
-  };
-
-  const renderTeamAnnouncementSections = (onClose: () => void): React.ReactNode[] => {
-    if (!showAnnouncements) {
-      return [];
-    }
-
-    if (
-      teamAnnouncementsLoading &&
-      teamAnnouncementSections.length === 0 &&
-      !teamAnnouncementsError
-    ) {
-      const items = normalizeMenuContent(
-        <MenuItem key="team-announcements-loading" disabled dense sx={{ gap: 1, opacity: 1 }}>
-          <CircularProgress size={18} />
-          <ListItemText
-            primary="Loading your team announcements…"
-            primaryTypographyProps={{ variant: 'body2' }}
-          />
-        </MenuItem>,
-      );
-
-      const section = buildMenuSection(items, 'team-announcements-loading', 'Team Announcements');
-      return section ?? [];
-    }
-
-    const sections: React.ReactNode[] = [];
-
-    teamAnnouncementSections.forEach((section) => {
-      if (section.announcements.length === 0) {
-        return;
+        ];
       }
 
-      const items = normalizeMenuContent(
-        section.announcements.map((announcement) => {
-          const secondaryText = formatDateTime(announcement.publishedAt);
+      if (accountAnnouncements.length === 0) {
+        return [];
+      }
 
-          return (
-            <MenuItem
-              key={`team-announcement-${section.teamId}-${announcement.id}`}
-              dense
-              onClick={() => {
-                onClose();
-                void handleAnnouncementSelect(announcement, `${section.teamName} Announcement`);
+      return accountAnnouncements.map((announcement) => {
+        const secondaryText = formatDateTime(announcement.publishedAt);
+
+        return (
+          <MenuItem
+            key={`account-announcement-${announcement.id}`}
+            dense
+            onClick={() => {
+              onClose();
+              void handleAnnouncementSelect(announcement, 'Account Announcement');
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <CampaignIcon
+                fontSize="small"
+                color={announcement.isSpecial ? 'secondary' : 'inherit'}
+              />
+            </ListItemIcon>
+            <ListItemText
+              primary={announcement.title}
+              primaryTypographyProps={{
+                variant: 'body2',
+                sx: { fontWeight: announcement.isSpecial ? 600 : undefined, whiteSpace: 'normal' },
               }}
+              secondary={secondaryText}
+              secondaryTypographyProps={{
+                variant: 'caption',
+                color: announcement.isSpecial ? 'secondary.main' : 'text.secondary',
+              }}
+            />
+          </MenuItem>
+        );
+      });
+    },
+    [
+      accountAnnouncements,
+      accountAnnouncementsError,
+      accountAnnouncementsLoading,
+      handleAnnouncementSelect,
+      loadAccountAnnouncements,
+      showAnnouncements,
+    ],
+  );
+
+  const renderTeamHandoutSections = React.useCallback(
+    (onClose: () => void): React.ReactNode[] => {
+      if (!showHandouts) {
+        return [];
+      }
+
+      if (teamHandoutsLoading && teamHandoutSections.length === 0 && !teamHandoutsError) {
+        const items = normalizeMenuContent(
+          <MenuItem key="team-handouts-loading" disabled dense sx={{ gap: 1, opacity: 1 }}>
+            <CircularProgress size={18} />
+            <ListItemText
+              primary="Loading your team handouts…"
+              primaryTypographyProps={{ variant: 'body2' }}
+            />
+          </MenuItem>,
+        );
+
+        const section = buildMenuSection(items, 'team-loading', 'Team Handouts');
+        return section ?? [];
+      }
+
+      const sections: React.ReactNode[] = [];
+
+      teamHandoutSections.forEach((section) => {
+        if (section.handouts.length === 0) {
+          return;
+        }
+
+        const items = normalizeMenuContent(
+          section.handouts.map((handout) => (
+            <MenuItem
+              key={`team-${section.teamId}-${handout.id}`}
+              dense
+              onClick={async () => {
+                await handleHandoutDownload(handout);
+                onClose();
+              }}
+              disabled={downloadingHandoutId === handout.id}
             >
               <ListItemIcon sx={{ minWidth: 32 }}>
-                <CampaignIcon
-                  fontSize="small"
-                  color={announcement.isSpecial ? 'secondary' : 'inherit'}
-                />
+                {downloadingHandoutId === handout.id ? (
+                  <CircularProgress size={18} />
+                ) : (
+                  <DescriptionIcon fontSize="small" />
+                )}
               </ListItemIcon>
               <ListItemText
-                primary={announcement.title}
+                primary={handout.fileName}
                 primaryTypographyProps={{
                   variant: 'body2',
-                  sx: {
-                    fontWeight: announcement.isSpecial ? 600 : undefined,
-                    whiteSpace: 'normal',
-                  },
-                }}
-                secondary={secondaryText}
-                secondaryTypographyProps={{
-                  variant: 'caption',
-                  color: announcement.isSpecial ? 'secondary.main' : 'text.secondary',
+                  sx: { whiteSpace: 'normal' },
                 }}
               />
             </MenuItem>
-          );
-        }),
-      );
+          )),
+        );
 
-      const sectionLink =
-        accountId && section.teamId
-          ? `/account/${accountId}/teams/${section.teamId}/announcements`
-          : undefined;
+        const sectionNodes = buildMenuSection(
+          items,
+          `team-${section.teamId}`,
+          `${section.teamName} Handouts`,
+          section.seasonId
+            ? `/account/${accountId}/seasons/${section.seasonId}/teams/${section.teamSeasonId}/handouts`
+            : `/account/${accountId}/teams/${section.teamId}/handouts`,
+        );
 
-      const sectionNodes = buildMenuSection(
-        items,
-        `team-announcements-${section.teamId}`,
-        `${section.teamName} Announcements`,
-        sectionLink,
-      );
+        if (sectionNodes) {
+          sections.push(...sectionNodes);
+        }
+      });
 
-      if (sectionNodes) {
-        sections.push(...sectionNodes);
+      if (!teamHandoutsLoading && sections.length === 0 && teamHandoutSections.length > 0) {
+        const emptySection = buildMenuSection(
+          normalizeMenuContent(
+            <MenuItem key="team-handouts-empty" disabled dense sx={{ opacity: 1 }}>
+              <ListItemText
+                primary="None of your teams have shared handouts yet."
+                primaryTypographyProps={{ variant: 'body2' }}
+              />
+            </MenuItem>,
+          ),
+          'team-empty',
+          'Team Handouts',
+        );
+
+        if (emptySection) {
+          sections.push(...emptySection);
+        }
       }
-    });
 
-    if (!teamAnnouncementsLoading && sections.length === 0 && !teamAnnouncementsError) {
-      return [];
-    }
+      if (teamHandoutsError) {
+        const errorSection = buildMenuSection(
+          [
+            <MenuItem key="team-handouts-error" disabled dense sx={{ opacity: 1 }}>
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <ErrorOutlineIcon color="error" fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary={teamHandoutsError}
+                primaryTypographyProps={{ variant: 'body2', color: 'error.main' }}
+              />
+            </MenuItem>,
+            <MenuItem
+              key="team-handouts-retry"
+              dense
+              onClick={() => {
+                onClose();
+                userTeamsCacheRef.current = null;
+                hasLoadedTeamHandoutsRef.current = false;
+                void loadTeamHandouts();
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <RefreshIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Retry loading team handouts" />
+            </MenuItem>,
+          ],
+          'team-error',
+          'Team Handouts',
+        );
 
-    if (teamAnnouncementsError) {
-      const errorSection = buildMenuSection(
-        [
-          <MenuItem key="team-announcements-error" disabled dense sx={{ opacity: 1 }}>
-            <ListItemIcon sx={{ minWidth: 32 }}>
-              <ErrorOutlineIcon color="error" fontSize="small" />
-            </ListItemIcon>
+        if (errorSection) {
+          sections.push(...errorSection);
+        }
+      }
+
+      return sections;
+    },
+    [
+      accountId,
+      buildMenuSection,
+      loadTeamHandouts,
+      normalizeMenuContent,
+      showHandouts,
+      teamHandoutSections,
+      teamHandoutsError,
+      teamHandoutsLoading,
+      downloadingHandoutId,
+      handleHandoutDownload,
+    ],
+  );
+
+  const renderTeamAnnouncementSections = React.useCallback(
+    (onClose: () => void): React.ReactNode[] => {
+      if (!showAnnouncements) {
+        return [];
+      }
+
+      if (
+        teamAnnouncementsLoading &&
+        teamAnnouncementSections.length === 0 &&
+        !teamAnnouncementsError
+      ) {
+        const items = normalizeMenuContent(
+          <MenuItem key="team-announcements-loading" disabled dense sx={{ gap: 1, opacity: 1 }}>
+            <CircularProgress size={18} />
             <ListItemText
-              primary={teamAnnouncementsError}
-              primaryTypographyProps={{ variant: 'body2', color: 'error.main' }}
+              primary="Loading your team announcements…"
+              primaryTypographyProps={{ variant: 'body2' }}
             />
           </MenuItem>,
-          <MenuItem
-            key="team-announcements-retry"
-            dense
-            onClick={() => {
-              onClose();
-              userTeamsCacheRef.current = null;
-              hasLoadedTeamAnnouncementsRef.current = false;
-              void loadTeamAnnouncements();
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 32 }}>
-              <RefreshIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary="Retry loading team announcements" />
-          </MenuItem>,
-        ],
-        'team-announcements-error',
-        'Team Announcements',
-      );
+        );
 
-      if (errorSection) {
-        sections.push(...errorSection);
+        const section = buildMenuSection(items, 'team-announcements-loading', 'Team Announcements');
+        return section ?? [];
       }
-    }
 
-    return sections;
-  };
+      const sections: React.ReactNode[] = [];
+
+      teamAnnouncementSections.forEach((section) => {
+        if (section.announcements.length === 0) {
+          return;
+        }
+
+        const items = normalizeMenuContent(
+          section.announcements.map((announcement) => {
+            const secondaryText = formatDateTime(announcement.publishedAt);
+
+            return (
+              <MenuItem
+                key={`team-announcement-${section.teamId}-${announcement.id}`}
+                dense
+                onClick={() => {
+                  onClose();
+                  void handleAnnouncementSelect(announcement, `${section.teamName} Announcement`);
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <CampaignIcon
+                    fontSize="small"
+                    color={announcement.isSpecial ? 'secondary' : 'inherit'}
+                  />
+                </ListItemIcon>
+                <ListItemText
+                  primary={announcement.title}
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    sx: {
+                      fontWeight: announcement.isSpecial ? 600 : undefined,
+                      whiteSpace: 'normal',
+                    },
+                  }}
+                  secondary={secondaryText}
+                  secondaryTypographyProps={{
+                    variant: 'caption',
+                    color: announcement.isSpecial ? 'secondary.main' : 'text.secondary',
+                  }}
+                />
+              </MenuItem>
+            );
+          }),
+        );
+
+        const sectionLink =
+          accountId && section.teamId
+            ? `/account/${accountId}/teams/${section.teamId}/announcements`
+            : undefined;
+
+        const sectionNodes = buildMenuSection(
+          items,
+          `team-announcements-${section.teamId}`,
+          `${section.teamName} Announcements`,
+          sectionLink,
+        );
+
+        if (sectionNodes) {
+          sections.push(...sectionNodes);
+        }
+      });
+
+      if (!teamAnnouncementsLoading && sections.length === 0 && !teamAnnouncementsError) {
+        return [];
+      }
+
+      if (teamAnnouncementsError) {
+        const errorSection = buildMenuSection(
+          [
+            <MenuItem key="team-announcements-error" disabled dense sx={{ opacity: 1 }}>
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <ErrorOutlineIcon color="error" fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary={teamAnnouncementsError}
+                primaryTypographyProps={{ variant: 'body2', color: 'error.main' }}
+              />
+            </MenuItem>,
+            <MenuItem
+              key="team-announcements-retry"
+              dense
+              onClick={() => {
+                onClose();
+                userTeamsCacheRef.current = null;
+                hasLoadedTeamAnnouncementsRef.current = false;
+                void loadTeamAnnouncements();
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <RefreshIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Retry loading team announcements" />
+            </MenuItem>,
+          ],
+          'team-announcements-error',
+          'Team Announcements',
+        );
+
+        if (errorSection) {
+          sections.push(...errorSection);
+        }
+      }
+
+      return sections;
+    },
+    [
+      accountId,
+      buildMenuSection,
+      handleAnnouncementSelect,
+      normalizeMenuContent,
+      showAnnouncements,
+      teamAnnouncementSections,
+      teamAnnouncementsError,
+      teamAnnouncementsLoading,
+      loadTeamAnnouncements,
+    ],
+  );
 
   const hasAccountHandoutItems = accountHandouts.length > 0;
   const hasTeamHandoutItems = teamHandoutSections.some((section) => section.handouts.length > 0);
@@ -1106,6 +1163,127 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
 
   const shouldShowQuickActionsMenu =
     shouldShowAnnouncementAction || shouldShowHandoutAction || shouldShowComposeAction;
+
+  const buildCompactMenuItems = React.useCallback(
+    (closeMenu: () => void): React.ReactNode[] => {
+      const nodes: React.ReactNode[] = [];
+
+      if (shouldShowComposeAction && composeHref) {
+        nodes.push(
+          <MenuItem
+            key="compose-email"
+            dense
+            component={NextLink}
+            href={composeHref}
+            onClick={closeMenu}
+          >
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <ComposeEmailIcon size="small" />
+            </ListItemIcon>
+            <ListItemText primary="Compose email" />
+          </MenuItem>,
+        );
+      }
+
+      nodes.push(
+        <MenuItem
+          key="theme-toggle"
+          dense
+          onClick={() => {
+            handleThemeToggle();
+            closeMenu();
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 32 }}>
+            {isDarkMode ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+          </ListItemIcon>
+          <ListItemText primary={themeToggleLabel} />
+        </MenuItem>,
+      );
+
+      const extraNodes = (() => {
+        const sectionNodes: React.ReactNode[] = [];
+
+        if (shouldShowAnnouncementAction) {
+          const accountNodes = buildMenuSection(
+            normalizeMenuContent(renderAccountAnnouncementItems(closeMenu)),
+            'compact-account-announcements',
+            'Account Announcements',
+            `/account/${accountId}/announcements`,
+          );
+          if (accountNodes) {
+            sectionNodes.push(...accountNodes);
+          }
+
+          const teamNodes = renderTeamAnnouncementSections(closeMenu);
+          if (teamNodes.length > 0) {
+            sectionNodes.push(...teamNodes);
+          }
+        }
+
+        if (shouldShowHandoutAction) {
+          const accountNodes = buildMenuSection(
+            normalizeMenuContent(renderAccountHandoutItems(closeMenu)),
+            'compact-account-handouts',
+            'Account Handouts',
+            `/account/${accountId}/handouts`,
+          );
+          if (accountNodes) {
+            sectionNodes.push(...accountNodes);
+          }
+
+          const teamNodes = renderTeamHandoutSections(closeMenu);
+          if (teamNodes.length > 0) {
+            sectionNodes.push(...teamNodes);
+          }
+        }
+
+        return sectionNodes.length > 0 ? sectionNodes : null;
+      })();
+
+      if (extraNodes) {
+        nodes.push(...extraNodes);
+      }
+
+      return nodes;
+    },
+    [
+      accountId,
+      buildMenuSection,
+      composeHref,
+      isDarkMode,
+      normalizeMenuContent,
+      renderAccountAnnouncementItems,
+      renderTeamAnnouncementSections,
+      renderAccountHandoutItems,
+      renderTeamHandoutSections,
+      handleThemeToggle,
+      shouldShowAnnouncementAction,
+      shouldShowComposeAction,
+      shouldShowHandoutAction,
+      themeToggleLabel,
+    ],
+  );
+
+  React.useEffect(() => {
+    if (!useUnifiedMenu || !isCompact) {
+      onCompactMenuItemsChange?.([]);
+      return;
+    }
+
+    const items = buildCompactMenuItems(onUnifiedMenuClose ?? (() => {}));
+    onCompactMenuItemsChange?.(items);
+
+    return () => {
+      onCompactMenuItemsChange?.([]);
+    };
+  }, [
+    buildCompactMenuItems,
+    isCompact,
+    onCompactMenuItemsChange,
+    onUnifiedMenuClose,
+    useUnifiedMenu,
+  ]);
 
   const announcementDialog = (
     <AnnouncementDetailDialog
@@ -1237,6 +1415,10 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     );
   }
 
+  if (isCompact && useUnifiedMenu) {
+    return <>{announcementDialog}</>;
+  }
+
   return (
     <>
       {shouldShowQuickActionsMenu ? (
@@ -1261,65 +1443,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         PaperProps={menuPaperStyles}
       >
-        {shouldShowComposeAction && composeHref ? (
-          <MenuItem dense component={NextLink} href={composeHref} onClick={handleCompactMenuClose}>
-            <ListItemIcon sx={{ minWidth: 32 }}>
-              <ComposeEmailIcon size="small" />
-            </ListItemIcon>
-            <ListItemText primary="Compose email" />
-          </MenuItem>
-        ) : null}
-        <MenuItem
-          dense
-          onClick={() => {
-            handleThemeToggle();
-            handleCompactMenuClose();
-          }}
-        >
-          <ListItemIcon sx={{ minWidth: 32 }}>
-            {isDarkMode ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
-          </ListItemIcon>
-          <ListItemText primary={themeToggleLabel} />
-        </MenuItem>
-        {(() => {
-          const nodes: React.ReactNode[] = [];
-
-          if (shouldShowAnnouncementAction) {
-            const accountNodes = buildMenuSection(
-              normalizeMenuContent(renderAccountAnnouncementItems(handleCompactMenuClose)),
-              'compact-account-announcements',
-              'Account Announcements',
-              `/account/${accountId}/announcements`,
-            );
-            if (accountNodes) {
-              nodes.push(...accountNodes);
-            }
-
-            const teamNodes = renderTeamAnnouncementSections(handleCompactMenuClose);
-            if (teamNodes.length > 0) {
-              nodes.push(...teamNodes);
-            }
-          }
-
-          if (shouldShowHandoutAction) {
-            const accountNodes = buildMenuSection(
-              normalizeMenuContent(renderAccountHandoutItems(handleCompactMenuClose)),
-              'compact-account-handouts',
-              'Account Handouts',
-              `/account/${accountId}/handouts`,
-            );
-            if (accountNodes) {
-              nodes.push(...accountNodes);
-            }
-
-            const teamNodes = renderTeamHandoutSections(handleCompactMenuClose);
-            if (teamNodes.length > 0) {
-              nodes.push(...teamNodes);
-            }
-          }
-
-          return nodes.length > 0 ? nodes : null;
-        })()}
+        {buildCompactMenuItems(handleCompactMenuClose)}
       </Menu>
       {announcementDialog}
     </>

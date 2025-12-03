@@ -27,11 +27,24 @@ import { getCurrentSeason } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../utils/apiResult';
 import { useApiClient } from '../hooks/useApiClient';
 
-interface BaseballMenuProps {
-  accountId: string;
+export interface BaseballOverflowItem {
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  busy?: boolean;
 }
 
-const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
+interface BaseballMenuProps {
+  accountId: string;
+  useUnifiedMenu?: boolean;
+  onOverflowItemsChange?: (items: BaseballOverflowItem[]) => void;
+}
+
+const BaseballMenu: React.FC<BaseballMenuProps> = ({
+  accountId,
+  useUnifiedMenu = false,
+  onOverflowItemsChange,
+}) => {
   const router = useRouter();
   const theme = useTheme();
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
@@ -67,67 +80,73 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
     };
   }, [accountId, apiClient]);
 
-  const menuItems = [
-    {
-      label: 'Socials',
-      icon: <SocialIcon />,
-      path: `/account/${accountId}/social-hub`,
-    },
-    {
-      label: 'Fields',
-      icon: <FieldIcon />,
-      path: `/account/${accountId}/fields`,
-    },
-    {
-      label: 'Schedule',
-      icon: <ScheduleIcon />,
-      onClick: () => {
-        if (loadingSeason) return;
-        if (currentSeasonId) {
-          router.push(`/account/${accountId}/schedule`);
-        } else {
-          router.push(`/account/${accountId}/no-current-seasons`);
-        }
+  const menuItems = React.useMemo(
+    () => [
+      {
+        label: 'Socials',
+        icon: <SocialIcon />,
+        path: `/account/${accountId}/social-hub`,
       },
-      needsSeason: true,
-    },
-    {
-      label: 'Stats',
-      icon: <StatsIcon />,
-      path: `/account/${accountId}/statistics`,
-    },
-    {
-      label: 'Standings',
-      icon: <StandingsIcon />,
-      onClick: () => {
-        if (loadingSeason) return;
-        if (currentSeasonId) {
-          router.push(`/account/${accountId}/seasons/${currentSeasonId}/standings`);
-        } else {
-          router.push(`/account/${accountId}/no-current-seasons`);
-        }
+      {
+        label: 'Fields',
+        icon: <FieldIcon />,
+        path: `/account/${accountId}/fields`,
       },
-      needsSeason: true,
-    },
-    {
-      label: 'Teams',
-      icon: <TeamsIcon />,
-      onClick: () => {
-        if (loadingSeason) return;
-        if (currentSeasonId) {
-          router.push(`/account/${accountId}/seasons/${currentSeasonId}/teams`);
-        } else {
-          router.push(`/account/${accountId}/no-current-seasons`);
-        }
+      {
+        label: 'Schedule',
+        icon: <ScheduleIcon />,
+        onClick: () => {
+          if (loadingSeason) return;
+          if (currentSeasonId) {
+            router.push(`/account/${accountId}/schedule`);
+          } else {
+            router.push(`/account/${accountId}/no-current-seasons`);
+          }
+        },
+        needsSeason: true,
       },
-      needsSeason: true,
-    },
-  ];
+      {
+        label: 'Stats',
+        icon: <StatsIcon />,
+        path: `/account/${accountId}/statistics`,
+      },
+      {
+        label: 'Standings',
+        icon: <StandingsIcon />,
+        onClick: () => {
+          if (loadingSeason) return;
+          if (currentSeasonId) {
+            router.push(`/account/${accountId}/seasons/${currentSeasonId}/standings`);
+          } else {
+            router.push(`/account/${accountId}/no-current-seasons`);
+          }
+        },
+        needsSeason: true,
+      },
+      {
+        label: 'Teams',
+        icon: <TeamsIcon />,
+        onClick: () => {
+          if (loadingSeason) return;
+          if (currentSeasonId) {
+            router.push(`/account/${accountId}/seasons/${currentSeasonId}/teams`);
+          } else {
+            router.push(`/account/${accountId}/no-current-seasons`);
+          }
+        },
+        needsSeason: true,
+      },
+    ],
+    [accountId, currentSeasonId, loadingSeason, router],
+  );
 
-  const handleNavigation = (path: string) => {
-    router.push(path);
-    setAnchorEl(null);
-  };
+  const handleNavigation = React.useCallback(
+    (path: string) => {
+      router.push(path);
+      setAnchorEl(null);
+    },
+    [router],
+  );
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -136,6 +155,176 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
+
+  const menuItemsWithState = React.useMemo(
+    () =>
+      menuItems.map((item) => ({
+        ...item,
+        isBusy: Boolean(item.needsSeason && loadingSeason),
+        action: item.onClick || (() => handleNavigation(item.path)),
+      })),
+    [handleNavigation, loadingSeason, menuItems],
+  );
+
+  React.useEffect(() => {
+    if (!useUnifiedMenu || !onOverflowItemsChange) {
+      return;
+    }
+
+    if (isLargeScreen) {
+      onOverflowItemsChange([]);
+      return;
+    }
+
+    const overflowItems = isMediumScreen ? menuItemsWithState.slice(3) : menuItemsWithState;
+
+    onOverflowItemsChange(
+      overflowItems.map((item) => ({
+        label: item.label,
+        icon: item.icon,
+        onClick: item.action,
+        busy: item.isBusy,
+      })),
+    );
+  }, [isLargeScreen, isMediumScreen, menuItemsWithState, onOverflowItemsChange, useUnifiedMenu]);
+
+  React.useEffect(
+    () => () => {
+      if (onOverflowItemsChange) {
+        onOverflowItemsChange([]);
+      }
+    },
+    [onOverflowItemsChange],
+  );
+
+  if (useUnifiedMenu) {
+    if (isLargeScreen) {
+      return (
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            alignItems: 'center',
+          }}
+        >
+          {menuItemsWithState.map((item, index) => (
+            <React.Fragment key={item.label}>
+              <Button
+                variant="text"
+                startIcon={item.icon}
+                onClick={item.action}
+                sx={{
+                  color: 'white',
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  fontSize: '0.75rem',
+                  px: 1,
+                  py: 0.5,
+                  minWidth: 'auto',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    color: 'white',
+                  },
+                  '&:active': {
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                  },
+                }}
+                disabled={item.isBusy}
+              >
+                {item.isBusy ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 500,
+                    }}
+                  >
+                    {item.label}
+                  </Typography>
+                )}
+              </Button>
+              {index < menuItemsWithState.length - 1 && (
+                <Divider
+                  orientation="vertical"
+                  flexItem
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    height: 20,
+                  }}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </Box>
+      );
+    }
+
+    if (isMediumScreen) {
+      const visibleItems = menuItemsWithState.slice(0, 3);
+      return (
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            alignItems: 'center',
+          }}
+        >
+          {visibleItems.map((item, index) => (
+            <React.Fragment key={item.label}>
+              <Button
+                variant="text"
+                startIcon={item.icon}
+                onClick={item.action}
+                sx={{
+                  color: 'white',
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  fontSize: '0.75rem',
+                  px: 1,
+                  py: 0.5,
+                  minWidth: 'auto',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    color: 'white',
+                  },
+                  '&:active': {
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                  },
+                }}
+                disabled={item.isBusy}
+              >
+                {item.isBusy ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 500,
+                    }}
+                  >
+                    {item.label}
+                  </Typography>
+                )}
+              </Button>
+              {index < visibleItems.length - 1 && (
+                <Divider
+                  orientation="vertical"
+                  flexItem
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    height: 20,
+                  }}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </Box>
+      );
+    }
+
+    return null;
+  }
 
   // Show full menu on large screens, hamburger on smaller screens
   if (isLargeScreen) {
