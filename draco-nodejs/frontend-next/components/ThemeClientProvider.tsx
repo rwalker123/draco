@@ -219,7 +219,7 @@ export default function ThemeClientProvider({
     if (nextTheme && nextTheme !== clientThemeSnapshot) {
       setThemePreference(nextTheme);
     }
-  }, [initialThemeName]);
+  }, []);
 
   const value = useMemo(
     () => ({
