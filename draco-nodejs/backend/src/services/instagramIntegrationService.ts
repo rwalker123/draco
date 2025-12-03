@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import {
   IAccountInstagramCredentialsRepository,
@@ -198,7 +199,12 @@ export class InstagramIntegrationService {
       return;
     }
 
-    const galleryPaths = buildGalleryAssetPaths(accountId, photoId, '.jpg');
+    const submission = albumPhoto.photogallerysubmission[0];
+    const submissionExtension =
+      submission?.originalfilepath && path.extname(submission.originalfilepath);
+    const normalizedExtension = submissionExtension || '.jpg';
+
+    const galleryPaths = buildGalleryAssetPaths(accountId, photoId, normalizedExtension);
     const imageUrl = `${frontendBase}/uploads/${galleryPaths.originalFilePath}`;
 
     console.info('[instagram] Uploading photo from gallery', {

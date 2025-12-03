@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -23,13 +23,7 @@ import {
   type UpdateGalleryPhotoInput,
 } from '../../../services/photoGalleryAdminService';
 import { ApiClientError } from '../../../utils/apiResult';
-
-const normalizeEntityId = (value?: string | null): string | null => {
-  if (value === undefined || value === null || value === '' || value === '0') {
-    return null;
-  }
-  return value;
-};
+import { normalizeEntityId } from '../utils';
 
 type PhotoDialogMode = 'create' | 'edit';
 
@@ -69,6 +63,7 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
   const [file, setFile] = useState<File | null>(null);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const previewUrlRef = useRef<string | null>(null);
 
   const albumSections = useMemo(() => {
     const accountAlbums: Array<{ id: string; title: string }> = [];
@@ -137,6 +132,10 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
     }
   }, [open, mode, photo]);
 
+  useEffect(() => {
+    previewUrlRef.current = previewSrc;
+  }, [previewSrc]);
+
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = event.target.files?.[0];
     if (selected) {
@@ -166,11 +165,12 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
   // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
-      if (previewSrc?.startsWith('blob:')) {
-        URL.revokeObjectURL(previewSrc);
+      const url = previewUrlRef.current;
+      if (url?.startsWith('blob:')) {
+        URL.revokeObjectURL(url);
       }
     };
-  }, [previewSrc]);
+  }, []);
 
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) {
