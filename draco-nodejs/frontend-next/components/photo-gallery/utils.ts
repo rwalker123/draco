@@ -21,3 +21,10 @@ export const formatDisplayDate = (value: string | null): string | null => {
 
 export const getPhotoThumbnailSrc = (photo: PhotoGalleryPhotoType): string =>
   photo.thumbnailUrl ?? photo.primaryUrl ?? photo.originalUrl;
+
+export const normalizeEntityId = (value?: string | null): string | null => {
+  if (value === undefined || value === null || value === '' || value === '0') {
+    return null;
+  }
+  return value;
+};

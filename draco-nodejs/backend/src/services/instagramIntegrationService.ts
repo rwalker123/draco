@@ -1,6 +1,8 @@
+import path from 'node:path';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import {
   IAccountInstagramCredentialsRepository,
+  IAccountFacebookCredentialsRepository,
   IInstagramIngestionRepository,
   IPhotoGalleryAdminRepository,
   ISeasonsRepository,
@@ -11,6 +13,7 @@ import type { dbPhotoGalleryAlbum } from '../repositories/types/dbTypes.js';
 import type { InstagramIngestionTarget } from '../config/socialIngestion.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { fetchJson } from '../utils/fetchJson.js';
+import { buildGalleryAssetPaths } from '../utils/photoSubmissionPaths.js';
 
 interface InstagramMediaItem {
   id: string;
@@ -36,6 +39,7 @@ export interface InstagramIngestionTargetWithAlbum extends InstagramIngestionTar
 
 export class InstagramIntegrationService {
   private readonly credentialsRepository: IAccountInstagramCredentialsRepository;
+  private readonly facebookCredentialsRepository: IAccountFacebookCredentialsRepository;
   private readonly ingestionRepository: IInstagramIngestionRepository;
   private readonly photoGalleryRepository: IPhotoGalleryAdminRepository;
   private readonly seasonsRepository: ISeasonsRepository;
@@ -47,6 +51,7 @@ export class InstagramIntegrationService {
 
   constructor(
     credentialsRepository?: IAccountInstagramCredentialsRepository,
+    facebookCredentialsRepository?: IAccountFacebookCredentialsRepository,
     ingestionRepository?: IInstagramIngestionRepository,
     photoGalleryRepository?: IPhotoGalleryAdminRepository,
     seasonsRepository?: ISeasonsRepository,
@@ -54,6 +59,8 @@ export class InstagramIntegrationService {
   ) {
     this.credentialsRepository =
       credentialsRepository ?? RepositoryFactory.getAccountInstagramCredentialsRepository();
+    this.facebookCredentialsRepository =
+      facebookCredentialsRepository ?? RepositoryFactory.getAccountFacebookCredentialsRepository();
     this.ingestionRepository =
       ingestionRepository ?? RepositoryFactory.getInstagramIngestionRepository();
     this.photoGalleryRepository =
@@ -159,12 +166,26 @@ export class InstagramIntegrationService {
     caption?: string,
   ): Promise<void> {
     const credentials = await this.credentialsRepository.findByAccountId(accountId);
-    if (!credentials?.instagramuserid || !credentials.accesstoken) {
+    const facebookCredentials = await this.facebookCredentialsRepository.findByAccountId(accountId);
+
+    if (!credentials?.instagramuserid) {
       return;
     }
 
-    const accessToken = decryptSecret(credentials.accesstoken);
+    const pageToken = facebookCredentials?.pagetoken
+      ? decryptSecret(facebookCredentials.pagetoken)
+      : null;
+    const userToken = facebookCredentials?.useraccesstoken
+      ? decryptSecret(facebookCredentials.useraccesstoken)
+      : null;
+    const tokenType = pageToken ? 'page' : userToken ? 'user' : null;
+    const accessToken = pageToken || userToken;
+
     if (!accessToken) {
+      console.info('[instagram] Skipping upload, no Facebook access token available', {
+        accountId: accountId.toString(),
+        photoId: photoId.toString(),
+      });
       return;
     }
 
@@ -173,17 +194,26 @@ export class InstagramIntegrationService {
       throw new NotFoundError('Photo not found for Instagram sync');
     }
 
-    const publicUrlBase = process.env.SOCIAL_INGESTION_INSTAGRAM_UPLOAD_BASE_URL;
-    if (!publicUrlBase) {
+    const frontendBase = process.env.FRONTEND_URL?.replace(/\/$/, '');
+    if (!frontendBase) {
       return;
     }
 
     const submission = albumPhoto.photogallerysubmission[0];
-    if (!submission?.originalfilepath) {
-      return;
-    }
+    const submissionExtension =
+      submission?.originalfilepath && path.extname(submission.originalfilepath);
+    const normalizedExtension = submissionExtension || '.jpg';
 
-    const imageUrl = new URL(submission.originalfilepath, publicUrlBase).toString();
+    const galleryPaths = buildGalleryAssetPaths(accountId, photoId, normalizedExtension);
+    const imageUrl = `${frontendBase}/uploads/${galleryPaths.originalFilePath}`;
+
+    console.info('[instagram] Uploading photo from gallery', {
+      accountId: accountId.toString(),
+      photoId: photoId.toString(),
+      imageUrl,
+      tokenType,
+    });
+
     const createRequest = new URL(
       `https://graph.facebook.com/v18.0/${credentials.instagramuserid}/media`,
     );

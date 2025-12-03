@@ -162,6 +162,7 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
       onAccountUpdate,
       onUpdateSyncToGallery,
       syncToGallery,
+      clearCredentials,
       syncToGallerySetting?.effectiveValue,
       syncToGallerySetting?.value,
     ],
@@ -178,10 +179,17 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
           <Alert severity="info">
             Instagram setup requires a Business/Creator account connected to a Facebook App. Provide
             the Business Instagram User ID and username; App credentials are configured in the
-            Facebook Integration widget. Secrets are stored server-side and never shown.
+            Facebook Integration widget. Secrets are stored server-side and never shown. The
+            Business User ID is not a secret credential—it’s an account identifier—so it is not
+            re-displayed after saving but does not need redaction like a token.
             <br />
             <strong>Where to find values:</strong> Business Manager → Instagram Accounts → copy the
             Instagram User ID; Instagram username is your @ handle.
+            <br />
+            Direct link:{' '}
+            <a href="https://business.facebook.com/settings/instagram-accounts">
+              https://business.facebook.com/settings/instagram-accounts
+            </a>
           </Alert>
 
           {error && <Alert severity="error">{error}</Alert>}

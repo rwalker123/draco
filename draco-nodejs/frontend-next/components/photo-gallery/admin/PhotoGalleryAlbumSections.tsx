@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import type { PhotoGalleryAdminAlbumType } from '@draco/shared-schemas';
+import { normalizeEntityId } from '../utils';
 
 export type PhotoGalleryAlbumSectionType = 'account' | 'team';
 
@@ -17,13 +18,6 @@ export interface PhotoGalleryAlbumEntry<TAlbum extends PhotoGalleryAdminAlbumTyp
   teamId: string | null;
   album: TAlbum;
 }
-
-const normalizeEntityId = (value?: string | null): string | null => {
-  if (value === undefined || value === null || value === '' || value === '0') {
-    return null;
-  }
-  return value;
-};
 
 const buildSections = <TAlbum extends PhotoGalleryAdminAlbumType>(
   albums: TAlbum[],

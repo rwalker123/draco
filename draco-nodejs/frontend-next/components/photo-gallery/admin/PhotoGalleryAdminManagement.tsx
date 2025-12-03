@@ -37,6 +37,7 @@ import { PhotoGalleryAlbumManagerDialog } from './PhotoGalleryAlbumManagerDialog
 import {
   formatDisplayDate,
   getPhotoThumbnailSrc,
+  normalizeEntityId,
   PHOTO_GALLERY_THUMBNAIL_DIMENSIONS,
 } from '../utils';
 import TeamAlbumMenu from '../TeamAlbumMenu';
@@ -50,13 +51,6 @@ type SnackbarState = {
   message: string;
   severity: 'success' | 'error';
 } | null;
-
-const normalizeEntityId = (value?: string | null): string | null => {
-  if (value === undefined || value === null || value === '' || value === '0') {
-    return null;
-  }
-  return value;
-};
 
 const encodeAlbumId = (value: string | null | undefined): string =>
   value === null || value === undefined ? '__null__' : value;
