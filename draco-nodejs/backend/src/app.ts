@@ -35,7 +35,6 @@ import statisticsRouter from './routes/statistics.js';
 import standingsRouter from './routes/standings.js';
 import monitoringRouter from './routes/monitoring.js';
 import adminAnalyticsRouter from './routes/admin-analytics.js';
-import { domainRouting } from './middleware/domainRouting.js';
 import emailsRouter from './routes/emails.js';
 import webhookRouter from './routes/webhook-routes.js';
 import cleanupRouter from './routes/cleanup.js';
@@ -45,6 +44,7 @@ import { ServiceFactory } from './services/serviceFactory.js';
 import { socialIngestionConfig } from './config/socialIngestion.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
 import { resolveUploadsRoot } from './utils/uploadsPath.js';
+import { OriginAllowList } from './utils/originAllowList.js';
 
 // Start cleanup service
 const cleanupService = ServiceFactory.getCleanupService();
@@ -58,6 +58,7 @@ if (socialIngestionConfig.enabled) {
 }
 
 const app = express();
+const originAllowList = new OriginAllowList();
 
 // Enable extended query parsing so nested query parameters are supported
 app.set('query parser', 'extended');
@@ -109,12 +110,14 @@ app.use(
 
 // CORS configuration - skip in test environment
 if (process.env.NODE_ENV !== 'test') {
-  if (!process.env.FRONTEND_URL) {
-    throw new Error('FRONTEND_URL environment variable is required but not set');
-  }
   app.use(
     cors({
-      origin: process.env.FRONTEND_URL,
+      origin: (origin, callback): void => {
+        void originAllowList
+          .isAllowed(origin)
+          .then((isAllowed) => callback(null, isAllowed))
+          .catch((error) => callback(error as Error));
+      },
       credentials: true,
     }),
   );
@@ -126,9 +129,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Global BigInt serialization middleware
 app.use(bigIntSerializer);
-
-// Domain routing middleware - must come before other routes
-app.use(domainRouting);
 
 // Query logging and performance monitoring middleware
 app.use(queryLoggerMiddleware);

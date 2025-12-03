@@ -26,13 +26,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  let host = request.headers.get('host');
+  const host = request.headers.get('host');
   if (!host) {
     return NextResponse.next();
   }
-
-  // Strip port if present (e.g., www.example.com:3000 -> www.example.com)
-  host = host.replace(/:\d+$/, '');
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
