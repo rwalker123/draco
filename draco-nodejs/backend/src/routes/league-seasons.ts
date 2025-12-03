@@ -1,4 +1,4 @@
-// LeagueSeason Management Routes for Draco Sports Manager
+// LeagueSeason Management Routes
 // Handles league-season relationships, divisions, and teams within leagues
 
 import { Router, Request, Response } from 'express';

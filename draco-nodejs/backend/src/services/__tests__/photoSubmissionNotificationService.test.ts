@@ -42,7 +42,7 @@ describe('PhotoSubmissionNotificationService', () => {
   const getEmailSettings = vi.fn(() => ({
     provider: 'ethereal' as const,
     fromEmail: 'noreply@example.com',
-    fromName: 'Draco Sports Manager',
+    fromName: 'ezRecSports.com',
     replyTo: 'support@example.com',
   }));
   const getBaseUrl = vi.fn(() => 'http://localhost:3000');

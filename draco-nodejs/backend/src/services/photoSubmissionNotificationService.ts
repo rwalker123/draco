@@ -15,7 +15,7 @@ type EmailContent = {
 };
 
 const FOOTER_TEXT =
-  'This is an automated message from Draco Sports Manager. Please do not reply to this email.';
+  'This is an automated message from ezRecSports.com. Please do not reply to this email.';
 
 export class PhotoSubmissionNotificationService {
   constructor(
@@ -244,7 +244,7 @@ export class PhotoSubmissionNotificationService {
         <body>
           <div class="container">
             <div class="header">
-              <h1>Draco Sports Manager</h1>
+              <h1>ezRecSports.com</h1>
             </div>
             <div class="content">
               <h2>${this.escapeHtml(content.subject)}</h2>

@@ -1,4 +1,4 @@
-// Email Attachment Service for Draco Sports Manager
+// Email Attachment Service
 // Handles attachment upload, storage, and retrieval
 
 import { createStorageService, StorageService } from './storageService.js';

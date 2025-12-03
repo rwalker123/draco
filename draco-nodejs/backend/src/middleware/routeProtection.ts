@@ -1,4 +1,4 @@
-// Route Protection Middleware for Draco Sports Manager
+// Route Protection Middleware
 // Implements contact role-based protection, account boundaries, and role hierarchy
 
 import { Request, Response, NextFunction } from 'express';

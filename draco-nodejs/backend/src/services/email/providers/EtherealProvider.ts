@@ -1,4 +1,4 @@
-// Ethereal Email Provider for Draco Sports Manager
+// Ethereal Email Provider
 // Follows LSP - implements IEmailProvider interface
 
 import nodemailer from 'nodemailer';
@@ -112,8 +112,8 @@ export class EtherealProvider implements IEmailProvider {
   }
 
   private formatFromAddress(email?: string, name?: string): string {
-    const fromEmail = email || 'noreply@example.com';
-    const fromName = name || 'Draco Sports Manager';
+    const fromEmail = email || 'noreply@ezrecsports.com';
+    const fromName = name || 'ezRecSports.com';
     return `"${fromName}" <${fromEmail}>`;
   }
 

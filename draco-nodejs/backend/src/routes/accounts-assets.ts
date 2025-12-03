@@ -1,4 +1,4 @@
-// Account Assets Management Routes for Draco Sports Manager
+// Account Assets Management Routes
 // Handles logo upload, retrieval, and deletion
 
 import { Router, Request, Response } from 'express';

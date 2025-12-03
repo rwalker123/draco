@@ -1,4 +1,4 @@
-// Enhanced Email Service for Draco Sports Manager
+// Enhanced Email Service
 // Follows SRP/DIP - depends on IEmailProvider interface
 
 import {
@@ -258,7 +258,7 @@ export class EmailService {
 
       const emailOptions: EmailOptions = {
         to: toEmail,
-        subject: 'Draco Sports Manager - Password Reset Request',
+        subject: 'ezRecSports.com - Password Reset Request',
         html: this.generatePasswordResetEmailHtml(username, resetUrl),
         text: this.generatePasswordResetEmailText(username, resetUrl),
         from: settings.fromEmail,
@@ -287,7 +287,7 @@ export class EmailService {
 
       const emailOptions: EmailOptions = {
         to: toEmail,
-        subject: 'Welcome to Draco Sports Manager',
+        subject: 'Welcome to ezRecSports.com',
         html: this.generateGeneralWelcomeEmailHtml(loginUrl),
         text: this.generateGeneralWelcomeEmailText(loginUrl),
         from: settings.fromEmail,
@@ -325,7 +325,7 @@ export class EmailService {
 
       const emailOptions: EmailOptions = {
         to: toEmail,
-        subject: `Welcome to ${accountName} on Draco Sports Manager`,
+        subject: `Welcome to ${accountName}`,
         html: this.generateAccountWelcomeEmailHtml({
           accountName,
           accountDashboardUrl,
@@ -1748,12 +1748,12 @@ export class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h1>Draco Sports Manager</h1>
+            <h1>ezRecSports.com</h1>
           </div>
           <div class="content">
             <h2>Password Reset Request</h2>
             <p>Hello ${username},</p>
-            <p>We received a request to reset your password for your Draco Sports Manager account.</p>
+            <p>We received a request to reset your password for your ezRecSports.com account.</p>
             <p>Click the button below to reset your password:</p>
             <a href="${resetUrl}" class="button">Reset Password</a>
             <p>If the button doesn't work, copy and paste this link into your browser:</p>
@@ -1762,7 +1762,7 @@ export class EmailService {
             <p>If you didn't request this password reset, please ignore this email. Your password will remain unchanged.</p>
           </div>
           <div class="footer">
-            <p>This is an automated message from Draco Sports Manager. Please do not reply to this email.</p>
+            <p>This is an automated message from ezRecSports.com. Please do not reply to this email.</p>
           </div>
         </div>
       </body>
@@ -1775,12 +1775,11 @@ export class EmailService {
    */
   private generatePasswordResetEmailText(username: string, resetUrl: string): string {
     return `
-Draco Sports Manager - Password Reset Request
+ezRecSports.com - Password Reset Request
 
 Hello ${username},
 
-We received a request to reset your password for your Draco Sports Manager account.
-
+We received a request to reset your password for your ezRecSports.com account.
 To reset your password, please visit this link:
 ${resetUrl}
 
@@ -1788,7 +1787,7 @@ This link will expire in 24 hours for security reasons.
 
 If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
 
-This is an automated message from Draco Sports Manager. Please do not reply to this email.
+This is an automated message from ezRecSports.com. Please do not reply to this email.
     `;
   }
 
@@ -1801,7 +1800,7 @@ This is an automated message from Draco Sports Manager. Please do not reply to t
       <html>
       <head>
         <meta charset="utf-8">
-        <title>Welcome to Draco Sports Manager</title>
+        <title>Welcome to ezRecSports.com</title>
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -1814,17 +1813,17 @@ This is an automated message from Draco Sports Manager. Please do not reply to t
       <body>
         <div class="container">
           <div class="header">
-            <h1>Draco Sports Manager</h1>
+            <h1>ezRecSports.com</h1>
           </div>
           <div class="content">
             <h2>Welcome!</h2>
-            <p>Thanks for creating a Draco Sports Manager login. You're all set to sign in and connect with your organizations.</p>
+            <p>Thanks for creating an ezRecSports.com login. You're all set to sign in and connect with your organizations.</p>
             <p>Use the button below to access your account.</p>
             <a href="${loginUrl}" class="button">Sign In</a>
             <p>After signing in, you can join or manage organizations, review schedules, and stay connected with your teams.</p>
           </div>
           <div class="footer">
-            <p>This is an automated message from Draco Sports Manager. Please do not reply to this email.</p>
+            <p>This is an automated message from ezRecSports.com. Please do not reply to this email.</p>
           </div>
         </div>
       </body>
@@ -1834,15 +1833,15 @@ This is an automated message from Draco Sports Manager. Please do not reply to t
 
   private generateGeneralWelcomeEmailText(loginUrl: string): string {
     return `
-Welcome to Draco Sports Manager!
+Welcome to ezRecSports.com!
 
-Thanks for creating a Draco Sports Manager login. You're all set to sign in and connect with your organizations.
+Thanks for creating an ezRecSports.com login. You're all set to sign in and connect with your organizations.
 
 Sign in here: ${loginUrl}
 
 After signing in, you can join or manage organizations, review schedules, and stay connected with your teams.
 
-This is an automated message from Draco Sports Manager. Please do not reply to this email.
+This is an automated message from ezRecSports.com. Please do not reply to this email.
     `.trim();
   }
 
@@ -1879,7 +1878,7 @@ This is an automated message from Draco Sports Manager. Please do not reply to t
           </div>
           <div class="content">
             <h2>Welcome aboard, ${greetingName}!</h2>
-            <p>You're now connected to <strong>${accountName}</strong> on Draco Sports Manager.</p>
+            <p>You're now connected to <strong>${accountName}</strong> on ezRecSports.com.</p>
             ${loginLine}
             <p>Sign in and head to the account dashboard to get started.</p>
             <a href="${loginUrl}" class="button">Sign In</a>
@@ -1887,7 +1886,7 @@ This is an automated message from Draco Sports Manager. Please do not reply to t
             <p>If you have any questions, reach out to your organization administrator.</p>
           </div>
           <div class="footer">
-            <p>This is an automated message from Draco Sports Manager. Please do not reply to this email.</p>
+            <p>This is an automated message from ezRecSports.com. Please do not reply to this email.</p>
           </div>
         </div>
       </body>
@@ -1909,7 +1908,7 @@ This is an automated message from Draco Sports Manager. Please do not reply to t
     return `
 Welcome aboard, ${greetingName}!
 
-You're now connected to ${accountName} on Draco Sports Manager.
+You're now connected to ${accountName} on ezRecSports.com.
 ${loginLine}Sign in: ${loginUrl}
 
 After signing in, open your account dashboard here:
@@ -1917,7 +1916,7 @@ ${accountDashboardUrl}
 
 If you have any questions, reach out to your organization administrator.
 
-This is an automated message from Draco Sports Manager. Please do not reply to this email.
+This is an automated message from ezRecSports.com. Please do not reply to this email.
     `.trim();
   }
 

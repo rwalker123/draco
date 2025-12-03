@@ -4,8 +4,8 @@ import type { EmailConfig } from '../../../../config/email.js';
 
 describe('NoneProvider', () => {
   const emailSettings = {
-    fromEmail: 'no-reply@example.com',
-    fromName: 'Draco Sports Manager',
+    fromEmail: 'no-reply@ezrecsports.com',
+    fromName: 'ezRecSports.com',
     provider: 'none' as const,
   };
 
@@ -27,7 +27,7 @@ describe('NoneProvider', () => {
 
   it('returns success when sending email without dispatching', async () => {
     const result = await provider.sendEmail({
-      to: 'recipient@example.com',
+      to: 'recipient@ezrecsports.com',
       subject: 'Test Email',
       html: '<p>content</p>',
     });

@@ -1,4 +1,4 @@
-// PlayerClassifieds Constants for Draco Sports Manager
+// PlayerClassifieds Constants
 // Baseball positions and experience levels used throughout the system
 
 import { BaseballPositionType, ExperienceLevelType } from '@draco/shared-schemas';

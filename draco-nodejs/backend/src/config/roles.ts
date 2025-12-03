@@ -1,4 +1,4 @@
-// Role configuration and constants for Draco Sports Manager
+// Role configuration and constants
 
 import { RoleNamesType } from '../types/roles.js';
 

@@ -1,4 +1,4 @@
-// Email Attachment Configuration for Draco Sports Manager
+// Email Attachment Configuration
 // Defines allowed file types, size limits, and validation rules
 
 export const ATTACHMENT_CONFIG = {

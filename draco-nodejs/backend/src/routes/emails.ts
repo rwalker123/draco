@@ -1,4 +1,4 @@
-// Email Routes for Draco Sports Manager
+// Email Routes
 import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 

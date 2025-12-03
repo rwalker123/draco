@@ -1,4 +1,4 @@
-// Core Account Routes for Draco Sports Manager
+// Core Account Routes
 // Handles basic account operations: search, retrieval, creation, updates, deletion
 
 import { Router, Request, Response } from 'express';

@@ -1,4 +1,4 @@
-// Role Service for Draco Sports Manager
+// Role Service
 // Handles all role-related operations including contact roles and global roles
 
 import { RoleNamesType } from '../types/roles.js';

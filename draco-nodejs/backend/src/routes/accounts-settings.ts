@@ -1,4 +1,4 @@
-// Account Settings & Metadata Routes for Draco Sports Manager
+// Account Settings & Metadata Routes
 // Handles URLs, Twitter settings, account types, and affiliations
 
 import { Router, Request, Response } from 'express';

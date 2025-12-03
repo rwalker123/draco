@@ -1,4 +1,4 @@
-// PlayerClassifiedAccessService for Draco Sports Manager
+// PlayerClassifiedAccessService
 // Single responsibility: Handles access control, permissions, and security for player classifieds
 import bcrypt from 'bcrypt';
 import validator from 'validator';

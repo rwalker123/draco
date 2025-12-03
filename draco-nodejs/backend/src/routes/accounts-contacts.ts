@@ -1,4 +1,4 @@
-// Account Contacts & Users Management Routes for Draco Sports Manager
+// Account Contacts & Users Management Routes
 // Handles all contact and user management within accounts
 
 import { Router, Request, Response } from 'express';
