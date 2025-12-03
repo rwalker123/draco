@@ -1,4 +1,4 @@
-// Email Provider Factory for Draco Sports Manager
+// Email Provider Factory
 // Follows OCP - extensible for new email providers
 
 import { IEmailProvider } from '../../interfaces/emailInterfaces.js';

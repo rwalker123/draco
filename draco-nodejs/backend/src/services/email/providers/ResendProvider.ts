@@ -1,4 +1,4 @@
-// Resend Email Provider for Draco Sports Manager
+// Resend Email Provider
 // Implements IEmailProvider using the Resend transactional email API
 
 import { promises as fs } from 'node:fs';

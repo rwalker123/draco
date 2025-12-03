@@ -119,9 +119,9 @@ describe('PlayerClassified Configuration Constants', () => {
 
   describe('EMAIL_CONTENT', () => {
     it('should provide default email settings', () => {
-      expect(EMAIL_CONTENT.DEFAULT_SETTINGS.fromEmail).toBe('noreply@dracosports.com');
-      expect(EMAIL_CONTENT.DEFAULT_SETTINGS.fromName).toBe('Draco Sports Manager');
-      expect(EMAIL_CONTENT.DEFAULT_SETTINGS.replyTo).toBe('support@dracosports.com');
+      expect(EMAIL_CONTENT.DEFAULT_SETTINGS.fromEmail).toBe('noreply@ezrecsports.com');
+      expect(EMAIL_CONTENT.DEFAULT_SETTINGS.fromName).toBe('ezRecSports');
+      expect(EMAIL_CONTENT.DEFAULT_SETTINGS.replyTo).toBe('support@ezrecsports.com');
     });
 
     it('should provide email subject templates', () => {

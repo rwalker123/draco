@@ -1,4 +1,4 @@
-// Main Accounts Router for Draco Sports Manager
+// Main Accounts Router
 // Combines all account-related sub-routers for organized routing
 
 import { Router } from 'express';

@@ -1,4 +1,4 @@
-// Cleanup Service for Draco Sports Manager
+// Cleanup Service
 // Handles automatic cleanup of expired data including player classifieds
 
 import {

@@ -1,4 +1,4 @@
-// Account Resources Management Routes for Draco Sports Manager
+// Account Resources Management Routes
 // Handles teams, leagues, fields, and umpires for accounts
 
 import { Router, Request, Response } from 'express';

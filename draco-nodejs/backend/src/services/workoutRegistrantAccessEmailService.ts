@@ -133,7 +133,7 @@ export class WorkoutRegistrantAccessEmailService {
     const ics = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//Draco Sports Manager//Workout Registration//EN',
+      'PRODID:-//ezRecSports.com//Workout Registration//EN',
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
       'BEGIN:VEVENT',

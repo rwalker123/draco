@@ -1,4 +1,4 @@
-// PlayerClassified Service for Draco Sports Manager
+// PlayerClassified Service
 // Orchestrator service that coordinates between specialized services following SOLID principles
 
 import { Prisma } from '#prisma/client';
@@ -732,7 +732,7 @@ export class PlayerClassifiedService {
         </div>
         
         <div class="footer">
-            <p>This email was sent through ${sanitizedData.accountName} via Draco Sports Manager.</p>
+            <p>This email was sent through ${sanitizedData.accountName} via ezRecSports.com.</p>
             <p>Your email address is kept private and is never shared with requesters.</p>
         </div>
     </div>
@@ -756,7 +756,7 @@ ${sanitizedData.messageText}
 Reply directly to this email to respond to ${sanitizedData.senderName}.
 
 ---
-This email was sent through ${sanitizedData.accountName} via Draco Sports Manager.
+This email was sent through ${sanitizedData.accountName} via ezRecSports.com.
 Your email address is kept private and is never shared with requesters.
 `;
 

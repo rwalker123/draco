@@ -1,4 +1,4 @@
-// Cleanup Routes for Draco Sports Manager
+// Cleanup Routes
 // Provides endpoints for manual cleanup and service status
 // Only accessible to users with database.cleanup permission (Administrators)
 

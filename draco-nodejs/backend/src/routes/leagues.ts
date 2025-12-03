@@ -1,4 +1,4 @@
-// League Management Routes for Draco Sports Manager
+// League Management Routes
 // Handles league CRUD operations and provides available leagues for account management
 
 import { Router, Request, Response } from 'express';

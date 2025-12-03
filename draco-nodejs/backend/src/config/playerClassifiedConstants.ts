@@ -168,9 +168,9 @@ export const EMAIL_STYLES = Object.freeze({
 export const EMAIL_CONTENT = Object.freeze({
   /** Default email settings */
   DEFAULT_SETTINGS: Object.freeze({
-    fromEmail: 'noreply@dracosports.com',
-    fromName: 'Draco Sports Manager',
-    replyTo: 'support@dracosports.com',
+    fromEmail: 'noreply@ezrecsports.com',
+    fromName: 'ezRecSports',
+    replyTo: 'support@ezrecsports.com',
   }),
 
   /** Email subject templates */

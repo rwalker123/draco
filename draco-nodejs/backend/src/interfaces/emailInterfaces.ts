@@ -1,4 +1,4 @@
-// Email Interfaces for Draco Sports Manager
+// Email Interfaces
 // Follows ISP - segregated interfaces for different concerns
 
 // Core email sending interface

@@ -1,4 +1,4 @@
-// PlayerClassifiedEmailService for Draco Sports Manager
+// PlayerClassifiedEmailService
 // Single responsibility: Handles all email operations for player classifieds
 
 import { sanitizePlainText, sanitizeRichHtml } from '../../utils/htmlSanitizer.js';

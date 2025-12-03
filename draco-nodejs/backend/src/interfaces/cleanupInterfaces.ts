@@ -1,7 +1,4 @@
-// Cleanup Service Interfaces for Draco Sports Manager
-// Follows Interface Segregation Principle to avoid fat interfaces
-
-// Cleanup Service Interfaces for Draco Sports Manager
+// Cleanup Service Interfaces
 // Follows Interface Segregation Principle to avoid fat interfaces
 
 /**

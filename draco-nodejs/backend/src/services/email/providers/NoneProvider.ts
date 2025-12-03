@@ -1,4 +1,4 @@
-// No-op Email Provider for Draco Sports Manager
+// No-op Email Provider
 // Used when outbound email is intentionally disabled
 
 import { EmailConfig } from '../../../config/email.js';

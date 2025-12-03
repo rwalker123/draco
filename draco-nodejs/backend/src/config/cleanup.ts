@@ -1,4 +1,4 @@
-// Cleanup Configuration Factory for Draco Sports Manager
+// Cleanup Configuration Factory
 // Follows DIP - depends on environment variables, no secrets in code
 
 import { ICleanupConfig } from '../interfaces/cleanupInterfaces.js';

@@ -1,4 +1,4 @@
-// AWS SES Email Provider for Draco Sports Manager
+// AWS SES Email Provider
 // Uses AWS SDK over HTTPS to avoid SMTP limitations in hosted environments
 
 import { SESClient, SendRawEmailCommand, GetSendQuotaCommand } from '@aws-sdk/client-ses';

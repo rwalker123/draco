@@ -31,9 +31,9 @@ function loadOpenApiSpec() {
     return {
       openapi: '3.0.0',
       info: {
-        title: 'Draco Sports Manager API',
+        title: 'ezRecSports API',
         version: '1.0.0',
-        description: 'API documentation for Draco Sports Manager (fallback spec)',
+        description: 'API documentation for ezRecSports (fallback spec)',
       },
       paths: {},
       components: {},

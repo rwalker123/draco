@@ -1,4 +1,4 @@
-// Role system types and interfaces for Draco Sports Manager
+// Role system types and interfaces
 
 export enum RoleNamesType {
   ADMINISTRATOR = 'Administrator',

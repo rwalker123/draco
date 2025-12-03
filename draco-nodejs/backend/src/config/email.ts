@@ -1,4 +1,4 @@
-// Email Configuration Factory for Draco Sports Manager
+// Email Configuration Factory
 // Follows DIP - depends on environment variables, no secrets in code
 
 export interface EmailConfig {

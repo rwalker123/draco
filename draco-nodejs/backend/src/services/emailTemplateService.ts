@@ -1,4 +1,4 @@
-// Email Template Service for Draco Sports Manager
+// Email Template Service
 // Follows SRP - handles template processing and management only
 
 import { IEmailTemplateEngine, TemplateValidationResult } from '../interfaces/emailInterfaces.js';

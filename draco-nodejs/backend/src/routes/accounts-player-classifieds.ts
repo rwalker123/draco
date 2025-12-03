@@ -1,4 +1,4 @@
-// Player Classified Routes for Draco Sports Manager
+// Player Classified Routes
 // Implements the layered architecture contract using shared schemas for validation
 
 import { Router, Request, Response, NextFunction } from 'express';
