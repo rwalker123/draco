@@ -36,10 +36,6 @@ export interface EmailComposeState {
   isScheduled: boolean;
   scheduledDate?: Date;
 
-  // Draft management
-  isDraft: boolean;
-  draftId?: string;
-  lastSaved?: Date;
   hasUnsavedChanges: boolean;
 
   // UI state
@@ -75,11 +71,6 @@ export interface EmailComposeActions {
   setScheduled: (scheduled: boolean, date?: Date) => void;
   clearSchedule: () => void;
 
-  // Draft actions
-  saveDraft: () => Promise<boolean>;
-  loadDraft: (draftId: string) => Promise<boolean>;
-  clearDraft: () => void;
-
   // Send actions
   validateCompose: () => ComposeValidationResult;
   sendEmail: () => Promise<boolean>;
@@ -106,10 +97,6 @@ export interface EmailComposeActions {
  * Email compose configuration
  */
 export interface EmailComposeConfig {
-  // Draft settings
-  autoSaveDrafts: boolean;
-  autoSaveInterval: number; // milliseconds
-
   // Validation settings
   requireSubject: boolean;
   requireRecipients: boolean;
@@ -163,7 +150,6 @@ export interface EmailComposeProviderProps {
   initialData?: Partial<EmailComposeRequest>;
   config?: Partial<EmailComposeConfig>;
   onSendComplete?: (emailId: string) => void;
-  onDraftSaved?: (draftId: string) => void;
   onError?: (error: Error) => void;
   editorRef?: React.RefObject<RichTextEditorHandle | null>;
 }
@@ -221,7 +207,6 @@ export type ComposeStep = 'recipients' | 'content' | 'attachments' | 'review' | 
  * Compose keyboard shortcuts
  */
 export interface ComposeKeyboardShortcuts {
-  save: string; // 'Ctrl+S' or 'Cmd+S'
   send: string; // 'Ctrl+Enter' or 'Cmd+Enter'
   bold: string; // 'Ctrl+B' or 'Cmd+B'
   italic: string; // 'Ctrl+I' or 'Cmd+I'
@@ -233,8 +218,6 @@ export interface ComposeKeyboardShortcuts {
  * Default compose configuration
  */
 export const DEFAULT_COMPOSE_CONFIG: EmailComposeConfig = {
-  autoSaveDrafts: true,
-  autoSaveInterval: 30000, // 30 seconds
   requireSubject: true,
   requireRecipients: true,
   requireContent: true,
@@ -252,7 +235,6 @@ export const DEFAULT_COMPOSE_CONFIG: EmailComposeConfig = {
  * Default keyboard shortcuts
  */
 export const DEFAULT_KEYBOARD_SHORTCUTS: ComposeKeyboardShortcuts = {
-  save: 'Ctrl+S',
   send: 'Ctrl+Enter',
   bold: 'Ctrl+B',
   italic: 'Ctrl+I',

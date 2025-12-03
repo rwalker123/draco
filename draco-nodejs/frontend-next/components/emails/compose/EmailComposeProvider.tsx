@@ -51,8 +51,6 @@ type ComposeAction =
   | { type: 'CLEAR_ATTACHMENTS' }
   | { type: 'SET_SCHEDULED'; payload: { scheduled: boolean; date?: Date } }
   | { type: 'CLEAR_SCHEDULE' }
-  | { type: 'SET_DRAFT_DATA'; payload: { isDraft: boolean; draftId?: string; lastSaved?: Date } }
-  | { type: 'CLEAR_DRAFT' }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_SENDING'; payload: { isSending: boolean; progress?: number } }
   | { type: 'SET_ERRORS'; payload: ComposeValidationError[] }
@@ -85,9 +83,6 @@ const createInitialState = (
   selectedTemplate: undefined,
   isScheduled: !!initialData?.scheduledSend,
   scheduledDate: initialData?.scheduledSend,
-  isDraft: false,
-  draftId: undefined,
-  lastSaved: undefined,
   hasUnsavedChanges: false,
   isLoading: false,
   isSending: false,
@@ -204,24 +199,6 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
         isScheduled: false,
         scheduledDate: undefined,
         hasUnsavedChanges: true,
-      };
-
-    case 'SET_DRAFT_DATA':
-      return {
-        ...state,
-        isDraft: action.payload.isDraft,
-        draftId: action.payload.draftId,
-        lastSaved: action.payload.lastSaved,
-        hasUnsavedChanges: false,
-      };
-
-    case 'CLEAR_DRAFT':
-      return {
-        ...state,
-        isDraft: false,
-        draftId: undefined,
-        lastSaved: undefined,
-        hasUnsavedChanges: false,
       };
 
     case 'SET_LOADING':
@@ -407,7 +384,6 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
   initialData,
   config: userConfig = {},
   onSendComplete,
-  onDraftSaved,
   onError,
   editorRef,
 }) => {
@@ -416,8 +392,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
   const config = useMemo(() => ({ ...DEFAULT_COMPOSE_CONFIG, ...userConfig }), [userConfig]);
   const [state, dispatch] = useReducer(composeReducer, createInitialState(config, initialData));
 
-  // Refs for intervals and service
-  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Refs for service
   const emailServiceRef = useRef(token ? createEmailService(token, apiClient) : null);
   const initialTemplateLoadedRef = useRef<string | null>(null);
 
@@ -496,103 +471,6 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Using ref to track loading state instead of state dependency
   }, [initialData?.templateId, accountId, token, onError]);
 
-  const saveDraft = useCallback(async (): Promise<boolean> => {
-    if (!emailServiceRef.current || !token) return false;
-
-    dispatch({ type: 'SET_LOADING', payload: true });
-
-    const result = await safeAsync(
-      async () => {
-        // Create draft request (will be used for API call when draft saving is implemented)
-        const draftRequest: EmailComposeRequest = {
-          recipients: {
-            contacts: [],
-            seasonSelection: {},
-            workoutRecipients: [],
-            teamsWantedRecipients: [],
-          },
-          subject: state.subject,
-          body: state.content,
-          templateId: state.selectedTemplate?.id,
-          attachments: state.attachments.filter((a) => a.status === 'uploaded').map((a) => a.url!),
-          scheduledSend: state.isScheduled ? state.scheduledDate : undefined,
-          seasonId,
-        };
-
-        // TODO: Implement draft saving in EmailService
-        // const draftId = await emailServiceRef.current.saveDraft(accountId, draftRequest);
-        const draftId = `draft_${Date.now()}`; // Temporary mock
-        void draftRequest; // Suppress unused variable warning until API is implemented
-
-        return { draftId };
-      },
-      {
-        accountId,
-        operation: 'save_draft',
-      },
-    );
-
-    dispatch({ type: 'SET_LOADING', payload: false });
-
-    if (result.success) {
-      dispatch({
-        type: 'SET_DRAFT_DATA',
-        payload: {
-          isDraft: true,
-          draftId: result.data.draftId,
-          lastSaved: new Date(),
-        },
-      });
-
-      if (onDraftSaved) {
-        onDraftSaved(result.data.draftId);
-      }
-
-      return true;
-    } else {
-      logError(result.error, 'saveDraft');
-      dispatch({
-        type: 'ADD_ERROR',
-        payload: {
-          field: 'general',
-          message: result.error.userMessage,
-          severity: 'error',
-        },
-      });
-
-      if (onError) {
-        onError(new Error(result.error.message));
-      }
-
-      return false;
-    }
-  }, [state, accountId, token, onDraftSaved, onError, seasonId]);
-
-  // Auto-save drafts
-  useEffect(() => {
-    if (config.autoSaveDrafts && state.hasUnsavedChanges && !state.isSending) {
-      if (autoSaveIntervalRef.current) {
-        clearTimeout(autoSaveIntervalRef.current);
-      }
-
-      autoSaveIntervalRef.current = setTimeout(() => {
-        saveDraft();
-      }, config.autoSaveInterval);
-    }
-
-    return () => {
-      if (autoSaveIntervalRef.current) {
-        clearTimeout(autoSaveIntervalRef.current);
-      }
-    };
-  }, [
-    state.hasUnsavedChanges,
-    state.isSending,
-    config.autoSaveDrafts,
-    config.autoSaveInterval,
-    saveDraft,
-  ]);
-
   // Actions
   const setSubject = useCallback((subject: string) => {
     dispatch({ type: 'SET_SUBJECT', payload: subject });
@@ -632,65 +510,6 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
 
   const clearSchedule = useCallback(() => {
     dispatch({ type: 'CLEAR_SCHEDULE' });
-  }, []);
-
-  const loadDraft = useCallback(
-    async (draftId: string): Promise<boolean> => {
-      if (!emailServiceRef.current || !token) return false;
-
-      dispatch({ type: 'SET_LOADING', payload: true });
-
-      const result = await safeAsync(
-        async () => {
-          // TODO: Implement draft loading in EmailService
-          // const draft = await emailServiceRef.current.loadDraft(accountId, draftId);
-
-          // For now, just mark as draft loaded
-          return { draftId };
-        },
-        {
-          accountId,
-          operation: 'load_draft',
-          additionalData: { draftId },
-        },
-      );
-
-      dispatch({ type: 'SET_LOADING', payload: false });
-
-      if (result.success) {
-        dispatch({
-          type: 'SET_DRAFT_DATA',
-          payload: {
-            isDraft: true,
-            draftId: result.data.draftId,
-            lastSaved: new Date(),
-          },
-        });
-
-        return true;
-      } else {
-        logError(result.error, 'loadDraft');
-        dispatch({
-          type: 'ADD_ERROR',
-          payload: {
-            field: 'general',
-            message: result.error.userMessage,
-            severity: 'error',
-          },
-        });
-
-        if (onError) {
-          onError(new Error(result.error.message));
-        }
-
-        return false;
-      }
-    },
-    [accountId, token, onError],
-  );
-
-  const clearDraft = useCallback(() => {
-    dispatch({ type: 'CLEAR_DRAFT' });
   }, []);
 
   const validateCompose = useCallback((): ComposeValidationResult => {
@@ -838,11 +657,6 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     );
 
     if (result.success) {
-      // Clear draft if it exists
-      if (state.isDraft) {
-        clearDraft();
-      }
-
       // Reset state
       dispatch({ type: 'RESET' });
 
@@ -869,7 +683,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
       dispatch({ type: 'SET_SENDING', payload: { isSending: false, progress: undefined } });
       return false;
     }
-  }, [state, accountId, token, validateCompose, clearDraft, onSendComplete, editorRef, seasonId]);
+  }, [state, accountId, token, validateCompose, onSendComplete, editorRef, seasonId]);
 
   const reset = useCallback(() => {
     dispatch({ type: 'RESET' });
@@ -932,9 +746,6 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     clearAttachments,
     setScheduled,
     clearSchedule,
-    saveDraft,
-    loadDraft,
-    clearDraft,
     validateCompose,
     sendEmail,
     reset,

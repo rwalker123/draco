@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   ButtonGroup,
-  IconButton,
   Menu,
   MenuItem,
   ListItemIcon,
@@ -13,8 +12,6 @@ import {
   LinearProgress,
   Stack,
   Typography,
-  Tooltip,
-  Chip,
   Alert,
   Dialog,
   DialogTitle,
@@ -23,12 +20,7 @@ import {
 } from '@mui/material';
 import {
   Send as SendIcon,
-  Save as SaveIcon,
   Schedule as ScheduleIcon,
-  Edit as DraftIcon,
-  MoreVert as MoreVertIcon,
-  Delete as DeleteIcon,
-  Refresh as RefreshIcon,
   KeyboardArrowDown as ArrowDownIcon,
 } from '@mui/icons-material';
 
@@ -38,28 +30,21 @@ import type { RichTextEditorHandle } from '../../email/RichTextEditor';
 
 interface ComposeActionsProps {
   onScheduleClick?: () => void;
-  onDeleteDraft?: () => void;
-  showAdvancedActions?: boolean;
   compact?: boolean;
   onBeforeSend?: () => void;
-  onBeforeSave?: () => void;
   editorRef?: React.RefObject<RichTextEditorHandle | null>;
 }
 
 /**
- * ComposeActions - Send, save, schedule, and other action buttons
+ * ComposeActions - Send, schedule, and other action buttons
  */
 const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
   onScheduleClick,
-  onDeleteDraft,
-  showAdvancedActions = true,
   compact = false,
   onBeforeSend,
-  onBeforeSave,
   editorRef,
 }) => {
   const { state, actions } = useEmailCompose();
-  const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(null);
   const [sendMenuAnchor, setSendMenuAnchor] = useState<null | HTMLElement>(null);
   const [showEmptyContentWarning, setShowEmptyContentWarning] = useState(false);
 
@@ -102,49 +87,12 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
     }
   }, [actions, onBeforeSend]);
 
-  // Handle save draft
-  const handleSaveDraft = useCallback(async () => {
-    // Sync editor content before saving
-    if (onBeforeSave) {
-      onBeforeSave();
-    }
-    await actions.saveDraft();
-  }, [actions, onBeforeSave]);
-
   // Handle schedule
   const handleSchedule = useCallback(() => {
     if (onScheduleClick) {
       onScheduleClick();
     }
   }, [onScheduleClick]);
-
-  // Handle delete draft
-  const handleDeleteDraft = useCallback(() => {
-    actions.clearDraft();
-    if (onDeleteDraft) {
-      onDeleteDraft();
-    }
-    setMoreMenuAnchor(null);
-  }, [actions, onDeleteDraft]);
-
-  // Handle reset/clear
-  const handleReset = useCallback(() => {
-    if (
-      window.confirm('Are you sure you want to clear all content? This action cannot be undone.')
-    ) {
-      actions.reset();
-    }
-    setMoreMenuAnchor(null);
-  }, [actions]);
-
-  // Menu handlers
-  const handleMoreMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    setMoreMenuAnchor(event.currentTarget);
-  }, []);
-
-  const handleMoreMenuClose = useCallback(() => {
-    setMoreMenuAnchor(null);
-  }, []);
 
   const handleSendMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setSendMenuAnchor(event.currentTarget);
@@ -157,7 +105,6 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
   // Determine if send is disabled (pure validation to avoid dispatch in render)
   const validation = useMemo(() => validateComposeData(state, state.config), [state]);
   const canSend = validation.isValid && !state.isSending && !state.isLoading;
-  const canSave = !state.isSending && !state.isLoading;
 
   // Get recipient count
   const recipientCount = state.recipientState?.totalRecipients || 0;
@@ -207,62 +154,10 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
               <ArrowDownIcon />
             </Button>
           </ButtonGroup>
-
-          {/* Save Draft */}
-          <Button
-            startIcon={<SaveIcon />}
-            variant="outlined"
-            onClick={handleSaveDraft}
-            disabled={!canSave}
-            size={compact ? 'small' : 'medium'}
-          >
-            {state.isDraft ? 'Update Draft' : 'Save Draft'}
-          </Button>
-
-          {/* Schedule Button */}
-          {!state.isScheduled && (
-            <Button
-              startIcon={<ScheduleIcon />}
-              variant="outlined"
-              onClick={handleSchedule}
-              disabled={!canSend}
-              size={compact ? 'small' : 'medium'}
-            >
-              Schedule
-            </Button>
-          )}
         </Stack>
 
         {/* Secondary Actions */}
-        <Stack direction="row" spacing={1} alignItems="center">
-          {/* Status Indicators */}
-          <Stack direction="row" spacing={1}>
-            {state.isDraft && (
-              <Chip
-                icon={<DraftIcon />}
-                label="Draft"
-                size="small"
-                color="secondary"
-                variant="outlined"
-              />
-            )}
-
-            {state.hasUnsavedChanges && (
-              <Chip label="Unsaved" size="small" color="warning" variant="outlined" />
-            )}
-          </Stack>
-
-          {/* Advanced Actions */}
-          {showAdvancedActions && (
-            <>
-              <Tooltip title="More actions">
-                <IconButton onClick={handleMoreMenuOpen} size="small">
-                  <MoreVertIcon />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
-        </Stack>
+        <Stack direction="row" spacing={1} alignItems="center" />
       </Stack>
 
       {/* Send Options Menu */}
@@ -300,30 +195,6 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
             </Typography>
           </ListItemText>
         </MenuItem>
-      </Menu>
-
-      {/* More Actions Menu */}
-      <Menu anchorEl={moreMenuAnchor} open={Boolean(moreMenuAnchor)} onClose={handleMoreMenuClose}>
-        <MenuItem
-          onClick={() => {
-            handleReset();
-            handleMoreMenuClose();
-          }}
-        >
-          <ListItemIcon>
-            <RefreshIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Clear All</ListItemText>
-        </MenuItem>
-
-        {state.isDraft && (
-          <MenuItem onClick={handleDeleteDraft}>
-            <ListItemIcon>
-              <DeleteIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Delete Draft</ListItemText>
-          </MenuItem>
-        )}
       </Menu>
 
       {/* General Validation Errors - Field-specific errors are shown next to their controls */}

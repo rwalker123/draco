@@ -10,16 +10,12 @@ import {
   useMediaQuery,
   useTheme,
   Fab,
-  Drawer,
-  IconButton,
   Button,
   AlertTitle,
   LinearProgress,
 } from '@mui/material';
 // Using Box/Stack layout only; avoid Grid2 to match project conventions
 import {
-  Menu as MenuIcon,
-  Close as CloseIcon,
   KeyboardArrowDown as ExpandIcon,
   CloudOff as OfflineIcon,
   Wifi as OnlineIcon,
@@ -30,7 +26,6 @@ import { useNotifications } from '../../../hooks/useNotifications';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { ComposeHeader } from './ComposeHeader';
 import { ComposeActions } from './ComposeActions';
-import ComposeSidebar from './ComposeSidebar';
 import { ScheduleDialog } from './ScheduleDialog';
 import AdvancedRecipientDialog from '../recipients/AdvancedRecipientDialog';
 import { FileUploadComponent } from '../attachments/FileUploadComponent';
@@ -53,14 +48,13 @@ interface EmailComposePageProps {
 }
 
 interface ComponentErrorState {
+  contacts: string | null;
   teams: string | null;
   roles: string | null;
-  templates: string | null;
   network: string | null;
 }
 
 interface DialogState {
-  sidebarOpen: boolean;
   scheduleDialogOpen: boolean;
   advancedRecipientDialogOpen: boolean;
   cancelConfirmDialogOpen: boolean;
@@ -99,7 +93,6 @@ const EmailComposePageInternal: React.FC<
     const maxRetries = 3;
 
     const [dialogState, setDialogState] = useState<DialogState>({
-      sidebarOpen: !isMobile,
       scheduleDialogOpen: false,
       advancedRecipientDialogOpen: false,
       cancelConfirmDialogOpen: false,
@@ -107,9 +100,9 @@ const EmailComposePageInternal: React.FC<
 
     const [componentState, setComponentState] = useState<ComponentState>({
       errors: {
+        contacts: null,
         teams: null,
         roles: null,
-        templates: null,
         network: null,
       },
       isOnline: navigator.onLine,
@@ -159,11 +152,6 @@ const EmailComposePageInternal: React.FC<
         abortController.abort();
       };
     }, [showNotification]);
-
-    // Handle sidebar toggle
-    const handleSidebarToggle = useCallback(() => {
-      setDialogState((prev) => ({ ...prev, sidebarOpen: !prev.sidebarOpen }));
-    }, []);
 
     // Handle schedule dialog
     const handleScheduleOpen = useCallback(() => {
@@ -228,7 +216,6 @@ const EmailComposePageInternal: React.FC<
           contacts: null,
           teams: null,
           roles: null,
-          templates: null,
           network: null,
         },
       }));
@@ -305,11 +292,6 @@ const EmailComposePageInternal: React.FC<
 
         if (event.ctrlKey || event.metaKey) {
           switch (event.key) {
-            case 's':
-              event.preventDefault();
-              syncEditorContent();
-              actions.saveDraft();
-              break;
             case 'Enter':
               if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
@@ -397,7 +379,6 @@ const EmailComposePageInternal: React.FC<
             <AlertTitle>Some features may not work properly</AlertTitle>
             {componentState.errors.teams && `Teams: ${componentState.errors.teams}. `}
             {componentState.errors.roles && `Roles: ${componentState.errors.roles}. `}
-            {componentState.errors.templates && `Templates: ${componentState.errors.templates}. `}
             {componentState.errors.network && `Network: ${componentState.errors.network}. `}
           </Alert>
         )}
@@ -420,113 +401,88 @@ const EmailComposePageInternal: React.FC<
           <Box
             sx={{
               height: '100%',
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                md: !isMobile && dialogState.sidebarOpen ? '2fr 1fr' : '1fr',
-                lg: !isMobile && dialogState.sidebarOpen ? '3fr 1fr' : '1fr',
-              },
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
-            {/* Main Compose Area */}
             <Box
               sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
+                flex: 1,
+                p: isMobile ? 2 : 3,
+                pb: isMobile ? 12 : 8,
+                bgcolor: 'background.paper',
               }}
             >
-              <Box
-                sx={{
-                  flex: 1,
-                  p: isMobile ? 2 : 3,
-                  pb: isMobile ? 12 : 8,
-                  bgcolor: 'background.paper',
-                }}
-              >
-                <Stack spacing={3}>
-                  {/* Compose Header */}
-                  <ComposeHeader
-                    showFromField={!isMobile}
-                    showRecipientCount={true}
-                    showValidationErrors={true}
-                    compact={isMobile}
-                    onRecipientSelectionClick={handleAdvancedRecipientOpen}
-                    onCancelClick={handleCancelClick}
-                    loading={loading}
-                  />
+              <Stack spacing={3}>
+                {/* Compose Header */}
+                <ComposeHeader
+                  showFromField={!isMobile}
+                  showRecipientCount={true}
+                  showValidationErrors={true}
+                  compact={isMobile}
+                  onRecipientSelectionClick={handleAdvancedRecipientOpen}
+                  onCancelClick={handleCancelClick}
+                  loading={loading}
+                />
 
-                  {/* Content Editor */}
-                  <Box sx={{ flex: 1, minHeight: 300 }}>
-                    {/* 
-                      Key prop forces React to remount RichTextEditor when template changes.
-                      This is necessary because RichTextEditor only reads initialValue on mount,
-                      so without this key, template content wouldn't populate when users select templates.
-                    */}
-                    <RichTextEditor
-                      key={`editor-${state.resetCounter}-${state.selectedTemplate?.id || 'no-template'}`}
-                      ref={editorRef}
-                      initialValue={state.content}
-                      placeholder="Write your email content..."
-                      disabled={state.isSending}
-                      minHeight={isMobile ? 200 : 300}
-                    />
-                  </Box>
-
-                  {/* Enhanced File Upload */}
-                  <Box>
-                    <Typography variant="h6" color="text.primary" sx={{ mb: 1, fontWeight: 600 }}>
-                      File Attachments
-                    </Typography>
-
-                    <ErrorBoundary
-                      fallback={
-                        <Alert severity="error" sx={{ mt: 2 }}>
-                          File upload component failed to load. Please refresh the page to try
-                          again.
-                        </Alert>
-                      }
-                      onError={(error) => {
-                        console.error('FileUploadComponent error:', error);
-                        showNotification('File upload component failed to load', 'error');
-                      }}
-                    >
-                      <FileUploadComponent
-                        accountId={accountId}
-                        onAttachmentsChange={handleAttachmentsChange}
-                        showPreview={true}
-                        compact={isMobile}
-                        disabled={state.isSending}
-                      />
-                    </ErrorBoundary>
-                  </Box>
-                </Stack>
-              </Box>
-            </Box>
-
-            {/* Sidebar */}
-            {!isMobile && dialogState.sidebarOpen && (
-              <Box sx={{ height: '100%', borderLeft: 1, borderColor: 'divider' }}>
-                <Box sx={{ height: '100%', overflow: 'auto', p: 2 }}>
-                  <ComposeSidebar
-                    state={state}
-                    actions={actions}
-                    accountId={accountId}
-                    showTemplates={true}
+                {/* Content Editor */}
+                <Box sx={{ flex: 1, minHeight: 300 }}>
+                  {/* 
+                    Key prop forces React to remount RichTextEditor when template changes.
+                    This is necessary because RichTextEditor only reads initialValue on mount,
+                    so without this key, template content wouldn't populate when users select templates.
+                  */}
+                  <RichTextEditor
+                    key={`editor-${state.resetCounter}-${state.selectedTemplate?.id || 'no-template'}`}
+                    ref={editorRef}
+                    initialValue={state.content}
+                    placeholder="Write your email content..."
+                    disabled={state.isSending}
+                    minHeight={isMobile ? 200 : 300}
                   />
                 </Box>
-              </Box>
-            )}
+
+                {/* Enhanced File Upload */}
+                <Box>
+                  <Typography variant="h6" color="text.primary" sx={{ mb: 1, fontWeight: 600 }}>
+                    File Attachments
+                  </Typography>
+
+                  <ErrorBoundary
+                    fallback={
+                      <Alert severity="error" sx={{ mt: 2 }}>
+                        File upload component failed to load. Please refresh the page to try again.
+                      </Alert>
+                    }
+                    onError={(error) => {
+                      console.error('FileUploadComponent error:', error);
+                      showNotification('File upload component failed to load', 'error');
+                    }}
+                  >
+                    <FileUploadComponent
+                      accountId={accountId}
+                      onAttachmentsChange={handleAttachmentsChange}
+                      showPreview={true}
+                      compact={isMobile}
+                      disabled={state.isSending}
+                    />
+                  </ErrorBoundary>
+                </Box>
+              </Stack>
+            </Box>
           </Box>
         </Box>
 
         {/* Actions Bar */}
         <Box
           sx={{
+            position: 'sticky',
+            bottom: 0,
             borderTop: 1,
             borderColor: 'divider',
             p: 2,
             backgroundColor: 'background.paper',
+            zIndex: theme.zIndex.appBar,
             transform:
               isMobile && componentState.actionsCollapsed ? 'translateY(100%)' : 'translateY(0)',
             transition: 'transform 0.3s ease-in-out',
@@ -534,64 +490,23 @@ const EmailComposePageInternal: React.FC<
         >
           <ComposeActions
             onScheduleClick={handleScheduleOpen}
-            showAdvancedActions={!isMobile}
             compact={isMobile}
             onBeforeSend={syncEditorContent}
-            onBeforeSave={syncEditorContent}
             editorRef={editorRef}
           />
         </Box>
 
-        {/* Mobile Sidebar Drawer */}
-        {isMobile && (
-          <Drawer
-            anchor="right"
-            open={dialogState.sidebarOpen}
-            onClose={handleSidebarToggle}
-            PaperProps={{ sx: { width: '90%', maxWidth: 400 } }}
-          >
-            <Box sx={{ p: 2 }}>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{ mb: 2 }}
-              >
-                <Typography variant="h6">Email Options</Typography>
-                <IconButton onClick={handleSidebarToggle}>
-                  <CloseIcon />
-                </IconButton>
-              </Stack>
-              <ComposeSidebar
-                state={state}
-                actions={actions}
-                accountId={accountId}
-                showTemplates={true}
-                compact={true}
-              />
-            </Box>
-          </Drawer>
-        )}
-
         {/* Floating Action Buttons */}
-        {isMobile && (
+        {isMobile && componentState.actionsCollapsed && (
           <Box sx={{ position: 'fixed', bottom: 80, right: 16, zIndex: 1000 }}>
             <Stack spacing={1}>
-              <Fab size="small" color="primary" onClick={handleSidebarToggle}>
-                <MenuIcon />
+              <Fab
+                size="small"
+                color="secondary"
+                onClick={() => setComponentState((prev) => ({ ...prev, actionsCollapsed: false }))}
+              >
+                <ExpandIcon />
               </Fab>
-
-              {componentState.actionsCollapsed && (
-                <Fab
-                  size="small"
-                  color="secondary"
-                  onClick={() =>
-                    setComponentState((prev) => ({ ...prev, actionsCollapsed: false }))
-                  }
-                >
-                  <ExpandIcon />
-                </Fab>
-              )}
             </Stack>
           </Box>
         )}
@@ -696,10 +611,6 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
     [onSendComplete],
   );
 
-  const handleProviderDraftSaved = useCallback((_draftId: string) => {
-    // Draft saved - could add notification here if needed
-  }, []);
-
   const handleProviderError = useCallback((error: Error) => {
     console.error('Compose error:', error);
   }, []);
@@ -709,7 +620,6 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
       seasonId={seasonId}
       initialData={initialData}
       onSendComplete={handleProviderSendComplete}
-      onDraftSaved={handleProviderDraftSaved}
       onError={handleProviderError}
       editorRef={editorRef}
     >
