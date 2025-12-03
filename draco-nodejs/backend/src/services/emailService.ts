@@ -1817,7 +1817,7 @@ This is an automated message from ezRecSports.com. Please do not reply to this e
           </div>
           <div class="content">
             <h2>Welcome!</h2>
-            <p>Thanks for creating a ezRecSports.com login. You're all set to sign in and connect with your organizations.</p>
+            <p>Thanks for creating an ezRecSports.com login. You're all set to sign in and connect with your organizations.</p>
             <p>Use the button below to access your account.</p>
             <a href="${loginUrl}" class="button">Sign In</a>
             <p>After signing in, you can join or manage organizations, review schedules, and stay connected with your teams.</p>
@@ -1835,7 +1835,7 @@ This is an automated message from ezRecSports.com. Please do not reply to this e
     return `
 Welcome to ezRecSports.com!
 
-Thanks for creating a ezRecSports.com login. You're all set to sign in and connect with your organizations.
+Thanks for creating an ezRecSports.com login. You're all set to sign in and connect with your organizations.
 
 Sign in here: ${loginUrl}
 
