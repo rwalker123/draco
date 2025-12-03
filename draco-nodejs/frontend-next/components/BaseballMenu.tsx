@@ -166,6 +166,11 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({
     [handleNavigation, loadingSeason, menuItems],
   );
 
+  const latestOverflowChangeRef = React.useRef<BaseballMenuProps['onOverflowItemsChange']>(null);
+  React.useEffect(() => {
+    latestOverflowChangeRef.current = onOverflowItemsChange;
+  }, [onOverflowItemsChange]);
+
   React.useEffect(() => {
     if (!useUnifiedMenu || !onOverflowItemsChange) {
       return;
@@ -188,14 +193,11 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({
     );
   }, [isLargeScreen, isMediumScreen, menuItemsWithState, onOverflowItemsChange, useUnifiedMenu]);
 
-  React.useEffect(
-    () => () => {
-      if (onOverflowItemsChange) {
-        onOverflowItemsChange([]);
-      }
-    },
-    [onOverflowItemsChange],
-  );
+  React.useEffect(() => {
+    return () => {
+      latestOverflowChangeRef.current?.([]);
+    };
+  }, []);
 
   if (useUnifiedMenu) {
     if (isLargeScreen) {

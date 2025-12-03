@@ -276,9 +276,10 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <IconButton
               size="large"
-              edge="start"
+              edge="end"
               color="inherit"
               aria-label="menu"
+              aria-expanded={Boolean(anchorEl)}
               onClick={handleMenuOpen}
             >
               {shouldShowAdminMenuIcon ? (

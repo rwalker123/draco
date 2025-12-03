@@ -1273,10 +1273,6 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
 
     const items = buildCompactMenuItems(onUnifiedMenuClose ?? (() => {}));
     onCompactMenuItemsChange?.(items);
-
-    return () => {
-      onCompactMenuItemsChange?.([]);
-    };
   }, [
     buildCompactMenuItems,
     isCompact,
@@ -1284,6 +1280,13 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     onUnifiedMenuClose,
     useUnifiedMenu,
   ]);
+
+  React.useEffect(
+    () => () => {
+      onCompactMenuItemsChange?.([]);
+    },
+    [onCompactMenuItemsChange],
+  );
 
   const announcementDialog = (
     <AnnouncementDetailDialog
