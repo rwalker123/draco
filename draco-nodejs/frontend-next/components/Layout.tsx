@@ -37,6 +37,8 @@ import {
   InfoOutlined as InfoOutlinedIcon,
   Public as PublicIcon,
 } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { useAccount } from '../context/AccountContext';
@@ -67,6 +69,8 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const { hasRole, hasManageableAccount } = useRole();
   const { currentAccount: contextAccount, setCurrentAccount: setAccountContext } = useAccount();
   const lastSyncedAccountIdRef = React.useRef<string | null>(null);
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -154,11 +158,11 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     setAnchorEl(null);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = React.useCallback(() => {
     clearAllContexts();
     logout(); // Will automatically handle redirect if on protected page
     handleMenuClose();
-  };
+  }, [clearAllContexts, handleMenuClose, logout]);
 
   const handleNavigation = React.useCallback(
     (path: string) => {
@@ -168,19 +172,19 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     [handleMenuClose, router],
   );
 
-  const handleLogin = () => {
+  const handleLogin = React.useCallback(() => {
     const params = new URLSearchParams();
     if (accountId) params.set('accountId', accountId);
     params.set('next', pathname);
     router.push(`/login?${params.toString()}`);
-  };
+  }, [accountId, pathname, router]);
 
-  const handleSignup = () => {
+  const handleSignup = React.useCallback(() => {
     const params = new URLSearchParams();
     if (accountId) params.set('accountId', accountId);
     params.set('next', pathname);
     router.push(`/signup?${params.toString()}`);
-  };
+  }, [accountId, pathname, router]);
 
   const greetingName = React.useMemo(() => {
     if (!user) {
@@ -206,13 +210,16 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     return usernameWithoutDomain || fallbackSource;
   }, [user]);
 
-  const handleHomeClick = () => {
-    if (accountId) {
-      router.push(`/account/${accountId}/home`);
-    } else {
-      router.push('/');
+  const greetingDisplay = React.useMemo(() => {
+    if (!greetingName) {
+      return '';
     }
-  };
+    const full = `Hi, ${greetingName}`;
+    if (full.length >= 10) {
+      return `${full.slice(0, 9)}...`;
+    }
+    return full;
+  }, [greetingName]);
 
   const handleProfileClick = useCallback(() => {
     if (!user) {
@@ -221,6 +228,123 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
 
     router.push('/profile');
   }, [router, user]);
+
+  const authMenuItems = React.useMemo(() => {
+    const items: React.ReactNode[] = [];
+    if (user) {
+      if (greetingDisplay) {
+        items.push(
+          <MenuItem
+            key="profile-link"
+            onClick={() => {
+              handleMenuClose();
+              handleProfileClick();
+            }}
+          >
+            <ListItemIcon>
+              <PersonIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{greetingDisplay}</ListItemText>
+          </MenuItem>,
+        );
+      }
+      if (accountId && isMember === false) {
+        items.push(
+          <MenuItem
+            key="register"
+            onClick={() => {
+              handleMenuClose();
+              setRegistrationOpen(true);
+            }}
+          >
+            <ListItemIcon>
+              <HandshakeIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Register</ListItemText>
+          </MenuItem>,
+        );
+      }
+      items.push(
+        <MenuItem
+          key="sign-out"
+          onClick={() => {
+            handleMenuClose();
+            handleLogout();
+          }}
+        >
+          <ListItemIcon>
+            <KeyIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Sign Out</ListItemText>
+        </MenuItem>,
+      );
+    } else {
+      items.push(
+        <MenuItem
+          key="sign-in"
+          onClick={() => {
+            handleMenuClose();
+            handleLogin();
+          }}
+        >
+          <ListItemIcon>
+            <KeyIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Sign In</ListItemText>
+        </MenuItem>,
+      );
+      if (accountId) {
+        items.push(
+          <MenuItem
+            key="register"
+            onClick={() => {
+              handleMenuClose();
+              setRegistrationOpen(true);
+            }}
+          >
+            <ListItemIcon>
+              <HandshakeIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Register</ListItemText>
+          </MenuItem>,
+        );
+      } else {
+        items.push(
+          <MenuItem
+            key="sign-up"
+            onClick={() => {
+              handleMenuClose();
+              handleSignup();
+            }}
+          >
+            <ListItemIcon>
+              <HandshakeIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Sign Up</ListItemText>
+          </MenuItem>,
+        );
+      }
+    }
+    return items;
+  }, [
+    accountId,
+    greetingDisplay,
+    handleLogin,
+    handleLogout,
+    handleMenuClose,
+    handleProfileClick,
+    handleSignup,
+    isMember,
+    user,
+  ]);
+
+  const handleHomeClick = () => {
+    if (accountId) {
+      router.push(`/account/${accountId}/home`);
+    } else {
+      router.push('/');
+    }
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -312,7 +436,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
             />
             {user ? (
               <>
-                {greetingName && (
+                {!isSmallScreen && greetingDisplay && (
                   <Typography
                     variant="body1"
                     onClick={user ? handleProfileClick : undefined}
@@ -326,32 +450,37 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                         : undefined,
                     }}
                   >
-                    Hi, {greetingName}
+                    {greetingDisplay}
                   </Typography>
                 )}
-                {accountId && isMember === false && (
+                {!isSmallScreen && accountId && isMember === false && (
                   <Button color="inherit" onClick={() => setRegistrationOpen(true)} sx={{ mr: 1 }}>
                     Register
                   </Button>
                 )}
-                <Button color="inherit" onClick={handleLogout}>
-                  Sign Out
-                </Button>
+                {!isSmallScreen && (
+                  <Button color="inherit" onClick={handleLogout}>
+                    Sign Out
+                  </Button>
+                )}
               </>
             ) : (
               <>
-                <Button color="inherit" onClick={handleLogin} sx={{ mr: 1 }}>
-                  Sign In
-                </Button>
-                {accountId ? (
-                  <Button color="inherit" onClick={() => setRegistrationOpen(true)}>
-                    Register
-                  </Button>
-                ) : (
-                  <Button color="inherit" onClick={handleSignup}>
-                    Sign Up
+                {!isSmallScreen && (
+                  <Button color="inherit" onClick={handleLogin} sx={{ mr: 1 }}>
+                    Sign In
                   </Button>
                 )}
+                {!isSmallScreen &&
+                  (accountId ? (
+                    <Button color="inherit" onClick={() => setRegistrationOpen(true)}>
+                      Register
+                    </Button>
+                  ) : (
+                    <Button color="inherit" onClick={handleSignup}>
+                      Sign Up
+                    </Button>
+                  ))}
               </>
             )}
           </Box>
@@ -382,6 +511,8 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           </MenuItem>
         ))}
         {sportOverflowItems.length > 0 ? <Divider sx={{ my: 1 }} /> : null}
+        {isSmallScreen ? authMenuItems : null}
+        {isSmallScreen && authMenuItems.length > 0 ? <Divider sx={{ my: 1 }} /> : null}
         {quickActionItems}
         {quickActionItems.length > 0 ? <Divider sx={{ my: 1 }} /> : null}
         <MenuItem onClick={() => handleNavigation('/accounts')}>
