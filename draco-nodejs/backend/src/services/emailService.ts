@@ -170,7 +170,7 @@ export class EmailService {
 
   constructor(config?: EmailConfig, fromEmail?: string, baseUrl?: string) {
     // Legacy constructor for backward compatibility
-    this.baseUrl = baseUrl || EmailConfigFactory.getBaseUrl();
+    this.baseUrl = EmailConfigFactory.getBaseUrl(baseUrl);
     this.attachmentService = new EmailAttachmentService();
     this.emailRepository = RepositoryFactory.getEmailRepository();
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
@@ -249,11 +249,7 @@ export class EmailService {
     resetToken: string,
   ): Promise<boolean> {
     try {
-      const frontendBaseUrl = process.env.FRONTEND_URL || this.baseUrl;
-      const normalizedBaseUrl = frontendBaseUrl.endsWith('/')
-        ? frontendBaseUrl.replace(/\/+$/, '')
-        : frontendBaseUrl;
-      const resetUrl = `${normalizedBaseUrl}/reset-password?token=${resetToken}`;
+      const resetUrl = `${this.baseUrl}/reset-password?token=${resetToken}`;
       const settings = EmailConfigFactory.getEmailSettings();
 
       const emailOptions: EmailOptions = {
@@ -291,14 +287,10 @@ export class EmailService {
     }
 
     try {
-      const frontendBaseUrl = process.env.FRONTEND_URL || this.baseUrl;
-      const normalizedBaseUrl = frontendBaseUrl.endsWith('/')
-        ? frontendBaseUrl.replace(/\/+$/, '')
-        : frontendBaseUrl;
-      const resetUrl = `${normalizedBaseUrl}/reset-password?token=${resetToken}`;
+      const resetUrl = `${this.baseUrl}/reset-password?token=${resetToken}`;
       const accountDashboardUrl = accountId
-        ? `${normalizedBaseUrl}/account/${accountId}`
-        : `${normalizedBaseUrl}/login`;
+        ? `${this.baseUrl}/account/${accountId}`
+        : `${this.baseUrl}/login`;
       const settings = EmailConfigFactory.getEmailSettings();
 
       const emailOptions: EmailOptions = {
