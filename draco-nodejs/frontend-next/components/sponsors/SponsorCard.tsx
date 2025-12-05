@@ -35,10 +35,7 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
       backgroundColor: theme.palette.background.paper,
       border: theme.palette.widget.border,
       shadow: theme.shadows[theme.palette.mode === 'dark' ? 8 : 1],
-      logoBackdrop: alpha(
-        theme.palette.text.primary,
-        theme.palette.mode === 'dark' ? 0.18 : 0.08,
-      ),
+      logoBackdrop: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.18 : 0.08),
     };
   }, [theme]);
 
@@ -91,11 +88,9 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                   minWidth: 240,
                   p: { xs: 1.5, sm: 2 },
                   borderRadius: 2,
-                  display: 'grid',
-                  gridTemplateColumns: 'auto 1fr',
-                  columnGap: { xs: 1.25, sm: 2 },
-                  rowGap: { xs: 1, sm: 1.25 },
-                  alignItems: 'start',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: { xs: 1.25, sm: 1.5 },
                   backgroundColor: tileStyles.backgroundColor,
                   border: '1px solid',
                   borderColor: tileStyles.border,
@@ -104,17 +99,16 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
               >
                 <Box
                   sx={{
-                    width: 78,
-                    height: 78,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    p: { xs: 1.25, sm: 1.75 },
                     borderRadius: 2,
                     bgcolor: tileStyles.logoBackdrop,
                     border: hasLogo ? 'none' : '1px dashed',
                     borderColor: hasLogo ? 'transparent' : theme.palette.divider,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     overflow: 'hidden',
-                    gridRow: '1 / 2',
+                    minHeight: 96,
                   }}
                 >
                   {hasLogo ? (
@@ -122,7 +116,11 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                       component="img"
                       src={sponsor.photoUrl ?? undefined}
                       alt={sponsor.name}
-                      sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      sx={{
+                        maxWidth: '100%',
+                        maxHeight: 140,
+                        objectFit: 'contain',
+                      }}
                       onError={() => handleImageError(sponsor.id)}
                     />
                   ) : (
@@ -130,63 +128,70 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                   )}
                 </Box>
 
-                <Stack spacing={0.75} minWidth={0} sx={{ gridColumn: '2 / 3', gridRow: '1 / 2' }}>
-                  <Typography variant="subtitle1" component="h3" fontWeight={600} noWrap>
-                    {sponsor.name}
-                  </Typography>
-                  {sponsor.description && (
-                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4 }}>
-                      {sponsor.description}
+                <Stack spacing={1} minWidth={0}>
+                  <Stack spacing={0.75}>
+                    <Typography variant="subtitle1" component="h3" fontWeight={600} noWrap>
+                      {sponsor.name}
                     </Typography>
-                  )}
-                </Stack>
-
-                <Stack spacing={0.5} sx={{ gridColumn: '1 / 3', gridRow: '2 / 3' }}>
-                  {(sponsor.streetAddress || sponsor.cityStateZip) && (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <LocationOnIcon fontSize="small" sx={{ color: 'primary.main' }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {[sponsor.streetAddress, sponsor.cityStateZip].filter(Boolean).join(', ')}
+                    {sponsor.description && (
+                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4 }}>
+                        {sponsor.description}
                       </Typography>
-                    </Stack>
-                  )}
-                  {sponsor.email && (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <EmailIcon fontSize="small" sx={{ color: 'primary.main' }} />
-                      <MuiLink variant="body2" color="primary" href={emailHref} underline="hover">
-                        {sponsor.email}
-                      </MuiLink>
-                    </Stack>
-                  )}
-                  {sponsor.phone && (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <PhoneIcon fontSize="small" sx={{ color: 'primary.main' }} />
-                      {phoneHref ? (
-                        <MuiLink variant="body2" color="primary" href={phoneHref} underline="hover">
-                          {sponsor.phone}
-                        </MuiLink>
-                      ) : (
+                    )}
+                  </Stack>
+
+                  <Stack spacing={0.5}>
+                    {(sponsor.streetAddress || sponsor.cityStateZip) && (
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <LocationOnIcon fontSize="small" sx={{ color: 'primary.main' }} />
                         <Typography variant="body2" color="text.secondary">
-                          {sponsor.phone}
+                          {[sponsor.streetAddress, sponsor.cityStateZip].filter(Boolean).join(', ')}
                         </Typography>
-                      )}
-                    </Stack>
-                  )}
-                  {sponsor.website && websiteHref && (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <LanguageIcon fontSize="small" sx={{ color: 'primary.main' }} />
-                      <MuiLink
-                        variant="body2"
-                        color="primary"
-                        href={websiteHref}
-                        underline="hover"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {sponsor.website}
-                      </MuiLink>
-                    </Stack>
-                  )}
+                      </Stack>
+                    )}
+                    {sponsor.email && (
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <EmailIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                        <MuiLink variant="body2" color="primary" href={emailHref} underline="hover">
+                          {sponsor.email}
+                        </MuiLink>
+                      </Stack>
+                    )}
+                    {sponsor.phone && (
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <PhoneIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                        {phoneHref ? (
+                          <MuiLink
+                            variant="body2"
+                            color="primary"
+                            href={phoneHref}
+                            underline="hover"
+                          >
+                            {sponsor.phone}
+                          </MuiLink>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            {sponsor.phone}
+                          </Typography>
+                        )}
+                      </Stack>
+                    )}
+                    {sponsor.website && websiteHref && (
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <LanguageIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                        <MuiLink
+                          variant="body2"
+                          color="primary"
+                          href={websiteHref}
+                          underline="hover"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {sponsor.website}
+                        </MuiLink>
+                      </Stack>
+                    )}
+                  </Stack>
                 </Stack>
               </Paper>
             );
