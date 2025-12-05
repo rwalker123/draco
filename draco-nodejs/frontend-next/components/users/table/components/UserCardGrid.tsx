@@ -18,6 +18,7 @@ interface UserCardGridProps {
   onDeleteContact?: (contact: BaseContactType) => Promise<void>;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
   onRevokeRegistration?: (contactId: string) => void;
+  onAutoRegister?: (contact: BaseContactType) => void;
   canManageUsers: boolean;
   getRoleDisplayName: (
     roleOrRoleId:
@@ -38,6 +39,7 @@ const UserCardGrid: React.FC<UserCardGridProps> = ({
   onDeleteContact,
   onDeleteContactPhoto,
   onRevokeRegistration,
+  onAutoRegister,
   canManageUsers,
   getRoleDisplayName,
   searchTerm,
@@ -100,6 +102,7 @@ const UserCardGrid: React.FC<UserCardGridProps> = ({
                 getRoleDisplayName={getRoleDisplayName}
                 showActions={true}
                 onRevokeRegistration={onRevokeRegistration}
+                onAutoRegister={onAutoRegister}
               />
             ))}
           </Box>

@@ -9,6 +9,7 @@ import {
   ContactRoleType,
   ContactSearchParamsType,
   AutomaticRoleHoldersType,
+  AutoRegisterContactResponseType,
 } from '@draco/shared-schemas';
 import {
   assignRoleToUser,
@@ -21,11 +22,12 @@ import {
   removeRoleFromUser,
   searchContacts,
   unlinkContactFromUser,
+  autoRegisterContact,
 } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
 import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
 import { createApiClient } from '../lib/apiClientFactory';
-import { unwrapApiResult } from '../utils/apiResult';
+import { unwrapApiResult, getApiErrorMessage, ApiClientError } from '../utils/apiResult';
 
 // Pagination interface for API responses
 interface PaginationInfo {
@@ -345,6 +347,38 @@ export class UserManagementService {
     });
 
     unwrapApiResult(result, 'Failed to revoke registration');
+  }
+
+  async autoRegisterContact(
+    accountId: string,
+    contactId: string,
+  ): Promise<AutoRegisterContactResponseType> {
+    const result = await autoRegisterContact({
+      client: this.client,
+      path: { accountId, contactId },
+      throwOnError: false,
+    });
+
+    const typedResult = result as { data?: unknown; error?: unknown; response?: Response };
+
+    if (typedResult.error || (typedResult.response && typedResult.response.status >= 400)) {
+      const message = getApiErrorMessage(typedResult.error, 'Failed to auto-register contact');
+      throw new ApiClientError(message, {
+        status: typedResult.response?.status,
+        response: typedResult.response,
+        details: typedResult.error,
+      });
+    }
+
+    if (typedResult.data) {
+      return typedResult.data as AutoRegisterContactResponseType;
+    }
+
+    throw new ApiClientError('Failed to auto-register contact', {
+      status: typedResult.response?.status,
+      response: typedResult.response,
+      details: typedResult.error,
+    });
   }
 
   async getContact(accountId: string, contactId: string): Promise<ContactType> {

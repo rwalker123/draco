@@ -29,6 +29,10 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
   // Title prop to override default behavior
   title: customTitle,
 
+  // Registration actions
+  onRevokeRegistration,
+  onAutoRegister,
+
   // All original UserTable props
   ...originalProps
 }) => {
@@ -75,10 +79,8 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
       onlyWithRoles={onlyWithRoles}
       onOnlyWithRolesChange={onOnlyWithRolesChange}
       // Registration management
-      onRevokeRegistration={
-        (originalProps as unknown as { onRevokeRegistration?: (id: string) => void })
-          .onRevokeRegistration
-      }
+      onRevokeRegistration={onRevokeRegistration}
+      onAutoRegister={onAutoRegister}
       // Title props for enhanced container
       title={
         customTitle !== undefined

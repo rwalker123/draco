@@ -276,6 +276,65 @@ export class EmailService {
     }
   }
 
+  async sendAccountPasswordSetupEmail(options: {
+    toEmail: string;
+    username: string;
+    resetToken: string;
+    accountName?: string;
+    accountId?: string;
+    contactName?: string;
+  }): Promise<boolean> {
+    const { toEmail, username, resetToken, accountName, accountId, contactName } = options;
+
+    if (!this.hasValidEmail(toEmail)) {
+      return false;
+    }
+
+    try {
+      const frontendBaseUrl = process.env.FRONTEND_URL || this.baseUrl;
+      const normalizedBaseUrl = frontendBaseUrl.endsWith('/')
+        ? frontendBaseUrl.replace(/\/+$/, '')
+        : frontendBaseUrl;
+      const resetUrl = `${normalizedBaseUrl}/reset-password?token=${resetToken}`;
+      const accountDashboardUrl = accountId
+        ? `${normalizedBaseUrl}/account/${accountId}`
+        : `${normalizedBaseUrl}/login`;
+      const settings = EmailConfigFactory.getEmailSettings();
+
+      const emailOptions: EmailOptions = {
+        to: toEmail,
+        subject: accountName
+          ? `Welcome to ${accountName} - Set your password`
+          : 'Welcome - Set your password',
+        html: this.generateAccountPasswordSetupEmailHtml({
+          accountName,
+          accountDashboardUrl,
+          resetUrl,
+          contactName,
+          username,
+        }),
+        text: this.generateAccountPasswordSetupEmailText({
+          accountName,
+          accountDashboardUrl,
+          resetUrl,
+          contactName,
+          username,
+        }),
+        from: settings.fromEmail,
+        fromName: settings.fromName,
+        replyTo: settings.replyTo,
+      };
+
+      const provider = await this.getProvider();
+      const result = await provider.sendEmail(emailOptions);
+
+      return result.success;
+    } catch (error) {
+      console.error('Error sending account password setup email:', error);
+      return false;
+    }
+  }
+
   async sendGeneralWelcomeEmail(toEmail: string): Promise<boolean> {
     if (!this.hasValidEmail(toEmail)) {
       return false;
@@ -1918,6 +1977,85 @@ If you have any questions, reach out to your organization administrator.
 
 This is an automated message from ezRecSports.com. Please do not reply to this email.
     `.trim();
+  }
+
+  private generateAccountPasswordSetupEmailHtml(options: {
+    accountName?: string;
+    accountDashboardUrl: string;
+    resetUrl: string;
+    contactName?: string;
+    username: string;
+  }): string {
+    const { accountName, accountDashboardUrl, resetUrl, contactName, username } = options;
+    const greetingName = contactName || username || 'there';
+    const brand = accountName || 'ezRecSports.com';
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Welcome to ${brand}</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f6f8; }
+          .container { max-width: 640px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+          .header { background-color: #0d6efd; color: #ffffff; padding: 28px 20px; text-align: center; }
+          .header h1 { margin: 0; font-size: 24px; }
+          .content { padding: 24px 20px 28px; }
+          .content h2 { margin: 0 0 12px 0; font-size: 22px; color: #1f2937; }
+          .content p { margin: 0 0 14px 0; }
+          .button { display: inline-block; padding: 12px 20px; background-color: #0d6efd; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; }
+          .muted { color: #6b7280; font-size: 14px; }
+          .footer { padding: 16px 20px 24px; text-align: center; color: #6b7280; font-size: 12px; }
+          a { color: #0d6efd; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>${brand}</h1>
+          </div>
+          <div class="content">
+            <h2>Welcome!</h2>
+            <p>Hi ${greetingName},</p>
+            <p>An account has been created for you. Set your password to finish signing in.</p>
+            <p><a href="${resetUrl}" class="button">Set your password</a></p>
+            <p class="muted">If the button doesn't work, copy and paste this link:<br/><a href="${resetUrl}">${resetUrl}</a></p>
+            <p>After setting your password, you can access your account here:<br/><a href="${accountDashboardUrl}">${accountDashboardUrl}</a></p>
+            <p class="muted">If you didn’t expect this, you can ignore this email.</p>
+          </div>
+          <div class="footer">
+            This is an automated message from ezRecSports.com. Please do not reply to this email.
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private generateAccountPasswordSetupEmailText(options: {
+    accountName?: string;
+    accountDashboardUrl: string;
+    resetUrl: string;
+    contactName?: string;
+    username: string;
+  }): string {
+    const { accountName, accountDashboardUrl, resetUrl, contactName, username } = options;
+    const greetingName = contactName || username;
+
+    return [
+      accountName ? `Welcome to ${accountName}!` : 'Welcome!',
+      `Hi ${greetingName || 'there'},`,
+      'An account has been created for you. Set your password to finish signing in.',
+      '',
+      `Set your password: ${resetUrl}`,
+      `Afterwards, access your account: ${accountDashboardUrl}`,
+      '',
+      'If you didn’t expect this, you can ignore this email.',
+      '',
+      'Thanks,',
+      'ezRecSports Team',
+    ].join('\n');
   }
 
   /**

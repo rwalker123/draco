@@ -99,6 +99,22 @@ export class UserService {
     return this.passwordResetTokenRepository.deleteExpiredTokens(new Date());
   }
 
+  /**
+   * Generate a password reset token without sending an email. Caller is responsible for delivery.
+   */
+  async createPasswordResetTokenForUser(userId: string): Promise<string> {
+    const user = await this.userRepository.findByUserId(userId);
+    if (!user) {
+      throw new ValidationError('User not found');
+    }
+
+    const resetToken = this.generateResetToken();
+    await this.invalidateExistingTokens(user.id);
+    await this.createResetToken(user.id, resetToken);
+
+    return resetToken;
+  }
+
   async isAccountOwner(userId: string, accountId: bigint): Promise<boolean> {
     const account = await this.accountService.getAccountById(accountId); // Ensure account exists
     if (!account) {

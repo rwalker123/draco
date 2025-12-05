@@ -130,7 +130,10 @@ export class AuthService {
   /**
    * Register a new user
    */
-  async register(credentials: SignInCredentialsType): Promise<RegisteredUserType> {
+  async register(
+    credentials: SignInCredentialsType,
+    options?: { sendWelcomeEmail?: boolean },
+  ): Promise<RegisteredUserType> {
     const { userName, password } = credentials;
 
     // Check if username already exists
@@ -164,7 +167,9 @@ export class AuthService {
     const token = this.generateToken(newUser.id, newUser.username || '');
 
     const welcomeEmailRecipient = newUser.username || userName;
-    void this.emailService.sendGeneralWelcomeEmail(welcomeEmailRecipient);
+    if (options?.sendWelcomeEmail !== false) {
+      void this.emailService.sendGeneralWelcomeEmail(welcomeEmailRecipient);
+    }
 
     return {
       token,

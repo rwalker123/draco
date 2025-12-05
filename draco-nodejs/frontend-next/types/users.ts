@@ -77,6 +77,7 @@ export interface UserTableProps {
   onEditContact?: (contact: ContactType) => Promise<void>;
   onDeleteContact?: (contact: ContactType) => Promise<void>;
   canManageUsers: boolean;
+  onAutoRegister?: (contact: ContactType) => void;
   page: number;
   rowsPerPage: number;
   hasNext: boolean;
@@ -110,6 +111,7 @@ export interface UserCardProps {
   onDeleteContact?: (contact: ContactType) => Promise<void>;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
   onRevokeRegistration?: (contactId: string) => void;
+  onAutoRegister?: (contact: ContactType) => void;
   getRoleDisplayName: (
     roleOrRoleId:
       | string
@@ -233,5 +235,6 @@ export interface UseUserManagementReturn {
   handleContactUpdated: (contact: ContactType, isCreate: boolean) => void;
   handlePhotoDeleted: (contactId: string) => void;
   handleRegistrationRevoked: (contactId: string) => void;
+  handleRegistrationLinked: (contactId: string, userId: string) => void;
   handleContactDeleted: (contactId: string) => void;
 }

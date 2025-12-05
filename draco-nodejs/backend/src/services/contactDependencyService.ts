@@ -125,6 +125,17 @@ export class ContactDependencyService {
    */
   private async checkTableDependency(tableName: string, contactId: bigint): Promise<number> {
     try {
+      // Special handling for rosterseason: link via roster -> contactid
+      if (tableName === 'rosterseason') {
+        return await prisma.rosterseason.count({
+          where: {
+            roster: {
+              contactid: contactId,
+            },
+          },
+        });
+      }
+
       // Use Prisma's dynamic model access
       const model = (
         prisma as unknown as Record<
@@ -183,6 +194,11 @@ export class ContactDependencyService {
     try {
       // Delete associated photo before deleting the contact
       await this.contactPhotoService.deleteContactPhoto(contactId, accountId);
+
+      // Clean up email recipients linked to this contact to satisfy FK constraints
+      await this.prisma.email_recipients.deleteMany({
+        where: { contact_id: contactId },
+      });
 
       // Since all dependencies have CASCADE delete configured in the schema,
       // we can simply delete the contact and let the database handle cascading
