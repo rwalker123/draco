@@ -19,7 +19,7 @@ export class ImageProcessor {
   private static readonly IMAGE_DIMENSIONS: ImageDimensions = {
     teamLogo: {
       width: 80,
-      height: 45,
+      height: 80,
       fit: 'cover',
       quality: 90,
       format: 'png',
@@ -33,7 +33,7 @@ export class ImageProcessor {
     },
     contactPhoto: {
       width: 80,
-      height: 60,
+      height: 80,
       fit: 'cover',
       quality: 90,
       format: 'png',
@@ -41,7 +41,7 @@ export class ImageProcessor {
     sponsorPhoto: {
       width: 170,
       height: 130,
-      fit: 'cover',
+      fit: 'contain',
       quality: 90,
       format: 'png',
     },

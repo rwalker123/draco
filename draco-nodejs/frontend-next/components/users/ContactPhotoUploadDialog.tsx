@@ -16,6 +16,7 @@ import EditableContactAvatar, { EditableContactAvatarHandle } from './EditableCo
 import { getContactDisplayName } from '@/utils/contactUtils';
 import { useContactPhotoUpload } from '@/hooks/useContactPhotoUpload';
 import Alert from '@mui/material/Alert';
+import { getPhotoSize } from '@/config/contacts';
 
 interface ContactPhotoUploadDialogProps {
   open: boolean;
@@ -37,6 +38,7 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
   onError,
 }) => {
   const avatarRef = useRef<EditableContactAvatarHandle | null>(null);
+  const photoSize = getPhotoSize();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -158,7 +160,7 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
           </Alert>
         ) : null}
         <Typography variant="caption" color="text.secondary">
-          Recommended size: 60x60 pixels. Max file size: 10MB.
+          Recommended size: {photoSize}x{photoSize} pixels. Max file size: 10MB.
         </Typography>
       </DialogContent>
       <DialogActions>

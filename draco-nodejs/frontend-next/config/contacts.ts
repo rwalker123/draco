@@ -3,7 +3,7 @@ import { addCacheBuster as addCacheBusterUtil } from '../utils/addCacheBuster';
 // Contact configuration settings
 export const CONTACT_CONFIG = {
   // Photo configuration
-  PHOTO_SIZE: 150, // Size in pixels for contact photos (width and height)
+  PHOTO_SIZE: 80, // Size in pixels for contact photos (width and height)
   PHOTO_MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB in bytes
   PHOTO_ACCEPTED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
 
