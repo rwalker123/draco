@@ -338,13 +338,13 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     user,
   ]);
 
-  const handleHomeClick = () => {
+  const handleHomeClick = useCallback(() => {
     if (accountId) {
       router.push(`/account/${accountId}/home`);
     } else {
       router.push('/');
     }
-  };
+  }, [accountId, router]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>

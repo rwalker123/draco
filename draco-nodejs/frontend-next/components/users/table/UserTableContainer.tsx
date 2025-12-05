@@ -18,6 +18,7 @@ import {
   UserTableAction,
   UserSelectionActions,
 } from '../../../types/userTable';
+import { ContactType } from '@draco/shared-schemas';
 
 import { StreamPaginationControl } from '../../pagination';
 
@@ -275,6 +276,9 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
           onRevokeRegistration={
             (_restProps as { onRevokeRegistration?: (contactId: string) => void })
               .onRevokeRegistration
+          }
+          onAutoRegister={
+            (_restProps as { onAutoRegister?: (contact: ContactType) => void }).onAutoRegister
           }
           getRoleDisplayName={getRoleDisplayName}
           searchTerm={currentSearchTerm}

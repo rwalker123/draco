@@ -26,6 +26,7 @@ import {
   parseFormDataJSON,
   validatePhotoUpload,
 } from '../middleware/fileUpload.js';
+import { AutoRegisterContactResponseType } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const roleService = ServiceFactory.getRoleService();
@@ -191,6 +192,32 @@ router.post(
     );
 
     res.status(201).json(registeredUser);
+  }),
+);
+
+/**
+ * POST /api/accounts/:accountId/contacts/:contactId/auto-register
+ * Attempt to auto-register a contact using their email
+ */
+router.post(
+  '/:accountId/contacts/:contactId/auto-register',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.contacts.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, contactId } = extractContactParams(req.params);
+
+    const result: AutoRegisterContactResponseType = await registrationService.autoRegisterContact(
+      accountId,
+      contactId,
+    );
+
+    if (result.status === 'conflict-other-contact') {
+      res.status(409).json(result);
+      return;
+    }
+
+    res.json(result);
   }),
 );
 

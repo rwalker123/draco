@@ -9,17 +9,23 @@ import {
   ContactValidationType,
   ContactValidationWithSignInType,
   RegisteredUserType,
+  AutoRegisterContactResponseType,
 } from '@draco/shared-schemas';
 import { ServiceFactory } from './serviceFactory.js';
 import { Mutex } from 'async-mutex';
 import type { EmailService } from './emailService.js';
 import type { AccountsService } from './accountsService.js';
+import { UserService } from './userService.js';
+import { RepositoryFactory } from '../repositories/index.js';
+import { randomUUID } from 'crypto';
 
 export class RegistrationService {
   private readonly authService = ServiceFactory.getAuthService();
   private readonly contactService = ServiceFactory.getContactService();
   private readonly emailService: EmailService = ServiceFactory.getEmailService();
   private readonly accountsService: AccountsService = ServiceFactory.getAccountsService();
+  private readonly userService: UserService = ServiceFactory.getUserService();
+  private readonly userRepository = RepositoryFactory.getUserRepository();
   private userCreateMutex = new Mutex();
 
   /**
@@ -49,10 +55,13 @@ export class RegistrationService {
       }
 
       // Step 2: Register user via AuthService (WITHIN TRANSACTION)
-      const registerResult = await this.authService.register({
-        userName: data.userName,
-        password: data.password,
-      });
+      const registerResult = await this.authService.register(
+        {
+          userName: data.userName,
+          password: data.password,
+        },
+        { sendWelcomeEmail: true },
+      );
 
       if (!registerResult || !registerResult.token || !registerResult.userId) {
         throw new ConflictError('User registration failed');
@@ -271,5 +280,140 @@ export class RegistrationService {
     } catch (error) {
       console.error('Failed to send account welcome email:', error);
     }
+  }
+
+  /**
+   * Auto-register contact by email: reuse existing user if present, otherwise create one, then send password-set email.
+   */
+  async autoRegisterContact(
+    accountId: bigint,
+    contactId: bigint,
+  ): Promise<AutoRegisterContactResponseType> {
+    return await this.userCreateMutex.runExclusive(async () => {
+      const contact = await this.contactService.getContact(accountId, contactId);
+
+      if (!contact.email) {
+        return {
+          status: 'missing-email',
+          contactId: contact.id,
+          message: 'Contact must have an email to auto-register.',
+        };
+      }
+
+      const normalizedEmail = contact.email.trim().toLowerCase();
+
+      if (contact.userId) {
+        return {
+          status: 'already-linked',
+          contactId: contact.id,
+          userId: contact.userId,
+          userName: normalizedEmail,
+        };
+      }
+
+      // Find existing user by username/email
+      const resolvedUser = await this.userRepository.findByUsername(normalizedEmail);
+
+      if (resolvedUser) {
+        // Check if another contact in this account is already linked to this user
+        const otherContact = await this.contactService
+          .getContactByUserId(resolvedUser.id, accountId)
+          .catch(() => null);
+
+        if (otherContact && otherContact.id !== contact.id) {
+          return {
+            status: 'conflict-other-contact',
+            contactId: contact.id,
+            userId: resolvedUser.id,
+            userName: resolvedUser.username ?? normalizedEmail,
+            otherContactId: otherContact.id,
+            otherContactName: `${otherContact.firstName} ${otherContact.lastName}`.trim(),
+            message: 'User already linked to another contact in this account.',
+          };
+        }
+
+        const linked = await this.contactService.registerContactUser(
+          resolvedUser.id,
+          contactId,
+          normalizedEmail,
+        );
+
+        await this.sendAccountWelcomeEmail(
+          accountId,
+          linked,
+          linked.email ?? normalizedEmail,
+          resolvedUser.username ?? normalizedEmail,
+        );
+
+        return {
+          status: 'linked-existing-user',
+          contactId: linked.id,
+          userId: resolvedUser.id,
+          userName: resolvedUser.username ?? normalizedEmail,
+          message:
+            'Existing user found. Contact linked and welcome email sent. User can sign in with existing credentials; no password setup required.',
+        };
+      }
+
+      // Create new user with generated password
+      const tempPassword = this.generateTempPassword();
+      const newUser = await this.authService.register(
+        {
+          userName: normalizedEmail,
+          password: tempPassword,
+        },
+        { sendWelcomeEmail: false },
+      );
+
+      const linked = await this.contactService.registerContactUser(
+        newUser.userId,
+        contactId,
+        normalizedEmail,
+      );
+
+      await this.sendPasswordSetEmail(
+        accountId,
+        newUser.userId,
+        normalizedEmail,
+        newUser.userName ?? normalizedEmail,
+      );
+
+      return {
+        status: 'created-new-user',
+        contactId: linked.id,
+        userId: newUser.userId,
+        userName: newUser.userName ?? normalizedEmail,
+      };
+    });
+  }
+
+  private generateTempPassword(): string {
+    // Simple strong temp password; only valid until reset is completed
+    return `Tmp${randomUUID().replace(/-/g, '').slice(0, 12)}!`;
+  }
+
+  private async sendPasswordSetEmail(
+    accountId: bigint,
+    userId: string,
+    toEmail: string,
+    username: string,
+  ): Promise<void> {
+    const token = await this.userService.createPasswordResetTokenForUser(userId).catch(() => null);
+    if (!token) {
+      throw new ValidationError(
+        'Failed to create password reset token for user; cannot send password setup email.',
+      );
+    }
+
+    const account = await this.accountsService.getAccountName(accountId).catch(() => null);
+    const accountName = account?.name;
+
+    await this.emailService.sendAccountPasswordSetupEmail({
+      toEmail,
+      username,
+      resetToken: token,
+      accountName,
+      accountId: account?.id,
+    });
   }
 }

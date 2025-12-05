@@ -20,6 +20,8 @@ import {
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { ContactType, ContactRoleType, RoleWithContactType } from '@draco/shared-schemas';
 import AddIcon from '@mui/icons-material/Add';
+import AutoRegisterDialog from '../../../../components/users/AutoRegisterDialog';
+import AutoRegisterConflictDialog from '../../../../components/users/AutoRegisterConflictDialog';
 
 interface UserManagementProps {
   accountId: string;
@@ -75,6 +77,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     handleContactUpdated,
     handlePhotoDeleted,
     handleRegistrationRevoked,
+    handleRegistrationLinked,
     handleContactDeleted,
     loadContextData,
   } = useUserManagement(accountId);
@@ -95,6 +98,20 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
       dialogs.revokeConfirmDialog.open(contactId);
     },
     [dialogs.revokeConfirmDialog],
+  );
+
+  const handleAutoRegisterConflict = useCallback(
+    (data: {
+      contact: ContactType;
+      otherContactName?: string;
+      otherContactId?: string;
+      email?: string;
+      message?: string;
+    }) => {
+      dialogs.autoRegisterDialog.close();
+      dialogs.autoRegisterConflictDialog.open(data);
+    },
+    [dialogs.autoRegisterDialog, dialogs.autoRegisterConflictDialog],
   );
 
   // Async wrapper functions to match the interface expectations
@@ -129,8 +146,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
   );
 
   const handleEditContactSuccess = useCallback(
-    (result: { message: string; contact: ContactType; isCreate: boolean }) => {
-      setSuccess(result.message);
+    (result: {
+      message: string;
+      contact: ContactType;
+      isCreate: boolean;
+      status?: 'success' | 'warning';
+    }) => {
+      if (result.status === 'warning') {
+        setError(null);
+        setSuccess(`⚠️ ${result.message}`);
+      } else {
+        setSuccess(result.message);
+      }
       handleContactUpdated(result.contact, result.isCreate);
       if (result.isCreate) {
         dialogs.createContactDialog.close();
@@ -138,7 +165,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         dialogs.editContactDialog.close();
       }
     },
-    [setSuccess, handleContactUpdated, dialogs.createContactDialog, dialogs.editContactDialog],
+    [
+      setSuccess,
+      setError,
+      handleContactUpdated,
+      dialogs.createContactDialog,
+      dialogs.editContactDialog,
+    ],
   );
 
   const handlePhotoDeleteSuccess = useCallback(
@@ -157,6 +190,17 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
       dialogs.revokeConfirmDialog.close();
     },
     [setSuccess, handleRegistrationRevoked, dialogs.revokeConfirmDialog],
+  );
+
+  const handleAutoRegisterSuccess = useCallback(
+    (result: { message?: string; contactId: string; userId: string }) => {
+      if (result.message) {
+        setSuccess(result.message);
+      }
+      handleRegistrationLinked(result.contactId, result.userId);
+      dialogs.autoRegisterDialog.close();
+    },
+    [setSuccess, handleRegistrationLinked, dialogs.autoRegisterDialog],
   );
 
   const handleContactDeleteSuccess = useCallback(
@@ -183,6 +227,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
       dialogs.removeRoleDialog.open(user, role);
     },
     [dialogs.removeRoleDialog],
+  );
+
+  const handleAutoRegisterWrapper = useCallback(
+    async (contact: ContactType) => {
+      dialogs.autoRegisterDialog.open(contact);
+    },
+    [dialogs.autoRegisterDialog],
   );
 
   const handleEditContactWrapper = useCallback(
@@ -278,6 +329,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         searchLoading={searchLoading}
         onDeleteContactPhoto={handleDeleteContactPhotoWithConfirm}
         onRevokeRegistration={handleRevokeWithConfirm}
+        onAutoRegister={handleAutoRegisterWrapper}
         // Filter props
         onlyWithRoles={onlyWithRoles}
         onOnlyWithRolesChange={handleFilterToggle}
@@ -352,6 +404,21 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onClose={dialogs.revokeConfirmDialog.close}
         onSuccess={handleRevokeRegistrationSuccess}
         accountId={accountId}
+      />
+
+      <AutoRegisterDialog
+        open={dialogs.autoRegisterDialog.isOpen}
+        contact={dialogs.autoRegisterDialog.data || null}
+        accountId={accountId}
+        onClose={dialogs.autoRegisterDialog.close}
+        onSuccess={handleAutoRegisterSuccess}
+        onConflict={handleAutoRegisterConflict}
+      />
+
+      <AutoRegisterConflictDialog
+        open={dialogs.autoRegisterConflictDialog.isOpen}
+        data={dialogs.autoRegisterConflictDialog.data || null}
+        onClose={dialogs.autoRegisterConflictDialog.close}
       />
 
       {canManageUsers && (

@@ -220,6 +220,32 @@ export const RegisteredUserSchema = z.object({
   contact: BaseContactSchema.optional(),
 });
 
+/**
+ * Auto-register request/response contracts
+ */
+export const AutoRegisterContactResponseSchema = z
+  .object({
+    status: z.enum([
+      'linked-existing-user', // contact linked to an existing aspnet user with matching email
+      'created-new-user', // new aspnet user created and linked
+      'already-linked', // contact already had a userId
+      'conflict-other-contact', // another contact in this account already linked to that user
+      'missing-email', // contact has no email so cannot auto-register
+      'manual-invite-sent', // we emailed instructions instead of auto-registering
+    ]),
+    contactId: bigintToStringSchema,
+    userId: z.string().optional(),
+    userName: SignInUserNameSchema.optional(),
+    otherContactId: bigintToStringSchema.optional(),
+    otherContactName: z.string().trim().optional(),
+    message: z.string().trim().optional(),
+  })
+  .openapi({
+    title: 'AutoRegisterContactResponse',
+  });
+
+export type AutoRegisterContactResponseType = z.infer<typeof AutoRegisterContactResponseSchema>;
+
 export const RegisteredUserWithRolesSchema = RegisteredUserSchema.extend(UserRolesSchema.shape);
 
 export const VerifyTokenRequestSchema = z.object({

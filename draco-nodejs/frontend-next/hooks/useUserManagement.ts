@@ -764,6 +764,29 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     [paginationState],
   );
 
+  const handleRegistrationLinked = useCallback(
+    (contactId: string, userId: string) => {
+      const updatedUsers = paginationState.users.map((user) => {
+        if (user.id === contactId) {
+          return {
+            ...user,
+            userId,
+          };
+        }
+        return user;
+      });
+
+      dispatch({
+        type: 'SET_DATA',
+        users: [...updatedUsers],
+        hasNext: paginationState.hasNext,
+        hasPrev: paginationState.hasPrev,
+        page: paginationState.page,
+      });
+    },
+    [paginationState],
+  );
+
   // Handle contact deletion incremental update
   const handleContactDeleted = useCallback(
     (contactId: string) => {
@@ -861,6 +884,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     handleContactUpdated,
     handlePhotoDeleted,
     handleRegistrationRevoked,
+    handleRegistrationLinked,
     handleContactDeleted,
   };
 };

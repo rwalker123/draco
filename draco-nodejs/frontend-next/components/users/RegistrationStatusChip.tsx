@@ -10,6 +10,7 @@ interface RegistrationStatusChipProps {
   size?: 'small' | 'medium';
   canManage?: boolean;
   onRevoke?: (contactId: string) => void;
+  onRequestRegister?: () => void;
 }
 
 /**
@@ -22,6 +23,7 @@ const RegistrationStatusChip: React.FC<RegistrationStatusChipProps> = ({
   size = 'small',
   canManage = false,
   onRevoke,
+  onRequestRegister,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const isRegistered = !!userId;
@@ -29,7 +31,10 @@ const RegistrationStatusChip: React.FC<RegistrationStatusChipProps> = ({
   const icon = isRegistered ? (
     <CheckCircle color="success" fontSize={size === 'small' ? 'small' : 'medium'} />
   ) : (
-    <PersonOutline color="action" fontSize={size === 'small' ? 'small' : 'medium'} />
+    <PersonOutline
+      color={onRequestRegister ? 'primary' : 'action'}
+      fontSize={size === 'small' ? 'small' : 'medium'}
+    />
   );
 
   return (
@@ -38,8 +43,31 @@ const RegistrationStatusChip: React.FC<RegistrationStatusChipProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Tooltip title={isRegistered ? 'Registered' : 'Not registered'} placement="top" arrow>
-        <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>{icon}</Box>
+      <Tooltip
+        title={
+          isRegistered
+            ? 'Registered'
+            : onRequestRegister
+              ? 'Click to auto register'
+              : 'Not registered'
+        }
+        placement="top"
+        arrow
+      >
+        <Box
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            cursor: !isRegistered && onRequestRegister ? 'pointer' : 'default',
+          }}
+          onClick={() => {
+            if (!isRegistered && onRequestRegister) {
+              onRequestRegister();
+            }
+          }}
+        >
+          {icon}
+        </Box>
       </Tooltip>
 
       {isRegistered && canManage && onRevoke && contactId && isHovered && (

@@ -27,7 +27,14 @@ const UserCard: React.FC<UserCardProps> = ({
   onDeleteContactPhoto,
   getRoleDisplayName,
   onRevokeRegistration,
+  onAutoRegister,
 }) => {
+  const handleRegistrationClick = () => {
+    if (!user.userId && onAutoRegister) {
+      onAutoRegister(user);
+    }
+  };
+
   return (
     <TableRow key={user.id} hover>
       <TableCell>
@@ -102,6 +109,7 @@ const UserCard: React.FC<UserCardProps> = ({
           contactId={user.id}
           canManage={canManageUsers}
           onRevoke={onRevokeRegistration}
+          onRequestRegister={handleRegistrationClick}
         />
       </TableCell>
       <TableCell>

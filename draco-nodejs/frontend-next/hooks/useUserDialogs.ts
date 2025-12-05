@@ -56,6 +56,34 @@ export interface UserDialogs {
     open: (contactId: string) => void;
     close: () => void;
   };
+
+  autoRegisterDialog: {
+    isOpen: boolean;
+    data: ContactType | undefined;
+    open: (contact: ContactType) => void;
+    close: () => void;
+  };
+
+  autoRegisterConflictDialog: {
+    isOpen: boolean;
+    data:
+      | {
+          contact: ContactType;
+          otherContactName?: string;
+          otherContactId?: string;
+          email?: string;
+          message?: string;
+        }
+      | undefined;
+    open: (data: {
+      contact: ContactType;
+      otherContactName?: string;
+      otherContactId?: string;
+      email?: string;
+      message?: string;
+    }) => void;
+    close: () => void;
+  };
 }
 
 export function useUserDialogs(): UserDialogs {
@@ -66,6 +94,14 @@ export function useUserDialogs(): UserDialogs {
   const removeRoleDialog = useDialog<{ user: ContactType; role: ContactRoleType }>();
   const photoDeleteConfirmDialog = useDialog<string>();
   const revokeConfirmDialog = useDialog<string>();
+  const autoRegisterDialog = useDialog<ContactType>();
+  const autoRegisterConflictDialog = useDialog<{
+    contact: ContactType;
+    otherContactName?: string;
+    otherContactId?: string;
+    email?: string;
+    message?: string;
+  }>();
 
   // Wrap the remove role dialog to accept two parameters
   const openRemoveRoleDialog = useCallback(
@@ -116,6 +152,18 @@ export function useUserDialogs(): UserDialogs {
       data: revokeConfirmDialog.data,
       open: revokeConfirmDialog.open,
       close: revokeConfirmDialog.close,
+    },
+    autoRegisterDialog: {
+      isOpen: autoRegisterDialog.isOpen,
+      data: autoRegisterDialog.data,
+      open: autoRegisterDialog.open,
+      close: autoRegisterDialog.close,
+    },
+    autoRegisterConflictDialog: {
+      isOpen: autoRegisterConflictDialog.isOpen,
+      data: autoRegisterConflictDialog.data,
+      open: autoRegisterConflictDialog.open,
+      close: autoRegisterConflictDialog.close,
     },
   };
 }

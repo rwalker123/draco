@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -37,6 +37,7 @@ import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useContactOperations } from '../../hooks/useContactOperations';
 import { useContactPhotoUpload } from '@/hooks/useContactPhotoUpload';
+import { useRegistrationOperations } from '@/hooks/useRegistrationOperations';
 
 const parseDateOnly = (value: string): Date | null => {
   if (!value) {
@@ -65,7 +66,12 @@ interface EditContactDialogProps {
   open: boolean;
   contact: BaseContactType | null;
   onClose: () => void;
-  onSuccess?: (result: { message: string; contact: ContactType; isCreate: boolean }) => void;
+  onSuccess?: (result: {
+    message: string;
+    contact: ContactType;
+    isCreate: boolean;
+    status?: 'success' | 'warning';
+  }) => void;
   accountId: string;
   mode?: 'create' | 'edit';
   // Optional roster signup functionality
@@ -105,10 +111,7 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
   onSuccess,
   onRosterSignup,
 }) => {
-  const initialValues = useMemo(
-    () => buildInitialContactValues(mode, contact),
-    [mode, contact],
-  );
+  const initialValues = useMemo(() => buildInitialContactValues(mode, contact), [mode, contact]);
 
   const {
     register,
@@ -125,12 +128,35 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
   // Use the contact operations hook
   const { createContact, updateContact, loading } = useContactOperations(accountId);
   const { uploadContactPhoto } = useContactPhotoUpload(accountId);
+  const { autoRegisterContact, loading: autoRegisterLoading } =
+    useRegistrationOperations(accountId);
 
   const [saveError, setSaveError] = useState<string>('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoError, setPhotoError] = useState<string>('');
   const [rosterSignup, setRosterSignup] = useState<boolean>(initialRosterSignup);
   const [createMultiplePlayers, setCreateMultiplePlayers] = useState(false);
+  const AUTO_REGISTER_PREF_KEY = 'draco:contacts:autoRegister';
+  const [autoRegister, setAutoRegister] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || mode !== 'create') {
+      return false;
+    }
+    try {
+      const stored = window.localStorage.getItem(AUTO_REGISTER_PREF_KEY);
+      return stored === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (mode !== 'create') return;
+    try {
+      window.localStorage.setItem(AUTO_REGISTER_PREF_KEY, autoRegister ? 'true' : 'false');
+    } catch {
+      // ignore storage errors
+    }
+  }, [autoRegister, mode]);
 
   const handlePhoneChange =
     (field: 'phone1' | 'phone2' | 'phone3') => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,15 +225,58 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
             });
 
       if (result.success && result.contact) {
+        let finalContact = result.contact;
+        let finalMessage =
+          result.message || `Contact ${mode === 'create' ? 'created' : 'updated'} successfully`;
+        let autoRegisterError: string | null = null;
+
+        if (mode === 'create' && autoRegister) {
+          const autoResult = await autoRegisterContact(result.contact.id);
+          if (autoResult.success && autoResult.response) {
+            const response = autoResult.response;
+            if (
+              response.userId &&
+              (response.status === 'linked-existing-user' || response.status === 'created-new-user')
+            ) {
+              finalContact = {
+                ...finalContact,
+                userId: response.userId,
+              } as ContactType;
+              finalMessage =
+                response.message ||
+                (response.status === 'created-new-user'
+                  ? 'User created and invitation sent.'
+                  : 'User linked and invitation sent.');
+            } else if (response.status === 'conflict-other-contact') {
+              autoRegisterError =
+                response.message ||
+                'Auto register skipped: this email is already linked to another contact.';
+            } else if (response.status === 'missing-email') {
+              autoRegisterError = 'Auto register skipped: contact is missing an email.';
+            } else if (response.status === 'already-linked') {
+              autoRegisterError =
+                response.message ||
+                'Auto register skipped: this contact is already linked to a user.';
+            }
+          } else if (!autoResult.success) {
+            autoRegisterError = autoResult.error || 'Auto registration failed';
+          }
+        }
+
         if (showRosterSignup && onRosterSignup) {
           onRosterSignup(rosterSignup);
         }
 
+        if (autoRegisterError) {
+          finalMessage = `${finalMessage} (Note: ${autoRegisterError})`;
+        }
+
         onSuccess?.({
-          message:
-            result.message || `Contact ${mode === 'create' ? 'created' : 'updated'} successfully`,
-          contact: result.contact,
+          message: finalMessage,
+          contact: finalContact,
           isCreate: mode === 'create',
+          // Signal to parent to show warning styling when auto-register partially failed
+          status: autoRegisterError ? 'warning' : 'success',
         });
 
         if (mode === 'create' && createMultiplePlayers) {
@@ -282,10 +351,20 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
                       <Switch
                         checked={createMultiplePlayers}
                         onChange={(e) => setCreateMultiplePlayers(e.target.checked)}
-                        disabled={loading}
+                        disabled={loading || autoRegisterLoading}
                       />
                     }
                     label="Create Multiple Players"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={autoRegister}
+                        onChange={(e) => setAutoRegister(e.target.checked)}
+                        disabled={loading || autoRegisterLoading}
+                      />
+                    }
+                    label="Auto register this contact after creation"
                   />
                   {showRosterSignup && (
                     <FormControlLabel
@@ -293,7 +372,7 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
                         <Switch
                           checked={rosterSignup}
                           onChange={(e) => setRosterSignup(e.target.checked)}
-                          disabled={loading}
+                          disabled={loading || autoRegisterLoading}
                         />
                       }
                       label="Automatically add this player to the team roster after creation"
@@ -515,16 +594,26 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
         </DialogContent>
 
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={handleClose} disabled={loading} startIcon={<CloseIcon />}>
+          <Button
+            onClick={handleClose}
+            disabled={loading || autoRegisterLoading}
+            startIcon={<CloseIcon />}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleSave}
             variant="contained"
-            disabled={loading}
-            startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+            disabled={loading || autoRegisterLoading}
+            startIcon={
+              loading || autoRegisterLoading ? <CircularProgress size={20} /> : <SaveIcon />
+            }
           >
-            {loading ? 'Saving...' : mode === 'create' ? 'Create Contact' : 'Save Changes'}
+            {loading || autoRegisterLoading
+              ? 'Saving...'
+              : mode === 'create'
+                ? 'Create Contact'
+                : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>

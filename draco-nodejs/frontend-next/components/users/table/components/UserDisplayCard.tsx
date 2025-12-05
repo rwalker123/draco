@@ -39,6 +39,7 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
   canManageUsers,
   getRoleDisplayName: _getRoleDisplayName,
   showActions = true,
+  onAutoRegister,
 }) => {
   // Card size configurations
   const cardConfig = {
@@ -267,6 +268,13 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
                 size={cardSize === 'compact' ? 'small' : 'medium'}
                 canManage={canManageUsers}
                 onRevoke={onRevokeRegistration}
+                onRequestRegister={
+                  !user.userId && onAutoRegister
+                    ? () => {
+                        onAutoRegister(user);
+                      }
+                    : undefined
+                }
               />
             </Box>
             {user.email && (

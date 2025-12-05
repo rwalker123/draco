@@ -3,12 +3,19 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { createUserManagementService } from '../services/userManagementService';
+import { AutoRegisterContactResponseType } from '@draco/shared-schemas';
 
 export interface RegistrationRevocationResult {
   success: boolean;
   message?: string;
   error?: string;
   contactId?: string;
+}
+
+export interface AutoRegistrationResult {
+  success: boolean;
+  error?: string;
+  response?: AutoRegisterContactResponseType;
 }
 
 /**
@@ -46,8 +53,31 @@ export function useRegistrationOperations(accountId: string) {
     [userService, accountId],
   );
 
+  const autoRegisterContact = useCallback(
+    async (contactId: string): Promise<AutoRegistrationResult> => {
+      if (!userService) {
+        return { success: false, error: 'User service not available' };
+      }
+
+      try {
+        setLoading(true);
+
+        const response = await userService.autoRegisterContact(accountId, contactId);
+
+        return { success: true, response };
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to auto-register';
+        return { success: false, error: errorMessage };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userService, accountId],
+  );
+
   return {
     revokeRegistration,
+    autoRegisterContact,
     loading,
   };
 }

@@ -20,7 +20,81 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     ContactSearchParamsSchemaRef,
     PublicContactSearchResponseSchemaRef,
     PublicContactSearchQuerySchemaRef,
+    AutoRegisterContactResponseSchemaRef,
   } = schemaRefs;
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/contacts/{contactId}/auto-register',
+    summary: 'Auto-register contact into account',
+    description:
+      'Link a contact to an existing user by email or create a new user with that email, sending a password-set email. Requires account.contacts.manage.',
+    operationId: 'autoRegisterContact',
+    security: [{ bearerAuth: [] }],
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'contactId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Auto-registration result',
+        content: {
+          'application/json': {
+            schema: AutoRegisterContactResponseSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Not authorized',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      409: {
+        description: 'Conflict with existing registration',
+        content: {
+          'application/json': {
+            schema: ConflictErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
 
   registry.registerPath({
     method: 'get',

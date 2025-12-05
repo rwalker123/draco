@@ -264,6 +264,7 @@ import {
   WelcomeMessageSchema,
   WelcomeMessageListSchema,
   UpsertWelcomeMessageSchema,
+  AutoRegisterContactResponseSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -280,6 +281,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const ContactWithContactRolesSchemaRef = registry.register(
     'ContactWithContactRoles',
     ContactWithContactRolesSchema,
+  );
+  const AutoRegisterContactResponseSchemaRef = registry.register(
+    'AutoRegisterContactResponse',
+    AutoRegisterContactResponseSchema,
   );
   const FieldSchemaRef = registry.register('Field', FieldSchema);
   const FieldsSchemaRef = registry.register('Fields', FieldsSchema);
@@ -1063,6 +1068,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     BaseContactSchemaRef,
     NamedContactSchemaRef,
     ContactWithContactRolesSchemaRef,
+    AutoRegisterContactResponseSchemaRef,
     FieldSchemaRef,
     FieldsSchemaRef,
     UpsertFieldSchemaRef,
