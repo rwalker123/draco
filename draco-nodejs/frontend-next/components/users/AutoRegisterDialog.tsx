@@ -67,6 +67,16 @@ const AutoRegisterDialog: React.FC<AutoRegisterDialogProps> = ({
       return;
     }
 
+    if (response.status === 'already-linked' && response.userId) {
+      onSuccess({
+        contactId: response.contactId,
+        userId: response.userId,
+        message: response.message || 'Contact is already linked to this user. No action taken.',
+      });
+      onClose();
+      return;
+    }
+
     if (response.userId) {
       onSuccess({
         contactId: response.contactId,

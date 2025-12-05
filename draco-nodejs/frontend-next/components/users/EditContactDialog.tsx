@@ -253,6 +253,10 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
                 'Auto register skipped: this email is already linked to another contact.';
             } else if (response.status === 'missing-email') {
               autoRegisterError = 'Auto register skipped: contact is missing an email.';
+            } else if (response.status === 'already-linked') {
+              autoRegisterError =
+                response.message ||
+                'Auto register skipped: this contact is already linked to a user.';
             }
           } else if (!autoResult.success) {
             autoRegisterError = autoResult.error || 'Auto registration failed';
@@ -295,7 +299,6 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
       setPhotoError('');
       setCreateMultiplePlayers(false);
       setRosterSignup(initialRosterSignup);
-      setAutoRegister(false);
       reset(initialValues);
       onClose();
     }

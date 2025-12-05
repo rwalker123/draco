@@ -351,7 +351,7 @@ export class RegistrationService {
           userId: resolvedUser.id,
           userName: resolvedUser.username ?? normalizedEmail,
           message:
-            'Existing user found. Contact linked and welcome email sent (no password reset).',
+            'Existing user found. Contact linked and welcome email sent. User can sign in with existing credentials; no password setup required.',
         };
       }
 
@@ -400,7 +400,9 @@ export class RegistrationService {
   ): Promise<void> {
     const token = await this.userService.createPasswordResetTokenForUser(userId).catch(() => null);
     if (!token) {
-      return;
+      throw new ValidationError(
+        'Failed to create password reset token for user; cannot send password setup email.',
+      );
     }
 
     const account = await this.accountsService.getAccountName(accountId).catch(() => null);

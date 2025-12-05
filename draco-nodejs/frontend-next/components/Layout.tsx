@@ -335,7 +335,6 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     handleProfileClick,
     handleSignup,
     isMember,
-    setRegistrationOpen,
     user,
   ]);
 

@@ -2018,7 +2018,11 @@ This is an automated message from ezRecSports.com. Please do not reply to this e
           <div class="content">
             <h2>Welcome!</h2>
             <p>Hi ${greetingName},</p>
-            <p>An account has been created for you. Set your password to finish signing in.</p>
+            <p>
+              An account has been created or linked for you on ${brand}. If you don’t have a password
+              yet, use the link below to set one. If you already have a password, you can keep using
+              it or reset it here.
+            </p>
             <p><a href="${resetUrl}" class="button">Set your password</a></p>
             <p class="muted">If the button doesn't work, copy and paste this link:<br/><a href="${resetUrl}">${resetUrl}</a></p>
             <p>After setting your password, you can access your account here:<br/><a href="${accountDashboardUrl}">${accountDashboardUrl}</a></p>
@@ -2046,7 +2050,7 @@ This is an automated message from ezRecSports.com. Please do not reply to this e
     return [
       accountName ? `Welcome to ${accountName}!` : 'Welcome!',
       `Hi ${greetingName || 'there'},`,
-      'An account has been created for you. Set your password to finish signing in.',
+      'An account has been created or linked for you. If you do not have a password yet, set one using the link below; if you already have a password, you can keep using it or reset it here.',
       '',
       `Set your password: ${resetUrl}`,
       `Afterwards, access your account: ${accountDashboardUrl}`,
