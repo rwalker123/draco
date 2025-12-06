@@ -129,6 +129,9 @@ export const routePermissions: Record<string, RoutePermission> = {
   '/account/[accountId]/player-classifieds': {
     public: true,
   },
+  '/account/[accountId]/announcements': {
+    public: true,
+  },
   '/account/[accountId]/handouts': {
     public: true,
   },

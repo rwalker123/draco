@@ -429,7 +429,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
             <TopBarQuickActions
               accountId={accountId}
               canViewHandouts={Boolean(accountId)}
-              canViewAnnouncements={isMember === true}
+              canViewAnnouncements={Boolean(accountId)}
               useUnifiedMenu
               onCompactMenuItemsChange={setQuickActionItems}
               onUnifiedMenuClose={handleMenuClose}

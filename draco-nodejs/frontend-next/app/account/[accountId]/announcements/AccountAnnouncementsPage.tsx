@@ -15,7 +15,6 @@ import {
 } from '@mui/material';
 import { useParams } from 'next/navigation';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
-import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 import { AnnouncementService } from '../../../../services/announcementService';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { useAuth } from '../../../../context/AuthContext';
@@ -35,13 +34,6 @@ const AccountAnnouncementsPage: React.FC = () => {
     [token, apiClient],
   );
 
-  const {
-    contact,
-    loading: membershipLoading,
-    error: membershipError,
-  } = useAccountMembership(accountId);
-  const canViewAnnouncements = Boolean(contact);
-
   const [announcements, setAnnouncements] = React.useState<AnnouncementType[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -52,10 +44,9 @@ const AccountAnnouncementsPage: React.FC = () => {
   );
 
   React.useEffect(() => {
-    if (!accountId || !canViewAnnouncements) {
+    if (!accountId) {
       setAnnouncements([]);
       setLoading(false);
-      setError(null);
       return;
     }
 
@@ -93,7 +84,7 @@ const AccountAnnouncementsPage: React.FC = () => {
     return () => {
       ignore = true;
     };
-  }, [accountId, announcementService, canViewAnnouncements]);
+  }, [accountId, announcementService]);
 
   const handleAnnouncementSelect = (announcement: AnnouncementType) => {
     setSelectedAnnouncement(announcement);
@@ -123,27 +114,12 @@ const AccountAnnouncementsPage: React.FC = () => {
       </AccountPageHeader>
 
       <Container maxWidth="md" sx={{ py: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {membershipError ? (
-          <Alert severity="error" sx={{ mb: 1 }}>
-            {membershipError}
-          </Alert>
-        ) : null}
-
         <WidgetShell
           title="Announcements"
           subtitle="Review all announcements shared with your organization."
           accent="secondary"
         >
-          {membershipLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : !canViewAnnouncements ? (
-            <Alert severity="info">
-              Account announcements are available to members. Please sign in with a contact account
-              to view them.
-            </Alert>
-          ) : loading ? (
+          {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress />
             </Box>
