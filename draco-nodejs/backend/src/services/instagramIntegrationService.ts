@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { ServiceFactory } from './serviceFactory.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import {
   IAccountInstagramCredentialsRepository,
@@ -49,24 +50,14 @@ export class InstagramIntegrationService {
     { seenIds: Set<string>; latestPostedAt?: number }
   >();
 
-  constructor(
-    credentialsRepository?: IAccountInstagramCredentialsRepository,
-    facebookCredentialsRepository?: IAccountFacebookCredentialsRepository,
-    ingestionRepository?: IInstagramIngestionRepository,
-    photoGalleryRepository?: IPhotoGalleryAdminRepository,
-    seasonsRepository?: ISeasonsRepository,
-    assetService?: PhotoGalleryAssetService,
-  ) {
-    this.credentialsRepository =
-      credentialsRepository ?? RepositoryFactory.getAccountInstagramCredentialsRepository();
+  constructor() {
+    this.credentialsRepository = RepositoryFactory.getAccountInstagramCredentialsRepository();
     this.facebookCredentialsRepository =
-      facebookCredentialsRepository ?? RepositoryFactory.getAccountFacebookCredentialsRepository();
-    this.ingestionRepository =
-      ingestionRepository ?? RepositoryFactory.getInstagramIngestionRepository();
-    this.photoGalleryRepository =
-      photoGalleryRepository ?? RepositoryFactory.getPhotoGalleryAdminRepository();
-    this.seasonsRepository = seasonsRepository ?? RepositoryFactory.getSeasonsRepository();
-    this.assetService = assetService ?? new PhotoGalleryAssetService();
+      RepositoryFactory.getAccountFacebookCredentialsRepository();
+    this.ingestionRepository = RepositoryFactory.getInstagramIngestionRepository();
+    this.photoGalleryRepository = RepositoryFactory.getPhotoGalleryAdminRepository();
+    this.seasonsRepository = RepositoryFactory.getSeasonsRepository();
+    this.assetService = ServiceFactory.getPhotoGalleryAssetService();
   }
 
   async listIngestionTargets(): Promise<InstagramIngestionTargetWithAlbum[]> {

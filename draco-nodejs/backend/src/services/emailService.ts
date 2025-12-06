@@ -37,6 +37,7 @@ import { TeamManagerService } from './teamManagerService.js';
 import { htmlToPlainText } from '../utils/emailContent.js';
 import { ContactService } from './contactService.js';
 import { sanitizeRichHtml } from '../utils/htmlSanitizer.js';
+import { getFrontendBaseUrlOrFallback } from '../utils/frontendBaseUrl.js';
 
 // Email queue management interfaces
 interface EmailQueueJob {
@@ -98,7 +99,6 @@ export interface EmailConfig {
 
 export class EmailService {
   private provider: IEmailProvider | null = null;
-  private baseUrl: string;
   private jobQueue: Map<string, EmailQueueJob> = new Map();
   private processingQueue: Set<string> = new Set();
   private queueProcessor: NodeJS.Timeout | null = null;
@@ -168,10 +168,8 @@ export class EmailService {
   private readonly RATE_LIMIT_BACKOFF_MS = [30000, 60000, 120000, 240000, 480000];
   private currentProviderType: 'sendgrid' | 'ethereal' | 'ses' | 'resend' | 'none' | null = null;
 
-  constructor(config?: EmailConfig, fromEmail?: string, baseUrl?: string) {
-    // Legacy constructor for backward compatibility
-    this.baseUrl = baseUrl || EmailConfigFactory.getBaseUrl();
-    this.attachmentService = new EmailAttachmentService();
+  constructor() {
+    this.attachmentService = ServiceFactory.getEmailAttachmentService();
     this.emailRepository = RepositoryFactory.getEmailRepository();
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
     this.rosterService = ServiceFactory.getRosterService();
@@ -249,11 +247,8 @@ export class EmailService {
     resetToken: string,
   ): Promise<boolean> {
     try {
-      const frontendBaseUrl = process.env.FRONTEND_URL || this.baseUrl;
-      const normalizedBaseUrl = frontendBaseUrl.endsWith('/')
-        ? frontendBaseUrl.replace(/\/+$/, '')
-        : frontendBaseUrl;
-      const resetUrl = `${normalizedBaseUrl}/reset-password?token=${resetToken}`;
+      const baseUrl = getFrontendBaseUrlOrFallback();
+      const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
       const settings = EmailConfigFactory.getEmailSettings();
 
       const emailOptions: EmailOptions = {
@@ -291,14 +286,11 @@ export class EmailService {
     }
 
     try {
-      const frontendBaseUrl = process.env.FRONTEND_URL || this.baseUrl;
-      const normalizedBaseUrl = frontendBaseUrl.endsWith('/')
-        ? frontendBaseUrl.replace(/\/+$/, '')
-        : frontendBaseUrl;
-      const resetUrl = `${normalizedBaseUrl}/reset-password?token=${resetToken}`;
+      const baseUrl = getFrontendBaseUrlOrFallback();
+      const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
       const accountDashboardUrl = accountId
-        ? `${normalizedBaseUrl}/account/${accountId}`
-        : `${normalizedBaseUrl}/login`;
+        ? `${baseUrl}/account/${accountId}`
+        : `${baseUrl}/login`;
       const settings = EmailConfigFactory.getEmailSettings();
 
       const emailOptions: EmailOptions = {
@@ -341,7 +333,8 @@ export class EmailService {
     }
 
     try {
-      const loginUrl = `${this.baseUrl}/login`;
+      const baseUrl = getFrontendBaseUrlOrFallback();
+      const loginUrl = `${baseUrl}/login`;
       const settings = EmailConfigFactory.getEmailSettings();
 
       const emailOptions: EmailOptions = {
@@ -378,8 +371,9 @@ export class EmailService {
     }
 
     try {
-      const accountDashboardUrl = `${this.baseUrl}/account/${accountId}`;
-      const loginUrl = `${this.baseUrl}/login`;
+      const baseUrl = getFrontendBaseUrlOrFallback();
+      const accountDashboardUrl = `${baseUrl}/account/${accountId}`;
+      const loginUrl = `${baseUrl}/login`;
       const settings = EmailConfigFactory.getEmailSettings();
 
       const emailOptions: EmailOptions = {

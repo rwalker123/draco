@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { normalizeOrigin } from './lib/url/normalizeOrigin';
 
 export async function middleware(request: NextRequest) {
   // Handle compression headers for API routes
@@ -10,6 +11,11 @@ export async function middleware(request: NextRequest) {
     // Add compression headers if not already present
     if (!requestHeaders.get('Accept-Encoding')) {
       requestHeaders.set('Accept-Encoding', 'gzip, deflate, br');
+    }
+
+    const origin = normalizeOrigin(request.nextUrl.origin);
+    if (origin && !requestHeaders.get('x-frontend-base-url')) {
+      requestHeaders.set('x-frontend-base-url', origin);
     }
 
     // Return the request with modified headers

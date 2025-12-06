@@ -1,4 +1,5 @@
 import { MonitoringService } from './monitoringService.js';
+import { ServiceFactory } from './serviceFactory.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import {
   dbAdminAccountEmailActivity,
@@ -89,8 +90,8 @@ export class AdminAnalyticsService {
   private readonly monitoringService: MonitoringService;
   private readonly adminAnalyticsRepository = RepositoryFactory.getAdminAnalyticsRepository();
 
-  constructor(monitoringService?: MonitoringService) {
-    this.monitoringService = monitoringService ?? new MonitoringService();
+  constructor() {
+    this.monitoringService = ServiceFactory.getMonitoringService();
   }
 
   async getSummary(): Promise<AdminAnalyticsSummary> {

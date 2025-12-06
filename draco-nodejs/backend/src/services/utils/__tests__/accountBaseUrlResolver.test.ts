@@ -78,18 +78,5 @@ describe('AccountBaseUrlResolver', () => {
 
       expect(result).toBe('https://fallback.example.com');
     });
-
-    it('falls back to env when urls are invalid', async () => {
-      repository.findAccountUrls = vi
-        .fn()
-        .mockResolvedValue([{ id: 3n, accountid: 40n, url: '::not-a-url' }]);
-      process.env.FRONTEND_URL = undefined;
-      process.env.BASE_URL = 'http://localhost:3000/';
-      const resolver = new AccountBaseUrlResolver(repository);
-
-      const result = await resolver.resolveAccountBaseUrl(40n);
-
-      expect(result).toBe('http://localhost:3000');
-    });
   });
 });

@@ -3,6 +3,7 @@ import { EmailConfigFactory } from '../config/email.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { logSecurely } from '../utils/auditLogger.js';
 import validator from 'validator';
+import { getFrontendBaseUrlOrFallback } from '../utils/frontendBaseUrl.js';
 
 interface WorkoutRegistrationAccessEmail {
   accountId: bigint;
@@ -20,13 +21,12 @@ export class WorkoutRegistrantAccessEmailService {
   constructor(
     private readonly getProvider = () => EmailProviderFactory.getProvider(),
     private readonly getEmailSettings = () => EmailConfigFactory.getEmailSettings(),
-    private readonly getBaseUrl = () => EmailConfigFactory.getBaseUrl(),
   ) {}
 
   async sendAccessEmail(payload: WorkoutRegistrationAccessEmail): Promise<void> {
     const provider = await this.getProvider();
     const settings = this.getEmailSettings();
-    const baseUrl = this.getBaseUrl().replace(/\/$/, '');
+    const baseUrl = getFrontendBaseUrlOrFallback();
     const verificationUrl = `${baseUrl}/account/${payload.accountId.toString()}/workouts/${payload.workoutId.toString()}/verify-registration/${payload.registrationId.toString()}?code=${payload.accessCode}`;
 
     const formattedDateLocal =

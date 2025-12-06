@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { PhotoSubmissionDetailType } from '@draco/shared-schemas';
 import { PhotoSubmissionNotificationService } from '../photoSubmissionNotificationService.js';
 
@@ -32,6 +32,7 @@ const createDetail = (
 });
 
 describe('PhotoSubmissionNotificationService', () => {
+  const originalFrontendUrl = process.env.FRONTEND_URL;
   const sendEmailMock = vi.fn();
   const providerMock = {
     sendEmail: sendEmailMock,
@@ -45,16 +46,19 @@ describe('PhotoSubmissionNotificationService', () => {
     fromName: 'ezRecSports.com',
     replyTo: 'support@example.com',
   }));
-  const getBaseUrl = vi.fn(() => 'http://localhost:3000');
 
   let service: PhotoSubmissionNotificationService;
 
   beforeEach(() => {
+    process.env.FRONTEND_URL = 'http://localhost:4001';
     sendEmailMock.mockReset().mockResolvedValue({ success: true });
     getProvider.mockClear();
     getEmailSettings.mockClear();
-    getBaseUrl.mockClear();
-    service = new PhotoSubmissionNotificationService(getProvider, getEmailSettings, getBaseUrl);
+    service = new PhotoSubmissionNotificationService(getProvider, getEmailSettings);
+  });
+
+  afterEach(() => {
+    process.env.FRONTEND_URL = originalFrontendUrl;
   });
 
   it('sends submission received email with gallery link', async () => {
@@ -69,7 +73,7 @@ describe('PhotoSubmissionNotificationService', () => {
     expect(options.html).toContain('Summer Tournament');
     expect(options.html).toContain('Example Account');
     expect(options.html).toContain('View gallery');
-    expect(options.text).toContain('View gallery: http://localhost:3000/account/1/photos');
+    expect(options.text).toContain('View gallery: http://localhost:4001/account/1/photos');
     expect(result).toBe(true);
   });
 

@@ -25,6 +25,7 @@ describe('OriginAllowList', () => {
     let repository: IAccountRepository;
 
     beforeEach(() => {
+      process.env.FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
       repository = {
         findAccountByUrls: vi.fn(),
       } as unknown as IAccountRepository;

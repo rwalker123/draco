@@ -4,9 +4,9 @@ import {
   SocialFeedItemType,
   SocialMediaAttachmentType,
 } from '@draco/shared-schemas';
+import { ServiceFactory } from './serviceFactory.js';
 import {
   RepositoryFactory,
-  IAccountRepository,
   ISeasonsRepository,
   IAccountTwitterCredentialsRepository,
 } from '../repositories/index.js';
@@ -14,7 +14,6 @@ import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { decryptSecret, encryptSecret } from '../utils/secretEncryption.js';
 import { fetchJson, HttpError } from '../utils/fetchJson.js';
 import { deterministicUuid } from '../utils/deterministicUuid.js';
-import { AccountSettingsService } from './accountSettingsService.js';
 import { composeGameResultMessage } from './socialGameResultFormatter.js';
 import {
   composeWorkoutAnnouncementMessage,
@@ -23,6 +22,7 @@ import {
 import type { TwitterIngestionTarget } from '../config/socialIngestion.js';
 import { twitterOAuthConfig } from '../config/twitterOAuth.js';
 import { stripHtml } from '../utils/emailContent.js';
+import { resolveAccountFrontendBaseUrl } from '../utils/frontendBaseUrl.js';
 
 interface TwitterUserResponse {
   data?: {
@@ -99,19 +99,21 @@ interface TwitterGameResultPayload {
 type TwitterWorkoutPayload = WorkoutPostPayload;
 
 export class TwitterIntegrationService {
-  private readonly accountRepository: IAccountRepository;
   private readonly seasonsRepository: ISeasonsRepository;
   private readonly accountTwitterCredentialsRepository: IAccountTwitterCredentialsRepository;
-  private readonly accountSettingsService = new AccountSettingsService();
+  private readonly accountSettingsService = ServiceFactory.getAccountSettingsService();
 
-  constructor(accountRepository?: IAccountRepository, seasonsRepository?: ISeasonsRepository) {
-    this.accountRepository = accountRepository ?? RepositoryFactory.getAccountRepository();
-    this.seasonsRepository = seasonsRepository ?? RepositoryFactory.getSeasonsRepository();
+  constructor() {
+    this.seasonsRepository = RepositoryFactory.getSeasonsRepository();
     this.accountTwitterCredentialsRepository =
       RepositoryFactory.getAccountTwitterCredentialsRepository();
   }
 
   async createAuthorizationUrl(accountId: bigint, returnUrl?: string): Promise<string> {
+    if (!twitterOAuthConfig.callbackUrl) {
+      throw new ValidationError('Twitter OAuth callback URL is not configured.');
+    }
+
     const credentials = await this.accountTwitterCredentialsRepository.findByAccountId(accountId);
 
     if (!credentials?.clientid || !credentials.clientsecret) {
@@ -414,7 +416,7 @@ export class TwitterIntegrationService {
         return;
       }
 
-      const content = this.composeAnnouncementTweet(accountId, announcement);
+      const content = await this.composeAnnouncementTweet(accountId, announcement);
       if (!content) {
         return;
       }
@@ -457,13 +459,13 @@ export class TwitterIntegrationService {
     return composeGameResultMessage(payload, { characterLimit: 280 });
   }
 
-  private composeAnnouncementTweet(
+  private async composeAnnouncementTweet(
     accountId: bigint,
     announcement: AnnouncementType,
-  ): string | null {
+  ): Promise<string | null> {
     const title = announcement.title?.trim();
     const body = stripHtml(announcement.body ?? '').trim();
-    const url = this.buildAnnouncementUrl(accountId);
+    const url = await this.buildAnnouncementUrl(accountId);
     const separator = url ? ' ' : '';
     const maxChars = 280;
     const urlLength = url ? url.length : 0;
@@ -488,13 +490,9 @@ export class TwitterIntegrationService {
     return tweet.length > maxChars ? tweet.slice(0, maxChars) : tweet;
   }
 
-  private getBaseUrl(): string {
-    const baseUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3000';
-    return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  }
-
-  private buildAnnouncementUrl(accountId: bigint): string {
-    return `${this.getBaseUrl()}/account/${accountId.toString()}/announcements`;
+  private async buildAnnouncementUrl(accountId: bigint): Promise<string> {
+    const baseUrl = await resolveAccountFrontendBaseUrl(accountId);
+    return `${baseUrl}/account/${accountId.toString()}/announcements`;
   }
 
   private decryptSecretValue(value?: string | null): string | undefined {
@@ -819,6 +817,10 @@ export class TwitterIntegrationService {
     message?: string,
     returnUrl?: string | null,
   ): string {
+    if (!twitterOAuthConfig.resultUrlTemplate) {
+      throw new ValidationError('Twitter OAuth result URL template is not configured.');
+    }
+
     const base =
       returnUrl?.trim() ||
       twitterOAuthConfig.resultUrlTemplate.replace('{accountId}', accountId.toString());

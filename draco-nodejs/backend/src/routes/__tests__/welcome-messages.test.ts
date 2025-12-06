@@ -98,7 +98,6 @@ let lastPermissionRequested: string | null = null;
 describe('Welcome messages routes', () => {
   beforeAll(async () => {
     process.env.JWT_SECRET = 'test-secret'; // pragma: allowlist secret
-    process.env.FRONTEND_URL = 'http://localhost:3000';
 
     vi.spyOn(ServiceFactory, 'getRouteProtection').mockReturnValue(
       createRouteProtectionMock() as never,

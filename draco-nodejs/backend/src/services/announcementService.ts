@@ -1,4 +1,5 @@
 import { AnnouncementType, UpsertAnnouncementType } from '@draco/shared-schemas';
+import { ServiceFactory } from './serviceFactory.js';
 import {
   IAnnouncementRepository,
   ITeamRepository,
@@ -42,10 +43,10 @@ export class AnnouncementService {
     this.announcementRepository =
       announcementRepository ?? RepositoryFactory.getAnnouncementRepository();
     this.teamRepository = teamRepository ?? RepositoryFactory.getTeamRepository();
-    this.discordIntegrationService = new DiscordIntegrationService();
-    this.blueskyIntegrationService = new BlueskyIntegrationService();
-    this.twitterIntegrationService = new TwitterIntegrationService();
-    this.facebookIntegrationService = new FacebookIntegrationService();
+    this.discordIntegrationService = ServiceFactory.getDiscordIntegrationService();
+    this.blueskyIntegrationService = ServiceFactory.getBlueskyIntegrationService();
+    this.twitterIntegrationService = ServiceFactory.getTwitterIntegrationService();
+    this.facebookIntegrationService = ServiceFactory.getFacebookIntegrationService();
   }
 
   async listAccountAnnouncements(accountId: bigint): Promise<AnnouncementType[]> {

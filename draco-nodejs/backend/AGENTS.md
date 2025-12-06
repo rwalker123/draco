@@ -16,3 +16,5 @@
 Use the architecture guide for deeper dives into patterns, examples, and dos & don'ts for each layer.
 
 ⚠️ **Type definition rule:** never introduce new Zod schemas or shared type definitions anywhere in the backend (routes, services, helpers, etc.) without explicit approval from the maintainer. All type shape changes must go through the shared schema workflow once approved.
+
+⚠️ **Service creation rule:** never 'new ServiceName()', always access from the ServiceFactory. If a service isn't exposed to ServiceFactory, expose it, then access via ServiceFactory.getServiceName(). No constructor arguments should be given to a service. It should use ServiceFactory and RepositoryFactory to get the dependent services and respositories.

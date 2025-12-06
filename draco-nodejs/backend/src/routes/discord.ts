@@ -12,7 +12,7 @@ const frontendBase = process.env.FRONTEND_URL?.replace(/\/$/, '') ?? '';
 const linkResultBase =
   process.env.DISCORD_LINK_RESULT_URL ?? `${frontendBase}/profile/discord/callback`;
 const installResultTemplate =
-  process.env.DISCORD_INSTALL_RESULT_URL ?? `${frontendBase}/account/{accountId}/settings`;
+  process.env.DISCORD_INSTALL_RESULT_URL ?? `${frontendBase}/account/{accountId}/social-media`;
 
 const buildLinkResultUrl = (status: 'success' | 'error', message?: string): string => {
   const url = new URL(linkResultBase);

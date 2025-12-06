@@ -75,6 +75,7 @@ import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
 import { FacebookIntegrationService } from './facebookIntegrationService.js';
 import { InstagramIntegrationService } from './instagramIntegrationService.js';
 import { WelcomeMessageService } from './welcomeMessageService.js';
+import { WorkoutRegistrantAccessEmailService } from './workoutRegistrantAccessEmailService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -141,6 +142,7 @@ export class ServiceFactory {
   private static facebookIntegrationService: FacebookIntegrationService;
   private static instagramIntegrationService: InstagramIntegrationService;
   private static welcomeMessageService: WelcomeMessageService;
+  private static workoutRegistrantAccessEmailService: WorkoutRegistrantAccessEmailService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -404,8 +406,7 @@ export class ServiceFactory {
 
   static getAdminAnalyticsService(): AdminAnalyticsService {
     if (!this.adminAnalyticsService) {
-      const monitoringService = this.getMonitoringService();
-      this.adminAnalyticsService = new AdminAnalyticsService(monitoringService);
+      this.adminAnalyticsService = new AdminAnalyticsService();
     }
 
     return this.adminAnalyticsService;
@@ -499,11 +500,7 @@ export class ServiceFactory {
 
   static getSocialHubService(): SocialHubService {
     if (!this.socialHubService) {
-      this.socialHubService = new SocialHubService(
-        undefined,
-        undefined,
-        this.getDiscordIntegrationService(),
-      );
+      this.socialHubService = new SocialHubService();
     }
 
     return this.socialHubService;
@@ -735,9 +732,7 @@ export class ServiceFactory {
 
   static getUserService(): UserService {
     if (!this.userService) {
-      this.userService = new UserService({
-        emailService: this.getEmailService(),
-      });
+      this.userService = new UserService();
     }
 
     return this.userService;
@@ -775,5 +770,12 @@ export class ServiceFactory {
     }
 
     return this.announcementService;
+  }
+
+  static getWorkoutRegistrantAccessEmailService(): WorkoutRegistrantAccessEmailService {
+    if (!this.workoutRegistrantAccessEmailService) {
+      this.workoutRegistrantAccessEmailService = new WorkoutRegistrantAccessEmailService();
+    }
+    return this.workoutRegistrantAccessEmailService;
   }
 }

@@ -1,9 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SocialHubService } from '../socialHubService.js';
 import { ISocialContentRepository, ILiveEventRepository } from '../../repositories/index.js';
 import type { dbLiveEvent } from '../../repositories/types/dbTypes.js';
 import { DiscordIntegrationService } from '../discordIntegrationService.js';
 import type { CommunityChannelType } from '@draco/shared-schemas';
+import { ServiceFactory } from '../serviceFactory.js';
+import { RepositoryFactory } from '../../repositories/repositoryFactory.js';
 
 const makeLiveEventRecord = (overrides: Partial<dbLiveEvent> = {}): dbLiveEvent => {
   const base: dbLiveEvent = {
@@ -89,6 +91,8 @@ describe('SocialHubService', () => {
   });
 
   beforeEach(() => {
+    vi.restoreAllMocks();
+
     socialContentRepository = {
       listFeedItems: vi.fn().mockResolvedValue([]),
       createFeedItems: vi.fn(),
@@ -122,11 +126,19 @@ describe('SocialHubService', () => {
       listCommunityChannels: listCommunityChannelsMock,
     } as unknown as DiscordIntegrationService;
 
-    service = new SocialHubService(
+    vi.spyOn(RepositoryFactory, 'getSocialContentRepository').mockReturnValue(
       socialContentRepository,
-      liveEventRepository,
+    );
+    vi.spyOn(RepositoryFactory, 'getLiveEventRepository').mockReturnValue(liveEventRepository);
+    vi.spyOn(ServiceFactory, 'getDiscordIntegrationService').mockReturnValue(
       discordIntegrationService,
     );
+
+    service = new SocialHubService();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('lists live events with filters', async () => {

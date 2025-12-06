@@ -32,6 +32,7 @@ declare global {
         id: string;
         username: string;
       };
+      frontendBaseUrl?: string;
       userRoles?: UserRolesType;
       accountBoundary?: AccountBoundaryContext;
       accountId?: string;

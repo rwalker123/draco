@@ -25,6 +25,7 @@ import {
   WorkoutUnauthorizedError,
   ConflictError,
 } from '../utils/customErrors.js';
+import { ServiceFactory } from './serviceFactory.js';
 import {
   dbWorkoutCreateData,
   dbWorkoutRegistration,
@@ -33,20 +34,17 @@ import {
   dbWorkoutWithField,
 } from '../repositories/index.js';
 import { BCRYPT_CONSTANTS } from '../config/playerClassifiedConstants.js';
-import { WorkoutRegistrantAccessEmailService } from './workoutRegistrantAccessEmailService.js';
-import { DiscordIntegrationService } from './discordIntegrationService.js';
-import { TwitterIntegrationService } from './twitterIntegrationService.js';
-import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
-import { FacebookIntegrationService } from './facebookIntegrationService.js';
+import { resolveAccountFrontendBaseUrl } from '../utils/frontendBaseUrl.js';
 
 export class WorkoutService {
   private readonly workoutRepository = RepositoryFactory.getWorkoutRepository();
   private readonly accountRepository = RepositoryFactory.getAccountRepository();
-  private readonly registrantAccessEmailService = new WorkoutRegistrantAccessEmailService();
-  private readonly discordIntegrationService = new DiscordIntegrationService();
-  private readonly twitterIntegrationService = new TwitterIntegrationService();
-  private readonly blueskyIntegrationService = new BlueskyIntegrationService();
-  private readonly facebookIntegrationService = new FacebookIntegrationService();
+  private readonly registrantAccessEmailService =
+    ServiceFactory.getWorkoutRegistrantAccessEmailService();
+  private readonly discordIntegrationService = ServiceFactory.getDiscordIntegrationService();
+  private readonly twitterIntegrationService = ServiceFactory.getTwitterIntegrationService();
+  private readonly blueskyIntegrationService = ServiceFactory.getBlueskyIntegrationService();
+  private readonly facebookIntegrationService = ServiceFactory.getFacebookIntegrationService();
 
   async listWorkouts(
     accountId: bigint,
@@ -496,13 +494,9 @@ export class WorkoutService {
     return BigInt(trimmed);
   }
 
-  private getBaseUrl(): string {
-    const baseUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3000';
-    return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  }
-
-  private buildWorkoutUrl(accountId: bigint): string {
-    return `${this.getBaseUrl()}/account/${accountId.toString()}/home`;
+  private async buildWorkoutUrl(accountId: bigint): Promise<string> {
+    const baseUrl = await resolveAccountFrontendBaseUrl(accountId);
+    return `${baseUrl}/account/${accountId.toString()}/home`;
   }
 
   private async syncWorkoutToSocial(accountId: bigint, workout: dbWorkoutWithField): Promise<void> {
@@ -512,7 +506,7 @@ export class WorkoutService {
         workoutId: workout.id,
         workoutDesc: workout.workoutdesc,
         workoutDate: workout.workoutdate,
-        workoutUrl: this.buildWorkoutUrl(accountId),
+        workoutUrl: await this.buildWorkoutUrl(accountId),
         accountName: account?.name ?? null,
         comments: workout.comments ?? null,
       } as const;
