@@ -18,6 +18,20 @@ const extractBaseUrlHeader = (req: Request): string | null => {
   return Array.isArray(headerValue) ? (headerValue[0] ?? null) : headerValue;
 };
 
+const logRejection = (
+  reason: string,
+  status: number,
+  baseUrl: string | null,
+  path: string,
+): void => {
+  console.warn('[frontendBaseUrlMiddleware] rejecting request', {
+    reason,
+    status,
+    baseUrl,
+    path,
+  });
+};
+
 export const createFrontendBaseUrlMiddleware =
   ({ originAllowList = new OriginAllowList() }: FrontendBaseUrlMiddlewareDeps = {}) =>
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -44,10 +58,12 @@ export const createFrontendBaseUrlMiddleware =
     try {
       const parsed = new URL(normalized);
       if (isProductionEnv() && parsed.protocol !== 'https:') {
+        logRejection('non-https frontend base URL in production', 400, normalized, req.path);
         res.status(400).json({ message: 'Frontend base URL must use https in production' });
         return;
       }
     } catch {
+      logRejection('invalid frontend base URL', 400, normalized, req.path);
       res.status(400).json({ message: 'Invalid frontend base URL' });
       return;
     }
@@ -55,6 +71,7 @@ export const createFrontendBaseUrlMiddleware =
     const isAllowed = await originAllowList.isAllowed(normalized);
 
     if (!isAllowed && isProductionEnv()) {
+      logRejection('frontend base URL not allowed', 403, normalized, req.path);
       res.status(403).json({ message: 'Frontend base URL not allowed' });
       return;
     }

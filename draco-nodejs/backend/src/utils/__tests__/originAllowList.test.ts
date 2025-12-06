@@ -56,7 +56,27 @@ describe('OriginAllowList', () => {
       });
 
       await expect(allowList.isAllowed('http://team1.local')).resolves.toBe(true);
-      expect(repository.findAccountByUrls).toHaveBeenCalledWith(['team1.local', 'www.team1.local']);
+      expect(repository.findAccountByUrls).toHaveBeenCalledWith([
+        'http://team1.local',
+        'http://www.team1.local',
+        'team1.local',
+        'www.team1.local',
+      ]);
+    });
+
+    it('uses the incoming protocol when matching account URLs', async () => {
+      const allowList = new OriginAllowList(repository);
+      (repository.findAccountByUrls as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 1n,
+      });
+
+      await expect(allowList.isAllowed('https://www.team1.local')).resolves.toBe(true);
+      expect(repository.findAccountByUrls).toHaveBeenCalledWith([
+        'https://www.team1.local',
+        'https://team1.local',
+        'www.team1.local',
+        'team1.local',
+      ]);
     });
 
     it('denies origins that do not match any account URL', async () => {
