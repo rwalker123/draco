@@ -3,9 +3,9 @@
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Alert, Box, Button, Container } from '@mui/material';
-import FieldsManagement from '../../../../components/fields/FieldsManagement';
+import FieldsManagement from '../../../../../components/fields/FieldsManagement';
 
-export default function FieldsClientWrapper() {
+const FieldsManagementPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const accountIdParam = params?.accountId;
@@ -26,5 +26,7 @@ export default function FieldsClientWrapper() {
     );
   }
 
-  return <FieldsManagement accountId={accountId} showManageControls={false} />;
-}
+  return <FieldsManagement accountId={accountId} />;
+};
+
+export default FieldsManagementPage;

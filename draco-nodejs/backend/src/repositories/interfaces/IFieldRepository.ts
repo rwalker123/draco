@@ -2,21 +2,21 @@ import { Prisma, availablefields } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import { dbAvailableField } from '../types/dbTypes.js';
 
-export interface IFieldRepository
-  extends IBaseRepository<
-    availablefields,
-    Prisma.availablefieldsCreateInput,
-    Prisma.availablefieldsUpdateInput
-  > {
+export interface IFieldRepository extends IBaseRepository<
+  availablefields,
+  Prisma.availablefieldsCreateInput,
+  Prisma.availablefieldsUpdateInput
+> {
   findByAccount(
     accountId: bigint,
     options: {
       skip: number;
       take: number;
       orderBy: Prisma.availablefieldsOrderByWithRelationInput;
+      search?: string;
     },
   ): Promise<dbAvailableField[]>;
-  countByAccount(accountId: bigint): Promise<number>;
+  countByAccount(accountId: bigint, search?: string): Promise<number>;
   findByName(accountId: bigint, name: string): Promise<availablefields | null>;
   findByNameExcludingId(
     accountId: bigint,

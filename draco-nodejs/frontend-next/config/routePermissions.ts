@@ -99,6 +99,10 @@ export const routePermissions: Record<string, RoutePermission> = {
   '/account/[accountId]/fields': {
     public: true,
   },
+  '/account/[accountId]/fields/manage': {
+    roles: ['AccountAdmin'],
+    checkAccountBoundary: true,
+  },
   '/account/[accountId]/schedule': {
     public: true,
   },

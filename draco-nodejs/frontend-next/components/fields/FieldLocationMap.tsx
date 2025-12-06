@@ -106,9 +106,18 @@ function MapFullscreenControl() {
       button.innerHTML = active
         ? '<span aria-hidden="true">&times;</span>'
         : '<span aria-hidden="true">&#x26F6;</span>';
-      setTimeout(() => {
-        map.invalidateSize();
+      const timeout = window.setTimeout(() => {
+        const container = map.getContainer();
+        if (!container || !container.isConnected) {
+          return;
+        }
+        try {
+          map.invalidateSize();
+        } catch {
+          // ignore resize errors that can occur if the map is unmounted
+        }
       }, 220);
+      return () => window.clearTimeout(timeout);
     };
 
     const handleToggle = (event: MouseEvent) => {

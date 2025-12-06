@@ -2513,6 +2513,16 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
           format: 'number',
         },
       },
+      {
+        name: 'search',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'string',
+          maxLength: 100,
+        },
+        description: 'Filter fields by name, short name, city, or state',
+      },
     ],
     request: {
       query: PagingSchemaRef,
