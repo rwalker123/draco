@@ -28,16 +28,21 @@ export class OriginAllowList {
     }
 
     let host: string;
+    let protocol: string;
     try {
-      host = new URL(normalizedOrigin).host.toLowerCase();
+      const parsed = new URL(normalizedOrigin);
+      host = parsed.host.toLowerCase();
+      protocol = parsed.protocol;
     } catch {
       return false;
     }
 
     const hostVariants = this.buildHostVariants(host);
+    const baseUrlVariants = hostVariants.map((variant) => `${protocol}//${variant}`);
+    const lookupVariants = Array.from(new Set([...baseUrlVariants, ...hostVariants]));
 
     try {
-      const account = await this.accountRepository.findAccountByUrls(hostVariants);
+      const account = await this.accountRepository.findAccountByUrls(lookupVariants);
       return Boolean(account);
     } catch (error) {
       console.error('[cors] Failed to validate origin', { origin, error });
