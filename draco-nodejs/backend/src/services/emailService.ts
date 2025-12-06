@@ -245,19 +245,21 @@ export class EmailService {
     toEmail: string,
     username: string,
     resetToken: string,
+    accountName?: string,
   ): Promise<boolean> {
     try {
       const baseUrl = getFrontendBaseUrlOrFallback();
       const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
       const settings = EmailConfigFactory.getEmailSettings();
+      const brandName = accountName?.trim() || 'ezRecSports.com';
 
       const emailOptions: EmailOptions = {
         to: toEmail,
-        subject: 'ezRecSports.com - Password Reset Request',
-        html: this.generatePasswordResetEmailHtml(username, resetUrl),
-        text: this.generatePasswordResetEmailText(username, resetUrl),
+        subject: `${brandName} - Password Reset Request`,
+        html: this.generatePasswordResetEmailHtml(username, resetUrl, brandName),
+        text: this.generatePasswordResetEmailText(username, resetUrl, brandName),
         from: settings.fromEmail,
-        fromName: settings.fromName,
+        fromName: brandName,
         replyTo: settings.replyTo,
       };
 
@@ -1782,7 +1784,11 @@ export class EmailService {
   /**
    * Generate HTML email template
    */
-  private generatePasswordResetEmailHtml(username: string, resetUrl: string): string {
+  private generatePasswordResetEmailHtml(
+    username: string,
+    resetUrl: string,
+    accountName: string,
+  ): string {
     return `
       <!DOCTYPE html>
       <html>
@@ -1801,12 +1807,12 @@ export class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h1>ezRecSports.com</h1>
+            <h1>${accountName}</h1>
           </div>
           <div class="content">
             <h2>Password Reset Request</h2>
             <p>Hello ${username},</p>
-            <p>We received a request to reset your password for your ezRecSports.com account.</p>
+            <p>We received a request to reset your password for your ${accountName} account.</p>
             <p>Click the button below to reset your password:</p>
             <a href="${resetUrl}" class="button">Reset Password</a>
             <p>If the button doesn't work, copy and paste this link into your browser:</p>
@@ -1815,7 +1821,7 @@ export class EmailService {
             <p>If you didn't request this password reset, please ignore this email. Your password will remain unchanged.</p>
           </div>
           <div class="footer">
-            <p>This is an automated message from ezRecSports.com. Please do not reply to this email.</p>
+            <p>This is an automated message from ${accountName}. Please do not reply to this email.</p>
           </div>
         </div>
       </body>
@@ -1826,13 +1832,17 @@ export class EmailService {
   /**
    * Generate plain text email template
    */
-  private generatePasswordResetEmailText(username: string, resetUrl: string): string {
+  private generatePasswordResetEmailText(
+    username: string,
+    resetUrl: string,
+    accountName: string,
+  ): string {
     return `
-ezRecSports.com - Password Reset Request
+${accountName} - Password Reset Request
 
 Hello ${username},
 
-We received a request to reset your password for your ezRecSports.com account.
+We received a request to reset your password for your ${accountName} account.
 To reset your password, please visit this link:
 ${resetUrl}
 
@@ -1840,7 +1850,7 @@ This link will expire in 24 hours for security reasons.
 
 If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
 
-This is an automated message from ezRecSports.com. Please do not reply to this email.
+This is an automated message from ${accountName}. Please do not reply to this email.
     `;
   }
 

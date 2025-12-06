@@ -28,7 +28,7 @@ export interface PasswordResetCompletionResult {
 export interface PasswordResetService {
   loading: boolean;
   error: string | null;
-  requestReset: (email: string) => Promise<PasswordResetRequestResult>;
+  requestReset: (email: string, accountId?: string) => Promise<PasswordResetRequestResult>;
   verifyToken: (token: string) => Promise<PasswordResetVerificationResult>;
   resetPassword: (token: string, newPassword: string) => Promise<PasswordResetCompletionResult>;
   setErrorMessage: (message: string) => void;
@@ -55,14 +55,15 @@ export function usePasswordResetService(): PasswordResetService {
   }, []);
 
   const requestReset = useCallback(
-    async (email: string): Promise<PasswordResetRequestResult> => {
+    async (email: string, accountId?: string): Promise<PasswordResetRequestResult> => {
       setLoading(true);
       clearError();
 
       try {
+        const requestBody = accountId ? { email, accountId } : { email };
         const result = await requestPasswordResetOperation({
           client: apiClient,
-          body: { email },
+          body: requestBody,
           throwOnError: false,
         });
 

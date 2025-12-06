@@ -1,3 +1,4 @@
+import { PasswordResetRequestSchema } from '@draco/shared-schemas';
 import { RegisterContext } from '../../openapiTypes.js';
 
 export const registerPasswordResetEndpoints = ({ registry, schemaRefs, z }: RegisterContext) => {
@@ -8,9 +9,7 @@ export const registerPasswordResetEndpoints = ({ registry, schemaRefs, z }: Regi
     AuthorizationErrorSchemaRef,
   } = schemaRefs;
 
-  const passwordResetRequestBodySchema = z.object({
-    email: z.string().trim().min(1),
-  });
+  const passwordResetRequestBodySchema = PasswordResetRequestSchema;
 
   const passwordResetRequestResponseSchema = z.union([
     z.literal(true),

@@ -1,4 +1,4 @@
-import { SignInUserNameType } from '@draco/shared-schemas';
+import { PasswordResetRequestType } from '@draco/shared-schemas';
 import bcrypt from 'bcrypt';
 import { randomBytes } from 'node:crypto';
 import {
@@ -7,6 +7,7 @@ import {
   RepositoryFactory,
   dbPasswordResetTokenCreateInput,
   dbUser,
+  IContactRepository,
 } from '../repositories/index.js';
 import {
   PasswordResetVerificationResponse,
@@ -31,6 +32,7 @@ export class UserService {
   private readonly passwordResetTokenRepository: IPasswordResetTokenRepository;
   private readonly emailService: EmailService;
   private accountService: AccountsService;
+  private readonly contactRepository: IContactRepository;
   private readonly tokenExpiryHours: number;
 
   constructor(dependencies: UserServiceDependencies = {}) {
@@ -38,21 +40,23 @@ export class UserService {
     this.passwordResetTokenRepository = RepositoryFactory.getPasswordResetTokenRepository();
     this.emailService = ServiceFactory.getEmailService();
     this.accountService = ServiceFactory.getAccountsService();
+    this.contactRepository = RepositoryFactory.getContactRepository();
 
     this.tokenExpiryHours = dependencies.tokenExpiryHours ?? 24;
   }
 
   async requestPasswordReset({
     email,
-  }: {
-    email: SignInUserNameType;
-  }): Promise<PasswordResetRequestResult> {
+    accountId,
+  }: PasswordResetRequestType): Promise<PasswordResetRequestResult> {
     const normalizedEmail = email.trim().toLowerCase();
     const user = await this.userRepository.findByUsername(normalizedEmail);
 
     if (!user) {
       return { kind: 'user-not-found' };
     }
+
+    const accountName = await this.resolveAccountNameForMember(user.id, accountId);
 
     const resetToken = this.generateResetToken();
     await this.invalidateExistingTokens(user.id);
@@ -62,6 +66,7 @@ export class UserService {
       normalizedEmail,
       user.username ?? normalizedEmail,
       resetToken,
+      accountName,
     );
 
     if (!emailSent) {
@@ -126,6 +131,36 @@ export class UserService {
 
   private generateResetToken(): string {
     return randomBytes(RESET_TOKEN_BYTES).toString('hex');
+  }
+
+  private parseAccountId(accountId?: string): bigint | null {
+    if (!accountId) {
+      return null;
+    }
+
+    try {
+      return BigInt(accountId);
+    } catch {
+      return null;
+    }
+  }
+
+  private async resolveAccountNameForMember(
+    userId: string,
+    accountId?: string,
+  ): Promise<string | undefined> {
+    const parsedAccountId = this.parseAccountId(accountId);
+    if (!parsedAccountId) {
+      return undefined;
+    }
+
+    const contact = await this.contactRepository.findByUserId(userId, parsedAccountId);
+    if (!contact) {
+      return undefined;
+    }
+
+    const account = await this.accountService.getAccountName(parsedAccountId).catch(() => null);
+    return account?.name;
   }
 
   private async invalidateExistingTokens(userId: dbUser['id']): Promise<void> {

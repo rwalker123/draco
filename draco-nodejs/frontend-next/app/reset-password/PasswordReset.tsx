@@ -86,7 +86,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
       return;
     }
 
-    const result = await requestReset(trimmedEmail);
+    const result = await requestReset(trimmedEmail, accountId);
     if (result.success) {
       setEmail(trimmedEmail);
       setSuccess(result.message);

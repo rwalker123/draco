@@ -15,6 +15,7 @@ export * from './field.js';
 export * from './umpire.js';
 export * from './workout.js';
 export * from './email.js';
+export * from './passwordReset.js';
 export * from './queryParams.js';
 export * from './standardSchema.js';
 export * from './division.js';
