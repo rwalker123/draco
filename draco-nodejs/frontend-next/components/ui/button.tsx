@@ -32,7 +32,7 @@ const buttonVariants = cva(
   },
 );
 
-type ButtonProps = React.ComponentPropsWithoutRef<'button'> &
+type ButtonProps = Omit<React.ComponentPropsWithoutRef<'button'>, 'popover'> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
   };

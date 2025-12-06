@@ -23,7 +23,7 @@ const badgeVariants = cva(
   },
 );
 
-type BadgeProps = React.ComponentPropsWithoutRef<'span'> &
+type BadgeProps = Omit<React.ComponentPropsWithoutRef<'span'>, 'popover'> &
   VariantProps<typeof badgeVariants> & {
     asChild?: boolean;
   };
