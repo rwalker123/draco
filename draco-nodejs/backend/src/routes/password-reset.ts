@@ -1,11 +1,10 @@
 import { Router, Request, Response } from 'express';
 import {
   ChangePasswordRequestSchema,
-  SignInUserNameSchema,
+  PasswordResetRequestSchema,
   VerifyTokenRequestSchema,
 } from '@draco/shared-schemas';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { ValidationError } from '../utils/customErrors.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 
@@ -23,16 +22,11 @@ const PASSWORD_RESET_ACKNOWLEDGEMENT =
 router.post(
   '/request',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { email } = req.body;
-
-    if (typeof email !== 'string') {
-      throw new ValidationError('Email is required');
-    }
-
-    const parsedEmail = SignInUserNameSchema.parse(email);
+    const { email, accountId } = PasswordResetRequestSchema.parse(req.body);
 
     const result = await userService.requestPasswordReset({
-      email: parsedEmail,
+      email,
+      accountId,
     });
 
     if (result.kind === 'user-not-found') {

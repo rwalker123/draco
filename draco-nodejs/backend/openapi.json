@@ -37832,7 +37832,11 @@
                 "properties": {
                   "email": {
                     "type": "string",
-                    "minLength": 1
+                    "maxLength": 100,
+                    "format": "email"
+                  },
+                  "accountId": {
+                    "type": "string"
                   }
                 },
                 "required": [
