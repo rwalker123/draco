@@ -5,7 +5,7 @@ import { sanitizePlainText, sanitizeRichHtml } from '../../utils/htmlSanitizer.j
 import { logSecurely } from '../../utils/auditLogger.js';
 import { EMAIL_STYLES, EMAIL_CONTENT } from '../../config/playerClassifiedConstants.js';
 import { DateUtils } from '../../utils/dateUtils.js';
-import { EmailConfigFactory } from '../../config/email.js';
+import { getFrontendBaseUrlOrFallback } from '../../utils/frontendBaseUrl.js';
 
 /**
  * PlayerClassifiedEmailService
@@ -77,7 +77,7 @@ export class PlayerClassifiedEmailService {
       const settings = EMAIL_CONTENT.DEFAULT_SETTINGS;
 
       // Generate verification URL with proper environment variable handling
-      const baseUrl = EmailConfigFactory.getBaseUrl();
+      const baseUrl = getFrontendBaseUrlOrFallback();
       const verificationUrl = `${baseUrl}/account/${account.id}/verify-classified/${classifiedId}?code=${accessCode}`;
 
       // Create email HTML content with security best practices and personalization

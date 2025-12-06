@@ -45,6 +45,7 @@ import { socialIngestionConfig } from './config/socialIngestion.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
 import { resolveUploadsRoot } from './utils/uploadsPath.js';
 import { OriginAllowList } from './utils/originAllowList.js';
+import { createFrontendBaseUrlMiddleware } from './middleware/frontendBaseUrlMiddleware.js';
 
 // Start cleanup service
 const cleanupService = ServiceFactory.getCleanupService();
@@ -59,6 +60,7 @@ if (socialIngestionConfig.enabled) {
 
 const app = express();
 const originAllowList = new OriginAllowList();
+const frontendBaseUrlMiddleware = createFrontendBaseUrlMiddleware({ originAllowList });
 
 // Enable extended query parsing so nested query parameters are supported
 app.set('query parser', 'extended');
@@ -126,6 +128,9 @@ if (process.env.NODE_ENV !== 'test') {
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Frontend base URL propagation
+app.use(frontendBaseUrlMiddleware);
 
 // Global BigInt serialization middleware
 app.use(bigIntSerializer);

@@ -16,7 +16,7 @@ const DEFAULT_AUTHORIZE_URL = 'https://discord.com/oauth2/authorize';
 const DEFAULT_TOKEN_URL = 'https://discord.com/api/oauth2/token';
 const DEFAULT_API_BASE_URL = 'https://discord.com/api';
 const DEFAULT_STATE_TTL_MS = 10 * 60 * 1000;
-const DEFAULT_INSTALL_REDIRECT_PATH = '/api/discord/install/callback';
+
 // Permissions: VIEW_CHANNEL + SEND_MESSAGES + EMBED_LINKS + MANAGE_CHANNELS
 // Calculate via https://discordapi.com/permissions.html
 const DEFAULT_INSTALL_PERMISSIONS = '268443664';
@@ -47,14 +47,11 @@ export function getDiscordOAuthConfig(): DiscordOAuthConfig {
     );
   }
 
-  const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, '');
-  const installRedirectUri =
-    process.env.DISCORD_BOT_INSTALL_REDIRECT_URI ??
-    (backendUrl ? `${backendUrl}${DEFAULT_INSTALL_REDIRECT_PATH}` : undefined);
+  const installRedirectUri = process.env.DISCORD_BOT_INSTALL_REDIRECT_URI;
 
   if (!installRedirectUri) {
     throw new Error(
-      'Discord install redirect URI is required. Set DISCORD_BOT_INSTALL_REDIRECT_URI or BACKEND_URL.',
+      'Discord install redirect URI is required. Set DISCORD_BOT_INSTALL_REDIRECT_URI.',
     );
   }
 

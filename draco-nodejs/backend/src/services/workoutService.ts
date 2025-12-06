@@ -38,6 +38,7 @@ import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { TwitterIntegrationService } from './twitterIntegrationService.js';
 import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
 import { FacebookIntegrationService } from './facebookIntegrationService.js';
+import { resolveAccountFrontendBaseUrl } from '../utils/frontendBaseUrl.js';
 
 export class WorkoutService {
   private readonly workoutRepository = RepositoryFactory.getWorkoutRepository();
@@ -496,13 +497,9 @@ export class WorkoutService {
     return BigInt(trimmed);
   }
 
-  private getBaseUrl(): string {
-    const baseUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3000';
-    return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  }
-
-  private buildWorkoutUrl(accountId: bigint): string {
-    return `${this.getBaseUrl()}/account/${accountId.toString()}/home`;
+  private async buildWorkoutUrl(accountId: bigint): Promise<string> {
+    const baseUrl = await resolveAccountFrontendBaseUrl(accountId);
+    return `${baseUrl}/account/${accountId.toString()}/home`;
   }
 
   private async syncWorkoutToSocial(accountId: bigint, workout: dbWorkoutWithField): Promise<void> {
@@ -512,7 +509,7 @@ export class WorkoutService {
         workoutId: workout.id,
         workoutDesc: workout.workoutdesc,
         workoutDate: workout.workoutdate,
-        workoutUrl: this.buildWorkoutUrl(accountId),
+        workoutUrl: await this.buildWorkoutUrl(accountId),
         accountName: account?.name ?? null,
         comments: workout.comments ?? null,
       } as const;

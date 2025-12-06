@@ -5,7 +5,6 @@ import {
 } from '@draco/shared-schemas';
 import {
   RepositoryFactory,
-  IAccountRepository,
   ISeasonsRepository,
   IAccountBlueskyCredentialsRepository,
 } from '../repositories/index.js';
@@ -21,6 +20,7 @@ import {
   type WorkoutPostPayload,
 } from './socialWorkoutFormatter.js';
 import { stripHtml } from '../utils/emailContent.js';
+import { resolveAccountFrontendBaseUrl } from '../utils/frontendBaseUrl.js';
 
 interface BlueskyFeedItem {
   post?: {
@@ -89,13 +89,11 @@ type BlueskyPostPayload = {
 };
 
 export class BlueskyIntegrationService {
-  private readonly accountRepository: IAccountRepository;
   private readonly seasonsRepository: ISeasonsRepository;
   private readonly accountBlueskyCredentialsRepository: IAccountBlueskyCredentialsRepository;
   private readonly accountSettingsService = new AccountSettingsService();
 
   constructor() {
-    this.accountRepository = RepositoryFactory.getAccountRepository();
     this.seasonsRepository = RepositoryFactory.getSeasonsRepository();
     this.accountBlueskyCredentialsRepository =
       RepositoryFactory.getAccountBlueskyCredentialsRepository();
@@ -516,7 +514,7 @@ export class BlueskyIntegrationService {
   ): Promise<BlueskyPostPayload | null> {
     const title = announcement.title?.trim();
     const body = stripHtml(announcement.body ?? '').trim();
-    const announcementUrl = this.buildAnnouncementUrl(accountId);
+    const announcementUrl = await this.buildAnnouncementUrl(accountId);
     const baseText = [title, body].filter(Boolean).join(': ').trim();
 
     if (!baseText && !announcementUrl) {
@@ -569,12 +567,8 @@ export class BlueskyIntegrationService {
     });
   }
 
-  private getBaseUrl(): string {
-    const baseUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3000';
-    return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  }
-
-  private buildAnnouncementUrl(accountId: bigint): string {
-    return `${this.getBaseUrl()}/account/${accountId.toString()}/announcements`;
+  private async buildAnnouncementUrl(accountId: bigint): Promise<string> {
+    const baseUrl = await resolveAccountFrontendBaseUrl(accountId);
+    return `${baseUrl}/account/${accountId.toString()}/announcements`;
   }
 }
