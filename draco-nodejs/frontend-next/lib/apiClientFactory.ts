@@ -1,17 +1,11 @@
 import { createClient, createConfig } from '@draco/shared-api-client/generated/client';
+import { normalizeOrigin } from './url/normalizeOrigin';
 
 type CreateApiClientOptions = {
   token?: string;
   baseUrl?: string;
   transformHostHeader?: boolean;
   frontendBaseUrl?: string;
-};
-
-const normalizeBaseUrl = (url?: string): string | undefined => {
-  if (!url) {
-    return undefined;
-  }
-  return url.replace(/\/+$/, '');
 };
 
 export const createApiClient = ({
@@ -31,8 +25,8 @@ export const createApiClient = ({
   const client = createClient(createConfig(configOverrides));
 
   const resolvedFrontendBaseUrl =
-    normalizeBaseUrl(frontendBaseUrl) ||
-    (typeof window !== 'undefined' ? normalizeBaseUrl(window.location.origin) : undefined);
+    normalizeOrigin(frontendBaseUrl) ||
+    (typeof window !== 'undefined' ? normalizeOrigin(window.location.origin) : undefined);
 
   if (resolvedFrontendBaseUrl) {
     client.interceptors.request.use(async (request) => {

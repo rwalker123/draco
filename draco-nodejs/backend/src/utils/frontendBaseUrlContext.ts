@@ -6,6 +6,6 @@ export const getFrontendBaseUrlFromContext = (): string | null => {
   return frontendBaseUrlStore.getStore() ?? null;
 };
 
-export const runWithFrontendBaseUrl = (baseUrl: string | null, callback: () => void): void => {
-  frontendBaseUrlStore.run(baseUrl, callback);
+export const runWithFrontendBaseUrl = <T>(baseUrl: string | null, callback: () => T): T => {
+  return frontendBaseUrlStore.run(baseUrl, callback);
 };

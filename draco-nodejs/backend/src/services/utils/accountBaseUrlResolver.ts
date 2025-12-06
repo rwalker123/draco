@@ -39,7 +39,9 @@ export class AccountBaseUrlResolver {
       }
     }
 
-    return '';
+    throw new Error(
+      'No valid FRONTEND_URL environment variable found. Please set FRONTEND_URL to a valid absolute URL.',
+    );
   }
 
   async resolveAccountBaseUrl(accountId: bigint, accountUrls?: dbAccountUrl[]): Promise<string> {

@@ -2,7 +2,10 @@ import { AccountBaseUrlResolver } from '../services/utils/accountBaseUrlResolver
 import type { dbAccountUrl } from '../repositories/types/index.js';
 import { getFrontendBaseUrlFromContext } from './frontendBaseUrlContext.js';
 
-const normalizeBase = (baseUrl: string): string => baseUrl.replace(/\/+$/, '');
+const normalizeBase = (baseUrl: string | null | undefined): string => {
+  const normalized = AccountBaseUrlResolver.normalizeBaseUrl(baseUrl);
+  return normalized ?? '';
+};
 
 export const getFrontendBaseUrlOrFallback = (): string => {
   const contextual = getFrontendBaseUrlFromContext();

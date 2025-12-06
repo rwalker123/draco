@@ -51,7 +51,7 @@ export function getDiscordOAuthConfig(): DiscordOAuthConfig {
 
   if (!installRedirectUri) {
     throw new Error(
-      'Discord install redirect URI is required. Set DISCORD_BOT_INSTALL_REDIRECT_URI.',
+      'Discord install redirect URI is required. Set DISCORD_BOT_INSTALL_REDIRECT_URI (e.g., https://your-backend.com/api/discord/install/callback).',
     );
   }
 

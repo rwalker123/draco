@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-
-const normalizeOrigin = (origin: string | null): string | null => {
-  if (!origin) {
-    return null;
-  }
-  return origin.replace(/\/+$/, '');
-};
+import { normalizeOrigin } from './lib/url/normalizeOrigin';
 
 export async function middleware(request: NextRequest) {
   // Handle compression headers for API routes

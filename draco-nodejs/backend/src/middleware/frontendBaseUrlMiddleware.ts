@@ -7,7 +7,7 @@ type FrontendBaseUrlMiddlewareDeps = {
   originAllowList?: OriginAllowList;
 };
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProductionEnv = (): boolean => process.env.NODE_ENV === 'production';
 
 const extractBaseUrlHeader = (req: Request): string | null => {
   const headerValue = req.headers['x-frontend-base-url'] ?? req.headers.origin ?? null;
@@ -37,19 +37,13 @@ export const createFrontendBaseUrlMiddleware =
     };
 
     if (!normalized) {
-      if (!isProduction) {
-        console.warn('[frontend-base-url] Missing or invalid base URL header (dev mode allowed)');
-        runWithContext(null);
-        return;
-      }
-
-      res.status(400).json({ message: 'Missing or invalid frontend base URL' });
+      runWithContext(null);
       return;
     }
 
     try {
       const parsed = new URL(normalized);
-      if (isProduction && parsed.protocol !== 'https:') {
+      if (isProductionEnv() && parsed.protocol !== 'https:') {
         res.status(400).json({ message: 'Frontend base URL must use https in production' });
         return;
       }
@@ -60,7 +54,7 @@ export const createFrontendBaseUrlMiddleware =
 
     const isAllowed = await originAllowList.isAllowed(normalized);
 
-    if (!isAllowed && isProduction) {
+    if (!isAllowed && isProductionEnv()) {
       res.status(403).json({ message: 'Frontend base URL not allowed' });
       return;
     }
