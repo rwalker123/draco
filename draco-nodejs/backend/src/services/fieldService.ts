@@ -51,19 +51,26 @@ export class FieldService {
     return numeric.toString();
   }
 
-  async listFields(accountId: bigint, paging: PagingType): Promise<FieldsType> {
+  async listFields(
+    accountId: bigint,
+    paging: PagingType,
+    options?: { search?: string },
+  ): Promise<FieldsType> {
     const sortBy = PaginationHelper.validateSortField(paging.sortBy, FIELD_SORT_FIELDS);
     const orderBy = PaginationHelper.getPrismaOrderBy(sortBy, paging.sortOrder, {
       name: 'asc',
     }) as Prisma.availablefieldsOrderByWithRelationInput;
+
+    const normalizedSearch = options?.search?.trim() || undefined;
 
     const [fields, total] = await Promise.all([
       this.fieldRepository.findByAccount(accountId, {
         skip: paging.skip,
         take: paging.limit,
         orderBy,
+        search: normalizedSearch,
       }),
-      this.fieldRepository.countByAccount(accountId),
+      this.fieldRepository.countByAccount(accountId, normalizedSearch),
     ]);
 
     return FieldResponseFormatter.formatPagedFields(fields, paging.page, paging.limit, total);

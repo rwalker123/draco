@@ -46,8 +46,13 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const pagingParams = PagingSchema.parse(req.query);
+    const rawSearch =
+      Array.isArray(req.query.search) && req.query.search.length
+        ? req.query.search[0]
+        : req.query.search;
+    const search = typeof rawSearch === 'string' ? rawSearch.trim() || undefined : undefined;
 
-    const fields = await fieldService.listFields(accountId, pagingParams);
+    const fields = await fieldService.listFields(accountId, pagingParams, { search });
 
     res.json(fields);
   }),

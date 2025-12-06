@@ -99,6 +99,10 @@ export const routePermissions: Record<string, RoutePermission> = {
   '/account/[accountId]/fields': {
     public: true,
   },
+  '/account/[accountId]/fields/manage': {
+    roles: ['AccountAdmin'],
+    checkAccountBoundary: true,
+  },
   '/account/[accountId]/schedule': {
     public: true,
   },
@@ -127,6 +131,9 @@ export const routePermissions: Record<string, RoutePermission> = {
     public: true,
   },
   '/account/[accountId]/player-classifieds': {
+    public: true,
+  },
+  '/account/[accountId]/announcements': {
     public: true,
   },
   '/account/[accountId]/handouts': {

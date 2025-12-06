@@ -23759,6 +23759,16 @@
             }
           },
           {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": "Filter fields by name, short name, city, or state"
+          },
+          {
             "schema": {
               "type": "number",
               "nullable": true,

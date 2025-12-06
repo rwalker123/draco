@@ -429,7 +429,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
             <TopBarQuickActions
               accountId={accountId}
               canViewHandouts={Boolean(accountId)}
-              canViewAnnouncements={isMember === true}
+              canViewAnnouncements={Boolean(accountId)}
               useUnifiedMenu
               onCompactMenuItemsChange={setQuickActionItems}
               onUnifiedMenuClose={handleMenuClose}
@@ -595,6 +595,28 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <PublicIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Social Media Management</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
+                  handleNavigation(`/account/${String(currentAccount.id)}/fields/manage`)
+                }
+                key="fields-management"
+              >
+                <ListItemIcon>
+                  <BusinessIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Field Management</ListItemText>
               </MenuItem>
             );
           }

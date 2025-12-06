@@ -20,6 +20,7 @@ export interface ListFieldParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  search?: string;
 }
 
 export interface FieldService {
@@ -84,7 +85,8 @@ export function useFieldService(accountId: string): FieldService {
 
   const listFields = useCallback<FieldService['listFields']>(
     async (params: ListFieldParams = {}) => {
-      const { page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc' } = params;
+      const { page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc', search } = params;
+      const trimmedSearch = search?.trim() || undefined;
       try {
         const result = await listAccountFields({
           client: apiClient,
@@ -96,6 +98,7 @@ export function useFieldService(accountId: string): FieldService {
             skip: (page - 1) * limit,
             sortBy,
             sortOrder,
+            search: trimmedSearch,
           },
         });
 

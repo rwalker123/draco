@@ -21,7 +21,11 @@ import {
   TableRow,
   TableSortLabel,
   Typography,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import type { FieldType, PaginationWithTotalType } from '@draco/shared-schemas';
 import AccountPageHeader from '../AccountPageHeader';
@@ -33,6 +37,7 @@ import FieldDetailsCard from './FieldDetailsCard';
 
 interface FieldsManagementProps {
   accountId: string;
+  showManageControls?: boolean;
 }
 
 interface ColumnDefinition {
@@ -50,10 +55,13 @@ const COLUMNS: ColumnDefinition[] = [
   { id: 'rainoutNumber', label: 'Rainout Line', sortable: true, sortKey: 'rainoutnumber' },
 ];
 
-export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId }) => {
+export const FieldsManagement: React.FC<FieldsManagementProps> = ({
+  accountId,
+  showManageControls = true,
+}) => {
   const { listFields } = useFieldService(accountId);
   const { hasPermission } = useRole();
-  const canManage = hasPermission('account.manage', { accountId });
+  const canManage = showManageControls && hasPermission('account.manage', { accountId });
 
   const [fields, setFields] = useState<FieldType[]>([]);
   const [pagination, setPagination] = useState<PaginationWithTotalType | null>(null);
@@ -65,6 +73,9 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const trimmedSearch = searchTerm.trim();
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
@@ -86,6 +97,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
         limit: rowsPerPage,
         sortBy,
         sortOrder,
+        search: trimmedSearch || undefined,
       });
 
       if (result.success) {
@@ -114,7 +126,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
     } finally {
       setLoading(false);
     }
-  }, [listFields, page, rowsPerPage, sortBy, sortOrder]);
+  }, [listFields, page, rowsPerPage, sortBy, sortOrder, trimmedSearch]);
 
   useEffect(() => {
     void loadFields();
@@ -182,7 +194,16 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
     setDialogError(null);
   };
 
+  useEffect(() => {
+    setPage(0);
+  }, [trimmedSearch]);
+
   const tableRows = useMemo(() => fields, [fields]);
+
+  const totalCount = useMemo(
+    () => pagination?.total ?? fields.length,
+    [fields.length, pagination?.total],
+  );
 
   return (
     <Box component="main" sx={{ pb: 6 }}>
@@ -208,7 +229,39 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
           <Grid size={{ xs: 12, md: 7 }}>
             <Paper elevation={3} sx={{ overflow: 'hidden' }}>
               <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="h6">Field Directory</Typography>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={2}
+                  alignItems={{ xs: 'flex-start', sm: 'center' }}
+                  justifyContent="space-between"
+                >
+                  <Typography variant="h6">Field Directory</Typography>
+                  <TextField
+                    size="small"
+                    placeholder="Search fields"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon fontSize="small" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: trimmedSearch ? (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="Clear search"
+                            size="small"
+                            onClick={() => setSearchTerm('')}
+                          >
+                            <ClearIcon fontSize="small" />
+                          </IconButton>
+                        </InputAdornment>
+                      ) : undefined,
+                    }}
+                    sx={{ minWidth: { xs: '100%', sm: 240 } }}
+                  />
+                </Stack>
                 {fetchError ? (
                   <Alert severity="error" sx={{ mt: 1 }}>
                     {fetchError}
@@ -218,7 +271,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
               <TableContainer
                 sx={{
                   position: 'relative',
-                  overflowX: 'visible',
+                  overflowX: 'hidden',
                   overflowY: 'visible',
                   maxWidth: '100%',
                   width: '100%',
@@ -246,12 +299,17 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
                   aria-busy={loading}
                   sx={{
                     width: '100%',
+                    minWidth: 820,
                     tableLayout: 'auto',
                     opacity: loading ? 0.88 : 1,
                     transition: 'opacity 120ms ease-in-out',
                     '& td, & th': {
                       whiteSpace: 'normal',
                       wordBreak: 'break-word',
+                    },
+                    '& th.state-column': {
+                      minWidth: 96,
+                      width: 96,
                     },
                   }}
                 >
@@ -262,6 +320,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
                         return (
                           <TableCell
                             key={column.id}
+                            className={column.id === 'state' ? 'state-column' : undefined}
                             sortDirection={sortBy === sortKey ? sortOrder : false}
                           >
                             {column.sortable ? (
@@ -345,7 +404,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
               </TableContainer>
               <TablePagination
                 component="div"
-                count={pagination?.total ?? fields.length}
+                count={totalCount}
                 page={page}
                 onPageChange={handleChangePage}
                 rowsPerPage={rowsPerPage}

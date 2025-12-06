@@ -84,6 +84,7 @@ function MapFullscreenControl() {
     }
 
     let button: HTMLButtonElement | null = null;
+    let resizeTimeout: number | undefined;
 
     const isContainerFullscreen = () => {
       const element =
@@ -106,8 +107,19 @@ function MapFullscreenControl() {
       button.innerHTML = active
         ? '<span aria-hidden="true">&times;</span>'
         : '<span aria-hidden="true">&#x26F6;</span>';
-      setTimeout(() => {
-        map.invalidateSize();
+      if (resizeTimeout !== undefined) {
+        window.clearTimeout(resizeTimeout);
+      }
+      resizeTimeout = window.setTimeout(() => {
+        const container = map.getContainer();
+        if (!container || !container.isConnected) {
+          return;
+        }
+        try {
+          map.invalidateSize();
+        } catch {
+          // ignore resize errors that can occur if the map is unmounted
+        }
       }, 220);
     };
 
@@ -161,6 +173,9 @@ function MapFullscreenControl() {
     control.onRemove = () => {
       if (button) {
         button.removeEventListener('click', handleToggle);
+      }
+      if (resizeTimeout !== undefined) {
+        window.clearTimeout(resizeTimeout);
       }
       button = null;
     };

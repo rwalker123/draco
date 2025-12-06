@@ -5,6 +5,24 @@ import { dbAvailableField } from '../types/dbTypes.js';
 export class PrismaFieldRepository implements IFieldRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
+  private buildAccountWhere(accountId: bigint, search?: string): Prisma.availablefieldsWhereInput {
+    const normalizedSearch = search?.trim();
+
+    if (!normalizedSearch) {
+      return { accountid: accountId };
+    }
+
+    return {
+      accountid: accountId,
+      OR: [
+        { name: { contains: normalizedSearch, mode: Prisma.QueryMode.insensitive } },
+        { shortname: { contains: normalizedSearch, mode: Prisma.QueryMode.insensitive } },
+        { city: { contains: normalizedSearch, mode: Prisma.QueryMode.insensitive } },
+        { state: { contains: normalizedSearch, mode: Prisma.QueryMode.insensitive } },
+      ],
+    };
+  }
+
   async findById(id: bigint): Promise<availablefields | null> {
     return this.prisma.availablefields.findUnique({
       where: { id: Number(id) },
@@ -44,10 +62,13 @@ export class PrismaFieldRepository implements IFieldRepository {
       skip: number;
       take: number;
       orderBy: Prisma.availablefieldsOrderByWithRelationInput;
+      search?: string;
     },
   ): Promise<dbAvailableField[]> {
+    const where = this.buildAccountWhere(accountId, options.search);
+
     return this.prisma.availablefields.findMany({
-      where: { accountid: accountId },
+      where,
       orderBy: options.orderBy,
       skip: options.skip,
       take: options.take,
@@ -68,9 +89,11 @@ export class PrismaFieldRepository implements IFieldRepository {
     });
   }
 
-  async countByAccount(accountId: bigint): Promise<number> {
+  async countByAccount(accountId: bigint, search?: string): Promise<number> {
+    const where = this.buildAccountWhere(accountId, search);
+
     return this.prisma.availablefields.count({
-      where: { accountid: accountId },
+      where,
     });
   }
 
