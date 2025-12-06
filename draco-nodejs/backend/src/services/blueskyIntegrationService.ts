@@ -3,6 +3,7 @@ import {
   SocialFeedItemType,
   SocialMediaAttachmentType,
 } from '@draco/shared-schemas';
+import { ServiceFactory } from './serviceFactory.js';
 import {
   RepositoryFactory,
   ISeasonsRepository,
@@ -12,7 +13,6 @@ import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { decryptSecret } from '../utils/secretEncryption.js';
 import { fetchJson, HttpError } from '../utils/fetchJson.js';
 import { deterministicUuid } from '../utils/deterministicUuid.js';
-import { AccountSettingsService } from './accountSettingsService.js';
 import type { BlueskyIngestionTarget } from '../config/socialIngestion.js';
 import { composeGameResultMessage } from './socialGameResultFormatter.js';
 import {
@@ -91,7 +91,7 @@ type BlueskyPostPayload = {
 export class BlueskyIntegrationService {
   private readonly seasonsRepository: ISeasonsRepository;
   private readonly accountBlueskyCredentialsRepository: IAccountBlueskyCredentialsRepository;
-  private readonly accountSettingsService = new AccountSettingsService();
+  private readonly accountSettingsService = ServiceFactory.getAccountSettingsService();
 
   constructor() {
     this.seasonsRepository = RepositoryFactory.getSeasonsRepository();

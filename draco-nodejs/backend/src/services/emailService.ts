@@ -169,7 +169,7 @@ export class EmailService {
   private currentProviderType: 'sendgrid' | 'ethereal' | 'ses' | 'resend' | 'none' | null = null;
 
   constructor() {
-    this.attachmentService = new EmailAttachmentService();
+    this.attachmentService = ServiceFactory.getEmailAttachmentService();
     this.emailRepository = RepositoryFactory.getEmailRepository();
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
     this.rosterService = ServiceFactory.getRosterService();

@@ -48,6 +48,7 @@ import { encryptSecret } from '../utils/secretEncryption.js';
 import { RoleNamesType } from '../types/roles.js';
 import { getAccountLogoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
+import { ServiceFactory } from './serviceFactory.js';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
 
 type OwnerSummary = AccountOwnerSummary;
@@ -71,7 +72,7 @@ export class AccountsService {
     this.userRepository = RepositoryFactory.getUserRepository();
     this.roleRepository = RepositoryFactory.getRoleRepository();
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
-    this.discordIntegrationService = new DiscordIntegrationService();
+    this.discordIntegrationService = ServiceFactory.getDiscordIntegrationService();
     this.accountTwitterCredentialsRepository =
       RepositoryFactory.getAccountTwitterCredentialsRepository();
     this.accountBlueskyCredentialsRepository =

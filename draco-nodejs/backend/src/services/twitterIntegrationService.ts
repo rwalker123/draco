@@ -4,9 +4,9 @@ import {
   SocialFeedItemType,
   SocialMediaAttachmentType,
 } from '@draco/shared-schemas';
+import { ServiceFactory } from './serviceFactory.js';
 import {
   RepositoryFactory,
-  IAccountRepository,
   ISeasonsRepository,
   IAccountTwitterCredentialsRepository,
 } from '../repositories/index.js';
@@ -14,7 +14,6 @@ import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { decryptSecret, encryptSecret } from '../utils/secretEncryption.js';
 import { fetchJson, HttpError } from '../utils/fetchJson.js';
 import { deterministicUuid } from '../utils/deterministicUuid.js';
-import { AccountSettingsService } from './accountSettingsService.js';
 import { composeGameResultMessage } from './socialGameResultFormatter.js';
 import {
   composeWorkoutAnnouncementMessage,
@@ -100,14 +99,12 @@ interface TwitterGameResultPayload {
 type TwitterWorkoutPayload = WorkoutPostPayload;
 
 export class TwitterIntegrationService {
-  private readonly accountRepository: IAccountRepository;
   private readonly seasonsRepository: ISeasonsRepository;
   private readonly accountTwitterCredentialsRepository: IAccountTwitterCredentialsRepository;
-  private readonly accountSettingsService = new AccountSettingsService();
+  private readonly accountSettingsService = ServiceFactory.getAccountSettingsService();
 
-  constructor(accountRepository?: IAccountRepository, seasonsRepository?: ISeasonsRepository) {
-    this.accountRepository = accountRepository ?? RepositoryFactory.getAccountRepository();
-    this.seasonsRepository = seasonsRepository ?? RepositoryFactory.getSeasonsRepository();
+  constructor() {
+    this.seasonsRepository = RepositoryFactory.getSeasonsRepository();
     this.accountTwitterCredentialsRepository =
       RepositoryFactory.getAccountTwitterCredentialsRepository();
   }

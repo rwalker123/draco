@@ -15,14 +15,12 @@ import {
 import { InternalServerError, ValidationError } from '../utils/customErrors.js';
 import { EmailService } from './emailService.js';
 import { AccountsService } from './accountsService.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 const RESET_TOKEN_BYTES = 32;
 const PASSWORD_SALT_ROUNDS = 12;
 
 interface UserServiceDependencies {
-  userRepository?: IUserRepository;
-  passwordResetTokenRepository?: IPasswordResetTokenRepository;
-  emailService?: EmailService;
   tokenExpiryHours?: number;
 }
 
@@ -36,12 +34,10 @@ export class UserService {
   private readonly tokenExpiryHours: number;
 
   constructor(dependencies: UserServiceDependencies = {}) {
-    this.userRepository = dependencies.userRepository ?? RepositoryFactory.getUserRepository();
-    this.passwordResetTokenRepository =
-      dependencies.passwordResetTokenRepository ??
-      RepositoryFactory.getPasswordResetTokenRepository();
-    this.emailService = dependencies.emailService ?? new EmailService();
-    this.accountService = new AccountsService();
+    this.userRepository = RepositoryFactory.getUserRepository();
+    this.passwordResetTokenRepository = RepositoryFactory.getPasswordResetTokenRepository();
+    this.emailService = ServiceFactory.getEmailService();
+    this.accountService = ServiceFactory.getAccountsService();
 
     this.tokenExpiryHours = dependencies.tokenExpiryHours ?? 24;
   }

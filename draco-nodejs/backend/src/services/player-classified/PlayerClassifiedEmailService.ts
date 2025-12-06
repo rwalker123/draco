@@ -21,7 +21,7 @@ import { getFrontendBaseUrlOrFallback } from '../../utils/frontendBaseUrl.js';
  *
  * @example
  * ```typescript
- * const emailService = new PlayerClassifiedEmailService();
+ * const emailService = ServiceFactory.PlayerClassifiedEmailService();
  * await emailService.sendTeamsWantedVerificationEmail(
  *   'user@example.com', 456n, 'uuid-code', account, userData
  * );

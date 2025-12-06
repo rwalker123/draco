@@ -1,5 +1,4 @@
 import { AnnouncementType } from '@draco/shared-schemas';
-import { AccountSettingsService } from './accountSettingsService.js';
 import {
   composeGameResultMessage,
   type GameResultPostPayload,
@@ -10,6 +9,7 @@ import {
 } from './socialWorkoutFormatter.js';
 import { stripHtml } from '../utils/emailContent.js';
 import { facebookOAuthConfig } from '../config/facebookOAuth.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { ValidationError } from '../utils/customErrors.js';
 import { encryptSecret, decryptSecret } from '../utils/secretEncryption.js';
@@ -33,7 +33,7 @@ interface FacebookPageResponse {
 
 export class FacebookIntegrationService {
   private static readonly FACEBOOK_MESSAGE_CHARACTER_LIMIT = 10_000;
-  private readonly accountSettingsService = new AccountSettingsService();
+  private readonly accountSettingsService = ServiceFactory.getAccountSettingsService();
   private readonly credentialsRepository =
     RepositoryFactory.getAccountFacebookCredentialsRepository();
 

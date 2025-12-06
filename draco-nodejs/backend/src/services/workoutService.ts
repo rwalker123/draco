@@ -25,6 +25,7 @@ import {
   WorkoutUnauthorizedError,
   ConflictError,
 } from '../utils/customErrors.js';
+import { ServiceFactory } from './serviceFactory.js';
 import {
   dbWorkoutCreateData,
   dbWorkoutRegistration,
@@ -33,21 +34,17 @@ import {
   dbWorkoutWithField,
 } from '../repositories/index.js';
 import { BCRYPT_CONSTANTS } from '../config/playerClassifiedConstants.js';
-import { WorkoutRegistrantAccessEmailService } from './workoutRegistrantAccessEmailService.js';
-import { DiscordIntegrationService } from './discordIntegrationService.js';
-import { TwitterIntegrationService } from './twitterIntegrationService.js';
-import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
-import { FacebookIntegrationService } from './facebookIntegrationService.js';
 import { resolveAccountFrontendBaseUrl } from '../utils/frontendBaseUrl.js';
 
 export class WorkoutService {
   private readonly workoutRepository = RepositoryFactory.getWorkoutRepository();
   private readonly accountRepository = RepositoryFactory.getAccountRepository();
-  private readonly registrantAccessEmailService = new WorkoutRegistrantAccessEmailService();
-  private readonly discordIntegrationService = new DiscordIntegrationService();
-  private readonly twitterIntegrationService = new TwitterIntegrationService();
-  private readonly blueskyIntegrationService = new BlueskyIntegrationService();
-  private readonly facebookIntegrationService = new FacebookIntegrationService();
+  private readonly registrantAccessEmailService =
+    ServiceFactory.getWorkoutRegistrantAccessEmailService();
+  private readonly discordIntegrationService = ServiceFactory.getDiscordIntegrationService();
+  private readonly twitterIntegrationService = ServiceFactory.getTwitterIntegrationService();
+  private readonly blueskyIntegrationService = ServiceFactory.getBlueskyIntegrationService();
+  private readonly facebookIntegrationService = ServiceFactory.getFacebookIntegrationService();
 
   async listWorkouts(
     accountId: bigint,

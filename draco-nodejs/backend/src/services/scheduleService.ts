@@ -12,6 +12,7 @@ import {
   ScheduleListFilters,
   ScheduleListOptions,
 } from '../repositories/interfaces/IScheduleRepository.js';
+import { ServiceFactory } from './serviceFactory.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { ScheduleResponseFormatter } from '../responseFormatters/index.js';
 import { NotFoundError, ValidationError, ConflictError } from '../utils/customErrors.js';
@@ -42,19 +43,12 @@ export class ScheduleService {
   private readonly blueskyIntegrationService: BlueskyIntegrationService;
   private readonly facebookIntegrationService: FacebookIntegrationService;
 
-  constructor(
-    scheduleRepository?: IScheduleRepository,
-    discordIntegrationService?: DiscordIntegrationService,
-    twitterIntegrationService?: TwitterIntegrationService,
-    blueskyIntegrationService?: BlueskyIntegrationService,
-    facebookIntegrationService?: FacebookIntegrationService,
-  ) {
-    this.scheduleRepository = scheduleRepository ?? RepositoryFactory.getScheduleRepository();
-    this.discordIntegrationService = discordIntegrationService ?? new DiscordIntegrationService();
-    this.twitterIntegrationService = twitterIntegrationService ?? new TwitterIntegrationService();
-    this.blueskyIntegrationService = blueskyIntegrationService ?? new BlueskyIntegrationService();
-    this.facebookIntegrationService =
-      facebookIntegrationService ?? new FacebookIntegrationService();
+  constructor() {
+    this.scheduleRepository = RepositoryFactory.getScheduleRepository();
+    this.discordIntegrationService = ServiceFactory.getDiscordIntegrationService();
+    this.twitterIntegrationService = ServiceFactory.getTwitterIntegrationService();
+    this.blueskyIntegrationService = ServiceFactory.getBlueskyIntegrationService();
+    this.facebookIntegrationService = ServiceFactory.getFacebookIntegrationService();
   }
 
   async updateGameResults(
