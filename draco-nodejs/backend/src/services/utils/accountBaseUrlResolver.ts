@@ -30,7 +30,7 @@ export class AccountBaseUrlResolver {
   }
 
   static getEnvFallbackBaseUrl(): string {
-    const candidates = [process.env.FRONTEND_URL, process.env.BASE_URL, 'http://localhost:3000'];
+    const candidates = [process.env.FRONTEND_URL];
 
     for (const candidate of candidates) {
       const normalized = AccountBaseUrlResolver.normalizeBaseUrl(candidate);
@@ -39,7 +39,9 @@ export class AccountBaseUrlResolver {
       }
     }
 
-    return 'http://localhost:3000';
+    throw new Error(
+      'No valid FRONTEND_URL environment variable found. Please set FRONTEND_URL to a valid absolute URL.',
+    );
   }
 
   async resolveAccountBaseUrl(accountId: bigint, accountUrls?: dbAccountUrl[]): Promise<string> {

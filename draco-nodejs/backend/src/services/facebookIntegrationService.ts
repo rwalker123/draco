@@ -1,5 +1,4 @@
 import { AnnouncementType } from '@draco/shared-schemas';
-import { AccountSettingsService } from './accountSettingsService.js';
 import {
   composeGameResultMessage,
   type GameResultPostPayload,
@@ -10,10 +9,12 @@ import {
 } from './socialWorkoutFormatter.js';
 import { stripHtml } from '../utils/emailContent.js';
 import { facebookOAuthConfig } from '../config/facebookOAuth.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { ValidationError } from '../utils/customErrors.js';
 import { encryptSecret, decryptSecret } from '../utils/secretEncryption.js';
 import { fetchJson, HttpError } from '../utils/fetchJson.js';
+import { resolveAccountFrontendBaseUrl } from '../utils/frontendBaseUrl.js';
 
 interface FacebookOAuthStatePayload {
   accountId: string;
@@ -32,7 +33,7 @@ interface FacebookPageResponse {
 
 export class FacebookIntegrationService {
   private static readonly FACEBOOK_MESSAGE_CHARACTER_LIMIT = 10_000;
-  private readonly accountSettingsService = new AccountSettingsService();
+  private readonly accountSettingsService = ServiceFactory.getAccountSettingsService();
   private readonly credentialsRepository =
     RepositoryFactory.getAccountFacebookCredentialsRepository();
 
@@ -196,7 +197,7 @@ export class FacebookIntegrationService {
         return;
       }
 
-      const message = this.composeAnnouncement(accountId, announcement);
+      const message = await this.composeAnnouncement(accountId, announcement);
       if (!message) {
         return;
       }
@@ -258,10 +259,13 @@ export class FacebookIntegrationService {
     return Boolean(setting?.effectiveValue);
   }
 
-  private composeAnnouncement(accountId: bigint, announcement: AnnouncementType): string | null {
+  private async composeAnnouncement(
+    accountId: bigint,
+    announcement: AnnouncementType,
+  ): Promise<string | null> {
     const title = announcement.title?.trim();
     const body = stripHtml(announcement.body ?? '').trim();
-    const url = this.buildAnnouncementUrl(accountId);
+    const url = await this.buildAnnouncementUrl(accountId);
 
     const pieces = [title, body].filter(Boolean).join(': ').trim();
     const message = [pieces, url].filter(Boolean).join(' ').trim();
@@ -276,10 +280,9 @@ export class FacebookIntegrationService {
     );
   }
 
-  private buildAnnouncementUrl(accountId: bigint): string {
-    const baseUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3000';
-    const normalized = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-    return `${normalized}/account/${accountId.toString()}/announcements`;
+  private async buildAnnouncementUrl(accountId: bigint): Promise<string> {
+    const baseUrl = await resolveAccountFrontendBaseUrl(accountId);
+    return `${baseUrl}/account/${accountId.toString()}/announcements`;
   }
 
   private async postToFacebook(

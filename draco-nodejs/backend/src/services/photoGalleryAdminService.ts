@@ -8,6 +8,7 @@ import type {
   UpdatePhotoGalleryAlbumType,
   UpdatePhotoGalleryPhotoType,
 } from '@draco/shared-schemas';
+import { ServiceFactory } from '../services/serviceFactory.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import {
   GalleryQueryOptions,
@@ -37,8 +38,8 @@ const trimOrEmpty = (value: string | null | undefined): string => {
 export class PhotoGalleryAdminService {
   constructor(
     private readonly repository: IPhotoGalleryAdminRepository = RepositoryFactory.getPhotoGalleryAdminRepository(),
-    private readonly assetService: PhotoGalleryAssetService = new PhotoGalleryAssetService(),
-    private readonly instagramIntegrationService: InstagramIntegrationService = new InstagramIntegrationService(),
+    private readonly assetService: PhotoGalleryAssetService = ServiceFactory.getPhotoGalleryAssetService(),
+    private readonly instagramIntegrationService: InstagramIntegrationService = ServiceFactory.getInstagramIntegrationService(),
   ) {}
 
   async listGalleryEntries(
@@ -394,7 +395,11 @@ export class PhotoGalleryAdminService {
     throw new ConflictError('An album with this title already exists');
   }
 
-  private async uploadToInstagram(accountId: bigint, photoId: bigint, caption?: string): Promise<void> {
+  private async uploadToInstagram(
+    accountId: bigint,
+    photoId: bigint,
+    caption?: string,
+  ): Promise<void> {
     await this.instagramIntegrationService.uploadPhotoFromGallery(accountId, photoId, caption);
   }
 

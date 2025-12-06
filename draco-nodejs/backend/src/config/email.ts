@@ -205,10 +205,6 @@ export class EmailConfigFactory {
   /**
    * Get base URL for email links
    */
-  static getBaseUrl(): string {
-    return process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3000';
-  }
-
   /**
    * Validate required environment variables
    */

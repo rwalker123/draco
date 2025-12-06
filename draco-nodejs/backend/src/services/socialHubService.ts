@@ -29,6 +29,7 @@ import type {
 } from '@draco/shared-schemas';
 import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 type LiveEventMutationPayload = LiveEventCreateType | LiveEventUpdateType;
 type LiveEventIdField = 'leagueEventId' | 'leagueSeasonId' | 'teamSeasonId';
@@ -45,15 +46,10 @@ export class SocialHubService {
   private readonly liveEventRepository: ILiveEventRepository;
   private readonly discordIntegrationService: DiscordIntegrationService;
 
-  constructor(
-    socialContentRepository?: ISocialContentRepository,
-    liveEventRepository?: ILiveEventRepository,
-    discordIntegrationService?: DiscordIntegrationService,
-  ) {
-    this.socialContentRepository =
-      socialContentRepository ?? RepositoryFactory.getSocialContentRepository();
-    this.liveEventRepository = liveEventRepository ?? RepositoryFactory.getLiveEventRepository();
-    this.discordIntegrationService = discordIntegrationService ?? new DiscordIntegrationService();
+  constructor() {
+    this.socialContentRepository = RepositoryFactory.getSocialContentRepository();
+    this.liveEventRepository = RepositoryFactory.getLiveEventRepository();
+    this.discordIntegrationService = ServiceFactory.getDiscordIntegrationService();
   }
 
   async listFeedItems(

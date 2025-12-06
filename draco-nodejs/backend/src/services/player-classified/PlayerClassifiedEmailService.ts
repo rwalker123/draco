@@ -3,9 +3,9 @@
 
 import { sanitizePlainText, sanitizeRichHtml } from '../../utils/htmlSanitizer.js';
 import { logSecurely } from '../../utils/auditLogger.js';
-import { InternalServerError } from '../../utils/customErrors.js';
 import { EMAIL_STYLES, EMAIL_CONTENT } from '../../config/playerClassifiedConstants.js';
 import { DateUtils } from '../../utils/dateUtils.js';
+import { getFrontendBaseUrlOrFallback } from '../../utils/frontendBaseUrl.js';
 
 /**
  * PlayerClassifiedEmailService
@@ -21,7 +21,7 @@ import { DateUtils } from '../../utils/dateUtils.js';
  *
  * @example
  * ```typescript
- * const emailService = new PlayerClassifiedEmailService();
+ * const emailService = ServiceFactory.PlayerClassifiedEmailService();
  * await emailService.sendTeamsWantedVerificationEmail(
  *   'user@example.com', 456n, 'uuid-code', account, userData
  * );
@@ -41,7 +41,6 @@ export class PlayerClassifiedEmailService {
    * @param account - Account information for branding and URL generation
    * @param userData - User data to display in email for confirmation
    *
-   * @throws {InternalServerError} When FRONTEND_URL environment variable is not set
    * @throws {Error} When email provider fails to send email
    *
    * @security Sanitizes all user input before including in email content to prevent
@@ -78,11 +77,8 @@ export class PlayerClassifiedEmailService {
       const settings = EMAIL_CONTENT.DEFAULT_SETTINGS;
 
       // Generate verification URL with proper environment variable handling
-      const frontendUrl = process.env.FRONTEND_URL;
-      if (!frontendUrl) {
-        throw new InternalServerError('FRONTEND_URL environment variable is required but not set');
-      }
-      const verificationUrl = `${frontendUrl}/account/${account.id}/verify-classified/${classifiedId}?code=${accessCode}`;
+      const baseUrl = getFrontendBaseUrlOrFallback();
+      const verificationUrl = `${baseUrl}/account/${account.id}/verify-classified/${classifiedId}?code=${accessCode}`;
 
       // Create email HTML content with security best practices and personalization
       const htmlContent = this.generateTeamsWantedEmailHtml(

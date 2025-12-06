@@ -4,6 +4,7 @@ import { EmailProviderFactory } from './email/EmailProviderFactory.js';
 import { EmailConfigFactory } from '../config/email.js';
 import validator from 'validator';
 import { photoSubmissionMetrics } from '../metrics/photoSubmissionMetrics.js';
+import { getFrontendBaseUrlOrFallback } from '../utils/frontendBaseUrl.js';
 
 type DetailRow = { label: string; value: string | null };
 type EmailContent = {
@@ -22,7 +23,6 @@ export class PhotoSubmissionNotificationService {
     private readonly getProvider: () => Promise<IEmailProvider> = () =>
       EmailProviderFactory.getProvider(),
     private readonly getEmailSettings = () => EmailConfigFactory.getEmailSettings(),
-    private readonly getBaseUrl = () => EmailConfigFactory.getBaseUrl(),
   ) {}
 
   async sendSubmissionReceivedNotification(detail: PhotoSubmissionDetailType): Promise<boolean> {
@@ -306,7 +306,7 @@ export class PhotoSubmissionNotificationService {
   }
 
   private buildGalleryUrl(detail: PhotoSubmissionDetailType): string {
-    const base = this.getBaseUrl().replace(/\/+$/, '');
+    const base = getFrontendBaseUrlOrFallback();
     const accountPath = `${base}/account/${detail.accountId}`;
 
     if (detail.teamId) {

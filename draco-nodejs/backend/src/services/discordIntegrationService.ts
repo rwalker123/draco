@@ -40,11 +40,11 @@ import { getDiscordOAuthConfig, type DiscordOAuthConfig } from '../config/discor
 import { HttpError, fetchJson } from '../utils/fetchJson.js';
 import type { dbTeamSeasonWithLeaguesAndTeams } from '../repositories/types/dbTypes.js';
 import type { DiscordIngestionTarget } from '../config/socialIngestion.js';
-import { AccountSettingsService } from './accountSettingsService.js';
 import {
   composeWorkoutAnnouncementMessage,
   type WorkoutPostPayload,
 } from './socialWorkoutFormatter.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 type DiscordLinkStatePayload =
   | {
@@ -130,7 +130,7 @@ export class DiscordIntegrationService {
   private readonly teamRepository = RepositoryFactory.getTeamRepository();
   private readonly rosterRepository = RepositoryFactory.getRosterRepository();
   private readonly contactRepository = RepositoryFactory.getContactRepository();
-  private readonly accountSettingsService = new AccountSettingsService();
+  private readonly accountSettingsService = ServiceFactory.getAccountSettingsService();
   private readonly roleRateLimits = new Map<string, number>();
   private async sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -355,8 +355,8 @@ export class DiscordIntegrationService {
           }
           return Boolean(
             allowedTeamSeasonIds &&
-              mapping.teamseasonid &&
-              allowedTeamSeasonIds.has(mapping.teamseasonid.toString()),
+            mapping.teamseasonid &&
+            allowedTeamSeasonIds.has(mapping.teamseasonid.toString()),
           );
         default:
           return false;

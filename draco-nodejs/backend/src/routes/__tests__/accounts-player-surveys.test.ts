@@ -103,7 +103,6 @@ let router: Router;
 describe('Accounts player surveys routes', () => {
   beforeAll(async () => {
     process.env.JWT_SECRET = 'test-secret'; // pragma: allowlist secret
-    process.env.FRONTEND_URL = 'http://localhost:3000';
 
     ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN] = ACCOUNT_ADMIN_ROLE_ID;
 
