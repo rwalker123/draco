@@ -47,6 +47,7 @@ const AccountAnnouncementsPage: React.FC = () => {
     if (!accountId) {
       setAnnouncements([]);
       setLoading(false);
+      setError(null);
       return;
     }
 
