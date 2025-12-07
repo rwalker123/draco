@@ -12127,6 +12127,91 @@ components:
         - description
       title: UpsertHandout
       description: Payload for creating or updating a handout record
+    Alert:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+        isActive:
+          type: boolean
+          default: true
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
+      required:
+        - message
+        - id
+        - createdAt
+        - updatedAt
+      title: Alert
+      description: System-wide alert message displayed to all accounts.
+    AlertList:
+      type: object
+      properties:
+        alerts:
+          type: array
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+                minLength: 1
+                maxLength: 500
+              isActive:
+                type: boolean
+                default: true
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              createdAt:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+              updatedAt:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+            required:
+              - message
+              - id
+              - createdAt
+              - updatedAt
+            title: Alert
+            description: System-wide alert message displayed to all accounts.
+      required:
+        - alerts
+      title: AlertList
+      description: Collection of alerts.
+    UpsertAlert:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+        isActive:
+          type: boolean
+          default: true
+      required:
+        - message
+      title: UpsertAlert
+      description: Payload to create or update a global alert message.
     Announcement:
       type: object
       properties:
@@ -19520,6 +19605,241 @@ paths:
           description: Authentication required.
         "403":
           description: Administrator privileges are required to access analytics.
+  /api/alerts:
+    get:
+      summary: List active alerts
+      description: Public endpoint returning active system alerts for all accounts.
+      operationId: listActiveAlerts
+      tags:
+        - Alerts
+      responses:
+        "200":
+          description: Active alerts currently visible to users.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertList"
+        "500":
+          description: Unexpected error while retrieving alerts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      summary: Create alert
+      description: Create a new system-wide alert message. Administrator only.
+      operationId: createAlert
+      tags:
+        - Alerts
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertAlert"
+      responses:
+        "201":
+          description: Alert created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "400":
+          description: Invalid alert payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Administrator role required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Unexpected error while creating the alert.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/alerts/all:
+    get:
+      summary: List all alerts
+      description: Administrator-only listing of all alerts, regardless of active status.
+      operationId: listAllAlerts
+      tags:
+        - Alerts
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: All alerts ordered by recency.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertList"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Administrator role required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Unexpected error while retrieving alerts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/alerts/{alertId}:
+    get:
+      summary: Get alert by ID
+      description: Administrator-only retrieval of a specific alert.
+      operationId: getAlert
+      tags:
+        - Alerts
+      security:
+        - bearerAuth: []
+      parameters:
+        - &a2
+          name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Alert details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Administrator role required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Alert not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error while retrieving the alert.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      summary: Update alert
+      description: Update an existing alert message. Administrator only.
+      operationId: updateAlert
+      tags:
+        - Alerts
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertAlert"
+      responses:
+        "200":
+          description: Updated alert details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "400":
+          description: Invalid alert payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Administrator role required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Alert not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error while updating the alert.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      summary: Delete alert
+      description: Remove an alert. Administrator only.
+      operationId: deleteAlert
+      tags:
+        - Alerts
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a2
+      responses:
+        "204":
+          description: Alert deleted successfully.
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Administrator role required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Alert not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error while deleting the alert.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/announcements/titles:
     get:
       summary: List account announcement summaries
@@ -19529,14 +19849,14 @@ paths:
       tags:
         - Announcements
       parameters:
-        - &a2
+        - &a3
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a4
+        - &a5
           name: limit
           in: query
           required: false
@@ -19545,7 +19865,7 @@ paths:
             minimum: 1
             maximum: 25
           description: Maximum number of announcement summaries to return (default 10).
-        - &a5
+        - &a6
           name: includeSpecialOnly
           in: query
           required: false
@@ -19573,7 +19893,7 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a2
+        - *a3
       responses:
         "200":
           description: Announcements published for the account.
@@ -19597,7 +19917,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a2
+        - *a3
       requestBody:
         content:
           application/json:
@@ -19642,8 +19962,8 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a2
-        - &a3
+        - *a3
+        - &a4
           name: announcementId
           in: path
           required: true
@@ -19678,8 +19998,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a2
         - *a3
+        - *a4
       requestBody:
         content:
           application/json:
@@ -19731,8 +20051,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a2
         - *a3
+        - *a4
       responses:
         "204":
           description: Announcement deleted.
@@ -19769,16 +20089,16 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a2
-        - &a6
+        - *a3
+        - &a7
           name: teamId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - *a4
         - *a5
+        - *a6
       responses:
         "200":
           description: Team announcement summaries for the specified account.
@@ -19807,8 +20127,8 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a2
-        - *a6
+        - *a3
+        - *a7
       responses:
         "200":
           description: Team announcements for the specified account.
@@ -19837,8 +20157,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a2
-        - *a6
+        - *a3
+        - *a7
       requestBody:
         content:
           application/json:
@@ -19889,9 +20209,9 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a2
-        - *a6
         - *a3
+        - *a7
+        - *a4
       responses:
         "200":
           description: Team announcement.
@@ -19920,9 +20240,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a2
-        - *a6
         - *a3
+        - *a7
+        - *a4
       requestBody:
         content:
           application/json:
@@ -19974,9 +20294,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a2
-        - *a6
         - *a3
+        - *a7
+        - *a4
       responses:
         "204":
           description: Team announcement deleted.
@@ -24067,7 +24387,7 @@ paths:
       tags:
         - League FAQ
       parameters:
-        - &a7
+        - &a8
           name: accountId
           in: path
           required: true
@@ -24096,7 +24416,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a7
+        - *a8
       requestBody:
         content:
           application/json:
@@ -24142,8 +24462,8 @@ paths:
       tags:
         - League FAQ
       parameters:
-        - *a7
-        - &a8
+        - *a8
+        - &a9
           name: faqId
           in: path
           required: true
@@ -24178,8 +24498,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a7
         - *a8
+        - *a9
       requestBody:
         content:
           application/json:
@@ -24231,8 +24551,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a7
         - *a8
+        - *a9
       responses:
         "204":
           description: League FAQ entry deleted
@@ -25808,7 +26128,7 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - &a9
+        - &a10
           name: accountId
           in: path
           required: true
@@ -25859,7 +26179,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a9
+        - *a10
       requestBody:
         content:
           application/json:
@@ -25916,8 +26236,8 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - *a9
-        - &a10
+        - *a10
+        - &a11
           name: memberBusinessId
           in: path
           required: true
@@ -25952,8 +26272,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a9
         - *a10
+        - *a11
       requestBody:
         content:
           application/json:
@@ -26011,8 +26331,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a9
         - *a10
+        - *a11
       responses:
         "204":
           description: Member business entry deleted
@@ -26971,7 +27291,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a11
+        - &a12
           name: accountId
           in: path
           required: true
@@ -27015,7 +27335,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a11
+        - *a12
       requestBody:
         content:
           application/json:
@@ -27062,8 +27382,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a11
-        - &a12
+        - *a12
+        - &a13
           name: categoryId
           in: path
           required: true
@@ -27122,8 +27442,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a11
         - *a12
+        - *a13
       responses:
         "204":
           description: Survey category deleted successfully.
@@ -27162,8 +27482,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a11
         - *a12
+        - *a13
       requestBody:
         content:
           application/json:
@@ -27216,8 +27536,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a11
-        - &a13
+        - *a12
+        - &a14
           name: questionId
           in: path
           required: true
@@ -27275,8 +27595,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a11
-        - *a13
+        - *a12
+        - *a14
       responses:
         "204":
           description: Survey question deleted successfully.
@@ -27313,7 +27633,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a11
+        - *a12
         - schema:
             type: integer
             minimum: 1
@@ -27364,8 +27684,8 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a11
-        - &a14
+        - *a12
+        - &a15
           name: playerId
           in: path
           required: true
@@ -27403,9 +27723,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a11
+        - *a12
+        - *a15
         - *a14
-        - *a13
       requestBody:
         content:
           application/json:
@@ -27458,9 +27778,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a11
+        - *a12
+        - *a15
         - *a14
-        - *a13
       responses:
         "204":
           description: Survey answer deleted successfully.
@@ -27497,7 +27817,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a11
+        - *a12
       responses:
         "200":
           description: Player survey spotlight result.
@@ -27526,7 +27846,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a11
+        - *a12
         - name: teamSeasonId
           in: path
           required: true
@@ -28957,14 +29277,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a15
+        - &a16
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a16
+        - &a17
           name: seasonId
           in: path
           required: true
@@ -29070,8 +29390,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
         - *a16
+        - *a17
         - name: feedItemId
           in: path
           required: true
@@ -29114,8 +29434,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
         - *a16
+        - *a17
         - name: feedItemId
           in: path
           required: true
@@ -29158,8 +29478,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
         - *a16
+        - *a17
         - schema:
             type: string
             pattern: ^\d+$
@@ -29226,8 +29546,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
         - *a16
+        - *a17
         - schema:
             type: string
             pattern: ^\d+$
@@ -29293,8 +29613,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
         - *a16
+        - *a17
         - schema:
             type: string
             nullable: true
@@ -29338,8 +29658,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
         - *a16
+        - *a17
         - schema:
             type: string
             pattern: ^\d+$
@@ -29406,8 +29726,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
         - *a16
+        - *a17
       requestBody:
         content:
           application/json:
@@ -29460,9 +29780,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
         - *a16
-        - &a17
+        - *a17
+        - &a18
           name: liveEventId
           in: path
           required: true
@@ -29509,9 +29829,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
         - *a16
         - *a17
+        - *a18
       requestBody:
         content:
           application/json:
@@ -29563,9 +29883,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
         - *a16
         - *a17
+        - *a18
       responses:
         "204":
           description: Live event deleted.
@@ -30803,23 +31123,23 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a19
+        - &a20
           name: accountId
           in: path
           required: true
-          schema: &a18
+          schema: &a19
             type: string
             format: number
-        - &a20
+        - &a21
           name: seasonId
           in: path
           required: true
-          schema: *a18
-        - &a21
+          schema: *a19
+        - &a22
           name: teamSeasonId
           in: path
           required: true
-          schema: *a18
+          schema: *a19
       responses:
         "200":
           description: Completed games retrieved.
@@ -30865,14 +31185,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
         - *a20
         - *a21
-        - &a22
+        - *a22
+        - &a23
           name: gameId
           in: path
           required: true
-          schema: *a18
+          schema: *a19
       responses:
         "200":
           description: Batting stats retrieved.
@@ -30917,10 +31237,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
         - *a20
         - *a21
         - *a22
+        - *a23
       requestBody:
         required: true
         content:
@@ -30978,15 +31298,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
         - *a20
         - *a21
         - *a22
-        - &a23
+        - *a23
+        - &a24
           name: statId
           in: path
           required: true
-          schema: *a18
+          schema: *a19
       requestBody:
         required: true
         content:
@@ -31037,11 +31357,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
         - *a20
         - *a21
         - *a22
         - *a23
+        - *a24
       responses:
         "204":
           description: Batting stat deleted.
@@ -31083,10 +31403,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
         - *a20
         - *a21
         - *a22
+        - *a23
       responses:
         "200":
           description: Pitching stats retrieved.
@@ -31131,10 +31451,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
         - *a20
         - *a21
         - *a22
+        - *a23
       requestBody:
         required: true
         content:
@@ -31192,11 +31512,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
         - *a20
         - *a21
         - *a22
         - *a23
+        - *a24
       requestBody:
         required: true
         content:
@@ -31247,11 +31567,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
         - *a20
         - *a21
         - *a22
         - *a23
+        - *a24
       responses:
         "204":
           description: Pitching stat deleted.
@@ -31293,10 +31613,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
         - *a20
         - *a21
         - *a22
+        - *a23
       responses:
         "200":
           description: Attendance retrieved.
@@ -31341,10 +31661,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
         - *a20
         - *a21
         - *a22
+        - *a23
       requestBody:
         required: true
         content:
@@ -32694,7 +33014,7 @@ paths:
       tags:
         - Accounts
       parameters:
-        - &a24
+        - &a25
           name: accountId
           in: path
           required: true
@@ -32719,7 +33039,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
+        - *a25
       requestBody:
         content:
           application/json:
@@ -32758,8 +33078,8 @@ paths:
       tags:
         - Accounts
       parameters:
-        - *a24
-        - &a25
+        - *a25
+        - &a26
           name: messageId
           in: path
           required: true
@@ -32788,8 +33108,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
         - *a25
+        - *a26
       requestBody:
         content:
           application/json:
@@ -32835,8 +33155,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
         - *a25
+        - *a26
       responses:
         "204":
           description: Welcome message deleted successfully.
@@ -32867,8 +33187,8 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a24
-        - &a26
+        - *a25
+        - &a27
           name: teamSeasonId
           in: path
           required: true
@@ -32897,8 +33217,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a26
+        - *a25
+        - *a27
       requestBody:
         content:
           application/json:
@@ -32943,9 +33263,9 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a24
-        - *a26
         - *a25
+        - *a27
+        - *a26
       responses:
         "200":
           description: Team welcome message retrieved successfully.
@@ -32968,9 +33288,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a26
         - *a25
+        - *a27
+        - *a26
       requestBody:
         content:
           application/json:
@@ -33016,9 +33336,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a26
         - *a25
+        - *a27
+        - *a26
       responses:
         "204":
           description: Team welcome message deleted successfully.

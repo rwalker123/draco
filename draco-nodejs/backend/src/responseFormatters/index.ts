@@ -27,6 +27,7 @@ export * from './photoGalleryResponseFormatter.js';
 export * from './memberBusinessResponseFormatter.js';
 export * from './HallOfFameResponseFormatter.js';
 export * from './AnnouncementResponseFormatter.js';
+export * from './alertResponseFormatter.js';
 export * from './accountSettingsResponseFormatter.js';
 export * from './SocialFeedResponseFormatter.js';
 export * from './LiveEventResponseFormatter.js';

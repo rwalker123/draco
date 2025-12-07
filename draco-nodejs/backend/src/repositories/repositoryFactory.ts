@@ -2,6 +2,7 @@ import {
   IUserRepository,
   ITeamRepository,
   IAccountRepository,
+  IAlertRepository,
   IContactRepository,
   IRoleRepository,
   ISeasonsRepository,
@@ -54,6 +55,7 @@ import {
   PrismaUserRepository,
   PrismaTeamRepository,
   PrismaAccountRepository,
+  PrismaAlertRepository,
   PrismaContactRepository,
   PrismaRoleRepository,
   PrismaSeasonsRepository,
@@ -111,6 +113,7 @@ export class RepositoryFactory {
   private static userRepository: IUserRepository;
   private static teamRepository: ITeamRepository;
   private static accountRepository: IAccountRepository;
+  private static alertRepository: IAlertRepository;
   private static contactRepository: IContactRepository;
   private static roleRepository: IRoleRepository;
   private static seasonsRepository: ISeasonsRepository;
@@ -176,6 +179,13 @@ export class RepositoryFactory {
       this.userRepository = new PrismaUserRepository(prisma);
     }
     return this.userRepository;
+  }
+
+  static getAlertRepository(): IAlertRepository {
+    if (!this.alertRepository) {
+      this.alertRepository = new PrismaAlertRepository(prisma);
+    }
+    return this.alertRepository;
   }
 
   static getTeamRepository(): ITeamRepository {

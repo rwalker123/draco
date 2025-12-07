@@ -30,28 +30,21 @@ function logError(err: Error, req: Request): void {
     return;
   }
 
-  if (
-    err instanceof AuthorizationError &&
-    req.method === 'GET' &&
-    req.path?.toLowerCase().endsWith('/contacts/me')
-  ) {
-    return;
-  }
+  const isGetContactsMe = req.method === 'GET' && req.path?.toLowerCase().endsWith('/contacts/me');
+  const isGetUserTeams =
+    req.method === 'GET' && /\/api\/accounts\/[^/]+\/user-teams$/i.test(req.path ?? '');
 
-  // Users without membership routinely hit the account team list; avoid noisy logs.
-  if (
-    err instanceof AuthorizationError &&
-    req.method === 'GET' &&
-    /\/api\/accounts\/[^/]+\/user-teams$/i.test(req.path ?? '')
-  ) {
+  if (err instanceof AuthorizationError && (isGetContactsMe || isGetUserTeams)) {
     return;
   }
 
   const shouldSuppressLog =
     err instanceof NotFoundError &&
     req.method === 'GET' &&
-    /\/api\/accounts\/[^/]+\/surveys\/answers\/[^/]+$/i.test(req.path ?? '') &&
-    /survey not available/i.test(err.message);
+    ((/\/api\/accounts\/[^/]+\/surveys\/answers\/[^/]+$/i.test(req.path ?? '') &&
+      /survey not available/i.test(err.message)) ||
+      isGetUserTeams ||
+      isGetContactsMe);
 
   if (shouldSuppressLog) {
     return;

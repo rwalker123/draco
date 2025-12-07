@@ -56,6 +56,7 @@ import { MemberBusinessService } from './memberBusinessService.js';
 import { HallOfFameService } from './hallOfFameService.js';
 import { HofNominationService } from './hofNominationService.js';
 import { HofSetupService } from './hofSetupService.js';
+import { AlertService } from './alertService.js';
 import { StatsEntryService } from './statsEntryService.js';
 import { PlayerSurveyService } from './playerSurveyService.js';
 import { AnnouncementService } from './announcementService.js';
@@ -132,6 +133,7 @@ export class ServiceFactory {
   private static statsEntryService: StatsEntryService;
   private static playerSurveyService: PlayerSurveyService;
   private static announcementService: AnnouncementService;
+  private static alertService: AlertService;
   private static accountSettingsService: AccountSettingsService;
   private static socialHubService: SocialHubService;
   private static socialIngestionService: SocialIngestionService;
@@ -770,6 +772,15 @@ export class ServiceFactory {
     }
 
     return this.announcementService;
+  }
+
+  static getAlertService(): AlertService {
+    if (!this.alertService) {
+      const alertRepository = RepositoryFactory.getAlertRepository();
+      this.alertService = new AlertService(alertRepository);
+    }
+
+    return this.alertService;
   }
 
   static getWorkoutRegistrantAccessEmailService(): WorkoutRegistrantAccessEmailService {
