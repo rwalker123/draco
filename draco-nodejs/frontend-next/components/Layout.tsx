@@ -53,6 +53,7 @@ import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 import type { AccountType } from '@draco/shared-schemas';
 import type { BaseballOverflowItem } from './BaseballMenu';
+import AlertsTicker from './alerts/AlertsTicker';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -529,6 +530,14 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
             <ListItemText>Admin Dashboard</ListItemText>
           </MenuItem>
         )}
+        {user && hasRole('Administrator') && (
+          <MenuItem onClick={() => handleNavigation('/admin/alerts')}>
+            <ListItemIcon>
+              <CampaignIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Alert Management</ListItemText>
+          </MenuItem>
+        )}
         {hasAccountManagementPrivileges && (
           <MenuItem onClick={() => handleNavigation('/account-management')}>
             <ListItemIcon>
@@ -914,6 +923,8 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
         })()}
         {quickActionItems.length > 0 && <Divider sx={{ my: 1 }} />}
       </Menu>
+
+      <AlertsTicker />
 
       <Container maxWidth={false} sx={{ flex: 1, py: 3, px: 4 }}>
         {children}

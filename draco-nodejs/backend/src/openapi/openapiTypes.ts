@@ -210,8 +210,11 @@ import {
   GamesWithRecapsSchema,
   HandoutListSchema,
   HandoutSchema,
+  AlertListSchema,
+  AlertSchema,
   AnnouncementListSchema,
   AnnouncementSchema,
+  UpsertAlertSchema,
   UpsertAnnouncementSchema,
   LeaderCategoriesSchema,
   LeaderRowSchema,
@@ -890,6 +893,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const HandoutSchemaRef = registry.register('Handout', HandoutSchema);
   const HandoutListSchemaRef = registry.register('HandoutList', HandoutListSchema);
   const UpsertHandoutSchemaRef = registry.register('UpsertHandout', UpsertHandoutSchema);
+  const AlertSchemaRef = registry.register('Alert', AlertSchema);
+  const AlertListSchemaRef = registry.register('AlertList', AlertListSchema);
+  const UpsertAlertSchemaRef = registry.register('UpsertAlert', UpsertAlertSchema);
   const AnnouncementSchemaRef = registry.register('Announcement', AnnouncementSchema);
   const AnnouncementListSchemaRef = registry.register('AnnouncementList', AnnouncementListSchema);
   const AnnouncementSummarySchema = AnnouncementSchema.omit({ body: true }).openapi({
@@ -1243,6 +1249,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     HandoutSchemaRef,
     HandoutListSchemaRef,
     UpsertHandoutSchemaRef,
+    AlertSchemaRef,
+    AlertListSchemaRef,
+    UpsertAlertSchemaRef,
     AnnouncementSchemaRef,
     AnnouncementListSchemaRef,
     AnnouncementSummarySchemaRef,

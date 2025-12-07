@@ -50,8 +50,10 @@ function logError(err: Error, req: Request): void {
   const shouldSuppressLog =
     err instanceof NotFoundError &&
     req.method === 'GET' &&
-    /\/api\/accounts\/[^/]+\/surveys\/answers\/[^/]+$/i.test(req.path ?? '') &&
-    /survey not available/i.test(err.message);
+    ((/\/api\/accounts\/[^/]+\/surveys\/answers\/[^/]+$/i.test(req.path ?? '') &&
+      /survey not available/i.test(err.message)) ||
+      /\/api\/accounts\/[^/]+\/user-teams$/i.test(req.path ?? '') ||
+      /\/api\/accounts\/[^/]+\/contacts\/me$/i.test(req.path ?? ''));
 
   if (shouldSuppressLog) {
     return;

@@ -9,6 +9,16 @@ export interface dbMonitoringConnectivityResult {
   connectivity_test: number;
 }
 
+export type dbAlert = Prisma.alertsGetPayload<{
+  select: {
+    id: true;
+    message: true;
+    isactive: true;
+    createdat: true;
+    updatedat: true;
+  };
+}>;
+
 export interface dbLeaderCategoryConfig {
   fieldname: string;
   isbatleader: boolean;
