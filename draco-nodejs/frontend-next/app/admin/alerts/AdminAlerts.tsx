@@ -100,6 +100,8 @@ const AdminAlerts: React.FC = () => {
           const created = await createAlert(payload, apiClient);
           setAlerts((prev) => sortAlerts([created, ...prev]));
         }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unable to save alert');
       } finally {
         setMutatingId(null);
       }

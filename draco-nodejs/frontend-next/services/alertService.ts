@@ -13,7 +13,7 @@ import { unwrapApiResult } from '../utils/apiResult';
 const mapAlert = (alert: AlertType): AlertType => ({
   id: alert.id,
   message: alert.message,
-  isActive: alert.isActive ?? false,
+  isActive: alert.isActive ?? true,
   createdAt: alert.createdAt,
   updatedAt: alert.updatedAt,
 });
