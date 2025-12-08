@@ -1,4 +1,5 @@
 import { AnnouncementType } from '@draco/shared-schemas';
+import { createHmac } from 'node:crypto';
 import {
   composeGameResultMessage,
   type GameResultPostPayload,
@@ -123,7 +124,10 @@ export class FacebookIntegrationService {
 
   async listPages(accountId: bigint): Promise<Array<{ id: string; name: string }>> {
     const credentials = await this.getAccountCredentials(accountId);
-    const pages = await this.fetchPages(credentials.userAccessToken);
+    const pages = await this.fetchPages({
+      userAccessToken: credentials.userAccessToken,
+      appSecret: credentials.appSecret,
+    });
     return pages.map((page) => ({ id: page.id, name: page.name }));
   }
 
@@ -148,7 +152,10 @@ export class FacebookIntegrationService {
 
   async savePageSelection(accountId: bigint, pageId: string, pageName: string): Promise<void> {
     const credentials = await this.getAccountCredentials(accountId);
-    const pages = await this.fetchPages(credentials.userAccessToken);
+    const pages = await this.fetchPages({
+      userAccessToken: credentials.userAccessToken,
+      appSecret: credentials.appSecret,
+    });
     const selected = pages.find((page) => page.id === pageId);
 
     if (!selected?.access_token) {
@@ -308,6 +315,10 @@ export class FacebookIntegrationService {
       message,
       access_token: pageToken,
     });
+    const postSecretProof = this.buildAppSecretProof(pageToken, credentials.appSecret);
+    if (postSecretProof) {
+      body.set('appsecret_proof', postSecretProof);
+    }
 
     try {
       await fetchJson(url, {
@@ -348,7 +359,10 @@ export class FacebookIntegrationService {
       return null;
     }
 
-    const pages = await this.fetchPages(credentials.userAccessToken);
+    const pages = await this.fetchPages({
+      userAccessToken: credentials.userAccessToken,
+      appSecret: credentials.appSecret,
+    });
     const match = pages.find((page) => page.id === credentials.pageId && page.access_token);
     if (!match?.access_token) {
       return null;
@@ -361,12 +375,17 @@ export class FacebookIntegrationService {
     return match.access_token;
   }
 
-  private async fetchPages(
-    userAccessToken: string,
-  ): Promise<Array<{ id: string; name: string; access_token?: string }>> {
+  private async fetchPages(params: {
+    userAccessToken: string;
+    appSecret?: string | null;
+  }): Promise<Array<{ id: string; name: string; access_token?: string }>> {
     const url = new URL('https://graph.facebook.com/v19.0/me/accounts');
-    url.searchParams.set('access_token', userAccessToken);
+    url.searchParams.set('access_token', params.userAccessToken);
     url.searchParams.set('fields', 'id,name,access_token');
+    const appSecretProof = this.buildAppSecretProof(params.userAccessToken, params.appSecret);
+    if (appSecretProof) {
+      url.searchParams.set('appsecret_proof', appSecretProof);
+    }
 
     const response = await fetchJson<FacebookPageResponse>(url, { timeoutMs: 8000 });
     const pages = response.data ?? [];
@@ -532,6 +551,14 @@ export class FacebookIntegrationService {
     }
 
     return `${value.slice(0, maxLength - 1)}…`;
+  }
+
+  private buildAppSecretProof(token: string, appSecret?: string | null): string | null {
+    if (!token || !appSecret) {
+      return null;
+    }
+
+    return createHmac('sha256', appSecret).update(token).digest('hex');
   }
 
   private decryptSecretValue(value?: string | null): string | undefined {
