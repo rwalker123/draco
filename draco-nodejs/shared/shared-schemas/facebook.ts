@@ -35,6 +35,7 @@ export const AccountFacebookCredentialsSchema = z.object({
   appId: z.string().trim().optional(),
   appSecret: z.string().trim().optional(),
   clearCredentials: z.boolean().optional(),
+  pageHandle: z.string().trim().min(1).optional(),
 });
 
 export type AccountFacebookCredentialsType = z.infer<typeof AccountFacebookCredentialsSchema>;
@@ -52,6 +53,8 @@ export const FacebookConnectionStatusSchema = z.object({
   pageConnected: z.boolean(),
   pageId: z.string().nullable().optional(),
   pageName: z.string().nullable().optional(),
+  pageHandle: z.string().nullable().optional(),
+  userTokenPresent: z.boolean().optional(),
 });
 
 export type FacebookConnectionStatusType = z.infer<typeof FacebookConnectionStatusSchema>;

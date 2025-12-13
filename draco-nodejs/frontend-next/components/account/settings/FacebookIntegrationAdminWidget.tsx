@@ -5,11 +5,7 @@ import {
   Alert,
   Box,
   Button,
-  FormControl,
   FormControlLabel,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
   Switch,
   TextField,
@@ -26,8 +22,6 @@ import {
   createFacebookAuthorizationUrl,
   disconnectAccountFacebook,
   getAccountFacebookStatus,
-  listAccountFacebookPages,
-  saveAccountFacebookPage,
   upsertAccountFacebookCredentials,
 } from '@draco/shared-api-client';
 
@@ -50,20 +44,25 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
-  const [pagesLoading, setPagesLoading] = useState(false);
-  const [pages, setPages] = useState<Array<{ id: string; name: string }>>([]);
-  const [selectedPageId, setSelectedPageId] = useState('');
+  const [pageHandle, setPageHandle] = useState('');
+  const [savedPageHandle, setSavedPageHandle] = useState<string | null>(null);
+  const [savingPageHandle, setSavingPageHandle] = useState(false);
   const [pageConnected, setPageConnected] = useState(false);
   const [pageName, setPageName] = useState<string | null>(null);
   const [appConfigured, setAppConfigured] = useState(false);
+  const [userTokenPresent, setUserTokenPresent] = useState(false);
+  const handleChanged = useMemo(
+    () => pageHandle.trim() !== (savedPageHandle ?? ''),
+    [pageHandle, savedPageHandle],
+  );
   type FacebookStatusResponse = {
     appConfigured: boolean;
     pageConnected: boolean;
     pageId?: string | null;
     pageName?: string | null;
+    pageHandle?: string | null;
+    userTokenPresent?: boolean;
   };
-
-  type FacebookPagesResponse = { pages?: Array<{ id: string; name: string }> };
 
   const authStatus = searchParams.get('facebookAuth');
   const authMessage = searchParams.get('message');
@@ -86,7 +85,9 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       setAppConfigured(Boolean(body.appConfigured));
       setPageConnected(Boolean(body.pageConnected));
       setPageName(body.pageName ?? null);
-      setSelectedPageId(body.pageId ?? '');
+      setPageHandle(body.pageHandle ?? '');
+      setSavedPageHandle(body.pageHandle ?? null);
+      setUserTokenPresent(Boolean(body.userTokenPresent));
     } catch (err) {
       console.error('Failed to load Facebook status', err);
       setError('Unable to load Facebook status. Please try again.');
@@ -95,46 +96,20 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
     }
   }, [account.id, apiClient, token]);
 
-  const loadPages = useCallback(async () => {
-    if (!token) {
-      return;
-    }
-    try {
-      setPagesLoading(true);
-      const response = await listAccountFacebookPages({
-        client: apiClient,
-        path: { accountId: account.id },
-        throwOnError: false,
-      });
-      const body = unwrapApiResult<FacebookPagesResponse>(
-        response,
-        'Unable to load Facebook Pages.',
-      );
-      setPages(body.pages ?? []);
-      if (body.pages?.length && !selectedPageId) {
-        setSelectedPageId(body.pages[0].id);
-      }
-    } catch (err) {
-      console.error('Failed to load Facebook pages', err);
-      setError('Unable to load Facebook Pages. Ensure Facebook is connected.');
-    } finally {
-      setPagesLoading(false);
-    }
-  }, [account.id, apiClient, selectedPageId, token]);
-
   useEffect(() => {
     void loadStatus();
   }, [loadStatus]);
 
   useEffect(() => {
     if (authStatus === 'success') {
-      setSuccess(authMessage || 'Facebook authorization completed. Select a Page to finish setup.');
-      void loadPages();
+      setSuccess(
+        authMessage || 'Facebook authorization completed. Enter your Page handle to finish setup.',
+      );
       void loadStatus();
     } else if (authStatus === 'error') {
       setError(authMessage || 'Facebook authorization failed.');
     }
-  }, [authMessage, authStatus, loadPages, loadStatus]);
+  }, [authMessage, authStatus, loadStatus]);
 
   const hasPendingChanges = useMemo(
     () =>
@@ -178,6 +153,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
         setFacebookAppId('');
         setFacebookAppSecret('');
         setClearCredentials(false);
+        void loadStatus();
       } catch (err) {
         console.error('Failed to save Facebook settings', err);
         setError('Unable to save Facebook settings. Please try again.');
@@ -192,6 +168,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       facebookAppId,
       facebookAppSecret,
       hasPendingChanges,
+      loadStatus,
       onAccountUpdate,
     ],
   );
@@ -226,37 +203,41 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
     }
   }, [account.id, apiClient, token]);
 
-  const handleSavePage = useCallback(async () => {
+  const handleSavePageHandle = useCallback(async () => {
     if (!token) {
       setError('You must be signed in to connect Facebook.');
       return;
     }
-    if (!selectedPageId) {
-      setError('Select a Facebook Page to complete connection.');
+    const normalizedHandle = pageHandle.trim();
+    if (!normalizedHandle) {
+      setError('Enter a Facebook Page handle before saving.');
       return;
     }
-    const selected = pages.find((page) => page.id === selectedPageId);
-    if (!selected) {
-      setError('Selected Facebook Page is not available.');
+    if (!userTokenPresent) {
+      setError('Connect Facebook to retrieve a user token before saving the Page handle.');
       return;
     }
     try {
       setError(null);
       setSuccess(null);
-      await saveAccountFacebookPage({
+      setSavingPageHandle(true);
+      const result = await upsertAccountFacebookCredentials({
         client: apiClient,
         path: { accountId: account.id },
-        body: { pageId: selected.id, pageName: selected.name },
+        body: { pageHandle: normalizedHandle },
         throwOnError: false,
       });
-      setSuccess(`Connected to Facebook Page: ${selected.name}`);
-      setPageConnected(true);
-      setPageName(selected.name);
+      assertNoApiError(result, 'Unable to save Facebook Page handle.');
+      setSuccess('Facebook Page handle saved and Page token refreshed.');
+      setSavedPageHandle(normalizedHandle);
+      await loadStatus();
     } catch (err) {
-      console.error('Failed to save Facebook Page selection', err);
-      setError('Unable to save Facebook Page selection.');
+      console.error('Failed to save Facebook Page handle', err);
+      setError('Unable to save Facebook Page handle. Confirm Facebook is connected and try again.');
+    } finally {
+      setSavingPageHandle(false);
     }
-  }, [account.id, apiClient, pages, selectedPageId, token]);
+  }, [account.id, apiClient, loadStatus, pageHandle, token, userTokenPresent]);
 
   const handleDisconnect = useCallback(async () => {
     if (!token) {
@@ -274,26 +255,28 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       assertNoApiError(result, 'Unable to disconnect Facebook.');
       setPageConnected(false);
       setPageName(null);
-      setPages([]);
-      setSelectedPageId('');
+      setPageHandle('');
+      setSavedPageHandle(null);
+      setUserTokenPresent(false);
       setSuccess('Facebook integration disconnected.');
+      void loadStatus();
     } catch (err) {
       console.error('Failed to disconnect Facebook', err);
       setError('Unable to disconnect Facebook.');
     }
-  }, [account.id, apiClient, token]);
+  }, [account.id, apiClient, loadStatus, token]);
 
   return (
     <WidgetShell
       title="Facebook Integration"
-      subtitle="Connect the Meta App credentials required for Instagram and Facebook posting."
+      subtitle="Connect the Meta App credentials required for Facebook Page posting."
       accent="info"
     >
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} autoComplete="off" data-lpignore="true" data-1p-ignore="true">
         <Stack spacing={3}>
           <Alert severity="info">
-            Facebook credentials power both Instagram publishing and future Facebook posting.
-            Provide your Meta App ID and App Secret from the{' '}
+            Facebook credentials power Facebook Page posting. Provide your Meta App ID and App
+            Secret from the{' '}
             <Link
               href="https://developers.facebook.com/apps"
               target="_blank"
@@ -303,13 +286,56 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
             >
               Meta App Dashboard
             </Link>
-            . Secrets are stored server-side and never displayed.
+            . After connecting Facebook, save your Page handle to refresh the Page token. Secrets
+            are stored server-side and never displayed.
             <br />
             <strong>Where to find values:</strong> Meta App Dashboard → Basic → App ID / App Secret.
           </Alert>
 
           {error && <Alert severity="error">{error}</Alert>}
           {success && <Alert severity="success">{success}</Alert>}
+
+          <Stack spacing={1.5}>
+            <TextField
+              label="Facebook Page handle"
+              value={pageHandle}
+              onChange={(event) => setPageHandle(event.target.value)}
+              placeholder="detroitmsbl"
+              helperText={
+                savedPageHandle
+                  ? `Current saved handle: ${savedPageHandle}`
+                  : 'Enter the Page handle (username) shown in the Page URL.'
+              }
+              fullWidth
+              autoComplete="off"
+              name="facebook-page-handle"
+              inputProps={{
+                'data-lpignore': 'true',
+                'data-1p-ignore': 'true',
+                autoCapitalize: 'none',
+                spellCheck: false,
+              }}
+              disabled={savingPageHandle || statusLoading}
+            />
+            <Box display="flex" justifyContent="flex-end">
+              <Button
+                type="button"
+                variant="contained"
+                color="secondary"
+                onClick={handleSavePageHandle}
+                disabled={
+                  savingPageHandle ||
+                  statusLoading ||
+                  !appConfigured ||
+                  !userTokenPresent ||
+                  pageHandle.trim().length === 0 ||
+                  !handleChanged
+                }
+              >
+                {savingPageHandle ? 'Saving…' : 'Save Page handle'}
+              </Button>
+            </Box>
+          </Stack>
 
           <Stack spacing={2}>
             <TextField
@@ -320,6 +346,8 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
               helperText="Meta App Dashboard → Basic → App ID."
               fullWidth
               autoComplete="off"
+              name="facebook-app-id"
+              inputProps={{ 'data-lpignore': 'true', 'data-1p-ignore': 'true' }}
               disabled={saving}
             />
 
@@ -331,6 +359,8 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
               helperText="Meta App Dashboard → Basic → App Secret."
               fullWidth
               autoComplete="off"
+              name="facebook-app-secret"
+              inputProps={{ 'data-lpignore': 'true', 'data-1p-ignore': 'true' }}
               disabled={saving}
             />
 
@@ -347,7 +377,14 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
           </Stack>
 
           <Box display="flex" justifyContent="flex-end">
-            <Button type="submit" variant="contained" color="primary" disabled={submitDisabled}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={submitDisabled}
+              data-lpignore="true"
+              data-1p-ignore="true"
+            >
               {saving ? 'Saving…' : 'Save Facebook settings'}
             </Button>
           </Box>
@@ -356,6 +393,12 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
             <Typography variant="body2" color="text.secondary">
               Status:{' '}
               {statusLoading ? 'Loading…' : appConfigured ? 'App configured' : 'App not configured'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Facebook user token: {userTokenPresent ? 'Connected' : 'Not connected'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Page handle: {savedPageHandle || 'Not saved'}
             </Typography>
             <Box display="flex" gap={2} flexWrap="wrap">
               <Button
@@ -381,45 +424,17 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
               </Alert>
             )}
 
-            {appConfigured && !pageConnected && (
-              <Stack spacing={1}>
-                <Typography variant="body2" color="text.secondary">
-                  Select a Facebook Page to complete the connection after authorizing.
-                </Typography>
-                <FormControl fullWidth>
-                  <InputLabel id="facebook-page-select-label">Facebook Page</InputLabel>
-                  <Select
-                    labelId="facebook-page-select-label"
-                    value={selectedPageId}
-                    label="Facebook Page"
-                    onOpen={() => {
-                      if (!pages.length) {
-                        void loadPages();
-                      }
-                    }}
-                    onChange={(event) => setSelectedPageId(event.target.value)}
-                    disabled={pagesLoading}
-                  >
-                    {pages.map((page) => (
-                      <MenuItem key={page.id} value={page.id}>
-                        {page.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <Box display="flex" gap={2}>
-                  <Button
-                    variant="contained"
-                    onClick={handleSavePage}
-                    disabled={!selectedPageId || pagesLoading}
-                  >
-                    Save Page
-                  </Button>
-                  <Button variant="text" onClick={loadPages} disabled={pagesLoading}>
-                    Refresh Pages
-                  </Button>
-                </Box>
-              </Stack>
+            {appConfigured && userTokenPresent && !pageConnected && (
+              <Alert severity="info">
+                Facebook is authorized. Save the Page handle above to refresh the Page token and
+                finish connecting.
+              </Alert>
+            )}
+
+            {appConfigured && !userTokenPresent && !pageConnected && (
+              <Alert severity="warning">
+                Connect Facebook to obtain a user token, then save your Page handle to finish setup.
+              </Alert>
             )}
           </Stack>
         </Stack>
