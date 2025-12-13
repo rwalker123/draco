@@ -481,7 +481,9 @@ export class FacebookIntegrationService {
           body: error.body,
           handle,
         });
-        throw new ValidationError('Facebook rejected the Page handle lookup.');
+        throw new ValidationError(
+          'Facebook rejected the Page handle lookup. Verify the handle is correct, the page exists, and you have admin access to it.',
+        );
       }
       throw error;
     }
@@ -514,7 +516,9 @@ export class FacebookIntegrationService {
           body: error.body,
           pageId,
         });
-        throw new ValidationError('Facebook rejected the Page token request.');
+        throw new ValidationError(
+          'Facebook rejected the Page token request. Ensure you have admin access to this page and the necessary permissions.',
+        );
       }
       throw error;
     }
