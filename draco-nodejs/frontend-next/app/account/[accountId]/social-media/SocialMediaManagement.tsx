@@ -14,7 +14,6 @@ import { TwitterIntegrationAdminWidget } from '@/components/account/settings/Twi
 import { TwitterPostSettingsWidget } from '@/components/account/settings/TwitterPostSettingsWidget';
 import { FacebookIntegrationAdminWidget } from '@/components/account/settings/FacebookIntegrationAdminWidget';
 import { FacebookPostSettingsWidget } from '@/components/account/settings/FacebookPostSettingsWidget';
-import { FacebookFanPageWidget } from '@/components/account/settings/FacebookFanPageWidget';
 import { InstagramIntegrationAdminWidget } from '@/components/account/settings/InstagramIntegrationAdminWidget';
 import DiscordGameResultsSyncCard from '@/components/discord/DiscordGameResultsSyncCard';
 import { useAuth } from '@/context/AuthContext';
@@ -396,7 +395,6 @@ const SocialMediaManagement: React.FC = () => {
                   updatePostResultsSetting('PostWorkoutsToFacebook', enabled)
                 }
               />
-              <FacebookFanPageWidget account={account} onAccountUpdate={setAccount} />
               <InstagramIntegrationAdminWidget
                 account={account}
                 onAccountUpdate={setAccount}

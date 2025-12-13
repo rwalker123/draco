@@ -4079,6 +4079,9 @@ components:
           type: string
         clearCredentials:
           type: boolean
+        pageHandle:
+          type: string
+          minLength: 1
     AccountTwitterOAuthStart:
       type: object
       properties:
@@ -4146,6 +4149,11 @@ components:
         pageName:
           type: string
           nullable: true
+        pageHandle:
+          type: string
+          nullable: true
+        userTokenPresent:
+          type: boolean
       required:
         - appConfigured
         - pageConnected
@@ -15269,8 +15277,8 @@ paths:
     post:
       operationId: upsertAccountFacebookCredentials
       summary: Save Facebook App credentials for an account
-      description: Saves the Meta App ID and App Secret for Facebook Page posting for
-        the specified account.
+      description: Saves the Meta App ID, App Secret, and optional Page handle for
+        Facebook Page posting for the specified account.
       tags:
         - Accounts
       security:
