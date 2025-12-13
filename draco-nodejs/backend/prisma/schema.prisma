@@ -123,6 +123,7 @@ model accountfacebookcredentials {
   accountid                BigInt    @unique
   pageid                   String?   @db.VarChar(64)
   pagename                 String?   @db.VarChar(150)
+  pagehandle               String?   @db.VarChar(150)
   appid                    String?   @db.VarChar(128)
   appsecret                String?   @db.Text
   useraccesstoken          String?   @db.Text

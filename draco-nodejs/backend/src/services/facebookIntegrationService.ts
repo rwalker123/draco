@@ -1,5 +1,5 @@
+import { accountfacebookcredentials } from '#prisma/client';
 import { AnnouncementType } from '@draco/shared-schemas';
-import { createHmac } from 'node:crypto';
 import {
   composeGameResultMessage,
   type GameResultPostPayload,
@@ -32,6 +32,32 @@ interface FacebookPageResponse {
   data?: Array<{ id?: string; name?: string; access_token?: string }>;
 }
 
+interface FacebookTokenDebugResponse {
+  data?: {
+    app_id?: string;
+    is_valid?: boolean;
+    scopes?: string[];
+    user_id?: string;
+    expires_at?: number;
+    error?: {
+      code?: number;
+      message?: string;
+      subcode?: number;
+    };
+  };
+}
+
+interface FacebookPageLookupResponse {
+  id?: string;
+  name?: string;
+}
+
+interface FacebookPageAccessTokenResponse {
+  id?: string;
+  name?: string;
+  access_token?: string;
+}
+
 export class FacebookIntegrationService {
   private static readonly FACEBOOK_MESSAGE_CHARACTER_LIMIT = 10_000;
   private readonly accountSettingsService = ServiceFactory.getAccountSettingsService();
@@ -40,25 +66,73 @@ export class FacebookIntegrationService {
 
   async saveAppCredentials(
     accountId: bigint,
-    payload: { appId?: string; appSecret?: string; clearCredentials?: boolean },
+    payload: {
+      appId?: string;
+      appSecret?: string;
+      clearCredentials?: boolean;
+      pageHandle?: string;
+    },
   ): Promise<void> {
     const appId = payload.appId?.trim();
     const appSecret = payload.appSecret?.trim();
+    const pageHandle = payload.pageHandle?.trim();
     const clear = payload.clearCredentials === true;
 
-    if (!clear && !appId && !appSecret) {
-      throw new ValidationError('Provide an App ID, App Secret, or enable clear credentials.');
+    if (!clear && !appId && !appSecret && pageHandle === undefined) {
+      throw new ValidationError(
+        'Provide an App ID, App Secret, Page handle, or enable clear credentials.',
+      );
     }
 
-    await this.credentialsRepository.upsertForAccount(accountId, {
-      appid: clear ? null : (appId ?? undefined),
-      appsecret: clear ? null : appSecret ? encryptSecret(appSecret) : undefined,
-      useraccesstoken: clear ? null : undefined,
-      useraccesstokenexpiresat: clear ? null : undefined,
-      pagetoken: clear ? null : undefined,
-      pageid: clear ? null : undefined,
-      pagename: clear ? null : undefined,
-    });
+    const existing = await this.credentialsRepository.findByAccountId(accountId);
+
+    if (clear) {
+      await this.credentialsRepository.upsertForAccount(accountId, {
+        appid: null,
+        appsecret: null,
+        useraccesstoken: null,
+        useraccesstokenexpiresat: null,
+        pagetoken: null,
+        pageid: null,
+        pagename: null,
+        pagehandle: null,
+      });
+      return;
+    }
+
+    const updates: Partial<accountfacebookcredentials> = {};
+
+    if (appId) {
+      updates.appid = appId;
+    }
+
+    if (appSecret) {
+      updates.appsecret = encryptSecret(appSecret);
+    }
+
+    if (pageHandle !== undefined) {
+      const userAccessToken = this.decryptSecretValue(existing?.useraccesstoken);
+      if (!userAccessToken) {
+        throw new ValidationError('Connect Facebook before saving a Page handle.');
+      }
+
+      const pageDetails = await this.resolvePageByHandle(pageHandle, userAccessToken);
+      const pageAccessTokenResult = await this.fetchPageAccessToken(
+        pageDetails.id,
+        userAccessToken,
+      );
+
+      if (!pageAccessTokenResult.accessToken) {
+        throw new ValidationError('Facebook did not return a Page access token for the handle.');
+      }
+
+      updates.pagehandle = pageHandle;
+      updates.pageid = pageDetails.id;
+      updates.pagename = pageAccessTokenResult.pageName ?? pageDetails.name;
+      updates.pagetoken = encryptSecret(pageAccessTokenResult.accessToken);
+    }
+
+    await this.credentialsRepository.upsertForAccount(accountId, updates);
   }
 
   async createAuthorizationUrl(accountId: bigint, returnUrl?: string): Promise<string> {
@@ -69,7 +143,7 @@ export class FacebookIntegrationService {
     };
     const state = encryptSecret(JSON.stringify(statePayload));
 
-    const url = new URL('https://www.facebook.com/v19.0/dialog/oauth');
+    const url = new URL('https://www.facebook.com/v24.0/dialog/oauth');
     url.searchParams.set('client_id', appId);
     url.searchParams.set('redirect_uri', callbackUrl);
     url.searchParams.set('scope', facebookOAuthConfig.scopes);
@@ -126,6 +200,7 @@ export class FacebookIntegrationService {
     const credentials = await this.getAccountCredentials(accountId);
     const pages = await this.fetchPages({
       userAccessToken: credentials.userAccessToken,
+      appId: credentials.appId,
       appSecret: credentials.appSecret,
     });
     return pages.map((page) => ({ id: page.id, name: page.name }));
@@ -136,6 +211,8 @@ export class FacebookIntegrationService {
     pageConnected: boolean;
     pageId?: string | null;
     pageName?: string | null;
+    pageHandle?: string | null;
+    userTokenPresent?: boolean;
   }> {
     const record = await this.credentialsRepository.findByAccountId(accountId);
 
@@ -147,6 +224,8 @@ export class FacebookIntegrationService {
       pageConnected,
       pageId: record?.pageid ?? null,
       pageName: record?.pagename ?? null,
+      pageHandle: record?.pagehandle ?? null,
+      userTokenPresent: Boolean(record?.useraccesstoken),
     };
   }
 
@@ -154,6 +233,7 @@ export class FacebookIntegrationService {
     const credentials = await this.getAccountCredentials(accountId);
     const pages = await this.fetchPages({
       userAccessToken: credentials.userAccessToken,
+      appId: credentials.appId,
       appSecret: credentials.appSecret,
     });
     const selected = pages.find((page) => page.id === pageId);
@@ -171,7 +251,19 @@ export class FacebookIntegrationService {
   }
 
   async disconnect(accountId: bigint): Promise<void> {
-    await this.credentialsRepository.deleteByAccountId(accountId);
+    const record = await this.credentialsRepository.findByAccountId(accountId);
+    if (!record) {
+      return;
+    }
+
+    await this.credentialsRepository.upsertForAccount(accountId, {
+      useraccesstoken: null,
+      useraccesstokenexpiresat: null,
+      pagetoken: null,
+      pageid: null,
+      pagename: null,
+      pagehandle: null,
+    });
   }
 
   async publishGameResult(accountId: bigint, payload: GameResultPostPayload): Promise<void> {
@@ -299,26 +391,15 @@ export class FacebookIntegrationService {
   ): Promise<void> {
     const credentials = await this.getAccountCredentials(accountId);
 
-    if (!credentials.pageId) {
-      throw new ValidationError('Facebook page is not connected for this account');
-    }
-
-    const pageToken = await this.ensurePageToken(credentials);
-    if (!pageToken) {
-      throw new ValidationError('Facebook page token is not available');
-    }
+    const pageAccess = await this.ensurePageAccess(credentials);
 
     const url = new URL(
-      `https://graph.facebook.com/v19.0/${encodeURIComponent(credentials.pageId)}/feed`,
+      `https://graph.facebook.com/v24.0/${encodeURIComponent(pageAccess.pageId)}/feed`,
     );
     const body = new URLSearchParams({
       message,
-      access_token: pageToken,
+      access_token: pageAccess.pageToken,
     });
-    const postSecretProof = this.buildAppSecretProof(pageToken, credentials.appSecret);
-    if (postSecretProof) {
-      body.set('appsecret_proof', postSecretProof);
-    }
 
     try {
       await fetchJson(url, {
@@ -341,61 +422,161 @@ export class FacebookIntegrationService {
     }
   }
 
-  private async ensurePageToken(credentials: {
+  private async ensurePageAccess(credentials: {
     accountId: bigint;
     appId?: string | null;
     appSecret?: string | null;
     userAccessToken: string;
     userAccessTokenExpiresAt?: Date | null;
     pageId?: string | null;
+    pageName?: string | null;
+    pageHandle?: string | null;
     pageToken?: string | null;
-  }): Promise<string | null> {
+  }): Promise<{ pageId: string; pageName: string | null; pageToken: string }> {
     const token = credentials.pageToken?.trim();
-    if (token) {
-      return token;
+    if (token && credentials.pageId) {
+      return {
+        pageId: credentials.pageId,
+        pageName: credentials.pageName ?? null,
+        pageToken: token,
+      };
     }
 
-    if (!credentials.pageId) {
-      return null;
+    await this.logTokenDebugInfo(
+      credentials.userAccessToken,
+      credentials.appId,
+      credentials.appSecret,
+    );
+
+    const handle = credentials.pageHandle?.trim();
+    const lookup = handle
+      ? await this.resolvePageByHandle(handle, credentials.userAccessToken)
+      : credentials.pageId
+        ? { id: credentials.pageId, name: credentials.pageName ?? null }
+        : null;
+
+    if (!lookup) {
+      throw new ValidationError('Facebook page handle is not configured for this account');
     }
 
-    const pages = await this.fetchPages({
-      userAccessToken: credentials.userAccessToken,
-      appSecret: credentials.appSecret,
-    });
-    const match = pages.find((page) => page.id === credentials.pageId && page.access_token);
-    if (!match?.access_token) {
-      return null;
+    const pageTokenResult = await this.fetchPageAccessToken(lookup.id, credentials.userAccessToken);
+
+    if (!pageTokenResult.accessToken) {
+      throw new ValidationError('Facebook did not return a Page access token.');
     }
+
+    const pageName = pageTokenResult.pageName ?? lookup.name ?? null;
 
     await this.credentialsRepository.upsertForAccount(credentials.accountId, {
-      pagetoken: encryptSecret(match.access_token),
+      pageid: lookup.id,
+      pagename: pageName,
+      pagehandle: handle ?? credentials.pageHandle ?? null,
+      pagetoken: encryptSecret(pageTokenResult.accessToken),
     });
 
-    return match.access_token;
+    return {
+      pageId: lookup.id,
+      pageName,
+      pageToken: pageTokenResult.accessToken,
+    };
+  }
+
+  private async resolvePageByHandle(
+    handle: string,
+    userAccessToken: string,
+  ): Promise<{ id: string; name: string | null }> {
+    const url = new URL(`https://graph.facebook.com/v24.0/${encodeURIComponent(handle)}`);
+    url.searchParams.set('fields', 'id,name');
+    url.searchParams.set('access_token', userAccessToken);
+
+    let response: FacebookPageLookupResponse;
+    try {
+      response = await fetchJson<FacebookPageLookupResponse>(url, { timeoutMs: 8000 });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        console.error('[facebook] Page handle lookup failed', {
+          status: error.status,
+          body: error.body,
+          handle,
+        });
+        throw new ValidationError('Facebook rejected the Page handle lookup.');
+      }
+      throw error;
+    }
+
+    const id = response?.id?.toString() ?? '';
+    const name = response?.name?.trim() ?? null;
+
+    if (!id) {
+      throw new ValidationError('Facebook page handle could not be resolved.');
+    }
+
+    return { id, name };
+  }
+
+  private async fetchPageAccessToken(
+    pageId: string,
+    userAccessToken: string,
+  ): Promise<{ accessToken: string | null; pageName: string | null }> {
+    const url = new URL(`https://graph.facebook.com/v24.0/${encodeURIComponent(pageId)}`);
+    url.searchParams.set('fields', 'access_token,name');
+    url.searchParams.set('access_token', userAccessToken);
+
+    let response: FacebookPageAccessTokenResponse;
+    try {
+      response = await fetchJson<FacebookPageAccessTokenResponse>(url, { timeoutMs: 8000 });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        console.error('[facebook] Failed to fetch Page access token', {
+          status: error.status,
+          body: error.body,
+          pageId,
+        });
+        throw new ValidationError('Facebook rejected the Page token request.');
+      }
+      throw error;
+    }
+    const accessToken = response?.access_token ?? null;
+    const pageName = response?.name?.trim() ?? null;
+
+    return { accessToken, pageName };
   }
 
   private async fetchPages(params: {
     userAccessToken: string;
+    appId?: string | null;
     appSecret?: string | null;
   }): Promise<Array<{ id: string; name: string; access_token?: string }>> {
-    const url = new URL('https://graph.facebook.com/v19.0/me/accounts');
+    const url = new URL('https://graph.facebook.com/v24.0/me/accounts');
     url.searchParams.set('access_token', params.userAccessToken);
     url.searchParams.set('fields', 'id,name,access_token');
-    const appSecretProof = this.buildAppSecretProof(params.userAccessToken, params.appSecret);
-    if (appSecretProof) {
-      url.searchParams.set('appsecret_proof', appSecretProof);
-    }
+
+    await this.logTokenDebugInfo(params.userAccessToken, params.appId, params.appSecret);
 
     const response = await fetchJson<FacebookPageResponse>(url, { timeoutMs: 8000 });
     const pages = response.data ?? [];
+    console.info('[facebook] Raw page response', {
+      response,
+    });
+    console.info('[facebook] Graph returned pages', {
+      pageCount: pages.length,
+      pages: pages.map((page) => ({
+        id: page.id ?? null,
+        namePresent: Boolean(page.name?.trim()),
+        hasPageToken: Boolean(page.access_token),
+      })),
+    });
     return pages
-      .map((page) => ({
-        id: page.id ?? '',
-        name: page.name ?? '',
-        access_token: page.access_token,
-      }))
-      .filter((page) => page.id && page.name);
+      .map((page) => {
+        const id = page.id ?? '';
+        const rawName = page.name?.trim() ?? '';
+        return {
+          id,
+          name: rawName || (id ? `Facebook Page ${id}` : ''),
+          access_token: page.access_token,
+        };
+      })
+      .filter((page) => page.id);
   }
 
   private decryptOAuthState(state: string): FacebookOAuthStatePayload {
@@ -422,6 +603,7 @@ export class FacebookIntegrationService {
     userAccessTokenExpiresAt?: Date | null;
     pageId?: string | null;
     pageName?: string | null;
+    pageHandle?: string | null;
     pageToken?: string | null;
   }> {
     const record = await this.credentialsRepository.findByAccountId(accountId);
@@ -442,6 +624,7 @@ export class FacebookIntegrationService {
       userAccessTokenExpiresAt: record.useraccesstokenexpiresat ?? null,
       pageId: record.pageid ?? null,
       pageName: record.pagename ?? null,
+      pageHandle: record.pagehandle ?? null,
       pageToken: this.decryptSecretValue(record.pagetoken),
     };
   }
@@ -496,7 +679,7 @@ export class FacebookIntegrationService {
     code: string;
     redirectUri: string;
   }): Promise<FacebookAccessTokenResponse> {
-    const url = new URL('https://graph.facebook.com/v19.0/oauth/access_token');
+    const url = new URL('https://graph.facebook.com/v24.0/oauth/access_token');
     url.searchParams.set('client_id', params.appId);
     url.searchParams.set('client_secret', params.appSecret);
     url.searchParams.set('redirect_uri', params.redirectUri);
@@ -521,7 +704,7 @@ export class FacebookIntegrationService {
     appSecret: string;
     shortLivedToken: string;
   }): Promise<FacebookAccessTokenResponse> {
-    const url = new URL('https://graph.facebook.com/v19.0/oauth/access_token');
+    const url = new URL('https://graph.facebook.com/v24.0/oauth/access_token');
     url.searchParams.set('grant_type', 'fb_exchange_token');
     url.searchParams.set('client_id', params.appId);
     url.searchParams.set('client_secret', params.appSecret);
@@ -553,12 +736,35 @@ export class FacebookIntegrationService {
     return `${value.slice(0, maxLength - 1)}…`;
   }
 
-  private buildAppSecretProof(token: string, appSecret?: string | null): string | null {
-    if (!token || !appSecret) {
-      return null;
+  private async logTokenDebugInfo(
+    userAccessToken: string,
+    appId?: string | null,
+    appSecret?: string | null,
+  ): Promise<void> {
+    if (!appId || !appSecret) {
+      return;
     }
 
-    return createHmac('sha256', appSecret).update(token).digest('hex');
+    const url = new URL('https://graph.facebook.com/debug_token');
+    url.searchParams.set('input_token', userAccessToken);
+    url.searchParams.set('access_token', `${appId}|${appSecret}`);
+
+    try {
+      const response = await fetchJson<FacebookTokenDebugResponse>(url, { timeoutMs: 8000 });
+      const data = response.data;
+      console.info('[facebook] Token debug info', {
+        isValid: data?.is_valid ?? null,
+        expiresAt: data?.expires_at ?? null,
+        scopes: data?.scopes ?? [],
+        userId: data?.user_id ?? null,
+        appId: data?.app_id ?? null,
+        error: data?.error ?? null,
+      });
+    } catch (error) {
+      console.warn('[facebook] Failed to debug token', {
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   private decryptSecretValue(value?: string | null): string | undefined {

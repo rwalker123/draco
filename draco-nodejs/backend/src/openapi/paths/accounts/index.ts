@@ -128,7 +128,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     operationId: 'upsertAccountFacebookCredentials',
     summary: 'Save Facebook App credentials for an account',
     description:
-      'Saves the Meta App ID and App Secret for Facebook Page posting for the specified account.',
+      'Saves the Meta App ID, App Secret, and optional Page handle for Facebook Page posting for the specified account.',
     tags: ['Accounts'],
     security: [{ bearerAuth: [] }],
     parameters: [
