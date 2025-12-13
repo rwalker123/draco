@@ -358,7 +358,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
               onChange={(event) => setFacebookAppSecret(event.target.value)}
               helperText="Meta App Dashboard → Basic → App Secret."
               fullWidth
-              autoComplete="new-password"
+              autoComplete="off"
               name="facebook-app-secret"
               inputProps={{ 'data-lpignore': 'true', 'data-1p-ignore': 'true' }}
               disabled={saving}

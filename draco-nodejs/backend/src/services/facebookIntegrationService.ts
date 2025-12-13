@@ -32,21 +32,6 @@ interface FacebookPageResponse {
   data?: Array<{ id?: string; name?: string; access_token?: string }>;
 }
 
-interface FacebookTokenDebugResponse {
-  data?: {
-    app_id?: string;
-    is_valid?: boolean;
-    scopes?: string[];
-    user_id?: string;
-    expires_at?: number;
-    error?: {
-      code?: number;
-      message?: string;
-      subcode?: number;
-    };
-  };
-}
-
 interface FacebookPageLookupResponse {
   id?: string;
   name?: string;
@@ -114,6 +99,9 @@ export class FacebookIntegrationService {
       const userAccessToken = this.decryptSecretValue(existing?.useraccesstoken);
       if (!userAccessToken) {
         throw new ValidationError('Connect Facebook before saving a Page handle.');
+      }
+      if (!pageHandle) {
+        throw new ValidationError('Provide a Facebook Page handle before saving.');
       }
 
       const pageDetails = await this.resolvePageByHandle(pageHandle, userAccessToken);
@@ -442,12 +430,6 @@ export class FacebookIntegrationService {
       };
     }
 
-    await this.logTokenDebugInfo(
-      credentials.userAccessToken,
-      credentials.appId,
-      credentials.appSecret,
-    );
-
     const handle = credentials.pageHandle?.trim();
     const lookup = handle
       ? await this.resolvePageByHandle(handle, credentials.userAccessToken)
@@ -470,7 +452,7 @@ export class FacebookIntegrationService {
     await this.credentialsRepository.upsertForAccount(credentials.accountId, {
       pageid: lookup.id,
       pagename: pageName,
-      pagehandle: handle ?? credentials.pageHandle ?? null,
+      pagehandle: handle ?? null,
       pagetoken: encryptSecret(pageTokenResult.accessToken),
     });
 
@@ -551,13 +533,13 @@ export class FacebookIntegrationService {
     url.searchParams.set('access_token', params.userAccessToken);
     url.searchParams.set('fields', 'id,name,access_token');
 
-    await this.logTokenDebugInfo(params.userAccessToken, params.appId, params.appSecret);
-
     const response = await fetchJson<FacebookPageResponse>(url, { timeoutMs: 8000 });
     const pages = response.data ?? [];
-    console.info('[facebook] Raw page response', {
-      response,
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.info('[facebook] Raw page response', {
+        response,
+      });
+    }
     console.info('[facebook] Graph returned pages', {
       pageCount: pages.length,
       pages: pages.map((page) => ({
@@ -734,37 +716,6 @@ export class FacebookIntegrationService {
     }
 
     return `${value.slice(0, maxLength - 1)}…`;
-  }
-
-  private async logTokenDebugInfo(
-    userAccessToken: string,
-    appId?: string | null,
-    appSecret?: string | null,
-  ): Promise<void> {
-    if (!appId || !appSecret) {
-      return;
-    }
-
-    const url = new URL('https://graph.facebook.com/debug_token');
-    url.searchParams.set('input_token', userAccessToken);
-    url.searchParams.set('access_token', `${appId}|${appSecret}`);
-
-    try {
-      const response = await fetchJson<FacebookTokenDebugResponse>(url, { timeoutMs: 8000 });
-      const data = response.data;
-      console.info('[facebook] Token debug info', {
-        isValid: data?.is_valid ?? null,
-        expiresAt: data?.expires_at ?? null,
-        scopes: data?.scopes ?? [],
-        userId: data?.user_id ?? null,
-        appId: data?.app_id ?? null,
-        error: data?.error ?? null,
-      });
-    } catch (error) {
-      console.warn('[facebook] Failed to debug token', {
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
   }
 
   private decryptSecretValue(value?: string | null): string | undefined {
