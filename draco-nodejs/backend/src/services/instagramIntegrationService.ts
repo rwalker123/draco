@@ -12,7 +12,7 @@ import { decryptSecret } from '../utils/secretEncryption.js';
 import { PhotoGalleryAssetService } from './photoGalleryAssetService.js';
 import type { dbPhotoGalleryAlbum } from '../repositories/types/dbTypes.js';
 import type { InstagramIngestionTarget } from '../config/socialIngestion.js';
-import { NotFoundError } from '../utils/customErrors.js';
+import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { fetchJson } from '../utils/fetchJson.js';
 import { buildGalleryAssetPaths } from '../utils/photoSubmissionPaths.js';
 
@@ -29,6 +29,13 @@ interface InstagramMediaItem {
 interface InstagramMediaResponse {
   data?: InstagramMediaItem[];
   paging?: { next?: string };
+}
+
+interface InstagramMediaContainerStatus {
+  id?: string;
+  status?: string | null;
+  status_code?: string | null;
+  error_message?: string | null;
 }
 
 const INSTAGRAM_ALBUM_TITLE = 'Instagram';
@@ -206,7 +213,7 @@ export class InstagramIntegrationService {
     });
 
     const createRequest = new URL(
-      `https://graph.facebook.com/v18.0/${credentials.instagramuserid}/media`,
+      `https://graph.facebook.com/v24.0/${credentials.instagramuserid}/media`,
     );
     createRequest.searchParams.set('image_url', imageUrl);
     if (caption) {
@@ -228,8 +235,10 @@ export class InstagramIntegrationService {
         return;
       }
 
+      await this.waitForMediaContainerReady(creationId, accessToken);
+
       const publishRequest = new URL(
-        `https://graph.facebook.com/v18.0/${credentials.instagramuserid}/media_publish`,
+        `https://graph.facebook.com/v24.0/${credentials.instagramuserid}/media_publish`,
       );
       publishRequest.searchParams.set('creation_id', creationId);
 
@@ -372,5 +381,44 @@ export class InstagramIntegrationService {
 
     const arrayBuffer = await response.arrayBuffer();
     return Buffer.from(arrayBuffer);
+  }
+
+  private async waitForMediaContainerReady(creationId: string, accessToken: string): Promise<void> {
+    const url = new URL(`https://graph.facebook.com/v24.0/${creationId}`);
+    url.searchParams.set('fields', 'status_code,error_message');
+
+    const attempts = 6;
+    const baseDelayMs = 700;
+
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      const status = await fetchJson<InstagramMediaContainerStatus>(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      const statusCode = (status.status_code ?? status.status ?? '').toUpperCase();
+      if (statusCode === 'FINISHED') {
+        return;
+      }
+      if (statusCode === 'ERROR') {
+        const message =
+          status.error_message?.trim() ||
+          'Instagram reported an error while preparing the media for publishing.';
+        throw new ValidationError(message);
+      }
+
+      if (attempt < attempts - 1) {
+        await this.delay(baseDelayMs * (attempt + 1));
+      }
+    }
+
+    throw new ValidationError(
+      'Instagram media is not ready for publishing. Please try again in a moment.',
+    );
+  }
+
+  private async delay(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
   }
 }
