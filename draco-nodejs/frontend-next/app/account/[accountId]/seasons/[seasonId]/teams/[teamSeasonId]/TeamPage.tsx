@@ -213,7 +213,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       hasRole('Administrator') ||
       hasRoleInAccount('AccountAdmin', accountId) ||
       hasRoleInAccount('AccountPhotoAdmin', accountId) ||
-      hasRoleInTeam('TeamAdmin', teamSeasonId) ||
       hasRoleInTeam('TeamPhotoAdmin', teamSeasonId)
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
