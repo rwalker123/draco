@@ -19,6 +19,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useRole } from '../../../../context/RoleContext';
 import { useAuth } from '../../../../context/AuthContext';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
+import AdPlacement from '../../../../components/ads/AdPlacement';
 import { useCurrentSeason } from '../../../../hooks/useCurrentSeason';
 import { useAccountTimezone } from '../../../../context/AccountContext';
 import { GameCardData } from '../../../../components/GameCard';
@@ -335,6 +336,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             </Box>
           </Box>
         </AccountPageHeader>
+        <AdPlacement wrapperSx={{ mt: 2 }} />
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

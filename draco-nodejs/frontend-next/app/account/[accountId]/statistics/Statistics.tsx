@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Box, Container, Typography, Tabs, Tab, Paper } from '@mui/material';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
+import AdPlacement from '../../../../components/ads/AdPlacement';
 import StatisticsFilters from './StatisticsFilters';
 import StatisticsLeaders from './StatisticsLeaders';
 import BattingStatistics from './BattingStatistics';
@@ -83,6 +84,7 @@ export default function Statistics({ accountId }: StatisticsProps) {
           </Box>
         </Box>
       </AccountPageHeader>
+      <AdPlacement wrapperSx={{ mt: 2 }} />
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
         {/* Filters */}

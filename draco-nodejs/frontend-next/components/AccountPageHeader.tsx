@@ -6,7 +6,6 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 import { useAccountHeader } from '../hooks/useAccountHeader';
-import AdSenseBanner from './ads/AdSenseBanner';
 
 interface AccountPageHeaderProps {
   accountId: string;
@@ -54,8 +53,6 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
         ...style,
       }}
     >
-      <AdSenseBanner />
-
       {/* Logo/Name Section */}
       {showLogo && (
         <Box

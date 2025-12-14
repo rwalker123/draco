@@ -9,6 +9,7 @@ import YesterdayScoreboard from '../../../components/YesterdayScoreboard';
 import GameRecapsWidget from '../../../components/GameRecapsWidget';
 import MyTeams, { UserTeam } from '../../../components/MyTeams';
 import AccountPageHeader from '../../../components/AccountPageHeader';
+import AdPlacement from '../../../components/ads/AdPlacement';
 import OrganizationsWidget from '../../../components/OrganizationsWidget';
 import { JoinLeagueDashboard } from '../../../components/join-league';
 import AccountPollsCard from '../../../components/polls/AccountPollsCard';
@@ -900,6 +901,7 @@ const BaseballAccountHome: React.FC = () => {
             </Typography>
           </Box>
         </AccountPageHeader>
+        <AdPlacement wrapperSx={{ mt: 2 }} />
       </Box>
 
       <Container maxWidth="xl" disableGutters sx={{ py: 4, px: { xs: 1, sm: 1.5 } }}>

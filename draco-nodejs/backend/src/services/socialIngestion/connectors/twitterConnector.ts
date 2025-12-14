@@ -217,20 +217,22 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
         });
       } catch (error) {
         const status = (error as { status?: number }).status;
+        const retryAfter = this.computeRetryAfter(error);
+        if (retryAfter) {
+          this.rateLimitUntilByHandle.set(handle, retryAfter.untilMs);
+        }
         if (status === 429 && attempt < maxAttempts) {
-          const backoffMs = 2000 * attempt;
+          const backoffMs = retryAfter
+            ? Math.max(0, retryAfter.untilMs - Date.now())
+            : 2000 * attempt;
           console.warn('[twitter] Rate limited fetching tweets, backing off', {
             handle,
             attempt,
             backoffMs,
+            retryHint: retryAfter?.hint ?? null,
           });
           await this.sleep(backoffMs);
           continue;
-        }
-
-        const retryAfter = this.computeRetryAfter(error);
-        if (retryAfter) {
-          this.rateLimitUntilByHandle.set(handle, retryAfter.untilMs);
         }
         console.error(`[twitter] Failed to fetch tweets for @${handle}`, {
           error,

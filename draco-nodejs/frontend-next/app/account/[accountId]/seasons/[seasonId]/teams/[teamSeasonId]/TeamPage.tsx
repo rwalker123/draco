@@ -8,6 +8,7 @@ import { useAuth } from '../../../../../../../context/AuthContext';
 import { useAccountTimezone } from '../../../../../../../context/AccountContext';
 import { useSchedulePermissions } from '../../../../../../../hooks/useSchedulePermissions';
 import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
+import AdPlacement from '../../../../../../../components/ads/AdPlacement';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
@@ -212,7 +213,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       hasRole('Administrator') ||
       hasRoleInAccount('AccountAdmin', accountId) ||
       hasRoleInAccount('AccountPhotoAdmin', accountId) ||
-      hasRoleInTeam('TeamAdmin', teamSeasonId) ||
       hasRoleInTeam('TeamPhotoAdmin', teamSeasonId)
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
@@ -610,6 +610,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           </Box>
         </Box>
       </AccountPageHeader>
+      <AdPlacement wrapperSx={{ mt: 2 }} />
 
       {/* Hidden TeamInfoCard to load data */}
       <div style={{ display: 'none' }}>
