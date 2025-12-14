@@ -385,7 +385,7 @@ export class InstagramIntegrationService {
 
   private async waitForMediaContainerReady(creationId: string, accessToken: string): Promise<void> {
     const url = new URL(`https://graph.facebook.com/v24.0/${creationId}`);
-    url.searchParams.set('fields', 'status_code,error_message');
+    url.searchParams.set('fields', 'status_code,status');
 
     const attempts = 6;
     const baseDelayMs = 700;

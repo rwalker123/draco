@@ -244,7 +244,7 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
 
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6" component="h2">
+        <Typography variant="h6" component="h2" color="text.primary">
           Teams Looking for Players ({playersWanted.length})
         </Typography>
       </Box>

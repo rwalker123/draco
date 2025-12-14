@@ -27,25 +27,13 @@ const AccountOwnerDisplay: React.FC<AccountOwnerDisplayProps> = ({
           gap: 0.5,
         }}
       >
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'common.white',
-            opacity: 0.8,
-            fontWeight: 400,
-            textAlign: 'center',
-            fontSize: '0.875rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}
-        >
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
           Account Owner
         </Typography>
         <Typography
           variant="h6"
           sx={{
-            color: 'common.white',
-            opacity: 0.95,
+            color: 'text.primary',
             fontWeight: 600,
             textAlign: 'center',
             fontSize: { xs: '1rem', sm: '1.125rem' },
@@ -54,15 +42,7 @@ const AccountOwnerDisplay: React.FC<AccountOwnerDisplayProps> = ({
           {accountOwner.firstName} {accountOwner.lastName}
         </Typography>
         {accountOwner.email && (
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'common.white',
-              opacity: 0.8,
-              textAlign: 'center',
-              fontSize: '0.875rem',
-            }}
-          >
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
             {accountOwner.email}
           </Typography>
         )}
@@ -74,13 +54,20 @@ const AccountOwnerDisplay: React.FC<AccountOwnerDisplayProps> = ({
   return (
     <Card
       sx={{
-        backgroundColor: '#FFF8E1', // Light gold background
-        borderLeft: '4px solid #FFD700', // Gold left border
+        backgroundColor: (theme) =>
+          theme.palette.mode === 'dark' ? theme.palette.background.paper : '#FFF8E1',
+        borderLeft: (theme) =>
+          `4px solid ${theme.palette.mode === 'dark' ? theme.palette.primary.main : '#FFD700'}`,
         mb: 2,
       }}
     >
       <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <CrownIcon sx={{ color: '#FFD700', fontSize: 32 }} />
+        <CrownIcon
+          sx={(theme) => ({
+            color: theme.palette.mode === 'dark' ? theme.palette.primary.main : '#FFD700',
+            fontSize: 32,
+          })}
+        />
         <UserAvatar
           user={{
             id: accountOwner.id,
@@ -91,10 +78,10 @@ const AccountOwnerDisplay: React.FC<AccountOwnerDisplayProps> = ({
           size={40}
         />
         <Box>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#E65100' }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
             Account Owner
           </Typography>
-          <Typography variant="body1">
+          <Typography variant="body1" color="text.primary">
             {accountOwner.firstName} {accountOwner.lastName}
           </Typography>
           <Typography variant="body2" color="text.secondary">

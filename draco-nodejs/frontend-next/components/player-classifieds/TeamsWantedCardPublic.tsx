@@ -10,6 +10,7 @@ import {
   Delete as DeleteIcon,
   Person as PersonIcon,
   ContactPhone as ContactPhoneIcon,
+  CalendarToday as CalendarIcon,
 } from '@mui/icons-material';
 import { ITeamsWantedCardPublicProps } from '../../types/playerClassifieds';
 import ContactInfoDialog from './ContactInfoDialog';
@@ -18,6 +19,7 @@ import { TeamsWantedContactInfoType } from '@draco/shared-schemas';
 import { getTeamsWantedContactInfo } from '@draco/shared-api-client';
 import { createApiClient } from '../../lib/apiClientFactory';
 import { ApiClientError, unwrapApiResult } from '../../utils/apiResult';
+import { formatDate } from '../../utils/dateUtils';
 
 const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   classified,
@@ -81,11 +83,11 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
 
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <CardContent sx={{ flexGrow: 1 }}>
+      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
           <Box>
-            <Typography variant="h6" component="h3" gutterBottom>
+            <Typography variant="h6" component="h3" gutterBottom color="text.primary">
               {classified.name}
             </Typography>
             {/* Age */}
@@ -178,6 +180,14 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
             </Button>
           </Box>
         )}
+
+        {/* Date Created */}
+        <Box display="flex" alignItems="center" gap={1} mt="auto">
+          <CalendarIcon fontSize="small" color="action" />
+          <Typography variant="caption" color="text.secondary">
+            Posted {formatDate(classified.dateCreated ?? '')}
+          </Typography>
+        </Box>
       </CardContent>
 
       {/* Contact Info Dialog */}
