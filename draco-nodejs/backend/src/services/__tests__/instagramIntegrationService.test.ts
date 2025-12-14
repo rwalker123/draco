@@ -30,14 +30,13 @@ describe('InstagramIntegrationService.waitForMediaContainerReady', () => {
     expect(fetchJsonSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('throws when status is ERROR and includes message', async () => {
+  it('throws when status is ERROR', async () => {
     fetchJsonSpy.mockResolvedValue({
       status_code: 'ERROR',
-      error_message: 'bad thing',
     });
 
     await expect(service['waitForMediaContainerReady'](creationId, accessToken)).rejects.toThrow(
-      new ValidationError('bad thing'),
+      new ValidationError('Instagram reported an error while preparing the media for publishing.'),
     );
   });
 

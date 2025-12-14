@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Box, Typography, Tabs, Tab } from '@mui/material';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
@@ -72,6 +72,9 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
   );
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    if (newValue === tabValue) {
+      return;
+    }
     setTabValue(newValue);
     setMountedTabs((prev) => {
       if (prev.has(newValue)) {
@@ -87,6 +90,32 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
     // Clean up any stale verification data once we've initialized state
     localStorage.removeItem('teamsWantedVerification');
   }, []);
+
+  const handleVerificationProcessed = useCallback(() => {
+    setVerificationData(null);
+    setTabValue(1);
+    setMountedTabs((prev) => {
+      if (prev.has(1)) {
+        return prev;
+      }
+      const next = new Set(prev);
+      next.add(1);
+      return next;
+    });
+  }, []);
+
+  const playersTabContent = useMemo(() => <PlayersWanted accountId={accountId} />, [accountId]);
+
+  const teamsTabContent = useMemo(
+    () => (
+      <TeamsWanted
+        accountId={accountId}
+        autoVerificationData={verificationData}
+        onVerificationProcessed={handleVerificationProcessed}
+      />
+    ),
+    [accountId, handleVerificationProcessed, verificationData],
+  );
 
   const effectiveTabValue = verificationData ? 1 : tabValue;
 
@@ -120,18 +149,20 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
             label="Players Wanted"
             id="player-classifieds-tab-0"
             aria-controls="player-classifieds-tabpanel-0"
+            disableRipple
           />
           <Tab
             label="Teams Wanted"
             id="player-classifieds-tab-1"
             aria-controls="player-classifieds-tabpanel-1"
+            disableRipple
           />
         </Tabs>
       </Box>
 
       {/* Tab Content */}
       <TabPanel value={effectiveTabValue} index={0} isMounted={mountedTabs.has(0)}>
-        <PlayersWanted accountId={accountId} />
+        {playersTabContent}
       </TabPanel>
       <TabPanel
         value={effectiveTabValue}
@@ -139,14 +170,7 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
         data-testid="teams-wanted-tabpanel"
         isMounted={mountedTabs.has(1)}
       >
-        <TeamsWanted
-          accountId={accountId}
-          autoVerificationData={verificationData}
-          onVerificationProcessed={() => {
-            setVerificationData(null);
-            setTabValue(1);
-          }}
-        />
+        {teamsTabContent}
       </TabPanel>
     </main>
   );
