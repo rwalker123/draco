@@ -4,7 +4,6 @@ import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Alert, Box, Button, Container } from '@mui/material';
 import FieldsManagement from '../../../../../components/fields/FieldsManagement';
-import AdPlacement from '../../../../../components/ads/AdPlacement';
 
 const FieldsManagementPage: React.FC = () => {
   const params = useParams();
@@ -27,12 +26,7 @@ const FieldsManagementPage: React.FC = () => {
     );
   }
 
-  return (
-    <>
-      <AdPlacement wrapperSx={{ mb: 2 }} />
-      <FieldsManagement accountId={accountId} />
-    </>
-  );
+  return <FieldsManagement accountId={accountId} />;
 };
 
 export default FieldsManagementPage;
