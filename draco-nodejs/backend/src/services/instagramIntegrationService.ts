@@ -395,7 +395,14 @@ export class InstagramIntegrationService {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
-      const statusCode = (status.status_code ?? status.status ?? '').toUpperCase();
+      const rawStatusCode = status.status_code ?? status.status;
+      if (!rawStatusCode || typeof rawStatusCode !== 'string' || !rawStatusCode.trim()) {
+        throw new ValidationError(
+          'Instagram API response is missing status information while preparing the media for publishing.',
+        );
+      }
+
+      const statusCode = rawStatusCode.toUpperCase();
       if (statusCode === 'FINISHED') {
         return;
       }
