@@ -353,7 +353,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
 
     return (
       <Box>
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h6" gutterBottom color="text.primary">
           Teams Wanted Ads ({teamsWanted.length})
         </Typography>
         <Box

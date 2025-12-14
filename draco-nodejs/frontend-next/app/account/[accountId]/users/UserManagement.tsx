@@ -260,20 +260,23 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     <main className="min-h-screen bg-background">
       {/* Account Header */}
       <AccountPageHeader accountId={accountId}>
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          sx={{ position: 'relative' }}
-        >
-          <Box sx={{ flex: 1, textAlign: 'center', mb: 2 }}>
-            <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
-              User Management
-            </Typography>
-          </Box>
-
-          {/* Account Owner Information */}
-          {accountOwner && <AccountOwnerDisplay accountOwner={accountOwner} variant="header" />}
+        <Box textAlign="center" sx={{ position: 'relative' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            color="text.primary"
+            sx={{ fontWeight: 'bold', mb: 1 }}
+          >
+            User Management
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.9 }}>
+            Manage account users, roles, and permissions.
+          </Typography>
+          {accountOwner && (
+            <Box mt={2} display="flex" justifyContent="center">
+              <AccountOwnerDisplay accountOwner={accountOwner} variant="header" />
+            </Box>
+          )}
         </Box>
       </AccountPageHeader>
 

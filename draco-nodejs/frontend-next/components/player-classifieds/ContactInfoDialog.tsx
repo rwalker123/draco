@@ -44,7 +44,9 @@ const ContactInfoDialog: React.FC<ContactInfoDialogProps> = ({
     >
       <DialogTitle id="contact-info-dialog-title">
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">Contact Information for {playerName}</Typography>
+          <Typography variant="h6" color="text.primary">
+            Contact Information for {playerName}
+          </Typography>
           <IconButton aria-label="close" onClick={onClose} size="small" sx={{ color: 'grey.500' }}>
             <CloseIcon />
           </IconButton>

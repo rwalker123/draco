@@ -17,10 +17,11 @@ interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+  isMounted: boolean;
 }
 
 function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+  const { children, value, index, isMounted, ...other } = props;
 
   return (
     <div
@@ -30,16 +31,13 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`player-classifieds-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {isMounted ? <Box sx={{ p: 3 }}>{children}</Box> : null}
     </div>
   );
 }
 
 const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
   const searchParams = useSearchParams();
-  const [tabValue, setTabValue] = useState(() =>
-    searchParams.get('tab') === 'teams-wanted' ? 1 : 0,
-  );
   const [verificationData, setVerificationData] = useState<{
     accessCode: string;
     classifiedData: TeamsWantedOwnerClassifiedType;
@@ -67,9 +65,22 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
 
     return null;
   });
+  const initialTabValue = searchParams.get('tab') === 'teams-wanted' ? 1 : 0;
+  const [tabValue, setTabValue] = useState(initialTabValue);
+  const [mountedTabs, setMountedTabs] = useState<Set<number>>(
+    () => new Set([verificationData ? 1 : initialTabValue]),
+  );
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
+    setMountedTabs((prev) => {
+      if (prev.has(newValue)) {
+        return prev;
+      }
+      const next = new Set(prev);
+      next.add(newValue);
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -119,10 +130,15 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
       </Box>
 
       {/* Tab Content */}
-      <TabPanel value={effectiveTabValue} index={0}>
+      <TabPanel value={effectiveTabValue} index={0} isMounted={mountedTabs.has(0)}>
         <PlayersWanted accountId={accountId} />
       </TabPanel>
-      <TabPanel value={effectiveTabValue} index={1} data-testid="teams-wanted-tabpanel">
+      <TabPanel
+        value={effectiveTabValue}
+        index={1}
+        data-testid="teams-wanted-tabpanel"
+        isMounted={mountedTabs.has(1)}
+      >
         <TeamsWanted
           accountId={accountId}
           autoVerificationData={verificationData}

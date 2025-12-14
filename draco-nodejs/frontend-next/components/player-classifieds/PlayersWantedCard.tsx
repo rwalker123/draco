@@ -73,7 +73,7 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
       <CardContent sx={{ flexGrow: 1 }}>
         {/* Header with Edit/Delete Actions */}
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-          <Typography variant="h6" component="h3" gutterBottom>
+          <Typography variant="h6" component="h3" gutterBottom color="text.primary">
             {classified.teamEventName}
           </Typography>
           <Box display="flex" gap={1}>
