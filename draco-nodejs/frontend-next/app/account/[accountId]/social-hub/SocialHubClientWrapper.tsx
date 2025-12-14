@@ -1,11 +1,11 @@
 'use client';
 
-import SocialHubContainer from '../../../../components/social/SocialHubContainer';
+import SocialHubPageContent from '../../../../components/social/SocialHubPageContent';
 
 interface SocialHubClientWrapperProps {
   accountId: string;
 }
 
 export default function SocialHubClientWrapper({ accountId }: SocialHubClientWrapperProps) {
-  return <SocialHubContainer accountId={accountId} />;
+  return <SocialHubPageContent accountId={accountId} />;
 }
