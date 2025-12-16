@@ -483,7 +483,7 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
                         role="button"
                         tabIndex={0}
                         onClick={() => handleSelectClass(index)}
-                        onKeyDown={(event) => {
+                        onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
                           if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault();
                             handleSelectClass(index);
