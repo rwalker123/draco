@@ -618,7 +618,7 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
                       </Typography>
                       <TextField
                         value={searchTerm}
-                        onChange={(event) => {
+                        onChange={(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
                           setSearchTerm(event.target.value);
                           if (searchError) {
                             setSearchError(null);
