@@ -233,7 +233,6 @@ export class PlayerClassifiedEmailService {
     // Security: Sanitize inputs to prevent XSS
     const sanitizedAccessCode = this.sanitizeHtmlContent(accessCode);
     const sanitizedVerificationUrl = this.sanitizeHtmlContent(verificationUrl);
-    const sanitizedReplyTo = this.sanitizeHtmlContent(settings.replyTo);
     const sanitizedAccountName = this.sanitizeHtmlContent(account.name);
     const sanitizedUserName = this.sanitizeHtmlContent(userData.name);
     const sanitizedUserEmail = this.sanitizeHtmlContent(userData.email);
@@ -365,7 +364,6 @@ export class PlayerClassifiedEmailService {
     // Security: Sanitize inputs to prevent injection
     const sanitizedAccessCode = this.sanitizeTextContent(accessCode);
     const sanitizedVerificationUrl = this.sanitizeTextContent(verificationUrl);
-    const sanitizedReplyTo = this.sanitizeTextContent(settings.replyTo);
     const sanitizedAccountName = this.sanitizeTextContent(account.name);
     const sanitizedUserName = this.sanitizeTextContent(userData.name);
     const sanitizedUserEmail = this.sanitizeTextContent(userData.email);
