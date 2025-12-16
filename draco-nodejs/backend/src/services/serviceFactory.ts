@@ -35,6 +35,8 @@ import { PollService } from './pollService.js';
 import { FieldService } from './fieldService.js';
 import { UmpireService } from './umpireService.js';
 import { ScheduleService } from './scheduleService.js';
+import { SchedulerEngineService } from './schedulerEngineService.js';
+import { SchedulerApplyService } from './schedulerApplyService.js';
 import { LeagueService } from './LeagueService.js';
 import { LeagueFaqService } from './LeagueFaqService.js';
 import { MonitoringService } from './monitoringService.js';
@@ -112,6 +114,8 @@ export class ServiceFactory {
   private static fieldService: FieldService;
   private static umpireService: UmpireService;
   private static scheduleService: ScheduleService;
+  private static schedulerEngineService: SchedulerEngineService;
+  private static schedulerApplyService: SchedulerApplyService;
   private static leagueService: LeagueService;
   private static leagueFaqService: LeagueFaqService;
   private static monitoringService: MonitoringService;
@@ -397,6 +401,22 @@ export class ServiceFactory {
       this.scheduleService = new ScheduleService();
     }
     return this.scheduleService;
+  }
+
+  static getSchedulerEngineService(): SchedulerEngineService {
+    if (!this.schedulerEngineService) {
+      this.schedulerEngineService = new SchedulerEngineService();
+    }
+
+    return this.schedulerEngineService;
+  }
+
+  static getSchedulerApplyService(): SchedulerApplyService {
+    if (!this.schedulerApplyService) {
+      this.schedulerApplyService = new SchedulerApplyService();
+    }
+
+    return this.schedulerApplyService;
   }
 
   static getMonitoringService(): MonitoringService {

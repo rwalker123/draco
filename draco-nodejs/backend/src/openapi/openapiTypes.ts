@@ -268,6 +268,10 @@ import {
   WelcomeMessageListSchema,
   UpsertWelcomeMessageSchema,
   AutoRegisterContactResponseSchema,
+  SchedulerProblemSpecSchema,
+  SchedulerSolveResultSchema,
+  SchedulerApplyRequestSchema,
+  SchedulerApplyResultSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1057,6 +1061,22 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'ChangePasswordRequest',
     ChangePasswordRequestSchema,
   );
+  const SchedulerProblemSpecSchemaRef = registry.register(
+    'SchedulerProblemSpec',
+    SchedulerProblemSpecSchema,
+  );
+  const SchedulerSolveResultSchemaRef = registry.register(
+    'SchedulerSolveResult',
+    SchedulerSolveResultSchema,
+  );
+  const SchedulerApplyRequestSchemaRef = registry.register(
+    'SchedulerApplyRequest',
+    SchedulerApplyRequestSchema,
+  );
+  const SchedulerApplyResultSchemaRef = registry.register(
+    'SchedulerApplyResult',
+    SchedulerApplyResultSchema,
+  );
   const RoleCheckResponseSchemaRef = registry.register(
     'RoleCheckResponse',
     RoleCheckResponseSchema,
@@ -1335,6 +1355,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RoleWithContactSchemaRef,
     VerifyTokenRequestSchemaRef,
     ChangePasswordRequestSchemaRef,
+    SchedulerProblemSpecSchemaRef,
+    SchedulerSolveResultSchemaRef,
+    SchedulerApplyRequestSchemaRef,
+    SchedulerApplyResultSchemaRef,
     RoleCheckResponseSchemaRef,
     DiscordTeamForumRemoveRequestSchemaRef,
   };

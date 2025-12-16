@@ -15154,6 +15154,649 @@ components:
       required:
         - currentPassword
         - newPassword
+    SchedulerProblemSpec:
+      type: object
+      properties:
+        season:
+          type: object
+          properties:
+            id:
+              type: string
+              minLength: 1
+              example: "123"
+            name:
+              type: string
+              minLength: 1
+              example: Spring 2026
+            startDate:
+              type: string
+              minLength: 1
+              example: 2026-04-01
+            endDate:
+              type: string
+              minLength: 1
+              example: 2026-08-31
+            gameDurations:
+              type: object
+              properties:
+                defaultMinutes:
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                  example: 75
+                weekendMinutes:
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                  example: 90
+                weekdayMinutes:
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                  example: 60
+              title: SchedulerGameDurations
+          required:
+            - id
+            - name
+            - startDate
+            - endDate
+          title: SchedulerSeasonConfig
+        teams:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+                example: "123"
+              teamSeasonId:
+                type: string
+                minLength: 1
+                example: "123"
+              divisionSeasonId:
+                type: string
+                minLength: 1
+                example: "123"
+              league:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    minLength: 1
+                    example: "123"
+                  name:
+                    type: string
+                    minLength: 1
+                    example: Open
+                required:
+                  - id
+                title: SchedulerLeagueRef
+            required:
+              - id
+              - teamSeasonId
+              - league
+            title: SchedulerTeam
+        fields:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+                example: "123"
+              name:
+                type: string
+                minLength: 1
+                example: Field 1
+              properties:
+                type: object
+                properties:
+                  hasLights:
+                    type: boolean
+                  maxParallelGames:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+            required:
+              - id
+              - name
+            title: SchedulerField
+        umpires:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+                example: "123"
+              name:
+                type: string
+                minLength: 1
+              maxGamesPerDay:
+                type: integer
+                minimum: 0
+                exclusiveMinimum: true
+            required:
+              - id
+            title: SchedulerUmpire
+        games:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+                example: "123"
+              leagueSeasonId:
+                type: string
+                minLength: 1
+                example: "123"
+              homeTeamSeasonId:
+                type: string
+                minLength: 1
+                example: "123"
+              visitorTeamSeasonId:
+                type: string
+                minLength: 1
+                example: "123"
+              requiredUmpires:
+                type: integer
+                minimum: 0
+                example: 1
+              preferredFieldIds:
+                type: array
+                items:
+                  type: string
+                  minLength: 1
+                  example: "123"
+              earliestStart:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+              latestEnd:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+              durationMinutes:
+                type: integer
+                minimum: 0
+                exclusiveMinimum: true
+            required:
+              - id
+              - leagueSeasonId
+              - homeTeamSeasonId
+              - visitorTeamSeasonId
+            title: SchedulerGameRequest
+          minItems: 1
+        fieldSlots:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+                example: slot-1
+              fieldId:
+                type: string
+                minLength: 1
+                example: "123"
+              startTime:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+              endTime:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+            required:
+              - id
+              - fieldId
+              - startTime
+              - endTime
+            title: SchedulerFieldSlot
+          minItems: 1
+        umpireAvailability:
+          type: array
+          items:
+            type: object
+            properties:
+              umpireId:
+                type: string
+                minLength: 1
+                example: "123"
+              startTime:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+              endTime:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+            required:
+              - umpireId
+              - startTime
+              - endTime
+            title: SchedulerUmpireAvailability
+        teamBlackouts:
+          type: array
+          items:
+            type: object
+            properties:
+              teamSeasonId:
+                type: string
+                minLength: 1
+                example: "123"
+              startTime:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+              endTime:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+            required:
+              - teamSeasonId
+              - startTime
+              - endTime
+            title: SchedulerTeamBlackout
+        constraints:
+          type: object
+          properties:
+            hard:
+              type: object
+              properties:
+                respectTeamBlackouts:
+                  type: boolean
+                respectUmpireAvailability:
+                  type: boolean
+                respectFieldSlots:
+                  type: boolean
+                maxGamesPerTeamPerDay:
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                maxGamesPerUmpirePerDay:
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                noTeamOverlap:
+                  type: boolean
+                noUmpireOverlap:
+                  type: boolean
+                noFieldOverlap:
+                  type: boolean
+              title: SchedulerHardConstraints
+            soft:
+              type: object
+              properties:
+                avoidBackToBackGames:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    minRestMinutes:
+                      type: integer
+                      minimum: 0
+                    weight:
+                      type: integer
+                      minimum: 0
+                  required:
+                    - enabled
+                    - minRestMinutes
+                balanceEarlyVsLate:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    weight:
+                      type: integer
+                      minimum: 0
+                  required:
+                    - enabled
+                spreadGamesAcrossDays:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    weight:
+                      type: integer
+                      minimum: 0
+                  required:
+                    - enabled
+              title: SchedulerSoftConstraints
+          title: SchedulerConstraints
+        objectives:
+          type: object
+          properties:
+            primary:
+              type: string
+              enum:
+                - maximize_scheduled_games
+                - minimize_conflicts
+            secondary:
+              type: array
+              items:
+                type: string
+                minLength: 1
+          title: SchedulerObjectives
+        runId:
+          type: string
+          minLength: 1
+          example: sched_account_42_ab12cd34
+      required:
+        - season
+        - teams
+        - fields
+        - umpires
+        - games
+        - fieldSlots
+      title: SchedulerProblemSpec
+      description: Self-contained scheduling problem specification. The solver treats
+        this input as authoritative and does not perform DB lookups.
+      example:
+        season:
+          id: spring-2026
+          name: Spring 2026
+          startDate: 2026-04-01
+          endDate: 2026-08-31
+          gameDurations:
+            defaultMinutes: 75
+            weekendMinutes: 90
+            weekdayMinutes: 60
+        teams:
+          - id: team-1
+            teamSeasonId: teamSeason-1
+            league:
+              id: league-1
+              name: Open
+          - id: team-2
+            teamSeasonId: teamSeason-2
+            league:
+              id: league-1
+              name: Open
+        fields:
+          - id: field-1
+            name: Field 1
+            properties:
+              hasLights: true
+              maxParallelGames: 1
+        umpires:
+          - id: ump-1
+            name: Alice
+            maxGamesPerDay: 3
+        games:
+          - id: game-1
+            leagueSeasonId: leagueSeason-1
+            homeTeamSeasonId: teamSeason-1
+            visitorTeamSeasonId: teamSeason-2
+            requiredUmpires: 1
+            earliestStart: 2026-04-05T09:00:00Z
+            latestEnd: 2026-04-05T14:00:00Z
+        fieldSlots:
+          - id: slot-1
+            fieldId: field-1
+            startTime: 2026-04-05T09:00:00Z
+            endTime: 2026-04-05T10:30:00Z
+        constraints:
+          hard:
+            respectFieldSlots: true
+            respectTeamBlackouts: true
+            respectUmpireAvailability: true
+            noFieldOverlap: true
+            noTeamOverlap: true
+            noUmpireOverlap: true
+        objectives:
+          primary: maximize_scheduled_games
+    SchedulerSolveResult:
+      type: object
+      properties:
+        runId:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum:
+            - completed
+            - partial
+            - infeasible
+            - failed
+          title: SchedulerRunStatus
+        metrics:
+          type: object
+          properties:
+            totalGames:
+              type: integer
+              minimum: 0
+            scheduledGames:
+              type: integer
+              minimum: 0
+            unscheduledGames:
+              type: integer
+              minimum: 0
+            objectiveValue:
+              type: number
+          required:
+            - totalGames
+            - scheduledGames
+            - unscheduledGames
+          title: SchedulerMetrics
+        assignments:
+          type: array
+          items:
+            type: object
+            properties:
+              gameId:
+                type: string
+                minLength: 1
+                example: "123"
+              fieldId:
+                type: string
+                minLength: 1
+                example: "123"
+              startTime:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+              endTime:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+              umpireIds:
+                type: array
+                items:
+                  type: string
+                  minLength: 1
+                  example: "123"
+            required:
+              - gameId
+              - fieldId
+              - startTime
+              - endTime
+              - umpireIds
+            title: SchedulerAssignment
+        unscheduled:
+          type: array
+          items:
+            type: object
+            properties:
+              gameId:
+                type: string
+                minLength: 1
+                example: "123"
+              reason:
+                type: string
+                minLength: 1
+            required:
+              - gameId
+              - reason
+            title: SchedulerUnscheduledReason
+      required:
+        - runId
+        - status
+        - metrics
+        - assignments
+        - unscheduled
+      title: SchedulerSolveResult
+      description: Proposal-only solve output. Persisting assignments is handled by a
+        follow-up apply endpoint.
+      example:
+        runId: sched_account_42_ab12cd34ef56gh78
+        status: completed
+        metrics:
+          totalGames: 1
+          scheduledGames: 1
+          unscheduledGames: 0
+          objectiveValue: 1
+        assignments:
+          - gameId: game-1
+            fieldId: field-1
+            startTime: 2026-04-05T09:00:00Z
+            endTime: 2026-04-05T10:30:00Z
+            umpireIds:
+              - ump-1
+        unscheduled: []
+    SchedulerApplyRequest:
+      type: object
+      properties:
+        runId:
+          type: string
+          minLength: 1
+        mode:
+          type: string
+          enum:
+            - all
+            - subset
+          title: SchedulerApplyMode
+          description: Whether to apply all assignments or only a subset.
+        assignments:
+          type: array
+          items:
+            type: object
+            properties:
+              gameId:
+                type: string
+                minLength: 1
+                example: "123"
+              fieldId:
+                type: string
+                minLength: 1
+                example: "123"
+              startTime:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+              endTime:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+              umpireIds:
+                type: array
+                items:
+                  type: string
+                  minLength: 1
+                  example: "123"
+            required:
+              - gameId
+              - fieldId
+              - startTime
+              - endTime
+              - umpireIds
+            title: SchedulerAssignment
+          minItems: 1
+        gameIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            example: "123"
+          minItems: 1
+      required:
+        - runId
+        - mode
+        - assignments
+      title: SchedulerApplyRequest
+      description: Apply a scheduling proposal to persist assignments. This is a
+        follow-up to /scheduler/solve and writes to the database.
+      example:
+        runId: sched_account_42_ab12cd34ef56gh78
+        mode: subset
+        gameIds:
+          - "123"
+          - "124"
+        assignments:
+          - gameId: "123"
+            fieldId: "44"
+            startTime: 2026-04-05T09:00:00Z
+            endTime: 2026-04-05T10:30:00Z
+            umpireIds:
+              - "10"
+    SchedulerApplyResult:
+      type: object
+      properties:
+        runId:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum:
+            - applied
+            - partial
+            - failed
+          title: SchedulerApplyStatus
+        appliedGameIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            example: "123"
+        skipped:
+          type: array
+          items:
+            type: object
+            properties:
+              gameId:
+                type: string
+                minLength: 1
+                example: "123"
+              reason:
+                type: string
+                minLength: 1
+            required:
+              - gameId
+              - reason
+            title: SchedulerApplySkipped
+      required:
+        - runId
+        - status
+        - appliedGameIds
+        - skipped
+      title: SchedulerApplyResult
+      description: Outcome of persisting a scheduling proposal.
+      example:
+        runId: sched_account_42_ab12cd34ef56gh78
+        status: partial
+        appliedGameIds:
+          - "123"
+        skipped:
+          - gameId: "124"
+            reason: Field is already booked for this date and time
     RoleCheckResponse:
       type: object
       properties:
@@ -28781,6 +29424,125 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/scheduler/solve:
+    post:
+      operationId: solveSchedule
+      summary: Generate a proposed schedule
+      description: Deterministically solves a scheduling problem specification and
+        returns a proposal (no persistence). Provide an Idempotency-Key header
+        to derive a stable runId for safe retries; a follow-up apply endpoint
+        will handle persisting all or selected assignments.
+      tags:
+        - Scheduler
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema:
+            type: string
+            minLength: 1
+          description: Optional client-provided key used to derive a stable runId so
+            callers can safely retry without changing the response metadata.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchedulerProblemSpec"
+      responses:
+        "200":
+          description: Scheduling proposal result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerSolveResult"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to generate schedules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/scheduler/apply:
+    post:
+      operationId: applyScheduleProposal
+      summary: Apply a schedule proposal
+      description: Persists a proposal returned by /scheduler/solve. This endpoint
+        writes to the database and can apply all assignments or a specified
+        subset.
+      tags:
+        - Scheduler
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchedulerApplyRequest"
+      responses:
+        "200":
+          description: Apply result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerApplyResult"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to apply schedules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
         "500":
           description: Internal server error
           content:
