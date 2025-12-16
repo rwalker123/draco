@@ -477,7 +477,7 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
                     return (
                       <Paper
                         key={hofClass.year}
-                        ref={(node) => {
+                        ref={(node: HTMLDivElement | null) => {
                           classCardRefs.current[hofClass.year] = node;
                         }}
                         role="button"
