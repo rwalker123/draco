@@ -36,7 +36,7 @@ import { TeamService } from './teamService.js';
 import { TeamManagerService } from './teamManagerService.js';
 import { htmlToPlainText } from '../utils/emailContent.js';
 import { ContactService } from './contactService.js';
-import { sanitizeRichHtml } from '../utils/htmlSanitizer.js';
+import { sanitizeRichHtml, sanitizeSystemEmailHtml } from '../utils/htmlSanitizer.js';
 import { getFrontendBaseUrlOrFallback } from '../utils/frontendBaseUrl.js';
 
 // Email queue management interfaces
@@ -80,10 +80,24 @@ interface QueueMetrics {
 }
 
 interface SenderContext {
-  contactId: bigint;
+  contactId?: bigint;
   displayName: string;
-  replyTo: string;
+  replyTo?: string;
   settings: EmailSettings;
+}
+
+interface ComposeEmailOptions {
+  isSystemEmail?: boolean;
+}
+
+interface EmailSendToAddressesRequest {
+  subject: string;
+  bodyHtml: string;
+  recipients: {
+    emails: string[];
+  };
+  scheduledSend?: string | Date | null;
+  templateId?: string | number | bigint | null;
 }
 
 // Legacy interface maintained for backward compatibility
@@ -417,7 +431,19 @@ export class EmailService {
     accountId: bigint,
     createdByUserId: string,
     request: EmailSendType,
+    options?: ComposeEmailOptions,
   ): Promise<bigint> {
+    return this.composeAndSendEmailFromUser(accountId, createdByUserId, request, options);
+  }
+
+  async composeAndSendEmailFromUser(
+    accountId: bigint,
+    createdByUserId: string,
+    request: EmailSendType,
+    options?: ComposeEmailOptions,
+  ): Promise<bigint> {
+    const isSystemEmail = options?.isSystemEmail ?? false;
+
     const scheduledDateRaw = request.scheduledSend ? new Date(request.scheduledSend) : null;
     const scheduledDate =
       scheduledDateRaw && !Number.isNaN(scheduledDateRaw.getTime()) ? scheduledDateRaw : null;
@@ -425,8 +451,14 @@ export class EmailService {
     const shouldDelaySend = Boolean(scheduledDate && scheduledDate > new Date());
     const emailStatus = shouldDelaySend ? 'scheduled' : 'sending';
 
+    if (!createdByUserId || createdByUserId.trim().length === 0) {
+      throw new ValidationError('User ID is required');
+    }
+
     const senderContext = await this.resolveSenderContext(accountId, createdByUserId);
-    const sanitizedBody = sanitizeRichHtml(request.body);
+    const sanitizedBody = isSystemEmail
+      ? sanitizeSystemEmailHtml(request.body)
+      : sanitizeRichHtml(request.body);
 
     const email = await this.emailRepository.createEmail({
       account_id: accountId,
@@ -438,7 +470,7 @@ export class EmailService {
       status: emailStatus,
       scheduled_send_at: scheduledDate,
       created_at: new Date(),
-      sender_contact_id: senderContext.contactId,
+      sender_contact_id: senderContext.contactId ?? null,
       sender_contact_name: senderContext.displayName,
       reply_to_email: senderContext.replyTo,
       from_name_override: senderContext.displayName,
@@ -447,6 +479,103 @@ export class EmailService {
     await this.sendBulkEmail(email.id, request, {
       queueImmediately: !shouldDelaySend,
     });
+
+    return email.id;
+  }
+
+  /**
+   * Compose and send an email to raw email addresses (internal-only helper).
+   *
+   * This exists for system-generated emails where recipients may not exist as contacts.
+   * Routes should NOT expose this; it bypasses shared-schema recipient resolution.
+   */
+  async composeAndSendSystemEmailToAddresses(
+    accountId: bigint,
+    request: EmailSendToAddressesRequest,
+    options?: ComposeEmailOptions,
+  ): Promise<bigint> {
+    const isSystemEmail = options?.isSystemEmail ?? false;
+
+    const scheduledDateRaw = request.scheduledSend ? new Date(request.scheduledSend) : null;
+    const scheduledDate =
+      scheduledDateRaw && !Number.isNaN(scheduledDateRaw.getTime()) ? scheduledDateRaw : null;
+
+    const shouldDelaySend = Boolean(scheduledDate && scheduledDate > new Date());
+    const emailStatus = shouldDelaySend ? 'scheduled' : 'sending';
+
+    if (!request.subject || !request.bodyHtml) {
+      throw new ValidationError('Subject and body are required');
+    }
+
+    const recipientEmails = Array.from(
+      new Set(
+        (request.recipients?.emails ?? [])
+          .map((email) => email.trim())
+          .filter((email) => email.length > 0)
+          .map((email) => email.toLowerCase()),
+      ),
+    ).filter((email) => this.hasValidEmail(email));
+
+    if (recipientEmails.length === 0) {
+      throw new ValidationError('At least one valid recipient email address is required');
+    }
+
+    const senderContext = this.resolveSystemSenderContext();
+
+    const sanitizedBody = isSystemEmail
+      ? sanitizeSystemEmailHtml(request.bodyHtml)
+      : sanitizeRichHtml(request.bodyHtml);
+
+    const email = await this.emailRepository.createEmail({
+      account_id: accountId,
+      created_by_user_id: null,
+      subject: request.subject,
+      body_html: sanitizedBody,
+      body_text: htmlToPlainText(sanitizedBody),
+      template_id: request.templateId ? BigInt(request.templateId) : null,
+      status: emailStatus,
+      scheduled_send_at: scheduledDate,
+      created_at: new Date(),
+      sender_contact_id: senderContext.contactId ?? null,
+      sender_contact_name: senderContext.displayName,
+      reply_to_email: senderContext.replyTo,
+      from_name_override: senderContext.displayName,
+    });
+
+    const recipientPayload: dbCreateEmailRecipientInput[] = recipientEmails.map((emailAddress) => ({
+      email_id: email.id,
+      contact_id: null,
+      email_address: emailAddress,
+      contact_name: emailAddress,
+      recipient_type: 'external',
+    }));
+
+    await this.emailRepository.createEmailRecipients(recipientPayload);
+    await this.emailRepository.updateEmail(email.id, {
+      total_recipients: recipientEmails.length,
+      ...(shouldDelaySend ? {} : { status: 'sending' }),
+    });
+
+    if (shouldDelaySend) {
+      return email.id;
+    }
+
+    await this.queueEmailBatches(
+      email.id,
+      recipientPayload.map((recipient) => ({
+        contactId: null,
+        emailAddress: recipient.email_address,
+        contactName: recipient.contact_name ?? recipient.email_address,
+        recipientType: recipient.recipient_type ?? 'external',
+      })),
+      email.subject,
+      email.body_html,
+      senderContext.settings,
+      {
+        senderContactId: senderContext.contactId,
+        requireReplyTo: false,
+      },
+    );
 
     return email.id;
   }
@@ -513,6 +642,7 @@ export class EmailService {
         {
           attachments,
           senderContactId,
+          requireReplyTo: Boolean(email.reply_to_email),
         },
       );
 
@@ -587,20 +717,31 @@ export class EmailService {
     subject: string,
     bodyHtml: string,
     settings: EmailSettings,
-    options: { attachments?: ServerEmailAttachment[]; senderContactId?: bigint } = {},
+    options: {
+      attachments?: ServerEmailAttachment[];
+      senderContactId?: bigint;
+      requireReplyTo?: boolean;
+    } = {},
   ): Promise<void> {
     const { attachments } = options;
     const now = new Date();
 
-    if (!settings.replyTo || !validator.isEmail(settings.replyTo)) {
+    const requireReplyTo = options.requireReplyTo ?? true;
+    const trimmedReplyTo = settings.replyTo?.trim();
+
+    if (requireReplyTo && (!trimmedReplyTo || !validator.isEmail(trimmedReplyTo))) {
       throw new ValidationError('Queued emails require a valid reply-to email address');
+    }
+
+    if (trimmedReplyTo && !validator.isEmail(trimmedReplyTo)) {
+      throw new ValidationError('Invalid reply-to email address');
     }
 
     const sanitizedFromName = this.sanitizeDisplayName(settings.fromName);
     const jobSettings: EmailSettings = {
       ...settings,
       fromName: sanitizedFromName || settings.fromName,
-      replyTo: settings.replyTo,
+      replyTo: trimmedReplyTo,
     };
 
     // Split recipients into batches and queue each batch
@@ -779,6 +920,7 @@ export class EmailService {
               {
                 attachments,
                 senderContactId,
+                requireReplyTo: Boolean(email.reply_to_email),
               },
             );
           } else {
@@ -1713,19 +1855,37 @@ export class EmailService {
   private applySenderOverrides(
     baseSettings: EmailSettings,
     overrides: { fromName?: string | null; replyTo?: string | null },
+    options: { requireReplyTo?: boolean } = {},
   ): EmailSettings {
     const overrideName = overrides.fromName ?? baseSettings.fromName;
     const sanitizedName = this.sanitizeDisplayName(overrideName) || baseSettings.fromName;
 
-    const candidateReplyTo = overrides.replyTo?.trim() || baseSettings.replyTo?.trim();
-    if (!candidateReplyTo || !validator.isEmail(candidateReplyTo)) {
+    const requireReplyTo = options.requireReplyTo ?? true;
+    const candidateReplyTo = (overrides.replyTo ?? baseSettings.replyTo)?.trim();
+
+    if (requireReplyTo && (!candidateReplyTo || !validator.isEmail(candidateReplyTo))) {
       throw new ValidationError('Queued emails require a valid reply-to email address');
+    }
+
+    if (candidateReplyTo && !validator.isEmail(candidateReplyTo)) {
+      throw new ValidationError('Invalid reply-to email address');
     }
 
     return {
       ...baseSettings,
       fromName: sanitizedName,
       replyTo: candidateReplyTo,
+    };
+  }
+
+  private resolveSystemSenderContext(): SenderContext {
+    const baseSettings = EmailConfigFactory.getEmailSettings();
+    const settings = this.applySenderOverrides(baseSettings, {}, { requireReplyTo: false });
+
+    return {
+      displayName: settings.fromName ?? baseSettings.fromName,
+      replyTo: settings.replyTo,
+      settings,
     };
   }
 
@@ -1762,19 +1922,21 @@ export class EmailService {
     from_name_override?: string | null;
     reply_to_email?: string | null;
   }): { settings: EmailSettings; senderContactId?: bigint } {
-    if (!email.sender_contact_id) {
-      throw new ValidationError('Sender contact information is required to queue emails');
-    }
-
     const baseSettings = EmailConfigFactory.getEmailSettings();
-    const settings = this.applySenderOverrides(baseSettings, {
-      fromName: email.from_name_override ?? email.sender_contact_name,
-      replyTo: email.reply_to_email,
-    });
+    const settings = this.applySenderOverrides(
+      baseSettings,
+      {
+        fromName: email.from_name_override ?? email.sender_contact_name,
+        replyTo: email.reply_to_email,
+      },
+      {
+        requireReplyTo: Boolean(email.reply_to_email),
+      },
+    );
 
     return {
       settings,
-      senderContactId: email.sender_contact_id,
+      senderContactId: email.sender_contact_id ?? undefined,
     };
   }
 

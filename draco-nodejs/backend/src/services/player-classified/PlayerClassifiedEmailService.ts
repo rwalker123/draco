@@ -6,6 +6,7 @@ import { logSecurely } from '../../utils/auditLogger.js';
 import { EMAIL_STYLES, EMAIL_CONTENT } from '../../config/playerClassifiedConstants.js';
 import { DateUtils } from '../../utils/dateUtils.js';
 import { getFrontendBaseUrlOrFallback } from '../../utils/frontendBaseUrl.js';
+import { ServiceFactory } from '../serviceFactory.js';
 
 /**
  * PlayerClassifiedEmailService
@@ -109,33 +110,16 @@ export class PlayerClassifiedEmailService {
         replyTo: settings.replyTo,
       };
 
-      // Send email using EmailProviderFactory directly for custom content
-      const { EmailProviderFactory } = await import('../email/EmailProviderFactory.js');
-      const provider = await EmailProviderFactory.getProvider();
-      const emailResult = await provider.sendEmail(emailOptions);
-
-      if (emailResult.success) {
-        logSecurely('info', 'Verification email sent successfully', {
-          toEmail,
-          classifiedId: String(classifiedId),
-        });
-      } else {
-        logSecurely('error', 'Failed to send verification email through provider', {
-          error: emailResult.error,
-        });
-      }
-
-      // For development, log the email data
-      if (process.env.NODE_ENV === 'development') {
-        logSecurely('debug', 'Email data prepared', {
-          to: toEmail,
+      const emailService = ServiceFactory.getEmailService();
+      await emailService.composeAndSendSystemEmailToAddresses(
+        account.id,
+        {
           subject: emailOptions.subject,
-          verificationUrl,
-          accountName: account.name,
-          userName: userData.name,
-          accessCode, // Will be automatically redacted by logSecurely
-        });
-      }
+          bodyHtml: emailOptions.html,
+          recipients: { emails: [toEmail] },
+        },
+        { isSystemEmail: true },
+      );
     } catch (error) {
       logSecurely('error', 'Error in sendTeamsWantedVerificationEmail', {
         error: error instanceof Error ? error.message : String(error),
@@ -249,7 +233,6 @@ export class PlayerClassifiedEmailService {
     // Security: Sanitize inputs to prevent XSS
     const sanitizedAccessCode = this.sanitizeHtmlContent(accessCode);
     const sanitizedVerificationUrl = this.sanitizeHtmlContent(verificationUrl);
-    const sanitizedReplyTo = this.sanitizeHtmlContent(settings.replyTo);
     const sanitizedAccountName = this.sanitizeHtmlContent(account.name);
     const sanitizedUserName = this.sanitizeHtmlContent(userData.name);
     const sanitizedUserEmail = this.sanitizeHtmlContent(userData.email);
@@ -327,7 +310,6 @@ export class PlayerClassifiedEmailService {
             <div class="footer">
               <p>Thank you for using ${sanitizedAccountName} Teams Wanted System!</p>
               <p>If you didn't create this classified, please ignore this email.<br>
-              For support, contact: <a href="mailto:${sanitizedReplyTo}" class="verification-link">${sanitizedReplyTo}</a></p>
             </div>
           </div>
         </div>
@@ -382,7 +364,6 @@ export class PlayerClassifiedEmailService {
     // Security: Sanitize inputs to prevent injection
     const sanitizedAccessCode = this.sanitizeTextContent(accessCode);
     const sanitizedVerificationUrl = this.sanitizeTextContent(verificationUrl);
-    const sanitizedReplyTo = this.sanitizeTextContent(settings.replyTo);
     const sanitizedAccountName = this.sanitizeTextContent(account.name);
     const sanitizedUserName = this.sanitizeTextContent(userData.name);
     const sanitizedUserEmail = this.sanitizeTextContent(userData.email);
@@ -420,7 +401,6 @@ Verification Link: ${sanitizedVerificationUrl}
 Thank you for using ${sanitizedAccountName} Teams Wanted System!
 
 If you didn't create this classified, please ignore this email.
-For support, contact: ${sanitizedReplyTo}
 `;
   }
 

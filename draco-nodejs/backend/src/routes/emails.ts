@@ -50,7 +50,7 @@ router.post(
       throw new ValidationError('Subject, body, and recipients are required');
     }
 
-    const emailId = await emailService.composeAndSendEmail(accountId, userId, request);
+    const emailId = await emailService.composeAndSendEmailFromUser(accountId, userId, request);
 
     res.status(201).json({
       emailId: emailId.toString(),

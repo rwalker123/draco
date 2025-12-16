@@ -74,6 +74,17 @@ describe('AccountSettingsService', () => {
     expect(updated.isDefault).toBe(false);
   });
 
+  it('includes the game result email setting with default off', async () => {
+    const settings = await service.getAccountSettings(accountId);
+
+    const gameEmailSetting = settings.find(
+      (setting) => setting.definition.key === 'EmailGameResultsToTeams',
+    );
+
+    expect(gameEmailSetting?.value).toBe(false);
+    expect(gameEmailSetting?.isDefault).toBe(true);
+  });
+
   it('prevents enabling a dependent toggle when requirements are not met', async () => {
     await expect(
       service.updateAccountSetting(accountId, 'ShowWaiver', true),

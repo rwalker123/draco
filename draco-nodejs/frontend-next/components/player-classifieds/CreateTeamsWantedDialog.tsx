@@ -459,7 +459,9 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{editMode ? 'Edit Teams Wanted' : 'Post Teams Wanted'}</DialogTitle>
+      <DialogTitle sx={{ color: 'text.primary' }}>
+        {editMode ? 'Edit Teams Wanted' : 'Post Teams Wanted'}
+      </DialogTitle>
       <form onSubmit={onSubmit} noValidate>
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <DialogContent>

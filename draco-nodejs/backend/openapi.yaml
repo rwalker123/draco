@@ -4182,6 +4182,7 @@ components:
                   - ShowUserInfoOnRosterPage
                   - ShowContactInfo
                   - EditContactInfo
+                  - EmailGameResultsToTeams
                   - PostGameResultsToDiscord
                   - PostGameResultsToTwitter
                   - PostGameResultsToFacebook
@@ -4247,6 +4248,7 @@ components:
                         - ShowUserInfoOnRosterPage
                         - ShowContactInfo
                         - EditContactInfo
+                        - EmailGameResultsToTeams
                         - PostGameResultsToDiscord
                         - PostGameResultsToTwitter
                         - PostGameResultsToFacebook
@@ -4348,6 +4350,7 @@ components:
                 - ShowUserInfoOnRosterPage
                 - ShowContactInfo
                 - EditContactInfo
+                - EmailGameResultsToTeams
                 - PostGameResultsToDiscord
                 - PostGameResultsToTwitter
                 - PostGameResultsToFacebook
@@ -4413,6 +4416,7 @@ components:
                       - ShowUserInfoOnRosterPage
                       - ShowContactInfo
                       - EditContactInfo
+                      - EmailGameResultsToTeams
                       - PostGameResultsToDiscord
                       - PostGameResultsToTwitter
                       - PostGameResultsToFacebook
@@ -4517,6 +4521,7 @@ components:
         - ShowUserInfoOnRosterPage
         - ShowContactInfo
         - EditContactInfo
+        - EmailGameResultsToTeams
         - PostGameResultsToDiscord
         - PostGameResultsToTwitter
         - PostGameResultsToFacebook
@@ -18183,6 +18188,7 @@ paths:
               - ShowUserInfoOnRosterPage
               - ShowContactInfo
               - EditContactInfo
+              - EmailGameResultsToTeams
               - PostGameResultsToDiscord
               - PostGameResultsToTwitter
               - PostGameResultsToFacebook

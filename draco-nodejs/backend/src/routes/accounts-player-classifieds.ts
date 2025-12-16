@@ -292,11 +292,13 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
+    const userId = req.user!.id;
     const contactId = req.accountBoundary!.contactId;
     const updateRequest = UpsertPlayersWantedClassifiedSchema.parse(req.body ?? {});
 
     const canEdit = await playerClassifiedService.canEditPlayersWanted(
       classifiedId,
+      userId,
       contactId,
       accountId,
     );
@@ -308,6 +310,7 @@ router.put(
     const classified = await playerClassifiedService.updatePlayersWanted(
       classifiedId,
       accountId,
+      userId,
       contactId,
       updateRequest,
     );
@@ -354,10 +357,12 @@ router.delete(
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
+    const userId = req.user!.id;
     const contactId = req.accountBoundary!.contactId;
 
     const canDelete = await playerClassifiedService.canDeletePlayersWanted(
       classifiedId,
+      userId,
       contactId,
       accountId,
     );
@@ -366,7 +371,7 @@ router.delete(
       throw new AuthorizationError('Insufficient permissions to delete this classified');
     }
 
-    await playerClassifiedService.deletePlayersWanted(classifiedId, accountId, contactId);
+    await playerClassifiedService.deletePlayersWanted(classifiedId, accountId, userId, contactId);
 
     res.status(204).send();
   }),

@@ -1,17 +1,7 @@
 'use client';
 
 import React from 'react';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Alert,
-  Fab,
-} from '@mui/material';
+import { Box, Alert, Fab } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
 import { useClassifiedsPagination } from '../../../../hooks/useClassifiedsPagination';
@@ -24,6 +14,9 @@ import CreateTeamsWantedDialog, {
   type TeamsWantedDialogSuccessEvent,
   type TeamsWantedFormInitialData,
 } from '../../../../components/player-classifieds/CreateTeamsWantedDialog';
+import DeleteTeamsWantedDialog, {
+  type DeleteTeamsWantedSuccessEvent,
+} from '../../../../components/player-classifieds/DeleteTeamsWantedDialog';
 import { playerClassifiedService } from '../../../../services/playerClassifiedService';
 import {
   TeamsWantedOwnerClassifiedType,
@@ -34,7 +27,7 @@ interface TeamsWantedProps {
   accountId: string;
   autoVerificationData?: {
     accessCode: string;
-    classifiedData: TeamsWantedOwnerClassifiedType;
+    classifiedData?: TeamsWantedOwnerClassifiedType | null;
   } | null;
   onVerificationProcessed?: () => void;
 }
@@ -91,7 +84,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
     paginationLoading,
     error: hookError,
     paginationInfo,
-    deleteTeamsWanted,
     loadTeamsWantedPage,
   } = usePlayerClassifieds(accountId, token || undefined);
 
@@ -229,29 +221,15 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
     setSelectedClassified(null);
   };
 
-  // Handle confirmed delete
-  const confirmDelete = async () => {
-    if (!selectedClassified) return;
-
-    const result = await deleteTeamsWanted(selectedClassified.id.toString(), ''); // Empty access code for AccountAdmins
-
-    if (result.success) {
-      // Show success notification
-      setSuccess('Teams Wanted deleted successfully');
+  const handleDeleteDialogSuccess = React.useCallback(
+    (event: DeleteTeamsWantedSuccessEvent) => {
+      setSuccess(event.message);
       setError(null);
-      // Refresh the data to show updated list
       loadTeamsWantedPage(pagination.page, pagination.limit);
-      // Auto-hide success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
-    } else {
-      // Show error notification
-      setError(result.error || 'Failed to delete Teams Wanted');
-      setSuccess(null);
-    }
-
-    // Always close dialog whether success or error
-    closeDeleteDialog();
-  };
+    },
+    [loadTeamsWantedPage, pagination.limit, pagination.page],
+  );
 
   return (
     <Box>
@@ -286,6 +264,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         error={hookError || undefined}
         autoVerificationData={autoVerificationData}
         onVerificationProcessed={onVerificationProcessed}
+        onCreate={() => setCreateDialogOpen(true)}
       />
 
       <Fab
@@ -332,21 +311,14 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         onError={handleDialogError}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog}>
-        <DialogTitle>Delete Teams Wanted</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this Teams Wanted ad? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteDialog}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteTeamsWantedDialog
+        accountId={accountId}
+        open={deleteDialogOpen}
+        classified={selectedClassified}
+        onClose={closeDeleteDialog}
+        onSuccess={handleDeleteDialogSuccess}
+        onError={handleDialogError}
+      />
 
       {/* Edit Teams Wanted Dialog */}
       {editingClassified && (

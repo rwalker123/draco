@@ -52,11 +52,17 @@ router.put(
   '/:gameId/results',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, gameId } = parseGameOnlyParams(req.params);
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new ValidationError('User ID is required to update game results');
+    }
     const input = UpdateGameResultsSchema.parse(req.body);
 
-    const result = await scheduleService.updateGameResults(accountId, gameId, input);
+    const result = await scheduleService.updateGameResults(accountId, gameId, input, userId);
 
     res.json(result);
   }),

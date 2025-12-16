@@ -18,6 +18,7 @@ export const ACCOUNT_SETTING_KEYS = [
   'ShowUserInfoOnRosterPage',
   'ShowContactInfo',
   'EditContactInfo',
+  'EmailGameResultsToTeams',
   'PostGameResultsToDiscord',
   'PostGameResultsToTwitter',
   'PostGameResultsToFacebook',
@@ -252,6 +253,15 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
         expectedValue: true,
       },
     ],
+  }),
+  booleanSetting({
+    key: 'EmailGameResultsToTeams',
+    label: 'Email game results to teams',
+    description:
+      'Email final scores and game status to active roster members of the teams involved.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 82,
   }),
   booleanSetting({
     key: 'PostGameResultsToDiscord',

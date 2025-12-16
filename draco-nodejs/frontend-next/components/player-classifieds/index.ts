@@ -7,3 +7,4 @@ export { default as PlayersWantedDetailDialog } from './PlayersWantedDetailDialo
 export { default as CreateTeamsWantedDialog } from './CreateTeamsWantedDialog';
 export { default as CreatePlayersWantedDialog } from './CreatePlayersWantedDialog';
 export { default as DeletePlayersWantedDialog } from './DeletePlayersWantedDialog';
+export { default as DeleteTeamsWantedDialog } from './DeleteTeamsWantedDialog';
