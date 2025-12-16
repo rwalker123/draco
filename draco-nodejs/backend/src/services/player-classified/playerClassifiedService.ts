@@ -422,8 +422,19 @@ export class PlayerClassifiedService {
   async deletePlayersWanted(
     classifiedId: bigint,
     accountId: bigint,
-    _contactId: bigint,
+    userId: string,
+    contactId: bigint,
   ): Promise<void> {
+    const canDelete = await this.accessService.canDeletePlayersWanted(
+      classifiedId,
+      userId,
+      contactId,
+      accountId,
+    );
+    if (!canDelete) {
+      throw new ValidationError('Insufficient permissions to delete this classified');
+    }
+
     // Verify the classified exists and belongs to account using data service
     const classified = await this.playersWantedRepository.findPlayersWantedById(
       classifiedId,
@@ -453,12 +464,14 @@ export class PlayerClassifiedService {
   async updatePlayersWanted(
     classifiedId: bigint,
     accountId: bigint,
+    userId: string,
     contactId: bigint,
     request: UpsertPlayersWantedClassifiedType,
   ): Promise<PlayersWantedClassifiedType> {
     // Check if user can edit this classified using access service
     const canEdit = await this.accessService.canEditPlayersWanted(
       classifiedId,
+      userId,
       contactId,
       accountId,
     );
@@ -524,11 +537,17 @@ export class PlayerClassifiedService {
    */
   async canEditPlayersWanted(
     classifiedId: bigint,
+    userId: string,
     contactId: bigint,
     accountId: bigint,
   ): Promise<boolean> {
     // Delegate to specialized access service
-    return await this.accessService.canEditPlayersWanted(classifiedId, contactId, accountId);
+    return await this.accessService.canEditPlayersWanted(
+      classifiedId,
+      userId,
+      contactId,
+      accountId,
+    );
   }
 
   /**
@@ -544,11 +563,17 @@ export class PlayerClassifiedService {
    */
   async canDeletePlayersWanted(
     classifiedId: bigint,
+    userId: string,
     contactId: bigint,
     accountId: bigint,
   ): Promise<boolean> {
     // Delegate to specialized access service
-    return await this.accessService.canDeletePlayersWanted(classifiedId, contactId, accountId);
+    return await this.accessService.canDeletePlayersWanted(
+      classifiedId,
+      userId,
+      contactId,
+      accountId,
+    );
   }
 
   /**

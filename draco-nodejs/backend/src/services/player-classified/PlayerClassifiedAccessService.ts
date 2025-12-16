@@ -14,8 +14,6 @@ import {
 import { ServiceFactory } from '../serviceFactory.js';
 import { AccountsService } from '../accountsService.js';
 import { TeamsWantedResponseFormatter } from '../../responseFormatters/index.js';
-import { ROLE_IDS } from '../../config/roles.js';
-import { RoleNamesType } from '../../types/roles.js';
 
 /**
  * PlayerClassifiedAccessService
@@ -178,6 +176,7 @@ export class PlayerClassifiedAccessService {
    */
   async canEditPlayersWanted(
     classifiedId: bigint,
+    userId: string,
     contactId: bigint,
     accountId: bigint,
   ): Promise<boolean> {
@@ -196,18 +195,8 @@ export class PlayerClassifiedAccessService {
       return true;
     }
 
-    const userRoleService = ServiceFactory.getRoleService();
-    const userRoles = await userRoleService.getUserRolesByContactId(contactId, accountId);
-
-    // Check if user has AccountAdmin role
-    const hasAccountAdminRole = userRoles.contactRoles.some(
-      (role) => role.roleId === 'AccountAdmin',
-    );
-    const hasGlobalAdminRole = userRoles.globalRoles.includes(
-      ROLE_IDS[RoleNamesType.ADMINISTRATOR],
-    );
-
-    return hasAccountAdminRole || hasGlobalAdminRole;
+    const roleService = ServiceFactory.getRoleService();
+    return await roleService.hasPermission(userId, 'player-classified.manage', { accountId });
   }
 
   /**
@@ -230,11 +219,12 @@ export class PlayerClassifiedAccessService {
    */
   async canDeletePlayersWanted(
     classifiedId: bigint,
+    userId: string,
     contactId: bigint,
     accountId: bigint,
   ): Promise<boolean> {
     // Same logic as canEdit - delete and edit permissions are equivalent
-    return this.canEditPlayersWanted(classifiedId, contactId, accountId);
+    return this.canEditPlayersWanted(classifiedId, userId, contactId, accountId);
   }
 
   /**

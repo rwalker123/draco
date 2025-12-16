@@ -3,20 +3,8 @@
 // TeamsWantedStateManager Component
 // Centralized logic for determining UI state based on user authentication
 
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Alert,
-  Stack,
-  Divider,
-  Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from '@mui/material';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Typography, Button, Alert, Stack, Divider, CircularProgress } from '@mui/material';
 import {
   PersonAdd as PersonAddIcon,
   Lock as LockIcon,
@@ -39,6 +27,10 @@ import {
   UpsertTeamsWantedClassifiedType,
 } from '@draco/shared-schemas';
 import { useTeamsWantedClassifieds } from '../../hooks/useClassifiedsService';
+import WidgetShell from '../ui/WidgetShell';
+import DeleteTeamsWantedDialog, {
+  type DeleteTeamsWantedSuccessEvent,
+} from './DeleteTeamsWantedDialog';
 
 // ============================================================================
 // COMPONENT INTERFACES
@@ -55,9 +47,10 @@ interface ITeamsWantedStateManagerProps {
   error?: string;
   autoVerificationData?: {
     accessCode: string;
-    classifiedData: TeamsWantedOwnerClassifiedType;
+    classifiedData?: TeamsWantedOwnerClassifiedType | null;
   } | null;
   onVerificationProcessed?: () => void;
+  onCreate?: () => void;
 }
 
 // User authentication states
@@ -78,12 +71,12 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   error,
   autoVerificationData,
   onVerificationProcessed,
+  onCreate,
 }) => {
   // Get authentication and account membership status
-  const { user } = useAuth();
-  const { isMember } = useAccountMembership(accountId);
-  const { deleteTeamsWanted: deleteTeamsWantedService, getTeamsWantedContactForEdit } =
-    useTeamsWantedClassifieds(accountId);
+  const { user, loading: authLoading, initialized: authInitialized } = useAuth();
+  const { isMember, loading: membershipLoading } = useAccountMembership(accountId);
+  const { getTeamsWantedContactForEdit } = useTeamsWantedClassifieds(accountId);
 
   // Local state for access code verification
   const [accessCodeResult, setAccessCodeResult] = useState<IAccessCodeVerificationResponse | null>(
@@ -95,7 +88,6 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
 
   // Local state for delete operations
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -121,27 +113,6 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
       shouldNotifyVerificationRef.current = true;
     }
   }, [autoVerificationData]);
-
-  useEffect(() => {
-    if (!accessCodeResult && pendingAutoVerificationRef.current) {
-      const data = pendingAutoVerificationRef.current;
-      setAccessCodeResult({
-        success: true,
-        classified: data.classifiedData,
-        message: 'Access code verified successfully from email link',
-      });
-      setVerifiedAccessCode(data.accessCode);
-
-      pendingAutoVerificationRef.current = null;
-    }
-  }, [accessCodeResult]);
-
-  useEffect(() => {
-    if (accessCodeResult && shouldNotifyVerificationRef.current) {
-      shouldNotifyVerificationRef.current = false;
-      onVerificationProcessed?.();
-    }
-  }, [accessCodeResult, onVerificationProcessed]);
 
   const computeAge = (birthDate: Date | string | null | undefined): number | null => {
     if (!birthDate) {
@@ -181,33 +152,38 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   };
 
   // Determine current user state
-  const userState: UserState = React.useMemo(() => {
+  const userState: UserState | 'pending' = React.useMemo(() => {
+    if (!authInitialized || authLoading) return 'pending';
     if (!user) return 'unauthenticated';
+    if (membershipLoading || isMember === null) return 'pending';
     if (isMember) return 'authenticated_member';
     return 'authenticated_non_member';
-  }, [user, isMember]);
+  }, [authInitialized, authLoading, user, isMember, membershipLoading]);
 
   // Handle access code verification
-  const handleAccessCodeSubmit = async (accessCode: string) => {
-    setIsVerifyingAccessCode(true);
-    setAccessCodeError(null);
+  const handleAccessCodeSubmit = useCallback(
+    async (accessCode: string) => {
+      setIsVerifyingAccessCode(true);
+      setAccessCodeError(null);
 
-    try {
-      const result = await accessCodeService.verifyAccessCode(accountId, accessCode);
-      setAccessCodeResult(result);
+      try {
+        const result = await accessCodeService.verifyAccessCode(accountId, accessCode);
+        setAccessCodeResult(result);
 
-      if (result.success) {
-        // Store the verified access code for later use in edit/delete operations
-        setVerifiedAccessCode(accessCode);
-      } else {
-        setAccessCodeError(result.message || 'Access code verification failed');
+        if (result.success) {
+          // Store the verified access code for later use in edit/delete operations
+          setVerifiedAccessCode(accessCode);
+        } else {
+          setAccessCodeError(result.message || 'Access code verification failed');
+        }
+      } catch (error) {
+        setAccessCodeError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      } finally {
+        setIsVerifyingAccessCode(false);
       }
-    } catch (error) {
-      setAccessCodeError(error instanceof Error ? error.message : 'An unexpected error occurred');
-    } finally {
-      setIsVerifyingAccessCode(false);
-    }
-  };
+    },
+    [accountId],
+  );
 
   // Handle access code cancellation
   const handleAccessCodeCancel = () => {
@@ -216,37 +192,41 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
     setVerifiedAccessCode(null);
   };
 
-  // Handle local delete for access code verified users
-  const handleAccessCodeDelete = async (id: string) => {
-    if (!verifiedAccessCode) {
-      setDeleteError('Access code not available');
-      return;
-    }
+  useEffect(() => {
+    if (!accessCodeResult && pendingAutoVerificationRef.current) {
+      const data = pendingAutoVerificationRef.current;
 
-    setDeleteLoading(true);
+      if (data?.classifiedData) {
+        setAccessCodeResult({
+          success: true,
+          classified: data.classifiedData,
+          message: 'Access code verified successfully from email link',
+        });
+        setVerifiedAccessCode(data.accessCode);
+      } else if (data?.accessCode) {
+        handleAccessCodeSubmit(data.accessCode);
+      }
+
+      pendingAutoVerificationRef.current = null;
+    }
+  }, [accessCodeResult, handleAccessCodeSubmit]);
+
+  useEffect(() => {
+    if (accessCodeResult && shouldNotifyVerificationRef.current) {
+      shouldNotifyVerificationRef.current = false;
+      onVerificationProcessed?.();
+    }
+  }, [accessCodeResult, onVerificationProcessed]);
+
+  const handleDeleteDialogSuccess = (event: DeleteTeamsWantedSuccessEvent) => {
+    setDeleteSuccess(event.message);
     setDeleteError(null);
 
-    try {
-      const result = await deleteTeamsWantedService(id, {
-        accessCode: verifiedAccessCode ?? undefined,
-      });
-
-      if (result.success) {
-        setDeleteSuccess(result.message ?? 'Teams Wanted deleted successfully!');
-        setDeleteDialogOpen(false);
-
-        setTimeout(() => {
-          setAccessCodeResult(null);
-          setVerifiedAccessCode(null);
-          setDeleteSuccess(null);
-        }, 2000);
-      } else {
-        const errorMessage = result.error ?? 'Failed to delete Teams Wanted';
-        setDeleteError(errorMessage);
-      }
-    } finally {
-      setDeleteLoading(false);
-    }
+    setTimeout(() => {
+      setAccessCodeResult(null);
+      setVerifiedAccessCode(null);
+      setDeleteSuccess(null);
+    }, 2000);
   };
 
   // Handle local edit for access code verified users
@@ -309,9 +289,54 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
     setDeleteDialogOpen(true);
   };
 
+  const renderAccessWidget = () => (
+    <WidgetShell
+      title="Access Your Own Ad"
+      subtitle="Access your existing Teams Wanted ad or create a new one."
+      accent="primary"
+      sx={{ maxWidth: 600, mx: 'auto' }}
+    >
+      <Stack spacing={2} mb={2}>
+        <Box>
+          <Button
+            variant="contained"
+            startIcon={<PersonAddIcon />}
+            onClick={() => {
+              onCreate?.();
+            }}
+          >
+            Create Teams Wanted Ad
+          </Button>
+        </Box>
+        <Typography variant="body2" color="text.secondary">
+          Enter your access code below to view and manage an existing ad.
+        </Typography>
+      </Stack>
+      {accessCodeResult?.success ? (
+        renderAccessCodeResult()
+      ) : (
+        <AccessCodeInput
+          accountId={accountId}
+          onSubmit={handleAccessCodeSubmit}
+          onCancel={handleAccessCodeCancel}
+          loading={isVerifyingAccessCode}
+          error={accessCodeError || undefined}
+          submitButtonText="View My Ad"
+        />
+      )}
+    </WidgetShell>
+  );
+
   // Render content based on user state
   const renderContent = () => {
     switch (userState) {
+      case 'pending':
+        return (
+          <Box textAlign="center" py={4}>
+            <CircularProgress />
+          </Box>
+        );
+
       case 'authenticated_member':
         return renderAuthenticatedMemberContent();
 
@@ -393,47 +418,37 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   const renderAuthenticatedNonMemberContent = () => {
     return (
       <Box>
-        <Paper sx={{ p: 3, mb: 3, backgroundColor: 'info.50' }}>
-          <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-            <InfoIcon color="info" />
-            <Typography variant="h6" color="info.main">
-              Join This Account
+        <WidgetShell
+          title="Join This Account"
+          subtitle="You are signed in but not a member of this account. Join to see all Teams Wanted ads and connect with team members."
+          accent="info"
+          sx={{ maxWidth: 600, mx: 'auto', mb: 3 }}
+        >
+          <Stack spacing={2}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <InfoIcon color="info" />
+              <Typography variant="body1" color="text.primary">
+                Unlock full access to Teams Wanted for this account.
+              </Typography>
+            </Stack>
+            <Typography variant="body2" color="text.secondary">
+              Joining lets you view all ads and connect with team members.
             </Typography>
+            <Box>
+              <Button
+                variant="contained"
+                startIcon={<PersonAddIcon />}
+                href={`/account/${accountId}/join`}
+              >
+                Join Account
+              </Button>
+            </Box>
           </Stack>
-          <Typography variant="body1" color="text.secondary" mb={2}>
-            You&apos;re signed in but not a member of this account. Join to see all Teams Wanted ads
-            and connect with team members.
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<PersonAddIcon />}
-            href={`/account/${accountId}/join`}
-          >
-            Join Account
-          </Button>
-        </Paper>
+        </WidgetShell>
 
         <Divider sx={{ my: 3 }} />
 
-        <Typography variant="h6" gutterBottom textAlign="center">
-          Access Your Own Ad
-        </Typography>
-        <Typography variant="body2" color="text.secondary" mb={3} textAlign="center">
-          If you have a Teams Wanted ad, enter your access code to view and manage it.
-        </Typography>
-
-        {accessCodeResult?.success ? (
-          renderAccessCodeResult()
-        ) : (
-          <AccessCodeInput
-            accountId={accountId}
-            onSubmit={handleAccessCodeSubmit}
-            onCancel={handleAccessCodeCancel}
-            loading={isVerifyingAccessCode}
-            error={accessCodeError || undefined}
-            submitButtonText="View My Ad"
-          />
-        )}
+        {renderAccessWidget()}
       </Box>
     );
   };
@@ -449,26 +464,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
         </Box>
         <Divider sx={{ my: 3 }} />
 
-        <Typography variant="h6" gutterBottom textAlign="center">
-          Access Your Own Ad
-        </Typography>
-        <Typography variant="body2" color="text.secondary" mb={3} textAlign="center">
-          If you have a Teams Wanted ad, enter your access code to view and manage it without
-          creating an account.
-        </Typography>
-
-        {accessCodeResult?.success ? (
-          renderAccessCodeResult()
-        ) : (
-          <AccessCodeInput
-            accountId={accountId}
-            onSubmit={handleAccessCodeSubmit}
-            onCancel={handleAccessCodeCancel}
-            loading={isVerifyingAccessCode}
-            error={accessCodeError || undefined}
-            submitButtonText="View My Ad"
-          />
-        )}
+        {renderAccessWidget()}
       </Box>
     );
   };
@@ -516,7 +512,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
               onDelete={handleLocalDelete} // Use local handler for access code users
               canEdit={() => true} // Owner can always edit their own ad
               canDelete={() => true} // Owner can always delete their own ad
-              isAuthenticated={true}
+              isAuthenticated
               accessCode={verifiedAccessCode || undefined} // Pass verified access code for contact info
             />
           </Box>
@@ -574,28 +570,15 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
       {/* Main Content */}
       {renderContent()}
 
-      {/* Delete Confirmation Dialog for Access Code Users */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete Teams Wanted Ad</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete your Teams Wanted ad? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button
-            onClick={() =>
-              handleAccessCodeDelete(accessCodeResult?.classified?.id?.toString() || '')
-            }
-            color="error"
-            variant="contained"
-            disabled={deleteLoading}
-          >
-            {deleteLoading ? 'Deleting...' : 'Delete Ad'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteTeamsWantedDialog
+        accountId={accountId}
+        open={deleteDialogOpen}
+        classified={accessCodeResult?.classified ?? null}
+        accessCode={verifiedAccessCode ?? undefined}
+        onClose={() => setDeleteDialogOpen(false)}
+        onSuccess={handleDeleteDialogSuccess}
+        onError={(message) => setDeleteError(message)}
+      />
 
       {/* Edit Dialog for Access Code Users */}
       <CreateTeamsWantedDialog

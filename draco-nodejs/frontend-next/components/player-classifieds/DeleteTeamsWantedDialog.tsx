@@ -1,40 +1,45 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Typography, Box, Chip, Alert } from '@mui/material';
+import React, { useMemo, useState } from 'react';
+import { Alert, Box, Chip, Typography } from '@mui/material';
 import { format } from 'date-fns';
-import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
-import { usePlayersWantedClassifieds } from '../../hooks/useClassifiedsService';
+import {
+  TeamsWantedOwnerClassifiedType,
+  TeamsWantedPublicClassifiedType,
+} from '@draco/shared-schemas';
+import { useTeamsWantedClassifieds } from '../../hooks/useClassifiedsService';
 import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
 
-export interface DeletePlayersWantedSuccessEvent {
+export interface DeleteTeamsWantedSuccessEvent {
   message: string;
   id: string;
 }
 
-interface DeletePlayersWantedDialogProps {
+interface DeleteTeamsWantedDialogProps {
   accountId: string;
   open: boolean;
-  classified: PlayersWantedClassifiedType | null;
+  classified: TeamsWantedPublicClassifiedType | TeamsWantedOwnerClassifiedType | null;
+  accessCode?: string;
   onClose: () => void;
-  onSuccess?: (event: DeletePlayersWantedSuccessEvent) => void;
+  onSuccess?: (event: DeleteTeamsWantedSuccessEvent) => void;
   onError?: (message: string) => void;
 }
 
-const DeletePlayersWantedDialog: React.FC<DeletePlayersWantedDialogProps> = ({
+const DeleteTeamsWantedDialog: React.FC<DeleteTeamsWantedDialogProps> = ({
   accountId,
   open,
   classified,
+  accessCode,
   onClose,
   onSuccess,
   onError,
 }) => {
   const {
-    deletePlayersWanted,
+    deleteTeamsWanted,
     loading: operationLoading,
     error: serviceError,
     resetError,
-  } = usePlayersWantedClassifieds(accountId);
+  } = useTeamsWantedClassifieds(accountId);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const combinedError = useMemo(() => localError ?? serviceError, [localError, serviceError]);
@@ -51,28 +56,33 @@ const DeletePlayersWantedDialog: React.FC<DeletePlayersWantedDialogProps> = ({
     setLocalError(null);
     resetError();
 
-    const result = await deletePlayersWanted(classified.id.toString());
+    const result = await deleteTeamsWanted(classified.id.toString(), {
+      accessCode,
+    });
 
     if (result.success) {
-      const successMessage = result.message ?? 'Players Wanted ad deleted successfully';
+      const successMessage = result.message ?? 'Teams Wanted ad deleted successfully';
       onSuccess?.({ message: successMessage, id: classified.id.toString() });
       handleClose();
       return;
     }
 
-    const message = result.error ?? 'Failed to delete Players Wanted ad';
+    const message = result.error ?? 'Failed to delete Teams Wanted ad';
     setLocalError(message);
     onError?.(message);
   };
 
   const createdDate = classified.dateCreated ? new Date(classified.dateCreated) : null;
-  const positionsNeeded = classified.positionsNeeded.split(',').map((pos) => pos.trim());
+  const positionsPlayed = (classified.positionsPlayed ?? '')
+    .split(',')
+    .map((position) => position.trim())
+    .filter((position) => position.length > 0);
 
   return (
     <ConfirmDeleteDialog
       open={open}
-      title="Delete Players Wanted Ad"
-      message="Are you sure you want to delete this Players Wanted ad?"
+      title="Delete Teams Wanted Ad"
+      message="Are you sure you want to delete this Teams Wanted ad?"
       content={
         <>
           {combinedError && (
@@ -101,7 +111,7 @@ const DeletePlayersWantedDialog: React.FC<DeletePlayersWantedDialogProps> = ({
             </Typography>
 
             <Typography variant="body2" sx={{ mb: 0.5 }}>
-              <strong>Team/Event:</strong> {classified.teamEventName}
+              <strong>Player:</strong> {classified.name}
             </Typography>
 
             <Typography variant="body2" sx={{ mb: 0.5 }}>
@@ -109,23 +119,24 @@ const DeletePlayersWantedDialog: React.FC<DeletePlayersWantedDialogProps> = ({
               {createdDate ? format(createdDate, 'MMMM d, yyyy') : 'Unknown'}
             </Typography>
 
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              <strong>Created by:</strong> {classified.creator.firstName}{' '}
-              {classified.creator.lastName}
-            </Typography>
-
-            {classified.description && (
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                <strong>Description:</strong> {classified.description}
+            {classified.age !== null && classified.age !== undefined ? (
+              <Typography variant="body2" sx={{ mb: 0.5 }}>
+                <strong>Age:</strong> {classified.age}
               </Typography>
-            )}
+            ) : null}
+
+            {classified.experience ? (
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <strong>Experience:</strong> {classified.experience}
+              </Typography>
+            ) : null}
 
             <Box sx={{ mb: 1 }}>
               <Typography variant="body2" sx={{ mb: 0.5 }}>
-                <strong>Positions Needed:</strong>
+                <strong>Positions Played:</strong>
               </Typography>
               <Box display="flex" flexWrap="wrap" gap={0.5}>
-                {positionsNeeded.map((position: string) => (
+                {positionsPlayed.map((position) => (
                   <Chip
                     key={position}
                     label={position}
@@ -153,4 +164,4 @@ const DeletePlayersWantedDialog: React.FC<DeletePlayersWantedDialogProps> = ({
   );
 };
 
-export default DeletePlayersWantedDialog;
+export default DeleteTeamsWantedDialog;

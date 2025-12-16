@@ -1868,7 +1868,7 @@ export type dbTeam = Prisma.teamsseasonGetPayload<{
 // Email repository DTOs
 export type dbCreateEmailInput = {
   account_id: bigint;
-  created_by_user_id: string;
+  created_by_user_id: string | null;
   subject: string;
   body_html: string;
   body_text: string;

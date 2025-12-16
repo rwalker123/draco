@@ -11,6 +11,51 @@ export class DateUtils {
    */
   private static readonly SENTINEL_DATE = '1900-01-01T00:00:00.000Z';
 
+  static formatMonthDayWithOrdinal(
+    date: Date | null | undefined,
+    timeZone?: string | null,
+  ): string | null {
+    if (!date) {
+      return null;
+    }
+
+    const tz = timeZone?.trim() || 'UTC';
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: 'numeric',
+        timeZone: tz,
+      }).formatToParts(date);
+
+      const month = parts.find((part) => part.type === 'month')?.value;
+      const dayRaw = parts.find((part) => part.type === 'day')?.value;
+      const day = dayRaw ? Number(dayRaw) : Number.NaN;
+
+      if (!month || Number.isNaN(day)) {
+        return null;
+      }
+
+      const suffix = (() => {
+        const mod100 = day % 100;
+        if (mod100 >= 11 && mod100 <= 13) return 'th';
+        switch (day % 10) {
+          case 1:
+            return 'st';
+          case 2:
+            return 'nd';
+          case 3:
+            return 'rd';
+          default:
+            return 'th';
+        }
+      })();
+
+      return `${month} ${day}${suffix}`;
+    } catch {
+      return null;
+    }
+  }
+
   /**
    * Convert database date to frontend-safe value
    * Returns null for sentinel dates (1900-01-01), ISO string for valid dates

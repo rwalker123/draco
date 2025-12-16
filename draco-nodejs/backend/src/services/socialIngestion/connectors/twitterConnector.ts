@@ -7,7 +7,7 @@ import {
 } from '../ingestionTypes.js';
 import type { SocialMediaAttachmentType } from '@draco/shared-schemas';
 import { deterministicUuid } from '../../../utils/deterministicUuid.js';
-import { fetchJson, HttpError } from '../../../utils/fetchJson.js';
+import { HttpError } from '../../../utils/fetchJson.js';
 import { ISocialContentRepository } from '../../../repositories/interfaces/ISocialContentRepository.js';
 import { SocialFeedCache } from './feedCache.js';
 
@@ -167,12 +167,10 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
     while (attempt < maxAttempts) {
       attempt += 1;
       try {
-        const response = await fetchJson<TwitterApiResponse>(query, {
-          headers: {
-            Authorization: `Bearer ${bearerToken as string}`,
-          },
-          timeoutMs: 8000,
-        });
+        const { body: response, headers } = await this.fetchTwitterJson<TwitterApiResponse>(
+          query,
+          bearerToken as string,
+        );
 
         if (!response.data?.length) {
           return [];
@@ -184,7 +182,7 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
 
         const userMap = new Map(response.includes?.users?.map((user) => [user.id, user]) ?? []);
 
-        return response.data.map((tweet) => {
+        const records = response.data.map((tweet) => {
           const mediaEntries =
             (tweet.attachments?.media_keys
               ?.map((key) => mediaMap.get(key))
@@ -215,6 +213,19 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
               : undefined,
           };
         });
+
+        const remaining = this.parseNumberHeader(headers['x-rate-limit-remaining']);
+        const resetSeconds = this.parseNumberHeader(headers['x-rate-limit-reset']);
+        const resetMs = resetSeconds ? resetSeconds * 1000 : null;
+        if (remaining !== null && remaining <= 0 && resetMs) {
+          this.rateLimitUntilByHandle.set(handle, resetMs);
+          console.warn('[twitter] Applied post-success rate limit window', {
+            handle,
+            retryAfter: new Date(resetMs).toISOString(),
+          });
+        }
+
+        return records;
       } catch (error) {
         const status = (error as { status?: number }).status;
         const retryAfter = this.computeRetryAfter(error);
@@ -299,5 +310,48 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
     }
     const num = Number(value);
     return Number.isFinite(num) ? num : null;
+  }
+
+  private async fetchTwitterJson<T>(
+    input: string | URL,
+    bearerToken: string,
+  ): Promise<{ body: T; headers: Record<string, string> }> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(input, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${bearerToken}`,
+        },
+        signal: controller.signal,
+      });
+
+      const headers: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headers[key.toLowerCase()] = value;
+      });
+
+      if (!response.ok) {
+        const message = await response.text().catch(() => response.statusText);
+        throw new HttpError(
+          `Request to ${typeof input === 'string' ? input : input.toString()} failed with status ${
+            response.status
+          }: ${message}`,
+          response.status,
+          message,
+          headers,
+        );
+      }
+
+      if (response.status === 204) {
+        return { body: {} as T, headers };
+      }
+
+      return { body: (await response.json()) as T, headers };
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 }

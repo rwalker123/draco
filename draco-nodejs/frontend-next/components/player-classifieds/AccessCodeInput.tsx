@@ -152,8 +152,8 @@ const AccessCodeInput: React.FC<IAccessCodeInputProps> = ({
     >
       {/* Header */}
       <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-        <LockIcon color="primary" />
-        <Typography variant="h6" component="h3">
+        <LockIcon sx={{ color: 'text.primary' }} />
+        <Typography variant="h6" component="h3" color="text.primary">
           Access Code Verification
         </Typography>
       </Stack>

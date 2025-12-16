@@ -5,6 +5,8 @@ import {
   UpdateGameResultsType,
   UpsertGameRecapType,
   GameType,
+  EmailSendType,
+  AccountSettingKey,
 } from '@draco/shared-schemas';
 import type { PagingType } from '@draco/shared-schemas';
 import {
@@ -28,6 +30,15 @@ import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { TwitterIntegrationService } from './twitterIntegrationService.js';
 import { BlueskyIntegrationService } from './blueskyIntegrationService.js';
 import { FacebookIntegrationService } from './facebookIntegrationService.js';
+import { AccountSettingsService } from './accountSettingsService.js';
+import { EmailService } from './emailService.js';
+import { RosterService } from './rosterService.js';
+import { AccountsService } from './accountsService.js';
+import { getFrontendBaseUrlOrFallback } from '../utils/frontendBaseUrl.js';
+import { getGameStatusText } from '../utils/gameStatus.js';
+import { GameStatus } from '../types/gameEnums.js';
+import { DateUtils } from '../utils/dateUtils.js';
+import { sanitizePlainText } from '../utils/htmlSanitizer.js';
 
 interface GameListFilters {
   startDate?: Date;
@@ -42,6 +53,10 @@ export class ScheduleService {
   private readonly twitterIntegrationService: TwitterIntegrationService;
   private readonly blueskyIntegrationService: BlueskyIntegrationService;
   private readonly facebookIntegrationService: FacebookIntegrationService;
+  private readonly accountSettingsService: AccountSettingsService;
+  private readonly emailService: EmailService;
+  private readonly rosterService: RosterService;
+  private readonly accountsService: AccountsService;
 
   constructor() {
     this.scheduleRepository = RepositoryFactory.getScheduleRepository();
@@ -49,12 +64,17 @@ export class ScheduleService {
     this.twitterIntegrationService = ServiceFactory.getTwitterIntegrationService();
     this.blueskyIntegrationService = ServiceFactory.getBlueskyIntegrationService();
     this.facebookIntegrationService = ServiceFactory.getFacebookIntegrationService();
+    this.accountSettingsService = ServiceFactory.getAccountSettingsService();
+    this.emailService = ServiceFactory.getEmailService();
+    this.rosterService = ServiceFactory.getRosterService();
+    this.accountsService = ServiceFactory.getAccountsService();
   }
 
   async updateGameResults(
     accountId: bigint,
     gameId: bigint,
     payload: UpdateGameResultsType,
+    userId: string,
   ): Promise<GameResultType> {
     await this.ensureGameInAccount(gameId, accountId);
 
@@ -67,6 +87,7 @@ export class ScheduleService {
     const updatedGame = await this.scheduleRepository.updateGameResults(gameId, resultUpdateData);
 
     void this.syncGameResultToSocial(accountId, updatedGame);
+    void this.syncGameResultToEmail(accountId, updatedGame, userId);
 
     return ScheduleResponseFormatter.formatGameResult(updatedGame);
   }
@@ -129,6 +150,201 @@ export class ScheduleService {
         gameId: game.id.toString(),
         error,
       });
+    }
+  }
+
+  private async syncGameResultToEmail(
+    accountId: bigint,
+    game: dbScheduleGameWithDetails,
+    userId: string,
+  ): Promise<void> {
+    try {
+      const isEnabled = await this.isSettingEnabled(accountId, 'EmailGameResultsToTeams');
+      if (!isEnabled) {
+        return;
+      }
+
+      const seasonId = game.leagueseason?.season?.id;
+      if (!seasonId) {
+        return;
+      }
+
+      const teamIds: bigint[] = [];
+      if (game.hteamid !== undefined && game.hteamid !== null) {
+        teamIds.push(game.hteamid);
+      }
+      if (game.vteamid !== undefined && game.vteamid !== null) {
+        teamIds.push(game.vteamid);
+      }
+
+      if (!teamIds.length) {
+        return;
+      }
+
+      const teamNames = await this.scheduleRepository.getTeamNames(teamIds);
+      const recipients = await this.resolveActiveRosterRecipients(teamIds, seasonId, accountId);
+
+      if (!recipients.length) {
+        return;
+      }
+
+      const accountHeader = await this.accountsService.getAccountHeader(accountId);
+      const baseUrl = getFrontendBaseUrlOrFallback();
+      const homeTeamName = (game.hteamid && teamNames.get(game.hteamid.toString())) || 'Home Team';
+      const visitorTeamName =
+        (game.vteamid && teamNames.get(game.vteamid.toString())) || 'Visitor Team';
+      const scoreLine = `${homeTeamName} ${game.hscore ?? '-'} - ${game.vscore ?? '-'} ${visitorTeamName}`;
+      const statusLine = getGameStatusText(Number(game.gamestatus ?? GameStatus.Scheduled));
+      const gameDate = game.gamedate
+        ? (DateUtils.formatMonthDayWithOrdinal(game.gamedate, 'UTC') ?? undefined)
+        : undefined;
+      const scheduleUrl = `${baseUrl}/account/${accountHeader.id}/schedule`;
+
+      const subject = `${accountHeader.name} - ${scoreLine} (${statusLine})`;
+      const body = this.buildGameResultEmailHtml({
+        accountName: accountHeader.name,
+        headerLine: `${homeTeamName} vs ${visitorTeamName}`,
+        statusLine,
+        scoreLine,
+        gameDate,
+        scheduleUrl,
+      });
+
+      const emailRequest: EmailSendType = {
+        subject,
+        body,
+        recipients: {
+          contacts: recipients.map((recipient) => recipient.contactId.toString()),
+        },
+      };
+
+      await this.emailService.composeAndSendEmailFromUser(accountId, userId, emailRequest, {
+        isSystemEmail: true,
+      });
+    } catch (error) {
+      console.error('[email] Failed to send game result email', {
+        accountId: accountId.toString(),
+        gameId: game.id.toString(),
+        error,
+      });
+    }
+  }
+
+  private buildGameResultEmailHtml(options: {
+    accountName: string;
+    headerLine: string;
+    statusLine: string;
+    scoreLine: string;
+    gameDate?: string;
+    scheduleUrl: string;
+  }): string {
+    const { accountName, headerLine, statusLine, scoreLine, gameDate, scheduleUrl } = options;
+
+    const safeAccountName = sanitizePlainText(accountName);
+    const safeHeaderLine = sanitizePlainText(headerLine);
+    const safeStatusLine = sanitizePlainText(statusLine);
+    const safeScoreLine = sanitizePlainText(scoreLine);
+    const safeGameDate = gameDate ? sanitizePlainText(gameDate) : '';
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Game Status Update</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #007bff; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background-color: #f8f9fa; }
+          .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>${safeAccountName}</h1>
+          </div>
+          <div class="content">
+            <h2>Game Status Update</h2>
+            <p>${safeHeaderLine}</p>
+            <h3>${safeStatusLine}</h3>
+            <p><strong>${safeScoreLine}</strong></p>
+            ${safeGameDate ? `<p>${safeGameDate}</p>` : ''}
+            <p>Use the button below to view the full schedule.</p>
+            <a href="${scheduleUrl}" class="button">View Schedule</a>
+            <p>If the button doesn't work, copy and paste this link into your browser:</p>
+            <p>${scheduleUrl}</p>
+          </div>
+          <div class="footer">
+            <p>This is an automated message from ezRecSports.com. Please do not reply to this email.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private async resolveActiveRosterRecipients(
+    teamIds: bigint[],
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<
+    Array<{
+      contactId: bigint;
+      emailAddress: string;
+      contactName: string;
+    }>
+  > {
+    const recipients = new Map<
+      string,
+      { contactId: bigint; emailAddress: string; contactName: string }
+    >();
+
+    for (const teamId of teamIds) {
+      const roster = await this.rosterService.getTeamRosterMembers(teamId, seasonId, accountId);
+      roster.rosterMembers
+        .filter((member) => !member.inactive)
+        .forEach((member) => {
+          const contactId = member.player.contact.id;
+          const email = member.player.contact.email;
+          if (!email || !contactId) {
+            return;
+          }
+
+          const contactName =
+            [member.player.contact.firstName, member.player.contact.lastName]
+              .filter(Boolean)
+              .join(' ')
+              .trim() || 'Team member';
+
+          const contactKey = contactId.toString();
+          if (!recipients.has(contactKey)) {
+            recipients.set(contactKey, {
+              contactId: BigInt(contactId),
+              emailAddress: email,
+              contactName,
+            });
+          }
+        });
+    }
+
+    return Array.from(recipients.values());
+  }
+
+  private async isSettingEnabled(accountId: bigint, key: AccountSettingKey): Promise<boolean> {
+    try {
+      const settings = await this.accountSettingsService.getAccountSettings(accountId);
+      const match = settings.find((setting) => setting.definition.key === key);
+      return Boolean(match?.value);
+    } catch (error) {
+      console.error('[settings] Failed to resolve account setting', {
+        accountId: accountId.toString(),
+        key,
+        error,
+      });
+      return false;
     }
   }
 

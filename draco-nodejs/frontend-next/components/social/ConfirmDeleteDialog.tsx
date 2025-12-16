@@ -50,7 +50,7 @@ const ConfirmDeleteDialog: React.FC<ConfirmDeleteDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth {...dialogProps}>
-      {title ? <DialogTitle>{title}</DialogTitle> : null}
+      {title ? <DialogTitle sx={{ color: 'text.primary' }}>{title}</DialogTitle> : null}
       {message || content ? (
         <DialogContent {...dialogContentProps}>
           {message ? <DialogContentText>{message}</DialogContentText> : null}
