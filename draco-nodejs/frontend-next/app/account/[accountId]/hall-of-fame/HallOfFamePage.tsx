@@ -477,13 +477,13 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
                     return (
                       <Paper
                         key={hofClass.year}
-                        ref={(node) => {
+                        ref={(node: HTMLDivElement | null) => {
                           classCardRefs.current[hofClass.year] = node;
                         }}
                         role="button"
                         tabIndex={0}
                         onClick={() => handleSelectClass(index)}
-                        onKeyDown={(event) => {
+                        onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
                           if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault();
                             handleSelectClass(index);
@@ -618,7 +618,7 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
                       </Typography>
                       <TextField
                         value={searchTerm}
-                        onChange={(event) => {
+                        onChange={(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
                           setSearchTerm(event.target.value);
                           if (searchError) {
                             setSearchError(null);

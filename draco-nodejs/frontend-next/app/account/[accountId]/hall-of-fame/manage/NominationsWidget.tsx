@@ -442,7 +442,9 @@ const NominationEditDialog: React.FC<NominationEditDialogProps> = ({
                   label="Phone Number"
                   required
                   value={field.value ?? ''}
-                  onChange={(event) => field.onChange(formatPhoneInput(event.target.value))}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                    field.onChange(formatPhoneInput(event.target.value))
+                  }
                   onBlur={field.onBlur}
                   inputProps={{ inputMode: 'tel' }}
                   error={Boolean(errors.phoneNumber)}
