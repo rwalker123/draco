@@ -12,6 +12,7 @@ import type {
 } from '@draco/shared-schemas';
 import crypto from 'node:crypto';
 import { ValidationError } from '../utils/customErrors.js';
+import { DateUtils } from '../utils/dateUtils.js';
 
 interface Interval {
   start: Date;
@@ -91,9 +92,11 @@ export class SchedulerEngineService {
       problemSpec.umpires,
       problemSpec.season,
     );
+    const umpireDailyLimitById = this.buildUmpireDailyLimitIndex(problemSpec.umpires);
+    const fieldCapacityById = this.buildFieldCapacityIndex(problemSpec.fields);
+    const fieldLightsById = this.buildFieldLightsIndex(problemSpec.fields);
     const teamBlackouts = this.groupTeamBlackouts(problemSpec.teamBlackouts);
 
-    const slotIndex = this.buildFieldSlotIndex(problemSpec.fieldSlots);
     const teamSchedule: Map<string, Interval[]> = new Map();
     const fieldSchedule: Map<string, Interval[]> = new Map();
     const umpireSchedule: Map<string, Interval[]> = new Map();
@@ -127,6 +130,9 @@ export class SchedulerEngineService {
         hard,
         availability,
         teamBlackouts,
+        umpireDailyLimitById,
+        fieldCapacityById,
+        fieldLightsById,
         {
           teamSchedule,
           fieldSchedule,
@@ -134,7 +140,6 @@ export class SchedulerEngineService {
           teamDailyCounts,
           umpireDailyCounts,
         },
-        slotIndex,
       );
 
       if (assignment) {
@@ -225,6 +230,133 @@ export class SchedulerEngineService {
     if (seasonStart > seasonEnd) {
       throw new ValidationError('Season startDate must be before endDate');
     }
+
+    this.ensureValidIntervals(problemSpec);
+    this.ensureReferentialIntegrity(problemSpec);
+  }
+
+  private ensureValidIntervals(problemSpec: SchedulerProblemSpec): void {
+    for (const game of problemSpec.games) {
+      if (game.earliestStart && game.latestEnd) {
+        const earliest = new Date(game.earliestStart);
+        const latest = new Date(game.latestEnd);
+        if (earliest > latest) {
+          throw new ValidationError(`Game ${game.id} earliestStart must be before latestEnd`);
+        }
+      }
+    }
+
+    for (const slot of problemSpec.fieldSlots) {
+      const start = new Date(slot.startTime);
+      const end = new Date(slot.endTime);
+      if (start >= end) {
+        throw new ValidationError(`Field slot ${slot.id} startTime must be before endTime`);
+      }
+    }
+
+    for (const blackout of problemSpec.teamBlackouts ?? []) {
+      const start = new Date(blackout.startTime);
+      const end = new Date(blackout.endTime);
+      if (start >= end) {
+        throw new ValidationError(
+          `Team blackout ${blackout.teamSeasonId} startTime must be before endTime`,
+        );
+      }
+    }
+
+    for (const availability of problemSpec.umpireAvailability ?? []) {
+      const start = new Date(availability.startTime);
+      const end = new Date(availability.endTime);
+      if (start >= end) {
+        throw new ValidationError(
+          `Umpire availability ${availability.umpireId} startTime must be before endTime`,
+        );
+      }
+    }
+  }
+
+  private ensureReferentialIntegrity(problemSpec: SchedulerProblemSpec): void {
+    const teamSeasonIds = problemSpec.teams.map((team) => team.teamSeasonId);
+    const fieldIds = problemSpec.fields.map((field) => field.id);
+    const umpireIds = problemSpec.umpires.map((umpire) => umpire.id);
+
+    const duplicateTeamSeasonIds = this.collectDuplicates(teamSeasonIds);
+    if (duplicateTeamSeasonIds.length) {
+      throw new ValidationError(
+        `Duplicate teamSeasonId values: ${duplicateTeamSeasonIds.join(', ')}`,
+      );
+    }
+
+    const duplicateFieldIds = this.collectDuplicates(fieldIds);
+    if (duplicateFieldIds.length) {
+      throw new ValidationError(`Duplicate fieldId values: ${duplicateFieldIds.join(', ')}`);
+    }
+
+    const duplicateUmpireIds = this.collectDuplicates(umpireIds);
+    if (duplicateUmpireIds.length) {
+      throw new ValidationError(`Duplicate umpireId values: ${duplicateUmpireIds.join(', ')}`);
+    }
+
+    const teamSeasonIdSet = new Set(teamSeasonIds);
+    const fieldIdSet = new Set(fieldIds);
+    const umpireIdSet = new Set(umpireIds);
+
+    for (const game of problemSpec.games) {
+      if (!teamSeasonIdSet.has(game.homeTeamSeasonId)) {
+        throw new ValidationError(
+          `Unknown homeTeamSeasonId for game ${game.id}: ${game.homeTeamSeasonId}`,
+        );
+      }
+      if (!teamSeasonIdSet.has(game.visitorTeamSeasonId)) {
+        throw new ValidationError(
+          `Unknown visitorTeamSeasonId for game ${game.id}: ${game.visitorTeamSeasonId}`,
+        );
+      }
+      if (game.homeTeamSeasonId === game.visitorTeamSeasonId) {
+        throw new ValidationError(`Game ${game.id} must reference two different teams`);
+      }
+
+      for (const preferredFieldId of game.preferredFieldIds ?? []) {
+        if (!fieldIdSet.has(preferredFieldId)) {
+          throw new ValidationError(
+            `Unknown preferredFieldId for game ${game.id}: ${preferredFieldId}`,
+          );
+        }
+      }
+    }
+
+    for (const slot of problemSpec.fieldSlots) {
+      if (!fieldIdSet.has(slot.fieldId)) {
+        throw new ValidationError(`Unknown fieldId for field slot ${slot.id}: ${slot.fieldId}`);
+      }
+    }
+
+    for (const blackout of problemSpec.teamBlackouts ?? []) {
+      if (!teamSeasonIdSet.has(blackout.teamSeasonId)) {
+        throw new ValidationError(`Unknown teamSeasonId for blackout: ${blackout.teamSeasonId}`);
+      }
+    }
+
+    for (const availability of problemSpec.umpireAvailability ?? []) {
+      if (!umpireIdSet.has(availability.umpireId)) {
+        throw new ValidationError(
+          `Unknown umpireId for umpire availability: ${availability.umpireId}`,
+        );
+      }
+    }
+  }
+
+  private collectDuplicates(values: string[]): string[] {
+    const seen = new Set<string>();
+    const duplicates = new Set<string>();
+    for (const value of values) {
+      if (seen.has(value)) {
+        duplicates.add(value);
+      } else {
+        seen.add(value);
+      }
+    }
+    return [...duplicates].sort((a, b) => a.localeCompare(b));
   }
 
   private resolveGameDuration(
@@ -254,16 +386,6 @@ export class SchedulerEngineService {
     return baseDuration;
   }
 
-  private buildFieldSlotIndex(fieldSlots: SchedulerFieldSlot[]): Map<string, SchedulerFieldSlot[]> {
-    const index = new Map<string, SchedulerFieldSlot[]>();
-    for (const slot of fieldSlots) {
-      const list = index.get(slot.fieldId) ?? [];
-      list.push(slot);
-      index.set(slot.fieldId, list);
-    }
-    return index;
-  }
-
   private groupUmpireAvailability(
     availability: SchedulerUmpireAvailability[] | undefined,
     umpires: Array<{ id: string }>,
@@ -275,8 +397,8 @@ export class SchedulerEngineService {
         ? availability
         : umpires.map((umpire) => ({
             umpireId: umpire.id,
-            startTime: season.startDate,
-            endTime: season.endDate,
+            startTime: DateUtils.normalizeDateOnlyToUtcDayStart(season.startDate),
+            endTime: DateUtils.normalizeDateOnlyToUtcDayEnd(season.endDate),
           }));
 
     windows.forEach((slot) => {
@@ -285,6 +407,41 @@ export class SchedulerEngineService {
       list.push(parsed);
       map.set(slot.umpireId, list);
     });
+    return map;
+  }
+
+  private buildUmpireDailyLimitIndex(
+    umpires: Array<{ id: string; maxGamesPerDay?: number }>,
+  ): Map<string, number> {
+    const map = new Map<string, number>();
+    for (const umpire of umpires) {
+      if (umpire.maxGamesPerDay !== undefined) {
+        map.set(umpire.id, umpire.maxGamesPerDay);
+      }
+    }
+    return map;
+  }
+
+  private buildFieldCapacityIndex(
+    fields: Array<{ id: string; properties?: { maxParallelGames?: number } }>,
+  ): Map<string, number> {
+    const map = new Map<string, number>();
+    for (const field of fields) {
+      const capacity = field.properties?.maxParallelGames;
+      if (capacity !== undefined && Number.isFinite(capacity)) {
+        map.set(field.id, Math.max(1, Math.floor(capacity)));
+      }
+    }
+    return map;
+  }
+
+  private buildFieldLightsIndex(
+    fields: Array<{ id: string; properties?: { hasLights?: boolean } }>,
+  ): Map<string, boolean> {
+    const map = new Map<string, boolean>();
+    for (const field of fields) {
+      map.set(field.id, field.properties?.hasLights === true);
+    }
     return map;
   }
 
@@ -316,6 +473,9 @@ export class SchedulerEngineService {
     constraints: SchedulerHardConstraints,
     availability: Map<string, Interval[]>,
     teamBlackouts: Map<string, Interval[]>,
+    umpireDailyLimitById: Map<string, number>,
+    fieldCapacityById: Map<string, number>,
+    fieldLightsById: Map<string, boolean>,
     schedules: {
       teamSchedule: Map<string, Interval[]>;
       fieldSchedule: Map<string, Interval[]>;
@@ -323,143 +483,187 @@ export class SchedulerEngineService {
       teamDailyCounts: Map<string, Map<string, number>>;
       umpireDailyCounts: Map<string, Map<string, number>>;
     },
-    slotIndex: Map<string, SchedulerFieldSlot[]>,
   ): SchedulerAssignment | undefined {
     const preferredFields = candidate.game.preferredFieldIds ?? [];
-    const slotsToEvaluate = preferredFields.length
-      ? preferredFields.flatMap((fieldId) => slotIndex.get(fieldId) ?? [])
-      : sortedSlots;
+    const preferredFieldSet = preferredFields.length ? new Set(preferredFields) : undefined;
+    const passes = preferredFieldSet
+      ? [
+          sortedSlots.filter((slot) => preferredFieldSet.has(slot.fieldId)),
+          sortedSlots.filter((slot) => !preferredFieldSet.has(slot.fieldId)),
+        ]
+      : [sortedSlots];
 
-    for (const slot of slotsToEvaluate) {
-      const start = new Date(slot.startTime);
-      const end = new Date(slot.endTime);
+    for (const slots of passes) {
+      for (const slot of slots) {
+        const start = new Date(slot.startTime);
+        const end = new Date(slot.endTime);
 
-      if (!this.slotWithinGameWindow(candidate.game, start, end)) {
-        continue;
-      }
+        const durationEnd = new Date(start.getTime() + candidate.durationMinutes * 60000);
+        if (durationEnd > end) {
+          continue;
+        }
 
-      const durationEnd = new Date(start.getTime() + candidate.durationMinutes * 60000);
-      if (durationEnd > end) {
-        continue;
-      }
+        if (!this.slotWithinGameWindow(candidate.game, start, durationEnd)) {
+          continue;
+        }
 
-      if (
-        constraints.respectTeamBlackouts &&
-        this.intersectsBlackout(candidate.game, start, durationEnd, teamBlackouts)
-      ) {
-        continue;
-      }
+        if (
+          constraints.respectTeamBlackouts &&
+          this.intersectsBlackout(candidate.game, start, durationEnd, teamBlackouts)
+        ) {
+          continue;
+        }
 
-      if (
-        constraints.noFieldOverlap &&
-        this.hasConflict(slot.fieldId, start, durationEnd, schedules.fieldSchedule)
-      ) {
-        continue;
-      }
+        if (this.violatesLightsRequirement(slot.fieldId, start, constraints, fieldLightsById)) {
+          continue;
+        }
 
-      if (
-        constraints.noTeamOverlap &&
-        (this.hasConflict(
+        if (
+          constraints.noFieldOverlap &&
+          this.hasFieldCapacityConflict(
+            slot.fieldId,
+            start,
+            durationEnd,
+            schedules.fieldSchedule,
+            fieldCapacityById.get(slot.fieldId) ?? 1,
+          )
+        ) {
+          continue;
+        }
+
+        if (
+          constraints.noTeamOverlap &&
+          (this.hasConflict(
+            candidate.game.homeTeamSeasonId,
+            start,
+            durationEnd,
+            schedules.teamSchedule,
+          ) ||
+            this.hasConflict(
+              candidate.game.visitorTeamSeasonId,
+              start,
+              durationEnd,
+              schedules.teamSchedule,
+            ))
+        ) {
+          continue;
+        }
+
+        const umpireIds = this.selectUmpires(
+          candidate.game,
+          start,
+          durationEnd,
+          constraints,
+          availability,
+          umpireDailyLimitById,
+          schedules.umpireSchedule,
+          schedules.umpireDailyCounts,
+        );
+
+        if (!umpireIds) {
+          continue;
+        }
+
+        if (
+          constraints.maxGamesPerTeamPerDay !== undefined &&
+          !this.withinDailyLimit(
+            candidate.game.homeTeamSeasonId,
+            start,
+            constraints.maxGamesPerTeamPerDay,
+            schedules.teamDailyCounts,
+          )
+        ) {
+          continue;
+        }
+
+        if (
+          constraints.maxGamesPerTeamPerDay !== undefined &&
+          !this.withinDailyLimit(
+            candidate.game.visitorTeamSeasonId,
+            start,
+            constraints.maxGamesPerTeamPerDay,
+            schedules.teamDailyCounts,
+          )
+        ) {
+          continue;
+        }
+
+        this.addBooking(slot.fieldId, start, durationEnd, schedules.fieldSchedule);
+        this.addBooking(
           candidate.game.homeTeamSeasonId,
           start,
           durationEnd,
           schedules.teamSchedule,
-        ) ||
-          this.hasConflict(
-            candidate.game.visitorTeamSeasonId,
-            start,
-            durationEnd,
-            schedules.teamSchedule,
-          ))
-      ) {
-        continue;
-      }
-
-      const umpireIds = this.selectUmpires(
-        candidate.game,
-        start,
-        durationEnd,
-        constraints,
-        availability,
-        schedules.umpireSchedule,
-        schedules.umpireDailyCounts,
-      );
-
-      if (!umpireIds) {
-        continue;
-      }
-
-      if (
-        constraints.maxGamesPerTeamPerDay !== undefined &&
-        !this.withinDailyLimit(
-          candidate.game.homeTeamSeasonId,
-          start,
-          constraints.maxGamesPerTeamPerDay,
-          schedules.teamDailyCounts,
-        )
-      ) {
-        continue;
-      }
-
-      if (
-        constraints.maxGamesPerTeamPerDay !== undefined &&
-        !this.withinDailyLimit(
+        );
+        this.addBooking(
           candidate.game.visitorTeamSeasonId,
           start,
-          constraints.maxGamesPerTeamPerDay,
+          durationEnd,
+          schedules.teamSchedule,
+        );
+        this.incrementDailyCount(candidate.game.homeTeamSeasonId, start, schedules.teamDailyCounts);
+        this.incrementDailyCount(
+          candidate.game.visitorTeamSeasonId,
+          start,
           schedules.teamDailyCounts,
-        )
-      ) {
-        continue;
+        );
+
+        for (const umpireId of umpireIds) {
+          this.addBooking(umpireId, start, durationEnd, schedules.umpireSchedule);
+          this.incrementDailyCount(umpireId, start, schedules.umpireDailyCounts);
+        }
+
+        return {
+          gameId: candidate.game.id,
+          fieldId: slot.fieldId,
+          startTime: start.toISOString(),
+          endTime: durationEnd.toISOString(),
+          umpireIds,
+        };
       }
-
-      this.addBooking(slot.fieldId, start, durationEnd, schedules.fieldSchedule);
-      this.addBooking(candidate.game.homeTeamSeasonId, start, durationEnd, schedules.teamSchedule);
-      this.addBooking(
-        candidate.game.visitorTeamSeasonId,
-        start,
-        durationEnd,
-        schedules.teamSchedule,
-      );
-      this.incrementDailyCount(candidate.game.homeTeamSeasonId, start, schedules.teamDailyCounts);
-      this.incrementDailyCount(
-        candidate.game.visitorTeamSeasonId,
-        start,
-        schedules.teamDailyCounts,
-      );
-
-      for (const umpireId of umpireIds) {
-        this.addBooking(umpireId, start, durationEnd, schedules.umpireSchedule);
-        this.incrementDailyCount(umpireId, start, schedules.umpireDailyCounts);
-      }
-
-      return {
-        gameId: candidate.game.id,
-        fieldId: slot.fieldId,
-        startTime: start.toISOString(),
-        endTime: durationEnd.toISOString(),
-        umpireIds,
-      };
     }
 
     return undefined;
   }
 
+  private violatesLightsRequirement(
+    fieldId: string,
+    slotStart: Date,
+    constraints: SchedulerHardConstraints,
+    fieldLightsById: Map<string, boolean>,
+  ): boolean {
+    const rule = constraints.requireLightsAfter;
+    if (!rule?.enabled) {
+      return false;
+    }
+
+    const hour = DateUtils.getHourInTimeZone(slotStart, rule.timeZone);
+    if (hour === null) {
+      throw new ValidationError('Invalid timeZone for requireLightsAfter constraint');
+    }
+
+    if (hour < rule.startHourLocal) {
+      return false;
+    }
+
+    return fieldLightsById.get(fieldId) !== true;
+  }
+
   private slotWithinGameWindow(
     game: SchedulerGameRequest,
-    slotStart: Date,
-    slotEnd: Date,
+    gameStart: Date,
+    gameEnd: Date,
   ): boolean {
     if (game.earliestStart) {
       const earliest = new Date(game.earliestStart);
-      if (slotStart < earliest) {
+      if (gameStart < earliest) {
         return false;
       }
     }
 
     if (game.latestEnd) {
       const latest = new Date(game.latestEnd);
-      if (slotEnd > latest) {
+      if (gameEnd > latest) {
         return false;
       }
     }
@@ -489,6 +693,7 @@ export class SchedulerEngineService {
     end: Date,
     constraints: SchedulerHardConstraints,
     availability: Map<string, Interval[]>,
+    umpireDailyLimitById: Map<string, number>,
     umpireSchedule: Map<string, Interval[]>,
     umpireDailyCounts: Map<string, Map<string, number>>,
   ): string[] | undefined {
@@ -510,7 +715,12 @@ export class SchedulerEngineService {
         continue;
       }
 
-      const maxGamesPerDay = constraints.maxGamesPerUmpirePerDay;
+      const perUmpireMax = umpireDailyLimitById.get(umpireId);
+      const globalMax = constraints.maxGamesPerUmpirePerDay;
+      const maxGamesPerDay =
+        globalMax !== undefined && perUmpireMax !== undefined
+          ? Math.min(globalMax, perUmpireMax)
+          : (globalMax ?? perUmpireMax);
       if (
         maxGamesPerDay !== undefined &&
         !this.withinDailyLimit(umpireId, start, maxGamesPerDay, umpireDailyCounts)
@@ -537,6 +747,22 @@ export class SchedulerEngineService {
     return bookings.some((existing) => this.overlaps(existing, { start, end }));
   }
 
+  private hasFieldCapacityConflict(
+    fieldId: string,
+    start: Date,
+    end: Date,
+    schedule: Map<string, Interval[]>,
+    capacity: number,
+  ): boolean {
+    const normalizedCapacity = Math.max(1, Math.floor(capacity));
+    const bookings = schedule.get(fieldId) ?? [];
+    const overlapping = bookings.reduce((count, existing) => {
+      return this.overlaps(existing, { start, end }) ? count + 1 : count;
+    }, 0);
+
+    return overlapping >= normalizedCapacity;
+  }
+
   private overlaps(a: Interval, b: Interval): boolean {
     return a.start < b.end && b.start < a.end;
   }
@@ -556,7 +782,7 @@ export class SchedulerEngineService {
     date: Date,
     counts: Map<string, Map<string, number>>,
   ): void {
-    const dayKey = date.toISOString().slice(0, 10);
+    const dayKey = this.formatUtcDayKey(date);
     const current = counts.get(key) ?? new Map<string, number>();
     current.set(dayKey, (current.get(dayKey) ?? 0) + 1);
     counts.set(key, current);
@@ -568,8 +794,19 @@ export class SchedulerEngineService {
     maxPerDay: number,
     counts: Map<string, Map<string, number>>,
   ): boolean {
-    const dayKey = date.toISOString().slice(0, 10);
+    const dayKey = this.formatUtcDayKey(date);
     const existing = counts.get(key)?.get(dayKey) ?? 0;
     return existing < maxPerDay;
+  }
+
+  /**
+   * Daily limits are computed in UTC to match the scheduler's ISO-8601 timestamps and other UTC-based logic
+   * (e.g., `getUTCDay()` usage in duration selection).
+   */
+  private formatUtcDayKey(date: Date): string {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

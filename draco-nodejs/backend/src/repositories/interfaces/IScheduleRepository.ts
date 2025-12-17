@@ -53,6 +53,38 @@ export interface IScheduleRepository extends IBaseRepository<leagueschedule> {
     leagueSeasonId: bigint,
     excludeGameId?: bigint,
   ): Promise<leagueschedule | null>;
+  countFieldBookingsAtTime(
+    fieldId: bigint,
+    gameDate: Date,
+    leagueSeasonId: bigint,
+    excludeGameId?: bigint,
+  ): Promise<number>;
+  countTeamBookingsAtTime(
+    teamSeasonId: bigint,
+    gameDate: Date,
+    leagueSeasonId: bigint,
+    excludeGameId?: bigint,
+  ): Promise<number>;
+  countUmpireBookingsAtTime(
+    umpireId: bigint,
+    gameDate: Date,
+    leagueSeasonId: bigint,
+    excludeGameId?: bigint,
+  ): Promise<number>;
+  countTeamGamesInRange(
+    teamSeasonId: bigint,
+    start: Date,
+    end: Date,
+    leagueSeasonId: bigint,
+    excludeGameId?: bigint,
+  ): Promise<number>;
+  countUmpireGamesInRange(
+    umpireId: bigint,
+    start: Date,
+    end: Date,
+    leagueSeasonId: bigint,
+    excludeGameId?: bigint,
+  ): Promise<number>;
   findRecap(gameId: bigint, teamSeasonId: bigint): Promise<dbGameRecap | null>;
   upsertRecap(gameId: bigint, teamSeasonId: bigint, recap: string): Promise<gamerecap>;
   getTeamNames(teamIds: bigint[]): Promise<Map<string, string>>;

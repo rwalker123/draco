@@ -218,4 +218,53 @@ export class DateUtils {
 
     return age;
   }
+
+  static isDateOnlyString(value: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value.trim());
+  }
+
+  static normalizeDateOnlyToUtcDayStart(value: string): string {
+    const trimmed = value.trim();
+    if (DateUtils.isDateOnlyString(trimmed)) {
+      return `${trimmed}T00:00:00.000Z`;
+    }
+    return trimmed;
+  }
+
+  static normalizeDateOnlyToUtcDayEnd(value: string): string {
+    const trimmed = value.trim();
+    if (DateUtils.isDateOnlyString(trimmed)) {
+      return `${trimmed}T23:59:59.999Z`;
+    }
+    return trimmed;
+  }
+
+  static getHourInTimeZone(date: Date, timeZone: string): number | null {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+      return null;
+    }
+
+    const tz = timeZone.trim();
+    if (!tz) {
+      return null;
+    }
+
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        hour12: false,
+        timeZone: tz,
+      }).formatToParts(date);
+
+      const hourValue = parts.find((part) => part.type === 'hour')?.value;
+      if (!hourValue) {
+        return null;
+      }
+
+      const hour = Number(hourValue);
+      return Number.isNaN(hour) ? null : hour;
+    } catch {
+      return null;
+    }
+  }
 }

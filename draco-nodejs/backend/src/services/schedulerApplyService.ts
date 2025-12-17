@@ -3,6 +3,7 @@ import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import type { IScheduleRepository } from '../repositories/interfaces/IScheduleRepository.js';
 import type { dbScheduleUpdateData } from '../repositories/index.js';
 import { ValidationError } from '../utils/customErrors.js';
+import { DateUtils } from '../utils/dateUtils.js';
 
 const MAX_UMPIRES_PER_GAME = 4;
 
@@ -13,6 +14,14 @@ export class SchedulerApplyService {
     this.scheduleRepository = repository ?? RepositoryFactory.getScheduleRepository();
   }
 
+  private buildUtcDayRange(date: Date): { start: Date; end: Date; dayKey: string } {
+    const dayKey = date.toISOString().slice(0, 10);
+    const start = new Date(`${dayKey}T00:00:00.000Z`);
+    const end = new Date(`${dayKey}T00:00:00.000Z`);
+    end.setUTCDate(end.getUTCDate() + 1);
+    return { start, end, dayKey };
+  }
+
   async applyProposal(
     accountId: bigint,
     request: SchedulerApplyRequest,
@@ -20,6 +29,18 @@ export class SchedulerApplyService {
     const targetGameIds = this.resolveTargetGameIds(request);
     const appliedGameIds: string[] = [];
     const skipped: Array<{ gameId: string; reason: string }> = [];
+    const fieldMetaById = new Map<string, { hasLights: boolean; maxParallelGames: number }>();
+    request.fields.forEach((field) => {
+      fieldMetaById.set(field.id, {
+        hasLights: field.properties?.hasLights === true,
+        maxParallelGames: Math.max(1, Math.floor(field.properties?.maxParallelGames ?? 1)),
+      });
+    });
+    const batchFieldBookings = new Map<string, number>();
+    const batchTeamBookings = new Map<string, number>();
+    const batchUmpireBookings = new Map<string, number>();
+    const batchTeamDayBookings = new Map<string, number>();
+    const batchUmpireDayBookings = new Map<string, number>();
 
     for (const assignment of request.assignments) {
       if (targetGameIds && !targetGameIds.has(assignment.gameId)) {
@@ -29,6 +50,12 @@ export class SchedulerApplyService {
       const gameId = this.parseBigIntId(assignment.gameId, 'gameId');
       const fieldId = this.parseBigIntId(assignment.fieldId, 'fieldId');
       const gameDate = this.parseDateTime(assignment.startTime, 'startTime');
+      const hard = request.constraints?.hard;
+      const fieldMeta = fieldMetaById.get(assignment.fieldId);
+      if (!fieldMeta) {
+        skipped.push({ gameId: assignment.gameId, reason: 'Unknown fieldId' });
+        continue;
+      }
 
       if (assignment.umpireIds.length > MAX_UMPIRES_PER_GAME) {
         skipped.push({
@@ -49,18 +76,180 @@ export class SchedulerApplyService {
         continue;
       }
 
-      const conflict = await this.scheduleRepository.findFieldConflict(
-        fieldId,
-        gameDate,
-        existingGame.leagueid,
-        gameId,
-      );
-      if (conflict) {
-        skipped.push({
-          gameId: assignment.gameId,
-          reason: 'Field is already booked for this date and time',
+      if (hard?.noTeamOverlap) {
+        const teams = [existingGame.hteamid, existingGame.vteamid];
+        const teamConflicts = await Promise.all(
+          teams.map(async (teamSeasonId) => {
+            const teamKey = `${teamSeasonId.toString()}:${gameDate.toISOString()}:${existingGame.leagueid.toString()}`;
+            const existingBookings = await this.scheduleRepository.countTeamBookingsAtTime(
+              teamSeasonId,
+              gameDate,
+              existingGame.leagueid,
+              gameId,
+            );
+            const batchBookings = batchTeamBookings.get(teamKey) ?? 0;
+            return { teamKey, existingBookings, batchBookings };
+          }),
+        );
+
+        const hasTeamConflict = teamConflicts.some(
+          (entry) => entry.existingBookings + entry.batchBookings > 0,
+        );
+        if (hasTeamConflict) {
+          skipped.push({
+            gameId: assignment.gameId,
+            reason: 'Team is already booked for this date and time',
+          });
+          continue;
+        }
+      }
+
+      if (hard?.noUmpireOverlap && umpireIds.length > 0) {
+        const umpireConflicts = await Promise.all(
+          umpireIds.map(async (umpireId) => {
+            const umpireKey = `${umpireId.toString()}:${gameDate.toISOString()}:${existingGame.leagueid.toString()}`;
+            const existingBookings = await this.scheduleRepository.countUmpireBookingsAtTime(
+              umpireId,
+              gameDate,
+              existingGame.leagueid,
+              gameId,
+            );
+            const batchBookings = batchUmpireBookings.get(umpireKey) ?? 0;
+            return { umpireKey, existingBookings, batchBookings };
+          }),
+        );
+
+        const hasUmpireConflict = umpireConflicts.some(
+          (entry) => entry.existingBookings + entry.batchBookings > 0,
+        );
+        if (hasUmpireConflict) {
+          skipped.push({
+            gameId: assignment.gameId,
+            reason: 'Umpire is already booked for this date and time',
+          });
+          continue;
+        }
+      }
+
+      if (hard?.maxGamesPerTeamPerDay !== undefined) {
+        const { start, end, dayKey } = this.buildUtcDayRange(gameDate);
+        const teams = [existingGame.hteamid, existingGame.vteamid];
+        const counts = await Promise.all(
+          teams.map(async (teamSeasonId) => {
+            const key = `${teamSeasonId.toString()}:${dayKey}:${existingGame.leagueid.toString()}`;
+            const existingCount = await this.scheduleRepository.countTeamGamesInRange(
+              teamSeasonId,
+              start,
+              end,
+              existingGame.leagueid,
+              gameId,
+            );
+            const batchCount = batchTeamDayBookings.get(key) ?? 0;
+            return { key, existingCount, batchCount };
+          }),
+        );
+
+        const exceeds = counts.some(
+          (entry) => entry.existingCount + entry.batchCount >= hard.maxGamesPerTeamPerDay!,
+        );
+        if (exceeds) {
+          skipped.push({ gameId: assignment.gameId, reason: 'Team daily game limit exceeded' });
+          continue;
+        }
+      }
+
+      if (hard?.maxGamesPerUmpirePerDay !== undefined && umpireIds.length > 0) {
+        const { start, end, dayKey } = this.buildUtcDayRange(gameDate);
+        const counts = await Promise.all(
+          umpireIds.map(async (umpireId) => {
+            const key = `${umpireId.toString()}:${dayKey}:${existingGame.leagueid.toString()}`;
+            const existingCount = await this.scheduleRepository.countUmpireGamesInRange(
+              umpireId,
+              start,
+              end,
+              existingGame.leagueid,
+              gameId,
+            );
+            const batchCount = batchUmpireDayBookings.get(key) ?? 0;
+            return { key, existingCount, batchCount };
+          }),
+        );
+
+        const exceeds = counts.some(
+          (entry) => entry.existingCount + entry.batchCount >= hard.maxGamesPerUmpirePerDay!,
+        );
+        if (exceeds) {
+          skipped.push({ gameId: assignment.gameId, reason: 'Umpire daily game limit exceeded' });
+          continue;
+        }
+      }
+
+      if (hard?.requireLightsAfter?.enabled) {
+        const hour = DateUtils.getHourInTimeZone(gameDate, hard.requireLightsAfter.timeZone);
+        if (hour === null) {
+          throw new ValidationError('Invalid timeZone for requireLightsAfter constraint');
+        }
+
+        if (hour >= hard.requireLightsAfter.startHourLocal && !fieldMeta.hasLights) {
+          skipped.push({
+            gameId: assignment.gameId,
+            reason: 'Field does not have lights for this time slot',
+          });
+          continue;
+        }
+      }
+
+      if (hard?.noFieldOverlap) {
+        const capacity = fieldMeta.maxParallelGames;
+        const fieldKey = `${assignment.fieldId}:${gameDate.toISOString()}:${existingGame.leagueid.toString()}`;
+        const existingBookings = await this.scheduleRepository.countFieldBookingsAtTime(
+          fieldId,
+          gameDate,
+          existingGame.leagueid,
+          gameId,
+        );
+        const batchBookings = batchFieldBookings.get(fieldKey) ?? 0;
+        if (existingBookings + batchBookings >= capacity) {
+          skipped.push({
+            gameId: assignment.gameId,
+            reason: 'Field is already booked for this date and time',
+          });
+          continue;
+        }
+
+        batchFieldBookings.set(fieldKey, batchBookings + 1);
+      }
+
+      if (hard?.noTeamOverlap) {
+        const teams = [existingGame.hteamid, existingGame.vteamid];
+        teams.forEach((teamSeasonId) => {
+          const key = `${teamSeasonId.toString()}:${gameDate.toISOString()}:${existingGame.leagueid.toString()}`;
+          batchTeamBookings.set(key, (batchTeamBookings.get(key) ?? 0) + 1);
         });
-        continue;
+      }
+
+      if (hard?.noUmpireOverlap && umpireIds.length > 0) {
+        umpireIds.forEach((umpireId) => {
+          const key = `${umpireId.toString()}:${gameDate.toISOString()}:${existingGame.leagueid.toString()}`;
+          batchUmpireBookings.set(key, (batchUmpireBookings.get(key) ?? 0) + 1);
+        });
+      }
+
+      if (hard?.maxGamesPerTeamPerDay !== undefined) {
+        const { dayKey } = this.buildUtcDayRange(gameDate);
+        const teams = [existingGame.hteamid, existingGame.vteamid];
+        teams.forEach((teamSeasonId) => {
+          const key = `${teamSeasonId.toString()}:${dayKey}:${existingGame.leagueid.toString()}`;
+          batchTeamDayBookings.set(key, (batchTeamDayBookings.get(key) ?? 0) + 1);
+        });
+      }
+
+      if (hard?.maxGamesPerUmpirePerDay !== undefined && umpireIds.length > 0) {
+        const { dayKey } = this.buildUtcDayRange(gameDate);
+        umpireIds.forEach((umpireId) => {
+          const key = `${umpireId.toString()}:${dayKey}:${existingGame.leagueid.toString()}`;
+          batchUmpireDayBookings.set(key, (batchUmpireDayBookings.get(key) ?? 0) + 1);
+        });
       }
 
       const updateData: dbScheduleUpdateData = {

@@ -15438,6 +15438,25 @@ components:
                   type: boolean
                 noFieldOverlap:
                   type: boolean
+                requireLightsAfter:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    startHourLocal:
+                      type: integer
+                      minimum: 0
+                      maximum: 23
+                    timeZone:
+                      type: string
+                      minLength: 1
+                      example: America/Chicago
+                  required:
+                    - enabled
+                    - startHourLocal
+                    - timeZone
+                  description: When enabled, slots whose local start time is at/after
+                    startHourLocal must use a field with hasLights=true.
               title: SchedulerHardConstraints
             soft:
               type: object
@@ -15720,6 +15739,118 @@ components:
               - umpireIds
             title: SchedulerAssignment
           minItems: 1
+        fields:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+                example: "123"
+              name:
+                type: string
+                minLength: 1
+                example: Field 1
+              properties:
+                type: object
+                properties:
+                  hasLights:
+                    type: boolean
+                  maxParallelGames:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+            required:
+              - id
+              - name
+            title: SchedulerField
+          minItems: 1
+        constraints:
+          type: object
+          properties:
+            hard:
+              type: object
+              properties:
+                respectTeamBlackouts:
+                  type: boolean
+                respectUmpireAvailability:
+                  type: boolean
+                respectFieldSlots:
+                  type: boolean
+                maxGamesPerTeamPerDay:
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                maxGamesPerUmpirePerDay:
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                noTeamOverlap:
+                  type: boolean
+                noUmpireOverlap:
+                  type: boolean
+                noFieldOverlap:
+                  type: boolean
+                requireLightsAfter:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    startHourLocal:
+                      type: integer
+                      minimum: 0
+                      maximum: 23
+                    timeZone:
+                      type: string
+                      minLength: 1
+                      example: America/Chicago
+                  required:
+                    - enabled
+                    - startHourLocal
+                    - timeZone
+                  description: When enabled, slots whose local start time is at/after
+                    startHourLocal must use a field with hasLights=true.
+              title: SchedulerHardConstraints
+            soft:
+              type: object
+              properties:
+                avoidBackToBackGames:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    minRestMinutes:
+                      type: integer
+                      minimum: 0
+                    weight:
+                      type: integer
+                      minimum: 0
+                  required:
+                    - enabled
+                    - minRestMinutes
+                balanceEarlyVsLate:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    weight:
+                      type: integer
+                      minimum: 0
+                  required:
+                    - enabled
+                spreadGamesAcrossDays:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    weight:
+                      type: integer
+                      minimum: 0
+                  required:
+                    - enabled
+              title: SchedulerSoftConstraints
+          title: SchedulerConstraints
         gameIds:
           type: array
           items:
@@ -15731,6 +15862,7 @@ components:
         - runId
         - mode
         - assignments
+        - fields
       title: SchedulerApplyRequest
       description: Apply a scheduling proposal to persist assignments. This is a
         follow-up to /scheduler/solve and writes to the database.

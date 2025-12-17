@@ -11,6 +11,11 @@ const routeProtection = ServiceFactory.getRouteProtection();
 const schedulerEngineService = ServiceFactory.getSchedulerEngineService();
 const schedulerApplyService = ServiceFactory.getSchedulerApplyService();
 
+/**
+ * POST /api/accounts/:accountId/scheduler/solve
+ * Solves a scheduling problem and returns assignments with metrics.
+ * Requires `account.games.manage` permission.
+ */
 router.post(
   '/solve',
   authenticateToken,

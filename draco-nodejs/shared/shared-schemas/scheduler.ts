@@ -111,6 +111,17 @@ export const SchedulerHardConstraintsSchema = z
     noTeamOverlap: z.boolean().optional(),
     noUmpireOverlap: z.boolean().optional(),
     noFieldOverlap: z.boolean().optional(),
+    requireLightsAfter: z
+      .object({
+        enabled: z.boolean(),
+        startHourLocal: z.number().int().min(0).max(23),
+        timeZone: z.string().trim().min(1).openapi({ example: 'America/Chicago' }),
+      })
+      .optional()
+      .openapi({
+        description:
+          'When enabled, slots whose local start time is at/after startHourLocal must use a field with hasLights=true.',
+      }),
   })
   .openapi({ title: 'SchedulerHardConstraints' });
 
@@ -280,18 +291,18 @@ export const SchedulerSolveResultSchema = z
     },
   });
 
-export const SchedulerApplyModeSchema = z
-  .enum(['all', 'subset'])
-  .openapi({
-    title: 'SchedulerApplyMode',
-    description: 'Whether to apply all assignments or only a subset.',
-  });
+export const SchedulerApplyModeSchema = z.enum(['all', 'subset']).openapi({
+  title: 'SchedulerApplyMode',
+  description: 'Whether to apply all assignments or only a subset.',
+});
 
 export const SchedulerApplyRequestSchema = z
   .object({
     runId: z.string().trim().min(1),
     mode: SchedulerApplyModeSchema,
     assignments: SchedulerAssignmentSchema.array().min(1),
+    fields: SchedulerFieldSchema.array().min(1),
+    constraints: SchedulerConstraintsSchema,
     gameIds: schedulerIdSchema.array().min(1).optional(),
   })
   .superRefine((data, ctx) => {
