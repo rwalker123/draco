@@ -62,6 +62,69 @@ export const SchedulerUmpireSchema = z
   })
   .openapi({ title: 'SchedulerUmpire' });
 
+const isoDateSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
+  .openapi({ type: 'string', format: 'date', example: '2026-04-01' });
+
+const hhmmSchema = z
+  .string()
+  .trim()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be formatted as HH:mm')
+  .openapi({ example: '18:30' });
+
+export const SchedulerFieldAvailabilityRuleSchema = z
+  .object({
+    id: schedulerIdSchema,
+    seasonId: schedulerIdSchema,
+    fieldId: schedulerIdSchema,
+    startDate: isoDateSchema,
+    endDate: isoDateSchema,
+    /**
+     * Bitmask for days of week where bit 0 = Monday ... bit 6 = Sunday.
+     * Example: Monday+Wednesday+Friday = 0b0010101 = 21.
+     */
+    daysOfWeekMask: z.number().int().min(1).max(127).openapi({
+      example: 21,
+      description: 'Bitmask for days of week where bit 0=Mon ... bit 6=Sun.',
+    }),
+    startTimeLocal: hhmmSchema,
+    endTimeLocal: hhmmSchema,
+    startIncrementMinutes: z.number().int().positive().max(1440).openapi({ example: 30 }),
+    enabled: z.boolean().default(true),
+  })
+  .superRefine((data, ctx) => {
+    if (data.startDate > data.endDate) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['startDate'],
+        message: 'startDate must be on or before endDate',
+      });
+    }
+
+    if (data.startTimeLocal >= data.endTimeLocal) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['startTimeLocal'],
+        message: 'startTimeLocal must be before endTimeLocal',
+      });
+    }
+  })
+  .openapi({ title: 'SchedulerFieldAvailabilityRule' });
+
+export const SchedulerFieldAvailabilityRuleUpsertSchema = SchedulerFieldAvailabilityRuleSchema.omit(
+  {
+    id: true,
+  },
+).openapi({ title: 'SchedulerFieldAvailabilityRuleUpsert' });
+
+export const SchedulerFieldAvailabilityRulesSchema = z
+  .object({
+    rules: SchedulerFieldAvailabilityRuleSchema.array(),
+  })
+  .openapi({ title: 'SchedulerFieldAvailabilityRules' });
+
 export const SchedulerGameRequestSchema = z
   .object({
     id: schedulerIdSchema,
@@ -366,6 +429,11 @@ export type SchedulerSeasonConfig = z.infer<typeof SchedulerSeasonConfigSchema>;
 export type SchedulerTeam = z.infer<typeof SchedulerTeamSchema>;
 export type SchedulerField = z.infer<typeof SchedulerFieldSchema>;
 export type SchedulerUmpire = z.infer<typeof SchedulerUmpireSchema>;
+export type SchedulerFieldAvailabilityRule = z.infer<typeof SchedulerFieldAvailabilityRuleSchema>;
+export type SchedulerFieldAvailabilityRuleUpsert = z.infer<
+  typeof SchedulerFieldAvailabilityRuleUpsertSchema
+>;
+export type SchedulerFieldAvailabilityRules = z.infer<typeof SchedulerFieldAvailabilityRulesSchema>;
 export type SchedulerGameRequest = z.infer<typeof SchedulerGameRequestSchema>;
 export type SchedulerFieldSlot = z.infer<typeof SchedulerFieldSlotSchema>;
 export type SchedulerUmpireAvailability = z.infer<typeof SchedulerUmpireAvailabilitySchema>;

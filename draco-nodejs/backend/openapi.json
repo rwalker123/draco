@@ -21296,6 +21296,222 @@
           ]
         }
       },
+      "SchedulerFieldAvailabilityRule": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "seasonId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "fieldId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-04-01"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-04-01"
+          },
+          "daysOfWeekMask": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 127,
+            "example": 21,
+            "description": "Bitmask for days of week where bit 0=Mon ... bit 6=Sun."
+          },
+          "startTimeLocal": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "example": "18:30"
+          },
+          "endTimeLocal": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "example": "18:30"
+          },
+          "startIncrementMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 1440,
+            "example": 30
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "id",
+          "seasonId",
+          "fieldId",
+          "startDate",
+          "endDate",
+          "daysOfWeekMask",
+          "startTimeLocal",
+          "endTimeLocal",
+          "startIncrementMinutes"
+        ],
+        "title": "SchedulerFieldAvailabilityRule"
+      },
+      "SchedulerFieldAvailabilityRuleUpsert": {
+        "type": "object",
+        "properties": {
+          "seasonId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "fieldId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-04-01"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-04-01"
+          },
+          "daysOfWeekMask": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 127,
+            "example": 21,
+            "description": "Bitmask for days of week where bit 0=Mon ... bit 6=Sun."
+          },
+          "startTimeLocal": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "example": "18:30"
+          },
+          "endTimeLocal": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "example": "18:30"
+          },
+          "startIncrementMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 1440,
+            "example": 30
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "seasonId",
+          "fieldId",
+          "startDate",
+          "endDate",
+          "daysOfWeekMask",
+          "startTimeLocal",
+          "endTimeLocal",
+          "startIncrementMinutes"
+        ],
+        "title": "SchedulerFieldAvailabilityRuleUpsert"
+      },
+      "SchedulerFieldAvailabilityRules": {
+        "type": "object",
+        "properties": {
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "seasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "fieldId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date",
+                  "example": "2026-04-01"
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date",
+                  "example": "2026-04-01"
+                },
+                "daysOfWeekMask": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 127,
+                  "example": 21,
+                  "description": "Bitmask for days of week where bit 0=Mon ... bit 6=Sun."
+                },
+                "startTimeLocal": {
+                  "type": "string",
+                  "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+                  "example": "18:30"
+                },
+                "endTimeLocal": {
+                  "type": "string",
+                  "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+                  "example": "18:30"
+                },
+                "startIncrementMinutes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true,
+                  "maximum": 1440,
+                  "example": 30
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                }
+              },
+              "required": [
+                "id",
+                "seasonId",
+                "fieldId",
+                "startDate",
+                "endDate",
+                "daysOfWeekMask",
+                "startTimeLocal",
+                "endTimeLocal",
+                "startIncrementMinutes"
+              ],
+              "title": "SchedulerFieldAvailabilityRule"
+            }
+          }
+        },
+        "required": [
+          "rules"
+        ],
+        "title": "SchedulerFieldAvailabilityRules"
+      },
       "RoleCheckResponse": {
         "type": "object",
         "properties": {
@@ -43492,6 +43708,385 @@
           },
           "403": {
             "description": "Insufficient permissions to generate schedules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-availability-rules": {
+      "get": {
+        "operationId": "listSchedulerFieldAvailabilityRules",
+        "summary": "List scheduler field availability rules",
+        "description": "Lists field availability rules for the season. These rules are expanded into concrete fieldSlots when assembling a scheduling problem spec.",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rules list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerFieldAvailabilityRules"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createSchedulerFieldAvailabilityRule",
+        "summary": "Create scheduler field availability rule",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerFieldAvailabilityRuleUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerFieldAvailabilityRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-availability-rules/{ruleId}": {
+      "put": {
+        "operationId": "updateSchedulerFieldAvailabilityRule",
+        "summary": "Update scheduler field availability rule",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerFieldAvailabilityRuleUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerFieldAvailabilityRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteSchedulerFieldAvailabilityRule",
+        "summary": "Delete scheduler field availability rule",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerFieldAvailabilityRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
             "content": {
               "application/json": {
                 "schema": {

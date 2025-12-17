@@ -10,6 +10,9 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
     SchedulerSolveResultSchemaRef,
     SchedulerApplyRequestSchemaRef,
     SchedulerApplyResultSchemaRef,
+    SchedulerFieldAvailabilityRuleSchemaRef,
+    SchedulerFieldAvailabilityRuleUpsertSchemaRef,
+    SchedulerFieldAvailabilityRulesSchemaRef,
   } = schemaRefs;
 
   registry.registerPath({
@@ -87,6 +90,202 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
             schema: InternalServerErrorSchemaRef,
           },
         },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-availability-rules',
+    operationId: 'listSchedulerFieldAvailabilityRules',
+    summary: 'List scheduler field availability rules',
+    description:
+      'Lists field availability rules for the season. These rules are expanded into concrete fieldSlots when assembling a scheduling problem spec.',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Rules list',
+        content: { 'application/json': { schema: SchedulerFieldAvailabilityRulesSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-availability-rules',
+    operationId: 'createSchedulerFieldAvailabilityRule',
+    summary: 'Create scheduler field availability rule',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: SchedulerFieldAvailabilityRuleUpsertSchemaRef } },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Created rule',
+        content: { 'application/json': { schema: SchedulerFieldAvailabilityRuleSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-availability-rules/{ruleId}',
+    operationId: 'updateSchedulerFieldAvailabilityRule',
+    summary: 'Update scheduler field availability rule',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      { name: 'ruleId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: SchedulerFieldAvailabilityRuleUpsertSchemaRef } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated rule',
+        content: { 'application/json': { schema: SchedulerFieldAvailabilityRuleSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-availability-rules/{ruleId}',
+    operationId: 'deleteSchedulerFieldAvailabilityRule',
+    summary: 'Delete scheduler field availability rule',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      { name: 'ruleId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+    ],
+    responses: {
+      200: {
+        description: 'Deleted rule',
+        content: { 'application/json': { schema: SchedulerFieldAvailabilityRuleSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
       },
     },
   });

@@ -37,6 +37,7 @@ import { UmpireService } from './umpireService.js';
 import { ScheduleService } from './scheduleService.js';
 import { SchedulerEngineService } from './schedulerEngineService.js';
 import { SchedulerApplyService } from './schedulerApplyService.js';
+import { SchedulerFieldAvailabilityRulesService } from './schedulerFieldAvailabilityRulesService.js';
 import { LeagueService } from './LeagueService.js';
 import { LeagueFaqService } from './LeagueFaqService.js';
 import { MonitoringService } from './monitoringService.js';
@@ -116,6 +117,7 @@ export class ServiceFactory {
   private static scheduleService: ScheduleService;
   private static schedulerEngineService: SchedulerEngineService;
   private static schedulerApplyService: SchedulerApplyService;
+  private static schedulerFieldAvailabilityRulesService: SchedulerFieldAvailabilityRulesService;
   private static leagueService: LeagueService;
   private static leagueFaqService: LeagueFaqService;
   private static monitoringService: MonitoringService;
@@ -417,6 +419,14 @@ export class ServiceFactory {
     }
 
     return this.schedulerApplyService;
+  }
+
+  static getSchedulerFieldAvailabilityRulesService(): SchedulerFieldAvailabilityRulesService {
+    if (!this.schedulerFieldAvailabilityRulesService) {
+      this.schedulerFieldAvailabilityRulesService = new SchedulerFieldAvailabilityRulesService();
+    }
+
+    return this.schedulerFieldAvailabilityRulesService;
   }
 
   static getMonitoringService(): MonitoringService {

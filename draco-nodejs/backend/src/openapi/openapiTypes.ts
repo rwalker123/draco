@@ -272,6 +272,9 @@ import {
   SchedulerSolveResultSchema,
   SchedulerApplyRequestSchema,
   SchedulerApplyResultSchema,
+  SchedulerFieldAvailabilityRuleSchema,
+  SchedulerFieldAvailabilityRuleUpsertSchema,
+  SchedulerFieldAvailabilityRulesSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1077,6 +1080,18 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'SchedulerApplyResult',
     SchedulerApplyResultSchema,
   );
+  const SchedulerFieldAvailabilityRuleSchemaRef = registry.register(
+    'SchedulerFieldAvailabilityRule',
+    SchedulerFieldAvailabilityRuleSchema,
+  );
+  const SchedulerFieldAvailabilityRuleUpsertSchemaRef = registry.register(
+    'SchedulerFieldAvailabilityRuleUpsert',
+    SchedulerFieldAvailabilityRuleUpsertSchema,
+  );
+  const SchedulerFieldAvailabilityRulesSchemaRef = registry.register(
+    'SchedulerFieldAvailabilityRules',
+    SchedulerFieldAvailabilityRulesSchema,
+  );
   const RoleCheckResponseSchemaRef = registry.register(
     'RoleCheckResponse',
     RoleCheckResponseSchema,
@@ -1359,6 +1374,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SchedulerSolveResultSchemaRef,
     SchedulerApplyRequestSchemaRef,
     SchedulerApplyResultSchemaRef,
+    SchedulerFieldAvailabilityRuleSchemaRef,
+    SchedulerFieldAvailabilityRuleUpsertSchemaRef,
+    SchedulerFieldAvailabilityRulesSchemaRef,
     RoleCheckResponseSchemaRef,
     DiscordTeamForumRemoveRequestSchemaRef,
   };

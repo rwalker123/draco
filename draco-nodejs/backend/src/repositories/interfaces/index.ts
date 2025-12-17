@@ -38,6 +38,7 @@ export * from './IHofNominationRepository.js';
 export * from './IHofNominationSetupRepository.js';
 export * from './IAnnouncementRepository.js';
 export * from './IStatsEntryRepository.js';
+export * from './ISchedulerFieldAvailabilityRulesRepository.js';
 export * from './IAccountSettingsRepository.js';
 export * from './ISocialContentRepository.js';
 export * from './ILiveEventRepository.js';

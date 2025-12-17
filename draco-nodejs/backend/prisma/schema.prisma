@@ -40,6 +40,7 @@ model accounts {
   accountsurl               accountsurl[]
   accountwelcome            accountwelcome[]
   availablefields           availablefields[]
+  schedulerfieldavailabilityrules schedulerfieldavailabilityrules[]
   contactroles              contactroles[]
   contacts                  contacts[]
   currentseason             currentseason?
@@ -350,7 +351,31 @@ model availablefields {
   fieldcontacts       fieldcontacts[]
   leagueschedule      leagueschedule[]
   playoffgame         playoffgame[]
+  schedulerfieldavailabilityrules schedulerfieldavailabilityrules[]
   workoutannouncement workoutannouncement[]
+}
+
+model schedulerfieldavailabilityrules {
+  id                    BigInt         @id @default(autoincrement())
+  accountid             BigInt
+  seasonid              BigInt
+  fieldid               BigInt
+  startdate             DateTime       @db.Date
+  enddate               DateTime       @db.Date
+  daysofweekmask        Int            @db.SmallInt
+  starttimelocal        String         @db.VarChar(5)
+  endtimelocal          String         @db.VarChar(5)
+  startincrementminutes Int            @db.SmallInt @default(30)
+  enabled               Boolean        @default(true)
+  createdat             DateTime       @default(now()) @db.Timestamptz(6)
+  updatedat             DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
+  accounts              accounts       @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_schedulerfieldavailabilityrules_accounts")
+  season                season         @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_schedulerfieldavailabilityrules_season")
+  availablefields       availablefields @relation(fields: [fieldid], references: [id], onDelete: Cascade, map: "fk_schedulerfieldavailabilityrules_availablefields")
+
+  @@index([accountid], map: "idx_schedulerfieldavailabilityrules_accountid")
+  @@index([seasonid], map: "idx_schedulerfieldavailabilityrules_seasonid")
+  @@index([fieldid], map: "idx_schedulerfieldavailabilityrules_fieldid")
 }
 
 model batstatsum {
@@ -1376,6 +1401,7 @@ model season {
   socialfeeditems             socialfeeditems[]
   socialvideos                socialvideos[]
   discordmessages             discordmessages[]
+  schedulerfieldavailabilityrules schedulerfieldavailabilityrules[]
   accounts                    accounts                      @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_season_accounts")
 }
 
