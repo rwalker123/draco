@@ -269,6 +269,8 @@ import {
   UpsertWelcomeMessageSchema,
   AutoRegisterContactResponseSchema,
   SchedulerProblemSpecSchema,
+  SchedulerProblemSpecPreviewSchema,
+  SchedulerSeasonSolveRequestSchema,
   SchedulerSolveResultSchema,
   SchedulerApplyRequestSchema,
   SchedulerApplyResultSchema,
@@ -1068,6 +1070,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'SchedulerProblemSpec',
     SchedulerProblemSpecSchema,
   );
+  const SchedulerProblemSpecPreviewSchemaRef = registry.register(
+    'SchedulerProblemSpecPreview',
+    SchedulerProblemSpecPreviewSchema,
+  );
+  const SchedulerSeasonSolveRequestSchemaRef = registry.register(
+    'SchedulerSeasonSolveRequest',
+    SchedulerSeasonSolveRequestSchema,
+  );
   const SchedulerSolveResultSchemaRef = registry.register(
     'SchedulerSolveResult',
     SchedulerSolveResultSchema,
@@ -1371,6 +1381,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     VerifyTokenRequestSchemaRef,
     ChangePasswordRequestSchemaRef,
     SchedulerProblemSpecSchemaRef,
+    SchedulerProblemSpecPreviewSchemaRef,
+    SchedulerSeasonSolveRequestSchemaRef,
     SchedulerSolveResultSchemaRef,
     SchedulerApplyRequestSchemaRef,
     SchedulerApplyResultSchemaRef,

@@ -3,12 +3,17 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
-import { SchedulerFieldAvailabilityRuleUpsertSchema } from '@draco/shared-schemas';
+import {
+  SchedulerFieldAvailabilityRuleUpsertSchema,
+  SchedulerSeasonSolveRequestSchema,
+} from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const schedulerFieldAvailabilityRulesService =
   ServiceFactory.getSchedulerFieldAvailabilityRulesService();
+const schedulerProblemSpecService = ServiceFactory.getSchedulerProblemSpecService();
+const schedulerEngineService = ServiceFactory.getSchedulerEngineService();
 
 router.get(
   '/field-availability-rules',
@@ -19,6 +24,42 @@ router.get(
     const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
     const rules = await schedulerFieldAvailabilityRulesService.listRules(accountId, seasonId);
     res.json(rules);
+  }),
+);
+
+router.get(
+  '/problem-spec',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
+    const preview = await schedulerProblemSpecService.buildProblemSpecPreview(accountId, seasonId);
+    res.json(preview);
+  }),
+);
+
+router.post(
+  '/solve',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
+    const request = SchedulerSeasonSolveRequestSchema.parse(req.body ?? {});
+    const rawIdempotencyKey = req.header('Idempotency-Key') ?? req.header('X-Idempotency-Key');
+    const idempotencyKey =
+      typeof rawIdempotencyKey === 'string' && rawIdempotencyKey.trim().length > 0
+        ? rawIdempotencyKey.trim()
+        : undefined;
+
+    const problemSpec = await schedulerProblemSpecService.buildProblemSpec(
+      accountId,
+      seasonId,
+      request,
+    );
+    const result = schedulerEngineService.solve(problemSpec, { accountId, idempotencyKey });
+    res.json(result);
   }),
 );
 

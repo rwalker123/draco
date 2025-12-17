@@ -38,6 +38,7 @@ import { ScheduleService } from './scheduleService.js';
 import { SchedulerEngineService } from './schedulerEngineService.js';
 import { SchedulerApplyService } from './schedulerApplyService.js';
 import { SchedulerFieldAvailabilityRulesService } from './schedulerFieldAvailabilityRulesService.js';
+import { SchedulerProblemSpecService } from './schedulerProblemSpecService.js';
 import { LeagueService } from './LeagueService.js';
 import { LeagueFaqService } from './LeagueFaqService.js';
 import { MonitoringService } from './monitoringService.js';
@@ -118,6 +119,7 @@ export class ServiceFactory {
   private static schedulerEngineService: SchedulerEngineService;
   private static schedulerApplyService: SchedulerApplyService;
   private static schedulerFieldAvailabilityRulesService: SchedulerFieldAvailabilityRulesService;
+  private static schedulerProblemSpecService: SchedulerProblemSpecService;
   private static leagueService: LeagueService;
   private static leagueFaqService: LeagueFaqService;
   private static monitoringService: MonitoringService;
@@ -427,6 +429,14 @@ export class ServiceFactory {
     }
 
     return this.schedulerFieldAvailabilityRulesService;
+  }
+
+  static getSchedulerProblemSpecService(): SchedulerProblemSpecService {
+    if (!this.schedulerProblemSpecService) {
+      this.schedulerProblemSpecService = new SchedulerProblemSpecService();
+    }
+
+    return this.schedulerProblemSpecService;
   }
 
   static getMonitoringService(): MonitoringService {

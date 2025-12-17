@@ -7,6 +7,8 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
     InternalServerErrorSchemaRef,
     ValidationErrorSchemaRef,
     SchedulerProblemSpecSchemaRef,
+    SchedulerProblemSpecPreviewSchemaRef,
+    SchedulerSeasonSolveRequestSchemaRef,
     SchedulerSolveResultSchemaRef,
     SchedulerApplyRequestSchemaRef,
     SchedulerApplyResultSchemaRef,
@@ -90,6 +92,118 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
             schema: InternalServerErrorSchemaRef,
           },
         },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/problem-spec',
+    operationId: 'getSchedulerProblemSpecPreview',
+    summary: 'Preview the assembled scheduler problem spec',
+    description:
+      'Builds a SchedulerProblemSpecPreview from database state (games/teams/fields/umpires) plus field availability rules expanded into fieldSlots.',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Problem spec preview',
+        content: { 'application/json': { schema: SchedulerProblemSpecPreviewSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/solve',
+    operationId: 'solveSeasonSchedule',
+    summary: 'Generate a proposed schedule (DB-sourced)',
+    description:
+      'Assembles a scheduling problem spec from database state (games/teams/fields/umpires + expanded fieldSlots from availability rules) and returns a deterministic proposal (no persistence). Provide an Idempotency-Key header for safe retries.',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'Idempotency-Key',
+        in: 'header',
+        required: false,
+        schema: { type: 'string', minLength: 1 },
+        description:
+          'Optional client-provided key used to derive a stable runId so callers can safely retry without changing the response metadata.',
+      },
+    ],
+    request: {
+      body: {
+        required: false,
+        content: {
+          'application/json': {
+            schema: SchedulerSeasonSolveRequestSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Scheduling proposal result',
+        content: { 'application/json': { schema: SchedulerSolveResultSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions to generate schedules',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
       },
     },
   });

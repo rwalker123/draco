@@ -164,6 +164,22 @@ export const SchedulerTeamBlackoutSchema = z
   })
   .openapi({ title: 'SchedulerTeamBlackout' });
 
+const SchedulerRequireLightsAfterConstraintSchema = z
+  .object({
+    enabled: z.boolean(),
+    startHourLocal: z.number().int().min(0).max(23),
+    timeZone: z.string().trim().min(1).openapi({ example: 'America/Chicago' }),
+  })
+  .openapi({ title: 'SchedulerRequireLightsAfterConstraint' });
+
+const SchedulerRequireLightsAfterOverrideSchema = SchedulerRequireLightsAfterConstraintSchema.omit({
+  timeZone: true,
+}).openapi({
+  title: 'SchedulerRequireLightsAfterOverride',
+  description:
+    'DB-sourced solve requests omit the timeZone; the backend uses the account timezoneid.',
+});
+
 export const SchedulerHardConstraintsSchema = z
   .object({
     respectTeamBlackouts: z.boolean().optional(),
@@ -174,19 +190,19 @@ export const SchedulerHardConstraintsSchema = z
     noTeamOverlap: z.boolean().optional(),
     noUmpireOverlap: z.boolean().optional(),
     noFieldOverlap: z.boolean().optional(),
-    requireLightsAfter: z
-      .object({
-        enabled: z.boolean(),
-        startHourLocal: z.number().int().min(0).max(23),
-        timeZone: z.string().trim().min(1).openapi({ example: 'America/Chicago' }),
-      })
-      .optional()
-      .openapi({
-        description:
-          'When enabled, slots whose local start time is at/after startHourLocal must use a field with hasLights=true.',
-      }),
+    requireLightsAfter: SchedulerRequireLightsAfterConstraintSchema.optional().openapi({
+      description:
+        'When enabled, slots whose local start time is at/after startHourLocal must use a field with hasLights=true.',
+    }),
   })
   .openapi({ title: 'SchedulerHardConstraints' });
+
+export const SchedulerHardConstraintsOverrideSchema = SchedulerHardConstraintsSchema.extend({
+  requireLightsAfter: SchedulerRequireLightsAfterOverrideSchema.optional().openapi({
+    description:
+      'When enabled, slots whose local start time is at/after startHourLocal must use a field with hasLights=true. The backend will use the account timezoneid.',
+  }),
+}).openapi({ title: 'SchedulerHardConstraintsOverride' });
 
 export const SchedulerSoftConstraintsSchema = z
   .object({
@@ -219,6 +235,14 @@ export const SchedulerConstraintsSchema = z
   })
   .optional()
   .openapi({ title: 'SchedulerConstraints' });
+
+export const SchedulerConstraintsOverrideSchema = z
+  .object({
+    hard: SchedulerHardConstraintsOverrideSchema.optional(),
+    soft: SchedulerSoftConstraintsSchema.optional(),
+  })
+  .optional()
+  .openapi({ title: 'SchedulerConstraintsOverride' });
 
 export const SchedulerObjectivesSchema = z
   .object({
@@ -293,6 +317,18 @@ export const SchedulerProblemSpecSchema = z
       },
       objectives: { primary: 'maximize_scheduled_games' },
     },
+  });
+
+export const SchedulerSeasonSolveRequestSchema = z
+  .object({
+    constraints: SchedulerConstraintsOverrideSchema,
+    objectives: SchedulerObjectivesSchema,
+    gameIds: schedulerIdSchema.array().min(1).optional(),
+  })
+  .openapi({
+    title: 'SchedulerSeasonSolveRequest',
+    description:
+      'DB-sourced solve request. The backend assembles teams/games/fields/umpires/fieldSlots from the database; the caller may provide optional constraint/objective overrides.',
   });
 
 export const SchedulerAssignmentSchema = z
@@ -453,3 +489,22 @@ export type SchedulerApplyRequest = z.infer<typeof SchedulerApplyRequestSchema>;
 export type SchedulerApplySkipped = z.infer<typeof SchedulerApplySkippedSchema>;
 export type SchedulerApplyStatus = z.infer<typeof SchedulerApplyStatusSchema>;
 export type SchedulerApplyResult = z.infer<typeof SchedulerApplyResultSchema>;
+export type SchedulerSeasonSolveRequest = z.infer<typeof SchedulerSeasonSolveRequestSchema>;
+
+export const SchedulerProblemSpecPreviewSchema = z
+  .object({
+    season: SchedulerSeasonConfigSchema,
+    teams: SchedulerTeamSchema.array(),
+    fields: SchedulerFieldSchema.array(),
+    umpires: SchedulerUmpireSchema.array(),
+    games: SchedulerGameRequestSchema.array(),
+    fieldSlots: SchedulerFieldSlotSchema.array(),
+    fieldAvailabilityRules: SchedulerFieldAvailabilityRuleSchema.array(),
+  })
+  .openapi({
+    title: 'SchedulerProblemSpecPreview',
+    description:
+      'DB-assembled scheduling problem spec preview. Uses field availability rules expanded into concrete fieldSlots.',
+  });
+
+export type SchedulerProblemSpecPreview = z.infer<typeof SchedulerProblemSpecPreviewSchema>;

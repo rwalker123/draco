@@ -51,6 +51,7 @@ import {
   IAccountInstagramCredentialsRepository,
   IInstagramIngestionRepository,
   ISchedulerFieldAvailabilityRulesRepository,
+  ISchedulerProblemSpecRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -103,6 +104,7 @@ import {
   PrismaAccountInstagramCredentialsRepository,
   PrismaInstagramIngestionRepository,
   PrismaSchedulerFieldAvailabilityRulesRepository,
+  PrismaSchedulerProblemSpecRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -162,6 +164,7 @@ export class RepositoryFactory {
   private static accountInstagramCredentialsRepository: IAccountInstagramCredentialsRepository;
   private static instagramIngestionRepository: IInstagramIngestionRepository;
   private static schedulerFieldAvailabilityRulesRepository: ISchedulerFieldAvailabilityRulesRepository;
+  private static schedulerProblemSpecRepository: ISchedulerProblemSpecRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -422,6 +425,13 @@ export class RepositoryFactory {
         new PrismaSchedulerFieldAvailabilityRulesRepository(prisma);
     }
     return this.schedulerFieldAvailabilityRulesRepository;
+  }
+
+  static getSchedulerProblemSpecRepository(): ISchedulerProblemSpecRepository {
+    if (!this.schedulerProblemSpecRepository) {
+      this.schedulerProblemSpecRepository = new PrismaSchedulerProblemSpecRepository(prisma);
+    }
+    return this.schedulerProblemSpecRepository;
   }
 
   static getUmpireRepository(): IUmpireRepository {

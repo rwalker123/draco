@@ -24,6 +24,10 @@ interface GameCandidateContext {
   durationMinutes: number;
 }
 
+const normalizeSchedulerId = (value: string | number): string => {
+  return String(value).trim();
+};
+
 const stableStringify = (value: unknown): string => {
   if (Array.isArray(value)) {
     return `[${value.map(stableStringify).join(',')}]`;
@@ -278,7 +282,7 @@ export class SchedulerEngineService {
   private ensureReferentialIntegrity(problemSpec: SchedulerProblemSpec): void {
     const teamSeasonIds = problemSpec.teams.map((team) => team.teamSeasonId);
     const fieldIds = problemSpec.fields.map((field) => field.id);
-    const umpireIds = problemSpec.umpires.map((umpire) => umpire.id);
+    const umpireIds = problemSpec.umpires.map((umpire) => normalizeSchedulerId(umpire.id));
 
     const duplicateTeamSeasonIds = this.collectDuplicates(teamSeasonIds);
     if (duplicateTeamSeasonIds.length) {
@@ -338,7 +342,7 @@ export class SchedulerEngineService {
     }
 
     for (const availability of problemSpec.umpireAvailability ?? []) {
-      if (!umpireIdSet.has(availability.umpireId)) {
+      if (!umpireIdSet.has(normalizeSchedulerId(availability.umpireId))) {
         throw new ValidationError(
           `Unknown umpireId for umpire availability: ${availability.umpireId}`,
         );
@@ -388,15 +392,18 @@ export class SchedulerEngineService {
 
   private groupUmpireAvailability(
     availability: SchedulerUmpireAvailability[] | undefined,
-    umpires: Array<{ id: string }>,
+    umpires: Array<{ id: string | number }>,
     season: SchedulerProblemSpec['season'],
   ): Map<string, Interval[]> {
     const map = new Map<string, Interval[]>();
     const windows =
       availability && availability.length
-        ? availability
+        ? availability.map((slot) => ({
+            ...slot,
+            umpireId: normalizeSchedulerId(slot.umpireId),
+          }))
         : umpires.map((umpire) => ({
-            umpireId: umpire.id,
+            umpireId: normalizeSchedulerId(umpire.id),
             startTime: DateUtils.normalizeDateOnlyToUtcDayStart(season.startDate),
             endTime: DateUtils.normalizeDateOnlyToUtcDayEnd(season.endDate),
           }));
@@ -411,12 +418,12 @@ export class SchedulerEngineService {
   }
 
   private buildUmpireDailyLimitIndex(
-    umpires: Array<{ id: string; maxGamesPerDay?: number }>,
+    umpires: Array<{ id: string | number; maxGamesPerDay?: number }>,
   ): Map<string, number> {
     const map = new Map<string, number>();
     for (const umpire of umpires) {
       if (umpire.maxGamesPerDay !== undefined) {
-        map.set(umpire.id, umpire.maxGamesPerDay);
+        map.set(normalizeSchedulerId(umpire.id), umpire.maxGamesPerDay);
       }
     }
     return map;
