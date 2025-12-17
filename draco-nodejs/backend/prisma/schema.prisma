@@ -344,6 +344,8 @@ model availablefields {
   rainoutnumber       String                @db.VarChar(15)
   latitude            String                @db.VarChar(25)
   longitude           String                @db.VarChar(25)
+  haslights           Boolean               @default(false)
+  maxparallelgames    Int                   @default(1)
   accounts            accounts              @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_availablefields_accounts")
   fieldcontacts       fieldcontacts[]
   leagueschedule      leagueschedule[]

@@ -508,6 +508,7 @@ export type dbAvailableField = Prisma.availablefieldsGetPayload<{
     rainoutnumber: true;
     latitude: true;
     longitude: true;
+    haslights: true;
   };
 }>;
 

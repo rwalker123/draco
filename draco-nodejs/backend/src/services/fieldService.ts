@@ -85,6 +85,7 @@ export class FieldService {
     }
 
     const shortName = fieldData.shortName.trim();
+    const hasLights = fieldData.hasLights ?? false;
     const address = this.sanitizeOptionalString(fieldData.address);
     const city = this.sanitizeOptionalString(fieldData.city);
     const state = this.sanitizeOptionalString(fieldData.state);
@@ -107,6 +108,7 @@ export class FieldService {
       rainoutnumber: rainoutNumber,
       latitude,
       longitude,
+      haslights: hasLights,
       accounts: {
         connect: { id: accountId },
       },
@@ -138,6 +140,7 @@ export class FieldService {
     }
 
     const shortName = fieldData.shortName.trim();
+    const hasLights = fieldData.hasLights ?? false;
     const address = this.sanitizeOptionalString(fieldData.address);
     const city = this.sanitizeOptionalString(fieldData.city);
     const state = this.sanitizeOptionalString(fieldData.state);
@@ -160,6 +163,7 @@ export class FieldService {
       rainoutnumber: rainoutNumber,
       latitude,
       longitude,
+      haslights: hasLights,
     });
 
     return FieldResponseFormatter.formatField(updatedField);

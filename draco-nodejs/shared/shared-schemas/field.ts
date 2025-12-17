@@ -43,6 +43,7 @@ export const FieldNameSchema = z.object({
 });
 
 export const FieldSchema = FieldNameSchema.extend({
+  hasLights: z.boolean().optional().default(false),
   address: optionalLimitedString(255),
   city: optionalLimitedString(25),
   state: optionalLimitedString(25),

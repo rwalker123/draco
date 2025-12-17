@@ -11,12 +11,14 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useForm, type Resolver } from 'react-hook-form';
+import { Controller, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { FieldType, UpsertFieldType } from '@draco/shared-schemas';
 import { UpsertFieldSchema } from '@draco/shared-schemas';
@@ -38,6 +40,7 @@ type FieldFormValues = UpsertFieldType;
 const DEFAULT_VALUES: FieldFormValues = {
   name: '',
   shortName: '',
+  hasLights: false,
   address: '',
   city: '',
   state: '',
@@ -106,6 +109,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
     return {
       name: field.name ?? '',
       shortName: field.shortName ?? field.name?.slice(0, 5) ?? '',
+      hasLights: field.hasLights ?? false,
       address: field.address ?? '',
       city: field.city ?? '',
       state: field.state ?? '',
@@ -130,6 +134,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     setValue,
@@ -291,6 +296,23 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 helperText={
                   errors.shortName?.message ?? 'Displayed in compact schedules (max 5 characters).'
                 }
+              />
+            </Grid>
+            <Grid size={12}>
+              <Controller
+                name="hasLights"
+                control={control}
+                render={({ field: controllerField }) => (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={controllerField.value ?? false}
+                        onChange={(event) => controllerField.onChange(event.target.checked)}
+                      />
+                    }
+                    label="Has lights"
+                  />
+                )}
               />
             </Grid>
             <Grid size={12}>

@@ -301,7 +301,6 @@ export const SchedulerApplyRequestSchema = z
     runId: z.string().trim().min(1),
     mode: SchedulerApplyModeSchema,
     assignments: SchedulerAssignmentSchema.array().min(1),
-    fields: SchedulerFieldSchema.array().min(1),
     constraints: SchedulerConstraintsSchema,
     gameIds: schedulerIdSchema.array().min(1).optional(),
   })

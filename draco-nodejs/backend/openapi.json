@@ -899,6 +899,10 @@
             "type": "string",
             "maxLength": 5
           },
+          "hasLights": {
+            "type": "boolean",
+            "default": false
+          },
           "address": {
             "type": "string",
             "nullable": true,
@@ -990,6 +994,10 @@
                 "shortName": {
                   "type": "string",
                   "maxLength": 5
+                },
+                "hasLights": {
+                  "type": "boolean",
+                  "default": false
                 },
                 "address": {
                   "type": "string",
@@ -1107,6 +1115,10 @@
           "shortName": {
             "type": "string",
             "maxLength": 5
+          },
+          "hasLights": {
+            "type": "boolean",
+            "default": false
           },
           "address": {
             "type": "string",
@@ -13018,6 +13030,10 @@
                 "type": "string",
                 "maxLength": 5
               },
+              "hasLights": {
+                "type": "boolean",
+                "default": false
+              },
               "address": {
                 "type": "string",
                 "nullable": true,
@@ -13134,6 +13150,10 @@
               "shortName": {
                 "type": "string",
                 "maxLength": 5
+              },
+              "hasLights": {
+                "type": "boolean",
+                "default": false
               },
               "address": {
                 "type": "string",
@@ -15082,6 +15102,10 @@
                 "type": "string",
                 "maxLength": 5
               },
+              "hasLights": {
+                "type": "boolean",
+                "default": false
+              },
               "address": {
                 "type": "string",
                 "nullable": true,
@@ -15404,6 +15428,10 @@
                       "type": "string",
                       "maxLength": 5
                     },
+                    "hasLights": {
+                      "type": "boolean",
+                      "default": false
+                    },
                     "address": {
                       "type": "string",
                       "nullable": true,
@@ -15693,6 +15721,10 @@
                     "shortName": {
                       "type": "string",
                       "maxLength": 5
+                    },
+                    "hasLights": {
+                      "type": "boolean",
+                      "default": false
                     },
                     "address": {
                       "type": "string",
@@ -15992,6 +16024,10 @@
                     "shortName": {
                       "type": "string",
                       "maxLength": 5
+                    },
+                    "hasLights": {
+                      "type": "boolean",
+                      "default": false
                     },
                     "address": {
                       "type": "string",
@@ -21034,43 +21070,6 @@
             },
             "minItems": 1
           },
-          "fields": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "minLength": 1,
-                  "example": "123"
-                },
-                "name": {
-                  "type": "string",
-                  "minLength": 1,
-                  "example": "Field 1"
-                },
-                "properties": {
-                  "type": "object",
-                  "properties": {
-                    "hasLights": {
-                      "type": "boolean"
-                    },
-                    "maxParallelGames": {
-                      "type": "integer",
-                      "minimum": 0,
-                      "exclusiveMinimum": true
-                    }
-                  }
-                }
-              },
-              "required": [
-                "id",
-                "name"
-              ],
-              "title": "SchedulerField"
-            },
-            "minItems": 1
-          },
           "constraints": {
             "type": "object",
             "properties": {
@@ -21204,8 +21203,7 @@
         "required": [
           "runId",
           "mode",
-          "assignments",
-          "fields"
+          "assignments"
         ],
         "title": "SchedulerApplyRequest",
         "description": "Apply a scheduling proposal to persist assignments. This is a follow-up to /scheduler/solve and writes to the database.",

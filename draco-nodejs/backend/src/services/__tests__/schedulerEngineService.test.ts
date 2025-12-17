@@ -104,6 +104,22 @@ describe('SchedulerEngineService', () => {
     expect(result.unscheduled[0]?.gameId).toBe('game-2');
   });
 
+  it('rejects games with earliestStart equal to latestEnd', () => {
+    const service = new SchedulerEngineService();
+    const spec: SchedulerProblemSpec = {
+      ...baseSpec,
+      games: [
+        {
+          ...baseSpec.games[0],
+          earliestStart: '2026-04-05T09:00:00Z',
+          latestEnd: '2026-04-05T09:00:00Z',
+        },
+      ],
+    };
+
+    expect(() => service.solve(spec)).toThrowError(/earliestStart must be before latestEnd/);
+  });
+
   it('rejects games that reference unknown teams', () => {
     const service = new SchedulerEngineService();
     const spec: SchedulerProblemSpec = {

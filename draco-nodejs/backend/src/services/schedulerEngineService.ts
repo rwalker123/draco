@@ -240,7 +240,7 @@ export class SchedulerEngineService {
       if (game.earliestStart && game.latestEnd) {
         const earliest = new Date(game.earliestStart);
         const latest = new Date(game.latestEnd);
-        if (earliest > latest) {
+        if (earliest >= latest) {
           throw new ValidationError(`Game ${game.id} earliestStart must be before latestEnd`);
         }
       }

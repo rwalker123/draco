@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SchedulerApplyService } from '../schedulerApplyService.js';
 import type { IScheduleRepository } from '../../repositories/interfaces/IScheduleRepository.js';
+import type { IFieldRepository } from '../../repositories/interfaces/IFieldRepository.js';
 import type {
   dbScheduleGameForAccount,
   dbScheduleGameWithDetails,
   dbScheduleUpdateData,
 } from '../../repositories/index.js';
 import type { SchedulerApplyRequest } from '@draco/shared-schemas';
+import type { availablefields } from '#prisma/client';
 
 class ScheduleRepositoryStub implements IScheduleRepository {
   findById = vi.fn<IScheduleRepository['findById']>();
@@ -36,6 +38,41 @@ class ScheduleRepositoryStub implements IScheduleRepository {
   listUpcomingGamesForTeam = vi.fn<IScheduleRepository['listUpcomingGamesForTeam']>();
   listRecentGamesForTeam = vi.fn<IScheduleRepository['listRecentGamesForTeam']>();
 }
+
+class FieldRepositoryStub implements IFieldRepository {
+  findById = vi.fn<IFieldRepository['findById']>();
+  findMany = vi.fn<IFieldRepository['findMany']>();
+  create = vi.fn<IFieldRepository['create']>();
+  update = vi.fn<IFieldRepository['update']>();
+  delete = vi.fn<IFieldRepository['delete']>();
+  count = vi.fn<IFieldRepository['count']>();
+  findByAccount = vi.fn<IFieldRepository['findByAccount']>();
+  countByAccount = vi.fn<IFieldRepository['countByAccount']>();
+  findByName = vi.fn<IFieldRepository['findByName']>();
+  findByNameExcludingId = vi.fn<IFieldRepository['findByNameExcludingId']>();
+  findAccountField = vi.fn<IFieldRepository['findAccountField']>();
+  isFieldInUse = vi.fn<IFieldRepository['isFieldInUse']>();
+}
+
+const makeAvailableField = (
+  overrides: Partial<availablefields> & { id: bigint; accountid: bigint },
+): availablefields => ({
+  id: overrides.id,
+  accountid: overrides.accountid,
+  name: overrides.name ?? 'Field 10',
+  shortname: overrides.shortname ?? 'F10',
+  comment: overrides.comment ?? '',
+  address: overrides.address ?? '',
+  city: overrides.city ?? '',
+  state: overrides.state ?? '',
+  zipcode: overrides.zipcode ?? '',
+  directions: overrides.directions ?? '',
+  rainoutnumber: overrides.rainoutnumber ?? '',
+  latitude: overrides.latitude ?? '',
+  longitude: overrides.longitude ?? '',
+  haslights: overrides.haslights ?? true,
+  maxparallelgames: overrides.maxparallelgames ?? 1,
+});
 
 const makeAccountGame = (
   overrides: Partial<dbScheduleGameForAccount> & { id: bigint },
@@ -96,31 +133,255 @@ const makeGameWithDetails = (id: bigint): dbScheduleGameWithDetails =>
 describe('SchedulerApplyService.applyProposal', () => {
   const accountId = 42n;
   let repository: ScheduleRepositoryStub;
+  let fieldRepository: FieldRepositoryStub;
   let service: SchedulerApplyService;
+  let fieldMeta: { haslights: boolean; maxparallelgames: number };
+  let gamesById: Map<bigint, dbScheduleGameForAccount>;
+
+  const resolveUpdatedDate = (value: dbScheduleUpdateData['gamedate'], fallback: Date): Date => {
+    if (value instanceof Date) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = new Date(value);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+    if (value && typeof value === 'object' && 'set' in value) {
+      const setValue = (value as { set?: unknown }).set;
+      if (setValue instanceof Date) {
+        return setValue;
+      }
+      if (typeof setValue === 'string') {
+        const parsed = new Date(setValue);
+        if (!Number.isNaN(parsed.getTime())) {
+          return parsed;
+        }
+      }
+    }
+    return fallback;
+  };
+
+  const resolveUpdatedNullableBigInt = (value: unknown, fallback: bigint | null): bigint | null => {
+    if (value === null || typeof value === 'bigint') {
+      return value;
+    }
+    if (value && typeof value === 'object' && 'set' in value) {
+      const setValue = (value as { set?: unknown }).set;
+      if (setValue === null || typeof setValue === 'bigint') {
+        return setValue;
+      }
+    }
+    return fallback;
+  };
 
   beforeEach(() => {
     repository = new ScheduleRepositoryStub();
-    service = new SchedulerApplyService(repository);
-    repository.findFieldConflict.mockResolvedValue(null);
-    repository.countFieldBookingsAtTime.mockResolvedValue(0);
-    repository.countTeamBookingsAtTime.mockResolvedValue(0);
-    repository.countUmpireBookingsAtTime.mockResolvedValue(0);
-    repository.countTeamGamesInRange.mockResolvedValue(0);
-    repository.countUmpireGamesInRange.mockResolvedValue(0);
-    repository.updateGame.mockImplementation(async (gameId: bigint, _data: dbScheduleUpdateData) =>
-      makeGameWithDetails(gameId),
+    fieldRepository = new FieldRepositoryStub();
+    gamesById = new Map();
+    fieldMeta = { haslights: true, maxparallelgames: 1 };
+    fieldRepository.findAccountField.mockImplementation(async (account, fieldId) => {
+      if (account !== accountId) {
+        return null;
+      }
+
+      if (fieldId !== 10n) {
+        return null;
+      }
+
+      return makeAvailableField({
+        id: 10n,
+        accountid: accountId,
+        haslights: fieldMeta.haslights,
+        maxparallelgames: fieldMeta.maxparallelgames,
+      });
+    });
+
+    service = new SchedulerApplyService({
+      scheduleRepository: repository,
+      fieldRepository,
+    });
+
+    repository.findGameWithAccountContext.mockImplementation(
+      async (gameId: bigint, account: bigint) => {
+        if (account !== accountId) {
+          return null;
+        }
+        return gamesById.get(gameId) ?? null;
+      },
+    );
+
+    repository.updateGame.mockImplementation(async (gameId: bigint, data: dbScheduleUpdateData) => {
+      const existing = gamesById.get(gameId);
+      if (!existing) {
+        throw new Error(`Game not found: ${gameId.toString()}`);
+      }
+
+      gamesById.set(gameId, {
+        ...existing,
+        gamedate: resolveUpdatedDate(data.gamedate, existing.gamedate),
+        fieldid: resolveUpdatedNullableBigInt(data.fieldid, existing.fieldid),
+        umpire1: resolveUpdatedNullableBigInt(data.umpire1, existing.umpire1),
+        umpire2: resolveUpdatedNullableBigInt(data.umpire2, existing.umpire2),
+        umpire3: resolveUpdatedNullableBigInt(data.umpire3, existing.umpire3),
+        umpire4: resolveUpdatedNullableBigInt(data.umpire4, existing.umpire4),
+      });
+
+      return makeGameWithDetails(gameId);
+    });
+
+    repository.countFieldBookingsAtTime.mockImplementation(
+      async (fieldId: bigint, gameDate: Date, leagueSeasonId: bigint, excludeGameId?: bigint) => {
+        let count = 0;
+        for (const game of gamesById.values()) {
+          if (excludeGameId && game.id === excludeGameId) {
+            continue;
+          }
+          if (game.fieldid !== fieldId) {
+            continue;
+          }
+          if (game.leagueid !== leagueSeasonId) {
+            continue;
+          }
+          if (game.gamedate.getTime() !== gameDate.getTime()) {
+            continue;
+          }
+          count += 1;
+        }
+        return count;
+      },
+    );
+
+    repository.countTeamBookingsAtTime.mockImplementation(
+      async (
+        teamSeasonId: bigint,
+        gameDate: Date,
+        leagueSeasonId: bigint,
+        excludeGameId?: bigint,
+      ) => {
+        let count = 0;
+        for (const game of gamesById.values()) {
+          if (excludeGameId && game.id === excludeGameId) {
+            continue;
+          }
+          if (game.leagueid !== leagueSeasonId) {
+            continue;
+          }
+          if (game.gamedate.getTime() !== gameDate.getTime()) {
+            continue;
+          }
+          if (game.hteamid !== teamSeasonId && game.vteamid !== teamSeasonId) {
+            continue;
+          }
+          count += 1;
+        }
+        return count;
+      },
+    );
+
+    repository.countUmpireBookingsAtTime.mockImplementation(
+      async (umpireId: bigint, gameDate: Date, leagueSeasonId: bigint, excludeGameId?: bigint) => {
+        let count = 0;
+        for (const game of gamesById.values()) {
+          if (excludeGameId && game.id === excludeGameId) {
+            continue;
+          }
+          if (game.leagueid !== leagueSeasonId) {
+            continue;
+          }
+          if (game.gamedate.getTime() !== gameDate.getTime()) {
+            continue;
+          }
+          if (
+            game.umpire1 !== umpireId &&
+            game.umpire2 !== umpireId &&
+            game.umpire3 !== umpireId &&
+            game.umpire4 !== umpireId
+          ) {
+            continue;
+          }
+          count += 1;
+        }
+        return count;
+      },
+    );
+
+    repository.countTeamGamesInRange.mockImplementation(
+      async (
+        teamSeasonId: bigint,
+        start: Date,
+        end: Date,
+        leagueSeasonId: bigint,
+        excludeGameId?: bigint,
+      ) => {
+        let count = 0;
+        for (const game of gamesById.values()) {
+          if (excludeGameId && game.id === excludeGameId) {
+            continue;
+          }
+          if (game.leagueid !== leagueSeasonId) {
+            continue;
+          }
+          if (
+            game.gamedate.getTime() < start.getTime() ||
+            game.gamedate.getTime() >= end.getTime()
+          ) {
+            continue;
+          }
+          if (game.hteamid !== teamSeasonId && game.vteamid !== teamSeasonId) {
+            continue;
+          }
+          count += 1;
+        }
+        return count;
+      },
+    );
+
+    repository.countUmpireGamesInRange.mockImplementation(
+      async (
+        umpireId: bigint,
+        start: Date,
+        end: Date,
+        leagueSeasonId: bigint,
+        excludeGameId?: bigint,
+      ) => {
+        let count = 0;
+        for (const game of gamesById.values()) {
+          if (excludeGameId && game.id === excludeGameId) {
+            continue;
+          }
+          if (game.leagueid !== leagueSeasonId) {
+            continue;
+          }
+          if (
+            game.gamedate.getTime() < start.getTime() ||
+            game.gamedate.getTime() >= end.getTime()
+          ) {
+            continue;
+          }
+          if (
+            game.umpire1 !== umpireId &&
+            game.umpire2 !== umpireId &&
+            game.umpire3 !== umpireId &&
+            game.umpire4 !== umpireId
+          ) {
+            continue;
+          }
+          count += 1;
+        }
+        return count;
+      },
     );
   });
 
   it('applies all assignments and returns applied status', async () => {
-    repository.findGameWithAccountContext.mockResolvedValue(makeAccountGame({ id: 123n }));
+    gamesById.set(123n, makeAccountGame({ id: 123n }));
+    fieldMeta = { haslights: true, maxparallelgames: 1 };
 
     const request: SchedulerApplyRequest = {
       runId: 'run-1',
       mode: 'all',
-      fields: [
-        { id: '10', name: 'Field 10', properties: { maxParallelGames: 1, hasLights: true } },
-      ],
       constraints: { hard: { noFieldOverlap: true } },
       assignments: [
         {
@@ -142,15 +403,13 @@ describe('SchedulerApplyService.applyProposal', () => {
   });
 
   it('applies subset and skips missing assignments', async () => {
-    repository.findGameWithAccountContext.mockResolvedValue(makeAccountGame({ id: 123n }));
+    gamesById.set(123n, makeAccountGame({ id: 123n }));
+    fieldMeta = { haslights: true, maxparallelgames: 1 };
 
     const request: SchedulerApplyRequest = {
       runId: 'run-2',
       mode: 'subset',
       gameIds: ['123', '124'],
-      fields: [
-        { id: '10', name: 'Field 10', properties: { maxParallelGames: 1, hasLights: true } },
-      ],
       constraints: { hard: { noFieldOverlap: true } },
       assignments: [
         {
@@ -173,15 +432,16 @@ describe('SchedulerApplyService.applyProposal', () => {
   });
 
   it('skips assignments when field conflict exists', async () => {
-    repository.findGameWithAccountContext.mockResolvedValue(makeAccountGame({ id: 123n }));
-    repository.countFieldBookingsAtTime.mockResolvedValue(1);
+    gamesById.set(123n, makeAccountGame({ id: 123n }));
+    gamesById.set(
+      999n,
+      makeAccountGame({ id: 999n, gamedate: new Date('2026-04-05T09:00:00.000Z'), fieldid: 10n }),
+    );
+    fieldMeta = { haslights: true, maxparallelgames: 1 };
 
     const request: SchedulerApplyRequest = {
       runId: 'run-3',
       mode: 'all',
-      fields: [
-        { id: '10', name: 'Field 10', properties: { maxParallelGames: 1, hasLights: true } },
-      ],
       constraints: { hard: { noFieldOverlap: true } },
       assignments: [
         {
@@ -205,7 +465,8 @@ describe('SchedulerApplyService.applyProposal', () => {
   });
 
   it('does not update when assignment already matches persisted state', async () => {
-    repository.findGameWithAccountContext.mockResolvedValue(
+    gamesById.set(
+      123n,
       makeAccountGame({
         id: 123n,
         gamedate: new Date('2026-04-05T09:00:00.000Z'),
@@ -216,13 +477,11 @@ describe('SchedulerApplyService.applyProposal', () => {
         umpire4: null,
       }),
     );
+    fieldMeta = { haslights: true, maxparallelgames: 1 };
 
     const request: SchedulerApplyRequest = {
       runId: 'run-4',
       mode: 'all',
-      fields: [
-        { id: '10', name: 'Field 10', properties: { maxParallelGames: 1, hasLights: true } },
-      ],
       constraints: { hard: { noFieldOverlap: true } },
       assignments: [
         {
@@ -243,14 +502,12 @@ describe('SchedulerApplyService.applyProposal', () => {
   });
 
   it('skips non-lit fields when requireLightsAfter is enabled', async () => {
-    repository.findGameWithAccountContext.mockResolvedValue(makeAccountGame({ id: 123n }));
+    gamesById.set(123n, makeAccountGame({ id: 123n }));
+    fieldMeta = { haslights: false, maxparallelgames: 1 };
 
     const request: SchedulerApplyRequest = {
       runId: 'run-5',
       mode: 'all',
-      fields: [
-        { id: '10', name: 'Field 10', properties: { maxParallelGames: 1, hasLights: false } },
-      ],
       constraints: {
         hard: { requireLightsAfter: { enabled: true, startHourLocal: 18, timeZone: 'UTC' } },
       },
@@ -275,16 +532,18 @@ describe('SchedulerApplyService.applyProposal', () => {
     expect(repository.updateGame).not.toHaveBeenCalled();
   });
 
-  it('enforces maxParallelGames against database and apply batch', async () => {
-    repository.findGameWithAccountContext.mockResolvedValue(makeAccountGame({ id: 123n }));
-    repository.countFieldBookingsAtTime.mockResolvedValue(1);
+  it('enforces maxParallelGames against database state', async () => {
+    gamesById.set(123n, makeAccountGame({ id: 123n }));
+    gamesById.set(124n, makeAccountGame({ id: 124n }));
+    gamesById.set(
+      999n,
+      makeAccountGame({ id: 999n, gamedate: new Date('2026-04-05T09:00:00.000Z'), fieldid: 10n }),
+    );
+    fieldMeta = { haslights: true, maxparallelgames: 2 };
 
     const request: SchedulerApplyRequest = {
       runId: 'run-6',
       mode: 'all',
-      fields: [
-        { id: '10', name: 'Field 10', properties: { maxParallelGames: 2, hasLights: true } },
-      ],
       constraints: { hard: { noFieldOverlap: true } },
       assignments: [
         {
@@ -304,13 +563,6 @@ describe('SchedulerApplyService.applyProposal', () => {
       ],
     };
 
-    repository.findGameWithAccountContext.mockImplementation(async (gameId: bigint) => {
-      if (gameId === 124n) {
-        return makeAccountGame({ id: 124n });
-      }
-      return makeAccountGame({ id: 123n });
-    });
-
     const result = await service.applyProposal(accountId, request);
 
     expect(result.status).toBe('partial');
@@ -321,15 +573,16 @@ describe('SchedulerApplyService.applyProposal', () => {
   });
 
   it('enforces noTeamOverlap using database state', async () => {
-    repository.countTeamBookingsAtTime.mockResolvedValue(1);
-    repository.findGameWithAccountContext.mockResolvedValue(makeAccountGame({ id: 123n }));
+    gamesById.set(123n, makeAccountGame({ id: 123n }));
+    gamesById.set(
+      999n,
+      makeAccountGame({ id: 999n, gamedate: new Date('2026-04-05T09:00:00.000Z') }),
+    );
+    fieldMeta = { haslights: true, maxparallelgames: 2 };
 
     const request: SchedulerApplyRequest = {
       runId: 'run-7',
       mode: 'all',
-      fields: [
-        { id: '10', name: 'Field 10', properties: { maxParallelGames: 2, hasLights: true } },
-      ],
       constraints: { hard: { noTeamOverlap: true } },
       assignments: [
         {
@@ -352,15 +605,20 @@ describe('SchedulerApplyService.applyProposal', () => {
   });
 
   it('enforces noUmpireOverlap using database state', async () => {
-    repository.countUmpireBookingsAtTime.mockResolvedValue(1);
-    repository.findGameWithAccountContext.mockResolvedValue(makeAccountGame({ id: 123n }));
+    gamesById.set(123n, makeAccountGame({ id: 123n }));
+    gamesById.set(
+      999n,
+      makeAccountGame({
+        id: 999n,
+        gamedate: new Date('2026-04-05T09:00:00.000Z'),
+        umpire1: 77n,
+      }),
+    );
+    fieldMeta = { haslights: true, maxparallelgames: 2 };
 
     const request: SchedulerApplyRequest = {
       runId: 'run-8',
       mode: 'all',
-      fields: [
-        { id: '10', name: 'Field 10', properties: { maxParallelGames: 2, hasLights: true } },
-      ],
       constraints: { hard: { noUmpireOverlap: true } },
       assignments: [
         {
@@ -382,21 +640,21 @@ describe('SchedulerApplyService.applyProposal', () => {
     expect(repository.updateGame).not.toHaveBeenCalled();
   });
 
-  it('enforces maxGamesPerTeamPerDay using database and apply batch', async () => {
-    repository.countTeamGamesInRange.mockResolvedValue(1);
-    repository.findGameWithAccountContext.mockImplementation(async (gameId: bigint) => {
-      if (gameId === 124n) {
-        return makeAccountGame({ id: 124n });
-      }
-      return makeAccountGame({ id: 123n });
-    });
+  it('enforces maxGamesPerTeamPerDay using database state', async () => {
+    gamesById.set(123n, makeAccountGame({ id: 123n }));
+    gamesById.set(
+      124n,
+      makeAccountGame({ id: 124n, gamedate: new Date('2026-04-06T08:00:00.000Z') }),
+    );
+    gamesById.set(
+      999n,
+      makeAccountGame({ id: 999n, gamedate: new Date('2026-04-05T06:00:00.000Z') }),
+    );
+    fieldMeta = { haslights: true, maxparallelgames: 2 };
 
     const request: SchedulerApplyRequest = {
       runId: 'run-9',
       mode: 'all',
-      fields: [
-        { id: '10', name: 'Field 10', properties: { maxParallelGames: 2, hasLights: true } },
-      ],
       constraints: { hard: { maxGamesPerTeamPerDay: 2 } },
       assignments: [
         {
@@ -423,21 +681,21 @@ describe('SchedulerApplyService.applyProposal', () => {
     expect(result.skipped).toEqual([{ gameId: '124', reason: 'Team daily game limit exceeded' }]);
   });
 
-  it('enforces maxGamesPerUmpirePerDay using database and apply batch', async () => {
-    repository.countUmpireGamesInRange.mockResolvedValue(1);
-    repository.findGameWithAccountContext.mockImplementation(async (gameId: bigint) => {
-      if (gameId === 124n) {
-        return makeAccountGame({ id: 124n });
-      }
-      return makeAccountGame({ id: 123n });
-    });
+  it('enforces maxGamesPerUmpirePerDay using database state', async () => {
+    gamesById.set(123n, makeAccountGame({ id: 123n }));
+    gamesById.set(
+      124n,
+      makeAccountGame({ id: 124n, gamedate: new Date('2026-04-06T08:00:00.000Z') }),
+    );
+    gamesById.set(
+      999n,
+      makeAccountGame({ id: 999n, gamedate: new Date('2026-04-05T06:00:00.000Z'), umpire1: 77n }),
+    );
+    fieldMeta = { haslights: true, maxparallelgames: 2 };
 
     const request: SchedulerApplyRequest = {
       runId: 'run-10',
       mode: 'all',
-      fields: [
-        { id: '10', name: 'Field 10', properties: { maxParallelGames: 2, hasLights: true } },
-      ],
       constraints: { hard: { maxGamesPerUmpirePerDay: 2 } },
       assignments: [
         {
