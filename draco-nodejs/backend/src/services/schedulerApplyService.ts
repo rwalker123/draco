@@ -32,6 +32,7 @@ export class SchedulerApplyService {
   async applyProposal(
     accountId: bigint,
     request: SchedulerApplyRequest,
+    context?: { seasonId?: bigint },
   ): Promise<SchedulerApplyResult> {
     const targetGameIds = this.resolveTargetGameIds(request);
     const appliedGameIds: string[] = [];
@@ -79,6 +80,11 @@ export class SchedulerApplyService {
       );
       if (!existingGame) {
         skipped.push({ gameId: assignment.gameId, reason: 'Game not found' });
+        continue;
+      }
+
+      if (context?.seasonId && existingGame.leagueseason.seasonid !== context.seasonId) {
+        skipped.push({ gameId: assignment.gameId, reason: 'Game is not in the requested season' });
         continue;
       }
 

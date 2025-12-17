@@ -15995,6 +15995,154 @@ components:
       description: DB-sourced solve request. The backend assembles
         teams/games/fields/umpires/fieldSlots from the database; the caller may
         provide optional constraint/objective overrides.
+    SchedulerSeasonApplyRequest:
+      type: object
+      properties:
+        runId:
+          type: string
+          minLength: 1
+        mode:
+          type: string
+          enum:
+            - all
+            - subset
+          title: SchedulerApplyMode
+          description: Whether to apply all assignments or only a subset.
+        assignments:
+          type: array
+          items:
+            type: object
+            properties:
+              gameId:
+                type: string
+                minLength: 1
+                example: "123"
+              fieldId:
+                type: string
+                minLength: 1
+                example: "123"
+              startTime:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+              endTime:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
+              umpireIds:
+                type: array
+                items:
+                  type: string
+                  minLength: 1
+                  example: "123"
+            required:
+              - gameId
+              - fieldId
+              - startTime
+              - endTime
+              - umpireIds
+            title: SchedulerAssignment
+          minItems: 1
+        constraints:
+          type: object
+          properties:
+            hard:
+              type: object
+              properties:
+                respectTeamBlackouts:
+                  type: boolean
+                respectUmpireAvailability:
+                  type: boolean
+                respectFieldSlots:
+                  type: boolean
+                maxGamesPerTeamPerDay:
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                maxGamesPerUmpirePerDay:
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                noTeamOverlap:
+                  type: boolean
+                noUmpireOverlap:
+                  type: boolean
+                noFieldOverlap:
+                  type: boolean
+                requireLightsAfter:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    startHourLocal:
+                      type: integer
+                      minimum: 0
+                      maximum: 23
+                  required:
+                    - enabled
+                    - startHourLocal
+                  title: SchedulerRequireLightsAfterOverride
+                  description: When enabled, slots whose local start time is at/after
+                    startHourLocal must use a field with hasLights=true. The
+                    backend will use the account timezoneid.
+              title: SchedulerHardConstraintsOverride
+            soft:
+              type: object
+              properties:
+                avoidBackToBackGames:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    minRestMinutes:
+                      type: integer
+                      minimum: 0
+                    weight:
+                      type: integer
+                      minimum: 0
+                  required:
+                    - enabled
+                    - minRestMinutes
+                balanceEarlyVsLate:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    weight:
+                      type: integer
+                      minimum: 0
+                  required:
+                    - enabled
+                spreadGamesAcrossDays:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    weight:
+                      type: integer
+                      minimum: 0
+                  required:
+                    - enabled
+              title: SchedulerSoftConstraints
+          title: SchedulerConstraintsOverrideRequired
+          description: Constraints overrides are required for season-scoped apply requests.
+        gameIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            example: "123"
+          minItems: 1
+      required:
+        - runId
+        - mode
+        - assignments
+        - constraints
+      title: SchedulerSeasonApplyRequest
+      description: DB-sourced apply request. Persists the proposed assignments for the
+        season using DB-derived data plus constraint overrides.
     SchedulerSolveResult:
       type: object
       properties:
@@ -30304,6 +30452,67 @@ paths:
                 $ref: "#/components/schemas/AuthenticationError"
         "403":
           description: Insufficient permissions to generate schedules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/scheduler/apply:
+    post:
+      operationId: applySeasonSchedule
+      summary: Persist a proposed schedule (DB-sourced)
+      description: Applies a proposed schedule for the season by persisting all or
+        selected assignments to the database. This endpoint validates
+        constraints using DB-derived context and is safe to retry.
+      tags:
+        - Scheduler
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchedulerSeasonApplyRequest"
+      responses:
+        "200":
+          description: Apply result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerApplyResult"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to apply schedules
           content:
             application/json:
               schema:

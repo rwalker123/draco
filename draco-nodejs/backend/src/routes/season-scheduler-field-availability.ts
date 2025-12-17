@@ -6,6 +6,7 @@ import { extractBigIntParams } from '../utils/paramExtraction.js';
 import {
   SchedulerFieldAvailabilityRuleUpsertSchema,
   SchedulerSeasonSolveRequestSchema,
+  SchedulerSeasonApplyRequestSchema,
 } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
@@ -14,6 +15,7 @@ const schedulerFieldAvailabilityRulesService =
   ServiceFactory.getSchedulerFieldAvailabilityRulesService();
 const schedulerProblemSpecService = ServiceFactory.getSchedulerProblemSpecService();
 const schedulerEngineService = ServiceFactory.getSchedulerEngineService();
+const schedulerSeasonApplyService = ServiceFactory.getSchedulerSeasonApplyService();
 
 router.get(
   '/field-availability-rules',
@@ -59,6 +61,23 @@ router.post(
       request,
     );
     const result = schedulerEngineService.solve(problemSpec, { accountId, idempotencyKey });
+    res.json(result);
+  }),
+);
+
+router.post(
+  '/apply',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
+    const request = SchedulerSeasonApplyRequestSchema.parse(req.body);
+    const result = await schedulerSeasonApplyService.applySeasonProposal(
+      accountId,
+      seasonId,
+      request,
+    );
     res.json(result);
   }),
 );

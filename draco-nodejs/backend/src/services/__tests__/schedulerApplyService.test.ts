@@ -464,6 +464,35 @@ describe('SchedulerApplyService.applyProposal', () => {
     expect(repository.updateGame).not.toHaveBeenCalled();
   });
 
+  it('skips assignments when game is not in the requested season', async () => {
+    gamesById.set(123n, makeAccountGame({ id: 123n }));
+    fieldMeta = { haslights: true, maxparallelgames: 1 };
+
+    const request: SchedulerApplyRequest = {
+      runId: 'run-3b',
+      mode: 'all',
+      constraints: { hard: { noFieldOverlap: true } },
+      assignments: [
+        {
+          gameId: '123',
+          fieldId: '10',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+          umpireIds: [],
+        },
+      ],
+    };
+
+    const result = await service.applyProposal(accountId, request, { seasonId: 123n });
+
+    expect(result.status).toBe('failed');
+    expect(result.appliedGameIds).toEqual([]);
+    expect(result.skipped).toEqual([
+      { gameId: '123', reason: 'Game is not in the requested season' },
+    ]);
+    expect(repository.updateGame).not.toHaveBeenCalled();
+  });
+
   it('does not update when assignment already matches persisted state', async () => {
     gamesById.set(
       123n,

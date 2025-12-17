@@ -9,6 +9,7 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
     SchedulerProblemSpecSchemaRef,
     SchedulerProblemSpecPreviewSchemaRef,
     SchedulerSeasonSolveRequestSchemaRef,
+    SchedulerSeasonApplyRequestSchemaRef,
     SchedulerSolveResultSchemaRef,
     SchedulerApplyRequestSchemaRef,
     SchedulerApplyResultSchemaRef,
@@ -199,6 +200,63 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
       },
       403: {
         description: 'Insufficient permissions to generate schedules',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/apply',
+    operationId: 'applySeasonSchedule',
+    summary: 'Persist a proposed schedule (DB-sourced)',
+    description:
+      'Applies a proposed schedule for the season by persisting all or selected assignments to the database. This endpoint validates constraints using DB-derived context and is safe to retry.',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: SchedulerSeasonApplyRequestSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Apply result',
+        content: { 'application/json': { schema: SchedulerApplyResultSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions to apply schedules',
         content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
       },
       500: {

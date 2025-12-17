@@ -244,6 +244,16 @@ export const SchedulerConstraintsOverrideSchema = z
   .optional()
   .openapi({ title: 'SchedulerConstraintsOverride' });
 
+export const SchedulerConstraintsOverrideRequiredSchema = z
+  .object({
+    hard: SchedulerHardConstraintsOverrideSchema.optional(),
+    soft: SchedulerSoftConstraintsSchema.optional(),
+  })
+  .openapi({
+    title: 'SchedulerConstraintsOverrideRequired',
+    description: 'Constraints overrides are required for season-scoped apply requests.',
+  });
+
 export const SchedulerObjectivesSchema = z
   .object({
     primary: z.enum(['maximize_scheduled_games', 'minimize_conflicts']).optional(),
@@ -432,6 +442,29 @@ export const SchedulerApplyRequestSchema = z
     },
   });
 
+export const SchedulerSeasonApplyRequestSchema = z
+  .object({
+    runId: z.string().trim().min(1),
+    mode: SchedulerApplyModeSchema,
+    assignments: SchedulerAssignmentSchema.array().min(1),
+    constraints: SchedulerConstraintsOverrideRequiredSchema,
+    gameIds: schedulerIdSchema.array().min(1).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.mode === 'subset' && (!data.gameIds || data.gameIds.length === 0)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['gameIds'],
+        message: 'gameIds is required when mode is subset',
+      });
+    }
+  })
+  .openapi({
+    title: 'SchedulerSeasonApplyRequest',
+    description:
+      'DB-sourced apply request. Persists the proposed assignments for the season using DB-derived data plus constraint overrides.',
+  });
+
 export const SchedulerApplySkippedSchema = z
   .object({
     gameId: schedulerIdSchema,
@@ -477,6 +510,9 @@ export type SchedulerTeamBlackout = z.infer<typeof SchedulerTeamBlackoutSchema>;
 export type SchedulerHardConstraints = z.infer<typeof SchedulerHardConstraintsSchema>;
 export type SchedulerSoftConstraints = z.infer<typeof SchedulerSoftConstraintsSchema>;
 export type SchedulerConstraints = z.infer<typeof SchedulerConstraintsSchema>;
+export type SchedulerConstraintsOverrideRequired = z.infer<
+  typeof SchedulerConstraintsOverrideRequiredSchema
+>;
 export type SchedulerObjectives = z.infer<typeof SchedulerObjectivesSchema>;
 export type SchedulerProblemSpec = z.infer<typeof SchedulerProblemSpecSchema>;
 export type SchedulerAssignment = z.infer<typeof SchedulerAssignmentSchema>;
@@ -490,6 +526,7 @@ export type SchedulerApplySkipped = z.infer<typeof SchedulerApplySkippedSchema>;
 export type SchedulerApplyStatus = z.infer<typeof SchedulerApplyStatusSchema>;
 export type SchedulerApplyResult = z.infer<typeof SchedulerApplyResultSchema>;
 export type SchedulerSeasonSolveRequest = z.infer<typeof SchedulerSeasonSolveRequestSchema>;
+export type SchedulerSeasonApplyRequest = z.infer<typeof SchedulerSeasonApplyRequestSchema>;
 
 export const SchedulerProblemSpecPreviewSchema = z
   .object({
