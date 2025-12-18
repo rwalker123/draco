@@ -263,7 +263,11 @@ export class DateUtils {
       }
 
       const hour = Number(hourValue);
-      return Number.isNaN(hour) ? null : hour;
+      if (Number.isNaN(hour)) {
+        return null;
+      }
+
+      return hour === 24 ? 0 : hour;
     } catch {
       return null;
     }
@@ -375,15 +379,18 @@ export class DateUtils {
         return null;
       }
 
-      const normalized = new Date(
-        Date.UTC(rawYear, rawMonth - 1, rawDay, rawHour, rawMinute, 0, 0),
-      );
+      const normalizedHour = rawHour === 24 && rawMinute === 0 ? 0 : rawHour;
+
+      if (normalizedHour < 0 || normalizedHour > 23) {
+        return null;
+      }
+
       return {
-        year: normalized.getUTCFullYear(),
-        month: normalized.getUTCMonth() + 1,
-        day: normalized.getUTCDate(),
-        hour: normalized.getUTCHours(),
-        minute: normalized.getUTCMinutes(),
+        year: rawYear,
+        month: rawMonth,
+        day: rawDay,
+        hour: normalizedHour,
+        minute: rawMinute,
       };
     };
 
