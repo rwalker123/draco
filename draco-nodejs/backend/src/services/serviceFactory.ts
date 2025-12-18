@@ -35,6 +35,12 @@ import { PollService } from './pollService.js';
 import { FieldService } from './fieldService.js';
 import { UmpireService } from './umpireService.js';
 import { ScheduleService } from './scheduleService.js';
+import { SchedulerEngineService } from './schedulerEngineService.js';
+import { SchedulerApplyService } from './schedulerApplyService.js';
+import { SchedulerFieldAvailabilityRulesService } from './schedulerFieldAvailabilityRulesService.js';
+import { SchedulerFieldExclusionDatesService } from './schedulerFieldExclusionDatesService.js';
+import { SchedulerProblemSpecService } from './schedulerProblemSpecService.js';
+import { SchedulerSeasonApplyService } from './schedulerSeasonApplyService.js';
 import { LeagueService } from './LeagueService.js';
 import { LeagueFaqService } from './LeagueFaqService.js';
 import { MonitoringService } from './monitoringService.js';
@@ -112,6 +118,12 @@ export class ServiceFactory {
   private static fieldService: FieldService;
   private static umpireService: UmpireService;
   private static scheduleService: ScheduleService;
+  private static schedulerEngineService: SchedulerEngineService;
+  private static schedulerApplyService: SchedulerApplyService;
+  private static schedulerFieldAvailabilityRulesService: SchedulerFieldAvailabilityRulesService;
+  private static schedulerFieldExclusionDatesService: SchedulerFieldExclusionDatesService;
+  private static schedulerProblemSpecService: SchedulerProblemSpecService;
+  private static schedulerSeasonApplyService: SchedulerSeasonApplyService;
   private static leagueService: LeagueService;
   private static leagueFaqService: LeagueFaqService;
   private static monitoringService: MonitoringService;
@@ -397,6 +409,57 @@ export class ServiceFactory {
       this.scheduleService = new ScheduleService();
     }
     return this.scheduleService;
+  }
+
+  static getSchedulerEngineService(): SchedulerEngineService {
+    if (!this.schedulerEngineService) {
+      this.schedulerEngineService = new SchedulerEngineService();
+    }
+
+    return this.schedulerEngineService;
+  }
+
+  static getSchedulerApplyService(): SchedulerApplyService {
+    if (!this.schedulerApplyService) {
+      this.schedulerApplyService = new SchedulerApplyService();
+    }
+
+    return this.schedulerApplyService;
+  }
+
+  static getSchedulerFieldAvailabilityRulesService(): SchedulerFieldAvailabilityRulesService {
+    if (!this.schedulerFieldAvailabilityRulesService) {
+      this.schedulerFieldAvailabilityRulesService = new SchedulerFieldAvailabilityRulesService();
+    }
+
+    return this.schedulerFieldAvailabilityRulesService;
+  }
+
+  static getSchedulerFieldExclusionDatesService(): SchedulerFieldExclusionDatesService {
+    if (!this.schedulerFieldExclusionDatesService) {
+      this.schedulerFieldExclusionDatesService = new SchedulerFieldExclusionDatesService();
+    }
+
+    return this.schedulerFieldExclusionDatesService;
+  }
+
+  static getSchedulerProblemSpecService(): SchedulerProblemSpecService {
+    if (!this.schedulerProblemSpecService) {
+      this.schedulerProblemSpecService = new SchedulerProblemSpecService();
+    }
+
+    return this.schedulerProblemSpecService;
+  }
+
+  static getSchedulerSeasonApplyService(): SchedulerSeasonApplyService {
+    if (!this.schedulerSeasonApplyService) {
+      this.schedulerSeasonApplyService = new SchedulerSeasonApplyService(
+        this.getSchedulerProblemSpecService(),
+        this.getSchedulerApplyService(),
+      );
+    }
+
+    return this.schedulerSeasonApplyService;
   }
 
   static getMonitoringService(): MonitoringService {

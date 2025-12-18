@@ -4,6 +4,7 @@ type AvailableFieldInput = {
   id: bigint | number | string;
   name: string;
   shortname?: string | null;
+  haslights?: boolean | null;
   address?: string | null;
   city?: string | null;
   state?: string | null;
@@ -77,6 +78,7 @@ export const formatFieldFromAvailableField = (
     id: normalizeId(field.id),
     name: field.name,
     shortName: normalizeShortName(field.shortname),
+    hasLights: field.haslights === true,
     address: normalizeOptionalString(field.address ?? null),
     city: normalizeOptionalString(field.city ?? null),
     state: normalizeOptionalString(field.state ?? null),

@@ -45,6 +45,7 @@ import {
 } from '../../../../components/schedule';
 import WidgetShell from '../../../../components/ui/WidgetShell';
 import { useTheme } from '@mui/material/styles';
+import { SeasonSchedulerAdapter } from '../../../../components/scheduler/SeasonSchedulerAdapter';
 
 interface ScheduleManagementProps {
   accountId: string;
@@ -56,7 +57,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const theme = useTheme();
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
   const { user, token } = useAuth();
-  const { currentSeasonName, fetchCurrentSeason } = useCurrentSeason(accountId);
+  const { currentSeasonId, currentSeasonName, fetchCurrentSeason } = useCurrentSeason(accountId);
   const timeZone = useAccountTimezone();
 
   // Fetch current season when component mounts
@@ -96,6 +97,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     success,
     loadLeagueTeams,
     loadUmpires,
+    loadGamesData,
     clearLeagueTeams,
     setSuccess,
     setError,
@@ -455,6 +457,23 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             </Box>
           </Box>
         </WidgetShell>
+
+        <SeasonSchedulerAdapter
+          accountId={accountId}
+          seasonId={currentSeasonId}
+          canEdit={Boolean(canEditSchedule)}
+          timeZone={timeZone}
+          leagueSeasonIdFilter={filterLeagueSeasonId || undefined}
+          teamSeasonIdFilter={filterTeamSeasonId || undefined}
+          fields={fields}
+          teams={teams}
+          games={games}
+          onApplied={async () => {
+            await loadGamesData();
+          }}
+          setSuccess={setSuccess}
+          setError={setError}
+        />
 
         {/* Schedule View */}
         <ViewFactory

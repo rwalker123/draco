@@ -32,6 +32,7 @@ export class FieldResponseFormatter {
     return {
       id: field.id.toString(),
       name: field.name,
+      hasLights: field.haslights,
       address: this.normalize(field.address),
       city: this.normalize(field.city),
       state: this.normalize(field.state),

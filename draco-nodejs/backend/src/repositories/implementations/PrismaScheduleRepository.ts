@@ -329,6 +329,98 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     });
   }
 
+  async countFieldBookingsAtTime(
+    fieldId: bigint,
+    gameDate: Date,
+    leagueSeasonId: bigint,
+    excludeGameId?: bigint,
+  ): Promise<number> {
+    return this.prisma.leagueschedule.count({
+      where: {
+        fieldid: fieldId,
+        gamedate: gameDate,
+        leagueid: leagueSeasonId,
+        ...(excludeGameId && { id: { not: excludeGameId } }),
+      },
+    });
+  }
+
+  async countTeamBookingsAtTime(
+    teamSeasonId: bigint,
+    gameDate: Date,
+    leagueSeasonId: bigint,
+    excludeGameId?: bigint,
+  ): Promise<number> {
+    return this.prisma.leagueschedule.count({
+      where: {
+        gamedate: gameDate,
+        leagueid: leagueSeasonId,
+        ...(excludeGameId && { id: { not: excludeGameId } }),
+        OR: [{ hteamid: teamSeasonId }, { vteamid: teamSeasonId }],
+      },
+    });
+  }
+
+  async countUmpireBookingsAtTime(
+    umpireId: bigint,
+    gameDate: Date,
+    leagueSeasonId: bigint,
+    excludeGameId?: bigint,
+  ): Promise<number> {
+    return this.prisma.leagueschedule.count({
+      where: {
+        gamedate: gameDate,
+        leagueid: leagueSeasonId,
+        ...(excludeGameId && { id: { not: excludeGameId } }),
+        OR: [
+          { umpire1: umpireId },
+          { umpire2: umpireId },
+          { umpire3: umpireId },
+          { umpire4: umpireId },
+        ],
+      },
+    });
+  }
+
+  async countTeamGamesInRange(
+    teamSeasonId: bigint,
+    start: Date,
+    end: Date,
+    leagueSeasonId: bigint,
+    excludeGameId?: bigint,
+  ): Promise<number> {
+    return this.prisma.leagueschedule.count({
+      where: {
+        gamedate: { gte: start, lt: end },
+        leagueid: leagueSeasonId,
+        ...(excludeGameId && { id: { not: excludeGameId } }),
+        OR: [{ hteamid: teamSeasonId }, { vteamid: teamSeasonId }],
+      },
+    });
+  }
+
+  async countUmpireGamesInRange(
+    umpireId: bigint,
+    start: Date,
+    end: Date,
+    leagueSeasonId: bigint,
+    excludeGameId?: bigint,
+  ): Promise<number> {
+    return this.prisma.leagueschedule.count({
+      where: {
+        gamedate: { gte: start, lt: end },
+        leagueid: leagueSeasonId,
+        ...(excludeGameId && { id: { not: excludeGameId } }),
+        OR: [
+          { umpire1: umpireId },
+          { umpire2: umpireId },
+          { umpire3: umpireId },
+          { umpire4: umpireId },
+        ],
+      },
+    });
+  }
+
   async findRecap(gameId: bigint, teamSeasonId: bigint): Promise<dbGameRecap | null> {
     return this.prisma.gamerecap.findUnique({
       where: {

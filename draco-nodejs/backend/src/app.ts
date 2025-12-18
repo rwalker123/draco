@@ -33,6 +33,8 @@ import teamManagersRouter from './routes/team-managers.js';
 import seasonManagersRouter from './routes/season-managers.js';
 import statisticsRouter from './routes/statistics.js';
 import standingsRouter from './routes/standings.js';
+import schedulerRouter from './routes/scheduler.js';
+import seasonSchedulerFieldAvailabilityRouter from './routes/season-scheduler-field-availability.js';
 import monitoringRouter from './routes/monitoring.js';
 import adminAnalyticsRouter from './routes/admin-analytics.js';
 import alertsRouter from './routes/alerts.js';
@@ -231,6 +233,11 @@ app.use('/api/accounts/:accountId/statistics', statisticsRouter);
 app.use('/api/accounts', accountsWelcomeMessagesRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/leagues', leagueSeasonsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/games', gamesRouter);
+app.use('/api/accounts/:accountId/scheduler', schedulerRouter);
+app.use(
+  '/api/accounts/:accountId/seasons/:seasonId/scheduler',
+  seasonSchedulerFieldAvailabilityRouter,
+);
 app.use('/api/accounts/:accountId/teams', accountTeamsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamRosterRouter);

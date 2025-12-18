@@ -33,3 +33,4 @@ export * from './SocialFeedResponseFormatter.js';
 export * from './LiveEventResponseFormatter.js';
 export * from './DiscordIntegrationResponseFormatter.js';
 export * from './welcomeMessageResponseFormatter.js';
+export * from './schedulerFieldAvailabilityRuleResponseFormatter.js';

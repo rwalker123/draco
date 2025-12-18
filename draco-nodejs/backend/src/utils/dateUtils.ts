@@ -218,4 +218,230 @@ export class DateUtils {
 
     return age;
   }
+
+  static isDateOnlyString(value: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value.trim());
+  }
+
+  static normalizeDateOnlyToUtcDayStart(value: string): string {
+    const trimmed = value.trim();
+    if (DateUtils.isDateOnlyString(trimmed)) {
+      return `${trimmed}T00:00:00.000Z`;
+    }
+    return trimmed;
+  }
+
+  static normalizeDateOnlyToUtcDayEnd(value: string): string {
+    const trimmed = value.trim();
+    if (DateUtils.isDateOnlyString(trimmed)) {
+      return `${trimmed}T23:59:59.999Z`;
+    }
+    return trimmed;
+  }
+
+  static getHourInTimeZone(date: Date, timeZone: string): number | null {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+      return null;
+    }
+
+    const tz = timeZone.trim();
+    if (!tz) {
+      return null;
+    }
+
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        hour12: false,
+        hourCycle: 'h23',
+        timeZone: tz,
+      }).formatToParts(date);
+
+      const hourValue = parts.find((part) => part.type === 'hour')?.value;
+      if (!hourValue) {
+        return null;
+      }
+
+      const hour = Number(hourValue);
+      if (Number.isNaN(hour)) {
+        return null;
+      }
+
+      return hour === 24 ? 0 : hour;
+    } catch {
+      return null;
+    }
+  }
+
+  static getWeekdayIndexMondayZeroInTimeZone(date: Date, timeZone: string): number | null {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+      return null;
+    }
+
+    const tz = timeZone.trim();
+    if (!tz) {
+      return null;
+    }
+
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        weekday: 'short',
+        timeZone: tz,
+      }).formatToParts(date);
+
+      const weekday = parts.find((part) => part.type === 'weekday')?.value;
+      if (!weekday) {
+        return null;
+      }
+
+      const map: Record<string, number> = {
+        Mon: 0,
+        Tue: 1,
+        Wed: 2,
+        Thu: 3,
+        Fri: 4,
+        Sat: 5,
+        Sun: 6,
+      };
+
+      return map[weekday] ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  static parseLocalDateTimeToUtcDate(
+    localDate: string,
+    localTime: string,
+    timeZone: string,
+  ): Date | null {
+    const date = localDate.trim();
+    const time = localTime.trim();
+    const tz = timeZone.trim();
+
+    if (!DateUtils.isDateOnlyString(date)) {
+      return null;
+    }
+
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+      return null;
+    }
+
+    if (!tz) {
+      return null;
+    }
+
+    const [yearStr, monthStr, dayStr] = date.split('-');
+    const [hourStr, minuteStr] = time.split(':');
+
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+    const hour = Number(hourStr);
+    const minute = Number(minuteStr);
+
+    if ([year, month, day, hour, minute].some((value) => Number.isNaN(value))) {
+      return null;
+    }
+
+    const approxUtcMs = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+    const approx = new Date(approxUtcMs);
+
+    const getPartsForZone = (instant: Date) => {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        hourCycle: 'h23',
+      }).formatToParts(instant);
+
+      const pick = (type: string) => parts.find((part) => part.type === type)?.value;
+      const yearValue = pick('year');
+      const monthValue = pick('month');
+      const dayValue = pick('day');
+      const hourValue = pick('hour');
+      const minuteValue = pick('minute');
+      if (!yearValue || !monthValue || !dayValue || !hourValue || !minuteValue) {
+        return null;
+      }
+
+      const rawYear = Number(yearValue);
+      const rawMonth = Number(monthValue);
+      const rawDay = Number(dayValue);
+      const rawHour = Number(hourValue);
+      const rawMinute = Number(minuteValue);
+
+      if ([rawYear, rawMonth, rawDay, rawHour, rawMinute].some((value) => Number.isNaN(value))) {
+        return null;
+      }
+
+      const normalizedHour = rawHour === 24 && rawMinute === 0 ? 0 : rawHour;
+
+      if (normalizedHour < 0 || normalizedHour > 23) {
+        return null;
+      }
+
+      return {
+        year: rawYear,
+        month: rawMonth,
+        day: rawDay,
+        hour: normalizedHour,
+        minute: rawMinute,
+      };
+    };
+
+    try {
+      const observed = getPartsForZone(approx);
+      if (!observed) {
+        return null;
+      }
+
+      const desiredUtcMs = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+      const observedUtcMs = Date.UTC(
+        observed.year,
+        observed.month - 1,
+        observed.day,
+        observed.hour,
+        observed.minute,
+        0,
+        0,
+      );
+
+      const corrected = new Date(desiredUtcMs + (approxUtcMs - observedUtcMs));
+      const finalObserved = getPartsForZone(corrected);
+      if (!finalObserved) {
+        return null;
+      }
+
+      const matches =
+        finalObserved.year === year &&
+        finalObserved.month === month &&
+        finalObserved.day === day &&
+        finalObserved.hour === hour &&
+        finalObserved.minute === minute;
+
+      return matches ? corrected : null;
+    } catch {
+      return null;
+    }
+  }
+
+  static addDaysUtcDateOnly(date: string, days: number): string | null {
+    const trimmed = date.trim();
+    if (!DateUtils.isDateOnlyString(trimmed)) {
+      return null;
+    }
+
+    const parsed = new Date(`${trimmed}T00:00:00.000Z`);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    parsed.setUTCDate(parsed.getUTCDate() + days);
+    return DateUtils.formatDateForResponse(parsed);
+  }
 }

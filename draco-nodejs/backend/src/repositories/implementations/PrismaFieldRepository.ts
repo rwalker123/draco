@@ -85,6 +85,7 @@ export class PrismaFieldRepository implements IFieldRepository {
         rainoutnumber: true,
         latitude: true,
         longitude: true,
+        haslights: true,
       },
     });
   }

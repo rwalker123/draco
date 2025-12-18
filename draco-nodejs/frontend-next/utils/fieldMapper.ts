@@ -4,6 +4,7 @@ type ApiFieldInput = {
   id: string | number;
   name: string;
   shortName: string;
+  hasLights?: boolean | null;
   address?: string | null;
   city?: string | null;
   state?: string | null;
@@ -68,6 +69,7 @@ export const mapApiFieldToFieldType = (
     id: normalizeIdentifier(field.id),
     name: field.name,
     shortName: field.shortName,
+    hasLights: field.hasLights === true,
     address: normalizeOptionalString(field.address),
     city: normalizeOptionalString(field.city),
     state: normalizeOptionalString(field.state),

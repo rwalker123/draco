@@ -19,6 +19,7 @@ export interface FieldDetails {
   id?: string | null;
   name?: string | null;
   shortName?: string | null;
+  hasLights?: boolean | null;
   address?: string | null;
   city?: string | null;
   state?: string | null;
@@ -177,6 +178,9 @@ export const FieldDetailsCard: React.FC<FieldDetailsCardProps> = ({
                 {[field.city, field.state, zip]
                   .filter((value) => typeof value === 'string' && value.trim().length > 0)
                   .join(', ') || 'City/state not provided'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {field.hasLights ? 'Has lights' : 'No lights'}
               </Typography>
             </Box>
             <Box>

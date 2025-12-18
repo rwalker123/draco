@@ -50,6 +50,9 @@ import {
   IAccountBlueskyCredentialsRepository,
   IAccountInstagramCredentialsRepository,
   IInstagramIngestionRepository,
+  ISchedulerFieldAvailabilityRulesRepository,
+  ISchedulerFieldExclusionDatesRepository,
+  ISchedulerProblemSpecRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -101,6 +104,9 @@ import {
   PrismaAccountBlueskyCredentialsRepository,
   PrismaAccountInstagramCredentialsRepository,
   PrismaInstagramIngestionRepository,
+  PrismaSchedulerFieldAvailabilityRulesRepository,
+  PrismaSchedulerFieldExclusionDatesRepository,
+  PrismaSchedulerProblemSpecRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -159,6 +165,9 @@ export class RepositoryFactory {
   private static accountBlueskyCredentialsRepository: IAccountBlueskyCredentialsRepository;
   private static accountInstagramCredentialsRepository: IAccountInstagramCredentialsRepository;
   private static instagramIngestionRepository: IInstagramIngestionRepository;
+  private static schedulerFieldAvailabilityRulesRepository: ISchedulerFieldAvailabilityRulesRepository;
+  private static schedulerFieldExclusionDatesRepository: ISchedulerFieldExclusionDatesRepository;
+  private static schedulerProblemSpecRepository: ISchedulerProblemSpecRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -411,6 +420,29 @@ export class RepositoryFactory {
       this.fieldRepository = new PrismaFieldRepository(prisma);
     }
     return this.fieldRepository;
+  }
+
+  static getSchedulerFieldAvailabilityRulesRepository(): ISchedulerFieldAvailabilityRulesRepository {
+    if (!this.schedulerFieldAvailabilityRulesRepository) {
+      this.schedulerFieldAvailabilityRulesRepository =
+        new PrismaSchedulerFieldAvailabilityRulesRepository(prisma);
+    }
+    return this.schedulerFieldAvailabilityRulesRepository;
+  }
+
+  static getSchedulerFieldExclusionDatesRepository(): ISchedulerFieldExclusionDatesRepository {
+    if (!this.schedulerFieldExclusionDatesRepository) {
+      this.schedulerFieldExclusionDatesRepository =
+        new PrismaSchedulerFieldExclusionDatesRepository(prisma);
+    }
+    return this.schedulerFieldExclusionDatesRepository;
+  }
+
+  static getSchedulerProblemSpecRepository(): ISchedulerProblemSpecRepository {
+    if (!this.schedulerProblemSpecRepository) {
+      this.schedulerProblemSpecRepository = new PrismaSchedulerProblemSpecRepository(prisma);
+    }
+    return this.schedulerProblemSpecRepository;
   }
 
   static getUmpireRepository(): IUmpireRepository {

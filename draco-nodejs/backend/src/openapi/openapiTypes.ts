@@ -268,6 +268,19 @@ import {
   WelcomeMessageListSchema,
   UpsertWelcomeMessageSchema,
   AutoRegisterContactResponseSchema,
+  SchedulerProblemSpecSchema,
+  SchedulerProblemSpecPreviewSchema,
+  SchedulerSeasonSolveRequestSchema,
+  SchedulerSeasonApplyRequestSchema,
+  SchedulerSolveResultSchema,
+  SchedulerApplyRequestSchema,
+  SchedulerApplyResultSchema,
+  SchedulerFieldAvailabilityRuleSchema,
+  SchedulerFieldAvailabilityRuleUpsertSchema,
+  SchedulerFieldAvailabilityRulesSchema,
+  SchedulerFieldExclusionDateSchema,
+  SchedulerFieldExclusionDateUpsertSchema,
+  SchedulerFieldExclusionDatesSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1057,6 +1070,58 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'ChangePasswordRequest',
     ChangePasswordRequestSchema,
   );
+  const SchedulerProblemSpecSchemaRef = registry.register(
+    'SchedulerProblemSpec',
+    SchedulerProblemSpecSchema,
+  );
+  const SchedulerProblemSpecPreviewSchemaRef = registry.register(
+    'SchedulerProblemSpecPreview',
+    SchedulerProblemSpecPreviewSchema,
+  );
+  const SchedulerSeasonSolveRequestSchemaRef = registry.register(
+    'SchedulerSeasonSolveRequest',
+    SchedulerSeasonSolveRequestSchema,
+  );
+  const SchedulerSeasonApplyRequestSchemaRef = registry.register(
+    'SchedulerSeasonApplyRequest',
+    SchedulerSeasonApplyRequestSchema,
+  );
+  const SchedulerSolveResultSchemaRef = registry.register(
+    'SchedulerSolveResult',
+    SchedulerSolveResultSchema,
+  );
+  const SchedulerApplyRequestSchemaRef = registry.register(
+    'SchedulerApplyRequest',
+    SchedulerApplyRequestSchema,
+  );
+  const SchedulerApplyResultSchemaRef = registry.register(
+    'SchedulerApplyResult',
+    SchedulerApplyResultSchema,
+  );
+  const SchedulerFieldAvailabilityRuleSchemaRef = registry.register(
+    'SchedulerFieldAvailabilityRule',
+    SchedulerFieldAvailabilityRuleSchema,
+  );
+  const SchedulerFieldAvailabilityRuleUpsertSchemaRef = registry.register(
+    'SchedulerFieldAvailabilityRuleUpsert',
+    SchedulerFieldAvailabilityRuleUpsertSchema,
+  );
+  const SchedulerFieldAvailabilityRulesSchemaRef = registry.register(
+    'SchedulerFieldAvailabilityRules',
+    SchedulerFieldAvailabilityRulesSchema,
+  );
+  const SchedulerFieldExclusionDateSchemaRef = registry.register(
+    'SchedulerFieldExclusionDate',
+    SchedulerFieldExclusionDateSchema,
+  );
+  const SchedulerFieldExclusionDateUpsertSchemaRef = registry.register(
+    'SchedulerFieldExclusionDateUpsert',
+    SchedulerFieldExclusionDateUpsertSchema,
+  );
+  const SchedulerFieldExclusionDatesSchemaRef = registry.register(
+    'SchedulerFieldExclusionDates',
+    SchedulerFieldExclusionDatesSchema,
+  );
   const RoleCheckResponseSchemaRef = registry.register(
     'RoleCheckResponse',
     RoleCheckResponseSchema,
@@ -1335,6 +1400,19 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RoleWithContactSchemaRef,
     VerifyTokenRequestSchemaRef,
     ChangePasswordRequestSchemaRef,
+    SchedulerProblemSpecSchemaRef,
+    SchedulerProblemSpecPreviewSchemaRef,
+    SchedulerSeasonSolveRequestSchemaRef,
+    SchedulerSeasonApplyRequestSchemaRef,
+    SchedulerSolveResultSchemaRef,
+    SchedulerApplyRequestSchemaRef,
+    SchedulerApplyResultSchemaRef,
+    SchedulerFieldAvailabilityRuleSchemaRef,
+    SchedulerFieldAvailabilityRuleUpsertSchemaRef,
+    SchedulerFieldAvailabilityRulesSchemaRef,
+    SchedulerFieldExclusionDateSchemaRef,
+    SchedulerFieldExclusionDateUpsertSchemaRef,
+    SchedulerFieldExclusionDatesSchemaRef,
     RoleCheckResponseSchemaRef,
     DiscordTeamForumRemoveRequestSchemaRef,
   };

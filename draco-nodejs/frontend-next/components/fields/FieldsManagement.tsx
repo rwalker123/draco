@@ -224,10 +224,10 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({
         </Stack>
       </AccountPageHeader>
 
-      <Container maxWidth="lg" sx={{ mt: 4, px: { xs: 2, md: 3 } }}>
+      <Container maxWidth="xl" sx={{ mt: 4, px: { xs: 2, md: 3 } }}>
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 7 }}>
-            <Paper elevation={3} sx={{ overflow: 'hidden' }}>
+          <Grid size={{ xs: 12, md: 8 }} sx={{ minWidth: 0 }}>
+            <Paper elevation={3} sx={{ overflow: 'visible' }}>
               <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Stack
                   direction={{ xs: 'column', sm: 'row' }}
@@ -235,7 +235,9 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({
                   alignItems={{ xs: 'flex-start', sm: 'center' }}
                   justifyContent="space-between"
                 >
-                  <Typography variant="h6">Field Directory</Typography>
+                  <Typography variant="h6" color="text.primary">
+                    Field Directory
+                  </Typography>
                   <TextField
                     size="small"
                     placeholder="Search fields"
@@ -271,10 +273,11 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({
               <TableContainer
                 sx={{
                   position: 'relative',
-                  overflowX: 'hidden',
+                  overflowX: 'auto',
                   overflowY: 'visible',
                   maxWidth: '100%',
                   width: '100%',
+                  WebkitOverflowScrolling: 'touch',
                 }}
               >
                 {loading ? (
@@ -299,7 +302,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({
                   aria-busy={loading}
                   sx={{
                     width: '100%',
-                    minWidth: 820,
+                    minWidth: canManage ? 920 : 820,
                     tableLayout: 'auto',
                     opacity: loading ? 0.88 : 1,
                     transition: 'opacity 120ms ease-in-out',
@@ -310,6 +313,10 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({
                     '& th.state-column': {
                       minWidth: 96,
                       width: 96,
+                    },
+                    '& th.actions-column': {
+                      minWidth: 108,
+                      width: 108,
                     },
                   }}
                 >
@@ -337,7 +344,11 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({
                           </TableCell>
                         );
                       })}
-                      {canManage ? <TableCell align="right">Actions</TableCell> : null}
+                      {canManage ? (
+                        <TableCell className="actions-column" align="right">
+                          Actions
+                        </TableCell>
+                      ) : null}
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -374,7 +385,11 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({
                             <TableCell>{field.state ?? '—'}</TableCell>
                             <TableCell>{field.rainoutNumber ?? '—'}</TableCell>
                             {canManage ? (
-                              <TableCell align="right" onClick={(event) => event.stopPropagation()}>
+                              <TableCell
+                                className="actions-column"
+                                align="right"
+                                onClick={(event) => event.stopPropagation()}
+                              >
                                 <Stack direction="row" spacing={1} justifyContent="flex-end">
                                   <IconButton
                                     aria-label="Edit field"
@@ -413,7 +428,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({
               />
             </Paper>
           </Grid>
-          <Grid size={{ xs: 12, md: 5 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <FieldDetailsCard field={selectedField} />
           </Grid>
         </Grid>

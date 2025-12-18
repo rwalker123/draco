@@ -899,6 +899,10 @@
             "type": "string",
             "maxLength": 5
           },
+          "hasLights": {
+            "type": "boolean",
+            "default": false
+          },
           "address": {
             "type": "string",
             "nullable": true,
@@ -990,6 +994,10 @@
                 "shortName": {
                   "type": "string",
                   "maxLength": 5
+                },
+                "hasLights": {
+                  "type": "boolean",
+                  "default": false
                 },
                 "address": {
                   "type": "string",
@@ -1107,6 +1115,10 @@
           "shortName": {
             "type": "string",
             "maxLength": 5
+          },
+          "hasLights": {
+            "type": "boolean",
+            "default": false
           },
           "address": {
             "type": "string",
@@ -13018,6 +13030,10 @@
                 "type": "string",
                 "maxLength": 5
               },
+              "hasLights": {
+                "type": "boolean",
+                "default": false
+              },
               "address": {
                 "type": "string",
                 "nullable": true,
@@ -13134,6 +13150,10 @@
               "shortName": {
                 "type": "string",
                 "maxLength": 5
+              },
+              "hasLights": {
+                "type": "boolean",
+                "default": false
               },
               "address": {
                 "type": "string",
@@ -15082,6 +15102,10 @@
                 "type": "string",
                 "maxLength": 5
               },
+              "hasLights": {
+                "type": "boolean",
+                "default": false
+              },
               "address": {
                 "type": "string",
                 "nullable": true,
@@ -15404,6 +15428,10 @@
                       "type": "string",
                       "maxLength": 5
                     },
+                    "hasLights": {
+                      "type": "boolean",
+                      "default": false
+                    },
                     "address": {
                       "type": "string",
                       "nullable": true,
@@ -15693,6 +15721,10 @@
                     "shortName": {
                       "type": "string",
                       "maxLength": 5
+                    },
+                    "hasLights": {
+                      "type": "boolean",
+                      "default": false
                     },
                     "address": {
                       "type": "string",
@@ -15992,6 +16024,10 @@
                     "shortName": {
                       "type": "string",
                       "maxLength": 5
+                    },
+                    "hasLights": {
+                      "type": "boolean",
+                      "default": false
                     },
                     "address": {
                       "type": "string",
@@ -20254,6 +20290,2073 @@
           "currentPassword",
           "newPassword"
         ]
+      },
+      "SchedulerProblemSpec": {
+        "type": "object",
+        "properties": {
+          "season": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "example": "123"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "example": "Spring 2026"
+              },
+              "startDate": {
+                "type": "string",
+                "minLength": 1,
+                "example": "2026-04-01"
+              },
+              "endDate": {
+                "type": "string",
+                "minLength": 1,
+                "example": "2026-08-31"
+              },
+              "gameDurations": {
+                "type": "object",
+                "properties": {
+                  "defaultMinutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "example": 75
+                  },
+                  "weekendMinutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "example": 90
+                  },
+                  "weekdayMinutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "example": 60
+                  }
+                },
+                "title": "SchedulerGameDurations"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "startDate",
+              "endDate"
+            ],
+            "title": "SchedulerSeasonConfig"
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "teamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "divisionSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "league": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "example": "123"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "example": "Open"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "title": "SchedulerLeagueRef"
+                }
+              },
+              "required": [
+                "id",
+                "teamSeasonId",
+                "league"
+              ],
+              "title": "SchedulerTeam"
+            }
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "Field 1"
+                },
+                "properties": {
+                  "type": "object",
+                  "properties": {
+                    "hasLights": {
+                      "type": "boolean"
+                    },
+                    "maxParallelGames": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": true
+                    }
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ],
+              "title": "SchedulerField"
+            }
+          },
+          "umpires": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "maxGamesPerDay": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "title": "SchedulerUmpire"
+            }
+          },
+          "games": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "leagueSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "homeTeamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "visitorTeamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "requiredUmpires": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "example": 1
+                },
+                "preferredFieldIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "example": "123"
+                  }
+                },
+                "earliestStart": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "latestEnd": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "durationMinutes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                }
+              },
+              "required": [
+                "id",
+                "leagueSeasonId",
+                "homeTeamSeasonId",
+                "visitorTeamSeasonId"
+              ],
+              "title": "SchedulerGameRequest"
+            },
+            "minItems": 1
+          },
+          "fieldSlots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "slot-1"
+                },
+                "fieldId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "startTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "endTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                }
+              },
+              "required": [
+                "id",
+                "fieldId",
+                "startTime",
+                "endTime"
+              ],
+              "title": "SchedulerFieldSlot"
+            },
+            "minItems": 1
+          },
+          "umpireAvailability": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "umpireId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "startTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "endTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                }
+              },
+              "required": [
+                "umpireId",
+                "startTime",
+                "endTime"
+              ],
+              "title": "SchedulerUmpireAvailability"
+            }
+          },
+          "teamBlackouts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "teamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "startTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "endTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                }
+              },
+              "required": [
+                "teamSeasonId",
+                "startTime",
+                "endTime"
+              ],
+              "title": "SchedulerTeamBlackout"
+            }
+          },
+          "constraints": {
+            "type": "object",
+            "properties": {
+              "hard": {
+                "type": "object",
+                "properties": {
+                  "respectTeamBlackouts": {
+                    "type": "boolean"
+                  },
+                  "respectUmpireAvailability": {
+                    "type": "boolean"
+                  },
+                  "respectFieldSlots": {
+                    "type": "boolean"
+                  },
+                  "maxGamesPerTeamPerDay": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "maxGamesPerUmpirePerDay": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "requireLightsAfter": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "startHourLocal": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 23
+                      },
+                      "timeZone": {
+                        "type": "string",
+                        "minLength": 1,
+                        "example": "America/Chicago"
+                      }
+                    },
+                    "required": [
+                      "enabled",
+                      "startHourLocal",
+                      "timeZone"
+                    ],
+                    "title": "SchedulerRequireLightsAfterConstraint",
+                    "description": "When enabled, slots whose local start time is at/after startHourLocal must use a field with hasLights=true."
+                  }
+                },
+                "title": "SchedulerHardConstraints"
+              },
+              "soft": {
+                "type": "object",
+                "properties": {
+                  "avoidBackToBackGames": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "minRestMinutes": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "weight": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "enabled",
+                      "minRestMinutes"
+                    ]
+                  },
+                  "balanceEarlyVsLate": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "weight": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "enabled"
+                    ]
+                  },
+                  "spreadGamesAcrossDays": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "weight": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "enabled"
+                    ]
+                  }
+                },
+                "title": "SchedulerSoftConstraints"
+              }
+            },
+            "title": "SchedulerConstraints"
+          },
+          "objectives": {
+            "type": "object",
+            "properties": {
+              "primary": {
+                "type": "string",
+                "enum": [
+                  "maximize_scheduled_games",
+                  "minimize_conflicts"
+                ]
+              },
+              "secondary": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "title": "SchedulerObjectives"
+          },
+          "runId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "sched_account_42_ab12cd34"
+          }
+        },
+        "required": [
+          "season",
+          "teams",
+          "fields",
+          "umpires",
+          "games",
+          "fieldSlots"
+        ],
+        "title": "SchedulerProblemSpec",
+        "description": "Self-contained scheduling problem specification. The solver treats this input as authoritative and does not perform DB lookups.",
+        "example": {
+          "season": {
+            "id": "spring-2026",
+            "name": "Spring 2026",
+            "startDate": "2026-04-01",
+            "endDate": "2026-08-31",
+            "gameDurations": {
+              "defaultMinutes": 75,
+              "weekendMinutes": 90,
+              "weekdayMinutes": 60
+            }
+          },
+          "teams": [
+            {
+              "id": "team-1",
+              "teamSeasonId": "teamSeason-1",
+              "league": {
+                "id": "league-1",
+                "name": "Open"
+              }
+            },
+            {
+              "id": "team-2",
+              "teamSeasonId": "teamSeason-2",
+              "league": {
+                "id": "league-1",
+                "name": "Open"
+              }
+            }
+          ],
+          "fields": [
+            {
+              "id": "field-1",
+              "name": "Field 1",
+              "properties": {
+                "hasLights": true,
+                "maxParallelGames": 1
+              }
+            }
+          ],
+          "umpires": [
+            {
+              "id": "ump-1",
+              "name": "Alice",
+              "maxGamesPerDay": 3
+            }
+          ],
+          "games": [
+            {
+              "id": "game-1",
+              "leagueSeasonId": "leagueSeason-1",
+              "homeTeamSeasonId": "teamSeason-1",
+              "visitorTeamSeasonId": "teamSeason-2",
+              "requiredUmpires": 1,
+              "earliestStart": "2026-04-05T09:00:00Z",
+              "latestEnd": "2026-04-05T14:00:00Z"
+            }
+          ],
+          "fieldSlots": [
+            {
+              "id": "slot-1",
+              "fieldId": "field-1",
+              "startTime": "2026-04-05T09:00:00Z",
+              "endTime": "2026-04-05T10:30:00Z"
+            }
+          ],
+          "constraints": {
+            "hard": {
+              "respectFieldSlots": true,
+              "respectTeamBlackouts": true,
+              "respectUmpireAvailability": true
+            }
+          },
+          "objectives": {
+            "primary": "maximize_scheduled_games"
+          }
+        }
+      },
+      "SchedulerProblemSpecPreview": {
+        "type": "object",
+        "properties": {
+          "season": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "example": "123"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "example": "Spring 2026"
+              },
+              "startDate": {
+                "type": "string",
+                "minLength": 1,
+                "example": "2026-04-01"
+              },
+              "endDate": {
+                "type": "string",
+                "minLength": 1,
+                "example": "2026-08-31"
+              },
+              "gameDurations": {
+                "type": "object",
+                "properties": {
+                  "defaultMinutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "example": 75
+                  },
+                  "weekendMinutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "example": 90
+                  },
+                  "weekdayMinutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "example": 60
+                  }
+                },
+                "title": "SchedulerGameDurations"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "startDate",
+              "endDate"
+            ],
+            "title": "SchedulerSeasonConfig"
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "teamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "divisionSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "league": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "example": "123"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "example": "Open"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "title": "SchedulerLeagueRef"
+                }
+              },
+              "required": [
+                "id",
+                "teamSeasonId",
+                "league"
+              ],
+              "title": "SchedulerTeam"
+            }
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "Field 1"
+                },
+                "properties": {
+                  "type": "object",
+                  "properties": {
+                    "hasLights": {
+                      "type": "boolean"
+                    },
+                    "maxParallelGames": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": true
+                    }
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ],
+              "title": "SchedulerField"
+            }
+          },
+          "umpires": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "maxGamesPerDay": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "title": "SchedulerUmpire"
+            }
+          },
+          "games": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "leagueSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "homeTeamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "visitorTeamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "requiredUmpires": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "example": 1
+                },
+                "preferredFieldIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "example": "123"
+                  }
+                },
+                "earliestStart": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "latestEnd": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "durationMinutes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                }
+              },
+              "required": [
+                "id",
+                "leagueSeasonId",
+                "homeTeamSeasonId",
+                "visitorTeamSeasonId"
+              ],
+              "title": "SchedulerGameRequest"
+            }
+          },
+          "fieldSlots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "slot-1"
+                },
+                "fieldId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "startTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "endTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                }
+              },
+              "required": [
+                "id",
+                "fieldId",
+                "startTime",
+                "endTime"
+              ],
+              "title": "SchedulerFieldSlot"
+            }
+          },
+          "fieldAvailabilityRules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "seasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "fieldId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date",
+                  "example": "2026-04-01",
+                  "description": "Optional. When omitted, treated as season start date."
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date",
+                  "example": "2026-04-01",
+                  "description": "Optional. When omitted, treated as season end date."
+                },
+                "daysOfWeekMask": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 127,
+                  "example": 21,
+                  "description": "Bitmask for days of week where bit 0=Mon ... bit 6=Sun."
+                },
+                "startTimeLocal": {
+                  "type": "string",
+                  "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+                  "example": "18:30"
+                },
+                "endTimeLocal": {
+                  "type": "string",
+                  "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+                  "example": "18:30"
+                },
+                "startIncrementMinutes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true,
+                  "maximum": 1440,
+                  "example": 30
+                },
+                "enabled": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "seasonId",
+                "fieldId",
+                "daysOfWeekMask",
+                "startTimeLocal",
+                "endTimeLocal",
+                "startIncrementMinutes",
+                "enabled"
+              ],
+              "title": "SchedulerFieldAvailabilityRule"
+            }
+          },
+          "fieldExclusionDates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "seasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "fieldId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date",
+                  "example": "2026-04-01"
+                },
+                "note": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "enabled": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "seasonId",
+                "fieldId",
+                "date",
+                "enabled"
+              ],
+              "title": "SchedulerFieldExclusionDate",
+              "description": "A date-only exclusion for a field. When enabled, no fieldSlots will be generated for the field on this date."
+            }
+          }
+        },
+        "required": [
+          "season",
+          "teams",
+          "fields",
+          "umpires",
+          "games",
+          "fieldSlots",
+          "fieldAvailabilityRules",
+          "fieldExclusionDates"
+        ],
+        "title": "SchedulerProblemSpecPreview",
+        "description": "DB-assembled scheduling problem spec preview. Uses field availability rules expanded into concrete fieldSlots."
+      },
+      "SchedulerSeasonSolveRequest": {
+        "type": "object",
+        "properties": {
+          "constraints": {
+            "type": "object",
+            "properties": {
+              "hard": {
+                "type": "object",
+                "properties": {
+                  "respectTeamBlackouts": {
+                    "type": "boolean"
+                  },
+                  "respectUmpireAvailability": {
+                    "type": "boolean"
+                  },
+                  "respectFieldSlots": {
+                    "type": "boolean"
+                  },
+                  "maxGamesPerTeamPerDay": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "maxGamesPerUmpirePerDay": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "requireLightsAfter": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "startHourLocal": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 23
+                      }
+                    },
+                    "required": [
+                      "enabled",
+                      "startHourLocal"
+                    ],
+                    "title": "SchedulerRequireLightsAfterOverride",
+                    "description": "When enabled, slots whose local start time is at/after startHourLocal must use a field with hasLights=true. The backend will use the account timezoneid."
+                  }
+                },
+                "title": "SchedulerHardConstraintsOverride"
+              },
+              "soft": {
+                "type": "object",
+                "properties": {
+                  "avoidBackToBackGames": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "minRestMinutes": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "weight": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "enabled",
+                      "minRestMinutes"
+                    ]
+                  },
+                  "balanceEarlyVsLate": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "weight": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "enabled"
+                    ]
+                  },
+                  "spreadGamesAcrossDays": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "weight": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "enabled"
+                    ]
+                  }
+                },
+                "title": "SchedulerSoftConstraints"
+              }
+            },
+            "title": "SchedulerConstraintsOverride"
+          },
+          "objectives": {
+            "type": "object",
+            "properties": {
+              "primary": {
+                "type": "string",
+                "enum": [
+                  "maximize_scheduled_games",
+                  "minimize_conflicts"
+                ]
+              },
+              "secondary": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "title": "SchedulerObjectives"
+          },
+          "gameIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "example": "123"
+            },
+            "minItems": 1
+          }
+        },
+        "title": "SchedulerSeasonSolveRequest",
+        "description": "DB-sourced solve request. The backend assembles teams/games/fields/umpires/fieldSlots from the database; the caller may provide optional constraint/objective overrides."
+      },
+      "SchedulerSeasonApplyRequest": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "all",
+              "subset"
+            ],
+            "title": "SchedulerApplyMode",
+            "description": "Whether to apply all assignments or only a subset."
+          },
+          "assignments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "gameId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "fieldId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "startTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "endTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "umpireIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "example": "123"
+                  }
+                }
+              },
+              "required": [
+                "gameId",
+                "fieldId",
+                "startTime",
+                "endTime",
+                "umpireIds"
+              ],
+              "title": "SchedulerAssignment"
+            },
+            "minItems": 1
+          },
+          "constraints": {
+            "type": "object",
+            "properties": {
+              "hard": {
+                "type": "object",
+                "properties": {
+                  "respectTeamBlackouts": {
+                    "type": "boolean"
+                  },
+                  "respectUmpireAvailability": {
+                    "type": "boolean"
+                  },
+                  "respectFieldSlots": {
+                    "type": "boolean"
+                  },
+                  "maxGamesPerTeamPerDay": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "maxGamesPerUmpirePerDay": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "requireLightsAfter": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "startHourLocal": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 23
+                      }
+                    },
+                    "required": [
+                      "enabled",
+                      "startHourLocal"
+                    ],
+                    "title": "SchedulerRequireLightsAfterOverride",
+                    "description": "When enabled, slots whose local start time is at/after startHourLocal must use a field with hasLights=true. The backend will use the account timezoneid."
+                  }
+                },
+                "title": "SchedulerHardConstraintsOverride"
+              },
+              "soft": {
+                "type": "object",
+                "properties": {
+                  "avoidBackToBackGames": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "minRestMinutes": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "weight": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "enabled",
+                      "minRestMinutes"
+                    ]
+                  },
+                  "balanceEarlyVsLate": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "weight": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "enabled"
+                    ]
+                  },
+                  "spreadGamesAcrossDays": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "weight": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "enabled"
+                    ]
+                  }
+                },
+                "title": "SchedulerSoftConstraints"
+              }
+            },
+            "title": "SchedulerConstraintsOverrideRequired",
+            "description": "Constraints overrides are required for season-scoped apply requests."
+          },
+          "gameIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "example": "123"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "runId",
+          "mode",
+          "assignments",
+          "constraints"
+        ],
+        "title": "SchedulerSeasonApplyRequest",
+        "description": "DB-sourced apply request. Persists the proposed assignments for the season using DB-derived data plus constraint overrides."
+      },
+      "SchedulerSolveResult": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "partial",
+              "infeasible",
+              "failed"
+            ],
+            "title": "SchedulerRunStatus"
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "totalGames": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "scheduledGames": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "unscheduledGames": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "objectiveValue": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "totalGames",
+              "scheduledGames",
+              "unscheduledGames"
+            ],
+            "title": "SchedulerMetrics"
+          },
+          "assignments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "gameId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "fieldId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "startTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "endTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "umpireIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "example": "123"
+                  }
+                }
+              },
+              "required": [
+                "gameId",
+                "fieldId",
+                "startTime",
+                "endTime",
+                "umpireIds"
+              ],
+              "title": "SchedulerAssignment"
+            }
+          },
+          "unscheduled": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "gameId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "gameId",
+                "reason"
+              ],
+              "title": "SchedulerUnscheduledReason"
+            }
+          }
+        },
+        "required": [
+          "runId",
+          "status",
+          "metrics",
+          "assignments",
+          "unscheduled"
+        ],
+        "title": "SchedulerSolveResult",
+        "description": "Proposal-only solve output. Persisting assignments is handled by a follow-up apply endpoint.",
+        "example": {
+          "runId": "sched_account_42_ab12cd34ef56gh78",
+          "status": "completed",
+          "metrics": {
+            "totalGames": 1,
+            "scheduledGames": 1,
+            "unscheduledGames": 0,
+            "objectiveValue": 1
+          },
+          "assignments": [
+            {
+              "gameId": "game-1",
+              "fieldId": "field-1",
+              "startTime": "2026-04-05T09:00:00Z",
+              "endTime": "2026-04-05T10:30:00Z",
+              "umpireIds": [
+                "ump-1"
+              ]
+            }
+          ],
+          "unscheduled": []
+        }
+      },
+      "SchedulerApplyRequest": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "all",
+              "subset"
+            ],
+            "title": "SchedulerApplyMode",
+            "description": "Whether to apply all assignments or only a subset."
+          },
+          "assignments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "gameId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "fieldId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "startTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "endTime": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "umpireIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "example": "123"
+                  }
+                }
+              },
+              "required": [
+                "gameId",
+                "fieldId",
+                "startTime",
+                "endTime",
+                "umpireIds"
+              ],
+              "title": "SchedulerAssignment"
+            },
+            "minItems": 1
+          },
+          "constraints": {
+            "type": "object",
+            "properties": {
+              "hard": {
+                "type": "object",
+                "properties": {
+                  "respectTeamBlackouts": {
+                    "type": "boolean"
+                  },
+                  "respectUmpireAvailability": {
+                    "type": "boolean"
+                  },
+                  "respectFieldSlots": {
+                    "type": "boolean"
+                  },
+                  "maxGamesPerTeamPerDay": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "maxGamesPerUmpirePerDay": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "requireLightsAfter": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "startHourLocal": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 23
+                      },
+                      "timeZone": {
+                        "type": "string",
+                        "minLength": 1,
+                        "example": "America/Chicago"
+                      }
+                    },
+                    "required": [
+                      "enabled",
+                      "startHourLocal",
+                      "timeZone"
+                    ],
+                    "title": "SchedulerRequireLightsAfterConstraint",
+                    "description": "When enabled, slots whose local start time is at/after startHourLocal must use a field with hasLights=true."
+                  }
+                },
+                "title": "SchedulerHardConstraints"
+              },
+              "soft": {
+                "type": "object",
+                "properties": {
+                  "avoidBackToBackGames": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "minRestMinutes": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "weight": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "enabled",
+                      "minRestMinutes"
+                    ]
+                  },
+                  "balanceEarlyVsLate": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "weight": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "enabled"
+                    ]
+                  },
+                  "spreadGamesAcrossDays": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "weight": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "enabled"
+                    ]
+                  }
+                },
+                "title": "SchedulerSoftConstraints"
+              }
+            },
+            "title": "SchedulerConstraints"
+          },
+          "gameIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "example": "123"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "runId",
+          "mode",
+          "assignments"
+        ],
+        "title": "SchedulerApplyRequest",
+        "description": "Apply a scheduling proposal to persist assignments. This is a follow-up to /scheduler/solve and writes to the database.",
+        "example": {
+          "runId": "sched_account_42_ab12cd34ef56gh78",
+          "mode": "subset",
+          "gameIds": [
+            "123",
+            "124"
+          ],
+          "assignments": [
+            {
+              "gameId": "123",
+              "fieldId": "44",
+              "startTime": "2026-04-05T09:00:00Z",
+              "endTime": "2026-04-05T10:30:00Z",
+              "umpireIds": [
+                "10"
+              ]
+            }
+          ]
+        }
+      },
+      "SchedulerApplyResult": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "applied",
+              "partial",
+              "failed"
+            ],
+            "title": "SchedulerApplyStatus"
+          },
+          "appliedGameIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "example": "123"
+            }
+          },
+          "skipped": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "gameId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "gameId",
+                "reason"
+              ],
+              "title": "SchedulerApplySkipped"
+            }
+          }
+        },
+        "required": [
+          "runId",
+          "status",
+          "appliedGameIds",
+          "skipped"
+        ],
+        "title": "SchedulerApplyResult",
+        "description": "Outcome of persisting a scheduling proposal.",
+        "example": {
+          "runId": "sched_account_42_ab12cd34ef56gh78",
+          "status": "partial",
+          "appliedGameIds": [
+            "123"
+          ],
+          "skipped": [
+            {
+              "gameId": "124",
+              "reason": "Field is already booked for this date and time"
+            }
+          ]
+        }
+      },
+      "SchedulerFieldAvailabilityRule": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "seasonId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "fieldId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-04-01",
+            "description": "Optional. When omitted, treated as season start date."
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-04-01",
+            "description": "Optional. When omitted, treated as season end date."
+          },
+          "daysOfWeekMask": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 127,
+            "example": 21,
+            "description": "Bitmask for days of week where bit 0=Mon ... bit 6=Sun."
+          },
+          "startTimeLocal": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "example": "18:30"
+          },
+          "endTimeLocal": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "example": "18:30"
+          },
+          "startIncrementMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 1440,
+            "example": 30
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "seasonId",
+          "fieldId",
+          "daysOfWeekMask",
+          "startTimeLocal",
+          "endTimeLocal",
+          "startIncrementMinutes",
+          "enabled"
+        ],
+        "title": "SchedulerFieldAvailabilityRule"
+      },
+      "SchedulerFieldAvailabilityRuleUpsert": {
+        "type": "object",
+        "properties": {
+          "seasonId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "fieldId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-04-01",
+            "description": "Optional. When omitted, treated as season start date."
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-04-01",
+            "description": "Optional. When omitted, treated as season end date."
+          },
+          "daysOfWeekMask": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 127,
+            "example": 21,
+            "description": "Bitmask for days of week where bit 0=Mon ... bit 6=Sun."
+          },
+          "startTimeLocal": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "example": "18:30"
+          },
+          "endTimeLocal": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "example": "18:30"
+          },
+          "startIncrementMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 1440,
+            "example": 30
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "seasonId",
+          "fieldId",
+          "daysOfWeekMask",
+          "startTimeLocal",
+          "endTimeLocal",
+          "startIncrementMinutes",
+          "enabled"
+        ],
+        "title": "SchedulerFieldAvailabilityRuleUpsert"
+      },
+      "SchedulerFieldAvailabilityRules": {
+        "type": "object",
+        "properties": {
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "seasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "fieldId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date",
+                  "example": "2026-04-01",
+                  "description": "Optional. When omitted, treated as season start date."
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date",
+                  "example": "2026-04-01",
+                  "description": "Optional. When omitted, treated as season end date."
+                },
+                "daysOfWeekMask": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 127,
+                  "example": 21,
+                  "description": "Bitmask for days of week where bit 0=Mon ... bit 6=Sun."
+                },
+                "startTimeLocal": {
+                  "type": "string",
+                  "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+                  "example": "18:30"
+                },
+                "endTimeLocal": {
+                  "type": "string",
+                  "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+                  "example": "18:30"
+                },
+                "startIncrementMinutes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true,
+                  "maximum": 1440,
+                  "example": 30
+                },
+                "enabled": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "seasonId",
+                "fieldId",
+                "daysOfWeekMask",
+                "startTimeLocal",
+                "endTimeLocal",
+                "startIncrementMinutes",
+                "enabled"
+              ],
+              "title": "SchedulerFieldAvailabilityRule"
+            }
+          }
+        },
+        "required": [
+          "rules"
+        ],
+        "title": "SchedulerFieldAvailabilityRules"
+      },
+      "SchedulerFieldExclusionDate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "seasonId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "fieldId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-04-01"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "seasonId",
+          "fieldId",
+          "date",
+          "enabled"
+        ],
+        "title": "SchedulerFieldExclusionDate",
+        "description": "A date-only exclusion for a field. When enabled, no fieldSlots will be generated for the field on this date."
+      },
+      "SchedulerFieldExclusionDateUpsert": {
+        "type": "object",
+        "properties": {
+          "seasonId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "fieldId": {
+            "type": "string",
+            "minLength": 1,
+            "example": "123"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-04-01"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "seasonId",
+          "fieldId",
+          "date",
+          "enabled"
+        ],
+        "title": "SchedulerFieldExclusionDateUpsert"
+      },
+      "SchedulerFieldExclusionDates": {
+        "type": "object",
+        "properties": {
+          "exclusions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "seasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "fieldId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date",
+                  "example": "2026-04-01"
+                },
+                "note": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "enabled": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "seasonId",
+                "fieldId",
+                "date",
+                "enabled"
+              ],
+              "title": "SchedulerFieldExclusionDate",
+              "description": "A date-only exclusion for a field. When enabled, no fieldSlots will be generated for the field on this date."
+            }
+          }
+        },
+        "required": [
+          "exclusions"
+        ],
+        "title": "SchedulerFieldExclusionDates"
       },
       "RoleCheckResponse": {
         "type": "object",
@@ -42357,6 +44460,1241 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/scheduler/solve": {
+      "post": {
+        "operationId": "solveSchedule",
+        "summary": "Generate a proposed schedule",
+        "description": "Deterministically solves a scheduling problem specification and returns a proposal (no persistence). Provide an Idempotency-Key header to derive a stable runId for safe retries; a follow-up apply endpoint will handle persisting all or selected assignments.",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Optional client-provided key used to derive a stable runId so callers can safely retry without changing the response metadata."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerProblemSpec"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scheduling proposal result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerSolveResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to generate schedules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/scheduler/problem-spec": {
+      "get": {
+        "operationId": "getSchedulerProblemSpecPreview",
+        "summary": "Preview the assembled scheduler problem spec",
+        "description": "Builds a SchedulerProblemSpecPreview from database state (games/teams/fields/umpires) plus field availability rules expanded into fieldSlots.",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Problem spec preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerProblemSpecPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/scheduler/solve": {
+      "post": {
+        "operationId": "solveSeasonSchedule",
+        "summary": "Generate a proposed schedule (DB-sourced)",
+        "description": "Assembles a scheduling problem spec from database state (games/teams/fields/umpires + expanded fieldSlots from availability rules) and returns a deterministic proposal (no persistence). Provide an Idempotency-Key header for safe retries.",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Optional client-provided key used to derive a stable runId so callers can safely retry without changing the response metadata."
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerSeasonSolveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scheduling proposal result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerSolveResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to generate schedules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/scheduler/apply": {
+      "post": {
+        "operationId": "applySeasonSchedule",
+        "summary": "Persist a proposed schedule (DB-sourced)",
+        "description": "Applies a proposed schedule for the season by persisting all or selected assignments to the database. This endpoint validates constraints using DB-derived context and is safe to retry.",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerSeasonApplyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Apply result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerApplyResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to apply schedules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-availability-rules": {
+      "get": {
+        "operationId": "listSchedulerFieldAvailabilityRules",
+        "summary": "List scheduler field availability rules",
+        "description": "Lists field availability rules for the season. These rules are expanded into concrete fieldSlots when assembling a scheduling problem spec.",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rules list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerFieldAvailabilityRules"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createSchedulerFieldAvailabilityRule",
+        "summary": "Create scheduler field availability rule",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerFieldAvailabilityRuleUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerFieldAvailabilityRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-exclusion-dates": {
+      "get": {
+        "operationId": "listSchedulerFieldExclusionDates",
+        "summary": "List scheduler field exclusion dates",
+        "description": "Lists per-field exclusion dates for the season. Enabled exclusions remove all fieldSlots for that field on the specified dates.",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exclusion dates list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerFieldExclusionDates"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createSchedulerFieldExclusionDate",
+        "summary": "Create scheduler field exclusion date",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerFieldExclusionDateUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created exclusion date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerFieldExclusionDate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-exclusion-dates/{exclusionId}": {
+      "put": {
+        "operationId": "updateSchedulerFieldExclusionDate",
+        "summary": "Update scheduler field exclusion date",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "exclusionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerFieldExclusionDateUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated exclusion date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerFieldExclusionDate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteSchedulerFieldExclusionDate",
+        "summary": "Delete scheduler field exclusion date",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "exclusionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted exclusion date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerFieldExclusionDate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-availability-rules/{ruleId}": {
+      "put": {
+        "operationId": "updateSchedulerFieldAvailabilityRule",
+        "summary": "Update scheduler field availability rule",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerFieldAvailabilityRuleUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerFieldAvailabilityRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteSchedulerFieldAvailabilityRule",
+        "summary": "Delete scheduler field availability rule",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerFieldAvailabilityRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/scheduler/apply": {
+      "post": {
+        "operationId": "applyScheduleProposal",
+        "summary": "Apply a schedule proposal",
+        "description": "Persists a proposal returned by /scheduler/solve. This endpoint writes to the database and can apply all assignments or a specified subset.",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerApplyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Apply result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerApplyResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to apply schedules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
                 }
               }
             }
