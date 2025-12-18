@@ -253,6 +253,7 @@ export class DateUtils {
       const parts = new Intl.DateTimeFormat('en-US', {
         hour: '2-digit',
         hour12: false,
+        hourCycle: 'h23',
         timeZone: tz,
       }).formatToParts(date);
 
@@ -351,6 +352,7 @@ export class DateUtils {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
+        hourCycle: 'h23',
       }).formatToParts(instant);
 
       const pick = (type: string) => parts.find((part) => part.type === type)?.value;
@@ -363,12 +365,25 @@ export class DateUtils {
         return null;
       }
 
+      const rawYear = Number(yearValue);
+      const rawMonth = Number(monthValue);
+      const rawDay = Number(dayValue);
+      const rawHour = Number(hourValue);
+      const rawMinute = Number(minuteValue);
+
+      if ([rawYear, rawMonth, rawDay, rawHour, rawMinute].some((value) => Number.isNaN(value))) {
+        return null;
+      }
+
+      const normalized = new Date(
+        Date.UTC(rawYear, rawMonth - 1, rawDay, rawHour, rawMinute, 0, 0),
+      );
       return {
-        year: Number(yearValue),
-        month: Number(monthValue),
-        day: Number(dayValue),
-        hour: Number(hourValue),
-        minute: Number(minuteValue),
+        year: normalized.getUTCFullYear(),
+        month: normalized.getUTCMonth() + 1,
+        day: normalized.getUTCDate(),
+        hour: normalized.getUTCHours(),
+        minute: normalized.getUTCMinutes(),
       };
     };
 
