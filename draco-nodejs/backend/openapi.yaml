@@ -15459,12 +15459,6 @@ components:
                   type: integer
                   minimum: 0
                   exclusiveMinimum: true
-                noTeamOverlap:
-                  type: boolean
-                noUmpireOverlap:
-                  type: boolean
-                noFieldOverlap:
-                  type: boolean
                 requireLightsAfter:
                   type: object
                   properties:
@@ -15602,9 +15596,6 @@ components:
             respectFieldSlots: true
             respectTeamBlackouts: true
             respectUmpireAvailability: true
-            noFieldOverlap: true
-            noTeamOverlap: true
-            noUmpireOverlap: true
         objectives:
           primary: maximize_scheduled_games
     SchedulerProblemSpecPreview:
@@ -15836,10 +15827,12 @@ components:
                 type: string
                 format: date
                 example: 2026-04-01
+                description: Optional. When omitted, treated as season start date.
               endDate:
                 type: string
                 format: date
                 example: 2026-04-01
+                description: Optional. When omitted, treated as season end date.
               daysOfWeekMask:
                 type: integer
                 minimum: 1
@@ -15862,18 +15855,52 @@ components:
                 example: 30
               enabled:
                 type: boolean
-                default: true
             required:
               - id
               - seasonId
               - fieldId
-              - startDate
-              - endDate
               - daysOfWeekMask
               - startTimeLocal
               - endTimeLocal
               - startIncrementMinutes
+              - enabled
             title: SchedulerFieldAvailabilityRule
+        fieldExclusionDates:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+                example: "123"
+              seasonId:
+                type: string
+                minLength: 1
+                example: "123"
+              fieldId:
+                type: string
+                minLength: 1
+                example: "123"
+              date:
+                type: string
+                format: date
+                example: 2026-04-01
+              note:
+                type: string
+                minLength: 1
+                maxLength: 255
+              enabled:
+                type: boolean
+            required:
+              - id
+              - seasonId
+              - fieldId
+              - date
+              - enabled
+            title: SchedulerFieldExclusionDate
+            description: A date-only exclusion for a field. When enabled, no fieldSlots will
+              be generated for the field on this date.
       required:
         - season
         - teams
@@ -15882,6 +15909,7 @@ components:
         - games
         - fieldSlots
         - fieldAvailabilityRules
+        - fieldExclusionDates
       title: SchedulerProblemSpecPreview
       description: DB-assembled scheduling problem spec preview. Uses field
         availability rules expanded into concrete fieldSlots.
@@ -15908,12 +15936,6 @@ components:
                   type: integer
                   minimum: 0
                   exclusiveMinimum: true
-                noTeamOverlap:
-                  type: boolean
-                noUmpireOverlap:
-                  type: boolean
-                noFieldOverlap:
-                  type: boolean
                 requireLightsAfter:
                   type: object
                   properties:
@@ -16065,12 +16087,6 @@ components:
                   type: integer
                   minimum: 0
                   exclusiveMinimum: true
-                noTeamOverlap:
-                  type: boolean
-                noUmpireOverlap:
-                  type: boolean
-                noFieldOverlap:
-                  type: boolean
                 requireLightsAfter:
                   type: object
                   properties:
@@ -16323,12 +16339,6 @@ components:
                   type: integer
                   minimum: 0
                   exclusiveMinimum: true
-                noTeamOverlap:
-                  type: boolean
-                noUmpireOverlap:
-                  type: boolean
-                noFieldOverlap:
-                  type: boolean
                 requireLightsAfter:
                   type: object
                   properties:
@@ -16485,10 +16495,12 @@ components:
           type: string
           format: date
           example: 2026-04-01
+          description: Optional. When omitted, treated as season start date.
         endDate:
           type: string
           format: date
           example: 2026-04-01
+          description: Optional. When omitted, treated as season end date.
         daysOfWeekMask:
           type: integer
           minimum: 1
@@ -16511,17 +16523,15 @@ components:
           example: 30
         enabled:
           type: boolean
-          default: true
       required:
         - id
         - seasonId
         - fieldId
-        - startDate
-        - endDate
         - daysOfWeekMask
         - startTimeLocal
         - endTimeLocal
         - startIncrementMinutes
+        - enabled
       title: SchedulerFieldAvailabilityRule
     SchedulerFieldAvailabilityRuleUpsert:
       type: object
@@ -16538,10 +16548,12 @@ components:
           type: string
           format: date
           example: 2026-04-01
+          description: Optional. When omitted, treated as season start date.
         endDate:
           type: string
           format: date
           example: 2026-04-01
+          description: Optional. When omitted, treated as season end date.
         daysOfWeekMask:
           type: integer
           minimum: 1
@@ -16564,16 +16576,14 @@ components:
           example: 30
         enabled:
           type: boolean
-          default: true
       required:
         - seasonId
         - fieldId
-        - startDate
-        - endDate
         - daysOfWeekMask
         - startTimeLocal
         - endTimeLocal
         - startIncrementMinutes
+        - enabled
       title: SchedulerFieldAvailabilityRuleUpsert
     SchedulerFieldAvailabilityRules:
       type: object
@@ -16599,10 +16609,12 @@ components:
                 type: string
                 format: date
                 example: 2026-04-01
+                description: Optional. When omitted, treated as season start date.
               endDate:
                 type: string
                 format: date
                 example: 2026-04-01
+                description: Optional. When omitted, treated as season end date.
               daysOfWeekMask:
                 type: integer
                 minimum: 1
@@ -16625,21 +16637,122 @@ components:
                 example: 30
               enabled:
                 type: boolean
-                default: true
             required:
               - id
               - seasonId
               - fieldId
-              - startDate
-              - endDate
               - daysOfWeekMask
               - startTimeLocal
               - endTimeLocal
               - startIncrementMinutes
+              - enabled
             title: SchedulerFieldAvailabilityRule
       required:
         - rules
       title: SchedulerFieldAvailabilityRules
+    SchedulerFieldExclusionDate:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          example: "123"
+        seasonId:
+          type: string
+          minLength: 1
+          example: "123"
+        fieldId:
+          type: string
+          minLength: 1
+          example: "123"
+        date:
+          type: string
+          format: date
+          example: 2026-04-01
+        note:
+          type: string
+          minLength: 1
+          maxLength: 255
+        enabled:
+          type: boolean
+      required:
+        - id
+        - seasonId
+        - fieldId
+        - date
+        - enabled
+      title: SchedulerFieldExclusionDate
+      description: A date-only exclusion for a field. When enabled, no fieldSlots will
+        be generated for the field on this date.
+    SchedulerFieldExclusionDateUpsert:
+      type: object
+      properties:
+        seasonId:
+          type: string
+          minLength: 1
+          example: "123"
+        fieldId:
+          type: string
+          minLength: 1
+          example: "123"
+        date:
+          type: string
+          format: date
+          example: 2026-04-01
+        note:
+          type: string
+          minLength: 1
+          maxLength: 255
+        enabled:
+          type: boolean
+      required:
+        - seasonId
+        - fieldId
+        - date
+        - enabled
+      title: SchedulerFieldExclusionDateUpsert
+    SchedulerFieldExclusionDates:
+      type: object
+      properties:
+        exclusions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+                example: "123"
+              seasonId:
+                type: string
+                minLength: 1
+                example: "123"
+              fieldId:
+                type: string
+                minLength: 1
+                example: "123"
+              date:
+                type: string
+                format: date
+                example: 2026-04-01
+              note:
+                type: string
+                minLength: 1
+                maxLength: 255
+              enabled:
+                type: boolean
+            required:
+              - id
+              - seasonId
+              - fieldId
+              - date
+              - enabled
+            title: SchedulerFieldExclusionDate
+            description: A date-only exclusion for a field. When enabled, no fieldSlots will
+              be generated for the field on this date.
+      required:
+        - exclusions
+      title: SchedulerFieldExclusionDates
     RoleCheckResponse:
       type: object
       properties:
@@ -30611,6 +30724,238 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SchedulerFieldAvailabilityRule"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-exclusion-dates:
+    get:
+      operationId: listSchedulerFieldExclusionDates
+      summary: List scheduler field exclusion dates
+      description: Lists per-field exclusion dates for the season. Enabled exclusions
+        remove all fieldSlots for that field on the specified dates.
+      tags:
+        - Scheduler
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Exclusion dates list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerFieldExclusionDates"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      operationId: createSchedulerFieldExclusionDate
+      summary: Create scheduler field exclusion date
+      tags:
+        - Scheduler
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchedulerFieldExclusionDateUpsert"
+      responses:
+        "201":
+          description: Created exclusion date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerFieldExclusionDate"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-exclusion-dates/{exclusionId}:
+    put:
+      operationId: updateSchedulerFieldExclusionDate
+      summary: Update scheduler field exclusion date
+      tags:
+        - Scheduler
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: exclusionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchedulerFieldExclusionDateUpsert"
+      responses:
+        "200":
+          description: Updated exclusion date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerFieldExclusionDate"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deleteSchedulerFieldExclusionDate
+      summary: Delete scheduler field exclusion date
+      tags:
+        - Scheduler
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: exclusionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Deleted exclusion date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerFieldExclusionDate"
         "400":
           description: Validation error
           content:

@@ -16,6 +16,9 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
     SchedulerFieldAvailabilityRuleSchemaRef,
     SchedulerFieldAvailabilityRuleUpsertSchemaRef,
     SchedulerFieldAvailabilityRulesSchemaRef,
+    SchedulerFieldExclusionDateSchemaRef,
+    SchedulerFieldExclusionDateUpsertSchemaRef,
+    SchedulerFieldExclusionDatesSchemaRef,
   } = schemaRefs;
 
   registry.registerPath({
@@ -293,6 +296,212 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
       200: {
         description: 'Rules list',
         content: { 'application/json': { schema: SchedulerFieldAvailabilityRulesSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-exclusion-dates',
+    operationId: 'listSchedulerFieldExclusionDates',
+    summary: 'List scheduler field exclusion dates',
+    description:
+      'Lists per-field exclusion dates for the season. Enabled exclusions remove all fieldSlots for that field on the specified dates.',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Exclusion dates list',
+        content: { 'application/json': { schema: SchedulerFieldExclusionDatesSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-exclusion-dates',
+    operationId: 'createSchedulerFieldExclusionDate',
+    summary: 'Create scheduler field exclusion date',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: SchedulerFieldExclusionDateUpsertSchemaRef } },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Created exclusion date',
+        content: { 'application/json': { schema: SchedulerFieldExclusionDateSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-exclusion-dates/{exclusionId}',
+    operationId: 'updateSchedulerFieldExclusionDate',
+    summary: 'Update scheduler field exclusion date',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'exclusionId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: SchedulerFieldExclusionDateUpsertSchemaRef } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated exclusion date',
+        content: { 'application/json': { schema: SchedulerFieldExclusionDateSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/field-exclusion-dates/{exclusionId}',
+    operationId: 'deleteSchedulerFieldExclusionDate',
+    summary: 'Delete scheduler field exclusion date',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'exclusionId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Deleted exclusion date',
+        content: { 'application/json': { schema: SchedulerFieldExclusionDateSchemaRef } },
       },
       400: {
         description: 'Validation error',

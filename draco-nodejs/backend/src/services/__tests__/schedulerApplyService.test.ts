@@ -80,8 +80,8 @@ const makeAccountGame = (
   ({
     id: overrides.id,
     gamedate: overrides.gamedate ?? new Date('2026-04-05T08:00:00.000Z'),
-    hteamid: 1n,
-    vteamid: 2n,
+    hteamid: overrides.hteamid ?? 1n,
+    vteamid: overrides.vteamid ?? 2n,
     hscore: 0,
     vscore: 0,
     comment: '',
@@ -382,7 +382,7 @@ describe('SchedulerApplyService.applyProposal', () => {
     const request: SchedulerApplyRequest = {
       runId: 'run-1',
       mode: 'all',
-      constraints: { hard: { noFieldOverlap: true } },
+      constraints: { hard: {} },
       assignments: [
         {
           gameId: '123',
@@ -410,7 +410,7 @@ describe('SchedulerApplyService.applyProposal', () => {
       runId: 'run-2',
       mode: 'subset',
       gameIds: ['123', '124'],
-      constraints: { hard: { noFieldOverlap: true } },
+      constraints: { hard: {} },
       assignments: [
         {
           gameId: '123',
@@ -435,14 +435,20 @@ describe('SchedulerApplyService.applyProposal', () => {
     gamesById.set(123n, makeAccountGame({ id: 123n }));
     gamesById.set(
       999n,
-      makeAccountGame({ id: 999n, gamedate: new Date('2026-04-05T09:00:00.000Z'), fieldid: 10n }),
+      makeAccountGame({
+        id: 999n,
+        gamedate: new Date('2026-04-05T09:00:00.000Z'),
+        fieldid: 10n,
+        hteamid: 3n,
+        vteamid: 4n,
+      }),
     );
     fieldMeta = { haslights: true, maxparallelgames: 1 };
 
     const request: SchedulerApplyRequest = {
       runId: 'run-3',
       mode: 'all',
-      constraints: { hard: { noFieldOverlap: true } },
+      constraints: { hard: {} },
       assignments: [
         {
           gameId: '123',
@@ -471,7 +477,7 @@ describe('SchedulerApplyService.applyProposal', () => {
     const request: SchedulerApplyRequest = {
       runId: 'run-3b',
       mode: 'all',
-      constraints: { hard: { noFieldOverlap: true } },
+      constraints: { hard: {} },
       assignments: [
         {
           gameId: '123',
@@ -511,7 +517,7 @@ describe('SchedulerApplyService.applyProposal', () => {
     const request: SchedulerApplyRequest = {
       runId: 'run-4',
       mode: 'all',
-      constraints: { hard: { noFieldOverlap: true } },
+      constraints: { hard: {} },
       assignments: [
         {
           gameId: '123',
@@ -563,17 +569,23 @@ describe('SchedulerApplyService.applyProposal', () => {
 
   it('enforces maxParallelGames against database state', async () => {
     gamesById.set(123n, makeAccountGame({ id: 123n }));
-    gamesById.set(124n, makeAccountGame({ id: 124n }));
+    gamesById.set(124n, makeAccountGame({ id: 124n, hteamid: 3n, vteamid: 4n }));
     gamesById.set(
       999n,
-      makeAccountGame({ id: 999n, gamedate: new Date('2026-04-05T09:00:00.000Z'), fieldid: 10n }),
+      makeAccountGame({
+        id: 999n,
+        gamedate: new Date('2026-04-05T09:00:00.000Z'),
+        fieldid: 10n,
+        hteamid: 5n,
+        vteamid: 6n,
+      }),
     );
     fieldMeta = { haslights: true, maxparallelgames: 2 };
 
     const request: SchedulerApplyRequest = {
       runId: 'run-6',
       mode: 'all',
-      constraints: { hard: { noFieldOverlap: true } },
+      constraints: { hard: {} },
       assignments: [
         {
           gameId: '123',
@@ -612,7 +624,7 @@ describe('SchedulerApplyService.applyProposal', () => {
     const request: SchedulerApplyRequest = {
       runId: 'run-7',
       mode: 'all',
-      constraints: { hard: { noTeamOverlap: true } },
+      constraints: { hard: {} },
       assignments: [
         {
           gameId: '123',
@@ -641,6 +653,8 @@ describe('SchedulerApplyService.applyProposal', () => {
         id: 999n,
         gamedate: new Date('2026-04-05T09:00:00.000Z'),
         umpire1: 77n,
+        hteamid: 3n,
+        vteamid: 4n,
       }),
     );
     fieldMeta = { haslights: true, maxparallelgames: 2 };
@@ -648,7 +662,7 @@ describe('SchedulerApplyService.applyProposal', () => {
     const request: SchedulerApplyRequest = {
       runId: 'run-8',
       mode: 'all',
-      constraints: { hard: { noUmpireOverlap: true } },
+      constraints: { hard: {} },
       assignments: [
         {
           gameId: '123',

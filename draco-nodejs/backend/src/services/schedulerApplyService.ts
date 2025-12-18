@@ -8,6 +8,21 @@ import { DateUtils } from '../utils/dateUtils.js';
 
 const MAX_UMPIRES_PER_GAME = 4;
 
+const withDefaultHardConstraints = (
+  constraints: SchedulerApplyRequest['constraints'],
+): NonNullable<SchedulerApplyRequest['constraints']>['hard'] => {
+  const defaults: NonNullable<SchedulerApplyRequest['constraints']>['hard'] = {
+    respectFieldSlots: true,
+    respectTeamBlackouts: true,
+    respectUmpireAvailability: true,
+    maxGamesPerTeamPerDay: undefined,
+    maxGamesPerUmpirePerDay: undefined,
+    requireLightsAfter: undefined,
+  };
+
+  return { ...defaults, ...(constraints?.hard ?? {}) };
+};
+
 export class SchedulerApplyService {
   private readonly scheduleRepository: IScheduleRepository;
   private readonly fieldRepository: IFieldRepository;
@@ -38,6 +53,7 @@ export class SchedulerApplyService {
     const appliedGameIds: string[] = [];
     const skipped: Array<{ gameId: string; reason: string }> = [];
     const fieldMetaById = new Map<string, { hasLights: boolean; maxParallelGames: number }>();
+    const hard = withDefaultHardConstraints(request.constraints);
 
     for (const assignment of request.assignments) {
       if (targetGameIds && !targetGameIds.has(assignment.gameId)) {
@@ -47,7 +63,6 @@ export class SchedulerApplyService {
       const gameId = this.parseBigIntId(assignment.gameId, 'gameId');
       const fieldId = this.parseBigIntId(assignment.fieldId, 'fieldId');
       const gameDate = this.parseDateTime(assignment.startTime, 'startTime');
-      const hard = request.constraints?.hard;
 
       let fieldMeta = fieldMetaById.get(assignment.fieldId);
       if (!fieldMeta) {
@@ -88,31 +103,29 @@ export class SchedulerApplyService {
         continue;
       }
 
-      if (hard?.noTeamOverlap) {
-        const teams = [existingGame.hteamid, existingGame.vteamid];
-        const teamConflicts = await Promise.all(
-          teams.map(async (teamSeasonId) => {
-            const existingBookings = await this.scheduleRepository.countTeamBookingsAtTime(
-              teamSeasonId,
-              gameDate,
-              existingGame.leagueid,
-              gameId,
-            );
-            return { existingBookings };
-          }),
-        );
+      const teams = [existingGame.hteamid, existingGame.vteamid];
+      const teamConflicts = await Promise.all(
+        teams.map(async (teamSeasonId) => {
+          const existingBookings = await this.scheduleRepository.countTeamBookingsAtTime(
+            teamSeasonId,
+            gameDate,
+            existingGame.leagueid,
+            gameId,
+          );
+          return { existingBookings };
+        }),
+      );
 
-        const hasTeamConflict = teamConflicts.some((entry) => entry.existingBookings > 0);
-        if (hasTeamConflict) {
-          skipped.push({
-            gameId: assignment.gameId,
-            reason: 'Team is already booked for this date and time',
-          });
-          continue;
-        }
+      const hasTeamConflict = teamConflicts.some((entry) => entry.existingBookings > 0);
+      if (hasTeamConflict) {
+        skipped.push({
+          gameId: assignment.gameId,
+          reason: 'Team is already booked for this date and time',
+        });
+        continue;
       }
 
-      if (hard?.noUmpireOverlap && umpireIds.length > 0) {
+      if (umpireIds.length > 0) {
         const umpireConflicts = await Promise.all(
           umpireIds.map(async (umpireId) => {
             const existingBookings = await this.scheduleRepository.countUmpireBookingsAtTime(
@@ -197,21 +210,19 @@ export class SchedulerApplyService {
         }
       }
 
-      if (hard?.noFieldOverlap) {
-        const capacity = fieldMeta.maxParallelGames;
-        const existingBookings = await this.scheduleRepository.countFieldBookingsAtTime(
-          fieldId,
-          gameDate,
-          existingGame.leagueid,
-          gameId,
-        );
-        if (existingBookings >= capacity) {
-          skipped.push({
-            gameId: assignment.gameId,
-            reason: 'Field is already booked for this date and time',
-          });
-          continue;
-        }
+      const capacity = fieldMeta.maxParallelGames;
+      const existingBookings = await this.scheduleRepository.countFieldBookingsAtTime(
+        fieldId,
+        gameDate,
+        existingGame.leagueid,
+        gameId,
+      );
+      if (existingBookings >= capacity) {
+        skipped.push({
+          gameId: assignment.gameId,
+          reason: 'Field is already booked for this date and time',
+        });
+        continue;
       }
 
       const updateData: dbScheduleUpdateData = {

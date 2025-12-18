@@ -51,6 +51,7 @@ import {
   IAccountInstagramCredentialsRepository,
   IInstagramIngestionRepository,
   ISchedulerFieldAvailabilityRulesRepository,
+  ISchedulerFieldExclusionDatesRepository,
   ISchedulerProblemSpecRepository,
 } from './interfaces/index.js';
 import {
@@ -104,6 +105,7 @@ import {
   PrismaAccountInstagramCredentialsRepository,
   PrismaInstagramIngestionRepository,
   PrismaSchedulerFieldAvailabilityRulesRepository,
+  PrismaSchedulerFieldExclusionDatesRepository,
   PrismaSchedulerProblemSpecRepository,
 } from './implementations/index.js';
 
@@ -164,6 +166,7 @@ export class RepositoryFactory {
   private static accountInstagramCredentialsRepository: IAccountInstagramCredentialsRepository;
   private static instagramIngestionRepository: IInstagramIngestionRepository;
   private static schedulerFieldAvailabilityRulesRepository: ISchedulerFieldAvailabilityRulesRepository;
+  private static schedulerFieldExclusionDatesRepository: ISchedulerFieldExclusionDatesRepository;
   private static schedulerProblemSpecRepository: ISchedulerProblemSpecRepository;
 
   static getLeagueRepository(): ILeagueRepository {
@@ -425,6 +428,14 @@ export class RepositoryFactory {
         new PrismaSchedulerFieldAvailabilityRulesRepository(prisma);
     }
     return this.schedulerFieldAvailabilityRulesRepository;
+  }
+
+  static getSchedulerFieldExclusionDatesRepository(): ISchedulerFieldExclusionDatesRepository {
+    if (!this.schedulerFieldExclusionDatesRepository) {
+      this.schedulerFieldExclusionDatesRepository =
+        new PrismaSchedulerFieldExclusionDatesRepository(prisma);
+    }
+    return this.schedulerFieldExclusionDatesRepository;
   }
 
   static getSchedulerProblemSpecRepository(): ISchedulerProblemSpecRepository {

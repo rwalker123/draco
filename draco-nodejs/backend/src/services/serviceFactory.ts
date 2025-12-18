@@ -38,6 +38,7 @@ import { ScheduleService } from './scheduleService.js';
 import { SchedulerEngineService } from './schedulerEngineService.js';
 import { SchedulerApplyService } from './schedulerApplyService.js';
 import { SchedulerFieldAvailabilityRulesService } from './schedulerFieldAvailabilityRulesService.js';
+import { SchedulerFieldExclusionDatesService } from './schedulerFieldExclusionDatesService.js';
 import { SchedulerProblemSpecService } from './schedulerProblemSpecService.js';
 import { SchedulerSeasonApplyService } from './schedulerSeasonApplyService.js';
 import { LeagueService } from './LeagueService.js';
@@ -120,6 +121,7 @@ export class ServiceFactory {
   private static schedulerEngineService: SchedulerEngineService;
   private static schedulerApplyService: SchedulerApplyService;
   private static schedulerFieldAvailabilityRulesService: SchedulerFieldAvailabilityRulesService;
+  private static schedulerFieldExclusionDatesService: SchedulerFieldExclusionDatesService;
   private static schedulerProblemSpecService: SchedulerProblemSpecService;
   private static schedulerSeasonApplyService: SchedulerSeasonApplyService;
   private static leagueService: LeagueService;
@@ -431,6 +433,14 @@ export class ServiceFactory {
     }
 
     return this.schedulerFieldAvailabilityRulesService;
+  }
+
+  static getSchedulerFieldExclusionDatesService(): SchedulerFieldExclusionDatesService {
+    if (!this.schedulerFieldExclusionDatesService) {
+      this.schedulerFieldExclusionDatesService = new SchedulerFieldExclusionDatesService();
+    }
+
+    return this.schedulerFieldExclusionDatesService;
   }
 
   static getSchedulerProblemSpecService(): SchedulerProblemSpecService {

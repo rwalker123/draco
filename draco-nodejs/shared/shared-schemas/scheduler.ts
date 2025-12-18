@@ -79,8 +79,12 @@ export const SchedulerFieldAvailabilityRuleSchema = z
     id: schedulerIdSchema,
     seasonId: schedulerIdSchema,
     fieldId: schedulerIdSchema,
-    startDate: isoDateSchema,
-    endDate: isoDateSchema,
+    startDate: isoDateSchema
+      .optional()
+      .openapi({ description: 'Optional. When omitted, treated as season start date.' }),
+    endDate: isoDateSchema
+      .optional()
+      .openapi({ description: 'Optional. When omitted, treated as season end date.' }),
     /**
      * Bitmask for days of week where bit 0 = Monday ... bit 6 = Sunday.
      * Example: Monday+Wednesday+Friday = 0b0010101 = 21.
@@ -92,10 +96,10 @@ export const SchedulerFieldAvailabilityRuleSchema = z
     startTimeLocal: hhmmSchema,
     endTimeLocal: hhmmSchema,
     startIncrementMinutes: z.number().int().positive().max(1440).openapi({ example: 30 }),
-    enabled: z.boolean().default(true),
+    enabled: z.boolean(),
   })
   .superRefine((data, ctx) => {
-    if (data.startDate > data.endDate) {
+    if (data.startDate && data.endDate && data.startDate > data.endDate) {
       ctx.addIssue({
         code: 'custom',
         path: ['startDate'],
@@ -124,6 +128,31 @@ export const SchedulerFieldAvailabilityRulesSchema = z
     rules: SchedulerFieldAvailabilityRuleSchema.array(),
   })
   .openapi({ title: 'SchedulerFieldAvailabilityRules' });
+
+export const SchedulerFieldExclusionDateSchema = z
+  .object({
+    id: schedulerIdSchema,
+    seasonId: schedulerIdSchema,
+    fieldId: schedulerIdSchema,
+    date: isoDateSchema,
+    note: z.string().trim().min(1).max(255).optional(),
+    enabled: z.boolean(),
+  })
+  .openapi({
+    title: 'SchedulerFieldExclusionDate',
+    description:
+      'A date-only exclusion for a field. When enabled, no fieldSlots will be generated for the field on this date.',
+  });
+
+export const SchedulerFieldExclusionDateUpsertSchema = SchedulerFieldExclusionDateSchema.omit({
+  id: true,
+}).openapi({ title: 'SchedulerFieldExclusionDateUpsert' });
+
+export const SchedulerFieldExclusionDatesSchema = z
+  .object({
+    exclusions: SchedulerFieldExclusionDateSchema.array(),
+  })
+  .openapi({ title: 'SchedulerFieldExclusionDates' });
 
 export const SchedulerGameRequestSchema = z
   .object({
@@ -187,9 +216,6 @@ export const SchedulerHardConstraintsSchema = z
     respectFieldSlots: z.boolean().optional(),
     maxGamesPerTeamPerDay: z.number().int().positive().optional(),
     maxGamesPerUmpirePerDay: z.number().int().positive().optional(),
-    noTeamOverlap: z.boolean().optional(),
-    noUmpireOverlap: z.boolean().optional(),
-    noFieldOverlap: z.boolean().optional(),
     requireLightsAfter: SchedulerRequireLightsAfterConstraintSchema.optional().openapi({
       description:
         'When enabled, slots whose local start time is at/after startHourLocal must use a field with hasLights=true.',
@@ -320,9 +346,6 @@ export const SchedulerProblemSpecSchema = z
           respectFieldSlots: true,
           respectTeamBlackouts: true,
           respectUmpireAvailability: true,
-          noFieldOverlap: true,
-          noTeamOverlap: true,
-          noUmpireOverlap: true,
         },
       },
       objectives: { primary: 'maximize_scheduled_games' },
@@ -503,6 +526,11 @@ export type SchedulerFieldAvailabilityRuleUpsert = z.infer<
   typeof SchedulerFieldAvailabilityRuleUpsertSchema
 >;
 export type SchedulerFieldAvailabilityRules = z.infer<typeof SchedulerFieldAvailabilityRulesSchema>;
+export type SchedulerFieldExclusionDate = z.infer<typeof SchedulerFieldExclusionDateSchema>;
+export type SchedulerFieldExclusionDateUpsert = z.infer<
+  typeof SchedulerFieldExclusionDateUpsertSchema
+>;
+export type SchedulerFieldExclusionDates = z.infer<typeof SchedulerFieldExclusionDatesSchema>;
 export type SchedulerGameRequest = z.infer<typeof SchedulerGameRequestSchema>;
 export type SchedulerFieldSlot = z.infer<typeof SchedulerFieldSlotSchema>;
 export type SchedulerUmpireAvailability = z.infer<typeof SchedulerUmpireAvailabilitySchema>;
@@ -537,6 +565,7 @@ export const SchedulerProblemSpecPreviewSchema = z
     games: SchedulerGameRequestSchema.array(),
     fieldSlots: SchedulerFieldSlotSchema.array(),
     fieldAvailabilityRules: SchedulerFieldAvailabilityRuleSchema.array(),
+    fieldExclusionDates: SchedulerFieldExclusionDateSchema.array(),
   })
   .openapi({
     title: 'SchedulerProblemSpecPreview',

@@ -235,7 +235,9 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({
                   alignItems={{ xs: 'flex-start', sm: 'center' }}
                   justifyContent="space-between"
                 >
-                  <Typography variant="h6">Field Directory</Typography>
+                  <Typography variant="h6" color="text.primary">
+                    Field Directory
+                  </Typography>
                   <TextField
                     size="small"
                     placeholder="Search fields"

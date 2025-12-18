@@ -186,9 +186,6 @@ export class SchedulerEngineService {
       respectUmpireAvailability: true,
       maxGamesPerTeamPerDay: undefined,
       maxGamesPerUmpirePerDay: undefined,
-      noFieldOverlap: true,
-      noTeamOverlap: true,
-      noUmpireOverlap: true,
     };
 
     return { ...defaults, ...(constraints?.hard ?? {}) };
@@ -526,7 +523,6 @@ export class SchedulerEngineService {
         }
 
         if (
-          constraints.noFieldOverlap &&
           this.hasFieldCapacityConflict(
             slot.fieldId,
             start,
@@ -539,19 +535,18 @@ export class SchedulerEngineService {
         }
 
         if (
-          constraints.noTeamOverlap &&
-          (this.hasConflict(
+          this.hasConflict(
             candidate.game.homeTeamSeasonId,
             start,
             durationEnd,
             schedules.teamSchedule,
           ) ||
-            this.hasConflict(
-              candidate.game.visitorTeamSeasonId,
-              start,
-              durationEnd,
-              schedules.teamSchedule,
-            ))
+          this.hasConflict(
+            candidate.game.visitorTeamSeasonId,
+            start,
+            durationEnd,
+            schedules.teamSchedule,
+          )
         ) {
           continue;
         }
@@ -718,7 +713,7 @@ export class SchedulerEngineService {
         continue;
       }
 
-      if (constraints.noUmpireOverlap && this.hasConflict(umpireId, start, end, umpireSchedule)) {
+      if (this.hasConflict(umpireId, start, end, umpireSchedule)) {
         continue;
       }
 

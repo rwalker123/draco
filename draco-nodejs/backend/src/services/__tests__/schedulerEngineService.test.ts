@@ -68,9 +68,6 @@ describe('SchedulerEngineService', () => {
         respectTeamBlackouts: true,
         respectUmpireAvailability: true,
         respectFieldSlots: true,
-        noTeamOverlap: true,
-        noFieldOverlap: true,
-        noUmpireOverlap: true,
       },
     },
   };
@@ -191,8 +188,6 @@ describe('SchedulerEngineService', () => {
       constraints: {
         hard: {
           respectFieldSlots: true,
-          noFieldOverlap: true,
-          noTeamOverlap: true,
         },
       },
     };
@@ -245,8 +240,7 @@ describe('SchedulerEngineService', () => {
       ],
       constraints: {
         hard: {
-          noFieldOverlap: true,
-          noTeamOverlap: true,
+          respectFieldSlots: true,
         },
       },
     };
@@ -305,8 +299,7 @@ describe('SchedulerEngineService', () => {
       ],
       constraints: {
         hard: {
-          noFieldOverlap: true,
-          noTeamOverlap: true,
+          respectFieldSlots: true,
         },
       },
     };
@@ -360,9 +353,6 @@ describe('SchedulerEngineService', () => {
       constraints: {
         hard: {
           respectUmpireAvailability: true,
-          noUmpireOverlap: true,
-          noFieldOverlap: true,
-          noTeamOverlap: true,
         },
       },
     };
@@ -434,7 +424,6 @@ describe('SchedulerEngineService', () => {
       constraints: {
         hard: {
           respectUmpireAvailability: true,
-          noUmpireOverlap: true,
         },
       },
     };
@@ -495,7 +484,7 @@ describe('SchedulerEngineService', () => {
       ],
       constraints: {
         hard: {
-          noFieldOverlap: true,
+          respectFieldSlots: true,
         },
       },
     };

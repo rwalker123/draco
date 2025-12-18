@@ -3,12 +3,14 @@ import { SchedulerProblemSpecService } from '../schedulerProblemSpecService.js';
 import type { ISchedulerProblemSpecRepository } from '../../repositories/interfaces/ISchedulerProblemSpecRepository.js';
 import type { ISeasonsRepository } from '../../repositories/interfaces/ISeasonsRepository.js';
 import type { ISchedulerFieldAvailabilityRulesRepository } from '../../repositories/interfaces/ISchedulerFieldAvailabilityRulesRepository.js';
+import type { ISchedulerFieldExclusionDatesRepository } from '../../repositories/interfaces/ISchedulerFieldExclusionDatesRepository.js';
 import type { dbSeason } from '../../repositories/types/dbTypes.js';
 import type {
   availablefields,
   accounts,
   leagueumpires,
   leagueschedule,
+  schedulerfieldexclusiondates,
   schedulerfieldavailabilityrules,
   teamsseason,
 } from '#prisma/client';
@@ -46,6 +48,15 @@ class SchedulerFieldAvailabilityRulesRepositoryStub implements ISchedulerFieldAv
   create = vi.fn<ISchedulerFieldAvailabilityRulesRepository['create']>();
   update = vi.fn<ISchedulerFieldAvailabilityRulesRepository['update']>();
   delete = vi.fn<ISchedulerFieldAvailabilityRulesRepository['delete']>();
+}
+
+class SchedulerFieldExclusionDatesRepositoryStub implements ISchedulerFieldExclusionDatesRepository {
+  findById = vi.fn<ISchedulerFieldExclusionDatesRepository['findById']>();
+  findForAccount = vi.fn<ISchedulerFieldExclusionDatesRepository['findForAccount']>();
+  listForSeason = vi.fn<ISchedulerFieldExclusionDatesRepository['listForSeason']>();
+  create = vi.fn<ISchedulerFieldExclusionDatesRepository['create']>();
+  update = vi.fn<ISchedulerFieldExclusionDatesRepository['update']>();
+  delete = vi.fn<ISchedulerFieldExclusionDatesRepository['delete']>();
 }
 
 const accountId = 42n;
@@ -145,20 +156,48 @@ const makeRule = (id: bigint, fieldId: bigint): schedulerfieldavailabilityrules 
     enabled: true,
   }) as schedulerfieldavailabilityrules;
 
+const makeOpenRule = (
+  id: bigint,
+  fieldId: bigint,
+  overrides?: Partial<schedulerfieldavailabilityrules>,
+): schedulerfieldavailabilityrules =>
+  ({
+    id,
+    accountid: accountId,
+    seasonid: seasonId,
+    fieldid: fieldId,
+    startdate: null,
+    enddate: null,
+    daysofweekmask: 1, // Monday
+    starttimelocal: '13:00',
+    endtimelocal: '15:00',
+    startincrementminutes: 60,
+    enabled: true,
+    ...overrides,
+  }) as schedulerfieldavailabilityrules;
+
 describe('SchedulerProblemSpecService.buildProblemSpec', () => {
   let schedulerRepo: SchedulerProblemSpecRepositoryStub;
   let seasonsRepo: SeasonsRepositoryStub;
   let rulesRepo: SchedulerFieldAvailabilityRulesRepositoryStub;
+  let exclusionsRepo: SchedulerFieldExclusionDatesRepositoryStub;
   let service: SchedulerProblemSpecService;
 
   beforeEach(() => {
     schedulerRepo = new SchedulerProblemSpecRepositoryStub();
     seasonsRepo = new SeasonsRepositoryStub();
     rulesRepo = new SchedulerFieldAvailabilityRulesRepositoryStub();
-    service = new SchedulerProblemSpecService(schedulerRepo, seasonsRepo, rulesRepo);
+    exclusionsRepo = new SchedulerFieldExclusionDatesRepositoryStub();
+    service = new SchedulerProblemSpecService(
+      schedulerRepo,
+      seasonsRepo,
+      rulesRepo,
+      exclusionsRepo,
+    );
 
     schedulerRepo.findAccount.mockResolvedValue(makeAccount({ timezoneid: 'UTC' }));
     seasonsRepo.findSeasonById.mockResolvedValue(makeSeason());
+    exclusionsRepo.listForSeason.mockResolvedValue([] as schedulerfieldexclusiondates[]);
   });
 
   it('assembles a problem spec from DB data and injects account timezone into requireLightsAfter', async () => {
@@ -170,6 +209,7 @@ describe('SchedulerProblemSpecService.buildProblemSpec', () => {
     schedulerRepo.listAccountUmpires.mockResolvedValue([makeUmpire(5n)]);
     schedulerRepo.listSeasonGames.mockResolvedValue([makeGame(999n, 55n, 11n, 12n)]);
     rulesRepo.listForSeason.mockResolvedValue([makeRule(1n, 100n)]);
+    exclusionsRepo.listForSeason.mockResolvedValue([] as schedulerfieldexclusiondates[]);
 
     const request: SchedulerSeasonSolveRequest = {
       constraints: {
@@ -203,6 +243,7 @@ describe('SchedulerProblemSpecService.buildProblemSpec', () => {
       makeGame(1000n, 55n, 11n, 12n),
     ]);
     rulesRepo.listForSeason.mockResolvedValue([makeRule(1n, 100n)]);
+    exclusionsRepo.listForSeason.mockResolvedValue([] as schedulerfieldexclusiondates[]);
 
     const request: SchedulerSeasonSolveRequest = {
       gameIds: ['999'],
@@ -212,5 +253,31 @@ describe('SchedulerProblemSpecService.buildProblemSpec', () => {
     const spec = await service.buildProblemSpec(accountId, seasonId, request);
     expect(spec.games).toHaveLength(1);
     expect(spec.games[0]?.id).toBe('999');
+  });
+
+  it('treats rules with omitted date bounds as covering the derived season window', async () => {
+    schedulerRepo.listSeasonTeams.mockResolvedValue([
+      makeTeamSeason(11n, 1001n, 55n),
+      makeTeamSeason(12n, 1002n, 55n),
+    ]);
+    schedulerRepo.listAccountFields.mockResolvedValue([makeField(100n)]);
+    schedulerRepo.listAccountUmpires.mockResolvedValue([makeUmpire(5n)]);
+    schedulerRepo.listSeasonGames.mockResolvedValue([makeGame(999n, 55n, 11n, 12n)]);
+    rulesRepo.listForSeason.mockResolvedValue([makeRule(1n, 100n), makeOpenRule(2n, 100n)]);
+    exclusionsRepo.listForSeason.mockResolvedValue([] as schedulerfieldexclusiondates[]);
+
+    const request: SchedulerSeasonSolveRequest = {
+      objectives: { primary: 'maximize_scheduled_games' },
+    };
+
+    const spec = await service.buildProblemSpec(accountId, seasonId, request);
+    expect(spec.season.startDate).toBe('2026-04-06');
+    expect(spec.season.endDate).toBe('2026-04-06');
+
+    const starts = spec.fieldSlots.map((slot) => slot.startTime).sort();
+    expect(starts).toContain('2026-04-06T09:00:00.000Z');
+    expect(starts).toContain('2026-04-06T10:00:00.000Z');
+    expect(starts).toContain('2026-04-06T13:00:00.000Z');
+    expect(starts).toContain('2026-04-06T14:00:00.000Z');
   });
 });

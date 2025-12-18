@@ -41,6 +41,7 @@ model accounts {
   accountwelcome            accountwelcome[]
   availablefields           availablefields[]
   schedulerfieldavailabilityrules schedulerfieldavailabilityrules[]
+  schedulerfieldexclusiondates schedulerfieldexclusiondates[]
   contactroles              contactroles[]
   contacts                  contacts[]
   currentseason             currentseason?
@@ -352,6 +353,7 @@ model availablefields {
   leagueschedule      leagueschedule[]
   playoffgame         playoffgame[]
   schedulerfieldavailabilityrules schedulerfieldavailabilityrules[]
+  schedulerfieldexclusiondates schedulerfieldexclusiondates[]
   workoutannouncement workoutannouncement[]
 }
 
@@ -360,8 +362,8 @@ model schedulerfieldavailabilityrules {
   accountid             BigInt
   seasonid              BigInt
   fieldid               BigInt
-  startdate             DateTime       @db.Date
-  enddate               DateTime       @db.Date
+  startdate             DateTime?      @db.Date
+  enddate               DateTime?      @db.Date
   daysofweekmask        Int            @db.SmallInt
   starttimelocal        String         @db.VarChar(5)
   endtimelocal          String         @db.VarChar(5)
@@ -376,6 +378,27 @@ model schedulerfieldavailabilityrules {
   @@index([accountid], map: "idx_schedulerfieldavailabilityrules_accountid")
   @@index([seasonid], map: "idx_schedulerfieldavailabilityrules_seasonid")
   @@index([fieldid], map: "idx_schedulerfieldavailabilityrules_fieldid")
+}
+
+model schedulerfieldexclusiondates {
+  id            BigInt         @id @default(autoincrement())
+  accountid     BigInt
+  seasonid      BigInt
+  fieldid       BigInt
+  exclusiondate DateTime       @db.Date
+  note          String?        @db.VarChar(255)
+  enabled       Boolean        @default(true)
+  createdat     DateTime       @default(now()) @db.Timestamptz(6)
+  updatedat     DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
+
+  accounts        accounts       @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_schedulerfieldexclusiondates_accounts")
+  season          season         @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_schedulerfieldexclusiondates_season")
+  availablefields availablefields @relation(fields: [fieldid], references: [id], onDelete: Cascade, map: "fk_schedulerfieldexclusiondates_availablefields")
+
+  @@unique([accountid, seasonid, fieldid, exclusiondate], map: "uq_schedulerfieldexclusiondates_account_season_field_date")
+  @@index([accountid], map: "idx_schedulerfieldexclusiondates_accountid")
+  @@index([seasonid], map: "idx_schedulerfieldexclusiondates_seasonid")
+  @@index([fieldid], map: "idx_schedulerfieldexclusiondates_fieldid")
 }
 
 model batstatsum {
@@ -1402,6 +1425,7 @@ model season {
   socialvideos                socialvideos[]
   discordmessages             discordmessages[]
   schedulerfieldavailabilityrules schedulerfieldavailabilityrules[]
+  schedulerfieldexclusiondates schedulerfieldexclusiondates[]
   accounts                    accounts                      @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_season_accounts")
 }
 

@@ -10,16 +10,12 @@ export class SchedulerFieldAvailabilityRuleResponseFormatter {
     const startDate = DateUtils.formatDateForResponse(record.startdate);
     const endDate = DateUtils.formatDateForResponse(record.enddate);
 
-    if (!startDate || !endDate) {
-      throw new Error('Invalid scheduler field availability rule dates');
-    }
-
     return {
       id: record.id.toString(),
       seasonId: record.seasonid.toString(),
       fieldId: record.fieldid.toString(),
-      startDate,
-      endDate,
+      startDate: startDate ?? undefined,
+      endDate: endDate ?? undefined,
       daysOfWeekMask: record.daysofweekmask,
       startTimeLocal: record.starttimelocal,
       endTimeLocal: record.endtimelocal,

@@ -32,9 +32,9 @@ export class SchedulerFieldAvailabilityRulesService {
     await this.ensureSeasonInAccount(accountId, seasonId);
     await this.ensureFieldInAccount(accountId, payload.fieldId);
 
-    const startDate = this.requireDate(payload.startDate, 'startDate');
-    const endDate = this.requireDate(payload.endDate, 'endDate');
-    if (startDate > endDate) {
+    const startDate = this.parseOptionalDate(payload.startDate, 'startDate');
+    const endDate = this.parseOptionalDate(payload.endDate, 'endDate');
+    if (startDate && endDate && startDate > endDate) {
       throw new ValidationError('startDate must be on or before endDate');
     }
 
@@ -48,8 +48,8 @@ export class SchedulerFieldAvailabilityRulesService {
       accountid: accountId,
       seasonid: seasonId,
       fieldid: BigInt(payload.fieldId),
-      startdate: startDate,
-      enddate: endDate,
+      startdate: startDate ?? null,
+      enddate: endDate ?? null,
       daysofweekmask: payload.daysOfWeekMask,
       starttimelocal: payload.startTimeLocal,
       endtimelocal: payload.endTimeLocal,
@@ -74,9 +74,9 @@ export class SchedulerFieldAvailabilityRulesService {
 
     await this.ensureFieldInAccount(accountId, payload.fieldId);
 
-    const startDate = this.requireDate(payload.startDate, 'startDate');
-    const endDate = this.requireDate(payload.endDate, 'endDate');
-    if (startDate > endDate) {
+    const startDate = this.parseOptionalDate(payload.startDate, 'startDate');
+    const endDate = this.parseOptionalDate(payload.endDate, 'endDate');
+    if (startDate && endDate && startDate > endDate) {
       throw new ValidationError('startDate must be on or before endDate');
     }
 
@@ -88,8 +88,8 @@ export class SchedulerFieldAvailabilityRulesService {
 
     const updated = await this.rulesRepository.update(ruleId, {
       fieldid: BigInt(payload.fieldId),
-      startdate: startDate,
-      enddate: endDate,
+      startdate: startDate ?? null,
+      enddate: endDate ?? null,
       daysofweekmask: payload.daysOfWeekMask,
       starttimelocal: payload.startTimeLocal,
       endtimelocal: payload.endTimeLocal,
@@ -139,6 +139,17 @@ export class SchedulerFieldAvailabilityRulesService {
   }
 
   private requireDate(value: string, label: string): Date {
+    const parsed = DateUtils.parseDateForDatabase(value);
+    if (!parsed) {
+      throw new ValidationError(`Invalid ${label}`);
+    }
+    return parsed;
+  }
+
+  private parseOptionalDate(value: string | undefined, label: string): Date | null {
+    if (!value) {
+      return null;
+    }
     const parsed = DateUtils.parseDateForDatabase(value);
     if (!parsed) {
       throw new ValidationError(`Invalid ${label}`);
