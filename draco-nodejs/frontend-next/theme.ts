@@ -50,32 +50,26 @@ export const dracoThemeOptions: ThemeOptions = {
     h1: {
       fontSize: '2.5rem',
       fontWeight: 600,
-      color: '#1d4ed8',
     },
     h2: {
       fontSize: '2rem',
       fontWeight: 500,
-      color: '#1d4ed8',
     },
     h3: {
       fontSize: '1.75rem',
       fontWeight: 500,
-      color: '#1d4ed8',
     },
     h4: {
       fontSize: '1.5rem',
       fontWeight: 500,
-      color: '#1d4ed8',
     },
     h5: {
       fontSize: '1.25rem',
       fontWeight: 500,
-      color: '#1d4ed8',
     },
     h6: {
       fontSize: '1rem',
       fontWeight: 500,
-      color: '#1d4ed8',
     },
   },
   components: {
