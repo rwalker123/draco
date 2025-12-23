@@ -3,15 +3,14 @@ name: Claude Code Review
 on:
   workflow_dispatch:
 
-  # NOTE: Automatic PR trigger temporarily disabled; uncomment the block below to restore it.
-  # pull_request:
-  #   types: [opened, synchronize]
-  #   # Optional: Only run on specific file changes
-  #   # paths:
-  #   #   - "src/**/*.ts"
-  #   #   - "src/**/*.tsx"
-  #   #   - "src/**/*.js"
-  #   #   - "src/**/*.jsx"
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - "draco-nodejs/backend/src/**"
+      - "draco-nodejs/frontend-next/**"
+      - "draco-nodejs/shared/**"
+      - "!**/*.md"
+      - "!**/CLAUDE.md"
 
 jobs:
   claude-review:

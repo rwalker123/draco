@@ -466,6 +466,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           leagueSeasonIdFilter={filterLeagueSeasonId || undefined}
           teamSeasonIdFilter={filterTeamSeasonId || undefined}
           fields={fields}
+          umpires={umpires}
+          leagues={leagues}
           teams={teams}
           games={games}
           onApplied={async () => {

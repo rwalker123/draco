@@ -1,5 +1,6 @@
 import { FieldsType, FieldType, PaginationWithTotalType } from '@draco/shared-schemas';
 import { dbAvailableField } from '../repositories/types/dbTypes.js';
+import { DEFAULT_FIELD_START_INCREMENT_MINUTES } from '../constants/fieldConstants.js';
 
 export class FieldResponseFormatter {
   private static buildPagination(
@@ -33,6 +34,8 @@ export class FieldResponseFormatter {
       id: field.id.toString(),
       name: field.name,
       hasLights: field.haslights,
+      schedulerStartIncrementMinutes:
+        field.schedulerstartincrementminutes ?? DEFAULT_FIELD_START_INCREMENT_MINUTES,
       address: this.normalize(field.address),
       city: this.normalize(field.city),
       state: this.normalize(field.state),

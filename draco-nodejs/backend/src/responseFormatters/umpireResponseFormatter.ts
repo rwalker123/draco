@@ -1,5 +1,6 @@
 import { PaginationWithTotalType, UmpireType, UmpiresType } from '@draco/shared-schemas';
 import { dbLeagueUmpireWithContact } from '../repositories/types/dbTypes.js';
+import { getContactPhotoUrl } from '../config/logo.js';
 
 export class UmpireResponseFormatter {
   private static buildPagination(
@@ -29,6 +30,17 @@ export class UmpireResponseFormatter {
       lastName: umpire.contacts.lastname,
       email,
       displayName: `${umpire.contacts.firstname} ${umpire.contacts.lastname}`.trim(),
+      photoUrl: getContactPhotoUrl(umpire.accountid.toString(), umpire.contacts.id.toString()),
+      contactDetails: {
+        phone1: umpire.contacts.phone1 ?? '',
+        phone2: umpire.contacts.phone2 ?? '',
+        phone3: umpire.contacts.phone3 ?? '',
+        streetAddress: umpire.contacts.streetaddress ?? '',
+        city: umpire.contacts.city ?? '',
+        state: umpire.contacts.state ?? '',
+        zip: umpire.contacts.zip ?? '',
+        dateOfBirth: umpire.contacts.dateofbirth?.toISOString().split('T')[0] ?? '',
+      },
     };
   }
 

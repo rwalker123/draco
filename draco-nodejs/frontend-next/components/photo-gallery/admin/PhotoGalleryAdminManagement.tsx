@@ -9,7 +9,6 @@ import {
   Typography,
   Button,
   ButtonBase,
-  IconButton,
   Paper,
   Table,
   TableBody,
@@ -17,11 +16,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Tooltip,
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import CollectionsBookmarkIcon from '@mui/icons-material/CollectionsBookmark';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material';
 import { useAuth } from '../../../context/AuthContext';
 import type { PhotoGalleryAdminAlbumType, PhotoGalleryPhotoType } from '@draco/shared-schemas';
 import AccountPageHeader from '../../AccountPageHeader';
@@ -42,6 +40,7 @@ import {
 } from '../utils';
 import TeamAlbumMenu from '../TeamAlbumMenu';
 import type { TeamAlbumHierarchyGroup } from '../types';
+import { EditIconButton, DeleteIconButton } from '../../common/ActionIconButtons';
 
 interface PhotoGalleryAdminManagementProps {
   accountId: string;
@@ -647,26 +646,16 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
                       </TableCell>
                       <TableCell align="right">
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <Tooltip title="Edit photo">
-                            <IconButton
-                              aria-label="Edit photo"
-                              onClick={() => handleOpenEditDialog(photo)}
-                              size="small"
-                              color="primary"
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete photo">
-                            <IconButton
-                              aria-label="Delete photo"
-                              onClick={() => handleConfirmDelete(photo)}
-                              size="small"
-                              color="error"
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
+                          <EditIconButton
+                            tooltipTitle="Edit photo"
+                            aria-label="Edit photo"
+                            onClick={() => handleOpenEditDialog(photo)}
+                          />
+                          <DeleteIconButton
+                            tooltipTitle="Delete photo"
+                            aria-label="Delete photo"
+                            onClick={() => handleConfirmDelete(photo)}
+                          />
                         </Stack>
                       </TableCell>
                     </TableRow>

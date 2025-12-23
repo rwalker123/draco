@@ -41,6 +41,10 @@ import { SchedulerFieldAvailabilityRulesService } from './schedulerFieldAvailabi
 import { SchedulerFieldExclusionDatesService } from './schedulerFieldExclusionDatesService.js';
 import { SchedulerProblemSpecService } from './schedulerProblemSpecService.js';
 import { SchedulerSeasonApplyService } from './schedulerSeasonApplyService.js';
+import { SchedulerSeasonWindowConfigService } from './schedulerSeasonWindowConfigService.js';
+import { SchedulerSeasonExclusionsService } from './schedulerSeasonExclusionsService.js';
+import { SchedulerTeamSeasonExclusionsService } from './schedulerTeamSeasonExclusionsService.js';
+import { SchedulerUmpireExclusionsService } from './schedulerUmpireExclusionsService.js';
 import { LeagueService } from './LeagueService.js';
 import { LeagueFaqService } from './LeagueFaqService.js';
 import { MonitoringService } from './monitoringService.js';
@@ -124,6 +128,10 @@ export class ServiceFactory {
   private static schedulerFieldExclusionDatesService: SchedulerFieldExclusionDatesService;
   private static schedulerProblemSpecService: SchedulerProblemSpecService;
   private static schedulerSeasonApplyService: SchedulerSeasonApplyService;
+  private static schedulerSeasonWindowConfigService: SchedulerSeasonWindowConfigService;
+  private static schedulerSeasonExclusionsService: SchedulerSeasonExclusionsService;
+  private static schedulerTeamSeasonExclusionsService: SchedulerTeamSeasonExclusionsService;
+  private static schedulerUmpireExclusionsService: SchedulerUmpireExclusionsService;
   private static leagueService: LeagueService;
   private static leagueFaqService: LeagueFaqService;
   private static monitoringService: MonitoringService;
@@ -453,13 +461,42 @@ export class ServiceFactory {
 
   static getSchedulerSeasonApplyService(): SchedulerSeasonApplyService {
     if (!this.schedulerSeasonApplyService) {
-      this.schedulerSeasonApplyService = new SchedulerSeasonApplyService(
-        this.getSchedulerProblemSpecService(),
-        this.getSchedulerApplyService(),
-      );
+      this.schedulerSeasonApplyService = new SchedulerSeasonApplyService();
     }
 
     return this.schedulerSeasonApplyService;
+  }
+
+  static getSchedulerSeasonWindowConfigService(): SchedulerSeasonWindowConfigService {
+    if (!this.schedulerSeasonWindowConfigService) {
+      this.schedulerSeasonWindowConfigService = new SchedulerSeasonWindowConfigService();
+    }
+
+    return this.schedulerSeasonWindowConfigService;
+  }
+
+  static getSchedulerSeasonExclusionsService(): SchedulerSeasonExclusionsService {
+    if (!this.schedulerSeasonExclusionsService) {
+      this.schedulerSeasonExclusionsService = new SchedulerSeasonExclusionsService();
+    }
+
+    return this.schedulerSeasonExclusionsService;
+  }
+
+  static getSchedulerTeamSeasonExclusionsService(): SchedulerTeamSeasonExclusionsService {
+    if (!this.schedulerTeamSeasonExclusionsService) {
+      this.schedulerTeamSeasonExclusionsService = new SchedulerTeamSeasonExclusionsService();
+    }
+
+    return this.schedulerTeamSeasonExclusionsService;
+  }
+
+  static getSchedulerUmpireExclusionsService(): SchedulerUmpireExclusionsService {
+    if (!this.schedulerUmpireExclusionsService) {
+      this.schedulerUmpireExclusionsService = new SchedulerUmpireExclusionsService();
+    }
+
+    return this.schedulerUmpireExclusionsService;
   }
 
   static getMonitoringService(): MonitoringService {

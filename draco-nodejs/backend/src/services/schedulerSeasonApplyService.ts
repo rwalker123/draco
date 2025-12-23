@@ -3,33 +3,30 @@ import type {
   SchedulerSeasonApplyRequest,
   SchedulerSeasonSolveRequest,
 } from '@draco/shared-schemas';
-import { SchedulerApplyService } from './schedulerApplyService.js';
-import { SchedulerProblemSpecService } from './schedulerProblemSpecService.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 export class SchedulerSeasonApplyService {
-  constructor(
-    private readonly schedulerProblemSpecService: SchedulerProblemSpecService = new SchedulerProblemSpecService(),
-    private readonly schedulerApplyService: SchedulerApplyService = new SchedulerApplyService(),
-  ) {}
-
   async applySeasonProposal(
     accountId: bigint,
     seasonId: bigint,
     request: SchedulerSeasonApplyRequest,
   ): Promise<SchedulerApplyResult> {
+    const schedulerProblemSpecService = ServiceFactory.getSchedulerProblemSpecService();
+    const schedulerApplyService = ServiceFactory.getSchedulerApplyService();
+
     const solveLikeRequest: SchedulerSeasonSolveRequest = {
       constraints: request.constraints,
       objectives: undefined,
       gameIds: request.gameIds,
     };
-    const spec = await this.schedulerProblemSpecService.buildProblemSpec(
+    const spec = await schedulerProblemSpecService.buildProblemSpec(
       accountId,
       seasonId,
       solveLikeRequest,
     );
     const constraints = spec.constraints;
 
-    return this.schedulerApplyService.applyProposal(
+    return schedulerApplyService.applyProposal(
       accountId,
       {
         runId: request.runId,

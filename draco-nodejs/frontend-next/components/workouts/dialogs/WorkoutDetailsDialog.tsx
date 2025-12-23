@@ -19,18 +19,16 @@ import {
   List,
   ListItem,
   ListItemText,
-  IconButton,
-  Tooltip,
   Divider,
   Stack,
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useAuth } from '../../../context/AuthContext';
 import type {
   WorkoutSummaryType,
   WorkoutRegistrationType,
   UpsertWorkoutRegistrationType,
 } from '@draco/shared-schemas';
+import { EditIconButton, DeleteIconButton } from '../../common/ActionIconButtons';
 import {
   listWorkoutRegistrations,
   createWorkoutRegistration,
@@ -334,24 +332,14 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
             }}
             secondaryAction={
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Tooltip title="Edit registration">
-                  <IconButton
-                    size="small"
-                    color="primary"
-                    onClick={() => handleEditRegistration(registration)}
-                  >
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete registration">
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => handleDeleteRegistration(registration)}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
+                <EditIconButton
+                  tooltipTitle="Edit registration"
+                  onClick={() => handleEditRegistration(registration)}
+                />
+                <DeleteIconButton
+                  tooltipTitle="Delete registration"
+                  onClick={() => handleDeleteRegistration(registration)}
+                />
               </Box>
             }
           >

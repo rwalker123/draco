@@ -1,10 +1,12 @@
 import { FieldType } from '@draco/shared-schemas';
+import { DEFAULT_FIELD_START_INCREMENT_MINUTES } from '../constants/fieldConstants.js';
 
 type AvailableFieldInput = {
   id: bigint | number | string;
   name: string;
   shortname?: string | null;
   haslights?: boolean | null;
+  schedulerstartincrementminutes?: number | null;
   address?: string | null;
   city?: string | null;
   state?: string | null;
@@ -79,6 +81,13 @@ export const formatFieldFromAvailableField = (
     name: field.name,
     shortName: normalizeShortName(field.shortname),
     hasLights: field.haslights === true,
+    schedulerStartIncrementMinutes: Math.max(
+      1,
+      Math.min(
+        1440,
+        Math.floor(field.schedulerstartincrementminutes ?? DEFAULT_FIELD_START_INCREMENT_MINUTES),
+      ),
+    ),
     address: normalizeOptionalString(field.address ?? null),
     city: normalizeOptionalString(field.city ?? null),
     state: normalizeOptionalString(field.state ?? null),

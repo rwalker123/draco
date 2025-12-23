@@ -7,8 +7,11 @@ import type {
   SchedulerProblemSpec,
   SchedulerSolveResult,
   SchedulerTeamBlackout,
+  SchedulerTeamExclusion,
   SchedulerUmpireAvailability,
+  SchedulerUmpireExclusion,
   SchedulerUnscheduledReason,
+  SchedulerSeasonExclusion,
 } from '@draco/shared-schemas';
 import crypto from 'node:crypto';
 import { ValidationError } from '../utils/customErrors.js';
@@ -76,9 +79,14 @@ const buildDeterministicRunId = ({
 export class SchedulerEngineService {
   solve(
     problemSpec: SchedulerProblemSpec,
-    context?: { accountId?: bigint; idempotencyKey?: string },
+    context?: { accountId?: bigint; idempotencyKey?: string; timeZoneId?: string },
   ): SchedulerSolveResult {
     this.validateProblemSpec(problemSpec);
+
+    const timeZoneId =
+      context?.timeZoneId?.trim() ||
+      problemSpec.constraints?.hard?.requireLightsAfter?.timeZone?.trim() ||
+      'UTC';
 
     const runId =
       problemSpec.runId ??
@@ -96,6 +104,9 @@ export class SchedulerEngineService {
       problemSpec.umpires,
       problemSpec.season,
     );
+    const seasonExclusions = this.groupSeasonExclusions(problemSpec.seasonExclusions);
+    const teamExclusions = this.groupTeamExclusions(problemSpec.teamExclusions);
+    const umpireExclusions = this.groupUmpireExclusions(problemSpec.umpireExclusions);
     const umpireDailyLimitById = this.buildUmpireDailyLimitIndex(problemSpec.umpires);
     const fieldCapacityById = this.buildFieldCapacityIndex(problemSpec.fields);
     const fieldLightsById = this.buildFieldLightsIndex(problemSpec.fields);
@@ -133,7 +144,10 @@ export class SchedulerEngineService {
         sortedSlots,
         hard,
         availability,
+        seasonExclusions,
         teamBlackouts,
+        teamExclusions,
+        umpireExclusions,
         umpireDailyLimitById,
         fieldCapacityById,
         fieldLightsById,
@@ -144,6 +158,7 @@ export class SchedulerEngineService {
           teamDailyCounts,
           umpireDailyCounts,
         },
+        timeZoneId,
       );
 
       if (assignment) {
@@ -265,6 +280,34 @@ export class SchedulerEngineService {
       }
     }
 
+    for (const exclusion of problemSpec.seasonExclusions ?? []) {
+      const start = new Date(exclusion.startTime);
+      const end = new Date(exclusion.endTime);
+      if (start >= end) {
+        throw new ValidationError('Season exclusion startTime must be before endTime');
+      }
+    }
+
+    for (const exclusion of problemSpec.teamExclusions ?? []) {
+      const start = new Date(exclusion.startTime);
+      const end = new Date(exclusion.endTime);
+      if (start >= end) {
+        throw new ValidationError(
+          `Team exclusion ${exclusion.teamSeasonId} startTime must be before endTime`,
+        );
+      }
+    }
+
+    for (const exclusion of problemSpec.umpireExclusions ?? []) {
+      const start = new Date(exclusion.startTime);
+      const end = new Date(exclusion.endTime);
+      if (start >= end) {
+        throw new ValidationError(
+          `Umpire exclusion ${exclusion.umpireId} startTime must be before endTime`,
+        );
+      }
+    }
+
     for (const availability of problemSpec.umpireAvailability ?? []) {
       const start = new Date(availability.startTime);
       const end = new Date(availability.endTime);
@@ -338,11 +381,25 @@ export class SchedulerEngineService {
       }
     }
 
+    for (const exclusion of problemSpec.teamExclusions ?? []) {
+      if (!teamSeasonIdSet.has(exclusion.teamSeasonId)) {
+        throw new ValidationError(
+          `Unknown teamSeasonId for team exclusion: ${exclusion.teamSeasonId}`,
+        );
+      }
+    }
+
     for (const availability of problemSpec.umpireAvailability ?? []) {
       if (!umpireIdSet.has(normalizeSchedulerId(availability.umpireId))) {
         throw new ValidationError(
           `Unknown umpireId for umpire availability: ${availability.umpireId}`,
         );
+      }
+    }
+
+    for (const exclusion of problemSpec.umpireExclusions ?? []) {
+      if (!umpireIdSet.has(normalizeSchedulerId(exclusion.umpireId))) {
+        throw new ValidationError(`Unknown umpireId for umpire exclusion: ${exclusion.umpireId}`);
       }
     }
   }
@@ -460,6 +517,38 @@ export class SchedulerEngineService {
     return map;
   }
 
+  private groupSeasonExclusions(exclusions?: SchedulerSeasonExclusion[]): Interval[] {
+    const enabled = (exclusions ?? []).filter((exclusion) => exclusion.enabled);
+    return enabled.map((exclusion) => this.toInterval(exclusion.startTime, exclusion.endTime));
+  }
+
+  private groupTeamExclusions(exclusions?: SchedulerTeamExclusion[]): Map<string, Interval[]> {
+    const map = new Map<string, Interval[]>();
+    (exclusions ?? [])
+      .filter((exclusion) => exclusion.enabled)
+      .forEach((exclusion) => {
+        const parsed = this.toInterval(exclusion.startTime, exclusion.endTime);
+        const list = map.get(exclusion.teamSeasonId) ?? [];
+        list.push(parsed);
+        map.set(exclusion.teamSeasonId, list);
+      });
+    return map;
+  }
+
+  private groupUmpireExclusions(exclusions?: SchedulerUmpireExclusion[]): Map<string, Interval[]> {
+    const map = new Map<string, Interval[]>();
+    (exclusions ?? [])
+      .filter((exclusion) => exclusion.enabled)
+      .forEach((exclusion) => {
+        const umpireId = normalizeSchedulerId(exclusion.umpireId);
+        const parsed = this.toInterval(exclusion.startTime, exclusion.endTime);
+        const list = map.get(umpireId) ?? [];
+        list.push(parsed);
+        map.set(umpireId, list);
+      });
+    return map;
+  }
+
   private toInterval(start: string, end: string): Interval {
     const startDate = new Date(start);
     const endDate = new Date(end);
@@ -476,7 +565,10 @@ export class SchedulerEngineService {
     sortedSlots: SchedulerFieldSlot[],
     constraints: SchedulerHardConstraints,
     availability: Map<string, Interval[]>,
+    seasonExclusions: Interval[],
     teamBlackouts: Map<string, Interval[]>,
+    teamExclusions: Map<string, Interval[]>,
+    umpireExclusions: Map<string, Interval[]>,
     umpireDailyLimitById: Map<string, number>,
     fieldCapacityById: Map<string, number>,
     fieldLightsById: Map<string, boolean>,
@@ -487,6 +579,7 @@ export class SchedulerEngineService {
       teamDailyCounts: Map<string, Map<string, number>>;
       umpireDailyCounts: Map<string, Map<string, number>>;
     },
+    timeZoneId: string,
   ): SchedulerAssignment | undefined {
     const preferredFields = candidate.game.preferredFieldIds ?? [];
     const preferredFieldSet = preferredFields.length ? new Set(preferredFields) : undefined;
@@ -504,6 +597,18 @@ export class SchedulerEngineService {
 
         const durationEnd = new Date(start.getTime() + candidate.durationMinutes * 60000);
         if (durationEnd > end) {
+          continue;
+        }
+
+        if (
+          seasonExclusions.some((exclusion) =>
+            this.overlaps(exclusion, { start, end: durationEnd }),
+          )
+        ) {
+          continue;
+        }
+
+        if (this.intersectsTeamExclusion(candidate.game, start, durationEnd, teamExclusions)) {
           continue;
         }
 
@@ -557,9 +662,11 @@ export class SchedulerEngineService {
           durationEnd,
           constraints,
           availability,
+          umpireExclusions,
           umpireDailyLimitById,
           schedules.umpireSchedule,
           schedules.umpireDailyCounts,
+          timeZoneId,
         );
 
         if (!umpireIds) {
@@ -573,6 +680,7 @@ export class SchedulerEngineService {
             start,
             constraints.maxGamesPerTeamPerDay,
             schedules.teamDailyCounts,
+            timeZoneId,
           )
         ) {
           continue;
@@ -585,6 +693,7 @@ export class SchedulerEngineService {
             start,
             constraints.maxGamesPerTeamPerDay,
             schedules.teamDailyCounts,
+            timeZoneId,
           )
         ) {
           continue;
@@ -603,16 +712,22 @@ export class SchedulerEngineService {
           durationEnd,
           schedules.teamSchedule,
         );
-        this.incrementDailyCount(candidate.game.homeTeamSeasonId, start, schedules.teamDailyCounts);
+        this.incrementDailyCount(
+          candidate.game.homeTeamSeasonId,
+          start,
+          schedules.teamDailyCounts,
+          timeZoneId,
+        );
         this.incrementDailyCount(
           candidate.game.visitorTeamSeasonId,
           start,
           schedules.teamDailyCounts,
+          timeZoneId,
         );
 
         for (const umpireId of umpireIds) {
           this.addBooking(umpireId, start, durationEnd, schedules.umpireSchedule);
-          this.incrementDailyCount(umpireId, start, schedules.umpireDailyCounts);
+          this.incrementDailyCount(umpireId, start, schedules.umpireDailyCounts, timeZoneId);
         }
 
         return {
@@ -689,15 +804,33 @@ export class SchedulerEngineService {
     return false;
   }
 
+  private intersectsTeamExclusion(
+    game: SchedulerGameRequest,
+    start: Date,
+    end: Date,
+    teamExclusions: Map<string, Interval[]>,
+  ): boolean {
+    const teams = [game.homeTeamSeasonId, game.visitorTeamSeasonId];
+    for (const team of teams) {
+      const blocks = teamExclusions.get(team) ?? [];
+      if (blocks.some((block) => this.overlaps(block, { start, end }))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private selectUmpires(
     game: SchedulerGameRequest,
     start: Date,
     end: Date,
     constraints: SchedulerHardConstraints,
     availability: Map<string, Interval[]>,
+    umpireExclusions: Map<string, Interval[]>,
     umpireDailyLimitById: Map<string, number>,
     umpireSchedule: Map<string, Interval[]>,
     umpireDailyCounts: Map<string, Map<string, number>>,
+    timeZoneId: string,
   ): string[] | undefined {
     const required = game.requiredUmpires ?? 1;
     if (required === 0) {
@@ -706,6 +839,13 @@ export class SchedulerEngineService {
 
     const availableUmpires: string[] = [];
     for (const [umpireId, slots] of availability.entries()) {
+      const excluded = (umpireExclusions.get(umpireId) ?? []).some((block) =>
+        this.overlaps(block, { start, end }),
+      );
+      if (excluded) {
+        continue;
+      }
+
       const hasAvailability =
         !constraints.respectUmpireAvailability ||
         slots.some((slot) => this.contains(slot, { start, end }));
@@ -725,7 +865,7 @@ export class SchedulerEngineService {
           : (globalMax ?? perUmpireMax);
       if (
         maxGamesPerDay !== undefined &&
-        !this.withinDailyLimit(umpireId, start, maxGamesPerDay, umpireDailyCounts)
+        !this.withinDailyLimit(umpireId, start, maxGamesPerDay, umpireDailyCounts, timeZoneId)
       ) {
         continue;
       }
@@ -783,8 +923,9 @@ export class SchedulerEngineService {
     key: string,
     date: Date,
     counts: Map<string, Map<string, number>>,
+    timeZoneId: string,
   ): void {
-    const dayKey = this.formatUtcDayKey(date);
+    const dayKey = this.formatDayKeyInTimeZone(date, timeZoneId);
     const current = counts.get(key) ?? new Map<string, number>();
     current.set(dayKey, (current.get(dayKey) ?? 0) + 1);
     counts.set(key, current);
@@ -795,20 +936,30 @@ export class SchedulerEngineService {
     date: Date,
     maxPerDay: number,
     counts: Map<string, Map<string, number>>,
+    timeZoneId: string,
   ): boolean {
-    const dayKey = this.formatUtcDayKey(date);
+    const dayKey = this.formatDayKeyInTimeZone(date, timeZoneId);
     const existing = counts.get(key)?.get(dayKey) ?? 0;
     return existing < maxPerDay;
   }
 
   /**
-   * Daily limits are computed in UTC to match the scheduler's ISO-8601 timestamps and other UTC-based logic
-   * (e.g., `getUTCDay()` usage in duration selection).
+   * Daily limits are computed in the account time zone so "per day" matches the schedule calendar users see.
    */
-  private formatUtcDayKey(date: Date): string {
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  private formatDayKeyInTimeZone(date: Date, timeZoneId: string): string {
+    const tz = timeZoneId.trim() || 'UTC';
+    try {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: tz,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(date);
+    } catch {
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
   }
 }

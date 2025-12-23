@@ -213,7 +213,7 @@ const EditContactInfoDialog: React.FC<EditContactInfoDialogProps> = ({
       <DialogContent dividers>
         <Stack spacing={3} sx={{ mt: 1 }}>
           <Box>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+            <Typography variant="subtitle2" sx={{ mb: 0.5, color: 'text.secondary' }}>
               Name
             </Typography>
             <Typography variant="body1" sx={{ fontWeight: 600 }}>

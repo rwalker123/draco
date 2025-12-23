@@ -1,17 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  Divider,
-  IconButton,
-  Skeleton,
-  Stack,
-  Typography,
-} from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Alert, Box, Button, Divider, Skeleton, Stack, Typography } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 import { listMemberBusinesses } from '@draco/shared-api-client';
 import type { MemberBusinessType } from '@draco/shared-schemas';
 import { useApiClient } from '@/hooks/useApiClient';
@@ -24,6 +15,7 @@ import MemberBusinessDeleteDialog, {
   type MemberBusinessDeleteResult,
 } from './MemberBusinessDeleteDialog';
 import WidgetShell from '../ui/WidgetShell';
+import { EditIconButton, DeleteIconButton } from '../common/ActionIconButtons';
 
 interface MemberBusinessCardProps {
   accountId: string | null;
@@ -261,25 +253,19 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
                   </Stack>
                   {canManage && (
                     <Stack direction="row" spacing={1} sx={{ ml: 1 }}>
-                      <IconButton
+                      <EditIconButton
+                        tooltipTitle="Edit member business"
                         aria-label="Edit member business"
-                        size="small"
                         onClick={() => handleOpenEdit(business)}
-                        color="primary"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
+                      />
+                      <DeleteIconButton
+                        tooltipTitle="Delete member business"
                         aria-label="Delete member business"
-                        size="small"
                         onClick={() => {
                           setSelectedBusiness(business);
                           setDeleteOpen(true);
                         }}
-                        color="error"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      />
                     </Stack>
                   )}
                 </Stack>

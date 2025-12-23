@@ -49,6 +49,7 @@ export const SchedulerFieldSchema = z
       .object({
         hasLights: z.boolean().optional(),
         maxParallelGames: z.number().int().positive().optional(),
+        startIncrementMinutes: z.number().int().positive().optional(),
       })
       .optional(),
   })
@@ -95,7 +96,6 @@ export const SchedulerFieldAvailabilityRuleSchema = z
     }),
     startTimeLocal: hhmmSchema,
     endTimeLocal: hhmmSchema,
-    startIncrementMinutes: z.number().int().positive().max(1440).openapi({ example: 30 }),
     enabled: z.boolean(),
   })
   .superRefine((data, ctx) => {
@@ -153,6 +153,153 @@ export const SchedulerFieldExclusionDatesSchema = z
     exclusions: SchedulerFieldExclusionDateSchema.array(),
   })
   .openapi({ title: 'SchedulerFieldExclusionDates' });
+
+export const SchedulerSeasonWindowConfigSchema = z
+  .object({
+    seasonId: schedulerIdSchema,
+    startDate: isoDateSchema,
+    endDate: isoDateSchema,
+    leagueSeasonIds: schedulerIdSchema
+      .array()
+      .min(1)
+      .optional()
+      .openapi({
+        description:
+          'League-season IDs selected for scheduling. When omitted, the frontend should treat this as "all leagues".',
+        example: ['55', '56'],
+      }),
+    umpiresPerGame: z.number().int().min(1).max(4).optional().openapi({
+      example: 2,
+      description: 'Default required umpire count per game for season-scoped scheduling runs.',
+    }),
+    maxGamesPerUmpirePerDay: z.number().int().positive().nullable().optional().openapi({
+      example: 2,
+      description:
+        'Optional global max games/day limit per umpire for season-scoped scheduling runs. Use null to clear.',
+    }),
+  })
+  .superRefine((data, ctx) => {
+    if (data.startDate > data.endDate) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['startDate'],
+        message: 'startDate must be on or before endDate',
+      });
+    }
+  })
+  .openapi({
+    title: 'SchedulerSeasonWindowConfig',
+    description:
+      'Explicit season scheduling window used as the default date bounds when expanding field availability rules into fieldSlots.',
+  });
+
+export const SchedulerSeasonWindowConfigUpsertSchema = SchedulerSeasonWindowConfigSchema.openapi({
+  title: 'SchedulerSeasonWindowConfigUpsert',
+});
+
+export const SchedulerSeasonExclusionSchema = z
+  .object({
+    id: schedulerIdSchema,
+    seasonId: schedulerIdSchema,
+    startTime: isoDateTimeSchema,
+    endTime: isoDateTimeSchema,
+    note: z.string().trim().min(1).max(255).optional(),
+    enabled: z.boolean(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.startTime >= data.endTime) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['startTime'],
+        message: 'startTime must be before endTime',
+      });
+    }
+  })
+  .openapi({
+    title: 'SchedulerSeasonExclusion',
+    description:
+      'Season-level exclusion window. When enabled, games must not be scheduled within the excluded time range.',
+  });
+
+export const SchedulerSeasonExclusionUpsertSchema = SchedulerSeasonExclusionSchema.omit({
+  id: true,
+}).openapi({ title: 'SchedulerSeasonExclusionUpsert' });
+
+export const SchedulerSeasonExclusionsSchema = z
+  .object({
+    exclusions: SchedulerSeasonExclusionSchema.array(),
+  })
+  .openapi({ title: 'SchedulerSeasonExclusions' });
+
+export const SchedulerTeamExclusionSchema = z
+  .object({
+    id: schedulerIdSchema,
+    seasonId: schedulerIdSchema,
+    teamSeasonId: schedulerIdSchema,
+    startTime: isoDateTimeSchema,
+    endTime: isoDateTimeSchema,
+    note: z.string().trim().min(1).max(255).optional(),
+    enabled: z.boolean(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.startTime >= data.endTime) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['startTime'],
+        message: 'startTime must be before endTime',
+      });
+    }
+  })
+  .openapi({
+    title: 'SchedulerTeamExclusion',
+    description:
+      'Team-season exclusion window. When enabled, the team must not be scheduled within the excluded time range.',
+  });
+
+export const SchedulerTeamExclusionUpsertSchema = SchedulerTeamExclusionSchema.omit({
+  id: true,
+}).openapi({ title: 'SchedulerTeamExclusionUpsert' });
+
+export const SchedulerTeamExclusionsSchema = z
+  .object({
+    exclusions: SchedulerTeamExclusionSchema.array(),
+  })
+  .openapi({ title: 'SchedulerTeamExclusions' });
+
+export const SchedulerUmpireExclusionSchema = z
+  .object({
+    id: schedulerIdSchema,
+    seasonId: schedulerIdSchema,
+    umpireId: schedulerIdSchema,
+    startTime: isoDateTimeSchema,
+    endTime: isoDateTimeSchema,
+    note: z.string().trim().min(1).max(255).optional(),
+    enabled: z.boolean(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.startTime >= data.endTime) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['startTime'],
+        message: 'startTime must be before endTime',
+      });
+    }
+  })
+  .openapi({
+    title: 'SchedulerUmpireExclusion',
+    description:
+      'Umpire exclusion window. When enabled, the umpire must not be assigned within the excluded time range.',
+  });
+
+export const SchedulerUmpireExclusionUpsertSchema = SchedulerUmpireExclusionSchema.omit({
+  id: true,
+}).openapi({ title: 'SchedulerUmpireExclusionUpsert' });
+
+export const SchedulerUmpireExclusionsSchema = z
+  .object({
+    exclusions: SchedulerUmpireExclusionSchema.array(),
+  })
+  .openapi({ title: 'SchedulerUmpireExclusions' });
 
 export const SchedulerGameRequestSchema = z
   .object({
@@ -296,6 +443,9 @@ export const SchedulerProblemSpecSchema = z
     umpires: SchedulerUmpireSchema.array(),
     games: SchedulerGameRequestSchema.array().min(1),
     fieldSlots: SchedulerFieldSlotSchema.array().min(1),
+    seasonExclusions: SchedulerSeasonExclusionSchema.array().optional(),
+    teamExclusions: SchedulerTeamExclusionSchema.array().optional(),
+    umpireExclusions: SchedulerUmpireExclusionSchema.array().optional(),
     umpireAvailability: SchedulerUmpireAvailabilitySchema.array().optional(),
     teamBlackouts: SchedulerTeamBlackoutSchema.array().optional(),
     constraints: SchedulerConstraintsSchema,
@@ -357,6 +507,11 @@ export const SchedulerSeasonSolveRequestSchema = z
     constraints: SchedulerConstraintsOverrideSchema,
     objectives: SchedulerObjectivesSchema,
     gameIds: schedulerIdSchema.array().min(1).optional(),
+    umpiresPerGame: z.number().int().min(1).max(4).optional().openapi({
+      example: 2,
+      description:
+        'Optional override for required umpire count per game. When provided, all games in the solve request require exactly this many umpires.',
+    }),
   })
   .openapi({
     title: 'SchedulerSeasonSolveRequest',
@@ -531,6 +686,19 @@ export type SchedulerFieldExclusionDateUpsert = z.infer<
   typeof SchedulerFieldExclusionDateUpsertSchema
 >;
 export type SchedulerFieldExclusionDates = z.infer<typeof SchedulerFieldExclusionDatesSchema>;
+export type SchedulerSeasonWindowConfig = z.infer<typeof SchedulerSeasonWindowConfigSchema>;
+export type SchedulerSeasonWindowConfigUpsert = z.infer<
+  typeof SchedulerSeasonWindowConfigUpsertSchema
+>;
+export type SchedulerSeasonExclusion = z.infer<typeof SchedulerSeasonExclusionSchema>;
+export type SchedulerSeasonExclusionUpsert = z.infer<typeof SchedulerSeasonExclusionUpsertSchema>;
+export type SchedulerSeasonExclusions = z.infer<typeof SchedulerSeasonExclusionsSchema>;
+export type SchedulerTeamExclusion = z.infer<typeof SchedulerTeamExclusionSchema>;
+export type SchedulerTeamExclusionUpsert = z.infer<typeof SchedulerTeamExclusionUpsertSchema>;
+export type SchedulerTeamExclusions = z.infer<typeof SchedulerTeamExclusionsSchema>;
+export type SchedulerUmpireExclusion = z.infer<typeof SchedulerUmpireExclusionSchema>;
+export type SchedulerUmpireExclusionUpsert = z.infer<typeof SchedulerUmpireExclusionUpsertSchema>;
+export type SchedulerUmpireExclusions = z.infer<typeof SchedulerUmpireExclusionsSchema>;
 export type SchedulerGameRequest = z.infer<typeof SchedulerGameRequestSchema>;
 export type SchedulerFieldSlot = z.infer<typeof SchedulerFieldSlotSchema>;
 export type SchedulerUmpireAvailability = z.infer<typeof SchedulerUmpireAvailabilitySchema>;
@@ -566,6 +734,10 @@ export const SchedulerProblemSpecPreviewSchema = z
     fieldSlots: SchedulerFieldSlotSchema.array(),
     fieldAvailabilityRules: SchedulerFieldAvailabilityRuleSchema.array(),
     fieldExclusionDates: SchedulerFieldExclusionDateSchema.array(),
+    seasonWindowConfig: SchedulerSeasonWindowConfigSchema.optional(),
+    seasonExclusions: SchedulerSeasonExclusionSchema.array().optional(),
+    teamExclusions: SchedulerTeamExclusionSchema.array().optional(),
+    umpireExclusions: SchedulerUmpireExclusionSchema.array().optional(),
   })
   .openapi({
     title: 'SchedulerProblemSpecPreview',

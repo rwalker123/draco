@@ -2,8 +2,12 @@ import type { SchedulerApplyRequest, SchedulerApplyResult } from '@draco/shared-
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import type { IScheduleRepository } from '../repositories/interfaces/IScheduleRepository.js';
 import type { IFieldRepository } from '../repositories/interfaces/IFieldRepository.js';
+import type { ISchedulerSeasonExclusionsRepository } from '../repositories/interfaces/ISchedulerSeasonExclusionsRepository.js';
+import type { ISchedulerTeamSeasonExclusionsRepository } from '../repositories/interfaces/ISchedulerTeamSeasonExclusionsRepository.js';
+import type { ISchedulerUmpireExclusionsRepository } from '../repositories/interfaces/ISchedulerUmpireExclusionsRepository.js';
 import type { dbScheduleUpdateData } from '../repositories/index.js';
 import { ValidationError } from '../utils/customErrors.js';
+import { ValidationUtils } from '../utils/validationUtils.js';
 import { DateUtils } from '../utils/dateUtils.js';
 
 const MAX_UMPIRES_PER_GAME = 4;
@@ -26,14 +30,33 @@ const withDefaultHardConstraints = (
 export class SchedulerApplyService {
   private readonly scheduleRepository: IScheduleRepository;
   private readonly fieldRepository: IFieldRepository;
+  private readonly schedulerSeasonExclusionsRepository: ISchedulerSeasonExclusionsRepository;
+  private readonly schedulerTeamSeasonExclusionsRepository: ISchedulerTeamSeasonExclusionsRepository;
+  private readonly schedulerUmpireExclusionsRepository: ISchedulerUmpireExclusionsRepository;
 
   constructor(repositories?: {
     scheduleRepository?: IScheduleRepository;
     fieldRepository?: IFieldRepository;
+    schedulerSeasonExclusionsRepository?: ISchedulerSeasonExclusionsRepository;
+    schedulerTeamSeasonExclusionsRepository?: ISchedulerTeamSeasonExclusionsRepository;
+    schedulerUmpireExclusionsRepository?: ISchedulerUmpireExclusionsRepository;
   }) {
     this.scheduleRepository =
       repositories?.scheduleRepository ?? RepositoryFactory.getScheduleRepository();
     this.fieldRepository = repositories?.fieldRepository ?? RepositoryFactory.getFieldRepository();
+    this.schedulerSeasonExclusionsRepository =
+      repositories?.schedulerSeasonExclusionsRepository ??
+      RepositoryFactory.getSchedulerSeasonExclusionsRepository();
+    this.schedulerTeamSeasonExclusionsRepository =
+      repositories?.schedulerTeamSeasonExclusionsRepository ??
+      RepositoryFactory.getSchedulerTeamSeasonExclusionsRepository();
+    this.schedulerUmpireExclusionsRepository =
+      repositories?.schedulerUmpireExclusionsRepository ??
+      RepositoryFactory.getSchedulerUmpireExclusionsRepository();
+  }
+
+  private overlaps(a: { start: Date; end: Date }, b: { start: Date; end: Date }): boolean {
+    return a.start < b.end && b.start < a.end;
   }
 
   private buildUtcDayRange(date: Date): { start: Date; end: Date; dayKey: string } {
@@ -55,6 +78,43 @@ export class SchedulerApplyService {
     const fieldMetaById = new Map<string, { hasLights: boolean; maxParallelGames: number }>();
     const hard = withDefaultHardConstraints(request.constraints);
 
+    const seasonExclusions: Array<{ start: Date; end: Date }> = [];
+    const teamExclusionsByTeamSeasonId = new Map<string, Array<{ start: Date; end: Date }>>();
+    const umpireExclusionsByUmpireId = new Map<string, Array<{ start: Date; end: Date }>>();
+
+    if (context?.seasonId) {
+      const [seasonExclusionRecords, teamExclusionRecords, umpireExclusionRecords] =
+        await Promise.all([
+          this.schedulerSeasonExclusionsRepository.listForSeason(accountId, context.seasonId),
+          this.schedulerTeamSeasonExclusionsRepository.listForSeason(accountId, context.seasonId),
+          this.schedulerUmpireExclusionsRepository.listForSeason(accountId, context.seasonId),
+        ]);
+
+      seasonExclusionRecords
+        .filter((record) => record.enabled)
+        .forEach((record) => {
+          seasonExclusions.push({ start: record.starttime, end: record.endtime });
+        });
+
+      teamExclusionRecords
+        .filter((record) => record.enabled)
+        .forEach((record) => {
+          const key = record.teamseasonid.toString();
+          const list = teamExclusionsByTeamSeasonId.get(key) ?? [];
+          list.push({ start: record.starttime, end: record.endtime });
+          teamExclusionsByTeamSeasonId.set(key, list);
+        });
+
+      umpireExclusionRecords
+        .filter((record) => record.enabled)
+        .forEach((record) => {
+          const key = record.umpireid.toString();
+          const list = umpireExclusionsByUmpireId.get(key) ?? [];
+          list.push({ start: record.starttime, end: record.endtime });
+          umpireExclusionsByUmpireId.set(key, list);
+        });
+    }
+
     for (const assignment of request.assignments) {
       if (targetGameIds && !targetGameIds.has(assignment.gameId)) {
         continue;
@@ -63,6 +123,19 @@ export class SchedulerApplyService {
       const gameId = this.parseBigIntId(assignment.gameId, 'gameId');
       const fieldId = this.parseBigIntId(assignment.fieldId, 'fieldId');
       const gameDate = this.parseDateTime(assignment.startTime, 'startTime');
+      const endTime = this.parseDateTime(assignment.endTime, 'endTime');
+
+      if (endTime <= gameDate) {
+        skipped.push({ gameId: assignment.gameId, reason: 'Invalid endTime' });
+        continue;
+      }
+
+      if (
+        seasonExclusions.some((block) => this.overlaps(block, { start: gameDate, end: endTime }))
+      ) {
+        skipped.push({ gameId: assignment.gameId, reason: 'Season exclusion window conflict' });
+        continue;
+      }
 
       let fieldMeta = fieldMetaById.get(assignment.fieldId);
       if (!fieldMeta) {
@@ -100,6 +173,30 @@ export class SchedulerApplyService {
 
       if (context?.seasonId && existingGame.leagueseason.seasonid !== context.seasonId) {
         skipped.push({ gameId: assignment.gameId, reason: 'Game is not in the requested season' });
+        continue;
+      }
+
+      const homeTeamKey = existingGame.hteamid.toString();
+      const visitorTeamKey = existingGame.vteamid.toString();
+      const excludedTeams = [homeTeamKey, visitorTeamKey].some((key) =>
+        (teamExclusionsByTeamSeasonId.get(key) ?? []).some((block) =>
+          this.overlaps(block, { start: gameDate, end: endTime }),
+        ),
+      );
+      if (excludedTeams) {
+        skipped.push({ gameId: assignment.gameId, reason: 'Team exclusion window conflict' });
+        continue;
+      }
+
+      const excludedUmpire =
+        assignment.umpireIds.length > 0 &&
+        assignment.umpireIds.some((umpireId) =>
+          (umpireExclusionsByUmpireId.get(umpireId) ?? []).some((block) =>
+            this.overlaps(block, { start: gameDate, end: endTime }),
+          ),
+        );
+      if (excludedUmpire) {
+        skipped.push({ gameId: assignment.gameId, reason: 'Umpire exclusion window conflict' });
         continue;
       }
 
@@ -288,11 +385,7 @@ export class SchedulerApplyService {
   }
 
   private parseBigIntId(value: string, label: string): bigint {
-    try {
-      return BigInt(value);
-    } catch {
-      throw new ValidationError(`Invalid ${label}`);
-    }
+    return ValidationUtils.parseBigInt(value, label);
   }
 
   private parseDateTime(value: string, label: string): Date {

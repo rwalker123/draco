@@ -9,16 +9,15 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  IconButton,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { Delete as DeleteIcon } from '@mui/icons-material';
 import { useAuth } from '../../../context/AuthContext';
 import { getSources, putSources } from '../../../services/workoutService';
 import type { WorkoutSourcesType } from '@draco/shared-schemas';
 import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
+import { DeleteIconButton } from '../../common/ActionIconButtons';
 
 interface WorkoutSourcesDialogProps {
   accountId: string;
@@ -202,14 +201,11 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
                       }}
                     >
                       <Typography>{option}</Typography>
-                      <IconButton
-                        size="small"
-                        color="error"
+                      <DeleteIconButton
+                        tooltipTitle="Delete source"
                         onClick={() => setPendingOption(option)}
                         disabled={loading}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      />
                     </Box>
                   ))}
                 </Stack>

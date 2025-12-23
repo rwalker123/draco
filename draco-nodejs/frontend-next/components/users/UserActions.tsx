@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { IconButton, Tooltip, Stack } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Stack } from '@mui/material';
 import { UserActionsProps } from '../../types/users';
+import { EditIconButton, DeleteIconButton } from '../common/ActionIconButtons';
 
 /**
  * UserActions Component
@@ -34,37 +34,27 @@ const UserActions: React.FC<UserActionsProps> = ({
   return (
     <Stack direction="row" spacing={0.5}>
       {onEditContact && (
-        <Tooltip title="Edit Contact">
-          <IconButton
-            size="small"
-            onClick={handleEditContact}
-            color="primary"
-            sx={{
-              '&:hover': {
-                backgroundColor: 'rgba(25, 118, 210, 0.04)',
-              },
-            }}
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <EditIconButton
+          tooltipTitle="Edit Contact"
+          onClick={handleEditContact}
+          sx={{
+            '&:hover': {
+              backgroundColor: 'rgba(25, 118, 210, 0.04)',
+            },
+          }}
+        />
       )}
 
       {onDeleteContact && (
-        <Tooltip title="Delete Contact">
-          <IconButton
-            size="small"
-            onClick={handleDeleteContact}
-            color="error"
-            sx={{
-              '&:hover': {
-                backgroundColor: 'rgba(211, 47, 47, 0.04)',
-              },
-            }}
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <DeleteIconButton
+          tooltipTitle="Delete Contact"
+          onClick={handleDeleteContact}
+          sx={{
+            '&:hover': {
+              backgroundColor: 'rgba(211, 47, 47, 0.04)',
+            },
+          }}
+        />
       )}
     </Stack>
   );

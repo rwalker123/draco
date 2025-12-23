@@ -2,6 +2,10 @@ import type {
   SchedulerProblemSpecPreview,
   SchedulerProblemSpec,
   SchedulerSeasonConfig,
+  SchedulerSeasonWindowConfig,
+  SchedulerSeasonExclusion,
+  SchedulerTeamExclusion,
+  SchedulerUmpireExclusion,
   SchedulerTeam,
   SchedulerField,
   SchedulerUmpire,
@@ -17,8 +21,18 @@ import type { ISchedulerProblemSpecRepository } from '../repositories/interfaces
 import type { ISeasonsRepository } from '../repositories/interfaces/ISeasonsRepository.js';
 import type { ISchedulerFieldAvailabilityRulesRepository } from '../repositories/interfaces/ISchedulerFieldAvailabilityRulesRepository.js';
 import type { ISchedulerFieldExclusionDatesRepository } from '../repositories/interfaces/ISchedulerFieldExclusionDatesRepository.js';
+import type { ISchedulerSeasonConfigRepository } from '../repositories/interfaces/ISchedulerSeasonConfigRepository.js';
+import type { ISchedulerSeasonLeagueSelectionsRepository } from '../repositories/interfaces/ISchedulerSeasonLeagueSelectionsRepository.js';
+import type { ISchedulerSeasonExclusionsRepository } from '../repositories/interfaces/ISchedulerSeasonExclusionsRepository.js';
+import type { ISchedulerTeamSeasonExclusionsRepository } from '../repositories/interfaces/ISchedulerTeamSeasonExclusionsRepository.js';
+import type { ISchedulerUmpireExclusionsRepository } from '../repositories/interfaces/ISchedulerUmpireExclusionsRepository.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { DateUtils } from '../utils/dateUtils.js';
+import { SchedulerSeasonWindowConfigResponseFormatter } from '../responseFormatters/schedulerSeasonWindowConfigResponseFormatter.js';
+import { SchedulerSeasonExclusionResponseFormatter } from '../responseFormatters/schedulerSeasonExclusionResponseFormatter.js';
+import { SchedulerTeamExclusionResponseFormatter } from '../responseFormatters/schedulerTeamExclusionResponseFormatter.js';
+import { SchedulerUmpireExclusionResponseFormatter } from '../responseFormatters/schedulerUmpireExclusionResponseFormatter.js';
+import { DEFAULT_FIELD_START_INCREMENT_MINUTES } from '../constants/fieldConstants.js';
 
 const isBitSet = (mask: number, bit: number): boolean => (mask & (1 << bit)) !== 0;
 
@@ -52,29 +66,17 @@ const formatMinutesToHhmm = (totalMinutes: number): string => {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 };
 
-const minDateString = (values: string[]): string | undefined => {
-  if (values.length === 0) {
-    return undefined;
-  }
-  return values.reduce((min, value) => (value < min ? value : min), values[0]);
-};
-
-const maxDateString = (values: string[]): string | undefined => {
-  if (values.length === 0) {
-    return undefined;
-  }
-  return values.reduce((max, value) => (value > max ? value : max), values[0]);
-};
-
-const compactStringArray = (values: Array<string | undefined>): string[] =>
-  values.filter((value): value is string => Boolean(value));
-
 export class SchedulerProblemSpecService {
   constructor(
     private readonly schedulerRepo: ISchedulerProblemSpecRepository = RepositoryFactory.getSchedulerProblemSpecRepository(),
     private readonly seasonsRepository: ISeasonsRepository = RepositoryFactory.getSeasonsRepository(),
     private readonly fieldAvailabilityRulesRepository: ISchedulerFieldAvailabilityRulesRepository = RepositoryFactory.getSchedulerFieldAvailabilityRulesRepository(),
     private readonly fieldExclusionDatesRepository: ISchedulerFieldExclusionDatesRepository = RepositoryFactory.getSchedulerFieldExclusionDatesRepository(),
+    private readonly schedulerSeasonConfigRepository: ISchedulerSeasonConfigRepository = RepositoryFactory.getSchedulerSeasonConfigRepository(),
+    private readonly schedulerSeasonLeagueSelectionsRepository: ISchedulerSeasonLeagueSelectionsRepository = RepositoryFactory.getSchedulerSeasonLeagueSelectionsRepository(),
+    private readonly schedulerSeasonExclusionsRepository: ISchedulerSeasonExclusionsRepository = RepositoryFactory.getSchedulerSeasonExclusionsRepository(),
+    private readonly schedulerTeamSeasonExclusionsRepository: ISchedulerTeamSeasonExclusionsRepository = RepositoryFactory.getSchedulerTeamSeasonExclusionsRepository(),
+    private readonly schedulerUmpireExclusionsRepository: ISchedulerUmpireExclusionsRepository = RepositoryFactory.getSchedulerUmpireExclusionsRepository(),
   ) {}
 
   async buildProblemSpecPreview(
@@ -92,6 +94,10 @@ export class SchedulerProblemSpecService {
       fieldSlots: base.fieldSlots,
       fieldAvailabilityRules: base.fieldAvailabilityRules,
       fieldExclusionDates: base.fieldExclusionDates,
+      seasonWindowConfig: base.seasonWindowConfig,
+      seasonExclusions: base.seasonExclusions,
+      teamExclusions: base.teamExclusions,
+      umpireExclusions: base.umpireExclusions,
     };
   }
 
@@ -100,27 +106,64 @@ export class SchedulerProblemSpecService {
     seasonId: bigint,
     request: SchedulerSeasonSolveRequest,
   ): Promise<SchedulerProblemSpec> {
+    const { problemSpec } = await this.buildProblemSpecForSolve(accountId, seasonId, request);
+    return problemSpec;
+  }
+
+  async buildProblemSpecForSolve(
+    accountId: bigint,
+    seasonId: bigint,
+    request: SchedulerSeasonSolveRequest,
+  ): Promise<{ problemSpec: SchedulerProblemSpec; timeZoneId: string }> {
     const base = await this.loadBaseSpecData(accountId, seasonId);
     const filteredGames = request.gameIds?.length
       ? base.games.filter((game) => request.gameIds?.includes(game.id))
       : base.games;
 
-    if (filteredGames.length === 0) {
+    const requiredUmpiresOverride =
+      request.umpiresPerGame ?? base.seasonWindowConfig.umpiresPerGame ?? 2;
+    const normalizedGames = filteredGames.map((game) => ({
+      ...game,
+      requiredUmpires: requiredUmpiresOverride,
+    }));
+
+    if (normalizedGames.length === 0) {
       throw new ValidationError('No games found to schedule for the provided selection');
     }
 
+    const normalizedConstraints = this.normalizeConstraints(request.constraints, base.timeZoneId);
+    const maxGamesPerUmpirePerDayDefault = base.seasonWindowConfig.maxGamesPerUmpirePerDay;
+    const constraintsWithDefaults =
+      maxGamesPerUmpirePerDayDefault === undefined || maxGamesPerUmpirePerDayDefault === null
+        ? normalizedConstraints
+        : {
+            ...(normalizedConstraints ?? {}),
+            hard: {
+              ...((normalizedConstraints?.hard ?? {}) as NonNullable<SchedulerConstraints>['hard']),
+              maxGamesPerUmpirePerDay:
+                normalizedConstraints?.hard?.maxGamesPerUmpirePerDay ??
+                maxGamesPerUmpirePerDayDefault,
+            },
+          };
+
     return {
-      season: base.season,
-      teams: base.teams,
-      fields: base.fields,
-      umpires: base.umpires,
-      games: filteredGames,
-      fieldSlots: base.fieldSlots,
-      umpireAvailability: undefined,
-      teamBlackouts: undefined,
-      constraints: this.normalizeConstraints(request.constraints, base.timeZoneId),
-      objectives: request.objectives,
-      runId: undefined,
+      timeZoneId: base.timeZoneId,
+      problemSpec: {
+        season: base.season,
+        teams: base.teams,
+        fields: base.fields,
+        umpires: base.umpires,
+        games: normalizedGames,
+        fieldSlots: base.fieldSlots,
+        seasonExclusions: base.seasonExclusions,
+        teamExclusions: base.teamExclusions,
+        umpireExclusions: base.umpireExclusions,
+        umpireAvailability: undefined,
+        teamBlackouts: undefined,
+        constraints: constraintsWithDefaults,
+        objectives: request.objectives,
+        runId: undefined,
+      },
     };
   }
 
@@ -155,6 +198,10 @@ export class SchedulerProblemSpecService {
   ): Promise<
     SchedulerProblemSpecPreview & {
       timeZoneId: string;
+      seasonWindowConfig: SchedulerSeasonWindowConfig;
+      seasonExclusions: SchedulerSeasonExclusion[];
+      teamExclusions: SchedulerTeamExclusion[];
+      umpireExclusions: SchedulerUmpireExclusion[];
     }
   > {
     const account = await this.schedulerRepo.findAccount(accountId);
@@ -172,14 +219,45 @@ export class SchedulerProblemSpecService {
       throw new ValidationError('Account timezone is required to generate field slots');
     }
 
-    const [teams, fields, umpires, games, ruleRecords, exclusionRecords] = await Promise.all([
+    const [
+      teams,
+      fields,
+      umpires,
+      games,
+      ruleRecords,
+      exclusionRecords,
+      seasonConfigRecord,
+      leagueSelectionRecords,
+      seasonExclusionRecords,
+      teamExclusionRecords,
+      umpireExclusionRecords,
+    ] = await Promise.all([
       this.schedulerRepo.listSeasonTeams(seasonId),
       this.schedulerRepo.listAccountFields(accountId),
       this.schedulerRepo.listAccountUmpires(accountId),
       this.schedulerRepo.listSeasonGames(seasonId),
       this.fieldAvailabilityRulesRepository.listForSeason(accountId, seasonId),
       this.fieldExclusionDatesRepository.listForSeason(accountId, seasonId),
+      this.schedulerSeasonConfigRepository.findForSeason(accountId, seasonId),
+      this.schedulerSeasonLeagueSelectionsRepository.listForSeason(accountId, seasonId),
+      this.schedulerSeasonExclusionsRepository.listForSeason(accountId, seasonId),
+      this.schedulerTeamSeasonExclusionsRepository.listForSeason(accountId, seasonId),
+      this.schedulerUmpireExclusionsRepository.listForSeason(accountId, seasonId),
     ]);
+
+    if (!seasonConfigRecord) {
+      throw new ValidationError(
+        'Season scheduling window is not configured. Set season start/end dates to enable scheduling.',
+      );
+    }
+
+    const selectedLeagueSeasonIds = leagueSelectionRecords
+      .filter((row) => row.enabled)
+      .map((row) => row.leagueseasonid.toString());
+    const seasonWindowConfig = SchedulerSeasonWindowConfigResponseFormatter.formatConfig(
+      seasonConfigRecord,
+      selectedLeagueSeasonIds,
+    );
 
     const schedulerTeams: SchedulerTeam[] = teams.map((team) => ({
       id: team.teamid.toString(),
@@ -194,12 +272,25 @@ export class SchedulerProblemSpecService {
       properties: {
         hasLights: field.haslights === true,
         maxParallelGames: field.maxparallelgames ?? 1,
+        startIncrementMinutes:
+          field.schedulerstartincrementminutes ?? DEFAULT_FIELD_START_INCREMENT_MINUTES,
       },
     }));
 
+    const startIncrementByFieldId = new Map<string, number>();
+    schedulerFields.forEach((field) => {
+      const increment = field.properties?.startIncrementMinutes;
+      if (increment !== undefined && Number.isFinite(increment)) {
+        startIncrementByFieldId.set(field.id, increment);
+      }
+    });
+
     const schedulerUmpires: SchedulerUmpire[] = umpires.map((umpire) => ({
       id: umpire.id.toString(),
-      name: undefined,
+      name:
+        [umpire.contacts.firstname, umpire.contacts.lastname].filter(Boolean).join(' ').trim() ||
+        umpire.contacts.email ||
+        undefined,
       maxGamesPerDay: undefined,
     }));
 
@@ -228,7 +319,6 @@ export class SchedulerProblemSpecService {
         daysOfWeekMask: record.daysofweekmask,
         startTimeLocal: record.starttimelocal,
         endTimeLocal: record.endtimelocal,
-        startIncrementMinutes: record.startincrementminutes,
         enabled: record.enabled,
       };
     });
@@ -249,25 +339,17 @@ export class SchedulerProblemSpecService {
       };
     });
 
-    const enabledRules = rules.filter((rule) => rule.enabled);
-    const derivedStartDate =
-      minDateString(compactStringArray(enabledRules.map((rule) => rule.startDate))) ??
-      minDateString(compactStringArray(enabledRules.map((rule) => rule.endDate)));
-    const derivedEndDate =
-      maxDateString(compactStringArray(enabledRules.map((rule) => rule.endDate))) ??
-      maxDateString(compactStringArray(enabledRules.map((rule) => rule.startDate)));
-
-    if (!derivedStartDate || !derivedEndDate) {
-      throw new ValidationError(
-        'At least one enabled field availability rule must specify a start or end date to derive the scheduling window',
-      );
+    const windowStartDate = seasonWindowConfig.startDate;
+    const windowEndDate = seasonWindowConfig.endDate;
+    if (windowStartDate > windowEndDate) {
+      throw new ValidationError('Season startDate must be on or before endDate');
     }
 
     const seasonConfig: SchedulerSeasonConfig = {
       id: season.id.toString(),
       name: season.name,
-      startDate: derivedStartDate,
-      endDate: derivedEndDate,
+      startDate: windowStartDate,
+      endDate: windowEndDate,
       gameDurations: undefined,
     };
 
@@ -278,10 +360,23 @@ export class SchedulerProblemSpecService {
       rules,
       timeZoneId,
       {
-        startDate: derivedStartDate,
-        endDate: derivedEndDate,
+        startDate: windowStartDate,
+        endDate: windowEndDate,
       },
       exclusionsByFieldId,
+      startIncrementByFieldId,
+    );
+
+    const seasonExclusions =
+      SchedulerSeasonExclusionResponseFormatter.formatExclusions(seasonExclusionRecords).exclusions;
+    const teamExclusions =
+      SchedulerTeamExclusionResponseFormatter.formatExclusions(teamExclusionRecords).exclusions;
+    const umpireExclusions =
+      SchedulerUmpireExclusionResponseFormatter.formatExclusions(umpireExclusionRecords).exclusions;
+
+    const filteredFieldSlots = this.filterSlotsBySeasonExclusionStarts(
+      fieldSlots,
+      seasonExclusions,
     );
 
     return {
@@ -290,11 +385,35 @@ export class SchedulerProblemSpecService {
       fields: schedulerFields,
       umpires: schedulerUmpires,
       games: schedulerGames,
-      fieldSlots,
+      fieldSlots: filteredFieldSlots,
       fieldAvailabilityRules: rules,
       fieldExclusionDates,
+      seasonWindowConfig,
+      seasonExclusions,
+      teamExclusions,
+      umpireExclusions,
       timeZoneId,
     };
+  }
+
+  private filterSlotsBySeasonExclusionStarts(
+    slots: SchedulerFieldSlot[],
+    exclusions: SchedulerSeasonExclusion[],
+  ): SchedulerFieldSlot[] {
+    const enabled = exclusions.filter((exclusion) => exclusion.enabled);
+    if (enabled.length === 0) {
+      return slots;
+    }
+
+    const windows = enabled.map((exclusion) => ({
+      start: new Date(exclusion.startTime),
+      end: new Date(exclusion.endTime),
+    }));
+
+    return slots.filter((slot) => {
+      const start = new Date(slot.startTime);
+      return !windows.some((window) => start >= window.start && start < window.end);
+    });
   }
 
   private groupFieldExclusions(
@@ -314,6 +433,7 @@ export class SchedulerProblemSpecService {
     timeZoneId: string,
     window: { startDate: string; endDate: string },
     exclusionsByFieldId: Map<string, Set<string>>,
+    startIncrementByFieldId: Map<string, number>,
   ): SchedulerFieldSlot[] {
     const slots: SchedulerFieldSlot[] = [];
 
@@ -322,17 +442,24 @@ export class SchedulerProblemSpecService {
         continue;
       }
 
-      const ruleStartDate = rule.startDate ?? window.startDate;
-      const ruleEndDate = rule.endDate ?? window.endDate;
+      const rawStartDate = rule.startDate ?? window.startDate;
+      const rawEndDate = rule.endDate ?? window.endDate;
+      const ruleStartDate = rawStartDate < window.startDate ? window.startDate : rawStartDate;
+      const ruleEndDate = rawEndDate > window.endDate ? window.endDate : rawEndDate;
       if (ruleStartDate > ruleEndDate) {
-        throw new ValidationError('Invalid rule date range while generating field slots');
+        continue;
       }
 
       let dateCursor = ruleStartDate;
       const endDate = ruleEndDate;
       const windowStartMinutes = parseHhmmToMinutes(rule.startTimeLocal);
       const windowEndMinutes = parseHhmmToMinutes(rule.endTimeLocal);
-      const increment = Math.max(1, Math.floor(rule.startIncrementMinutes));
+      const increment = Math.max(
+        1,
+        Math.floor(
+          startIncrementByFieldId.get(rule.fieldId) ?? DEFAULT_FIELD_START_INCREMENT_MINUTES,
+        ),
+      );
 
       while (dateCursor <= endDate) {
         const excludedDates = exclusionsByFieldId.get(rule.fieldId);
@@ -394,7 +521,7 @@ export class SchedulerProblemSpecService {
             guard += 1;
             if (guard > maxStarts) {
               throw new ValidationError(
-                'Rule startIncrementMinutes produced too many slots in one day',
+                'Field schedulerStartIncrementMinutes produced too many slots in one day',
               );
             }
           }

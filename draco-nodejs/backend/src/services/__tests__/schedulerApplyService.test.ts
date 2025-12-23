@@ -2,13 +2,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SchedulerApplyService } from '../schedulerApplyService.js';
 import type { IScheduleRepository } from '../../repositories/interfaces/IScheduleRepository.js';
 import type { IFieldRepository } from '../../repositories/interfaces/IFieldRepository.js';
+import type { ISchedulerSeasonExclusionsRepository } from '../../repositories/interfaces/ISchedulerSeasonExclusionsRepository.js';
+import type { ISchedulerTeamSeasonExclusionsRepository } from '../../repositories/interfaces/ISchedulerTeamSeasonExclusionsRepository.js';
+import type { ISchedulerUmpireExclusionsRepository } from '../../repositories/interfaces/ISchedulerUmpireExclusionsRepository.js';
 import type {
   dbScheduleGameForAccount,
   dbScheduleGameWithDetails,
   dbScheduleUpdateData,
 } from '../../repositories/index.js';
 import type { SchedulerApplyRequest } from '@draco/shared-schemas';
-import type { availablefields } from '#prisma/client';
+import type {
+  availablefields,
+  schedulerseasonexclusions,
+  schedulerteamseasonexclusions,
+  schedulerumpireexclusions,
+} from '#prisma/client';
+import { DEFAULT_FIELD_START_INCREMENT_MINUTES } from '../../constants/fieldConstants.js';
 
 class ScheduleRepositoryStub implements IScheduleRepository {
   findById = vi.fn<IScheduleRepository['findById']>();
@@ -32,6 +41,8 @@ class ScheduleRepositoryStub implements IScheduleRepository {
   countUmpireBookingsAtTime = vi.fn<IScheduleRepository['countUmpireBookingsAtTime']>();
   countTeamGamesInRange = vi.fn<IScheduleRepository['countTeamGamesInRange']>();
   countUmpireGamesInRange = vi.fn<IScheduleRepository['countUmpireGamesInRange']>();
+  countUmpireAssignmentsForAccount =
+    vi.fn<IScheduleRepository['countUmpireAssignmentsForAccount']>();
   findRecap = vi.fn<IScheduleRepository['findRecap']>();
   upsertRecap = vi.fn<IScheduleRepository['upsertRecap']>();
   getTeamNames = vi.fn<IScheduleRepository['getTeamNames']>();
@@ -54,6 +65,30 @@ class FieldRepositoryStub implements IFieldRepository {
   isFieldInUse = vi.fn<IFieldRepository['isFieldInUse']>();
 }
 
+class SchedulerSeasonExclusionsRepositoryStub implements ISchedulerSeasonExclusionsRepository {
+  findForAccount = vi.fn<ISchedulerSeasonExclusionsRepository['findForAccount']>();
+  listForSeason = vi.fn<ISchedulerSeasonExclusionsRepository['listForSeason']>();
+  create = vi.fn<ISchedulerSeasonExclusionsRepository['create']>();
+  update = vi.fn<ISchedulerSeasonExclusionsRepository['update']>();
+  delete = vi.fn<ISchedulerSeasonExclusionsRepository['delete']>();
+}
+
+class SchedulerTeamSeasonExclusionsRepositoryStub implements ISchedulerTeamSeasonExclusionsRepository {
+  findForAccount = vi.fn<ISchedulerTeamSeasonExclusionsRepository['findForAccount']>();
+  listForSeason = vi.fn<ISchedulerTeamSeasonExclusionsRepository['listForSeason']>();
+  create = vi.fn<ISchedulerTeamSeasonExclusionsRepository['create']>();
+  update = vi.fn<ISchedulerTeamSeasonExclusionsRepository['update']>();
+  delete = vi.fn<ISchedulerTeamSeasonExclusionsRepository['delete']>();
+}
+
+class SchedulerUmpireExclusionsRepositoryStub implements ISchedulerUmpireExclusionsRepository {
+  findForAccount = vi.fn<ISchedulerUmpireExclusionsRepository['findForAccount']>();
+  listForSeason = vi.fn<ISchedulerUmpireExclusionsRepository['listForSeason']>();
+  create = vi.fn<ISchedulerUmpireExclusionsRepository['create']>();
+  update = vi.fn<ISchedulerUmpireExclusionsRepository['update']>();
+  delete = vi.fn<ISchedulerUmpireExclusionsRepository['delete']>();
+}
+
 const makeAvailableField = (
   overrides: Partial<availablefields> & { id: bigint; accountid: bigint },
 ): availablefields => ({
@@ -72,6 +107,8 @@ const makeAvailableField = (
   longitude: overrides.longitude ?? '',
   haslights: overrides.haslights ?? true,
   maxparallelgames: overrides.maxparallelgames ?? 1,
+  schedulerstartincrementminutes:
+    overrides.schedulerstartincrementminutes ?? DEFAULT_FIELD_START_INCREMENT_MINUTES,
 });
 
 const makeAccountGame = (
@@ -132,8 +169,12 @@ const makeGameWithDetails = (id: bigint): dbScheduleGameWithDetails =>
 
 describe('SchedulerApplyService.applyProposal', () => {
   const accountId = 42n;
+  const seasonId = 2n;
   let repository: ScheduleRepositoryStub;
   let fieldRepository: FieldRepositoryStub;
+  let seasonExclusionsRepository: SchedulerSeasonExclusionsRepositoryStub;
+  let teamExclusionsRepository: SchedulerTeamSeasonExclusionsRepositoryStub;
+  let umpireExclusionsRepository: SchedulerUmpireExclusionsRepositoryStub;
   let service: SchedulerApplyService;
   let fieldMeta: { haslights: boolean; maxparallelgames: number };
   let gamesById: Map<bigint, dbScheduleGameForAccount>;
@@ -179,6 +220,9 @@ describe('SchedulerApplyService.applyProposal', () => {
   beforeEach(() => {
     repository = new ScheduleRepositoryStub();
     fieldRepository = new FieldRepositoryStub();
+    seasonExclusionsRepository = new SchedulerSeasonExclusionsRepositoryStub();
+    teamExclusionsRepository = new SchedulerTeamSeasonExclusionsRepositoryStub();
+    umpireExclusionsRepository = new SchedulerUmpireExclusionsRepositoryStub();
     gamesById = new Map();
     fieldMeta = { haslights: true, maxparallelgames: 1 };
     fieldRepository.findAccountField.mockImplementation(async (account, fieldId) => {
@@ -201,7 +245,14 @@ describe('SchedulerApplyService.applyProposal', () => {
     service = new SchedulerApplyService({
       scheduleRepository: repository,
       fieldRepository,
+      schedulerSeasonExclusionsRepository: seasonExclusionsRepository,
+      schedulerTeamSeasonExclusionsRepository: teamExclusionsRepository,
+      schedulerUmpireExclusionsRepository: umpireExclusionsRepository,
     });
+
+    seasonExclusionsRepository.listForSeason.mockResolvedValue([] as schedulerseasonexclusions[]);
+    teamExclusionsRepository.listForSeason.mockResolvedValue([] as schedulerteamseasonexclusions[]);
+    umpireExclusionsRepository.listForSeason.mockResolvedValue([] as schedulerumpireexclusions[]);
 
     repository.findGameWithAccountContext.mockImplementation(
       async (gameId: bigint, account: bigint) => {
@@ -373,6 +424,48 @@ describe('SchedulerApplyService.applyProposal', () => {
         return count;
       },
     );
+  });
+
+  it('skips assignments that violate configured exclusion windows (DB-sourced)', async () => {
+    const gameId = 1n;
+    gamesById.set(
+      gameId,
+      makeAccountGame({ id: gameId, gamedate: new Date('2026-04-05T08:00:00.000Z') }),
+    );
+
+    seasonExclusionsRepository.listForSeason.mockResolvedValue([
+      {
+        id: 1n,
+        accountid: accountId,
+        seasonid: seasonId,
+        starttime: new Date('2026-04-05T07:00:00.000Z'),
+        endtime: new Date('2026-04-05T09:00:00.000Z'),
+        note: null,
+        enabled: true,
+        createdat: new Date(),
+        updatedat: new Date(),
+      } as schedulerseasonexclusions,
+    ]);
+
+    const request: SchedulerApplyRequest = {
+      runId: 'run-1',
+      mode: 'all',
+      assignments: [
+        {
+          gameId: gameId.toString(),
+          fieldId: '10',
+          startTime: '2026-04-05T08:00:00.000Z',
+          endTime: '2026-04-05T09:15:00.000Z',
+          umpireIds: [],
+        },
+      ],
+      constraints: {},
+    };
+
+    const result = await service.applyProposal(accountId, request, { seasonId });
+    expect(result.appliedGameIds).toHaveLength(0);
+    expect(result.skipped[0]?.reason).toMatch(/Season exclusion window conflict/);
+    expect(repository.updateGame).not.toHaveBeenCalled();
   });
 
   it('applies all assignments and returns applied status', async () => {

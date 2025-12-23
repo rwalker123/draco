@@ -5,21 +5,19 @@ import {
   CardContent,
   Typography,
   Chip,
-  IconButton,
   Button,
   TextField,
   InputAdornment,
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Edit as EditIcon,
   Preview as PreviewIcon,
-  Delete as DeleteIcon,
   Description as TemplateIcon,
 } from '@mui/icons-material';
 import { EmailTemplate } from '../../../types/emails/email';
 import { formatDateTime } from '../../../utils/dateUtils';
 import { extractVariables } from '../../../utils/templateUtils';
+import { EditIconButton, DeleteIconButton } from '../../common/ActionIconButtons';
 
 interface TemplateListViewProps {
   templates: EmailTemplate[];
@@ -123,22 +121,11 @@ export default function TemplateListView({
                     )}
                   </Box>
                   <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
-                    <IconButton
-                      size="small"
-                      onClick={() => onEdit(template)}
-                      title="Edit Template"
-                      color="primary"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
+                    <EditIconButton tooltipTitle="Edit Template" onClick={() => onEdit(template)} />
+                    <DeleteIconButton
+                      tooltipTitle="Delete Template"
                       onClick={() => onDelete(template)}
-                      title="Delete Template"
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    />
                   </Box>
                 </Box>
 

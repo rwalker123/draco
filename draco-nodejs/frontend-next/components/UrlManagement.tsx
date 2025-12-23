@@ -17,13 +17,7 @@ import {
   TableRow,
   Fab,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Link as LinkIcon,
-  OpenInNew as OpenInNewIcon,
-} from '@mui/icons-material';
+import { Add as AddIcon, Link as LinkIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { isAccountAdministrator } from '../utils/permissionUtils';
@@ -40,6 +34,7 @@ import type {
   AccountUrlDeleteResult,
   AccountUrlUpdateResult,
 } from '../hooks/useAccountUrlsService';
+import { EditIconButton, DeleteIconButton } from './common/ActionIconButtons';
 
 interface UrlManagementProps {
   accountId: string;
@@ -229,34 +224,14 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
                         </Tooltip>
                         {canManageUrls && (
                           <>
-                            <Tooltip title="Edit URL">
-                              <IconButton
-                                size="small"
-                                onClick={() => openEditDialog(url)}
-                                sx={{
-                                  color: (theme) =>
-                                    theme.palette.mode === 'dark'
-                                      ? theme.palette.primary.light
-                                      : theme.palette.primary.main,
-                                }}
-                              >
-                                <EditIcon />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete URL">
-                              <IconButton
-                                size="small"
-                                onClick={() => openDeleteDialog(url)}
-                                sx={{
-                                  color: (theme) =>
-                                    theme.palette.mode === 'dark'
-                                      ? theme.palette.error.light
-                                      : theme.palette.error.main,
-                                }}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
+                            <EditIconButton
+                              tooltipTitle="Edit URL"
+                              onClick={() => openEditDialog(url)}
+                            />
+                            <DeleteIconButton
+                              tooltipTitle="Delete URL"
+                              onClick={() => openDeleteDialog(url)}
+                            />
                           </>
                         )}
                       </Stack>

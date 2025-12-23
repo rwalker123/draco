@@ -20,6 +20,7 @@ import type { dbPhotoGalleryAlbum, dbPhotoGalleryEntry } from '../repositories/t
 import { PhotoGalleryAssetService } from './photoGalleryAssetService.js';
 import { ALBUM_PHOTO_LIMIT } from './photoGalleryLimits.js';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
+import { ValidationUtils } from '../utils/validationUtils.js';
 import { buildGalleryAssetPaths } from '../utils/photoSubmissionPaths.js';
 import { InstagramIntegrationService } from './instagramIntegrationService.js';
 
@@ -336,11 +337,7 @@ export class PhotoGalleryAdminService {
   }
 
   private parseBigInt(value: string, label: string): bigint {
-    try {
-      return BigInt(value);
-    } catch {
-      throw new ValidationError(`${label} identifier must be a valid number`);
-    }
+    return ValidationUtils.parseBigInt(value, `${label} identifier`);
   }
 
   private async enforceAlbumCapacity(

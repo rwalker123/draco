@@ -7,15 +7,23 @@ import {
   Button,
   Checkbox,
   CircularProgress,
+  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
+  FormControl,
   FormControlLabel,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
+import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import WidgetShell from '../ui/WidgetShell';
 import type {
   SchedulerFieldAvailabilityRule,
@@ -23,15 +31,28 @@ import type {
   SchedulerFieldExclusionDate,
   SchedulerFieldExclusionDateUpsert,
   SchedulerProblemSpecPreview,
+  SchedulerSeasonExclusion,
+  SchedulerSeasonExclusionUpsert,
+  SchedulerSeasonWindowConfig,
+  SchedulerSeasonWindowConfigUpsert,
   SchedulerSeasonApplyRequest,
   SchedulerSeasonSolveRequest,
   SchedulerSolveResult,
+  SchedulerTeamExclusion,
+  SchedulerTeamExclusionUpsert,
+  SchedulerUmpireExclusion,
+  SchedulerUmpireExclusionUpsert,
 } from '@draco/shared-schemas';
 import { SchedulerFieldAvailabilityRuleDialog } from './SchedulerFieldAvailabilityRuleDialog';
 import { SchedulerFieldExclusionDateDialog } from './SchedulerFieldExclusionDateDialog';
+import { SchedulerSeasonExclusionDialog } from './SchedulerSeasonExclusionDialog';
+import { SchedulerTeamExclusionDialog } from './SchedulerTeamExclusionDialog';
+import { SchedulerUmpireExclusionDialog } from './SchedulerUmpireExclusionDialog';
 import { useSeasonSchedulerOperations } from '../../hooks/useSeasonSchedulerOperations';
 
 type FieldOption = { id: string; name: string };
+type EntityOption = { id: string; name: string };
+type UmpiresPerGame = 1 | 2 | 3 | 4;
 
 const DAYS: Array<{ label: string; bit: number }> = [
   { label: 'Mon', bit: 0 },
@@ -66,6 +87,32 @@ const formatLocalHhmmTo12Hour = (value: string): string => {
   return `${hours12}:${minutes} ${suffix}`;
 };
 
+const formatIsoDateKey = (isoString: string, timeZone: string): string => {
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) {
+    return isoString;
+  }
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+};
+
+const formatLocalDateHeader = (isoString: string, timeZone: string): string => {
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) {
+    return isoString;
+  }
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+};
+
 interface SeasonSchedulerWidgetProps {
   accountId: string;
   seasonId: string | null;
@@ -74,6 +121,9 @@ interface SeasonSchedulerWidgetProps {
   leagueSeasonIdFilter?: string;
   teamSeasonIdFilter?: string;
   fields: FieldOption[];
+  leagues: EntityOption[];
+  teams: EntityOption[];
+  umpires: EntityOption[];
   getGameSummaryLabel: (gameId: string) => string;
   onApplied: () => Promise<void>;
   setSuccess: (message: string | null) => void;
@@ -88,12 +138,29 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   leagueSeasonIdFilter,
   teamSeasonIdFilter,
   fields,
+  leagues,
+  teams,
+  umpires,
   getGameSummaryLabel,
   onApplied,
   setSuccess,
   setError,
 }) => {
   const {
+    getSeasonWindowConfig,
+    upsertSeasonWindowConfig,
+    listSeasonExclusions,
+    createSeasonExclusion,
+    updateSeasonExclusion,
+    deleteSeasonExclusion,
+    listTeamExclusions,
+    createTeamExclusion,
+    updateTeamExclusion,
+    deleteTeamExclusion,
+    listUmpireExclusions,
+    createUmpireExclusion,
+    updateUmpireExclusion,
+    deleteUmpireExclusion,
     listFieldAvailabilityRules,
     createFieldAvailabilityRule,
     updateFieldAvailabilityRule,
@@ -112,10 +179,22 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
 
   const [rules, setRules] = useState<SchedulerFieldAvailabilityRule[]>([]);
   const [exclusions, setExclusions] = useState<SchedulerFieldExclusionDate[]>([]);
+  const [seasonWindowConfig, setSeasonWindowConfig] = useState<SchedulerSeasonWindowConfig | null>(
+    null,
+  );
+  const [seasonStartDate, setSeasonStartDate] = useState('');
+  const [seasonEndDate, setSeasonEndDate] = useState('');
+  const [leagueSeasonSelection, setLeagueSeasonSelection] = useState<string[] | null>(null);
+  const [seasonExclusions, setSeasonExclusions] = useState<SchedulerSeasonExclusion[]>([]);
+  const [teamExclusions, setTeamExclusions] = useState<SchedulerTeamExclusion[]>([]);
+  const [umpireExclusions, setUmpireExclusions] = useState<SchedulerUmpireExclusion[]>([]);
   const [proposal, setProposal] = useState<SchedulerSolveResult | null>(null);
   const [selectedGameIds, setSelectedGameIds] = useState<Set<string>>(new Set());
   const [specPreview, setSpecPreview] = useState<SchedulerProblemSpecPreview | null>(null);
   const [specPreviewOpen, setSpecPreviewOpen] = useState(false);
+  const [expandedGameIds, setExpandedGameIds] = useState<Set<string>>(new Set());
+  const [umpiresPerGame, setUmpiresPerGame] = useState<UmpiresPerGame>(2);
+  const [maxGamesPerUmpirePerDayInput, setMaxGamesPerUmpirePerDayInput] = useState('');
 
   const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
   const [ruleDialogKey, setRuleDialogKey] = useState('rule_new');
@@ -131,6 +210,33 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     undefined,
   );
 
+  const [seasonExclusionDialogOpen, setSeasonExclusionDialogOpen] = useState(false);
+  const [seasonExclusionDialogKey, setSeasonExclusionDialogKey] = useState('season_exclusion_new');
+  const [seasonExclusionDialogMode, setSeasonExclusionDialogMode] = useState<'create' | 'edit'>(
+    'create',
+  );
+  const [editingSeasonExclusion, setEditingSeasonExclusion] = useState<
+    SchedulerSeasonExclusion | undefined
+  >(undefined);
+
+  const [teamExclusionDialogOpen, setTeamExclusionDialogOpen] = useState(false);
+  const [teamExclusionDialogKey, setTeamExclusionDialogKey] = useState('team_exclusion_new');
+  const [teamExclusionDialogMode, setTeamExclusionDialogMode] = useState<'create' | 'edit'>(
+    'create',
+  );
+  const [editingTeamExclusion, setEditingTeamExclusion] = useState<
+    SchedulerTeamExclusion | undefined
+  >(undefined);
+
+  const [umpireExclusionDialogOpen, setUmpireExclusionDialogOpen] = useState(false);
+  const [umpireExclusionDialogKey, setUmpireExclusionDialogKey] = useState('umpire_exclusion_new');
+  const [umpireExclusionDialogMode, setUmpireExclusionDialogMode] = useState<'create' | 'edit'>(
+    'create',
+  );
+  const [editingUmpireExclusion, setEditingUmpireExclusion] = useState<
+    SchedulerUmpireExclusion | undefined
+  >(undefined);
+
   const assignments = proposal?.assignments ?? [];
 
   const fieldNameById = useMemo(() => {
@@ -138,6 +244,62 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     fields.forEach((field) => map.set(field.id, field.name));
     return map;
   }, [fields]);
+
+  const teamNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    teams.forEach((team) => map.set(team.id, team.name));
+    return map;
+  }, [teams]);
+
+  const umpireNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    umpires.forEach((umpire) => map.set(umpire.id, umpire.name));
+    return map;
+  }, [umpires]);
+
+  const schedulerUmpireNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    (specPreview?.umpires ?? []).forEach((umpire) => {
+      if (umpire.name) {
+        map.set(umpire.id, umpire.name);
+      }
+    });
+    return map;
+  }, [specPreview]);
+
+  const leagueNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    leagues.forEach((league) => map.set(league.id, league.name));
+    return map;
+  }, [leagues]);
+
+  const allLeagueSeasonIds = useMemo(() => leagues.map((league) => league.id), [leagues]);
+
+  const selectedLeagueSeasonIds = useMemo(() => {
+    const leagueIdSet = new Set(allLeagueSeasonIds);
+    const normalizedManual = leagueSeasonSelection?.filter((id) => leagueIdSet.has(id)) ?? null;
+
+    if (normalizedManual && normalizedManual.length > 0) {
+      return normalizedManual;
+    }
+
+    if (leagueSeasonIdFilter) {
+      return [leagueSeasonIdFilter];
+    }
+
+    return allLeagueSeasonIds;
+  }, [allLeagueSeasonIds, leagueSeasonIdFilter, leagueSeasonSelection]);
+
+  const gameRequestById = useMemo(() => {
+    const map = new Map<string, SchedulerProblemSpecPreview['games'][number]>();
+    if (!specPreview) {
+      return map;
+    }
+    specPreview.games.forEach((game) => {
+      map.set(game.id, game);
+    });
+    return map;
+  }, [specPreview]);
 
   const formatLocalTimeRange = useCallback(
     (startIso: string, endIso: string): string => {
@@ -169,7 +331,14 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
           hour12: true,
         }).format(end);
 
-        return `${dateLabel} ${startTime}–${endTime}`;
+        const tzLabel = new Intl.DateTimeFormat('en-US', {
+          timeZone,
+          timeZoneName: 'short',
+        })
+          .formatToParts(start)
+          .find((part) => part.type === 'timeZoneName')?.value;
+
+        return `${dateLabel} • ${startTime} – ${endTime}${tzLabel ? ` (${tzLabel})` : ''}`;
       } catch {
         return `${start.toISOString()}–${end.toISOString()}`;
       }
@@ -208,6 +377,62 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     setExclusions(nextExclusions);
   }, [listFieldExclusionDates, seasonId]);
 
+  const loadSeasonWindow = useCallback(async () => {
+    if (!seasonId) {
+      return;
+    }
+    const config = await getSeasonWindowConfig();
+    setSeasonWindowConfig(config);
+    if (config) {
+      setSeasonStartDate(config.startDate);
+      setSeasonEndDate(config.endDate);
+      if (
+        config.umpiresPerGame &&
+        (config.umpiresPerGame === 1 ||
+          config.umpiresPerGame === 2 ||
+          config.umpiresPerGame === 3 ||
+          config.umpiresPerGame === 4)
+      ) {
+        setUmpiresPerGame(config.umpiresPerGame);
+      } else {
+        setUmpiresPerGame(2);
+      }
+
+      const maxGames = config.maxGamesPerUmpirePerDay;
+      setMaxGamesPerUmpirePerDayInput(
+        typeof maxGames === 'number' && Number.isFinite(maxGames) ? String(maxGames) : '',
+      );
+
+      if (config.leagueSeasonIds && config.leagueSeasonIds.length > 0) {
+        setLeagueSeasonSelection(config.leagueSeasonIds);
+      }
+    }
+  }, [getSeasonWindowConfig, seasonId]);
+
+  const loadSeasonExclusions = useCallback(async () => {
+    if (!seasonId) {
+      return;
+    }
+    const next = await listSeasonExclusions();
+    setSeasonExclusions(next);
+  }, [listSeasonExclusions, seasonId]);
+
+  const loadTeamExclusions = useCallback(async () => {
+    if (!seasonId) {
+      return;
+    }
+    const next = await listTeamExclusions();
+    setTeamExclusions(next);
+  }, [listTeamExclusions, seasonId]);
+
+  const loadUmpireExclusions = useCallback(async () => {
+    if (!seasonId) {
+      return;
+    }
+    const next = await listUmpireExclusions();
+    setUmpireExclusions(next);
+  }, [listUmpireExclusions, seasonId]);
+
   useEffect(() => {
     if (!canEdit || !seasonId) {
       return;
@@ -218,7 +443,73 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     loadExclusions().catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed to load exclusions'),
     );
-  }, [canEdit, loadExclusions, loadRules, seasonId, setError]);
+    loadSeasonWindow().catch((err) =>
+      setError(err instanceof Error ? err.message : 'Failed to load season window'),
+    );
+    loadSeasonExclusions().catch((err) =>
+      setError(err instanceof Error ? err.message : 'Failed to load season exclusions'),
+    );
+    loadTeamExclusions().catch((err) =>
+      setError(err instanceof Error ? err.message : 'Failed to load team exclusions'),
+    );
+    loadUmpireExclusions().catch((err) =>
+      setError(err instanceof Error ? err.message : 'Failed to load umpire exclusions'),
+    );
+  }, [
+    canEdit,
+    loadExclusions,
+    loadRules,
+    loadSeasonExclusions,
+    loadSeasonWindow,
+    loadTeamExclusions,
+    loadUmpireExclusions,
+    seasonId,
+    setError,
+  ]);
+
+  const handleSaveSeasonWindow = async () => {
+    if (!seasonId) {
+      return;
+    }
+
+    const trimmedMaxGames = maxGamesPerUmpirePerDayInput.trim();
+    const maxGamesPerUmpirePerDay = trimmedMaxGames.length > 0 ? Number(trimmedMaxGames) : null;
+    if (maxGamesPerUmpirePerDay !== null) {
+      if (!Number.isFinite(maxGamesPerUmpirePerDay) || maxGamesPerUmpirePerDay <= 0) {
+        throw new Error('Max games/day per umpire must be a positive number');
+      }
+    }
+
+    const payload: SchedulerSeasonWindowConfigUpsert = {
+      seasonId,
+      startDate: seasonStartDate.trim(),
+      endDate: seasonEndDate.trim(),
+      leagueSeasonIds: selectedLeagueSeasonIds,
+      umpiresPerGame,
+      maxGamesPerUmpirePerDay,
+    };
+
+    const updated = await upsertSeasonWindowConfig(payload);
+    setSeasonWindowConfig(updated);
+    setSeasonStartDate(updated.startDate);
+    setSeasonEndDate(updated.endDate);
+    if (
+      updated.umpiresPerGame &&
+      (updated.umpiresPerGame === 1 ||
+        updated.umpiresPerGame === 2 ||
+        updated.umpiresPerGame === 3 ||
+        updated.umpiresPerGame === 4)
+    ) {
+      setUmpiresPerGame(updated.umpiresPerGame);
+    }
+    const nextMaxGames = updated.maxGamesPerUmpirePerDay;
+    setMaxGamesPerUmpirePerDayInput(
+      typeof nextMaxGames === 'number' && Number.isFinite(nextMaxGames) ? String(nextMaxGames) : '',
+    );
+    if (updated.leagueSeasonIds && updated.leagueSeasonIds.length > 0) {
+      setLeagueSeasonSelection(updated.leagueSeasonIds);
+    }
+  };
 
   const handleOpenCreateRule = () => {
     setEditingRule(undefined);
@@ -246,6 +537,48 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     setExclusionDialogMode('edit');
     setExclusionDialogKey(`edit_${exclusion.id}`);
     setExclusionDialogOpen(true);
+  };
+
+  const handleOpenCreateSeasonExclusion = () => {
+    setEditingSeasonExclusion(undefined);
+    setSeasonExclusionDialogMode('create');
+    setSeasonExclusionDialogKey(`new_${Date.now()}`);
+    setSeasonExclusionDialogOpen(true);
+  };
+
+  const handleOpenEditSeasonExclusion = (exclusion: SchedulerSeasonExclusion) => {
+    setEditingSeasonExclusion(exclusion);
+    setSeasonExclusionDialogMode('edit');
+    setSeasonExclusionDialogKey(`edit_${exclusion.id}`);
+    setSeasonExclusionDialogOpen(true);
+  };
+
+  const handleOpenCreateTeamExclusion = () => {
+    setEditingTeamExclusion(undefined);
+    setTeamExclusionDialogMode('create');
+    setTeamExclusionDialogKey(`new_${Date.now()}`);
+    setTeamExclusionDialogOpen(true);
+  };
+
+  const handleOpenEditTeamExclusion = (exclusion: SchedulerTeamExclusion) => {
+    setEditingTeamExclusion(exclusion);
+    setTeamExclusionDialogMode('edit');
+    setTeamExclusionDialogKey(`edit_${exclusion.id}`);
+    setTeamExclusionDialogOpen(true);
+  };
+
+  const handleOpenCreateUmpireExclusion = () => {
+    setEditingUmpireExclusion(undefined);
+    setUmpireExclusionDialogMode('create');
+    setUmpireExclusionDialogKey(`new_${Date.now()}`);
+    setUmpireExclusionDialogOpen(true);
+  };
+
+  const handleOpenEditUmpireExclusion = (exclusion: SchedulerUmpireExclusion) => {
+    setEditingUmpireExclusion(exclusion);
+    setUmpireExclusionDialogMode('edit');
+    setUmpireExclusionDialogKey(`edit_${exclusion.id}`);
+    setUmpireExclusionDialogOpen(true);
   };
 
   const handleDeleteRule = async (rule: SchedulerFieldAvailabilityRule) => {
@@ -310,11 +643,105 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     }
   };
 
+  const handleDeleteSeasonExclusion = async (exclusion: SchedulerSeasonExclusion) => {
+    try {
+      await deleteSeasonExclusion(exclusion.id);
+      await loadSeasonExclusions();
+      setSuccess('Season exclusion deleted');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete season exclusion');
+    }
+  };
+
+  const handleSaveSeasonExclusion = async (input: SchedulerSeasonExclusionUpsert) => {
+    try {
+      if (!seasonId) {
+        throw new Error('Missing current season');
+      }
+
+      if (seasonExclusionDialogMode === 'create') {
+        await createSeasonExclusion(input);
+        setSuccess('Season exclusion created');
+      } else if (editingSeasonExclusion) {
+        await updateSeasonExclusion(editingSeasonExclusion.id, input);
+        setSuccess('Season exclusion updated');
+      }
+
+      await loadSeasonExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save season exclusion');
+      throw err;
+    }
+  };
+
+  const handleDeleteTeamExclusion = async (exclusion: SchedulerTeamExclusion) => {
+    try {
+      await deleteTeamExclusion(exclusion.id);
+      await loadTeamExclusions();
+      setSuccess('Team exclusion deleted');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete team exclusion');
+    }
+  };
+
+  const handleSaveTeamExclusion = async (input: SchedulerTeamExclusionUpsert) => {
+    try {
+      if (!seasonId) {
+        throw new Error('Missing current season');
+      }
+
+      if (teamExclusionDialogMode === 'create') {
+        await createTeamExclusion(input);
+        setSuccess('Team exclusion created');
+      } else if (editingTeamExclusion) {
+        await updateTeamExclusion(editingTeamExclusion.id, input);
+        setSuccess('Team exclusion updated');
+      }
+
+      await loadTeamExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save team exclusion');
+      throw err;
+    }
+  };
+
+  const handleDeleteUmpireExclusion = async (exclusion: SchedulerUmpireExclusion) => {
+    try {
+      await deleteUmpireExclusion(exclusion.id);
+      await loadUmpireExclusions();
+      setSuccess('Umpire exclusion deleted');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete umpire exclusion');
+    }
+  };
+
+  const handleSaveUmpireExclusion = async (input: SchedulerUmpireExclusionUpsert) => {
+    try {
+      if (!seasonId) {
+        throw new Error('Missing current season');
+      }
+
+      if (umpireExclusionDialogMode === 'create') {
+        await createUmpireExclusion(input);
+        setSuccess('Umpire exclusion created');
+      } else if (editingUmpireExclusion) {
+        await updateUmpireExclusion(editingUmpireExclusion.id, input);
+        setSuccess('Umpire exclusion updated');
+      }
+
+      await loadUmpireExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save umpire exclusion');
+      throw err;
+    }
+  };
+
   const filterProblemSpecGames = useCallback(
     (preview: SchedulerProblemSpecPreview): string[] => {
       let filtered = preview.games;
-      if (leagueSeasonIdFilter) {
-        filtered = filtered.filter((game) => game.leagueSeasonId === leagueSeasonIdFilter);
+      if (leagues.length > 0 && selectedLeagueSeasonIds.length !== leagues.length) {
+        const leagueSet = new Set(selectedLeagueSeasonIds);
+        filtered = filtered.filter((game) => leagueSet.has(game.leagueSeasonId));
       }
       if (teamSeasonIdFilter) {
         filtered = filtered.filter(
@@ -325,13 +752,21 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       }
       return filtered.map((game) => game.id);
     },
-    [leagueSeasonIdFilter, teamSeasonIdFilter],
+    [leagues.length, selectedLeagueSeasonIds, teamSeasonIdFilter],
   );
 
   const handlePreviewProblemSpec = async () => {
     try {
       setError(null);
       clearError();
+
+      if (!seasonWindowConfig) {
+        throw new Error('Season dates are required before previewing the problem spec');
+      }
+
+      if (leagues.length > 0 && selectedLeagueSeasonIds.length === 0) {
+        throw new Error('Select at least one league to schedule');
+      }
 
       const preview = await getProblemSpecPreview();
       setSpecPreview(preview);
@@ -349,11 +784,26 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       setError(null);
       clearError();
       setProposal(null);
+      setExpandedGameIds(new Set());
+
+      if (!seasonWindowConfig) {
+        throw new Error('Season dates are required before generating a proposal');
+      }
+
+      if (leagues.length > 0 && selectedLeagueSeasonIds.length === 0) {
+        throw new Error('Select at least one league to schedule');
+      }
 
       let gameIds: SchedulerSeasonSolveRequest['gameIds'];
-      if (leagueSeasonIdFilter || teamSeasonIdFilter) {
-        const preview = await getProblemSpecPreview();
-        setSpecPreview(preview);
+      const shouldFilterByLeagueSelection =
+        leagues.length > 0 &&
+        selectedLeagueSeasonIds.length > 0 &&
+        selectedLeagueSeasonIds.length !== leagues.length;
+
+      const preview = await getProblemSpecPreview();
+      setSpecPreview(preview);
+
+      if (teamSeasonIdFilter || shouldFilterByLeagueSelection) {
         const filteredIds = filterProblemSpecGames(preview);
         if (filteredIds.length === 0) {
           throw new Error('No games match the current schedule filter');
@@ -361,9 +811,27 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         gameIds = filteredIds;
       }
 
+      const trimmedMaxGames = maxGamesPerUmpirePerDayInput.trim();
+      const maxGamesPerUmpirePerDay =
+        trimmedMaxGames.length > 0 ? Number(trimmedMaxGames) : undefined;
+      if (maxGamesPerUmpirePerDay !== undefined) {
+        if (!Number.isFinite(maxGamesPerUmpirePerDay) || maxGamesPerUmpirePerDay <= 0) {
+          throw new Error('Max games/day for umpires must be a positive number');
+        }
+      }
+
       const request: SchedulerSeasonSolveRequest = {
         objectives: { primary: 'maximize_scheduled_games' },
         gameIds,
+        umpiresPerGame,
+        constraints:
+          maxGamesPerUmpirePerDay !== undefined
+            ? {
+                hard: {
+                  maxGamesPerUmpirePerDay: Math.floor(maxGamesPerUmpirePerDay),
+                },
+              }
+            : undefined,
       };
 
       const result = await solveSeason(request);
@@ -428,16 +896,59 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     setSelectedGameIds(new Set(assignments.map((assignment) => assignment.gameId)));
   };
 
+  const toggleExpanded = (gameId: string) => {
+    setExpandedGameIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(gameId)) {
+        next.delete(gameId);
+      } else {
+        next.add(gameId);
+      }
+      return next;
+    });
+  };
+
+  const groupedAssignments = useMemo(() => {
+    if (!proposal) {
+      return [];
+    }
+
+    const groups = new Map<string, { dateLabel: string; assignments: typeof assignments }>();
+    proposal.assignments.forEach((assignment) => {
+      const dateKey = formatIsoDateKey(assignment.startTime, timeZone);
+      const existing = groups.get(dateKey);
+      if (existing) {
+        existing.assignments.push(assignment);
+      } else {
+        groups.set(dateKey, {
+          dateLabel: formatLocalDateHeader(assignment.startTime, timeZone),
+          assignments: [assignment],
+        });
+      }
+    });
+
+    const sortedKeys = Array.from(groups.keys()).sort();
+    return sortedKeys.map((dateKey) => {
+      const group = groups.get(dateKey) ?? { dateLabel: dateKey, assignments: [] };
+      const sortedGroup = [...group.assignments].sort((a, b) =>
+        a.startTime.localeCompare(b.startTime),
+      );
+      return { dateKey, dateLabel: group.dateLabel, assignments: sortedGroup };
+    });
+  }, [proposal, timeZone]);
+
   if (!canEdit) {
     return null;
   }
 
-  const filterLabel =
-    leagueSeasonIdFilter || teamSeasonIdFilter
-      ? `Filter: ${leagueSeasonIdFilter ? `league ${leagueSeasonIdFilter}` : 'all leagues'}${
-          teamSeasonIdFilter ? `, team ${teamSeasonIdFilter}` : ''
-        }`
-      : null;
+  const filterLabelParts: string[] = [];
+  if (leagues.length > 0 && selectedLeagueSeasonIds.length !== leagues.length) {
+    filterLabelParts.push(`leagues ${selectedLeagueSeasonIds.length}/${leagues.length}`);
+  }
+  if (teamSeasonIdFilter) {
+    filterLabelParts.push(`team ${teamSeasonIdFilter}`);
+  }
+  const filterLabel = filterLabelParts.length ? `Filter: ${filterLabelParts.join(', ')}` : null;
 
   return (
     <WidgetShell accent="primary" sx={{ mb: 3, px: 3, py: 2 }}>
@@ -468,10 +979,43 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
           >
             Add Exclusion Date
           </Button>
-          <Button variant="outlined" onClick={handlePreviewProblemSpec} disabled={!seasonId}>
+          <Button variant="outlined" onClick={handleOpenCreateSeasonExclusion} disabled={!seasonId}>
+            Add Season Exclusion
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handleOpenCreateTeamExclusion}
+            disabled={!seasonId || teams.length === 0}
+          >
+            Add Team Exclusion
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handleOpenCreateUmpireExclusion}
+            disabled={!seasonId || umpires.length === 0}
+          >
+            Add Umpire Exclusion
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handlePreviewProblemSpec}
+            disabled={
+              !seasonId ||
+              !seasonWindowConfig ||
+              (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
+            }
+          >
             Preview Problem Spec
           </Button>
-          <Button variant="contained" onClick={handleSolve} disabled={!seasonId}>
+          <Button
+            variant="contained"
+            onClick={handleSolve}
+            disabled={
+              !seasonId ||
+              !seasonWindowConfig ||
+              (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
+            }
+          >
             Generate Proposal
           </Button>
         </Box>
@@ -482,6 +1026,185 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
           {error}
         </Alert>
       )}
+
+      <Divider sx={{ my: 2 }} />
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box>
+          <Typography variant="subtitle2">Season Dates</Typography>
+          {seasonId ? (
+            <Typography variant="body2" color="text.secondary">
+              {seasonWindowConfig
+                ? `Configured: ${seasonWindowConfig.startDate}–${seasonWindowConfig.endDate}`
+                : 'Not configured. Set start/end dates to enable scheduling.'}
+            </Typography>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              Loading season…
+            </Typography>
+          )}
+        </Box>
+
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            label="Season Start"
+            type="date"
+            size="small"
+            value={seasonStartDate}
+            onChange={(event) => setSeasonStartDate(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+            disabled={!seasonId}
+          />
+          <TextField
+            label="Season End"
+            type="date"
+            size="small"
+            value={seasonEndDate}
+            onChange={(event) => setSeasonEndDate(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+            disabled={!seasonId}
+          />
+          <Button
+            variant="contained"
+            onClick={() => {
+              handleSaveSeasonWindow()
+                .then(() => setSuccess('Scheduler settings saved'))
+                .catch((err) =>
+                  setError(err instanceof Error ? err.message : 'Failed to save season window'),
+                );
+            }}
+            disabled={
+              !seasonId || seasonStartDate.trim().length === 0 || seasonEndDate.trim().length === 0
+            }
+          >
+            Save Scheduler Settings
+          </Button>
+        </Box>
+
+        {seasonId && !seasonWindowConfig && (
+          <Alert severity="warning">
+            Season dates are required before generating a proposal or preview.
+          </Alert>
+        )}
+      </Box>
+
+      <Divider sx={{ my: 2 }} />
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box>
+          <Typography variant="subtitle2">Leagues to Schedule</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {leagues.length > 0
+              ? `${selectedLeagueSeasonIds.length}/${leagues.length} league(s) selected.`
+              : 'No leagues found for this season.'}
+          </Typography>
+          {leagueSeasonIdFilter && leagueSeasonSelection === null && (
+            <Typography variant="caption" color="text.secondary">
+              Defaulted from the schedule page league filter.
+            </Typography>
+          )}
+        </Box>
+
+        {leagues.length > 0 && (
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+            <FormControl size="small" sx={{ minWidth: 320 }}>
+              <InputLabel id="scheduler-leagues-filter">Leagues</InputLabel>
+              <Select
+                labelId="scheduler-leagues-filter"
+                label="Leagues"
+                multiple
+                value={selectedLeagueSeasonIds}
+                onChange={(event) => {
+                  const next = Array.isArray(event.target.value)
+                    ? event.target.value
+                    : String(event.target.value).split(',');
+                  if (next.length === 0) {
+                    return;
+                  }
+                  setLeagueSeasonSelection(next);
+                }}
+                renderValue={(selected) =>
+                  selected.map((id) => leagueNameById.get(id) ?? `League ${id}`).join(', ')
+                }
+              >
+                {leagues.map((league) => (
+                  <MenuItem key={league.id} value={league.id}>
+                    {league.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Button variant="outlined" onClick={() => setLeagueSeasonSelection(allLeagueSeasonIds)}>
+              Select All
+            </Button>
+          </Box>
+        )}
+
+        {leagues.length > 0 && selectedLeagueSeasonIds.length === 0 && (
+          <Alert severity="warning">Select at least one league to schedule.</Alert>
+        )}
+      </Box>
+
+      <Divider sx={{ my: 2 }} />
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box>
+          <Typography variant="subtitle2">Umpires Per Game</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Sets the required umpire count for each scheduled game (applies to proposal generation
+            only).
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <FormControl size="small" sx={{ minWidth: 240 }} disabled={!seasonId}>
+            <InputLabel id="scheduler-umpires-per-game">Umpires</InputLabel>
+            <Select
+              labelId="scheduler-umpires-per-game"
+              label="Umpires"
+              value={umpiresPerGame}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                if (next === 1 || next === 2 || next === 3 || next === 4) {
+                  setUmpiresPerGame(next);
+                }
+              }}
+            >
+              <MenuItem value={1}>1 per game</MenuItem>
+              <MenuItem value={2}>2 per game</MenuItem>
+              <MenuItem value={3}>3 per game</MenuItem>
+              <MenuItem value={4}>4 per game</MenuItem>
+            </Select>
+          </FormControl>
+          {umpires.length > 0 && (
+            <Typography variant="caption" color="text.secondary">
+              {umpires.length} umpire(s) available for assignment.
+            </Typography>
+          )}
+        </Box>
+      </Box>
+
+      <Divider sx={{ my: 2 }} />
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box>
+          <Typography variant="subtitle2">Umpire Max Games/Day</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Optional global limit applied during proposal generation (leave blank for no limit).
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            label="Max games/day per umpire"
+            type="number"
+            size="small"
+            value={maxGamesPerUmpirePerDayInput}
+            onChange={(event) => setMaxGamesPerUmpirePerDayInput(event.target.value)}
+            inputProps={{ min: 1, step: 1 }}
+            disabled={!seasonId}
+          />
+        </Box>
+      </Box>
 
       <Divider sx={{ my: 2 }} />
 
@@ -525,8 +1248,8 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
                     {formatLocalHhmmTo12Hour(rule.endTimeLocal)}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Days={formatDaysOfWeekMask(rule.daysOfWeekMask)}, increment=
-                    {rule.startIncrementMinutes}m, {rule.enabled ? 'enabled' : 'disabled'}
+                    Days={formatDaysOfWeekMask(rule.daysOfWeekMask)},{' '}
+                    {rule.enabled ? 'enabled' : 'disabled'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -608,6 +1331,188 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         )}
       </Box>
 
+      <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box>
+          <Typography variant="subtitle2">Season Exclusion Windows</Typography>
+          {seasonId ? (
+            <Typography variant="body2" color="text.secondary">
+              {seasonExclusions.length} exclusion window(s) configured.
+            </Typography>
+          ) : null}
+        </Box>
+
+        {seasonExclusions.length > 0 && (
+          <Stack spacing={1}>
+            {seasonExclusions.map((exclusion) => (
+              <Box
+                key={exclusion.id}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 2,
+                  p: 1,
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                    {formatLocalTimeRange(exclusion.startTime, exclusion.endTime)}{' '}
+                    {exclusion.enabled ? '' : '(disabled)'}
+                  </Typography>
+                  {exclusion.note && (
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {exclusion.note}
+                    </Typography>
+                  )}
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => handleOpenEditSeasonExclusion(exclusion)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    variant="outlined"
+                    onClick={() => handleDeleteSeasonExclusion(exclusion).catch(() => undefined)}
+                  >
+                    Delete
+                  </Button>
+                </Box>
+              </Box>
+            ))}
+          </Stack>
+        )}
+      </Box>
+
+      <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box>
+          <Typography variant="subtitle2">Team Exclusion Windows</Typography>
+          {seasonId ? (
+            <Typography variant="body2" color="text.secondary">
+              {teamExclusions.length} exclusion window(s) configured.
+            </Typography>
+          ) : null}
+        </Box>
+
+        {teamExclusions.length > 0 && (
+          <Stack spacing={1}>
+            {teamExclusions.map((exclusion) => (
+              <Box
+                key={exclusion.id}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 2,
+                  p: 1,
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                    {teamNameById.get(exclusion.teamSeasonId) ?? `Team ${exclusion.teamSeasonId}`} •{' '}
+                    {formatLocalTimeRange(exclusion.startTime, exclusion.endTime)}{' '}
+                    {exclusion.enabled ? '' : '(disabled)'}
+                  </Typography>
+                  {exclusion.note && (
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {exclusion.note}
+                    </Typography>
+                  )}
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => handleOpenEditTeamExclusion(exclusion)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    variant="outlined"
+                    onClick={() => handleDeleteTeamExclusion(exclusion).catch(() => undefined)}
+                  >
+                    Delete
+                  </Button>
+                </Box>
+              </Box>
+            ))}
+          </Stack>
+        )}
+      </Box>
+
+      <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box>
+          <Typography variant="subtitle2">Umpire Exclusion Windows</Typography>
+          {seasonId ? (
+            <Typography variant="body2" color="text.secondary">
+              {umpireExclusions.length} exclusion window(s) configured.
+            </Typography>
+          ) : null}
+        </Box>
+
+        {umpireExclusions.length > 0 && (
+          <Stack spacing={1}>
+            {umpireExclusions.map((exclusion) => (
+              <Box
+                key={exclusion.id}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 2,
+                  p: 1,
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                    {umpireNameById.get(exclusion.umpireId) ?? `Umpire ${exclusion.umpireId}`} •{' '}
+                    {formatLocalTimeRange(exclusion.startTime, exclusion.endTime)}{' '}
+                    {exclusion.enabled ? '' : '(disabled)'}
+                  </Typography>
+                  {exclusion.note && (
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {exclusion.note}
+                    </Typography>
+                  )}
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => handleOpenEditUmpireExclusion(exclusion)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    variant="outlined"
+                    onClick={() => handleDeleteUmpireExclusion(exclusion).catch(() => undefined)}
+                  >
+                    Delete
+                  </Button>
+                </Box>
+              </Box>
+            ))}
+          </Stack>
+        )}
+      </Box>
+
       <Divider sx={{ my: 2 }} />
 
       <Box>
@@ -662,33 +1567,145 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
                 </Box>
 
                 <Stack spacing={1}>
-                  {proposal.assignments.map((assignment) => (
+                  {groupedAssignments.map((group) => (
                     <Box
-                      key={assignment.gameId}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        p: 1,
-                        borderRadius: 1,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                      }}
+                      key={group.dateKey}
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
                     >
-                      <Checkbox
-                        checked={selectedGameIds.has(assignment.gameId)}
-                        onChange={() => handleToggleSelection(assignment.gameId)}
-                      />
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography variant="body2" noWrap>
-                          {getGameSummaryLabel(assignment.gameId)}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap>
-                          {fieldNameById.get(assignment.fieldId) ?? `Field ${assignment.fieldId}`} •{' '}
-                          {formatLocalTimeRange(assignment.startTime, assignment.endTime)} •{' '}
-                          {assignment.umpireIds.length} umpire(s)
-                        </Typography>
-                      </Box>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        {group.dateLabel}
+                      </Typography>
+
+                      {group.assignments.map((assignment) => {
+                        const game = gameRequestById.get(assignment.gameId);
+                        const home =
+                          (game?.homeTeamSeasonId
+                            ? teamNameById.get(game.homeTeamSeasonId)
+                            : null) ?? 'Unknown Home';
+                        const visitor =
+                          (game?.visitorTeamSeasonId
+                            ? teamNameById.get(game.visitorTeamSeasonId)
+                            : null) ?? 'Unknown Visitor';
+                        const title = game ? `${home} vs ${visitor}` : `Game ${assignment.gameId}`;
+
+                        const leagueLabel =
+                          game?.leagueSeasonId && leagueNameById.get(game.leagueSeasonId)
+                            ? leagueNameById.get(game.leagueSeasonId)
+                            : null;
+
+                        const umpireNames = assignment.umpireIds
+                          .map(
+                            (id) =>
+                              schedulerUmpireNameById.get(id) ??
+                              umpireNameById.get(id) ??
+                              `Umpire ${id}`,
+                          )
+                          .filter((name) => name.trim().length > 0);
+
+                        const secondaryParts: string[] = [];
+                        if (leagueLabel) {
+                          secondaryParts.push(leagueLabel);
+                        }
+                        secondaryParts.push(
+                          `Field: ${fieldNameById.get(assignment.fieldId) ?? `Field ${assignment.fieldId}`}`,
+                        );
+                        secondaryParts.push(
+                          formatLocalTimeRange(assignment.startTime, assignment.endTime),
+                        );
+                        if (umpireNames.length === 1) {
+                          secondaryParts.push(`Umpire: ${umpireNames[0]}`);
+                        } else if (umpireNames.length > 1) {
+                          secondaryParts.push(`Umpires: ${umpireNames.join(', ')}`);
+                        } else {
+                          secondaryParts.push('Umpire: Unassigned');
+                        }
+
+                        const expanded = expandedGameIds.has(assignment.gameId);
+
+                        return (
+                          <Box
+                            key={assignment.gameId}
+                            sx={{
+                              borderRadius: 1,
+                              border: '1px solid',
+                              borderColor: 'divider',
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                p: 1,
+                              }}
+                            >
+                              <Checkbox
+                                checked={selectedGameIds.has(assignment.gameId)}
+                                onChange={() => handleToggleSelection(assignment.gameId)}
+                              />
+                              <Box sx={{ minWidth: 0, flex: 1 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                                  {title}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" noWrap>
+                                  {secondaryParts.join(' • ')}
+                                </Typography>
+                              </Box>
+                              <IconButton
+                                size="small"
+                                aria-label={expanded ? 'Collapse details' : 'Expand details'}
+                                onClick={() => toggleExpanded(assignment.gameId)}
+                              >
+                                {expanded ? (
+                                  <ExpandLess fontSize="small" />
+                                ) : (
+                                  <ExpandMore fontSize="small" />
+                                )}
+                              </IconButton>
+                            </Box>
+
+                            <Collapse in={expanded} timeout="auto" unmountOnExit>
+                              <Box sx={{ px: 2, pb: 1 }}>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  display="block"
+                                >
+                                  Game ID: {assignment.gameId}
+                                </Typography>
+                                {game && (
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    display="block"
+                                  >
+                                    Home Team Season ID: {game.homeTeamSeasonId} • Visitor Team
+                                    Season ID: {game.visitorTeamSeasonId}
+                                  </Typography>
+                                )}
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  display="block"
+                                >
+                                  Start (UTC): {assignment.startTime} • End (UTC):{' '}
+                                  {assignment.endTime}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  display="block"
+                                >
+                                  Field ID: {assignment.fieldId} • Umpire IDs:{' '}
+                                  {assignment.umpireIds.length
+                                    ? assignment.umpireIds.join(', ')
+                                    : 'None'}
+                                </Typography>
+                              </Box>
+                            </Collapse>
+                          </Box>
+                        );
+                      })}
                     </Box>
                   ))}
                 </Stack>
@@ -758,6 +1775,47 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
           initialExclusion={editingExclusion}
           onClose={() => setExclusionDialogOpen(false)}
           onSubmit={handleSaveExclusion}
+          loading={loading}
+        />
+      )}
+
+      {seasonId && (
+        <SchedulerSeasonExclusionDialog
+          key={seasonExclusionDialogKey}
+          open={seasonExclusionDialogOpen}
+          mode={seasonExclusionDialogMode}
+          seasonId={seasonId}
+          initialExclusion={editingSeasonExclusion}
+          onClose={() => setSeasonExclusionDialogOpen(false)}
+          onSubmit={handleSaveSeasonExclusion}
+          loading={loading}
+        />
+      )}
+
+      {seasonId && (
+        <SchedulerTeamExclusionDialog
+          key={teamExclusionDialogKey}
+          open={teamExclusionDialogOpen}
+          mode={teamExclusionDialogMode}
+          seasonId={seasonId}
+          teams={teams}
+          initialExclusion={editingTeamExclusion}
+          onClose={() => setTeamExclusionDialogOpen(false)}
+          onSubmit={handleSaveTeamExclusion}
+          loading={loading}
+        />
+      )}
+
+      {seasonId && (
+        <SchedulerUmpireExclusionDialog
+          key={umpireExclusionDialogKey}
+          open={umpireExclusionDialogOpen}
+          mode={umpireExclusionDialogMode}
+          seasonId={seasonId}
+          umpires={umpires}
+          initialExclusion={editingUmpireExclusion}
+          onClose={() => setUmpireExclusionDialogOpen(false)}
+          onSubmit={handleSaveUmpireExclusion}
           loading={loading}
         />
       )}

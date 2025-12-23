@@ -53,6 +53,11 @@ import {
   ISchedulerFieldAvailabilityRulesRepository,
   ISchedulerFieldExclusionDatesRepository,
   ISchedulerProblemSpecRepository,
+  ISchedulerSeasonConfigRepository,
+  ISchedulerSeasonLeagueSelectionsRepository,
+  ISchedulerSeasonExclusionsRepository,
+  ISchedulerTeamSeasonExclusionsRepository,
+  ISchedulerUmpireExclusionsRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -107,6 +112,11 @@ import {
   PrismaSchedulerFieldAvailabilityRulesRepository,
   PrismaSchedulerFieldExclusionDatesRepository,
   PrismaSchedulerProblemSpecRepository,
+  PrismaSchedulerSeasonConfigRepository,
+  PrismaSchedulerSeasonLeagueSelectionsRepository,
+  PrismaSchedulerSeasonExclusionsRepository,
+  PrismaSchedulerTeamSeasonExclusionsRepository,
+  PrismaSchedulerUmpireExclusionsRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -168,6 +178,11 @@ export class RepositoryFactory {
   private static schedulerFieldAvailabilityRulesRepository: ISchedulerFieldAvailabilityRulesRepository;
   private static schedulerFieldExclusionDatesRepository: ISchedulerFieldExclusionDatesRepository;
   private static schedulerProblemSpecRepository: ISchedulerProblemSpecRepository;
+  private static schedulerSeasonConfigRepository: ISchedulerSeasonConfigRepository;
+  private static schedulerSeasonLeagueSelectionsRepository: ISchedulerSeasonLeagueSelectionsRepository;
+  private static schedulerSeasonExclusionsRepository: ISchedulerSeasonExclusionsRepository;
+  private static schedulerTeamSeasonExclusionsRepository: ISchedulerTeamSeasonExclusionsRepository;
+  private static schedulerUmpireExclusionsRepository: ISchedulerUmpireExclusionsRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -443,6 +458,47 @@ export class RepositoryFactory {
       this.schedulerProblemSpecRepository = new PrismaSchedulerProblemSpecRepository(prisma);
     }
     return this.schedulerProblemSpecRepository;
+  }
+
+  static getSchedulerSeasonConfigRepository(): ISchedulerSeasonConfigRepository {
+    if (!this.schedulerSeasonConfigRepository) {
+      this.schedulerSeasonConfigRepository = new PrismaSchedulerSeasonConfigRepository(prisma);
+    }
+    return this.schedulerSeasonConfigRepository;
+  }
+
+  static getSchedulerSeasonLeagueSelectionsRepository(): ISchedulerSeasonLeagueSelectionsRepository {
+    if (!this.schedulerSeasonLeagueSelectionsRepository) {
+      this.schedulerSeasonLeagueSelectionsRepository =
+        new PrismaSchedulerSeasonLeagueSelectionsRepository(prisma);
+    }
+    return this.schedulerSeasonLeagueSelectionsRepository;
+  }
+
+  static getSchedulerSeasonExclusionsRepository(): ISchedulerSeasonExclusionsRepository {
+    if (!this.schedulerSeasonExclusionsRepository) {
+      this.schedulerSeasonExclusionsRepository = new PrismaSchedulerSeasonExclusionsRepository(
+        prisma,
+      );
+    }
+    return this.schedulerSeasonExclusionsRepository;
+  }
+
+  static getSchedulerTeamSeasonExclusionsRepository(): ISchedulerTeamSeasonExclusionsRepository {
+    if (!this.schedulerTeamSeasonExclusionsRepository) {
+      this.schedulerTeamSeasonExclusionsRepository =
+        new PrismaSchedulerTeamSeasonExclusionsRepository(prisma);
+    }
+    return this.schedulerTeamSeasonExclusionsRepository;
+  }
+
+  static getSchedulerUmpireExclusionsRepository(): ISchedulerUmpireExclusionsRepository {
+    if (!this.schedulerUmpireExclusionsRepository) {
+      this.schedulerUmpireExclusionsRepository = new PrismaSchedulerUmpireExclusionsRepository(
+        prisma,
+      );
+    }
+    return this.schedulerUmpireExclusionsRepository;
   }
 
   static getUmpireRepository(): IUmpireRepository {

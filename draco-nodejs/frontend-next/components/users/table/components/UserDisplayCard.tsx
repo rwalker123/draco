@@ -17,8 +17,6 @@ import {
   LocationOn as LocationIcon,
   CalendarToday as CalendarIcon,
   PersonAdd as PersonAddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { UserDisplayCardProps } from '../../../../types/userTable';
 import RoleIconGrid from '../../RoleIconGrid';
@@ -26,6 +24,7 @@ import UserAvatar from '../../UserAvatar';
 import { EmailButton } from '../../../emails/common/EmailButton';
 import RegistrationStatusChip from '../../RegistrationStatusChip';
 import { ContactRoleType } from '@draco/shared-schemas';
+import { EditIconButton, DeleteIconButton } from '../../../common/ActionIconButtons';
 
 const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
   user,
@@ -178,18 +177,32 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
             gap: 0.5,
           }}
         >
-          <Tooltip title="Edit User">
-            <IconButton
+          <EditIconButton
+            tooltipTitle="Edit User"
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (typeof onEditContact === 'function') {
+                onEditContact(user);
+              }
+            }}
+            sx={{
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 1)',
+              },
+              transition: 'all 0.2s ease-in-out',
+            }}
+          />
+
+          {onDeleteContact && (
+            <DeleteIconButton
+              tooltipTitle="Delete Contact"
               size="small"
               onClick={(e) => {
                 e.stopPropagation();
-
-                // This will be passed down from the parent component that uses useUserManagement
-                if (typeof onEditContact === 'function') {
-                  onEditContact(user);
-                }
+                onDeleteContact(user);
               }}
-              color="primary"
               sx={{
                 backgroundColor: 'rgba(255, 255, 255, 0.9)',
                 '&:hover': {
@@ -197,31 +210,7 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
                 },
                 transition: 'all 0.2s ease-in-out',
               }}
-            >
-              <EditIcon fontSize={cardSize === 'compact' ? 'small' : 'medium'} />
-            </IconButton>
-          </Tooltip>
-
-          {onDeleteContact && (
-            <Tooltip title="Delete Contact">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteContact(user);
-                }}
-                color="error"
-                sx={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 1)',
-                  },
-                  transition: 'all 0.2s ease-in-out',
-                }}
-              >
-                <DeleteIcon fontSize={cardSize === 'compact' ? 'small' : 'medium'} />
-              </IconButton>
-            </Tooltip>
+            />
           )}
         </Box>
       )}

@@ -81,6 +81,83 @@ describe('SchedulerEngineService', () => {
     expect(result.unscheduled).toHaveLength(0);
   });
 
+  it('treats season exclusions as hard constraints', () => {
+    const service = new SchedulerEngineService();
+    const spec: SchedulerProblemSpec = {
+      ...baseSpec,
+      seasonExclusions: [
+        {
+          id: 'ex-1',
+          seasonId: baseSpec.season.id,
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:00:00Z',
+          enabled: true,
+        },
+      ],
+    };
+
+    const result = service.solve(spec);
+    expect(result.assignments[0]?.startTime).toBe('2026-04-05T11:30:00.000Z');
+    expect(result.status).toBe('partial');
+  });
+
+  it('treats team exclusions as hard constraints', () => {
+    const service = new SchedulerEngineService();
+    const spec: SchedulerProblemSpec = {
+      ...baseSpec,
+      teamExclusions: [
+        {
+          id: 'team-ex-1',
+          seasonId: baseSpec.season.id,
+          teamSeasonId: 'teamSeason-1',
+          startTime: '2026-04-05T11:00:00Z',
+          endTime: '2026-04-05T14:00:00Z',
+          enabled: true,
+        },
+      ],
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('partial');
+    expect(result.assignments[0]?.startTime).toBe('2026-04-05T09:00:00.000Z');
+    expect(result.unscheduled.some((item) => item.gameId === 'game-2')).toBe(true);
+  });
+
+  it('avoids assigning an umpire during an umpire exclusion window', () => {
+    const service = new SchedulerEngineService();
+    const spec: SchedulerProblemSpec = {
+      ...baseSpec,
+      umpireExclusions: [
+        {
+          id: 'ump-ex-1',
+          seasonId: baseSpec.season.id,
+          umpireId: 'ump-1',
+          startTime: '2026-04-05T08:30:00Z',
+          endTime: '2026-04-05T11:00:00Z',
+          enabled: true,
+        },
+      ],
+      games: [
+        {
+          ...baseSpec.games[0],
+          id: 'game-only',
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+        },
+      ],
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('completed');
+    expect(result.assignments[0]?.umpireIds).toEqual(['ump-2']);
+  });
+
   it('reports unscheduled games when hard constraints prevent placement', () => {
     const service = new SchedulerEngineService();
     const constrainedSpec: SchedulerProblemSpec = {
@@ -99,6 +176,76 @@ describe('SchedulerEngineService', () => {
     expect(result.assignments).toHaveLength(1);
     expect(result.unscheduled).toHaveLength(1);
     expect(result.unscheduled[0]?.gameId).toBe('game-2');
+  });
+
+  it('enforces maxGamesPerUmpirePerDay in the account timezone', () => {
+    const service = new SchedulerEngineService();
+    const spec: SchedulerProblemSpec = {
+      ...baseSpec,
+      umpires: [{ id: 'ump-1', name: 'Alice' }],
+      umpireAvailability: [
+        {
+          umpireId: 'ump-1',
+          startTime: '2026-03-31T12:00:00Z',
+          endTime: '2026-04-01T03:00:00Z',
+        },
+      ],
+      games: [
+        {
+          ...baseSpec.games[0],
+          id: 'game-1',
+          earliestStart: '2026-03-31T13:00:00Z',
+          latestEnd: '2026-03-31T14:30:00Z',
+          requiredUmpires: 1,
+        },
+        {
+          ...baseSpec.games[0],
+          id: 'game-2',
+          earliestStart: '2026-03-31T15:45:00Z',
+          latestEnd: '2026-03-31T17:15:00Z',
+          requiredUmpires: 1,
+        },
+        {
+          ...baseSpec.games[0],
+          id: 'game-3',
+          earliestStart: '2026-04-01T00:00:00Z',
+          latestEnd: '2026-04-01T01:30:00Z',
+          requiredUmpires: 1,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-03-31T13:00:00Z',
+          endTime: '2026-03-31T14:30:00Z',
+        },
+        {
+          id: 'slot-2',
+          fieldId: 'field-1',
+          startTime: '2026-03-31T15:45:00Z',
+          endTime: '2026-03-31T17:15:00Z',
+        },
+        {
+          id: 'slot-3',
+          fieldId: 'field-1',
+          startTime: '2026-04-01T00:00:00Z',
+          endTime: '2026-04-01T01:30:00Z',
+        },
+      ],
+      constraints: {
+        hard: {
+          ...baseSpec.constraints?.hard,
+          maxGamesPerUmpirePerDay: 2,
+        },
+      },
+    };
+
+    // 2026-04-01T00:00:00Z is still 2026-03-31 in America/New_York (EDT).
+    const result = service.solve(spec, { timeZoneId: 'America/New_York' });
+    expect(result.status).toBe('partial');
+    expect(result.assignments).toHaveLength(2);
+    expect(result.unscheduled).toHaveLength(1);
   });
 
   it('rejects games with earliestStart equal to latestEnd', () => {

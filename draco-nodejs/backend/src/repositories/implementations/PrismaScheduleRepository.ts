@@ -421,6 +421,24 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     });
   }
 
+  async countUmpireAssignmentsForAccount(umpireId: bigint, accountId: bigint): Promise<number> {
+    return this.prisma.leagueschedule.count({
+      where: {
+        leagueseason: {
+          league: {
+            accountid: accountId,
+          },
+        },
+        OR: [
+          { umpire1: umpireId },
+          { umpire2: umpireId },
+          { umpire3: umpireId },
+          { umpire4: umpireId },
+        ],
+      },
+    });
+  }
+
   async findRecap(gameId: bigint, teamSeasonId: bigint): Promise<dbGameRecap | null> {
     return this.prisma.gamerecap.findUnique({
       where: {
