@@ -35,6 +35,7 @@ import ConfirmationDialog from '../../common/ConfirmationDialog';
 import { RecipientContact, RecipientSelectionState } from '../../../types/emails/recipients';
 import { EmailAttachment } from '../../../types/emails/attachments';
 import { EmailComposeRequest } from '../../../types/emails/email';
+import PageSectionHeader from '../../common/PageSectionHeader';
 
 interface EmailComposePageProps {
   accountId: string;
@@ -444,9 +445,7 @@ const EmailComposePageInternal: React.FC<
 
                 {/* Enhanced File Upload */}
                 <Box>
-                  <Typography variant="h6" color="text.primary" sx={{ mb: 1, fontWeight: 600 }}>
-                    File Attachments
-                  </Typography>
+                  <PageSectionHeader title="File Attachments" gutterBottom />
 
                   <ErrorBoundary
                     fallback={
