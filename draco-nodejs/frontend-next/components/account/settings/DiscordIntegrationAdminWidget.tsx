@@ -14,7 +14,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
-  IconButton,
   LinearProgress,
   Radio,
   RadioGroup,
@@ -26,15 +25,9 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material';
-import {
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Refresh as RefreshIcon,
-  LinkOff as LinkOffIcon,
-} from '@mui/icons-material';
+import { Refresh as RefreshIcon, LinkOff as LinkOffIcon } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,6 +45,7 @@ import AddDiscordChannelMappingDialog from './AddDiscordChannelMappingDialog';
 import ConfirmDiscordDisconnectDialog from './ConfirmDiscordDisconnectDialog';
 import { ROLE_DISPLAY_NAMES, ROLE_NAME_TO_ID } from '@/utils/roleUtils';
 import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
+import { EditIconButton, DeleteIconButton } from '../../common/ActionIconButtons';
 
 interface DiscordIntegrationAdminWidgetProps {
   accountId: string | null;
@@ -833,22 +827,25 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
                   <TableCell>{mapping.teamSeasonId ?? '—'}</TableCell>
                   <TableCell>{mapping.label ?? '—'}</TableCell>
                   <TableCell align="right">
-                    <Tooltip title="Delete mapping">
-                      <span>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteChannelMapping(mapping)}
-                          disabled={channelMappingBusyId === mapping.id}
-                        >
-                          {channelMappingBusyId === mapping.id ? (
-                            <CircularProgress size={16} />
-                          ) : (
-                            <DeleteIcon fontSize="small" />
-                          )}
-                        </IconButton>
-                      </span>
-                    </Tooltip>
+                    <DeleteIconButton
+                      tooltipTitle="Delete mapping"
+                      onClick={() => handleDeleteChannelMapping(mapping)}
+                      disabled={channelMappingBusyId === mapping.id}
+                      sx={{
+                        ...(channelMappingBusyId === mapping.id && {
+                          '& .MuiSvgIcon-root': {
+                            display: 'none',
+                          },
+                          '&::before': {
+                            content: '""',
+                            width: 16,
+                            height: 16,
+                          },
+                        }),
+                      }}
+                    >
+                      {channelMappingBusyId === mapping.id && <CircularProgress size={16} />}
+                    </DeleteIconButton>
                   </TableCell>
                 </TableRow>
               ))}
@@ -1022,33 +1019,30 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
                     </TableCell>
                     <TableCell align="right">
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title="Edit mapping">
-                          <span>
-                            <IconButton
-                              size="small"
-                              onClick={() => openEditRoleDialog(mapping)}
-                              disabled={roleMappingBusyId === mapping.id}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                        <Tooltip title="Delete mapping">
-                          <span>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => handleDeleteRoleMapping(mapping)}
-                              disabled={roleMappingBusyId === mapping.id}
-                            >
-                              {roleMappingBusyId === mapping.id ? (
-                                <CircularProgress size={16} />
-                              ) : (
-                                <DeleteIcon fontSize="small" />
-                              )}
-                            </IconButton>
-                          </span>
-                        </Tooltip>
+                        <EditIconButton
+                          tooltipTitle="Edit mapping"
+                          onClick={() => openEditRoleDialog(mapping)}
+                          disabled={roleMappingBusyId === mapping.id}
+                        />
+                        <DeleteIconButton
+                          tooltipTitle="Delete mapping"
+                          onClick={() => handleDeleteRoleMapping(mapping)}
+                          disabled={roleMappingBusyId === mapping.id}
+                          sx={{
+                            ...(roleMappingBusyId === mapping.id && {
+                              '& .MuiSvgIcon-root': {
+                                display: 'none',
+                              },
+                              '&::before': {
+                                content: '""',
+                                width: 16,
+                                height: 16,
+                              },
+                            }),
+                          }}
+                        >
+                          {roleMappingBusyId === mapping.id && <CircularProgress size={16} />}
+                        </DeleteIconButton>
                       </Stack>
                     </TableCell>
                   </TableRow>

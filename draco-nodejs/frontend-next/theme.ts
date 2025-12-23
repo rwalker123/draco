@@ -103,6 +103,13 @@ export const dracoThemeOptions: ThemeOptions = {
         },
       },
     },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          color: theme.palette.text.primary,
+        }),
+      },
+    },
   },
 };
 

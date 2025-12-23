@@ -19,7 +19,6 @@ export class SchedulerFieldAvailabilityRuleResponseFormatter {
       daysOfWeekMask: record.daysofweekmask,
       startTimeLocal: record.starttimelocal,
       endTimeLocal: record.endtimelocal,
-      startIncrementMinutes: record.startincrementminutes,
       enabled: record.enabled,
     };
   }

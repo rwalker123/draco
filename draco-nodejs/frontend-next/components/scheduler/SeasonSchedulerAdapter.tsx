@@ -3,7 +3,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import type { TeamSeasonType } from '@draco/shared-schemas';
-import type { Game, Field } from '@/types/schedule';
+import type { Game, Field, League, Umpire } from '@/types/schedule';
 import { SeasonSchedulerWidget } from './SeasonSchedulerWidget';
 
 interface SeasonSchedulerAdapterProps {
@@ -14,6 +14,8 @@ interface SeasonSchedulerAdapterProps {
   leagueSeasonIdFilter?: string;
   teamSeasonIdFilter?: string;
   fields: Field[];
+  umpires: Umpire[];
+  leagues: League[];
   teams: TeamSeasonType[];
   games: Game[];
   onApplied: () => Promise<void>;
@@ -29,6 +31,8 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
   leagueSeasonIdFilter,
   teamSeasonIdFilter,
   fields,
+  umpires,
+  leagues,
   teams,
   games,
   onApplied,
@@ -40,6 +44,17 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
   const schedulerFields = useMemo(() => {
     return fields.map((field) => ({ id: field.id, name: field.name }));
   }, [fields]);
+
+  const schedulerUmpires = useMemo(() => {
+    return umpires.map((umpire) => ({
+      id: umpire.id,
+      name: umpire.displayName || `${umpire.firstName} ${umpire.lastName}`.trim() || 'Umpire',
+    }));
+  }, [umpires]);
+
+  const schedulerLeagues = useMemo(() => {
+    return leagues.map((league) => ({ id: league.id, name: league.name }));
+  }, [leagues]);
 
   const teamNameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -112,6 +127,11 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
       leagueSeasonIdFilter={leagueSeasonIdFilter}
       teamSeasonIdFilter={teamSeasonIdFilter}
       fields={schedulerFields}
+      umpires={schedulerUmpires}
+      leagues={schedulerLeagues}
+      teams={teams
+        .filter((team) => Boolean(team.id))
+        .map((team) => ({ id: team.id!, name: team.name ?? 'Unknown Team' }))}
       getGameSummaryLabel={getSchedulerGameLabel}
       onApplied={onApplied}
       setSuccess={setSuccess}

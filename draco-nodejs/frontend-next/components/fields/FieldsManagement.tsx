@@ -26,7 +26,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material';
 import type { FieldType, PaginationWithTotalType } from '@draco/shared-schemas';
 import AccountPageHeader from '../AccountPageHeader';
 import { useFieldService } from '../../hooks/useFieldService';
@@ -34,6 +34,7 @@ import { useRole } from '../../context/RoleContext';
 import FieldFormDialog from './FieldFormDialog';
 import FieldDeleteDialog from './FieldDeleteDialog';
 import FieldDetailsCard from './FieldDetailsCard';
+import { EditIconButton, DeleteIconButton } from '../common/ActionIconButtons';
 
 interface FieldsManagementProps {
   accountId: string;
@@ -391,22 +392,16 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({
                                 onClick={(event) => event.stopPropagation()}
                               >
                                 <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                  <IconButton
+                                  <EditIconButton
+                                    tooltipTitle="Edit field"
                                     aria-label="Edit field"
-                                    size="small"
                                     onClick={() => handleOpenEditDialog(field)}
-                                    color="primary"
-                                  >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                  <IconButton
+                                  />
+                                  <DeleteIconButton
+                                    tooltipTitle="Delete field"
                                     aria-label="Delete field"
-                                    size="small"
-                                    color="error"
                                     onClick={() => handleOpenDeleteDialog(field)}
-                                  >
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
+                                  />
                                 </Stack>
                               </TableCell>
                             ) : null}

@@ -9,16 +9,15 @@ import {
   TextField,
   Button,
   Alert,
-  IconButton,
   Breadcrumbs,
   Link,
 } from '@mui/material';
-import { Delete as DeleteIcon } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import AccountPageHeader from '../AccountPageHeader';
 import { getSources, putSources } from '../../services/workoutService';
 import { WorkoutSourcesType } from '@draco/shared-schemas';
+import { DeleteIconButton } from '../common/ActionIconButtons';
 
 const EMPTY_SOURCES: WorkoutSourcesType = { options: [] };
 const DEFAULT_FALLBACK_SOURCES: WorkoutSourcesType = {
@@ -212,14 +211,10 @@ export const WorkoutSourcesForm: React.FC = () => {
                     }}
                   >
                     <Typography>{option}</Typography>
-                    <IconButton
-                      edge="end"
+                    <DeleteIconButton
+                      tooltipTitle="Remove option"
                       onClick={() => handleRemoveOption(option)}
-                      color="error"
-                      size="small"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    />
                   </Box>
                 ))}
               </Box>

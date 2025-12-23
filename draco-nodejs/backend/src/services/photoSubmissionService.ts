@@ -8,6 +8,7 @@ import type {
   PhotoSubmissionRecordType,
 } from '@draco/shared-schemas';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
+import { ValidationUtils } from '../utils/validationUtils.js';
 import { RepositoryFactory } from '../repositories/index.js';
 import { buildSubmissionAssetPaths } from '../utils/photoSubmissionPaths.js';
 import type {
@@ -278,15 +279,11 @@ export class PhotoSubmissionService {
   }
 
   private parseBigInt(value: string, label: string): bigint {
-    try {
-      const normalized = value.trim();
-      if (!normalized) {
-        throw new Error('empty');
-      }
-      return BigInt(normalized);
-    } catch (_error) {
+    const normalized = value.trim();
+    if (!normalized) {
       throw new ValidationError(`${label} identifier must be a valid number`);
     }
+    return ValidationUtils.parseBigInt(normalized, `${label} identifier`);
   }
 
   private parseOptionalBigInt(value: string | null | undefined, label: string): bigint | null {

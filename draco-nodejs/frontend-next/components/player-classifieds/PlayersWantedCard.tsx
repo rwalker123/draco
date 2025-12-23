@@ -11,13 +11,10 @@ import {
   Typography,
   Chip,
   Box,
-  IconButton,
   Avatar,
   Button,
 } from '@mui/material';
 import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Person as PersonIcon,
   CalendarToday as CalendarIcon,
   Email as EmailIcon,
@@ -28,6 +25,7 @@ import { playerClassifiedService } from '../../services/playerClassifiedService'
 import { useParams } from 'next/navigation';
 import { useNotifications } from '../../hooks/useNotifications';
 import ContactCreatorDialog from './ContactCreatorDialog';
+import { EditIconButton, DeleteIconButton } from '../common/ActionIconButtons';
 import { ContactPlayersWantedCreatorType } from '@draco/shared-schemas';
 
 const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
@@ -78,24 +76,18 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
           </Typography>
           <Box display="flex" gap={1}>
             {canEdit(classified) && (
-              <IconButton
-                size="small"
-                onClick={() => onEdit(classified.id.toString())}
+              <EditIconButton
+                tooltipTitle="Edit classified"
                 aria-label="Edit classified"
-                color="primary"
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
+                onClick={() => onEdit(classified.id.toString())}
+              />
             )}
             {canDelete(classified) && (
-              <IconButton
-                size="small"
-                onClick={() => onDelete(classified.id.toString())}
+              <DeleteIconButton
+                tooltipTitle="Delete classified"
                 aria-label="Delete classified"
-                color="error"
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
+                onClick={() => onDelete(classified.id.toString())}
+              />
             )}
           </Box>
         </Box>

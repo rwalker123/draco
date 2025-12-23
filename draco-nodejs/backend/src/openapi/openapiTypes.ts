@@ -117,6 +117,7 @@ import {
   RecentGamesSchema,
   UmpireSchema,
   UmpiresSchema,
+  CreateUmpireSchema,
   RoleCheckSchema,
   RoleMetadataSchema,
   SubmitHofNominationSchema,
@@ -281,6 +282,17 @@ import {
   SchedulerFieldExclusionDateSchema,
   SchedulerFieldExclusionDateUpsertSchema,
   SchedulerFieldExclusionDatesSchema,
+  SchedulerSeasonWindowConfigSchema,
+  SchedulerSeasonWindowConfigUpsertSchema,
+  SchedulerSeasonExclusionSchema,
+  SchedulerSeasonExclusionUpsertSchema,
+  SchedulerSeasonExclusionsSchema,
+  SchedulerTeamExclusionSchema,
+  SchedulerTeamExclusionUpsertSchema,
+  SchedulerTeamExclusionsSchema,
+  SchedulerUmpireExclusionSchema,
+  SchedulerUmpireExclusionUpsertSchema,
+  SchedulerUmpireExclusionsSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -396,6 +408,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const ContactRoleSchemaRef = registry.register('ContactRole', ContactRoleSchema);
   const UmpireSchemaRef = registry.register('Umpire', UmpireSchema);
   const UmpiresSchemaRef = registry.register('Umpires', UmpiresSchema);
+  const CreateUmpireSchemaRef = registry.register('CreateUmpire', CreateUmpireSchema);
   const BaseRoleSchemaRef = registry.register('BaseRole', BaseRoleSchema);
   const RoleCheckSchemaRef = registry.register('RoleCheck', RoleCheckSchema);
   const AccountSchemaRef = registry.register('Account', AccountSchema);
@@ -1122,6 +1135,50 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'SchedulerFieldExclusionDates',
     SchedulerFieldExclusionDatesSchema,
   );
+  const SchedulerSeasonWindowConfigSchemaRef = registry.register(
+    'SchedulerSeasonWindowConfig',
+    SchedulerSeasonWindowConfigSchema,
+  );
+  const SchedulerSeasonWindowConfigUpsertSchemaRef = registry.register(
+    'SchedulerSeasonWindowConfigUpsert',
+    SchedulerSeasonWindowConfigUpsertSchema,
+  );
+  const SchedulerSeasonExclusionSchemaRef = registry.register(
+    'SchedulerSeasonExclusion',
+    SchedulerSeasonExclusionSchema,
+  );
+  const SchedulerSeasonExclusionUpsertSchemaRef = registry.register(
+    'SchedulerSeasonExclusionUpsert',
+    SchedulerSeasonExclusionUpsertSchema,
+  );
+  const SchedulerSeasonExclusionsSchemaRef = registry.register(
+    'SchedulerSeasonExclusions',
+    SchedulerSeasonExclusionsSchema,
+  );
+  const SchedulerTeamExclusionSchemaRef = registry.register(
+    'SchedulerTeamExclusion',
+    SchedulerTeamExclusionSchema,
+  );
+  const SchedulerTeamExclusionUpsertSchemaRef = registry.register(
+    'SchedulerTeamExclusionUpsert',
+    SchedulerTeamExclusionUpsertSchema,
+  );
+  const SchedulerTeamExclusionsSchemaRef = registry.register(
+    'SchedulerTeamExclusions',
+    SchedulerTeamExclusionsSchema,
+  );
+  const SchedulerUmpireExclusionSchemaRef = registry.register(
+    'SchedulerUmpireExclusion',
+    SchedulerUmpireExclusionSchema,
+  );
+  const SchedulerUmpireExclusionUpsertSchemaRef = registry.register(
+    'SchedulerUmpireExclusionUpsert',
+    SchedulerUmpireExclusionUpsertSchema,
+  );
+  const SchedulerUmpireExclusionsSchemaRef = registry.register(
+    'SchedulerUmpireExclusions',
+    SchedulerUmpireExclusionsSchema,
+  );
   const RoleCheckResponseSchemaRef = registry.register(
     'RoleCheckResponse',
     RoleCheckResponseSchema,
@@ -1173,6 +1230,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     ContactRoleSchemaRef,
     UmpireSchemaRef,
     UmpiresSchemaRef,
+    CreateUmpireSchemaRef,
     BaseRoleSchemaRef,
     RoleCheckSchemaRef,
     RegisteredUserSchemaRef,
@@ -1413,6 +1471,17 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SchedulerFieldExclusionDateSchemaRef,
     SchedulerFieldExclusionDateUpsertSchemaRef,
     SchedulerFieldExclusionDatesSchemaRef,
+    SchedulerSeasonWindowConfigSchemaRef,
+    SchedulerSeasonWindowConfigUpsertSchemaRef,
+    SchedulerSeasonExclusionSchemaRef,
+    SchedulerSeasonExclusionUpsertSchemaRef,
+    SchedulerSeasonExclusionsSchemaRef,
+    SchedulerTeamExclusionSchemaRef,
+    SchedulerTeamExclusionUpsertSchemaRef,
+    SchedulerTeamExclusionsSchemaRef,
+    SchedulerUmpireExclusionSchemaRef,
+    SchedulerUmpireExclusionUpsertSchemaRef,
+    SchedulerUmpireExclusionsSchemaRef,
     RoleCheckResponseSchemaRef,
     DiscordTeamForumRemoveRequestSchemaRef,
   };

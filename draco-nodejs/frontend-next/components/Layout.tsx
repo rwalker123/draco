@@ -24,6 +24,7 @@ import {
   Home as HomeIcon,
   Key as KeyIcon,
   Person as PersonIcon,
+  SportsBaseball as SportsBaseballIcon,
   Email as EmailIcon,
   FitnessCenter as FitnessCenterIcon,
   Handshake as HandshakeIcon,
@@ -848,6 +849,29 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <PersonIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>User Management</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            (hasRole('Administrator') ||
+              hasRole('AccountAdmin', { accountId: String(currentAccount.id) }))
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
+                  handleNavigation(`/account/${String(currentAccount.id)}/umpires/manage`)
+                }
+                key="umpire-management"
+              >
+                <ListItemIcon>
+                  <SportsBaseballIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Umpires</ListItemText>
               </MenuItem>
             );
           }

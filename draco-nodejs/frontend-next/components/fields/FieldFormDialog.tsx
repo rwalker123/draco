@@ -41,6 +41,7 @@ const DEFAULT_VALUES: FieldFormValues = {
   name: '',
   shortName: '',
   hasLights: false,
+  schedulerStartIncrementMinutes: 165,
   address: '',
   city: '',
   state: '',
@@ -110,6 +111,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
       name: field.name ?? '',
       shortName: field.shortName ?? field.name?.slice(0, 5) ?? '',
       hasLights: field.hasLights ?? false,
+      schedulerStartIncrementMinutes: field.schedulerStartIncrementMinutes ?? 165,
       address: field.address ?? '',
       city: field.city ?? '',
       state: field.state ?? '',
@@ -266,7 +268,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        <Typography component="span" variant="h6" fontWeight={700} color="text.primary">
+        <Typography component="span" variant="h6" fontWeight={700}>
           {dialogTitle}
         </Typography>
       </DialogTitle>
@@ -298,7 +300,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 }
               />
             </Grid>
-            <Grid size={12}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Controller
                 name="hasLights"
                 control={control}
@@ -313,6 +315,20 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                     label="Has lights"
                   />
                 )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                label="Time Between Games (minutes)"
+                type="number"
+                fullWidth
+                {...register('schedulerStartIncrementMinutes', { valueAsNumber: true })}
+                error={Boolean(errors.schedulerStartIncrementMinutes)}
+                helperText={
+                  errors.schedulerStartIncrementMinutes?.message ??
+                  'Used when generating game start times (default 165).'
+                }
+                inputProps={{ min: 1, max: 1440, step: 1 }}
               />
             </Grid>
             <Grid size={12}>

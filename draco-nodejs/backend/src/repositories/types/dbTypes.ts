@@ -509,6 +509,7 @@ export type dbAvailableField = Prisma.availablefieldsGetPayload<{
     latitude: true;
     longitude: true;
     haslights: true;
+    schedulerstartincrementminutes: true;
   };
 }>;
 
@@ -587,7 +588,16 @@ export type dbLeagueUmpireWithContact = Prisma.leagueumpiresGetPayload<{
         id: true;
         firstname: true;
         lastname: true;
+        middlename: true;
         email: true;
+        phone1: true;
+        phone2: true;
+        phone3: true;
+        streetaddress: true;
+        city: true;
+        state: true;
+        zip: true;
+        dateofbirth: true;
       };
     };
   };

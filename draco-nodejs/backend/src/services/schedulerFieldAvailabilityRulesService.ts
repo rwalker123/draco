@@ -8,6 +8,7 @@ import type { ISchedulerFieldAvailabilityRulesRepository } from '../repositories
 import { SchedulerFieldAvailabilityRuleResponseFormatter } from '../responseFormatters/schedulerFieldAvailabilityRuleResponseFormatter.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { DateUtils } from '../utils/dateUtils.js';
+import { SchedulerValidationUtils } from '../utils/schedulerValidationUtils.js';
 
 export class SchedulerFieldAvailabilityRulesService {
   private readonly rulesRepository: ISchedulerFieldAvailabilityRulesRepository;
@@ -53,7 +54,6 @@ export class SchedulerFieldAvailabilityRulesService {
       daysofweekmask: payload.daysOfWeekMask,
       starttimelocal: payload.startTimeLocal,
       endtimelocal: payload.endTimeLocal,
-      startincrementminutes: payload.startIncrementMinutes,
       enabled: payload.enabled,
     });
 
@@ -93,7 +93,6 @@ export class SchedulerFieldAvailabilityRulesService {
       daysofweekmask: payload.daysOfWeekMask,
       starttimelocal: payload.startTimeLocal,
       endtimelocal: payload.endTimeLocal,
-      startincrementminutes: payload.startIncrementMinutes,
       enabled: payload.enabled,
     });
 
@@ -116,25 +115,18 @@ export class SchedulerFieldAvailabilityRulesService {
   }
 
   private async ensureSeasonInAccount(accountId: bigint, seasonId: bigint): Promise<void> {
-    const season = await this.seasonsRepository.findSeasonById(accountId, seasonId);
-    if (!season) {
-      throw new NotFoundError('Season not found');
-    }
+    await SchedulerValidationUtils.ensureSeasonInAccount(
+      this.seasonsRepository,
+      accountId,
+      seasonId,
+    );
   }
 
   private async ensureFieldInAccount(accountId: bigint, fieldId: string): Promise<void> {
-    const parsedFieldId = this.parseBigInt(fieldId, 'fieldId');
+    const parsedFieldId = SchedulerValidationUtils.parseBigInt(fieldId, 'fieldId');
     const field = await this.fieldRepository.findAccountField(accountId, parsedFieldId);
     if (!field) {
       throw new NotFoundError('Field not found');
-    }
-  }
-
-  private parseBigInt(value: string, label: string): bigint {
-    try {
-      return BigInt(value);
-    } catch {
-      throw new ValidationError(`Invalid ${label}`);
     }
   }
 

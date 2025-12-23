@@ -4,10 +4,8 @@
 // Displays an individual Teams Wanted classified ad for public viewing (no sensitive data)
 
 import React, { useState } from 'react';
-import { Card, CardContent, Typography, Chip, Box, IconButton, Button } from '@mui/material';
+import { Card, CardContent, Typography, Chip, Box, Button } from '@mui/material';
 import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Person as PersonIcon,
   ContactPhone as ContactPhoneIcon,
   CalendarToday as CalendarIcon,
@@ -20,6 +18,7 @@ import { getTeamsWantedContactInfo } from '@draco/shared-api-client';
 import { createApiClient } from '../../lib/apiClientFactory';
 import { ApiClientError, unwrapApiResult } from '../../utils/apiResult';
 import { formatDate } from '../../utils/dateUtils';
+import { EditIconButton, DeleteIconButton } from '../common/ActionIconButtons';
 
 const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   classified,
@@ -100,24 +99,18 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
           </Box>
           <Box display="flex" gap={1}>
             {canEdit(classified) && (
-              <IconButton
-                size="small"
-                onClick={() => onEdit(classified.id.toString(), 'access-code-required')}
+              <EditIconButton
+                tooltipTitle="Edit classified"
                 aria-label="Edit classified"
-                color="primary"
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
+                onClick={() => onEdit(classified.id.toString(), 'access-code-required')}
+              />
             )}
             {canDelete(classified) && (
-              <IconButton
-                size="small"
-                onClick={() => onDelete(classified.id.toString(), 'access-code-required')}
+              <DeleteIconButton
+                tooltipTitle="Delete classified"
                 aria-label="Delete classified"
-                color="error"
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
+                onClick={() => onDelete(classified.id.toString(), 'access-code-required')}
+              />
             )}
           </Box>
         </Box>

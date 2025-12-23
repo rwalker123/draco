@@ -85,6 +85,7 @@ export interface IScheduleRepository extends IBaseRepository<leagueschedule> {
     leagueSeasonId: bigint,
     excludeGameId?: bigint,
   ): Promise<number>;
+  countUmpireAssignmentsForAccount(umpireId: bigint, accountId: bigint): Promise<number>;
   findRecap(gameId: bigint, teamSeasonId: bigint): Promise<dbGameRecap | null>;
   upsertRecap(gameId: bigint, teamSeasonId: bigint, recap: string): Promise<gamerecap>;
   getTeamNames(teamIds: bigint[]): Promise<Map<string, string>>;

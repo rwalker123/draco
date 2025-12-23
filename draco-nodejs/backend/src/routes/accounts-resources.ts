@@ -7,7 +7,7 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AuthenticationError } from '../utils/customErrors.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import { PagingSchema, UpsertFieldSchema } from '@draco/shared-schemas';
+import { CreateUmpireSchema, PagingSchema, UpsertFieldSchema } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -130,6 +130,43 @@ router.get(
     const umpires = await umpireService.listUmpires(accountId, pagingParams);
 
     res.json(umpires);
+  }),
+);
+
+/**
+ * POST /api/accounts/:accountId/umpires
+ * Create an umpire for an account
+ */
+router.post(
+  '/:accountId/umpires',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.umpires.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const payload = CreateUmpireSchema.parse(req.body);
+
+    const umpire = await umpireService.createUmpire(accountId, payload);
+
+    res.status(201).json(umpire);
+  }),
+);
+
+/**
+ * DELETE /api/accounts/:accountId/umpires/:umpireId
+ * Delete an umpire for an account
+ */
+router.delete(
+  '/:accountId/umpires/:umpireId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.umpires.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, umpireId } = extractBigIntParams(req.params, 'accountId', 'umpireId');
+
+    const umpire = await umpireService.deleteUmpire(accountId, umpireId);
+
+    res.json(umpire);
   }),
 );
 

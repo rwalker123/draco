@@ -1,20 +1,36 @@
-import { Prisma, leagueumpires } from '#prisma/client';
-import { IBaseRepository } from './IBaseRepository.js';
+import { leagueumpires } from '#prisma/client';
 import { dbLeagueUmpireWithContact } from '../types/dbTypes.js';
 
-export interface IUmpireRepository
-  extends IBaseRepository<
-    leagueumpires,
-    Prisma.leagueumpiresCreateInput,
-    Prisma.leagueumpiresUpdateInput
-  > {
+export interface UmpireCreateData {
+  accountid: bigint;
+  contactid: bigint;
+}
+
+export interface UmpireFindOptions {
+  skip: number;
+  take: number;
+  sortField?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface IUmpireRepository {
+  findById(id: bigint): Promise<leagueumpires | null>;
+  findMany(where?: Record<string, unknown>): Promise<leagueumpires[]>;
+  create(data: UmpireCreateData): Promise<leagueumpires>;
+  update(id: bigint, data: Partial<leagueumpires>): Promise<leagueumpires>;
+  delete(id: bigint): Promise<leagueumpires>;
+  count(where?: Record<string, unknown>): Promise<number>;
   findByAccount(
     accountId: bigint,
-    options: {
-      skip: number;
-      take: number;
-      orderBy: Prisma.leagueumpiresOrderByWithRelationInput;
-    },
+    options: UmpireFindOptions,
   ): Promise<dbLeagueUmpireWithContact[]>;
+  findByAccountAndId(
+    accountId: bigint,
+    umpireId: bigint,
+  ): Promise<dbLeagueUmpireWithContact | null>;
+  findByAccountAndContact(
+    accountId: bigint,
+    contactId: bigint,
+  ): Promise<dbLeagueUmpireWithContact | null>;
   countByAccount(accountId: bigint): Promise<number>;
 }

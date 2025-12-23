@@ -40,8 +40,15 @@ jobs:
           additional_permissions: |
             actions: read
 
-          # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
-          # prompt: 'Update the pull request description to include a summary of changes.'
+          # Custom prompt to guide Claude's behavior
+          prompt: |
+            Please help with the request in the comment that tagged you.
+
+            Use the repository's CLAUDE.md files for guidance on architecture, style, and conventions:
+            - Root: CLAUDE.md - Repository-wide guidelines
+            - Backend: draco-nodejs/backend/CLAUDE.md - Backend patterns
+            - Frontend: draco-nodejs/frontend-next/CLAUDE.md - Frontend patterns
+            - Shared: draco-nodejs/shared/CLAUDE.md - Shared schemas
 
           # Optional: Add claude_args to customize behavior and configuration
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md

@@ -84,9 +84,6 @@ export const SchedulerFieldAvailabilityRuleDialog: React.FC<
   const [endDate, setEndDate] = useState(initialRule?.endDate ?? '');
   const [startTimeLocal, setStartTimeLocal] = useState(initialRule?.startTimeLocal ?? '09:00');
   const [endTimeLocal, setEndTimeLocal] = useState(initialRule?.endTimeLocal ?? '17:00');
-  const [startIncrementMinutes, setStartIncrementMinutes] = useState<number>(
-    initialRule?.startIncrementMinutes ?? 60,
-  );
   const [enabled, setEnabled] = useState(initialRule?.enabled ?? true);
   const [selectedDays, setSelectedDays] = useState<Set<number>>(initialSelectedDays);
   const [error, setError] = useState<string | null>(null);
@@ -118,7 +115,6 @@ export const SchedulerFieldAvailabilityRuleDialog: React.FC<
           daysOfWeekMask: selectedBitsToMask(selectedDays),
           startTimeLocal: normalizeTime(startTimeLocal),
           endTimeLocal: normalizeTime(endTimeLocal),
-          startIncrementMinutes,
           enabled,
         });
 
@@ -196,14 +192,6 @@ export const SchedulerFieldAvailabilityRuleDialog: React.FC<
               onChange={(event) => setEndTimeLocal(event.target.value)}
               InputLabelProps={{ shrink: true }}
               inputProps={{ step: 60 }}
-            />
-            <TextField
-              label="Increment (minutes)"
-              type="number"
-              size="small"
-              value={startIncrementMinutes}
-              onChange={(event) => setStartIncrementMinutes(Number(event.target.value))}
-              inputProps={{ min: 1, max: 1440 }}
             />
           </Box>
 

@@ -40,7 +40,9 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     FieldSchemaRef,
     FieldsSchemaRef,
     UpsertFieldSchemaRef,
+    UmpireSchemaRef,
     UmpiresSchemaRef,
+    CreateUmpireSchemaRef,
     PagingSchemaRef,
     PhotoSubmissionSchemaRef,
     PhotoSubmissionDetailSchemaRef,
@@ -2860,6 +2862,181 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
         content: {
           'application/json': {
             schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * POST /api/accounts/:accountId/umpires
+   * Create an umpire for an account
+   */
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/umpires',
+    description: 'Create an umpire for the account.',
+    operationId: 'createAccountUmpire',
+    security: [{ bearerAuth: [] }],
+    tags: ['Accounts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: CreateUmpireSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Created umpire',
+        content: {
+          'application/json': {
+            schema: UmpireSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Invalid umpire request',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Permission denied to manage umpires for this account',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Contact not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      409: {
+        description: 'Umpire already exists for this contact',
+        content: {
+          'application/json': {
+            schema: ConflictErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * DELETE /api/accounts/:accountId/umpires/:umpireId
+   * Delete an umpire for an account
+   */
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/umpires/{umpireId}',
+    description: 'Delete an umpire for the account.',
+    operationId: 'deleteAccountUmpire',
+    security: [{ bearerAuth: [] }],
+    tags: ['Accounts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'umpireId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Deleted umpire',
+        content: {
+          'application/json': {
+            schema: UmpireSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Permission denied to manage umpires for this account',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Umpire not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      409: {
+        description: 'Umpire is assigned to scheduled games',
+        content: {
+          'application/json': {
+            schema: ConflictErrorSchemaRef,
           },
         },
       },

@@ -2,11 +2,11 @@ import type {
   PrismaClient,
   availablefields,
   accounts,
-  leagueumpires,
   leagueschedule,
   teamsseason,
 } from '#prisma/client';
 import type { ISchedulerProblemSpecRepository } from '../interfaces/ISchedulerProblemSpecRepository.js';
+import type { dbLeagueUmpireWithContact } from '../types/dbTypes.js';
 
 export class PrismaSchedulerProblemSpecRepository implements ISchedulerProblemSpecRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -27,9 +27,28 @@ export class PrismaSchedulerProblemSpecRepository implements ISchedulerProblemSp
     });
   }
 
-  async listAccountUmpires(accountId: bigint): Promise<leagueumpires[]> {
+  async listAccountUmpires(accountId: bigint): Promise<dbLeagueUmpireWithContact[]> {
     return this.prisma.leagueumpires.findMany({
       where: { accountid: accountId },
+      include: {
+        contacts: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            middlename: true,
+            email: true,
+            phone1: true,
+            phone2: true,
+            phone3: true,
+            streetaddress: true,
+            city: true,
+            state: true,
+            zip: true,
+            dateofbirth: true,
+          },
+        },
+      },
     });
   }
 

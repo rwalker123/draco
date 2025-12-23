@@ -8,9 +8,17 @@ import type {
   SchedulerFieldExclusionDate,
   SchedulerFieldExclusionDateUpsert,
   SchedulerProblemSpecPreview,
+  SchedulerSeasonExclusion,
+  SchedulerSeasonExclusionUpsert,
+  SchedulerSeasonWindowConfig,
+  SchedulerSeasonWindowConfigUpsert,
   SchedulerSeasonApplyRequest,
   SchedulerSeasonSolveRequest,
   SchedulerSolveResult,
+  SchedulerTeamExclusion,
+  SchedulerTeamExclusionUpsert,
+  SchedulerUmpireExclusion,
+  SchedulerUmpireExclusionUpsert,
 } from '@draco/shared-schemas';
 import { useAuth } from '../context/AuthContext';
 import { useApiClient } from './useApiClient';
@@ -63,6 +71,258 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
       setLoading(false);
     }
   }, [accountId, requireSeasonId, service]);
+
+  const getSeasonWindowConfig =
+    useCallback(async (): Promise<SchedulerSeasonWindowConfig | null> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resolvedSeasonId = requireSeasonId();
+        return await service.getSeasonWindowConfig(accountId, resolvedSeasonId);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Failed to load scheduler season window config';
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    }, [accountId, requireSeasonId, service]);
+
+  const upsertSeasonWindowConfig = useCallback(
+    async (input: SchedulerSeasonWindowConfigUpsert): Promise<SchedulerSeasonWindowConfig> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resolvedSeasonId = requireSeasonId();
+        return await service.upsertSeasonWindowConfig(accountId, resolvedSeasonId, input);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Failed to save scheduler season window config';
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accountId, requireSeasonId, service],
+  );
+
+  const listSeasonExclusions = useCallback(async (): Promise<SchedulerSeasonExclusion[]> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.listSeasonExclusions(accountId, resolvedSeasonId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load season exclusions';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [accountId, requireSeasonId, service]);
+
+  const createSeasonExclusion = useCallback(
+    async (input: SchedulerSeasonExclusionUpsert): Promise<SchedulerSeasonExclusion> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resolvedSeasonId = requireSeasonId();
+        return await service.createSeasonExclusion(accountId, resolvedSeasonId, input);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to create season exclusion';
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accountId, requireSeasonId, service],
+  );
+
+  const updateSeasonExclusion = useCallback(
+    async (
+      exclusionId: string,
+      input: SchedulerSeasonExclusionUpsert,
+    ): Promise<SchedulerSeasonExclusion> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resolvedSeasonId = requireSeasonId();
+        return await service.updateSeasonExclusion(accountId, resolvedSeasonId, exclusionId, input);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to update season exclusion';
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accountId, requireSeasonId, service],
+  );
+
+  const deleteSeasonExclusion = useCallback(
+    async (exclusionId: string): Promise<void> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resolvedSeasonId = requireSeasonId();
+        await service.deleteSeasonExclusion(accountId, resolvedSeasonId, exclusionId);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to delete season exclusion';
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accountId, requireSeasonId, service],
+  );
+
+  const listTeamExclusions = useCallback(async (): Promise<SchedulerTeamExclusion[]> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.listTeamExclusions(accountId, resolvedSeasonId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load team exclusions';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [accountId, requireSeasonId, service]);
+
+  const createTeamExclusion = useCallback(
+    async (input: SchedulerTeamExclusionUpsert): Promise<SchedulerTeamExclusion> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resolvedSeasonId = requireSeasonId();
+        return await service.createTeamExclusion(accountId, resolvedSeasonId, input);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to create team exclusion';
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accountId, requireSeasonId, service],
+  );
+
+  const updateTeamExclusion = useCallback(
+    async (
+      exclusionId: string,
+      input: SchedulerTeamExclusionUpsert,
+    ): Promise<SchedulerTeamExclusion> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resolvedSeasonId = requireSeasonId();
+        return await service.updateTeamExclusion(accountId, resolvedSeasonId, exclusionId, input);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to update team exclusion';
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accountId, requireSeasonId, service],
+  );
+
+  const deleteTeamExclusion = useCallback(
+    async (exclusionId: string): Promise<void> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resolvedSeasonId = requireSeasonId();
+        await service.deleteTeamExclusion(accountId, resolvedSeasonId, exclusionId);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to delete team exclusion';
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accountId, requireSeasonId, service],
+  );
+
+  const listUmpireExclusions = useCallback(async (): Promise<SchedulerUmpireExclusion[]> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.listUmpireExclusions(accountId, resolvedSeasonId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load umpire exclusions';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [accountId, requireSeasonId, service]);
+
+  const createUmpireExclusion = useCallback(
+    async (input: SchedulerUmpireExclusionUpsert): Promise<SchedulerUmpireExclusion> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resolvedSeasonId = requireSeasonId();
+        return await service.createUmpireExclusion(accountId, resolvedSeasonId, input);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to create umpire exclusion';
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accountId, requireSeasonId, service],
+  );
+
+  const updateUmpireExclusion = useCallback(
+    async (
+      exclusionId: string,
+      input: SchedulerUmpireExclusionUpsert,
+    ): Promise<SchedulerUmpireExclusion> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resolvedSeasonId = requireSeasonId();
+        return await service.updateUmpireExclusion(accountId, resolvedSeasonId, exclusionId, input);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to update umpire exclusion';
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accountId, requireSeasonId, service],
+  );
+
+  const deleteUmpireExclusion = useCallback(
+    async (exclusionId: string): Promise<void> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resolvedSeasonId = requireSeasonId();
+        await service.deleteUmpireExclusion(accountId, resolvedSeasonId, exclusionId);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to delete umpire exclusion';
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accountId, requireSeasonId, service],
+  );
 
   const createFieldAvailabilityRule = useCallback(
     async (
@@ -254,6 +514,8 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
 
   return {
     getProblemSpecPreview,
+    getSeasonWindowConfig,
+    upsertSeasonWindowConfig,
     listFieldAvailabilityRules,
     createFieldAvailabilityRule,
     updateFieldAvailabilityRule,
@@ -262,6 +524,18 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     createFieldExclusionDate,
     updateFieldExclusionDate,
     deleteFieldExclusionDate,
+    listSeasonExclusions,
+    createSeasonExclusion,
+    updateSeasonExclusion,
+    deleteSeasonExclusion,
+    listTeamExclusions,
+    createTeamExclusion,
+    updateTeamExclusion,
+    deleteTeamExclusion,
+    listUmpireExclusions,
+    createUmpireExclusion,
+    updateUmpireExclusion,
+    deleteUmpireExclusion,
     solveSeason,
     applySeason,
     loading,
