@@ -227,7 +227,7 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
         initialSponsor={dialogState.mode === 'edit' ? dialogState.sponsor : null}
         onClose={handleDialogClose}
         onSuccess={handleDialogSuccess}
-        onError={(message) => setError(message)}
+        onError={handleDialogError}
       />
 
       <SponsorDeleteDialog
