@@ -14,8 +14,6 @@ import { Client as FTPClient, type AccessOptions, type FileInfo as FtpFileInfo }
 // PrismaClient will be imported dynamically from the backend
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as dotenv from 'dotenv';
-import sharp from 'sharp';
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -48,25 +46,6 @@ interface MigrationStats {
   whereHeardOptions: CategoryStats;
   messageBoards: CategoryStats;
 }
-
-const GALLERY_PRIMARY_DIMENSIONS = { width: 800, height: 450 } as const;
-const GALLERY_THUMBNAIL_DIMENSIONS = { width: 160, height: 90 } as const;
-const EXTENSION_FORMAT_MAP: Record<string, 'jpeg' | 'png' | 'webp'> = {
-  '.jpg': 'jpeg',
-  '.jpeg': 'jpeg',
-  '.png': 'png',
-  '.webp': 'webp',
-};
-
-const matchesTargetDimensions = (
-  metadata: sharp.Metadata | null | undefined,
-  dimensions: { width: number; height: number },
-) => {
-  if (!metadata?.width || !metadata?.height) {
-    return false;
-  }
-  return metadata.width === dimensions.width && metadata.height === dimensions.height;
-};
 
 interface FileInfo {
   remotePath: string;
@@ -106,6 +85,7 @@ type DbTeamHandoutRecord = {
 class FileMigrationService {
   private prisma: any; // Will import dynamically
   private storageService: any; // Will import dynamically
+  private photoGalleryAssetService: any; // Will import dynamically
   private ftpClient: FTPClient;
   private ftpConfig: AccessOptions | null = null;
   private tempDir: string;
@@ -241,7 +221,8 @@ class FileMigrationService {
         throw new Error('DATABASE_URL must be set to initialize Prisma for file migration');
       }
       console.log(`🔍 DATABASE_URL: ${connectionString}`);
-      const { PrismaClient } = await import('@prisma/client');
+      const prismaModule = await import('../draco-nodejs/backend/dist/src/generated/client/client.js');
+      const { PrismaClient } = prismaModule;
       const adapter = new PrismaPg({ connectionString });
       this.prisma = new PrismaClient({ adapter });
       console.log('✅ Prisma client initialized');
@@ -261,6 +242,19 @@ class FileMigrationService {
     } catch (error) {
       console.error(
         '❌ Failed to load storage service. Make sure backend is built with: cd ../draco-nodejs/backend && npm run build',
+      );
+      throw error;
+    }
+
+    // Import and create photo gallery asset service
+    try {
+      const photoGalleryAssetModule =
+        await import('../draco-nodejs/backend/dist/src/services/photoGalleryAssetService.js');
+      this.photoGalleryAssetService = new photoGalleryAssetModule.PhotoGalleryAssetService();
+      console.log('✅ Photo gallery asset service initialized');
+    } catch (error) {
+      console.error(
+        '❌ Failed to load photo gallery asset service. Make sure backend is built with: cd ../draco-nodejs/backend && npm run build',
       );
       throw error;
     }
@@ -738,85 +732,70 @@ class FileMigrationService {
       }
 
       const usedHandoutIds = new Set<bigint>();
-      const normalizeName = (name: string) => name.trim().toLowerCase();
 
-      const pickLatestRecord = (records: DbAccountHandoutRecord[]): DbAccountHandoutRecord => {
-        let latest = records[0];
-        for (const record of records) {
-          if (record.id > latest.id) {
-            latest = record;
-          }
-        }
-        return latest;
-      };
+      const handoutDirs = await this.listDirectory(remoteDirPath);
+      let processedHandouts = 0;
 
-      const findMatchingHandoutRecord = (fileName: string): DbAccountHandoutRecord | null => {
-        const availableExactMatches = dbHandouts.filter(
-          (record) => record.filename === fileName && !usedHandoutIds.has(record.id),
-        );
-
-        if (availableExactMatches.length > 0) {
-          if (availableExactMatches.length > 1) {
-            console.warn(
-              `⚠️ Multiple account handout rows match filename "${fileName}" for account ${accountId}. Using the most recent record.`,
-            );
-          }
-          return pickLatestRecord(availableExactMatches);
-        }
-
-        const normalizedTarget = normalizeName(fileName);
-        const availableNormalizedMatches = dbHandouts.filter(
-          (record) =>
-            normalizeName(record.filename) === normalizedTarget && !usedHandoutIds.has(record.id),
-        );
-
-        if (availableNormalizedMatches.length > 0) {
-          if (availableNormalizedMatches.length > 1) {
-            console.warn(
-              `⚠️ Multiple account handout rows match filename "${fileName}" (case-insensitive) for account ${accountId}. Using the most recent record.`,
-            );
-          }
-          return pickLatestRecord(availableNormalizedMatches);
-        }
-
-        return null;
-      };
-
-      const handoutFiles = await this.listDirectory(remoteDirPath);
-      let processedFiles = 0;
-
-      for (const file of handoutFiles) {
-        if (!file.isFile) {
+      for (const handoutDir of handoutDirs) {
+        if (!handoutDir.isDirectory) {
           console.log(
-            `ℹ️ Nested directory found under Handouts for account ${accountId}: ${file.name}. Skipping.`,
+            `ℹ️ Unexpected file in Handouts directory for account ${accountId}: ${handoutDir.name}. Skipping.`,
           );
           continue;
         }
 
-        if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
+        if (this.isTestMode && processedHandouts >= this.testLimits.filesPerDirectory) {
           console.log(
-            `🧪 Test mode: reached handout file limit for account ${accountId}, skipping remaining handouts.`,
+            `🧪 Test mode: reached handout limit for account ${accountId}, skipping remaining handouts.`,
           );
           break;
         }
 
-        processedFiles += 1;
-
-        const remotePath = `${remoteDirPath}/${file.name}`;
-        const localPath = path.join(this.tempDir, 'accounts', accountId, 'Handouts', file.name);
-
-        const matchingRecord = findMatchingHandoutRecord(file.name);
-
-        if (!matchingRecord) {
-          console.warn(
-            `⚠️ No database handout record found for account ${accountId} matching file "${file.name}". Skipping upload.`,
-          );
-          this.stats.handouts.skipped++;
-          this.markFileFailed(remotePath);
+        const handoutId = handoutDir.name;
+        const handoutIdBigInt = this.parseBigIntId(
+          handoutId,
+          `account handout directory (account ${accountId})`,
+        );
+        if (handoutIdBigInt === null) {
+          this.stats.handouts.errors++;
           continue;
         }
 
-        const handoutId = matchingRecord.id.toString();
+        const matchingRecord = dbHandouts.find(
+          (record) => record.id === handoutIdBigInt && !usedHandoutIds.has(record.id),
+        );
+
+        if (!matchingRecord) {
+          console.warn(
+            `⚠️ No database handout record found for account ${accountId} with ID ${handoutId}. Skipping.`,
+          );
+          this.stats.handouts.skipped++;
+          continue;
+        }
+
+        const handoutDirPath = `${remoteDirPath}/${handoutId}`;
+        const handoutFiles = await this.listDirectory(handoutDirPath);
+
+        const handoutFile = handoutFiles.find((f) => f.isFile);
+        if (!handoutFile) {
+          console.warn(
+            `⚠️ No files found in handout directory ${handoutId} for account ${accountId}. Skipping.`,
+          );
+          this.stats.handouts.skipped++;
+          continue;
+        }
+
+        processedHandouts += 1;
+
+        const remotePath = `${handoutDirPath}/${handoutFile.name}`;
+        const localPath = path.join(
+          this.tempDir,
+          'accounts',
+          accountId,
+          'Handouts',
+          handoutId,
+          handoutFile.name,
+        );
         const storageFileName = matchingRecord.filename;
 
         if (this.isFileAlreadyProcessed(remotePath)) {
@@ -847,7 +826,7 @@ class FileMigrationService {
           }
         }
 
-        console.log(`⬇️ Downloading handout for account ${accountId}: ${file.name}`);
+        console.log(`⬇️ Downloading handout for account ${accountId}: ${handoutFile.name}`);
 
         if (!(await this.downloadFile(remotePath, localPath))) {
           this.stats.handouts.errors++;
@@ -1200,85 +1179,70 @@ class FileMigrationService {
       }
 
       const usedHandoutIds = new Set<bigint>();
-      const normalizeName = (name: string) => name.trim().toLowerCase();
 
-      const pickLatestRecord = (records: DbTeamHandoutRecord[]): DbTeamHandoutRecord => {
-        let latest = records[0];
-        for (const record of records) {
-          if (record.id > latest.id) {
-            latest = record;
-          }
-        }
-        return latest;
-      };
+      const handoutDirs = await this.listDirectory(remoteDirPath);
+      let processedHandouts = 0;
 
-      const findMatchingHandoutRecord = (fileName: string): DbTeamHandoutRecord | null => {
-        const exactMatches = dbHandouts.filter(
-          (record) => record.filename === fileName && !usedHandoutIds.has(record.id),
-        );
-
-        if (exactMatches.length > 0) {
-          if (exactMatches.length > 1) {
-            console.warn(
-              `⚠️ Multiple team handout rows match filename "${fileName}" for team ${teamId}. Using the most recent record.`,
-            );
-          }
-          return pickLatestRecord(exactMatches);
-        }
-
-        const normalizedTarget = normalizeName(fileName);
-        const normalizedMatches = dbHandouts.filter(
-          (record) =>
-            normalizeName(record.filename) === normalizedTarget && !usedHandoutIds.has(record.id),
-        );
-
-        if (normalizedMatches.length > 0) {
-          if (normalizedMatches.length > 1) {
-            console.warn(
-              `⚠️ Multiple team handout rows match filename "${fileName}" (case-insensitive) for team ${teamId}. Using the most recent record.`,
-            );
-          }
-          return pickLatestRecord(normalizedMatches);
-        }
-
-        return null;
-      };
-
-      const handoutFiles = await this.listDirectory(remoteDirPath);
-      let processedFiles = 0;
-
-      for (const file of handoutFiles) {
-        if (!file.isFile) {
+      for (const handoutDir of handoutDirs) {
+        if (!handoutDir.isDirectory) {
           console.log(
-            `ℹ️ Nested directory found under Handouts for team ${teamId}: ${file.name}. Skipping.`,
+            `ℹ️ Unexpected file in Handouts directory for team ${teamId}: ${handoutDir.name}. Skipping.`,
           );
           continue;
         }
 
-        if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
+        if (this.isTestMode && processedHandouts >= this.testLimits.filesPerDirectory) {
           console.log(
-            `🧪 Test mode: reached handout file limit for team ${teamId}, skipping remaining handouts.`,
+            `🧪 Test mode: reached handout limit for team ${teamId}, skipping remaining handouts.`,
           );
           break;
         }
 
-        processedFiles += 1;
-
-        const remotePath = `${remoteDirPath}/${file.name}`;
-        const localPath = path.join(this.tempDir, 'teams', teamId, 'Handouts', file.name);
-
-        const matchingRecord = findMatchingHandoutRecord(file.name);
-
-        if (!matchingRecord) {
-          console.warn(
-            `⚠️ No database handout record found for team ${teamId} matching file "${file.name}". Skipping upload.`,
-          );
-          this.stats.handouts.skipped++;
-          this.markFileFailed(remotePath);
+        const handoutId = handoutDir.name;
+        const handoutIdBigInt = this.parseBigIntId(
+          handoutId,
+          `team handout directory (team ${teamId})`,
+        );
+        if (handoutIdBigInt === null) {
+          this.stats.handouts.errors++;
           continue;
         }
 
-        const handoutId = matchingRecord.id.toString();
+        const matchingRecord = dbHandouts.find(
+          (record) => record.id === handoutIdBigInt && !usedHandoutIds.has(record.id),
+        );
+
+        if (!matchingRecord) {
+          console.warn(
+            `⚠️ No database handout record found for team ${teamId} with ID ${handoutId}. Skipping.`,
+          );
+          this.stats.handouts.skipped++;
+          continue;
+        }
+
+        const handoutDirPath = `${remoteDirPath}/${handoutId}`;
+        const handoutFiles = await this.listDirectory(handoutDirPath);
+
+        const handoutFile = handoutFiles.find((f) => f.isFile);
+        if (!handoutFile) {
+          console.warn(
+            `⚠️ No files found in handout directory ${handoutId} for team ${teamId}. Skipping.`,
+          );
+          this.stats.handouts.skipped++;
+          continue;
+        }
+
+        processedHandouts += 1;
+
+        const remotePath = `${handoutDirPath}/${handoutFile.name}`;
+        const localPath = path.join(
+          this.tempDir,
+          'teams',
+          teamId,
+          'Handouts',
+          handoutId,
+          handoutFile.name,
+        );
         const storageFileName = matchingRecord.filename;
 
         if (this.isFileAlreadyProcessed(remotePath)) {
@@ -1310,7 +1274,7 @@ class FileMigrationService {
           }
         }
 
-        console.log(`⬇️ Downloading handout for team ${teamId}: ${file.name}`);
+        console.log(`⬇️ Downloading handout for team ${teamId}: ${handoutFile.name}`);
 
         if (!(await this.downloadFile(remotePath, localPath))) {
           this.stats.handouts.errors++;
@@ -1838,45 +1802,6 @@ class FileMigrationService {
     }
   }
 
-  private normalizeGalleryExtension(originalPath: string): {
-    extension: string;
-    format: 'jpeg' | 'png' | 'webp';
-  } {
-    const rawExtension = path.extname(originalPath).toLowerCase();
-    if (rawExtension === '.jpeg') {
-      return { extension: '.jpg', format: 'jpeg' };
-    }
-
-    const format = EXTENSION_FORMAT_MAP[rawExtension];
-    if (format) {
-      return { extension: rawExtension as '.jpg' | '.png' | '.webp', format };
-    }
-
-    return { extension: '.jpg', format: 'jpeg' };
-  }
-
-  private buildGalleryDestinationPaths(
-    accountId: bigint,
-    galleryId: bigint,
-    extension: string,
-  ): { photo: string; thumbnail: string } {
-    const accountSegment = accountId.toString();
-    const gallerySegment = galleryId.toString();
-    const normalizedExtension = extension.startsWith('.')
-      ? extension.toLowerCase()
-      : `.${extension.toLowerCase()}`;
-    const basePath = path.join(accountSegment, 'photo-gallery', gallerySegment);
-
-    return {
-      photo: path.join(basePath, `photo${normalizedExtension}`),
-      thumbnail: path.join(basePath, `photo-thumb${normalizedExtension}`),
-    };
-  }
-
-  private resolveUploadsAbsolutePath(relativePath: string): string {
-    return path.join(process.cwd(), 'uploads', relativePath);
-  }
-
   private async migrateGalleryPhoto(options: {
     accountId: string;
     galleryId: string;
@@ -1884,8 +1809,7 @@ class FileMigrationService {
     remoteOriginalPath: string;
     remoteThumbnailPath?: string;
   }): Promise<void> {
-    const { accountId, galleryId, ownerSegments, remoteOriginalPath, remoteThumbnailPath } =
-      options;
+    const { accountId, galleryId, ownerSegments, remoteOriginalPath } = options;
 
     const accountIdBigInt = this.tryParseBigInt(accountId, `Gallery ${galleryId}`);
     const galleryIdBigInt = this.tryParseBigInt(galleryId, `Gallery ${galleryId}`);
@@ -1921,115 +1845,17 @@ class FileMigrationService {
       return;
     }
 
-    let thumbnailBuffer: Buffer | null = null;
-    let thumbnailLocalPath: string | null = null;
-    let thumbnailRemotePath = remoteThumbnailPath;
-
-    if (thumbnailRemotePath) {
-      if (this.isFileAlreadyProcessed(thumbnailRemotePath)) {
-        console.log(`⏭️ Gallery thumbnail already migrated: ${thumbnailRemotePath}`);
-        thumbnailRemotePath = undefined;
-      } else {
-        thumbnailLocalPath = path.join(
-          this.tempDir,
-          ...ownerSegments,
-          path.basename(thumbnailRemotePath),
-        );
-
-        if (await this.downloadFile(thumbnailRemotePath, thumbnailLocalPath)) {
-          this.stats.galleryPhotos.downloaded++;
-          thumbnailBuffer = await this.getFileBuffer(thumbnailLocalPath);
-          if (!thumbnailBuffer) {
-            this.stats.galleryPhotos.errors++;
-          }
-        } else {
-          this.stats.galleryPhotos.errors++;
-          thumbnailRemotePath = undefined;
-        }
-      }
-    }
-
     try {
-      const { extension, format } = this.normalizeGalleryExtension(remoteOriginalPath);
-      const destinations = this.buildGalleryDestinationPaths(
+      await this.photoGalleryAssetService.saveGalleryAssets(
         accountIdBigInt,
         galleryIdBigInt,
-        extension,
+        originalBuffer,
       );
-      const originalDestination = this.resolveUploadsAbsolutePath(destinations.photo);
-      const thumbnailDestination = this.resolveUploadsAbsolutePath(destinations.thumbnail);
-
-      await fs.promises.mkdir(path.dirname(originalDestination), { recursive: true });
-
-      const originalMetadata = await sharp(originalBuffer)
-        .metadata()
-        .catch(() => null);
-      const shouldResizePrimary = !matchesTargetDimensions(
-        originalMetadata,
-        GALLERY_PRIMARY_DIMENSIONS,
-      );
-
-      if (shouldResizePrimary) {
-        const resizedPhotoBuffer = await sharp(originalBuffer)
-          .resize(GALLERY_PRIMARY_DIMENSIONS.width, GALLERY_PRIMARY_DIMENSIONS.height, {
-            fit: 'cover',
-            position: 'centre',
-            withoutEnlargement: true,
-          })
-          .toFormat(format)
-          .toBuffer();
-        await fs.promises.writeFile(originalDestination, resizedPhotoBuffer);
-      } else {
-        await fs.promises.writeFile(originalDestination, originalBuffer);
-      }
-
-      await fs.promises.mkdir(path.dirname(thumbnailDestination), { recursive: true });
-
-      const thumbnailMetadata = thumbnailBuffer
-        ? await sharp(thumbnailBuffer)
-            .metadata()
-            .catch(() => null)
-        : null;
-
-      let thumbnailSourceBuffer = thumbnailBuffer ?? originalBuffer;
-      let shouldResizeThumbnail = true;
-
-      if (
-        thumbnailBuffer &&
-        matchesTargetDimensions(thumbnailMetadata, GALLERY_THUMBNAIL_DIMENSIONS)
-      ) {
-        shouldResizeThumbnail = false;
-        thumbnailSourceBuffer = thumbnailBuffer;
-      } else if (
-        !thumbnailBuffer &&
-        matchesTargetDimensions(originalMetadata, GALLERY_THUMBNAIL_DIMENSIONS)
-      ) {
-        shouldResizeThumbnail = false;
-        thumbnailSourceBuffer = originalBuffer;
-      }
-
-      if (shouldResizeThumbnail) {
-        const resizedThumbnailBuffer = await sharp(thumbnailSourceBuffer)
-          .resize(GALLERY_THUMBNAIL_DIMENSIONS.width, GALLERY_THUMBNAIL_DIMENSIONS.height, {
-            fit: 'cover',
-            position: 'centre',
-          })
-          .toFormat(format)
-          .toBuffer();
-        await fs.promises.writeFile(thumbnailDestination, resizedThumbnailBuffer);
-      } else {
-        await fs.promises.writeFile(thumbnailDestination, thumbnailSourceBuffer);
-      }
 
       this.stats.galleryPhotos.uploaded++;
       this.markFileProcessed(remoteOriginalPath);
-      if (thumbnailRemotePath) {
-        this.markFileProcessed(thumbnailRemotePath);
-      }
 
-      console.log(
-        `✅ Migrated gallery photo ${galleryId} for account ${accountId} into uploads/${destinations.photo}`,
-      );
+      console.log(`✅ Migrated gallery photo ${galleryId} for account ${accountId}`);
     } catch (error) {
       console.error(
         `❌ Failed to migrate gallery photo ${galleryId} for account ${accountId}:`,
@@ -2037,14 +1863,8 @@ class FileMigrationService {
       );
       this.stats.galleryPhotos.errors++;
       this.markFileFailed(remoteOriginalPath);
-      if (thumbnailRemotePath) {
-        this.markFileFailed(thumbnailRemotePath);
-      }
     } finally {
       await this.cleanupTempFile(originalLocalPath);
-      if (thumbnailLocalPath) {
-        await this.cleanupTempFile(thumbnailLocalPath);
-      }
     }
   }
 

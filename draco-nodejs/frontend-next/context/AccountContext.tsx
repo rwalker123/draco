@@ -68,12 +68,26 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
   const { token, loading: authLoading } = useAuth();
   const { userRoles, loading: roleLoading } = useRole();
   const apiClient = useApiClient();
-  const [currentAccount, setCurrentAccount] = useState<Account | null>(() =>
-    readPersistedAccount(),
-  );
+  const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
   const [userAccounts, setUserAccounts] = useState<Account[]>([]);
   const [error, setError] = useState<string | null>(null);
   const requestedAccountIdRef = useRef<string | null>(null);
+  const hasRestoredFromStorageRef = useRef(false);
+
+  // Restore persisted account from localStorage after hydration.
+  // This must run once on mount to sync with browser storage.
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- legitimate one-time hydration sync */
+    if (hasRestoredFromStorageRef.current) {
+      return;
+    }
+    hasRestoredFromStorageRef.current = true;
+    const persisted = readPersistedAccount();
+    if (persisted) {
+      setCurrentAccount(persisted);
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
 
   const normalizeAccount = useCallback(
     (account: Account): Account => normalizeAccountShape(account),

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import type { FC } from 'react';
-import { Box, Typography, Paper, Button } from '@mui/material';
+import { Box, Container, Paper, Button, Typography } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
@@ -10,6 +10,12 @@ import OrganizationsWidget from '../../components/OrganizationsWidget';
 import { AccountType as SharedAccountType } from '@draco/shared-schemas';
 import CreateAccountDialog from '../../components/account-management/dialogs/CreateAccountDialog';
 import { useAccountManagementService } from '../../hooks/useAccountManagementService';
+import HeroSection from '../../components/landing/HeroSection';
+import FeatureShowcaseSection from '../../components/landing/FeatureShowcaseSection';
+import CommunityHighlightsSection from '../../components/landing/CommunityHighlightsSection';
+import HowItWorksSection from '../../components/landing/HowItWorksSection';
+import SportFeaturesSection from '../../components/landing/SportFeaturesSection';
+import FinalCtaSection from '../../components/landing/FinalCtaSection';
 
 type SearchState =
   | { status: 'idle'; results: SharedAccountType[] }
@@ -32,11 +38,7 @@ const Accounts: FC = () => {
   const params = useParams();
   const accountId = params?.accountId as string | undefined;
   const { searchAccounts: searchAccountsOperation } = useAccountManagementService();
-  const showCreateOrganizationAction = isAdministrator;
-  const showPublicAuthActions = !user;
-  const shouldRenderActionBar = showCreateOrganizationAction || showPublicAuthActions;
 
-  // If accountId is provided, redirect to that account's home page
   useEffect(() => {
     if (accountId) {
       router.push(`/account/${accountId}/home`);
@@ -111,94 +113,104 @@ const Accounts: FC = () => {
     [router],
   );
 
-  const handleSignup = () => {
+  const handleSignup = useCallback(() => {
     setCtaState('idle');
     router.push('/signup');
-  };
+  }, [router]);
 
-  const handleLogin = () => {
-    router.push('/login');
-  };
+  const handleContact = useCallback(() => {
+    router.push('/contact');
+  }, [router]);
+
+  const scrollToSearch = useCallback(() => {
+    document.getElementById('organization-search')?.scrollIntoView({
+      behavior: 'smooth',
+    });
+  }, []);
 
   return (
-    <Box
-      component="main"
-      className="min-h-screen bg-background"
-      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
-    >
-      <Typography variant="h3" component="h1" gutterBottom align="center">
-        ezRecSports
-      </Typography>
-
-      {/* Action Buttons */}
-      {shouldRenderActionBar && (
-        <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <Typography variant="h6" gutterBottom>
-            {showCreateOrganizationAction ? 'Quick Actions' : 'Get Started'}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {showCreateOrganizationAction && (
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                onClick={handleCreateAccount}
-              >
-                Create New Organization
-              </Button>
-            )}
-            {!user && (
-              <Button variant="contained" color="primary" size="large" onClick={handleSignup}>
-                Sign Up
-              </Button>
-            )}
-            {!user && (
-              <Button variant="outlined" color="primary" size="large" onClick={handleLogin}>
-                Sign In
-              </Button>
-            )}
-          </Box>
-        </Box>
-      )}
-
-      {/* Organizations Widget - Show for all users */}
-      <OrganizationsWidget
-        title={
-          user
-            ? searchTerm
-              ? 'Search Results'
-              : 'Your Organizations'
-            : searchTerm
-              ? 'Search Results'
-              : 'Find Organizations'
-        }
-        showSearch={true}
-        organizations={searchTerm ? searchState.results : user ? undefined : []}
-        loading={searchState.status === 'searching'}
-        onSearch={handleSearch}
-        searchTerm={searchTerm}
-        onSearchTermChange={handleSearchTermChange}
+    <Box component="main" className="min-h-screen bg-background">
+      <HeroSection
+        onSignUp={handleSignup}
+        onFindLeague={scrollToSearch}
+        isAuthenticated={Boolean(user)}
       />
 
-      {/* Signup Modal */}
+      <Container maxWidth="lg" sx={{ py: 8 }}>
+        <Typography
+          variant="h3"
+          component="h2"
+          sx={{ textAlign: 'center', mb: 6, fontWeight: 600 }}
+        >
+          What We Offer
+        </Typography>
+        <FeatureShowcaseSection />
+      </Container>
+
+      <Box id="organization-search" sx={{ backgroundColor: 'background.paper', py: 8 }}>
+        <Container maxWidth="lg">
+          <OrganizationsWidget
+            title={
+              user
+                ? searchTerm
+                  ? 'Search Results'
+                  : 'Your Organizations'
+                : searchTerm
+                  ? 'Search Results'
+                  : 'Find Organizations'
+            }
+            showSearch={true}
+            organizations={searchTerm ? searchState.results : user ? undefined : []}
+            loading={searchState.status === 'searching'}
+            onSearch={handleSearch}
+            searchTerm={searchTerm}
+            onSearchTermChange={handleSearchTermChange}
+          />
+
+          {isAdministrator && (
+            <Box sx={{ mt: 4, textAlign: 'center' }}>
+              <Button variant="contained" size="large" onClick={handleCreateAccount}>
+                Create New Organization
+              </Button>
+            </Box>
+          )}
+        </Container>
+      </Box>
+
+      <CommunityHighlightsSection />
+
+      <Box sx={{ backgroundColor: 'background.paper' }}>
+        <SportFeaturesSection />
+      </Box>
+
+      <HowItWorksSection />
+
+      <FinalCtaSection
+        onSignUp={handleSignup}
+        onContact={handleContact}
+        isAuthenticated={Boolean(user)}
+      />
+
       {ctaState === 'signupPrompt' && (
-        <Paper sx={{ p: 3, mt: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Create Your Account
-          </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {"To create and manage your own sports organization, you'll need to create an account"}
-            first.
-          </Typography>
-          <Box sx={{ mt: 2 }}>
-            <Button variant="contained" color="primary" onClick={handleSignup} sx={{ mr: 2 }}>
-              Sign Up
-            </Button>
-            <Button variant="outlined" onClick={() => setCtaState('idle')}>
-              Cancel
-            </Button>
-          </Box>
-        </Paper>
+        <Container maxWidth="sm" sx={{ py: 4 }}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Create Your Account
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              To create and manage your own sports organization, you&apos;ll need to create an
+              account first.
+            </Typography>
+            <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+              <Button variant="contained" color="primary" onClick={handleSignup}>
+                Sign Up
+              </Button>
+              <Button variant="outlined" onClick={() => setCtaState('idle')}>
+                Cancel
+              </Button>
+            </Box>
+          </Paper>
+        </Container>
       )}
 
       <CreateAccountDialog
