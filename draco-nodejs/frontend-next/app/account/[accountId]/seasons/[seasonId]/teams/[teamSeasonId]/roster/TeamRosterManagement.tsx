@@ -732,23 +732,20 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
       {/* Managers Section */}
       <Box sx={{ mb: 3, textAlign: 'center' }}>
-        <Box
-          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2, gap: 2 }}
-        >
-          <PageSectionHeader
-            title="Team Managers"
-            actions={
-              <Button
-                variant="outlined"
-                startIcon={<ManagerIcon />}
-                onClick={() => setAddManagerDialogOpen(true)}
-                size="small"
-              >
-                Assign Manager
-              </Button>
-            }
-          />
-        </Box>
+        <PageSectionHeader
+          title="Team Managers"
+          actions={
+            <Button
+              variant="outlined"
+              startIcon={<ManagerIcon />}
+              onClick={() => setAddManagerDialogOpen(true)}
+              size="small"
+            >
+              Assign Manager
+            </Button>
+          }
+          sx={{ mb: 2 }}
+        />
         {managers.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
             No managers assigned to this team.
