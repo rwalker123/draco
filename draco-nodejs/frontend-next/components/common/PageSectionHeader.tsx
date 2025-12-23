@@ -24,24 +24,32 @@ export const PageSectionHeader: React.FC<PageSectionHeaderProps> = ({
   actions,
   sx,
 }) => {
+  const shouldWrap = showDivider || !!actions;
+
   const typography = (
     <Typography
       variant={variant}
       component={component}
       color="text.primary"
-      sx={{ fontWeight, ...(!showDivider && gutterBottom ? { mb: 2 } : {}) }}
+      sx={{
+        fontWeight,
+        ...(!shouldWrap && gutterBottom ? { mb: 2 } : {}),
+        ...(!shouldWrap ? sx : {}),
+      }}
     >
       {title}
     </Typography>
   );
 
-  if (showDivider || actions) {
+  if (shouldWrap) {
     return (
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 2,
+          alignItems: { xs: 'flex-start', sm: 'center' },
           justifyContent: 'space-between',
-          alignItems: 'center',
           ...(showDivider
             ? {
                 p: 2,
@@ -49,25 +57,13 @@ export const PageSectionHeader: React.FC<PageSectionHeaderProps> = ({
                 borderColor: 'divider',
               }
             : {}),
+          ...(gutterBottom ? { mb: 2 } : {}),
           ...sx,
         }}
       >
         {typography}
         {actions ? <Box>{actions}</Box> : null}
       </Box>
-    );
-  }
-
-  if (sx) {
-    return (
-      <Typography
-        variant={variant}
-        component={component}
-        color="text.primary"
-        sx={{ fontWeight, ...(gutterBottom ? { mb: 2 } : {}), ...sx }}
-      >
-        {title}
-      </Typography>
     );
   }
 

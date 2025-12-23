@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Alert, Typography } from '@mui/material';
 import type { SponsorType } from '@draco/shared-schemas';
 import { useSponsorOperations } from '../../hooks/useSponsorOperations';
@@ -23,23 +23,21 @@ export const SponsorDeleteDialog: React.FC<SponsorDeleteDialogProps> = ({
   onSuccess,
   onError,
 }) => {
-  const { deleteSponsor } = useSponsorOperations({ type: 'account', accountId });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { deleteSponsor, loading, error, clearError } = useSponsorOperations({
+    type: 'account',
+    accountId,
+  });
 
   useEffect(() => {
     if (open) {
-      setError(null);
+      clearError();
     }
-  }, [open]);
+  }, [open, clearError]);
 
   const handleDelete = async () => {
     if (!sponsor) {
       return;
     }
-
-    setLoading(true);
-    setError(null);
 
     try {
       await deleteSponsor(sponsor.id);
@@ -47,10 +45,7 @@ export const SponsorDeleteDialog: React.FC<SponsorDeleteDialogProps> = ({
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete sponsor';
-      setError(message);
       onError?.(message);
-    } finally {
-      setLoading(false);
     }
   };
 
