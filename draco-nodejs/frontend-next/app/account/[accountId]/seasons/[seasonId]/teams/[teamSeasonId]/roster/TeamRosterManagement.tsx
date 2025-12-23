@@ -41,6 +41,7 @@ import { useRouter } from 'next/navigation';
 import EditContactDialog from '../../../../../../../../components/users/EditContactDialog';
 import UserAvatar from '../../../../../../../../components/users/UserAvatar';
 import SignPlayerDialog from '../../../../../../../../components/roster/SignPlayerDialog';
+import PageSectionHeader from '../../../../../../../../components/common/PageSectionHeader';
 import {
   formatRosterContactInfo,
   formatRosterVerificationInfo,
@@ -734,17 +735,19 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         <Box
           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2, gap: 2 }}
         >
-          <Typography variant="h6" color="primary">
-            Team Managers
-          </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<ManagerIcon />}
-            onClick={() => setAddManagerDialogOpen(true)}
-            size="small"
-          >
-            Assign Manager
-          </Button>
+          <PageSectionHeader
+            title="Team Managers"
+            actions={
+              <Button
+                variant="outlined"
+                startIcon={<ManagerIcon />}
+                onClick={() => setAddManagerDialogOpen(true)}
+                size="small"
+              >
+                Assign Manager
+              </Button>
+            }
+          />
         </Box>
         {managers.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
@@ -790,9 +793,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       {/* Active Players Table */}
       <Paper sx={{ mb: 3 }}>
         <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Typography variant="h6" color="success.main">
-            Active Players ({activePlayers.length})
-          </Typography>
+          <PageSectionHeader title={`Active Players (${activePlayers.length})`} />
         </Box>
         <TableContainer>
           <Table>
@@ -920,9 +921,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       {inactivePlayers.length > 0 && (
         <Paper>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6" color="warning.main">
-              Released Players ({inactivePlayers.length})
-            </Typography>
+            <PageSectionHeader title={`Released Players (${inactivePlayers.length})`} />
           </Box>
           <TableContainer>
             <Table>

@@ -35,6 +35,7 @@ import type {
   AccountUrlUpdateResult,
 } from '../hooks/useAccountUrlsService';
 import { EditIconButton, DeleteIconButton } from './common/ActionIconButtons';
+import PageSectionHeader from './common/PageSectionHeader';
 
 interface UrlManagementProps {
   accountId: string;
@@ -161,9 +162,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
 
   return (
     <Box sx={{ position: 'relative', minHeight: '400px' }}>
-      <Typography variant="h5" component="h2" sx={{ mb: 3 }} color="text.primary">
-        URL Management
-      </Typography>
+      <PageSectionHeader title="URL Management" variant="h5" component="h2" gutterBottom />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>

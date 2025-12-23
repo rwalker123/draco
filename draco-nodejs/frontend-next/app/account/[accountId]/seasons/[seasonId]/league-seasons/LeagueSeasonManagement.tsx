@@ -62,6 +62,7 @@ import { createApiClient } from '../../../../../../lib/apiClientFactory';
 import { assertNoApiError, unwrapApiResult } from '../../../../../../utils/apiResult';
 import { mapLeagueSetup } from '../../../../../../utils/leagueSeasonMapper';
 import { useAuth } from '../../../../../../context/AuthContext';
+import PageSectionHeader from '../../../../../../components/common/PageSectionHeader';
 
 interface LeagueSeasonManagementProps {
   accountId: string;
@@ -855,9 +856,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       <Box sx={{ maxWidth: 1200, mx: 'auto', px: 3 }}>
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4" component="h1">
-            League Season Management
-          </Typography>
+          <PageSectionHeader title="League Season Management" variant="h5" component="h1" />
           <Button variant="outlined" onClick={onClose} startIcon={<RemoveIcon />}>
             Back to Seasons
           </Button>
@@ -878,9 +877,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         {/* Season Info */}
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Season: {seasonName}
-            </Typography>
+            <PageSectionHeader title={`Season: ${seasonName}`} gutterBottom />
             <Typography variant="body2" color="text.secondary">
               Manage leagues, divisions, and team assignments for this season
             </Typography>
@@ -1273,9 +1270,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             {!createDivisionInAddDialog ? (
               <>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="h6" gutterBottom>
-                    Select Existing Division
-                  </Typography>
+                  <PageSectionHeader title="Select Existing Division" gutterBottom />
                   <Button
                     variant="outlined"
                     size="small"
@@ -1325,9 +1320,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             ) : (
               <>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="h6" gutterBottom>
-                    Create New Division
-                  </Typography>
+                  <PageSectionHeader title="Create New Division" gutterBottom />
                   <Button
                     variant="outlined"
                     size="small"

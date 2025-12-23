@@ -43,6 +43,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
 import { isAccountAdministrator } from '../../../../utils/permissionUtils';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
+import PageSectionHeader from '../../../../components/common/PageSectionHeader';
 import {
   listAccountLeagues,
   createLeague,
@@ -844,20 +845,21 @@ const SeasonManagement: React.FC = () => {
           )}
 
           <Box mb={3}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6" gutterBottom>
-                Add League to Season
-              </Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={openCreateLeagueDialog}
-                startIcon={<AddIcon />}
-                disabled={formLoading}
-              >
-                Create New League
-              </Button>
-            </Box>
+            <PageSectionHeader
+              title="Add League to Season"
+              gutterBottom
+              actions={
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={openCreateLeagueDialog}
+                  startIcon={<AddIcon />}
+                  disabled={formLoading}
+                >
+                  Create New League
+                </Button>
+              }
+            />
             <Box display="flex" gap={2} alignItems="center">
               <Autocomplete
                 options={getAvailableLeaguesForSeason()}
@@ -891,9 +893,10 @@ const SeasonManagement: React.FC = () => {
           <Divider sx={{ my: 2 }} />
 
           <Box>
-            <Typography variant="h6" gutterBottom>
-              Current Leagues ({selectedSeason?.leagues.length || 0})
-            </Typography>
+            <PageSectionHeader
+              title={`Current Leagues (${selectedSeason?.leagues.length || 0})`}
+              gutterBottom
+            />
             {selectedSeason?.leagues.length === 0 ? (
               <Typography variant="body2" color="textSecondary">
                 No leagues are currently assigned to this season.

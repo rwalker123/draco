@@ -36,6 +36,7 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { useAuth } from '@/context/AuthContext';
 import { useRole } from '@/context/RoleContext';
 import { useApiClient } from '@/hooks/useApiClient';
+import PageSectionHeader from '../../components/common/PageSectionHeader';
 import {
   fetchAdminAnalyticsSummary,
   type AdminAnalyticsSummary,
@@ -242,9 +243,7 @@ const AdminDashboard: React.FC = () => {
       {summary && (
         <Stack spacing={3}>
           <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Platform Snapshot
-            </Typography>
+            <PageSectionHeader title="Platform Snapshot" gutterBottom />
             <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2} useFlexGap flexWrap="wrap">
               <MetricCard
                 icon={<GroupsIcon />}
@@ -517,9 +516,7 @@ const AdminDashboard: React.FC = () => {
           </Paper>
 
           <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Signed-in administrator
-            </Typography>
+            <PageSectionHeader title="Signed-in administrator" gutterBottom />
             <Stack spacing={1}>
               <Typography variant="body2">
                 <strong>Username:</strong> {user?.userName ?? 'Unknown'}
