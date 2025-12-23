@@ -247,15 +247,13 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        {success ? (
-          <Alert severity="success" onClose={handleSnackbarClose} sx={{ width: '100%' }}>
-            {success}
-          </Alert>
-        ) : dialogError ? (
-          <Alert severity="error" onClose={handleSnackbarClose} sx={{ width: '100%' }}>
-            {dialogError}
-          </Alert>
-        ) : undefined}
+        <Alert
+          severity={success ? 'success' : 'error'}
+          onClose={handleSnackbarClose}
+          sx={{ width: '100%' }}
+        >
+          {success || dialogError}
+        </Alert>
       </Snackbar>
     </main>
   );

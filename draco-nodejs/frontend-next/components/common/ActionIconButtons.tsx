@@ -8,11 +8,7 @@ interface BaseActionIconButtonProps extends Omit<IconButtonProps, 'color'> {
   tooltipTitle?: string;
 }
 
-interface EditIconButtonProps extends BaseActionIconButtonProps {
-  tooltipTitle?: string;
-}
-
-export const EditIconButton: React.FC<EditIconButtonProps> = ({
+export const EditIconButton: React.FC<BaseActionIconButtonProps> = ({
   tooltipTitle = 'Edit',
   size = 'small',
   ...props
