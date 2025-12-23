@@ -30,6 +30,7 @@ import UmpireDeleteDialog from './UmpireDeleteDialog';
 import EditContactInfoDialog from '../profile/EditContactInfoDialog';
 import UserAvatar from '../users/UserAvatar';
 import { EditIconButton, DeleteIconButton } from '../common/ActionIconButtons';
+import PageSectionHeader from '../common/PageSectionHeader';
 
 interface UmpiresManagementProps {
   accountId: string;
@@ -243,17 +244,7 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
 
       <Container maxWidth="lg" sx={{ mt: 4, px: { xs: 2, md: 3 } }}>
         <Paper elevation={3} sx={{ overflow: 'hidden' }}>
-          <Box
-            sx={{
-              p: 2,
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-            }}
-          >
-            <Typography variant="h6" color="text.primary">
-              Umpire Directory
-            </Typography>
-          </Box>
+          <PageSectionHeader title="Umpire Directory" showDivider />
 
           {fetchError ? (
             <Alert severity="error" sx={{ m: 2 }}>

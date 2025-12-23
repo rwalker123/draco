@@ -20,6 +20,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import PageSectionHeader from '../../common/PageSectionHeader';
 
 export interface AccountSettingsGroupProps {
   title: string;
@@ -50,9 +51,7 @@ export function AccountSettingsGroup({
 
   return (
     <Paper variant="outlined" sx={{ p: 3, bgcolor: 'background.paper' }}>
-      <Typography variant="h6" component="h3" sx={{ mb: 2 }} color="text.primary">
-        {title}
-      </Typography>
+      <PageSectionHeader title={title} component="h3" gutterBottom />
 
       <Stack spacing={2.5}>
         {sortedSettings.map((setting) => (

@@ -26,6 +26,7 @@ import { SponsorType } from '@draco/shared-schemas';
 import AccountPageHeader from '../../../../../../../../../components/AccountPageHeader';
 import SponsorFormDialog from '../../../../../../../../../components/sponsors/SponsorFormDialog';
 import { useSponsorOperations } from '../../../../../../../../../hooks/useSponsorOperations';
+import PageSectionHeader from '../../../../../../../../../components/common/PageSectionHeader';
 import TeamAvatar from '../../../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../../../components/TeamInfoCard';
 import NextLink from 'next/link';
@@ -194,11 +195,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
           <Typography color="text.primary">Sponsor Management</Typography>
         </Breadcrumbs>
         <Stack spacing={3} sx={{ pb: 8 }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h5" component="h1">
-              Team Sponsors
-            </Typography>
-          </Box>
+          <PageSectionHeader title="Team Sponsors" variant="h5" component="h1" />
 
           {success && (
             <Alert severity="success" onClose={() => setSuccess(null)}>

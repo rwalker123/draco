@@ -7,9 +7,9 @@ import {
   Avatar,
   CircularProgress,
   Container,
-  IconButton,
   Paper,
   Fab,
+  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -19,10 +19,16 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { Add, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add } from '@mui/icons-material';
 import { SponsorType } from '@draco/shared-schemas';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
 import SponsorFormDialog from '../../../../../components/sponsors/SponsorFormDialog';
+import SponsorDeleteDialog from '../../../../../components/sponsors/SponsorDeleteDialog';
+import {
+  EditIconButton,
+  DeleteIconButton,
+} from '../../../../../components/common/ActionIconButtons';
+import PageSectionHeader from '../../../../../components/common/PageSectionHeader';
 import { useSponsorOperations } from '../../../../../hooks/useSponsorOperations';
 
 interface AccountSponsorManagementProps {
@@ -36,12 +42,7 @@ type DialogState = {
 };
 
 const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ accountId }) => {
-  const {
-    listSponsors,
-    deleteSponsor,
-    loading: mutationLoading,
-    clearError,
-  } = useSponsorOperations({
+  const { listSponsors } = useSponsorOperations({
     type: 'account',
     accountId,
   });
@@ -54,6 +55,9 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
     mode: 'create',
     sponsor: null,
   });
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [sponsorToDelete, setSponsorToDelete] = React.useState<SponsorType | null>(null);
+  const [dialogError, setDialogError] = React.useState<string | null>(null);
 
   const refreshSponsors = React.useCallback(async () => {
     try {
@@ -88,47 +92,49 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
   const handleDialogSuccess = async ({ message }: { sponsor: SponsorType; message: string }) => {
     setSuccess(message);
     setError(null);
+    setDialogError(null);
     handleDialogClose();
     await refreshSponsors();
   };
 
-  const handleDelete = async (sponsorId: string) => {
-    try {
-      setSuccess(null);
-      setError(null);
-      clearError();
-      await deleteSponsor(sponsorId);
-      setSuccess('Sponsor deleted successfully');
-      await refreshSponsors();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete sponsor';
-      setError(message);
-    }
+  const handleOpenDeleteDialog = (sponsor: SponsorType) => {
+    setSponsorToDelete(sponsor);
+    setDeleteOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteOpen(false);
+    setSponsorToDelete(null);
+  };
+
+  const handleDialogError = (message: string) => {
+    setDialogError(message);
+  };
+
+  const handleSnackbarClose = () => {
+    setSuccess(null);
+    setDialogError(null);
   };
 
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box display="flex" justifyContent="center">
-          <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
-            Sponsor Management
-          </Typography>
-        </Box>
+        <Stack alignItems="center" justifyContent="center" spacing={2} textAlign="center">
+          <Box>
+            <Typography
+              variant="h4"
+              color="text.primary"
+              sx={{ fontWeight: 700, textAlign: 'center' }}
+            >
+              Sponsor Management
+            </Typography>
+          </Box>
+        </Stack>
       </AccountPageHeader>
 
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Stack spacing={3} sx={{ pb: 8 }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h5" component="h1">
-              Account Sponsors
-            </Typography>
-          </Box>
-
-          {success && (
-            <Alert severity="success" onClose={() => setSuccess(null)}>
-              {success}
-            </Alert>
-          )}
+          <PageSectionHeader title="Account Sponsors" variant="h5" component="h1" />
 
           {error && (
             <Alert severity="error" onClose={() => setError(null)}>
@@ -171,23 +177,18 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
                       <TableCell>{sponsor.phone || '—'}</TableCell>
                       <TableCell>{sponsor.website || '—'}</TableCell>
                       <TableCell align="right">
-                        <IconButton
-                          aria-label="edit"
-                          onClick={() => handleOpenEdit(sponsor)}
-                          size="small"
-                          color="primary"
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          aria-label="delete"
-                          onClick={() => handleDelete(sponsor.id)}
-                          size="small"
-                          disabled={mutationLoading}
-                          color="error"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                          <EditIconButton
+                            tooltipTitle="Edit sponsor"
+                            aria-label={`Edit ${sponsor.name}`}
+                            onClick={() => handleOpenEdit(sponsor)}
+                          />
+                          <DeleteIconButton
+                            tooltipTitle="Delete sponsor"
+                            aria-label={`Delete ${sponsor.name}`}
+                            onClick={() => handleOpenDeleteDialog(sponsor)}
+                          />
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -226,8 +227,34 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
         initialSponsor={dialogState.mode === 'edit' ? dialogState.sponsor : null}
         onClose={handleDialogClose}
         onSuccess={handleDialogSuccess}
-        onError={(message) => setError(message)}
+        onError={handleDialogError}
       />
+
+      <SponsorDeleteDialog
+        accountId={accountId}
+        open={deleteOpen}
+        sponsor={sponsorToDelete}
+        onClose={handleCloseDeleteDialog}
+        onSuccess={(result) =>
+          handleDialogSuccess({ sponsor: result.sponsor, message: result.message })
+        }
+        onError={handleDialogError}
+      />
+
+      <Snackbar
+        open={Boolean(success || dialogError)}
+        autoHideDuration={4000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={success ? 'success' : 'error'}
+          onClose={handleSnackbarClose}
+          sx={{ width: '100%' }}
+        >
+          {success || dialogError}
+        </Alert>
+      </Snackbar>
     </main>
   );
 };

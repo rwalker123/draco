@@ -35,6 +35,7 @@ import FieldFormDialog from './FieldFormDialog';
 import FieldDeleteDialog from './FieldDeleteDialog';
 import FieldDetailsCard from './FieldDetailsCard';
 import { EditIconButton, DeleteIconButton } from '../common/ActionIconButtons';
+import PageSectionHeader from '../common/PageSectionHeader';
 
 interface FieldsManagementProps {
   accountId: string;
@@ -230,41 +231,36 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({
           <Grid size={{ xs: 12, md: 8 }} sx={{ minWidth: 0 }}>
             <Paper elevation={3} sx={{ overflow: 'visible' }}>
               <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                <Stack
-                  direction={{ xs: 'column', sm: 'row' }}
-                  spacing={2}
-                  alignItems={{ xs: 'flex-start', sm: 'center' }}
-                  justifyContent="space-between"
-                >
-                  <Typography variant="h6" color="text.primary">
-                    Field Directory
-                  </Typography>
-                  <TextField
-                    size="small"
-                    placeholder="Search fields"
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon fontSize="small" />
-                        </InputAdornment>
-                      ),
-                      endAdornment: trimmedSearch ? (
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label="Clear search"
-                            size="small"
-                            onClick={() => setSearchTerm('')}
-                          >
-                            <ClearIcon fontSize="small" />
-                          </IconButton>
-                        </InputAdornment>
-                      ) : undefined,
-                    }}
-                    sx={{ minWidth: { xs: '100%', sm: 240 } }}
-                  />
-                </Stack>
+                <PageSectionHeader
+                  title="Field Directory"
+                  actions={
+                    <TextField
+                      size="small"
+                      placeholder="Search fields"
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon fontSize="small" />
+                          </InputAdornment>
+                        ),
+                        endAdornment: trimmedSearch ? (
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label="Clear search"
+                              size="small"
+                              onClick={() => setSearchTerm('')}
+                            >
+                              <ClearIcon fontSize="small" />
+                            </IconButton>
+                          </InputAdornment>
+                        ) : undefined,
+                      }}
+                      sx={{ minWidth: { xs: '100%', sm: 240 } }}
+                    />
+                  }
+                />
                 {fetchError ? (
                   <Alert severity="error" sx={{ mt: 1 }}>
                     {fetchError}
