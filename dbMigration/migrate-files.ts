@@ -221,7 +221,8 @@ class FileMigrationService {
         throw new Error('DATABASE_URL must be set to initialize Prisma for file migration');
       }
       console.log(`🔍 DATABASE_URL: ${connectionString}`);
-      const prismaModule = await import('../draco-nodejs/backend/dist/src/generated/client/client.js');
+      const prismaModule =
+        await import('../draco-nodejs/backend/dist/src/generated/client/client.js');
       const { PrismaClient } = prismaModule;
       const adapter = new PrismaPg({ connectionString });
       this.prisma = new PrismaClient({ adapter });
