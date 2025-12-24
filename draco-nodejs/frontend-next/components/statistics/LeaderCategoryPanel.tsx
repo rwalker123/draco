@@ -109,7 +109,7 @@ const createLeaderColumns = (
         <TeamBadges
           teams={row.teams as string[] | undefined}
           teamName={row.teamName as string | undefined}
-          maxVisible={3}
+          maxVisible={2}
         />
       ),
     });
@@ -358,7 +358,6 @@ export default function LeaderCategoryPanel({
         >
           <LeaderCard
             leader={leaderForCard}
-            statLabel={category.label}
             formatter={getFormatter(category.format)}
             hideTeamInfo={hideTeamInfo}
             accountId={accountId}
