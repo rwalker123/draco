@@ -154,7 +154,11 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
 
     const { leagueId, teamId, isHistorical, includeAllGameTypes } = query;
     let whereClause = '';
-    const params: (bigint | number)[] = [];
+    const params: (bigint | number | bigint[])[] = [];
+
+    // Use parameterized query for player IDs to prevent SQL injection
+    const playerIdParamIndex = params.length + 1;
+    params.push(playerIds);
 
     if (leagueId && leagueId !== BigInt(0)) {
       if (isHistorical) {
@@ -170,11 +174,6 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
       params.push(teamId);
     }
 
-    const playerIdStrings = playerIds.map((id) => id.toString()).join(',');
-    if (!playerIdStrings) {
-      return [];
-    }
-
     const teamQuery = `
       SELECT DISTINCT
         c.id as "playerId",
@@ -188,7 +187,7 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
       LEFT JOIN teams t ON ts.teamid = t.id
       LEFT JOIN leagueschedule lg ON ps.gameid = lg.id
       LEFT JOIN leagueseason ls ON lg.leagueid = ls.id
-      WHERE c.id IN (${playerIdStrings})
+      WHERE c.id = ANY($${playerIdParamIndex}::bigint[])
         AND ${includeAllGameTypes ? `lg.gametype IN (${GameType.RegularSeason}, ${GameType.Playoff})` : `lg.gametype = ${GameType.RegularSeason}`}
         ${whereClause}
       ORDER BY c.id, t.id, ts.name
@@ -231,20 +230,20 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
         SUM(ps.t)::int AS t,
         SUM(ps.ab)::int AS ab,
         CASE
-          WHEN SUM(ps.ip * 3 + ps.ip2) = 0 THEN 0
-          ELSE (SUM(ps.er)::float * 9 / (SUM(ps.ip * 3 + ps.ip2)::float / 3))
+          WHEN (SUM(ps.ip) + SUM(ps.ip2) / 3.0) = 0 THEN 0
+          ELSE (SUM(ps.er) * 9.0)::float / (SUM(ps.ip) + SUM(ps.ip2) / 3.0)
         END AS era,
         CASE
-          WHEN SUM(ps.ip * 3 + ps.ip2) = 0 THEN 0
-          ELSE (SUM(ps.bb) + SUM(ps.h))::float / (SUM(ps.ip * 3 + ps.ip2)::float / 3)
+          WHEN (SUM(ps.ip) + SUM(ps.ip2) / 3.0) = 0 THEN 0
+          ELSE (SUM(ps.bb) + SUM(ps.h))::float / (SUM(ps.ip) + SUM(ps.ip2) / 3.0)
         END AS whip,
         CASE
-          WHEN SUM(ps.ip * 3 + ps.ip2) = 0 THEN 0
-          ELSE (SUM(ps.so)::float * 9) / (SUM(ps.ip * 3 + ps.ip2)::float / 3)
+          WHEN (SUM(ps.ip) + SUM(ps.ip2) / 3.0) = 0 THEN 0
+          ELSE (SUM(ps.so)::float / (SUM(ps.ip) + SUM(ps.ip2) / 3.0)) * 9.0
         END AS k9,
         CASE
-          WHEN SUM(ps.ip * 3 + ps.ip2) = 0 THEN 0
-          ELSE (SUM(ps.bb)::float * 9) / (SUM(ps.ip * 3 + ps.ip2)::float / 3)
+          WHEN (SUM(ps.ip) + SUM(ps.ip2) / 3.0) = 0 THEN 0
+          ELSE (SUM(ps.bb)::float / (SUM(ps.ip) + SUM(ps.ip2) / 3.0)) * 9.0
         END AS bb9,
         CASE
           WHEN SUM(ps.ab) = 0 THEN 0
@@ -256,10 +255,7 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
             (SUM(ps.d) * 2 + SUM(ps.t) * 3 + SUM(ps.hr) * 4 + (SUM(ps.h) - SUM(ps.d) - SUM(ps.t) - SUM(ps.hr)))::float
           ) / SUM(ps.ab)
         END AS slg,
-        CASE
-          WHEN SUM(ps.ip * 3 + ps.ip2) = 0 THEN 0
-          ELSE (SUM(ps.ip * 3 + ps.ip2)::float) / 3
-        END AS "ipDecimal"
+        (SUM(ps.ip) + SUM(ps.ip2) / 3.0)::float AS "ipDecimal"
       FROM contacts c
       INNER JOIN roster r ON c.id = r.contactid
       INNER JOIN rosterseason rs ON r.id = rs.playerid

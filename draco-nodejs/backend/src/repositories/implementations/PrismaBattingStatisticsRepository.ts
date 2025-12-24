@@ -144,7 +144,11 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
 
     const { leagueId, teamId, isHistorical, includeAllGameTypes } = query;
     let whereClause = '';
-    const params: (bigint | number)[] = [];
+    const params: (bigint | number | bigint[])[] = [];
+
+    // Use parameterized query for player IDs to prevent SQL injection
+    const playerIdParamIndex = params.length + 1;
+    params.push(playerIds);
 
     if (leagueId && leagueId !== BigInt(0)) {
       if (isHistorical) {
@@ -160,11 +164,6 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
       params.push(teamId);
     }
 
-    const playerIdStrings = playerIds.map((id) => id.toString()).join(',');
-    if (!playerIdStrings) {
-      return [];
-    }
-
     const teamQuery = `
       SELECT DISTINCT
         c.id as "playerId",
@@ -178,7 +177,7 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
       LEFT JOIN teams t ON ts.teamid = t.id
       LEFT JOIN leagueschedule lg ON bs.gameid = lg.id
       LEFT JOIN leagueseason ls ON lg.leagueid = ls.id
-      WHERE c.id IN (${playerIdStrings})
+      WHERE c.id = ANY($${playerIdParamIndex}::bigint[])
         AND ${includeAllGameTypes ? `lg.gametype IN (${GameType.RegularSeason}, ${GameType.Playoff})` : `lg.gametype = ${GameType.RegularSeason}`}
         ${whereClause}
       ORDER BY c.id, t.id, ts.name

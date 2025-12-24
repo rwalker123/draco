@@ -152,15 +152,20 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
             {classified.experience}
           </Typography>
           {(isTruncated || experienceExpanded) && (
-            <Typography
-              component="span"
-              variant="body2"
-              color="primary"
-              sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+            <Button
+              variant="text"
+              size="small"
               onClick={() => setExperienceExpanded(!experienceExpanded)}
+              aria-expanded={experienceExpanded}
+              sx={{
+                p: 0,
+                minWidth: 'auto',
+                textTransform: 'none',
+                '&:hover': { textDecoration: 'underline', backgroundColor: 'transparent' },
+              }}
             >
               {experienceExpanded ? 'less...' : 'more...'}
-            </Typography>
+            </Button>
           )}
         </Box>
 
