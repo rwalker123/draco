@@ -1,5 +1,6 @@
 'use client';
 import React, { useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import {
   AppBar,
   Toolbar,
@@ -48,7 +49,9 @@ import { useLogout } from '../hooks/useLogout';
 import BaseballMenu from './BaseballMenu';
 import { useAccountMembership } from '../hooks/useAccountMembership';
 import RegistrationDialog from './account/RegistrationDialog';
-import TopBarQuickActions from './TopBarQuickActions';
+const TopBarQuickActions = dynamic(() => import('./TopBarQuickActions'), {
+  ssr: false,
+});
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';

@@ -86,6 +86,126 @@ CREATE TABLE passwordresettokens (
     createdat TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
+-- Email system tables
+CREATE TABLE IF NOT EXISTS email_templates (
+    id BIGSERIAL PRIMARY KEY,
+    account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    subject_template VARCHAR(500),
+    body_template TEXT NOT NULL,
+    created_by_user_id VARCHAR(128) REFERENCES aspnetusers(id),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_templates_account_active ON email_templates(account_id, is_active);
+
+CREATE TABLE IF NOT EXISTS emails (
+    id BIGSERIAL PRIMARY KEY,
+    account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    created_by_user_id VARCHAR(128) REFERENCES aspnetusers(id),
+    sender_contact_id BIGINT REFERENCES contacts(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    sender_contact_name VARCHAR(255),
+    reply_to_email VARCHAR(320),
+    from_name_override VARCHAR(255),
+    subject VARCHAR(500) NOT NULL,
+    body_html TEXT NOT NULL,
+    body_text TEXT,
+    template_id BIGINT REFERENCES email_templates(id),
+    status VARCHAR(20) NOT NULL DEFAULT 'draft',
+    scheduled_send_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    sent_at TIMESTAMP WITH TIME ZONE,
+    total_recipients INT NOT NULL DEFAULT 0,
+    successful_deliveries INT NOT NULL DEFAULT 0,
+    failed_deliveries INT NOT NULL DEFAULT 0,
+    bounce_count INT NOT NULL DEFAULT 0,
+    open_count INT NOT NULL DEFAULT 0,
+    click_count INT NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_emails_account_status ON emails(account_id, status);
+CREATE INDEX IF NOT EXISTS idx_emails_scheduled_send_at ON emails(scheduled_send_at);
+CREATE INDEX IF NOT EXISTS idx_emails_sender_contact_id ON emails(sender_contact_id);
+
+CREATE TABLE IF NOT EXISTS email_recipients (
+    id BIGSERIAL PRIMARY KEY,
+    email_id BIGINT NOT NULL REFERENCES emails(id) ON DELETE CASCADE,
+    contact_id BIGINT REFERENCES contacts(id),
+    email_address VARCHAR(255) NOT NULL,
+    contact_name VARCHAR(255),
+    recipient_type VARCHAR(50),
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    sent_at TIMESTAMP WITH TIME ZONE,
+    delivered_at TIMESTAMP WITH TIME ZONE,
+    opened_at TIMESTAMP WITH TIME ZONE,
+    clicked_at TIMESTAMP WITH TIME ZONE,
+    bounce_reason TEXT,
+    error_message TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_recipients_email_status ON email_recipients(email_id, status);
+CREATE INDEX IF NOT EXISTS idx_email_recipients_contact_id ON email_recipients(contact_id);
+
+CREATE TABLE IF NOT EXISTS email_attachments (
+    id BIGSERIAL PRIMARY KEY,
+    email_id BIGINT NOT NULL REFERENCES emails(id) ON DELETE CASCADE,
+    filename VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    file_size BIGINT NOT NULL,
+    mime_type VARCHAR(100),
+    storage_path VARCHAR(500) NOT NULL,
+    uploaded_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_attachments_email_id ON email_attachments(email_id);
+
+CREATE TABLE IF NOT EXISTS email_events (
+    id BIGSERIAL PRIMARY KEY,
+    email_recipient_id BIGINT NOT NULL REFERENCES email_recipients(id) ON DELETE CASCADE,
+    event_type VARCHAR(20) NOT NULL,
+    event_data JSONB,
+    occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    user_agent TEXT,
+    ip_address INET
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_events_recipient_id ON email_events(email_recipient_id);
+
+-- Photo gallery submission table (for user-submitted photos pending moderation)
+CREATE TABLE IF NOT EXISTS photogallerysubmission (
+    id BIGSERIAL PRIMARY KEY,
+    accountid BIGINT NOT NULL,
+    teamid BIGINT,
+    albumid BIGINT,
+    submittercontactid BIGINT NOT NULL,
+    moderatedbycontactid BIGINT,
+    approvedphotoid BIGINT,
+    title VARCHAR(50) NOT NULL,
+    caption VARCHAR(255),
+    originalfilename VARCHAR(255) NOT NULL,
+    originalfilepath VARCHAR(255) NOT NULL,
+    primaryimagepath VARCHAR(255) NOT NULL,
+    thumbnailimagepath VARCHAR(255) NOT NULL,
+    status VARCHAR(10) NOT NULL DEFAULT 'Pending',
+    denialreason VARCHAR(255),
+    submittedat TIMESTAMPTZ(6) NOT NULL DEFAULT NOW(),
+    updatedat TIMESTAMPTZ(6) NOT NULL DEFAULT NOW(),
+    moderatedat TIMESTAMPTZ(6),
+    CONSTRAINT fk_photogallerysubmission_accounts FOREIGN KEY (accountid) REFERENCES accounts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_photogallerysubmission_albumid FOREIGN KEY (albumid) REFERENCES photogalleryalbum(id),
+    CONSTRAINT fk_photogallerysubmission_approvedphotoid FOREIGN KEY (approvedphotoid) REFERENCES photogallery(id) ON DELETE SET NULL,
+    CONSTRAINT fk_photogallerysubmission_submittercontactid FOREIGN KEY (submittercontactid) REFERENCES contacts(id),
+    CONSTRAINT fk_photogallerysubmission_moderatedbycontactid FOREIGN KEY (moderatedbycontactid) REFERENCES contacts(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_photogallerysubmission_accountid ON photogallerysubmission(accountid);
+CREATE INDEX IF NOT EXISTS idx_photogallerysubmission_teamid ON photogallerysubmission(teamid);
+CREATE INDEX IF NOT EXISTS idx_photogallerysubmission_albumid ON photogallerysubmission(albumid);
+CREATE INDEX IF NOT EXISTS idx_photogallerysubmission_status ON photogallerysubmission(status);
+
 ALTER TABLE contactroles
 RENAME COLUMN roldata TO roledata;
 
@@ -296,19 +416,3 @@ ALTER TABLE leagueschedule
 ALTER TABLE leagueschedule
   ADD CONSTRAINT leagueschedule_gamestatus_check
   CHECK (gamestatus BETWEEN 0 AND 5);
-
-ALTER TABLE "emails"
-  ADD COLUMN "sender_contact_id" BIGINT,
-  ADD COLUMN "sender_contact_name" VARCHAR(255),
-  ADD COLUMN "reply_to_email" VARCHAR(320),
-  ADD COLUMN "from_name_override" VARCHAR(255);
-
-ALTER TABLE "emails"
-  ADD CONSTRAINT "emails_sender_contact_id_fkey"
-  FOREIGN KEY ("sender_contact_id")
-  REFERENCES "contacts"("id")
-  ON DELETE SET NULL
-  ON UPDATE CASCADE;
-
-CREATE INDEX "emails_sender_contact_id_idx" ON "emails" ("sender_contact_id");
-

@@ -78,6 +78,7 @@ Thumbs.db
 # Ignore uploaded files
 /uploads/
 **/Uploads/
+**/uploads_orig/
 
 # Ignore LocalStack data
 /localstack-data/
