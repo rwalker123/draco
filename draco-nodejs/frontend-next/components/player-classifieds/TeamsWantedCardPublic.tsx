@@ -3,7 +3,7 @@
 // TeamsWantedCardPublic Component
 // Displays an individual Teams Wanted classified ad for public viewing (no sensitive data)
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, Typography, Chip, Box, Button } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -34,6 +34,16 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   const [contactInfo, setContactInfo] = useState<TeamsWantedContactInfoType | null>(null);
   const [contactLoading, setContactLoading] = useState(false);
   const [contactError, setContactError] = useState<string | null>(null);
+  const [experienceExpanded, setExperienceExpanded] = useState(false);
+  const [isTruncated, setIsTruncated] = useState(false);
+  const experienceRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const el = experienceRef.current;
+    if (el) {
+      setIsTruncated(el.scrollHeight > el.clientHeight);
+    }
+  }, [classified.experience]);
 
   const handleContactInfoClick = async () => {
     setContactDialogOpen(true);
@@ -121,21 +131,42 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
             Experience:
           </Typography>
           <Typography
+            ref={experienceRef}
             variant="body2"
             color="text.secondary"
             sx={{
               whiteSpace: 'pre-line',
               wordBreak: 'break-word',
-              maxHeight: '100px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              display: '-webkit-box',
-              WebkitLineClamp: 4,
-              WebkitBoxOrient: 'vertical',
+              ...(experienceExpanded
+                ? {}
+                : {
+                    maxHeight: '100px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 4,
+                    WebkitBoxOrient: 'vertical',
+                  }),
             }}
           >
             {classified.experience}
           </Typography>
+          {(isTruncated || experienceExpanded) && (
+            <Button
+              variant="text"
+              size="small"
+              onClick={() => setExperienceExpanded(!experienceExpanded)}
+              aria-expanded={experienceExpanded}
+              sx={{
+                p: 0,
+                minWidth: 'auto',
+                textTransform: 'none',
+                '&:hover': { textDecoration: 'underline', backgroundColor: 'transparent' },
+              }}
+            >
+              {experienceExpanded ? 'less...' : 'more...'}
+            </Button>
+          )}
         </Box>
 
         {/* Positions Played */}

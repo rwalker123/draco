@@ -22,7 +22,6 @@ interface LeaderRow {
 
 interface LeaderCardProps {
   leader: LeaderRow;
-  statLabel: string;
   formatter: (value: unknown) => string;
   hideTeamInfo?: boolean;
   accountId?: string;
@@ -31,7 +30,6 @@ interface LeaderCardProps {
 
 export default function LeaderCard({
   leader,
-  statLabel,
   formatter,
   hideTeamInfo = false,
   accountId,
@@ -86,7 +84,7 @@ export default function LeaderCard({
     return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : name.substring(0, 2);
   };
 
-  const shortPlayerName = useMemo(() => {
+  const displayPlayerName = useMemo(() => {
     if (leader.isTie) {
       const label = leader.playerName?.trim();
       if (label) {
@@ -102,9 +100,10 @@ export default function LeaderCard({
     if (!trimmed) {
       return leader.playerName;
     }
-    const parts = trimmed.split(/\s+/);
-    return parts.length > 0 ? parts[parts.length - 1] : trimmed;
+    return trimmed;
   }, [leader.isTie, leader.playerName, leader.tieCount]);
+
+  const isLongName = displayPlayerName.length > 15;
 
   const isTie = leader.isTie;
 
@@ -243,7 +242,9 @@ export default function LeaderCard({
                     color: 'primary.main',
                     mb: { xs: 0.5, sm: 1 },
                     lineHeight: 1.2,
-                    fontSize: { xs: '.90rem', sm: '1.0rem' },
+                    fontSize: isLongName
+                      ? { xs: '0.75rem', sm: '0.85rem' }
+                      : { xs: '0.90rem', sm: '1.0rem' },
                     textDecoration: 'none',
                     '&:hover': { textDecoration: 'underline' },
                     display: 'block',
@@ -252,7 +253,7 @@ export default function LeaderCard({
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  {shortPlayerName}
+                  {displayPlayerName}
                 </Typography>
               ) : (
                 <Typography
@@ -261,20 +262,22 @@ export default function LeaderCard({
                     color: theme.palette.text.primary,
                     mb: { xs: 0.5, sm: 1 },
                     lineHeight: 1.2,
-                    fontSize: { xs: '.90rem', sm: '1.0rem' },
+                    fontSize: isLongName
+                      ? { xs: '0.75rem', sm: '0.85rem' }
+                      : { xs: '0.90rem', sm: '1.0rem' },
                     display: 'block',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  {shortPlayerName}
+                  {displayPlayerName}
                 </Typography>
               )}
 
               {!hideTeamInfo && !isTie && (
                 <Box sx={{ maxWidth: { xs: '100%', sm: 260 }, mt: 0.25 }}>
-                  <TeamBadges teams={leader.teams} teamName={leader.teamName} maxVisible={3} />
+                  <TeamBadges teams={leader.teams} teamName={leader.teamName} maxVisible={2} />
                 </Box>
               )}
             </Box>
@@ -286,7 +289,7 @@ export default function LeaderCard({
             alignItems="center"
             justifyContent="center"
             sx={{
-              minWidth: { xs: 'auto', sm: 128 },
+              minWidth: { xs: 'auto', sm: 80 },
               px: { sm: 1 },
               textAlign: 'center',
               justifySelf: { xs: 'stretch', sm: 'end' },
@@ -312,7 +315,7 @@ export default function LeaderCard({
                 fontSize: { xs: '0.68rem', sm: '0.82rem' },
               }}
             >
-              {statLabel}
+              {leader.category}
             </Typography>
           </Box>
         </Box>

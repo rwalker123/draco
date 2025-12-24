@@ -55,14 +55,38 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
 
     const havingClause = minAtBats > 0 ? `HAVING SUM(bs.ab) >= ${minAtBats}` : '';
     const orderDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
-    const sortFieldSql = sortField.toLowerCase();
+    const sortFieldMap: Record<string, string> = {
+      playerid: '"playerId"',
+      playername: '"playerName"',
+      ab: 'ab',
+      h: 'h',
+      r: 'r',
+      d: 'd',
+      t: 't',
+      hr: 'hr',
+      rbi: 'rbi',
+      bb: 'bb',
+      so: 'so',
+      hbp: 'hbp',
+      sb: 'sb',
+      sf: 'sf',
+      sh: 'sh',
+      avg: 'avg',
+      obp: 'obp',
+      slg: 'slg',
+      ops: 'ops',
+      tb: 'tb',
+      pa: 'pa',
+    };
+    const normalizedSortField = sortField ? sortField.toLowerCase() : 'playername';
+    const sortFieldSql = sortFieldMap[normalizedSortField] ?? '"playerName"';
     const teamJoin =
       divisionId && divisionId !== BigInt(0) ? 'LEFT JOIN teamsseason ts ON bs.teamid = ts.id' : '';
 
     const queryText = `
       SELECT
         c.id as "playerId",
-        CONCAT(c.firstname, ' ', c.lastname) as "playerName",
+        CONCAT(c.lastname, ', ', c.firstname) as "playerName",
         SUM(bs.ab)::int as ab,
         SUM(bs.h)::int as h,
         SUM(bs.r)::int as r,
@@ -120,7 +144,11 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
 
     const { leagueId, teamId, isHistorical, includeAllGameTypes } = query;
     let whereClause = '';
-    const params: (bigint | number)[] = [];
+    const params: (bigint | number | bigint[])[] = [];
+
+    // Use parameterized query for player IDs to prevent SQL injection
+    const playerIdParamIndex = params.length + 1;
+    params.push(playerIds);
 
     if (leagueId && leagueId !== BigInt(0)) {
       if (isHistorical) {
@@ -136,11 +164,6 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
       params.push(teamId);
     }
 
-    const playerIdStrings = playerIds.map((id) => id.toString()).join(',');
-    if (!playerIdStrings) {
-      return [];
-    }
-
     const teamQuery = `
       SELECT DISTINCT
         c.id as "playerId",
@@ -154,7 +177,7 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
       LEFT JOIN teams t ON ts.teamid = t.id
       LEFT JOIN leagueschedule lg ON bs.gameid = lg.id
       LEFT JOIN leagueseason ls ON lg.leagueid = ls.id
-      WHERE c.id IN (${playerIdStrings})
+      WHERE c.id = ANY($${playerIdParamIndex}::bigint[])
         AND ${includeAllGameTypes ? `lg.gametype IN (${GameType.RegularSeason}, ${GameType.Playoff})` : `lg.gametype = ${GameType.RegularSeason}`}
         ${whereClause}
       ORDER BY c.id, t.id, ts.name

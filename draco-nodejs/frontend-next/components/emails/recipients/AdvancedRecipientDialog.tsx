@@ -2311,14 +2311,13 @@ const TeamsWantedTabContent: React.FC<TeamsWantedTabContentProps> = ({
                     {classified.positionsPlayed}
                   </Typography>
                 </Box>
-                <Chip
-                  label={classified.experience}
-                  size="small"
-                  variant="outlined"
-                  sx={{ ml: 'auto' }}
-                />
                 {classified.age ? (
-                  <Chip label={`Age ${classified.age}`} size="small" variant="outlined" />
+                  <Chip
+                    label={`Age ${classified.age}`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ ml: 'auto' }}
+                  />
                 ) : null}
               </Box>
             ))}

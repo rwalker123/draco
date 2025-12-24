@@ -122,6 +122,8 @@ export const StatisticsTableBase = <T extends Record<string, unknown>>({
       <TableContainer
         component={Paper}
         sx={{
+          width: 'fit-content',
+          maxWidth: '100%',
           ...(maxHeight
             ? {
                 maxHeight,
@@ -140,11 +142,13 @@ export const StatisticsTableBase = <T extends Record<string, unknown>>({
           size="small"
           stickyHeader={!hideHeader}
           sx={{
+            width: 'auto',
             tableLayout: 'auto',
             '& .MuiTableCell-root': {
               py: 0.75,
               px: 1.25,
               fontSize: '0.85rem',
+              whiteSpace: 'nowrap',
             },
             '& .MuiTableCell-head': {
               fontSize: '0.75rem',
@@ -584,6 +588,10 @@ const buildColumns = <T extends StatsRowBase>(
       tooltip,
       align,
     };
+
+    if (field === 'teamName') {
+      columnConfig.sortable = false;
+    }
 
     if (formatter) {
       columnConfig.formatter = formatter;
