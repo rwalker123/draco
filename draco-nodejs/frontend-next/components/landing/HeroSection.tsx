@@ -9,7 +9,11 @@ interface HeroSectionProps {
   isAuthenticated: boolean;
 }
 
-export default function HeroSection({ onSignUp, onFindLeague, isAuthenticated }: HeroSectionProps) {
+export default function HeroSection({
+  onSignUp: _onSignUp,
+  onFindLeague,
+  isAuthenticated: _isAuthenticated,
+}: HeroSectionProps) {
   const theme = useTheme();
 
   return (
@@ -66,6 +70,7 @@ export default function HeroSection({ onSignUp, onFindLeague, isAuthenticated }:
               alignItems: 'center',
             }}
           >
+            {/* TODO: Re-enable Get Started button
             <Button
               variant="contained"
               size="large"
@@ -79,6 +84,7 @@ export default function HeroSection({ onSignUp, onFindLeague, isAuthenticated }:
             >
               {isAuthenticated ? 'Go to Dashboard' : 'Get Started'}
             </Button>
+            */}
             <Button
               variant="outlined"
               size="large"

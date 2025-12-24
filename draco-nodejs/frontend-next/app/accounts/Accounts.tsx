@@ -15,7 +15,8 @@ import FeatureShowcaseSection from '../../components/landing/FeatureShowcaseSect
 import CommunityHighlightsSection from '../../components/landing/CommunityHighlightsSection';
 import HowItWorksSection from '../../components/landing/HowItWorksSection';
 import SportFeaturesSection from '../../components/landing/SportFeaturesSection';
-import FinalCtaSection from '../../components/landing/FinalCtaSection';
+// FinalCtaSection import commented out - see TODO below
+// import FinalCtaSection from '../../components/landing/FinalCtaSection';
 
 type SearchState =
   | { status: 'idle'; results: SharedAccountType[] }
@@ -118,9 +119,10 @@ const Accounts: FC = () => {
     router.push('/signup');
   }, [router]);
 
-  const handleContact = useCallback(() => {
-    router.push('/contact');
-  }, [router]);
+  // handleContact commented out - see TODO for FinalCtaSection below
+  // const handleContact = useCallback(() => {
+  //   router.push('/contact');
+  // }, [router]);
 
   const scrollToSearch = useCallback(() => {
     document.getElementById('organization-search')?.scrollIntoView({
@@ -185,11 +187,13 @@ const Accounts: FC = () => {
 
       <HowItWorksSection />
 
+      {/* TODO: Re-enable FinalCtaSection ("Ready to Transform your league")
       <FinalCtaSection
         onSignUp={handleSignup}
         onContact={handleContact}
         isAuthenticated={Boolean(user)}
       />
+      */}
 
       {ctaState === 'signupPrompt' && (
         <Container maxWidth="sm" sx={{ py: 4 }}>

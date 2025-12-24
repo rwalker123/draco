@@ -2,12 +2,6 @@ export const FEATURED_ACCOUNT_IDS = ['1'];
 
 export const LANDING_FEATURES = [
   {
-    id: 'scoreboards',
-    icon: 'Scoreboard',
-    title: 'Real-time Scoreboards',
-    description: 'Track games as they happen with live score updates and standings.',
-  },
-  {
     id: 'statistics',
     icon: 'Leaderboard',
     title: 'Statistical Leaderboards',
