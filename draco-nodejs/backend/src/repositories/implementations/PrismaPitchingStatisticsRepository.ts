@@ -59,11 +59,32 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
         : '';
     const orderDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
     const sortFieldMap: Record<string, string> = {
-      ip: '"ipDecimal"',
-      playername: '"playerName"',
       playerid: '"playerId"',
+      playername: '"playerName"',
+      ip: '"ipDecimal"',
+      ip2: 'ip2',
+      w: 'w',
+      l: 'l',
+      s: 's',
+      h: 'h',
+      r: 'r',
+      er: 'er',
+      bb: 'bb',
+      so: 'so',
+      hr: 'hr',
+      bf: 'bf',
+      wp: 'wp',
+      hbp: 'hbp',
+      era: 'era',
+      whip: 'whip',
+      k9: 'k9',
+      bb9: 'bb9',
+      oba: 'oba',
+      slg: 'slg',
+      ipdecimal: '"ipDecimal"',
     };
-    const sortFieldSql = sortFieldMap[sortField.toLowerCase()] || sortField.toLowerCase();
+    const normalizedSortField = sortField ? sortField.toLowerCase() : 'playername';
+    const sortFieldSql = sortFieldMap[normalizedSortField] ?? '"playerName"';
     const teamJoin =
       divisionId && divisionId !== BigInt(0) ? 'LEFT JOIN teamsseason ts ON ps.teamid = ts.id' : '';
 
