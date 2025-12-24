@@ -388,7 +388,7 @@ draco-nodejs/
 #### Development Commands (from root directory)
 - **`npm run dev`**: Start both backend and frontend concurrently
 - **`npm run backend:dev`**: Start backend only
-- **`npm run frontend-next:start`**: Start frontend only
+- **`npm run frontend:start`**: Start frontend only
 - **`npm run build`**: Build both projects
 - **`npm run lint:all`**: Lint all code
 - **`npm run type-check:all`**: Type check all code
