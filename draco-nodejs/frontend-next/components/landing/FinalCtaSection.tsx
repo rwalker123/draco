@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Button, Container, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 
 interface FinalCtaSectionProps {
   onSignUp: () => void;
@@ -20,7 +20,7 @@ export default function FinalCtaSection({
     <Box
       sx={{
         width: '100%',
-        backgroundColor: `rgba(${parseInt(theme.palette.primary.light.slice(1, 3), 16)}, ${parseInt(theme.palette.primary.light.slice(3, 5), 16)}, ${parseInt(theme.palette.primary.light.slice(5, 7), 16)}, 0.1)`,
+        backgroundColor: alpha(theme.palette.primary.light, 0.1),
         py: 8,
       }}
     >

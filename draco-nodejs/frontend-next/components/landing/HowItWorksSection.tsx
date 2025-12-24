@@ -108,7 +108,7 @@ export default function HowItWorksSection() {
         <Grid size={{ xs: 12, md: 6 }}>
           <Paper elevation={2} sx={{ p: 4, height: '100%' }}>
             <Typography
-              variant="h3"
+              variant="h4"
               component="h3"
               sx={{ textAlign: 'center', mb: 4, fontWeight: 600 }}
             >
@@ -123,7 +123,7 @@ export default function HowItWorksSection() {
         <Grid size={{ xs: 12, md: 6 }}>
           <Paper elevation={2} sx={{ p: 4, height: '100%' }}>
             <Typography
-              variant="h3"
+              variant="h4"
               component="h3"
               sx={{ textAlign: 'center', mb: 4, fontWeight: 600 }}
             >

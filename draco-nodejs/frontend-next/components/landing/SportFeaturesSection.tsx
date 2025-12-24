@@ -33,10 +33,11 @@ interface FeatureListProps {
 function FeatureList({ features, disabled = false }: FeatureListProps) {
   return (
     <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
-      {features.map((feature, index) => (
+      {features.map((feature) => (
         <Box
-          key={index}
+          key={feature.text}
           component="li"
+          aria-disabled={disabled || undefined}
           sx={{
             display: 'flex',
             alignItems: 'flex-start',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from './useApiClient';
 import type { AccountType } from '@draco/shared-schemas';
@@ -17,8 +17,11 @@ export function useFeaturedAccounts(accountIds: string[]): FeaturedAccountsResul
   const [error, setError] = useState<string | null>(null);
   const apiClient = useApiClient();
 
+  const accountIdsKey = useMemo(() => accountIds.join(','), [accountIds]);
+
   useEffect(() => {
-    if (accountIds.length === 0) {
+    const ids = accountIdsKey ? accountIdsKey.split(',') : [];
+    if (ids.length === 0) {
       setAccounts([]);
       setLoading(false);
       return;
@@ -32,7 +35,7 @@ export function useFeaturedAccounts(accountIds: string[]): FeaturedAccountsResul
 
       try {
         const results = await Promise.all(
-          accountIds.map(async (accountId) => {
+          ids.map(async (accountId) => {
             try {
               const result = await getAccountById({
                 client: apiClient,
@@ -41,7 +44,7 @@ export function useFeaturedAccounts(accountIds: string[]): FeaturedAccountsResul
               });
 
               if (result.data?.account) {
-                return result.data.account as AccountType;
+                return result.data.account;
               }
               return null;
             } catch {
@@ -72,7 +75,7 @@ export function useFeaturedAccounts(accountIds: string[]): FeaturedAccountsResul
     return () => {
       ignore = true;
     };
-  }, [accountIds, apiClient]);
+  }, [accountIdsKey, apiClient]);
 
   return { accounts, loading, error };
 }
