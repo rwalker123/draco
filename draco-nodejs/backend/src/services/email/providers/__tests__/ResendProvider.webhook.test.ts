@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ResendProvider } from '../ResendProvider.js';
 import { ResendWebhookEvent } from '../../../../interfaces/emailInterfaces.js';
+import type { EmailSettings } from '../../../../config/email.js';
 
 const hoisted = vi.hoisted(() => {
   const mockPrisma = {
@@ -52,11 +53,20 @@ describe('ResendProvider - Webhook Processing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    provider = new ResendProvider({
-      service: 'Resend',
-      // pragma: allowlist secret
-      resendApiKey: 'resend_mock_api_key_for_tests_only', // pragma: allowlist secret
-    });
+    const testSettings: EmailSettings = {
+      provider: 'resend',
+      fromEmail: 'test@example.com',
+      fromName: 'Test',
+    };
+
+    provider = new ResendProvider(
+      {
+        service: 'Resend',
+        // pragma: allowlist secret
+        resendApiKey: 'resend_mock_api_key_for_tests_only', // pragma: allowlist secret
+      },
+      testSettings,
+    );
   });
 
   it('processes webhook events and updates recipients', async () => {

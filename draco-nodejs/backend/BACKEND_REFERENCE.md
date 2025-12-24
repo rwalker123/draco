@@ -300,8 +300,8 @@ environment variable.
 
 | Variable | Purpose |
 | --- | --- |
-| `EMAIL_FROM` | Sender email stamped on every message (required). |
-| `EMAIL_FROM_NAME` | Display name paired with `EMAIL_FROM` (required). |
+| `EMAIL_FROM` | Sender email stamped on every message. **Required** – the application will fail to start if not set. |
+| `EMAIL_FROM_NAME` | Display name paired with `EMAIL_FROM`. Defaults to `ezRecSports` if not set. |
 | `EMAIL_REPLY_TO` | Optional global reply-to fallback; individual jobs may override it. |
 | `BASE_URL` | Public site URL used when generating links inside templates. |
 

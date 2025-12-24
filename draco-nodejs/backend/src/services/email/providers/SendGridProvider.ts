@@ -11,15 +11,17 @@ import {
   WebhookProcessingResult,
   RecipientUpdateData,
 } from '../../../interfaces/emailInterfaces.js';
-import { EmailConfig } from '../../../config/email.js';
+import { EmailConfig, EmailSettings } from '../../../config/email.js';
 import prisma from '../../../lib/prisma.js';
 
 export class SendGridProvider implements IEmailProvider {
   private transporter: Transporter;
   private config: EmailConfig;
+  private settings: EmailSettings;
 
-  constructor(config: EmailConfig) {
+  constructor(config: EmailConfig, settings: EmailSettings) {
     this.config = config;
+    this.settings = settings;
     this.transporter = nodemailer.createTransport(config);
   }
 
@@ -66,8 +68,8 @@ export class SendGridProvider implements IEmailProvider {
   }
 
   private formatFromAddress(email?: string, name?: string): string {
-    const fromEmail = email || 'noreply@ezrecsports.com';
-    const fromName = name || 'ezRecSports.com';
+    const fromEmail = email || this.settings.fromEmail;
+    const fromName = name || this.settings.fromName;
     return `"${fromName}" <${fromEmail}>`;
   }
 

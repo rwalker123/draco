@@ -166,13 +166,6 @@ export const EMAIL_STYLES = Object.freeze({
  * Email template content constants
  */
 export const EMAIL_CONTENT = Object.freeze({
-  /** Default email settings */
-  DEFAULT_SETTINGS: Object.freeze({
-    fromEmail: 'noreply@ezrecsports.com',
-    fromName: 'ezRecSports',
-    replyTo: 'support@ezrecsports.com',
-  }),
-
   /** Email subject templates */
   SUBJECT_TEMPLATES: Object.freeze({
     teamsWantedVerification: (accountName: string) =>
