@@ -121,7 +121,7 @@ export class SesProvider implements IEmailProvider {
 
   private formatFromAddress(email?: string, name?: string): string {
     const fromEmail = email || this.settings.fromEmail;
-    const fromName = name?.trim() || this.settings.fromName;
+    const fromName = name || this.settings.fromName;
 
     if (fromName) {
       return `"${this.escapeQuotes(fromName)}" <${fromEmail}>`;
