@@ -58,14 +58,19 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
         ? `HAVING (SUM(ps.ip) + SUM(ps.ip2) / 3.0) >= ${minInningsPitched}`
         : '';
     const orderDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
-    const sortFieldSql = sortField.toLowerCase() === 'ip' ? '"ipDecimal"' : sortField.toLowerCase();
+    const sortFieldMap: Record<string, string> = {
+      ip: '"ipDecimal"',
+      playername: '"playerName"',
+      playerid: '"playerId"',
+    };
+    const sortFieldSql = sortFieldMap[sortField.toLowerCase()] || sortField.toLowerCase();
     const teamJoin =
       divisionId && divisionId !== BigInt(0) ? 'LEFT JOIN teamsseason ts ON ps.teamid = ts.id' : '';
 
     const queryText = `
       SELECT
         c.id as "playerId",
-        CONCAT(c.firstname, ' ', c.lastname) as "playerName",
+        CONCAT(c.lastname, ', ', c.firstname) as "playerName",
         SUM(ps.ip)::int as ip,
         SUM(ps.ip2)::int as ip2,
         SUM(ps.w)::int as w,

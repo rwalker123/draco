@@ -55,14 +55,18 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
 
     const havingClause = minAtBats > 0 ? `HAVING SUM(bs.ab) >= ${minAtBats}` : '';
     const orderDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
-    const sortFieldSql = sortField.toLowerCase();
+    const sortFieldMap: Record<string, string> = {
+      playername: '"playerName"',
+      playerid: '"playerId"',
+    };
+    const sortFieldSql = sortFieldMap[sortField.toLowerCase()] || sortField.toLowerCase();
     const teamJoin =
       divisionId && divisionId !== BigInt(0) ? 'LEFT JOIN teamsseason ts ON bs.teamid = ts.id' : '';
 
     const queryText = `
       SELECT
         c.id as "playerId",
-        CONCAT(c.firstname, ' ', c.lastname) as "playerName",
+        CONCAT(c.lastname, ', ', c.firstname) as "playerName",
         SUM(bs.ab)::int as ab,
         SUM(bs.h)::int as h,
         SUM(bs.r)::int as r,
