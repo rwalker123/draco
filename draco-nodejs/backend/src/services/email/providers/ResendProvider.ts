@@ -14,7 +14,7 @@ import {
   ServerEmailAttachment,
   WebhookProcessingResult,
 } from '../../../interfaces/emailInterfaces.js';
-import { EmailConfig } from '../../../config/email.js';
+import { EmailConfig, EmailSettings } from '../../../config/email.js';
 import prisma from '../../../lib/prisma.js';
 import type { Prisma } from '#prisma/client';
 
@@ -27,13 +27,15 @@ type ResendAttachment = {
 export class ResendProvider implements IEmailProvider {
   private client: Resend;
   private config: EmailConfig;
+  private settings: EmailSettings;
 
-  constructor(config: EmailConfig) {
+  constructor(config: EmailConfig, settings: EmailSettings) {
     if (!config.resendApiKey) {
       throw new Error('Missing Resend API key in email configuration');
     }
 
     this.config = config;
+    this.settings = settings;
     this.client = new Resend(config.resendApiKey);
   }
 
@@ -266,8 +268,8 @@ export class ResendProvider implements IEmailProvider {
   }
 
   private formatFromAddress(email?: string, name?: string): string {
-    const fromEmail = email || 'noreply@ezrecsports.com';
-    const fromName = name || 'ezRecSports';
+    const fromEmail = email || this.settings.fromEmail;
+    const fromName = name || this.settings.fromName;
     return `${fromName ? `"${fromName}" ` : ''}<${fromEmail}>`;
   }
 

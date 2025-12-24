@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SendGridProvider } from '../SendGridProvider.js';
 import { SendGridWebhookEvent } from '../../../../interfaces/emailInterfaces.js';
+import type { EmailSettings } from '../../../../config/email.js';
 
 // Mock the centralized prisma module (hoisted)
 const hoisted = vi.hoisted(() => ({
@@ -44,7 +45,13 @@ describe('SendGridProvider - Webhook Processing', () => {
       auth: { user: 'apikey', pass: 'test-key' },
     };
 
-    provider = new SendGridProvider(mockConfig);
+    const testSettings: EmailSettings = {
+      provider: 'sendgrid',
+      fromEmail: 'test@example.com',
+      fromName: 'Test',
+    };
+
+    provider = new SendGridProvider(mockConfig, testSettings);
   });
 
   describe('processWebhookEvents', () => {

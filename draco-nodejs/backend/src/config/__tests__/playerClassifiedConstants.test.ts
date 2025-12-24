@@ -118,12 +118,6 @@ describe('PlayerClassified Configuration Constants', () => {
   });
 
   describe('EMAIL_CONTENT', () => {
-    it('should provide default email settings', () => {
-      expect(EMAIL_CONTENT.DEFAULT_SETTINGS.fromEmail).toBe('noreply@ezrecsports.com');
-      expect(EMAIL_CONTENT.DEFAULT_SETTINGS.fromName).toBe('ezRecSports');
-      expect(EMAIL_CONTENT.DEFAULT_SETTINGS.replyTo).toBe('support@ezrecsports.com');
-    });
-
     it('should provide email subject templates', () => {
       const accountName = 'Test League';
       const subject = EMAIL_CONTENT.SUBJECT_TEMPLATES.teamsWantedVerification(accountName);
@@ -143,7 +137,6 @@ describe('PlayerClassified Configuration Constants', () => {
 
     it('should be immutable at TypeScript level', () => {
       // TypeScript prevents modification at compile time with 'as const'
-      expect(EMAIL_CONTENT).toHaveProperty('DEFAULT_SETTINGS');
       expect(EMAIL_CONTENT).toHaveProperty('SUBJECT_TEMPLATES');
     });
   });
@@ -292,7 +285,7 @@ describe('PlayerClassified Configuration Constants', () => {
       expect(typeof TIMEOUT_CONSTANTS.EMAIL_VERIFICATION_TIMEOUT_MS).toBe('number');
       expect(typeof VALIDATION_LIMITS.MIN_AGE).toBe('number');
       expect(typeof EMAIL_STYLES.CONTAINER.maxWidth).toBe('string');
-      expect(typeof EMAIL_CONTENT.DEFAULT_SETTINGS.fromEmail).toBe('string');
+      expect(typeof EMAIL_CONTENT.SUBJECT_TEMPLATES.teamsWantedVerification('Test')).toBe('string');
       expect(SECURITY_PATTERNS.HTML_DANGEROUS_PATTERNS[0]).toBeInstanceOf(RegExp);
       expect(typeof BCRYPT_CONSTANTS.ACCESS_CODE_SALT_ROUNDS).toBe('number');
       expect(DEFAULT_VALUES.DEFAULT_BIRTH_DATE).toBeInstanceOf(Date);
@@ -337,7 +330,7 @@ describe('PlayerClassified Configuration Constants', () => {
       // Email-related constants should be together
       expect(EMAIL_STYLES).toHaveProperty('CONTAINER');
       expect(EMAIL_STYLES).toHaveProperty('HEADER_BANNER');
-      expect(EMAIL_CONTENT).toHaveProperty('DEFAULT_SETTINGS');
+      expect(EMAIL_CONTENT).toHaveProperty('SUBJECT_TEMPLATES');
 
       // Security-related constants should be together
       expect(SECURITY_PATTERNS).toHaveProperty('HTML_DANGEROUS_PATTERNS');

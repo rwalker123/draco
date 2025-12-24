@@ -5,7 +5,7 @@ import { SESClient, SendRawEmailCommand, GetSendQuotaCommand } from '@aws-sdk/cl
 import type { AwsCredentialIdentity } from '@aws-sdk/types';
 import MailComposer from 'nodemailer/lib/mail-composer/index.js';
 
-import type { EmailConfig } from '../../../config/email.js';
+import type { EmailConfig, EmailSettings } from '../../../config/email.js';
 import type {
   EmailOptions,
   EmailResult,
@@ -15,9 +15,9 @@ import { htmlToPlainText } from '../../../utils/emailContent.js';
 
 export class SesProvider implements IEmailProvider {
   private readonly client: SESClient;
-  private readonly defaultFromEmail: string;
+  private readonly settings: EmailSettings;
 
-  constructor(config: EmailConfig) {
+  constructor(config: EmailConfig, settings: EmailSettings) {
     const region = config.region || process.env.SES_REGION || process.env.AWS_REGION;
 
     if (!region) {
@@ -41,7 +41,7 @@ export class SesProvider implements IEmailProvider {
       credentials,
     });
 
-    this.defaultFromEmail = process.env.EMAIL_FROM || 'noreply@example.com';
+    this.settings = settings;
   }
 
   async sendEmail(options: EmailOptions): Promise<EmailResult> {
@@ -66,7 +66,7 @@ export class SesProvider implements IEmailProvider {
       const rawMessage = await mail.compile().build();
 
       const command = new SendRawEmailCommand({
-        Source: this.extractEmailAddress(fromAddress) || this.defaultFromEmail,
+        Source: this.extractEmailAddress(fromAddress) || this.settings.fromEmail,
         Destinations: destinations,
         RawMessage: {
           Data: rawMessage,
@@ -120,8 +120,8 @@ export class SesProvider implements IEmailProvider {
   }
 
   private formatFromAddress(email?: string, name?: string): string {
-    const fromEmail = email || this.defaultFromEmail;
-    const fromName = name?.trim();
+    const fromEmail = email || this.settings.fromEmail;
+    const fromName = name?.trim() || this.settings.fromName;
 
     if (fromName) {
       return `"${this.escapeQuotes(fromName)}" <${fromEmail}>`;

@@ -59,10 +59,15 @@ export class EmailConfigFactory {
    */
   static getEmailSettings(): EmailSettings {
     const provider = this.resolveProvider();
+    const fromEmail = process.env.EMAIL_FROM;
+
+    if (!fromEmail) {
+      throw new Error('EMAIL_FROM environment variable is required');
+    }
 
     return {
       provider,
-      fromEmail: process.env.EMAIL_FROM || 'noreply@ezrecsports.com',
+      fromEmail,
       fromName: process.env.EMAIL_FROM_NAME || 'ezRecSports',
       replyTo: process.env.EMAIL_REPLY_TO,
     };
@@ -241,7 +246,7 @@ export class EmailConfigFactory {
     }
 
     if (!process.env.EMAIL_FROM) {
-      console.warn('EMAIL_FROM not set, using default email address');
+      throw new Error('EMAIL_FROM environment variable is required');
     }
   }
 }
