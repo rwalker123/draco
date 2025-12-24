@@ -104,11 +104,11 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                     justifyContent: 'center',
                     p: { xs: 1.25, sm: 1.75 },
                     borderRadius: 2,
-                    bgcolor: tileStyles.logoBackdrop,
+                    bgcolor: hasLogo ? 'transparent' : tileStyles.logoBackdrop,
                     border: hasLogo ? 'none' : '1px dashed',
                     borderColor: hasLogo ? 'transparent' : theme.palette.divider,
                     overflow: 'hidden',
-                    minHeight: 96,
+                    minHeight: hasLogo ? undefined : 96,
                   }}
                 >
                   {hasLogo ? (
@@ -118,8 +118,7 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                       alt={sponsor.name}
                       sx={{
                         maxWidth: '100%',
-                        maxHeight: 140,
-                        objectFit: 'contain',
+                        height: 'auto',
                       }}
                       onError={() => handleImageError(sponsor.id)}
                     />
