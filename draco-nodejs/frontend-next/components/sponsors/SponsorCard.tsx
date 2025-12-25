@@ -115,8 +115,8 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                       src={sponsor.photoUrl ?? undefined}
                       alt={sponsor.name}
                       sx={{
-                        maxWidth: '200px',
-                        maxHeight: '200px',
+                        maxWidth: '100%',
+                        maxHeight: '150px',
                         objectFit: 'contain',
                       }}
                       onError={() => handleImageError(sponsor.id)}
