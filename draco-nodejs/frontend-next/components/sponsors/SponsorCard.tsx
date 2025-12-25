@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Typography, Stack, Box, Paper, Link as MuiLink } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import WidgetShell from '../ui/WidgetShell';
 import BusinessIcon from '@mui/icons-material/Business';
 import EmailIcon from '@mui/icons-material/Email';
@@ -35,7 +35,6 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
       backgroundColor: theme.palette.background.paper,
       border: theme.palette.widget.border,
       shadow: theme.shadows[theme.palette.mode === 'dark' ? 8 : 1],
-      logoBackdrop: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.18 : 0.08),
     };
   }, [theme]);
 
@@ -83,8 +82,8 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                 key={sponsor.id}
                 variant="outlined"
                 sx={{
-                  flex: '1 1 300px',
-                  maxWidth: 540,
+                  flex: '1 1 280px',
+                  maxWidth: 310,
                   minWidth: 240,
                   p: { xs: 1.5, sm: 2 },
                   borderRadius: 2,
@@ -104,7 +103,6 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                     justifyContent: 'center',
                     p: { xs: 1.25, sm: 1.75 },
                     borderRadius: 2,
-                    bgcolor: tileStyles.logoBackdrop,
                     border: hasLogo ? 'none' : '1px dashed',
                     borderColor: hasLogo ? 'transparent' : theme.palette.divider,
                     overflow: 'hidden',
@@ -118,7 +116,7 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                       alt={sponsor.name}
                       sx={{
                         maxWidth: '100%',
-                        maxHeight: 140,
+                        maxHeight: '150px',
                         objectFit: 'contain',
                       }}
                       onError={() => handleImageError(sponsor.id)}

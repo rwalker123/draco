@@ -92,7 +92,9 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
     [gameById, teamNameById],
   );
 
-  if (!canEdit) {
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  if (!canEdit || !isDevelopment) {
     return null;
   }
 
