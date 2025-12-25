@@ -30,6 +30,7 @@ import {
   UpsertTeamsWantedClassifiedType,
 } from '@draco/shared-schemas';
 import { useTeamsWantedClassifieds } from '../../hooks/useClassifiedsService';
+import { useClassifiedsConfig } from '../../hooks/useClassifiedsConfig';
 import { useAccountMembership } from '../../hooks/useAccountMembership';
 import TurnstileChallenge from '../security/TurnstileChallenge';
 
@@ -221,6 +222,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     error: serviceError,
     resetError,
   } = useTeamsWantedClassifieds(accountId);
+  const { config: classifiedsConfig } = useClassifiedsConfig(accountId);
   const { isMember, contact } = useAccountMembership(accountId);
 
   const turnstileEnabled = useMemo(() => Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY), []);
@@ -666,6 +668,14 @@ Examples:
                   later.
                 </Alert>
               </Box>
+            )}
+
+            {/* Expiration Notice */}
+            {!editMode && (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                Your Teams Wanted ad will be visible to all logged in members of the site for{' '}
+                {classifiedsConfig.expirationDays} days.
+              </Alert>
             )}
 
             {captchaRequired && (

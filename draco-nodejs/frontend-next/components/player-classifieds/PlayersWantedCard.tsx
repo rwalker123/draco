@@ -27,6 +27,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import ContactCreatorDialog from './ContactCreatorDialog';
 import { EditIconButton, DeleteIconButton } from '../common/ActionIconButtons';
 import { ContactPlayersWantedCreatorType } from '@draco/shared-schemas';
+import { useClassifiedsConfig } from '../../hooks/useClassifiedsConfig';
 
 const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
   classified,
@@ -39,6 +40,18 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
   const { showNotification } = useNotifications();
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
+  const { config: classifiedsConfig } = useClassifiedsConfig(
+    Array.isArray(accountId) ? accountId[0] : accountId || '',
+  );
+
+  // Calculate expiration date from dateCreated + expirationDays
+  const getExpirationDate = (): string => {
+    if (!classified.dateCreated) return '';
+    const createdDate = new Date(classified.dateCreated);
+    const expirationDate = new Date(createdDate);
+    expirationDate.setDate(expirationDate.getDate() + classifiedsConfig.expirationDays);
+    return formatDate(expirationDate.toISOString());
+  };
 
   // Parse positions from comma-separated string
   const positionsNeeded = classified.positionsNeeded.split(',').map((pos) => pos.trim());
@@ -127,12 +140,22 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
           </Box>
         </Box>
 
-        {/* Date Created */}
-        <Box display="flex" alignItems="center" gap={1}>
+        {/* Date Created and Expiration */}
+        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
           <CalendarIcon fontSize="small" color="action" />
           <Typography variant="caption" color="text.secondary">
             Posted {formatDate(classified.dateCreated ?? '')}
           </Typography>
+          {classified.dateCreated && (
+            <>
+              <Typography variant="caption" color="text.secondary">
+                •
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Expires {getExpirationDate()}
+              </Typography>
+            </>
+          )}
         </Box>
       </CardContent>
 

@@ -139,3 +139,31 @@ export interface CleanupStatus {
   /** Any error messages from the last operation */
   lastError?: string;
 }
+
+/**
+ * Expired Players Wanted classified with creator email info
+ * Used for sending expiration notifications before deletion
+ */
+export interface ExpiredPlayersWantedWithEmail {
+  id: bigint;
+  accountId: bigint;
+  teamEventName: string;
+  dateCreated: Date;
+  creatorEmail: string | null;
+  creatorFirstName: string;
+  creatorLastName: string;
+  accountName: string;
+}
+
+/**
+ * Expired Teams Wanted classified with email info
+ * Used for sending expiration notifications before deletion
+ */
+export interface ExpiredTeamsWantedWithEmail {
+  id: bigint;
+  accountId: bigint;
+  name: string;
+  email: string;
+  dateCreated: Date;
+  accountName: string;
+}

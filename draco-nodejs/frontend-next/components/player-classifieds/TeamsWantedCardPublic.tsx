@@ -19,6 +19,7 @@ import { createApiClient } from '../../lib/apiClientFactory';
 import { ApiClientError, unwrapApiResult } from '../../utils/apiResult';
 import { formatDate } from '../../utils/dateUtils';
 import { EditIconButton, DeleteIconButton } from '../common/ActionIconButtons';
+import { useClassifiedsConfig } from '../../hooks/useClassifiedsConfig';
 
 const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   classified,
@@ -37,6 +38,15 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   const [experienceExpanded, setExperienceExpanded] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
   const experienceRef = useRef<HTMLSpanElement>(null);
+  const { config: classifiedsConfig } = useClassifiedsConfig(classified.accountId);
+
+  const getExpirationDate = (): string => {
+    if (!classified.dateCreated) return '';
+    const createdDate = new Date(classified.dateCreated);
+    const expirationDate = new Date(createdDate);
+    expirationDate.setDate(expirationDate.getDate() + classifiedsConfig.expirationDays);
+    return formatDate(expirationDate.toISOString());
+  };
 
   useEffect(() => {
     const el = experienceRef.current;
@@ -205,12 +215,22 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
           </Box>
         )}
 
-        {/* Date Created */}
-        <Box display="flex" alignItems="center" gap={1} mt="auto">
+        {/* Date Created and Expiration */}
+        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mt="auto">
           <CalendarIcon fontSize="small" color="action" />
           <Typography variant="caption" color="text.secondary">
             Posted {formatDate(classified.dateCreated ?? '')}
           </Typography>
+          {classified.dateCreated && (
+            <>
+              <Typography variant="caption" color="text.secondary">
+                •
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Expires {getExpirationDate()}
+              </Typography>
+            </>
+          )}
         </Box>
       </CardContent>
 

@@ -954,6 +954,56 @@ export const registerPlayerClassifiedsEndpoints = ({ registry, schemaRefs }: Reg
       },
     },
   });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/player-classifieds/config',
+    operationId: 'getPlayerClassifiedsConfig',
+    summary: 'Get classifieds configuration',
+    description:
+      'Retrieve public configuration for player classifieds including expiration duration.',
+    tags: ['Player Classifieds'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Classifieds configuration',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                expirationDays: {
+                  type: 'integer',
+                  minimum: 1,
+                  example: 45,
+                  description: 'Number of days until classifieds expire',
+                },
+              },
+              required: ['expirationDays'],
+            },
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
 };
 
 export default registerPlayerClassifiedsEndpoints;
