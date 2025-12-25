@@ -6,11 +6,14 @@ import {
   ICleanupConfig,
   CleanupResult,
   CleanupStatus,
+  ExpiredPlayersWantedWithEmail,
+  ExpiredTeamsWantedWithEmail,
 } from '../interfaces/cleanupInterfaces.js';
 
 import { ICleanupRepository, RepositoryFactory } from '../repositories/index.js';
 import { ValidationError, InternalServerError } from '../utils/customErrors.js';
 import { performanceMonitor } from '../utils/performanceMonitor.js';
+import { ClassifiedExpirationEmailService } from './player-classified/ClassifiedExpirationEmailService.js';
 
 export class CleanupService implements ICleanupService {
   private repository: ICleanupRepository;
@@ -18,9 +21,11 @@ export class CleanupService implements ICleanupService {
   private config: ICleanupConfig;
   private lastCleanup: Date | null = null;
   private lastError: string | null = null;
+  private emailService: ClassifiedExpirationEmailService;
 
   constructor(config?: Partial<ICleanupConfig>, repository?: ICleanupRepository) {
     this.repository = repository || RepositoryFactory.getCleanupRepository();
+    this.emailService = new ClassifiedExpirationEmailService();
 
     // Use provided configuration or defaults
     this.config = {
@@ -153,6 +158,7 @@ export class CleanupService implements ICleanupService {
 
   /**
    * Clean up expired Players Wanted classifieds (older than configured days)
+   * Sends expiration notification emails before deletion
    * @param expirationDays - Optional override for expiration days
    * @param batchSize - Optional override for batch size
    * @param enabled - Optional flag to enable/disable this cleanup
@@ -170,12 +176,14 @@ export class CleanupService implements ICleanupService {
     const days = expirationDays || this.config.expirationDays;
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
+    const effectiveBatchSize = batchSize || this.config.batchSize;
 
-    return this.cleanupExpiredRecords('playerswantedclassified', cutoffDate, batchSize);
+    return this.cleanupExpiredPlayersWantedWithNotifications(cutoffDate, effectiveBatchSize, days);
   }
 
   /**
    * Clean up expired Teams Wanted classifieds (older than configured days)
+   * Sends expiration notification emails before deletion
    * @param expirationDays - Optional override for expiration days
    * @param batchSize - Optional override for batch size
    * @param enabled - Optional flag to enable/disable this cleanup
@@ -193,38 +201,28 @@ export class CleanupService implements ICleanupService {
     const days = expirationDays || this.config.expirationDays;
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
+    const effectiveBatchSize = batchSize || this.config.batchSize;
 
-    return this.cleanupExpiredRecords('teamswantedclassified', cutoffDate, batchSize);
+    return this.cleanupExpiredTeamsWantedWithNotifications(cutoffDate, effectiveBatchSize, days);
   }
 
   /**
-   * Generic method to clean up expired records from any supported table
-   * @param tableName - Name of the table to clean up
-   * @param cutoffDate - Date before which records are considered expired
-   * @param batchSize - Optional override for batch size
-   * @returns Promise<number> - Number of records deleted
+   * Clean up expired Players Wanted with email notifications
    */
-  private async cleanupExpiredRecords(
-    tableName: string,
+  private async cleanupExpiredPlayersWantedWithNotifications(
     cutoffDate: Date,
-    batchSize?: number,
+    batchSize: number,
+    expirationDays: number,
   ): Promise<number> {
-    // Validate table name
-    if (!['playerswantedclassified', 'teamswantedclassified'].includes(tableName)) {
-      throw new ValidationError(`Unsupported table for cleanup: ${tableName}`);
-    }
-
-    const effectiveBatchSize = batchSize || this.config.batchSize;
     let totalDeleted = 0;
     let hasMore = true;
     const startTime = Date.now();
 
     try {
       while (hasMore) {
-        const expiredRecords = await this.repository.findExpiredRecords(
-          tableName,
+        const expiredRecords = await this.repository.findExpiredPlayersWantedWithEmail(
           cutoffDate,
-          effectiveBatchSize,
+          batchSize,
         );
 
         if (expiredRecords.length === 0) {
@@ -232,18 +230,21 @@ export class CleanupService implements ICleanupService {
           break;
         }
 
+        // Send expiration emails before deletion (failures are handled gracefully)
+        await this.sendPlayersWantedExpirationEmails(expiredRecords, expirationDays);
+
+        // Delete the records
         const ids = expiredRecords.map((record) => record.id);
-        const result = await this.repository.deleteRecordsByIds(tableName, ids);
+        const result = await this.repository.deleteRecordsByIds('playerswantedclassified', ids);
 
         totalDeleted += result;
-        hasMore = expiredRecords.length === effectiveBatchSize;
+        hasMore = expiredRecords.length === batchSize;
       }
 
-      // Record successful cleanup operation
       const duration = Date.now() - startTime;
       performanceMonitor.recordQuery({
         duration,
-        query: `cleanup.${tableName}`,
+        query: 'cleanup.playerswantedclassified',
         timestamp: new Date(),
         model: 'Cleanup',
         operation: 'delete',
@@ -252,30 +253,136 @@ export class CleanupService implements ICleanupService {
       return totalDeleted;
     } catch (error) {
       const duration = Date.now() - startTime;
-
-      // Record failed cleanup operation
       performanceMonitor.recordQuery({
         duration,
-        query: `cleanup.${tableName}.failed`,
+        query: 'cleanup.playerswantedclassified.failed',
         timestamp: new Date(),
         model: 'Cleanup',
         operation: 'delete',
       });
 
-      // Log error with context
-      console.error(`❌ Cleanup failed for table ${tableName}:`, {
+      console.error('❌ Cleanup failed for Players Wanted:', {
         error: error instanceof Error ? error.message : String(error),
-        tableName,
         cutoffDate: cutoffDate.toISOString(),
-        batchSize: effectiveBatchSize,
+        batchSize,
         duration,
         timestamp: new Date().toISOString(),
       });
 
-      // Re-throw as InternalServerError for proper error handling
       throw new InternalServerError(
-        `Cleanup failed for table ${tableName}: ${error instanceof Error ? error.message : String(error)}`,
+        `Cleanup failed for Players Wanted: ${error instanceof Error ? error.message : String(error)}`,
       );
+    }
+  }
+
+  /**
+   * Clean up expired Teams Wanted with email notifications
+   */
+  private async cleanupExpiredTeamsWantedWithNotifications(
+    cutoffDate: Date,
+    batchSize: number,
+    expirationDays: number,
+  ): Promise<number> {
+    let totalDeleted = 0;
+    let hasMore = true;
+    const startTime = Date.now();
+
+    try {
+      while (hasMore) {
+        const expiredRecords = await this.repository.findExpiredTeamsWantedWithEmail(
+          cutoffDate,
+          batchSize,
+        );
+
+        if (expiredRecords.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        // Send expiration emails before deletion (failures are handled gracefully)
+        await this.sendTeamsWantedExpirationEmails(expiredRecords, expirationDays);
+
+        // Delete the records
+        const ids = expiredRecords.map((record) => record.id);
+        const result = await this.repository.deleteRecordsByIds('teamswantedclassified', ids);
+
+        totalDeleted += result;
+        hasMore = expiredRecords.length === batchSize;
+      }
+
+      const duration = Date.now() - startTime;
+      performanceMonitor.recordQuery({
+        duration,
+        query: 'cleanup.teamswantedclassified',
+        timestamp: new Date(),
+        model: 'Cleanup',
+        operation: 'delete',
+      });
+
+      return totalDeleted;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      performanceMonitor.recordQuery({
+        duration,
+        query: 'cleanup.teamswantedclassified.failed',
+        timestamp: new Date(),
+        model: 'Cleanup',
+        operation: 'delete',
+      });
+
+      console.error('❌ Cleanup failed for Teams Wanted:', {
+        error: error instanceof Error ? error.message : String(error),
+        cutoffDate: cutoffDate.toISOString(),
+        batchSize,
+        duration,
+        timestamp: new Date().toISOString(),
+      });
+
+      throw new InternalServerError(
+        `Cleanup failed for Teams Wanted: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Send expiration emails for Players Wanted classifieds
+   * Silently skips records without email, continues on failure
+   */
+  private async sendPlayersWantedExpirationEmails(
+    records: ExpiredPlayersWantedWithEmail[],
+    expirationDays: number,
+  ): Promise<void> {
+    for (const record of records) {
+      if (!record.creatorEmail) {
+        continue;
+      }
+
+      try {
+        await this.emailService.sendPlayersWantedExpirationEmail(record, expirationDays);
+      } catch {
+        // Continue cleanup even if email fails
+      }
+    }
+  }
+
+  /**
+   * Send expiration emails for Teams Wanted classifieds
+   * Continues on failure to ensure cleanup proceeds
+   */
+  private async sendTeamsWantedExpirationEmails(
+    records: ExpiredTeamsWantedWithEmail[],
+    expirationDays: number,
+  ): Promise<void> {
+    for (const record of records) {
+      if (!record.email) {
+        continue;
+      }
+
+      try {
+        await this.emailService.sendTeamsWantedExpirationEmail(record, expirationDays);
+      } catch {
+        // Continue cleanup even if email fails
+      }
     }
   }
 

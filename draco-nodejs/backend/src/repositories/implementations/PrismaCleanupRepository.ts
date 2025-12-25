@@ -4,6 +4,10 @@
 import { PrismaClient } from '#prisma/client';
 import { ICleanupRepository } from '../interfaces/index.js';
 import { ValidationError, InternalServerError } from '../../utils/customErrors.js';
+import {
+  ExpiredPlayersWantedWithEmail,
+  ExpiredTeamsWantedWithEmail,
+} from '../../interfaces/cleanupInterfaces.js';
 
 export class PrismaCleanupRepository implements ICleanupRepository {
   private prisma: PrismaClient;
@@ -153,6 +157,142 @@ export class PrismaCleanupRepository implements ICleanupRepository {
       // Re-throw as InternalServerError for proper error handling
       throw new InternalServerError(
         `Failed to delete records from table ${tableName}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Find expired Players Wanted classifieds with creator email info
+   * Joins to contacts and accounts tables to get email and account name
+   */
+  async findExpiredPlayersWantedWithEmail(
+    cutoffDate: Date,
+    batchSize: number,
+  ): Promise<ExpiredPlayersWantedWithEmail[]> {
+    if (!(cutoffDate instanceof Date) || isNaN(cutoffDate.getTime())) {
+      throw new ValidationError('Cutoff date must be a valid Date object');
+    }
+
+    if (!Number.isInteger(batchSize) || batchSize <= 0) {
+      throw new ValidationError('Batch size must be a positive integer');
+    }
+
+    try {
+      const records = await this.prisma.playerswantedclassified.findMany({
+        where: {
+          datecreated: {
+            lt: cutoffDate,
+          },
+        },
+        take: batchSize,
+        select: {
+          id: true,
+          accountid: true,
+          teameventname: true,
+          datecreated: true,
+          contacts: {
+            select: {
+              email: true,
+              firstname: true,
+              lastname: true,
+            },
+          },
+          accounts: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      return records.map((record) => ({
+        id: record.id,
+        accountId: record.accountid,
+        teamEventName: record.teameventname,
+        dateCreated: record.datecreated,
+        creatorEmail: record.contacts?.email ?? null,
+        creatorFirstName: record.contacts?.firstname ?? '',
+        creatorLastName: record.contacts?.lastname ?? '',
+        accountName: record.accounts?.name ?? '',
+      }));
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      console.error('Database error in findExpiredPlayersWantedWithEmail:', {
+        error: error instanceof Error ? error.message : String(error),
+        cutoffDate: cutoffDate.toISOString(),
+        batchSize,
+        timestamp: new Date().toISOString(),
+      });
+
+      throw new InternalServerError(
+        `Failed to find expired Players Wanted records: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Find expired Teams Wanted classifieds with email info
+   * Email is stored directly on the classified, joins to accounts for account name
+   */
+  async findExpiredTeamsWantedWithEmail(
+    cutoffDate: Date,
+    batchSize: number,
+  ): Promise<ExpiredTeamsWantedWithEmail[]> {
+    if (!(cutoffDate instanceof Date) || isNaN(cutoffDate.getTime())) {
+      throw new ValidationError('Cutoff date must be a valid Date object');
+    }
+
+    if (!Number.isInteger(batchSize) || batchSize <= 0) {
+      throw new ValidationError('Batch size must be a positive integer');
+    }
+
+    try {
+      const records = await this.prisma.teamswantedclassified.findMany({
+        where: {
+          datecreated: {
+            lt: cutoffDate,
+          },
+        },
+        take: batchSize,
+        select: {
+          id: true,
+          accountid: true,
+          name: true,
+          email: true,
+          datecreated: true,
+          accounts: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      return records.map((record) => ({
+        id: record.id,
+        accountId: record.accountid,
+        name: record.name,
+        email: record.email,
+        dateCreated: record.datecreated,
+        accountName: record.accounts?.name ?? '',
+      }));
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      console.error('Database error in findExpiredTeamsWantedWithEmail:', {
+        error: error instanceof Error ? error.message : String(error),
+        cutoffDate: cutoffDate.toISOString(),
+        batchSize,
+        timestamp: new Date().toISOString(),
+      });
+
+      throw new InternalServerError(
+        `Failed to find expired Teams Wanted records: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

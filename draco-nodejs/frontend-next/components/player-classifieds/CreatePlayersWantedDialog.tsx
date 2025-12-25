@@ -32,6 +32,7 @@ import { getAccountUserTeams } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { usePlayersWantedClassifieds } from '../../hooks/useClassifiedsService';
+import { useClassifiedsConfig } from '../../hooks/useClassifiedsConfig';
 
 // Use shared validation constants
 const VALIDATION_CONSTANTS = PLAYER_CLASSIFIED_VALIDATION.PLAYERS_WANTED;
@@ -109,6 +110,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     error: serviceError,
     resetError,
   } = usePlayersWantedClassifieds(accountId);
+  const { config: classifiedsConfig } = useClassifiedsConfig(accountId);
 
   const [formData, setFormData] = useState<UpsertPlayersWantedClassifiedType>(
     initialData ?? EMPTY_FORM,
@@ -437,8 +439,9 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
               </FormHelperText>
             </FormControl>
 
-            <Alert severity="info">
-              Your Players Wanted ad will be visible to all visitors of the site for 45 days.
+            <Alert severity="warning">
+              Your Players Wanted ad will be visible to all visitors of the site for{' '}
+              {classifiedsConfig.expirationDays} days.
             </Alert>
           </Box>
         </DialogContent>

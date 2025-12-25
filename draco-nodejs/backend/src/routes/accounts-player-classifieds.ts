@@ -17,6 +17,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import { AuthorizationError, ValidationError } from '../utils/customErrors.js';
 import { BASEBALL_POSITIONS, EXPERIENCE_LEVELS } from '../interfaces/playerClassifiedConstants.js';
+import { getCleanupConfig } from '../config/cleanup.js';
 
 const router = Router({ mergeParams: true });
 const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
@@ -461,6 +462,20 @@ router.get(
   '/experience-levels',
   asyncHandler(async (_req: Request, res: Response): Promise<void> => {
     res.json(EXPERIENCE_LEVELS);
+  }),
+);
+
+/**
+ *
+ * GET /api/accounts/:accountId/player-classifieds/config
+ * Returns public configuration for player classifieds
+ * Publicly accessible
+ */
+router.get(
+  '/config',
+  asyncHandler(async (_req: Request, res: Response): Promise<void> => {
+    const { expirationDays } = getCleanupConfig();
+    res.json({ expirationDays });
   }),
 );
 
