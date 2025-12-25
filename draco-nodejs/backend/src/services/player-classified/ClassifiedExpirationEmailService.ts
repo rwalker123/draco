@@ -1,7 +1,7 @@
 // ClassifiedExpirationEmailService
 // Handles expiration notification emails for player classifieds
 
-import { sanitizePlainText, sanitizeRichHtml } from '../../utils/htmlSanitizer.js';
+import { sanitizeRichHtml } from '../../utils/htmlSanitizer.js';
 import { EMAIL_STYLES } from '../../config/playerClassifiedConstants.js';
 import { getFrontendBaseUrlOrFallback } from '../../utils/frontendBaseUrl.js';
 import { ServiceFactory } from '../serviceFactory.js';
@@ -156,39 +156,6 @@ export class ClassifiedExpirationEmailService {
     `;
   }
 
-  private generatePlayersWantedExpirationText(
-    classified: ExpiredPlayersWantedWithEmail,
-    expirationDays: number,
-    classifiedsUrl: string,
-  ): string {
-    const sanitizedTeamEventName = this.sanitizeTextContent(classified.teamEventName);
-    const sanitizedAccountName = this.sanitizeTextContent(classified.accountName);
-    const sanitizedFirstName = this.sanitizeTextContent(classified.creatorFirstName);
-    const postedDate = classified.dateCreated.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-
-    return `
-${sanitizedAccountName} - Your Players Wanted Ad Has Expired
-
-Hello ${sanitizedFirstName},
-
-Your Players Wanted classified ad "${sanitizedTeamEventName}" has expired and been removed from ${sanitizedAccountName}.
-
-Ad Title: ${sanitizedTeamEventName}
-Posted: ${postedDate}
-Duration: ${expirationDays} days
-
-Still Looking for Players?
-You can create a new Players Wanted ad anytime:
-${classifiedsUrl}
-
-Thank you for using ${sanitizedAccountName}!
-`;
-  }
-
   private generateTeamsWantedExpirationHtml(
     classified: ExpiredTeamsWantedWithEmail,
     expirationDays: number,
@@ -256,38 +223,6 @@ Thank you for using ${sanitizedAccountName}!
     `;
   }
 
-  private generateTeamsWantedExpirationText(
-    classified: ExpiredTeamsWantedWithEmail,
-    expirationDays: number,
-    classifiedsUrl: string,
-  ): string {
-    const sanitizedName = this.sanitizeTextContent(classified.name);
-    const sanitizedAccountName = this.sanitizeTextContent(classified.accountName);
-    const postedDate = classified.dateCreated.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-
-    return `
-${sanitizedAccountName} - Your Teams Wanted Ad Has Expired
-
-Hello ${sanitizedName},
-
-Your Teams Wanted classified ad has expired and been removed from ${sanitizedAccountName}.
-
-Your Name: ${sanitizedName}
-Posted: ${postedDate}
-Duration: ${expirationDays} days
-
-Still Looking for a Team?
-You can create a new Teams Wanted ad anytime:
-${classifiedsUrl}
-
-Thank you for using ${sanitizedAccountName}!
-`;
-  }
-
   private generateEmailStyles(): string {
     return `
       .email-container { max-width: ${EMAIL_STYLES.CONTAINER.maxWidth}; margin: ${EMAIL_STYLES.CONTAINER.margin}; padding: ${EMAIL_STYLES.CONTAINER.padding}; font-family: ${EMAIL_STYLES.CONTAINER.fontFamily}; }
@@ -308,9 +243,5 @@ Thank you for using ${sanitizedAccountName}!
 
   private sanitizeHtmlContent(content: string): string {
     return sanitizeRichHtml(content);
-  }
-
-  private sanitizeTextContent(content: string): string {
-    return sanitizePlainText(content);
   }
 }

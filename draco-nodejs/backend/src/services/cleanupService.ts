@@ -226,7 +226,6 @@ export class CleanupService implements ICleanupService {
         );
 
         if (expiredRecords.length === 0) {
-          hasMore = false;
           break;
         }
 
@@ -295,7 +294,6 @@ export class CleanupService implements ICleanupService {
         );
 
         if (expiredRecords.length === 0) {
-          hasMore = false;
           break;
         }
 

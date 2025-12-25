@@ -439,10 +439,12 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
               </FormHelperText>
             </FormControl>
 
-            <Alert severity="warning">
-              Your Players Wanted ad will be visible to all visitors of the site for{' '}
-              {classifiedsConfig.expirationDays} days.
-            </Alert>
+            {!editMode && (
+              <Alert severity="warning">
+                Your Players Wanted ad will be visible to all visitors of the site for{' '}
+                {classifiedsConfig.expirationDays} days.
+              </Alert>
+            )}
           </Box>
         </DialogContent>
         <DialogActions>
