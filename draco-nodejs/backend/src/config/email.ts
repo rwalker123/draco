@@ -59,10 +59,15 @@ export class EmailConfigFactory {
    */
   static getEmailSettings(): EmailSettings {
     const provider = this.resolveProvider();
+    const fromEmail = process.env.EMAIL_FROM;
+
+    if (!fromEmail) {
+      throw new Error('EMAIL_FROM environment variable is required');
+    }
 
     return {
       provider,
-      fromEmail: process.env.EMAIL_FROM || 'noreply@ezrecsports.com',
+      fromEmail,
       fromName: process.env.EMAIL_FROM_NAME || 'ezRecSports',
       replyTo: process.env.EMAIL_REPLY_TO,
     };
@@ -199,49 +204,6 @@ export class EmailConfigFactory {
           pass: '', // Will be filled by EtherealProvider
         },
       };
-    }
-  }
-
-  /**
-   * Get base URL for email links
-   */
-  /**
-   * Validate required environment variables
-   */
-  static validateConfig(): void {
-    const provider = this.resolveProvider();
-
-    if (provider === 'sendgrid' && !process.env.SENDGRID_API_KEY) {
-      throw new Error('SENDGRID_API_KEY is required when using the SendGrid email provider');
-    }
-
-    if (provider === 'ses') {
-      const region = process.env.SES_REGION || process.env.AWS_REGION;
-      const accessKeyId = process.env.SES_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
-      const secretAccessKey =
-        process.env.SES_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
-
-      if (!region) {
-        throw new Error('SES_REGION or AWS_REGION is required when using the SES email provider');
-      }
-
-      if (!accessKeyId || !secretAccessKey) {
-        throw new Error(
-          'SES_ACCESS_KEY_ID/SES_SECRET_ACCESS_KEY or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY are required when using the SES email provider',
-        );
-      }
-    }
-
-    if (provider === 'resend' && !process.env.RESEND_API_KEY) {
-      throw new Error('RESEND_API_KEY is required when using the Resend email provider');
-    }
-
-    if (provider === 'none') {
-      console.warn('EMAIL_PROVIDER set to "none" – outbound emails are disabled.');
-    }
-
-    if (!process.env.EMAIL_FROM) {
-      console.warn('EMAIL_FROM not set, using default email address');
     }
   }
 }

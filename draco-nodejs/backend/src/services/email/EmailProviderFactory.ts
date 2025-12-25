@@ -35,19 +35,19 @@ export class EmailProviderFactory {
 
     switch (emailSettings.provider) {
       case 'sendgrid':
-        return new SendGridProvider(emailConfig);
+        return new SendGridProvider(emailConfig, emailSettings);
 
       case 'ses':
-        return new SesProvider(emailConfig);
+        return new SesProvider(emailConfig, emailSettings);
 
       case 'resend':
-        return new ResendProvider(emailConfig);
+        return new ResendProvider(emailConfig, emailSettings);
 
       case 'none':
         return new NoneProvider(emailConfig, emailSettings);
 
       case 'ethereal':
-        return new EtherealProvider(emailConfig);
+        return new EtherealProvider(emailConfig, emailSettings);
 
       default:
         throw new Error(`Unsupported email provider: ${emailSettings.provider}`);

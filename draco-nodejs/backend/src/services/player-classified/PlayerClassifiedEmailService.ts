@@ -4,6 +4,7 @@
 import { sanitizePlainText, sanitizeRichHtml } from '../../utils/htmlSanitizer.js';
 import { logSecurely } from '../../utils/auditLogger.js';
 import { EMAIL_STYLES, EMAIL_CONTENT } from '../../config/playerClassifiedConstants.js';
+import { EmailConfigFactory } from '../../config/email.js';
 import { DateUtils } from '../../utils/dateUtils.js';
 import { getFrontendBaseUrlOrFallback } from '../../utils/frontendBaseUrl.js';
 import { ServiceFactory } from '../serviceFactory.js';
@@ -74,8 +75,8 @@ export class PlayerClassifiedEmailService {
     },
   ): Promise<void> {
     try {
-      // Get email settings from config factory
-      const settings = EMAIL_CONTENT.DEFAULT_SETTINGS;
+      // Get email settings from centralized config factory
+      const settings = EmailConfigFactory.getEmailSettings();
 
       // Generate verification URL with proper environment variable handling
       const baseUrl = getFrontendBaseUrlOrFallback();
@@ -219,7 +220,7 @@ export class PlayerClassifiedEmailService {
   generateTeamsWantedEmailHtml(
     accessCode: string,
     verificationUrl: string,
-    settings: { fromEmail: string; fromName: string; replyTo: string },
+    settings: { fromEmail: string; fromName: string; replyTo?: string },
     account: { id: bigint; name: string },
     userData: {
       name: string;
@@ -350,7 +351,7 @@ export class PlayerClassifiedEmailService {
   generateTeamsWantedEmailText(
     accessCode: string,
     verificationUrl: string,
-    settings: { fromEmail: string; fromName: string; replyTo: string },
+    settings: { fromEmail: string; fromName: string; replyTo?: string },
     account: { id: bigint; name: string },
     userData: {
       name: string;
