@@ -106,7 +106,7 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                     border: hasLogo ? 'none' : '1px dashed',
                     borderColor: hasLogo ? 'transparent' : theme.palette.divider,
                     overflow: 'hidden',
-                    minHeight: 96,
+                    minHeight: hasLogo ? undefined : 96,
                   }}
                 >
                   {hasLogo ? (
