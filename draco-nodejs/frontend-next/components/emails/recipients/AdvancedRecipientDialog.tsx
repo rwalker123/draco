@@ -34,6 +34,7 @@ import {
   SportsMartialArts as SportsMartialArtsIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  Gavel as GavelIcon,
 } from '@mui/icons-material';
 
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -54,6 +55,7 @@ import {
   convertHierarchicalToContactGroups,
   WorkoutRecipientSelection,
   TeamsWantedRecipientSelection,
+  UmpireRecipientSelection,
 } from '../../../types/emails/recipients';
 
 // Simplified RecipientSelectionState for backward compatibility
@@ -61,6 +63,7 @@ interface SimplifiedRecipientSelectionState {
   selectedGroups?: Map<GroupType, ContactGroup[]>;
   selectedWorkoutRecipients?: WorkoutRecipientSelection[];
   selectedTeamsWantedRecipients?: TeamsWantedRecipientSelection[];
+  selectedUmpireRecipients?: UmpireRecipientSelection[];
   workoutManagersOnly?: boolean;
   totalRecipients: number;
   validEmailCount: number;
@@ -92,7 +95,9 @@ import {
   WorkoutSummaryType,
   TeamsWantedPublicClassifiedType,
   WorkoutStatusType,
+  UmpireType,
 } from '@draco/shared-schemas';
+import { useUmpireService } from '../../../hooks/useUmpireService';
 
 type WorkoutWithRegistrants = WorkoutSummaryType & { registrants: WorkoutRegistrationType[] };
 
@@ -114,6 +119,7 @@ export interface AdvancedRecipientDialogProps {
   initialWorkoutRecipients?: WorkoutRecipientSelection[];
   initialWorkoutManagersOnly?: boolean;
   initialTeamsWantedRecipients?: TeamsWantedRecipientSelection[];
+  initialUmpireRecipients?: UmpireRecipientSelection[];
 }
 
 interface LoadingState {
@@ -136,7 +142,7 @@ interface SelectedContactCacheEntry {
   selectedTime: number;
 }
 
-type TabValue = 'contacts' | 'season' | 'workouts' | 'teamsWanted';
+type TabValue = 'contacts' | 'season' | 'workouts' | 'teamsWanted' | 'umpires';
 
 /**
  * Wrapper component that provides the ManagerStateProvider context
@@ -169,11 +175,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   initialWorkoutRecipients,
   initialWorkoutManagersOnly,
   initialTeamsWantedRecipients,
+  initialUmpireRecipients,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { showNotification } = useNotifications();
   const { token } = useAuth();
+  const { listUmpires } = useUmpireService(accountId);
 
   // Use EmailCompose provider which now contains all recipient functionality
 
@@ -211,6 +219,10 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   const [teamsWanted, setTeamsWanted] = useState<TeamsWantedPublicClassifiedType[]>([]);
   const [teamsWantedLoading, setTeamsWantedLoading] = useState(false);
   const [teamsWantedError, setTeamsWantedError] = useState<string | null>(null);
+  const [umpires, setUmpires] = useState<UmpireType[]>([]);
+  const [selectedUmpireIds, setSelectedUmpireIds] = useState<Set<string>>(new Set());
+  const [umpiresLoading, setUmpiresLoading] = useState(false);
+  const [umpiresError, setUmpiresError] = useState<string | null>(null);
 
   // Hierarchical selection state for shared data model
   const [hierarchicalSelectedIds, setHierarchicalSelectedIds] = useState<
@@ -347,6 +359,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     [selectedTeamsWantedIds],
   );
 
+  const umpireSelectionCount = useMemo(() => selectedUmpireIds.size, [selectedUmpireIds]);
+
   const getTotalSelected = useCallback((): number => {
     let total = 0;
 
@@ -371,6 +385,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
     total += workoutSelectionCount;
     total += teamsWantedSelectionCount;
+    total += umpireSelectionCount;
 
     return total;
   }, [
@@ -379,6 +394,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     seasonId,
     workoutSelectionCount,
     teamsWantedSelectionCount,
+    umpireSelectionCount,
   ]);
 
   // Hierarchical selection change handler
@@ -761,14 +777,46 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     }
   }, [accountId, token]);
 
+  const loadUmpires = useCallback(async () => {
+    if (!accountId || !token) {
+      return;
+    }
+
+    setUmpiresLoading(true);
+    setUmpiresError(null);
+
+    try {
+      const result = await listUmpires({ limit: 100 });
+
+      if (result.success) {
+        setUmpires(result.data.umpires || []);
+      } else {
+        setUmpiresError(result.error);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load umpires';
+      setUmpiresError(message);
+    } finally {
+      setUmpiresLoading(false);
+    }
+  }, [accountId, token, listUmpires]);
+
   useEffect(() => {
     if (open) {
       loadActiveWorkouts();
       loadTeamsWanted();
+      loadUmpires();
       loadRecentPastWorkouts();
       loadOlderWorkoutsOptions();
     }
-  }, [open, loadActiveWorkouts, loadTeamsWanted, loadRecentPastWorkouts, loadOlderWorkoutsOptions]);
+  }, [
+    open,
+    loadActiveWorkouts,
+    loadTeamsWanted,
+    loadUmpires,
+    loadRecentPastWorkouts,
+    loadOlderWorkoutsOptions,
+  ]);
 
   const [currentTab, setCurrentTab] = useState<TabValue>('contacts');
 
@@ -788,6 +836,11 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       } else {
         setSelectedTeamsWantedIds(new Set());
       }
+      if (initialUmpireRecipients && initialUmpireRecipients.length > 0) {
+        setSelectedUmpireIds(new Set(initialUmpireRecipients.map((item) => item.umpireId)));
+      } else {
+        setSelectedUmpireIds(new Set());
+      }
 
       // Reset hierarchical selections when parent state is cleared
       if (!initialSelectedGroups || initialSelectedGroups.size === 0) {
@@ -795,7 +848,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         setHierarchicalManagersOnly(false);
       }
     }
-  }, [open, initialSelectedGroups, initialTeamsWantedRecipients]);
+  }, [open, initialSelectedGroups, initialTeamsWantedRecipients, initialUmpireRecipients]);
 
   useEffect(() => {
     if (open && initialWorkoutManagersOnly) {
@@ -924,6 +977,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         setHierarchicalManagersOnly(false); // Reset managers-only toggle
         setSelectedWorkoutRegistrantIds(new Map());
         setSelectedTeamsWantedIds(new Set());
+        setSelectedUmpireIds(new Set());
       },
 
       isContactSelected: (contactId: string): boolean => {
@@ -1062,6 +1116,31 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     });
   }, []);
 
+  const handleToggleAllUmpires = useCallback(
+    (checked: boolean) => {
+      if (!checked) {
+        setSelectedUmpireIds(new Set());
+        return;
+      }
+      // Only select umpires with valid email addresses
+      const umpiresWithEmail = umpires.filter((umpire) => umpire.email?.trim());
+      setSelectedUmpireIds(new Set(umpiresWithEmail.map((item) => item.id)));
+    },
+    [umpires],
+  );
+
+  const handleToggleUmpire = useCallback((umpireId: string, checked: boolean) => {
+    setSelectedUmpireIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(umpireId);
+      } else {
+        next.delete(umpireId);
+      }
+      return next;
+    });
+  }, []);
+
   const handleOlderWorkoutSelect = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const workoutId = event.target.value;
@@ -1182,7 +1261,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     [currentPageContacts],
   );
   const hasTeamsWanted = useMemo(() => teamsWanted.length > 0, [teamsWanted]);
-  const hasAnyData = hasContacts || hasWorkouts || hasTeamsWanted;
+  const hasUmpires = useMemo(() => umpires.length > 0, [umpires]);
+  const hasAnyData = hasContacts || hasWorkouts || hasTeamsWanted || hasUmpires;
 
   // Determine overall loading state - include pagination loading
   const isGeneralLoading =
@@ -1194,13 +1274,35 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
   useEffect(() => {
     if (currentTab === 'season' && !seasonId) {
-      setCurrentTab(hasWorkouts ? 'workouts' : hasTeamsWanted ? 'teamsWanted' : 'contacts');
+      setCurrentTab(
+        hasWorkouts
+          ? 'workouts'
+          : hasTeamsWanted
+            ? 'teamsWanted'
+            : hasUmpires
+              ? 'umpires'
+              : 'contacts',
+      );
     } else if (currentTab === 'workouts' && !hasWorkouts) {
-      setCurrentTab(seasonId ? 'season' : hasTeamsWanted ? 'teamsWanted' : 'contacts');
+      setCurrentTab(
+        seasonId ? 'season' : hasTeamsWanted ? 'teamsWanted' : hasUmpires ? 'umpires' : 'contacts',
+      );
     } else if (currentTab === 'teamsWanted' && !hasTeamsWanted) {
-      setCurrentTab(seasonId ? 'season' : hasWorkouts ? 'workouts' : 'contacts');
+      setCurrentTab(
+        seasonId ? 'season' : hasWorkouts ? 'workouts' : hasUmpires ? 'umpires' : 'contacts',
+      );
+    } else if (currentTab === 'umpires' && !hasUmpires) {
+      setCurrentTab(
+        seasonId
+          ? 'season'
+          : hasWorkouts
+            ? 'workouts'
+            : hasTeamsWanted
+              ? 'teamsWanted'
+              : 'contacts',
+      );
     }
-  }, [currentTab, seasonId, hasWorkouts, hasTeamsWanted]);
+  }, [currentTab, seasonId, hasWorkouts, hasTeamsWanted, hasUmpires]);
 
   // Handle tab changes
   const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: TabValue) => {
@@ -1393,6 +1495,18 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
     const totalTeamsWantedSelected = teamsWantedSelections.length;
 
+    const umpireSelections: UmpireRecipientSelection[] = [];
+    selectedUmpireIds.forEach((id) => {
+      const umpire = umpires.find((item) => item.id === id);
+      umpireSelections.push({
+        umpireId: id,
+        name: umpire?.displayName,
+        email: umpire?.email ?? undefined,
+      });
+    });
+
+    const totalUmpireSelected = umpireSelections.length;
+
     // Convert hierarchical selections to ContactGroups and merge with manual selections
     const hierarchicalContactGroups = convertHierarchicalSelectionsToContactGroups();
 
@@ -1462,17 +1576,21 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       const totalRecipients = allSelectedContactDetails.length + totalWorkoutSelected;
       const validWorkoutCount = totalWorkoutSelected; // assume workout registrants already filtered to valid emails server-side
       const validTeamsWantedCount = totalTeamsWantedSelected; // assume resolved emails will be valid server-side
+      const validUmpireCount = totalUmpireSelected; // assume umpire emails are valid
       const simplifiedState: SimplifiedRecipientSelectionState = {
         selectedGroups: mergedContactGroups,
         selectedWorkoutRecipients: workoutSelections,
         selectedTeamsWantedRecipients: teamsWantedSelections,
+        selectedUmpireRecipients: umpireSelections,
         workoutManagersOnly,
-        totalRecipients: totalRecipients + totalTeamsWantedSelected,
-        validEmailCount: validContactsCount + validWorkoutCount + validTeamsWantedCount,
+        totalRecipients: totalRecipients + totalTeamsWantedSelected + totalUmpireSelected,
+        validEmailCount:
+          validContactsCount + validWorkoutCount + validTeamsWantedCount + validUmpireCount,
         invalidEmailCount:
           totalRecipients +
-          totalTeamsWantedSelected -
-          (validContactsCount + validWorkoutCount + validTeamsWantedCount),
+          totalTeamsWantedSelected +
+          totalUmpireSelected -
+          (validContactsCount + validWorkoutCount + validTeamsWantedCount + validUmpireCount),
         searchQuery: '',
         activeTab: 'contacts',
         expandedSections: new Set(),
@@ -1502,6 +1620,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     workoutManagersOnly,
     selectedTeamsWantedIds,
     teamsWanted,
+    selectedUmpireIds,
+    umpires,
   ]);
 
   // Effect to handle external error prop
@@ -1710,6 +1830,9 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
               iconPosition="start"
             />
           ) : null}
+          {hasUmpires ? (
+            <Tab icon={<GavelIcon />} label="Umpires" value="umpires" iconPosition="start" />
+          ) : null}
         </Tabs>
       </Box>
 
@@ -1874,6 +1997,16 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
                   onToggle={handleToggleTeamsWanted}
                   loading={teamsWantedLoading}
                   error={teamsWantedError}
+                />
+              )}
+              {currentTab === 'umpires' && (
+                <UmpiresTabContent
+                  umpires={umpires}
+                  selectedIds={selectedUmpireIds}
+                  onToggleAll={handleToggleAllUmpires}
+                  onToggle={handleToggleUmpire}
+                  loading={umpiresLoading}
+                  error={umpiresError}
                 />
               )}
             </Box>
@@ -2321,6 +2454,149 @@ const TeamsWantedTabContent: React.FC<TeamsWantedTabContentProps> = ({
                 ) : null}
               </Box>
             ))}
+          </Stack>
+        )}
+      </Stack>
+    </Box>
+  );
+};
+
+// Umpires Tab Component
+interface UmpiresTabContentProps {
+  umpires: UmpireType[];
+  selectedIds: Set<string>;
+  onToggleAll: (checked: boolean) => void;
+  onToggle: (id: string, checked: boolean) => void;
+  loading: boolean;
+  error?: string | null;
+}
+
+const UmpiresTabContent: React.FC<UmpiresTabContentProps> = ({
+  umpires,
+  selectedIds,
+  onToggleAll,
+  onToggle,
+  loading,
+  error,
+}) => {
+  // Filter to umpires with valid email addresses
+  const umpiresWithEmail = useMemo(
+    () => umpires.filter((umpire) => umpire.email?.trim()),
+    [umpires],
+  );
+  const selectableCount = umpiresWithEmail.length;
+  const selectedCount = selectedIds.size;
+  const allSelected = selectableCount > 0 && selectedCount === selectableCount;
+  const indeterminate = selectedCount > 0 && selectedCount < selectableCount;
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <CircularProgress size={32} />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Loading Umpires...
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ p: 0, overflowY: 'auto', height: '100%' }}>
+      {error ? (
+        <Alert severity="error" sx={{ mb: 2, mx: 2 }}>
+          {error}
+        </Alert>
+      ) : null}
+
+      <Box
+        sx={{
+          px: 2,
+          py: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Typography variant="h6" component="h3" color="text.primary">
+          Select Umpires
+        </Typography>
+      </Box>
+
+      <Stack spacing={1}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 0.25 }}>
+          <Checkbox
+            checked={allSelected}
+            indeterminate={indeterminate}
+            onChange={(event) => onToggleAll(event.target.checked)}
+            disabled={selectableCount === 0}
+            size="small"
+            sx={{ p: 0.5 }}
+          />
+          <GavelIcon fontSize="small" color="primary" />
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            All Umpires
+          </Typography>
+          <Chip
+            label={`${selectedCount}/${selectableCount} umpires`}
+            size="small"
+            variant="outlined"
+            sx={{ ml: 1 }}
+          />
+          {umpires.length > selectableCount && (
+            <Chip
+              label={`${umpires.length - selectableCount} no email`}
+              size="small"
+              color="warning"
+              variant="outlined"
+            />
+          )}
+        </Box>
+
+        {umpires.length === 0 ? (
+          <Typography variant="body2" color="text.secondary" sx={{ px: 2, pb: 2 }}>
+            No umpires are available.
+          </Typography>
+        ) : (
+          <Stack spacing={0}>
+            {umpires.map((umpire) => {
+              const hasEmail = Boolean(umpire.email?.trim());
+              return (
+                <Box
+                  key={umpire.id}
+                  sx={{
+                    borderBottom: 1,
+                    borderColor: 'divider',
+                    px: 2,
+                    py: 0.75,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    opacity: hasEmail ? 1 : 0.6,
+                  }}
+                >
+                  <Checkbox
+                    size="small"
+                    checked={selectedIds.has(umpire.id)}
+                    onChange={(event) => onToggle(umpire.id, event.target.checked)}
+                    disabled={!hasEmail}
+                  />
+                  <PersonIcon fontSize="small" color="action" />
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {umpire.displayName}
+                    </Typography>
+                    {hasEmail && (
+                      <Typography variant="caption" color="text.secondary" noWrap>
+                        {umpire.email}
+                      </Typography>
+                    )}
+                  </Box>
+                  {!hasEmail && (
+                    <Chip label="No Email" size="small" color="warning" variant="outlined" />
+                  )}
+                </Box>
+              );
+            })}
           </Stack>
         )}
       </Stack>

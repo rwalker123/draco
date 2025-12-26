@@ -198,6 +198,10 @@ const mapRecipients = (recipients: EmailComposeRequest['recipients']): EmailReci
     groups.teamsWantedRecipients = recipients.teamsWantedRecipients;
   }
 
+  if (recipients.umpireRecipients && recipients.umpireRecipients.length > 0) {
+    groups.umpireRecipients = recipients.umpireRecipients;
+  }
+
   return groups;
 };
 

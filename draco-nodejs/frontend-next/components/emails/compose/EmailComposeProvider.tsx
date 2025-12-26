@@ -31,8 +31,10 @@ import {
   getTotalRecipientsFromGroups,
   getTotalWorkoutRecipients,
   getTotalTeamsWantedRecipients,
+  getTotalUmpireRecipients,
   WorkoutRecipientSelection,
   TeamsWantedRecipientSelection,
+  UmpireRecipientSelection,
 } from '../../../types/emails/recipients';
 import { createEmailService } from '../../../services/emailService';
 import { useAuth } from '../../../context/AuthContext';
@@ -64,6 +66,7 @@ type ComposeAction =
       payload: Map<GroupType, ContactGroup[]>;
       workoutRecipients?: WorkoutRecipientSelection[];
       teamsWantedRecipients?: TeamsWantedRecipientSelection[];
+      umpireRecipients?: UmpireRecipientSelection[];
     }
   | { type: 'CLEAR_ALL_RECIPIENTS' }
   | { type: 'REMOVE_SPECIFIC_GROUP'; payload: { groupType: GroupType; groupIndex: number } }
@@ -108,11 +111,13 @@ const calculateTotalRecipients = (
   groups: Map<GroupType, ContactGroup[]>,
   workoutRecipients?: WorkoutRecipientSelection[],
   teamsWantedRecipients?: TeamsWantedRecipientSelection[],
+  umpireRecipients?: UmpireRecipientSelection[],
 ): number => {
   return (
     getTotalRecipientsFromGroups(groups) +
     getTotalWorkoutRecipients(workoutRecipients) +
-    getTotalTeamsWantedRecipients(teamsWantedRecipients)
+    getTotalTeamsWantedRecipients(teamsWantedRecipients) +
+    getTotalUmpireRecipients(umpireRecipients)
   );
 };
 
@@ -252,12 +257,14 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
         action.workoutRecipients ?? recipientState.selectedWorkoutRecipients;
       const teamsWantedRecipients =
         action.teamsWantedRecipients ?? recipientState.selectedTeamsWantedRecipients;
+      const umpireRecipients = action.umpireRecipients ?? recipientState.selectedUmpireRecipients;
 
       // Calculate total recipients from unified groups
       const totalRecipients = calculateTotalRecipients(
         action.payload,
         workoutRecipients,
         teamsWantedRecipients,
+        umpireRecipients,
       );
 
       // For now, assume all recipients are valid (this will be refined later)
@@ -270,6 +277,7 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
           selectedGroups: action.payload,
           selectedWorkoutRecipients: workoutRecipients,
           selectedTeamsWantedRecipients: teamsWantedRecipients,
+          selectedUmpireRecipients: umpireRecipients,
           totalRecipients,
           validEmailCount,
           invalidEmailCount: totalRecipients - validEmailCount,
@@ -318,6 +326,7 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
         newSelectedGroups,
         recipientState.selectedWorkoutRecipients,
         recipientState.selectedTeamsWantedRecipients,
+        recipientState.selectedUmpireRecipients,
       );
       const validEmailCount = totalRecipients; // Assume all valid for now
 
@@ -328,6 +337,7 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
           selectedGroups: newSelectedGroups,
           selectedWorkoutRecipients: recipientState.selectedWorkoutRecipients,
           selectedTeamsWantedRecipients: recipientState.selectedTeamsWantedRecipients,
+          selectedUmpireRecipients: recipientState.selectedUmpireRecipients,
           totalRecipients,
           validEmailCount,
           invalidEmailCount: totalRecipients - validEmailCount,
@@ -537,18 +547,25 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
         const selectedWorkoutRecipients = state.recipientState?.selectedWorkoutRecipients || [];
         const selectedTeamsWantedRecipients =
           state.recipientState?.selectedTeamsWantedRecipients || [];
+        const selectedUmpireRecipients = state.recipientState?.selectedUmpireRecipients || [];
 
         const hasGroupRecipients = selectedGroups && selectedGroups.size > 0;
         const hasWorkoutRecipients = selectedWorkoutRecipients.length > 0;
         const hasTeamsWantedRecipients = selectedTeamsWantedRecipients.length > 0;
+        const hasUmpireRecipients = selectedUmpireRecipients.length > 0;
 
-        if (!hasGroupRecipients && !hasWorkoutRecipients && !hasTeamsWantedRecipients) {
+        if (
+          !hasGroupRecipients &&
+          !hasWorkoutRecipients &&
+          !hasTeamsWantedRecipients &&
+          !hasUmpireRecipients
+        ) {
           dispatch({
             type: 'ADD_ERROR',
             payload: {
               field: 'recipients',
               message:
-                'No recipients selected. Please choose contacts, groups, workout registrants, or Teams Wanted.',
+                'No recipients selected. Please choose contacts, groups, workout registrants, Teams Wanted, or Umpires.',
               severity: 'error',
             },
           });
@@ -629,6 +646,9 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
             teamsWantedRecipients: selectedTeamsWantedRecipients.map((selection) => ({
               classifiedId: selection.classifiedId,
             })),
+            umpireRecipients: selectedUmpireRecipients.map((selection) => ({
+              umpireId: selection.umpireId,
+            })),
           },
           subject: state.subject,
           body: bodyContent,
@@ -707,12 +727,14 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
       groups: Map<GroupType, ContactGroup[]>,
       workoutRecipients?: WorkoutRecipientSelection[],
       teamsWantedRecipients?: TeamsWantedRecipientSelection[],
+      umpireRecipients?: UmpireRecipientSelection[],
     ) => {
       dispatch({
         type: 'UPDATE_SELECTED_GROUPS',
         payload: groups,
         workoutRecipients,
         teamsWantedRecipients,
+        umpireRecipients,
       });
     },
     [],

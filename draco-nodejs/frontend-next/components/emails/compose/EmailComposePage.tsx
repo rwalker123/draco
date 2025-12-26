@@ -257,14 +257,14 @@ const EmailComposePageInternal: React.FC<
           // Update the compose state with recipient information
           actions.updateRecipientState(recipientState);
 
-          // Update selected groups if they exist (unified group architecture)
-          if (recipientState.selectedGroups) {
-            actions.updateSelectedGroups(
-              recipientState.selectedGroups,
-              recipientState.selectedWorkoutRecipients,
-              recipientState.selectedTeamsWantedRecipients,
-            );
-          }
+          // Update selected groups (unified group architecture)
+          // Always call updateSelectedGroups to ensure all recipient types are saved
+          actions.updateSelectedGroups(
+            recipientState.selectedGroups || new Map(),
+            recipientState.selectedWorkoutRecipients,
+            recipientState.selectedTeamsWantedRecipients,
+            recipientState.selectedUmpireRecipients,
+          );
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to update recipients';
           setComponentState((prev) => ({
@@ -542,6 +542,7 @@ const EmailComposePageInternal: React.FC<
             initialWorkoutRecipients={state.recipientState?.selectedWorkoutRecipients}
             initialWorkoutManagersOnly={state.recipientState?.workoutManagersOnly}
             initialTeamsWantedRecipients={state.recipientState?.selectedTeamsWantedRecipients}
+            initialUmpireRecipients={state.recipientState?.selectedUmpireRecipients}
           />
         </ErrorBoundary>
 

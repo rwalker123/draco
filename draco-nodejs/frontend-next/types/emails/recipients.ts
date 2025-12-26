@@ -207,7 +207,8 @@ export interface UtilityActions {
 
 // Combined actions interface (for backward compatibility)
 export interface RecipientSelectionActions
-  extends ContactSelectionActions,
+  extends
+    ContactSelectionActions,
     SeasonParticipantsActions,
     LeagueSelectionActions,
     TeamSelectionActions,
@@ -409,11 +410,18 @@ export interface TeamsWantedRecipientSelection {
   name?: string;
 }
 
+export interface UmpireRecipientSelection {
+  umpireId: string;
+  name?: string;
+  email?: string;
+}
+
 export interface RecipientSelectionState {
   // Unified group-based selection system
   selectedGroups?: Map<GroupType, ContactGroup[]>;
   selectedWorkoutRecipients?: WorkoutRecipientSelection[];
   selectedTeamsWantedRecipients?: TeamsWantedRecipientSelection[];
+  selectedUmpireRecipients?: UmpireRecipientSelection[];
   workoutManagersOnly?: boolean;
 
   // Computed properties
@@ -610,6 +618,16 @@ export const getTotalTeamsWantedRecipients = (
   return selectedTeamsWantedRecipients.length;
 };
 
+export const getTotalUmpireRecipients = (
+  selectedUmpireRecipients?: UmpireRecipientSelection[],
+): number => {
+  if (!selectedUmpireRecipients || selectedUmpireRecipients.length === 0) {
+    return 0;
+  }
+
+  return selectedUmpireRecipients.length;
+};
+
 /**
  * Creates complete default recipient selection state
  * Follows DRY principle by using factory functions
@@ -619,6 +637,7 @@ export const createDefaultRecipientSelectionState = (): RecipientSelectionState 
   selectedGroups: new Map<GroupType, ContactGroup[]>(),
   selectedWorkoutRecipients: [],
   selectedTeamsWantedRecipients: [],
+  selectedUmpireRecipients: [],
   workoutManagersOnly: false,
 
   // Computed properties

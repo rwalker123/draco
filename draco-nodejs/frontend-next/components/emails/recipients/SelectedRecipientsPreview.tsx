@@ -10,6 +10,7 @@ import {
   Email as EmailIcon,
   FitnessCenter as WorkoutIcon,
   Warning as WarningIcon,
+  Gavel as GavelIcon,
 } from '@mui/icons-material';
 
 import { useEmailCompose } from '../compose/EmailComposeProvider';
@@ -101,13 +102,23 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
       teamsWantedSummaries.push({ count: teamsWantedCount });
     }
 
+    const umpireSummaries: Array<{ count: number }> = [];
+    const umpireCount = (state.recipientState?.selectedUmpireRecipients || []).length;
+    if (umpireCount > 0) {
+      umpireSummaries.push({ count: umpireCount });
+    }
+
     return {
       groupSummaries,
       workoutSummaries,
       teamsWantedSummaries,
+      umpireSummaries,
       invalidEmails: state.recipientState?.invalidEmailCount || 0,
       hasSelections:
-        groupSummaries.length > 0 || workoutSummaries.length > 0 || teamsWantedSummaries.length > 0,
+        groupSummaries.length > 0 ||
+        workoutSummaries.length > 0 ||
+        teamsWantedSummaries.length > 0 ||
+        umpireSummaries.length > 0,
       isManagersOnly,
       workoutManagersOnly: state.recipientState?.workoutManagersOnly ?? false,
     };
@@ -167,8 +178,21 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
     ));
   }, [summaryData.teamsWantedSummaries, compact]);
 
+  const umpireChips = useMemo(() => {
+    return summaryData.umpireSummaries.map((entry, index) => (
+      <Chip
+        key={`umpire-${index}`}
+        icon={<GavelIcon />}
+        label={`Umpires (${entry.count})`}
+        size={compact ? 'small' : 'medium'}
+        variant="outlined"
+        color="default"
+      />
+    ));
+  }, [summaryData.umpireSummaries, compact]);
+
   // Determine visible and hidden chips
-  const allChips = [...groupChips, ...workoutChips, ...teamsWantedChips];
+  const allChips = [...groupChips, ...workoutChips, ...teamsWantedChips, ...umpireChips];
   const visibleChips = allChips.slice(0, maxVisibleChips);
   const hiddenChipsCount = Math.max(0, allChips.length - maxVisibleChips);
 
