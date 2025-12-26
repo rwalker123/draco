@@ -3327,6 +3327,21 @@
                   ]
                 },
                 "description": "Teams Wanted classifieds to include as recipients."
+              },
+              "umpireRecipients": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "umpireId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "umpireId"
+                  ]
+                },
+                "description": "Umpire IDs to include as recipients."
               }
             }
           },
@@ -3452,6 +3467,21 @@
                   ]
                 },
                 "description": "Teams Wanted classifieds to include as recipients."
+              },
+              "umpireRecipients": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "umpireId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "umpireId"
+                  ]
+                },
+                "description": "Umpire IDs to include as recipients."
               }
             }
           },

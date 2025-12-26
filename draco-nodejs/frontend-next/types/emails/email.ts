@@ -16,6 +16,9 @@ export interface EmailRecipientSelection {
   teamsWantedRecipients?: {
     classifiedId: string;
   }[];
+  umpireRecipients?: {
+    umpireId: string;
+  }[];
 }
 
 export interface EmailComposeRequest {

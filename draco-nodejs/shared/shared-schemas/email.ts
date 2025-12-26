@@ -56,6 +56,16 @@ export const EmailRecipientGroupsSchema = z.object({
     .openapi({
       description: 'Teams Wanted classifieds to include as recipients.',
     }),
+  umpireRecipients: z
+    .array(
+      z.object({
+        umpireId: z.string(),
+      }),
+    )
+    .optional()
+    .openapi({
+      description: 'Umpire IDs to include as recipients.',
+    }),
 });
 
 export const EmailComposeSchema = z.object({

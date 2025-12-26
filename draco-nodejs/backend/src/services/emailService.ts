@@ -26,6 +26,7 @@ import {
   ISeasonsRepository,
   IWorkoutRepository,
   ITeamsWantedRepository,
+  IUmpireRepository,
   dbCreateEmailRecipientInput,
 } from '../repositories/index.js';
 import { EmailResponseFormatter } from '../responseFormatters/index.js';
@@ -135,6 +136,7 @@ export class EmailService {
   private contactService: ContactService;
   private workoutRepository: IWorkoutRepository;
   private teamsWantedRepository: ITeamsWantedRepository;
+  private umpireRepository: IUmpireRepository;
 
   // Provider-specific queue configuration
   private readonly PROVIDER_CONFIGS = {
@@ -192,6 +194,7 @@ export class EmailService {
     this.contactService = ServiceFactory.getContactService();
     this.workoutRepository = RepositoryFactory.getWorkoutRepository();
     this.teamsWantedRepository = RepositoryFactory.getTeamsWantedRepository();
+    this.umpireRepository = RepositoryFactory.getUmpireRepository();
 
     // Start queue processor
     this.startQueueProcessor();
@@ -1803,6 +1806,27 @@ export class EmailService {
           contactName: name,
           recipientType: 'teamsWanted',
         });
+      }
+    }
+
+    // Process umpire recipients
+    if (selection.umpireRecipients && selection.umpireRecipients.length > 0) {
+      for (const umpireSelection of selection.umpireRecipients) {
+        const umpireId = BigInt(umpireSelection.umpireId);
+        const umpire = await this.umpireRepository.findByAccountAndId(accountId, umpireId);
+
+        if (umpire && umpire.contacts?.email) {
+          const name =
+            `${umpire.contacts.firstname || ''} ${umpire.contacts.lastname || ''}`.trim() ||
+            'Umpire';
+
+          recipients.push({
+            contactId: umpire.contactid,
+            emailAddress: umpire.contacts.email,
+            contactName: name,
+            recipientType: 'umpire',
+          });
+        }
       }
     }
 
