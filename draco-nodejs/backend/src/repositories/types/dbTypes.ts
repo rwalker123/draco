@@ -1267,6 +1267,15 @@ export type dbTeamSeasonManagerContact = Prisma.teamseasonmanagerGetPayload<{
       select: {
         id: true;
         name: true;
+        leagueseason: {
+          select: {
+            league: {
+              select: {
+                name: true;
+              };
+            };
+          };
+        };
       };
     };
   };

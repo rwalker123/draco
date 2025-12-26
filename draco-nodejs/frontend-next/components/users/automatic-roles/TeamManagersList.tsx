@@ -19,6 +19,23 @@ import {
 import { TeamManagerWithTeamsType } from '@draco/shared-schemas';
 import { alpha } from '@mui/material/styles';
 
+const getLeagueShortLabel = (leagueName: string | undefined): string => {
+  const original = leagueName?.trim() ?? '';
+  if (original.length === 0) return '';
+  if (original.length <= 3) return original;
+
+  const wordParts = original.split(/\s+/).filter((part) => part.length > 0);
+  if (wordParts.length > 1) {
+    let acronym = '';
+    for (const part of wordParts) {
+      acronym += part[0]!.toUpperCase();
+      if (acronym.length >= 3) break;
+    }
+    return acronym;
+  }
+  return original.slice(0, 3).toUpperCase();
+};
+
 interface TeamManagersListProps {
   teamManagers: TeamManagerWithTeamsType[];
 }
@@ -142,20 +159,24 @@ const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => 
                     )}
                   </Box>
                   <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
-                    {manager.teams.map((team) => (
-                      <Chip
-                        key={`${manager.id}-${team.teamSeasonId}`}
-                        label={team.teamName}
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          fontSize: '0.75rem',
-                          height: '20px',
-                          borderColor: theme.palette.primary.main,
-                          color: theme.palette.primary.main,
-                        }}
-                      />
-                    ))}
+                    {manager.teams.map((team) => {
+                      const leagueShort = getLeagueShortLabel(team.leagueName);
+                      const label = leagueShort ? `${leagueShort} ${team.teamName}` : team.teamName;
+                      return (
+                        <Chip
+                          key={`${manager.id}-${team.teamSeasonId}`}
+                          label={label}
+                          size="small"
+                          variant="outlined"
+                          sx={{
+                            fontSize: '0.75rem',
+                            height: '20px',
+                            borderColor: theme.palette.primary.main,
+                            color: theme.palette.primary.main,
+                          }}
+                        />
+                      );
+                    })}
                   </Box>
                 </Box>
               </Box>
