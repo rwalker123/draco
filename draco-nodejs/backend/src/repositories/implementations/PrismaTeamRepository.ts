@@ -397,6 +397,15 @@ export class PrismaTeamRepository implements ITeamRepository {
           select: {
             id: true,
             name: true,
+            leagueseason: {
+              select: {
+                league: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
       },

@@ -157,6 +157,7 @@ export class TeamResponseFormatter {
       manager.teams.push({
         teamSeasonId: row.teamsseason.id.toString(),
         teamName: row.teamsseason.name,
+        leagueName: row.teamsseason.leagueseason.league.name,
       });
     }
 

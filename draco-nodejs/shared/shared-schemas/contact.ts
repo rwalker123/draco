@@ -155,6 +155,7 @@ export const PublicContactSearchQuerySchema = z.object({
 export const TeamWithNameSchema = z.object({
   teamSeasonId: z.string(),
   teamName: z.string(),
+  leagueName: z.string(),
 });
 
 // Team manager with associated teams (extends BaseContact)

@@ -5280,11 +5280,15 @@
                       },
                       "teamName": {
                         "type": "string"
+                      },
+                      "leagueName": {
+                        "type": "string"
                       }
                     },
                     "required": [
                       "teamSeasonId",
-                      "teamName"
+                      "teamName",
+                      "leagueName"
                     ]
                   }
                 }
