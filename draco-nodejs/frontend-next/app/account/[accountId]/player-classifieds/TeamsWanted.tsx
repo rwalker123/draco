@@ -151,6 +151,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
           email: contact.email,
           phone: contact.phone,
           birthDate: contact.birthDate ?? '',
+          notifyOptOut: contact.notifyOptOut,
         };
 
         setEditingClassified(classifiedWithContact);

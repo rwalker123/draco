@@ -5887,7 +5887,9 @@
                     "PostWorkoutsToTwitter",
                     "PostWorkoutsToFacebook",
                     "PostWorkoutsToBluesky",
-                    "SyncInstagramToGallery"
+                    "SyncInstagramToGallery",
+                    "NotifyTeamsWantedOnPlayersWanted",
+                    "NotifyPlayersWantedOnTeamsWanted"
                   ]
                 },
                 "label": {
@@ -5973,7 +5975,9 @@
                           "PostWorkoutsToTwitter",
                           "PostWorkoutsToFacebook",
                           "PostWorkoutsToBluesky",
-                          "SyncInstagramToGallery"
+                          "SyncInstagramToGallery",
+                          "NotifyTeamsWantedOnPlayersWanted",
+                          "NotifyPlayersWantedOnTeamsWanted"
                         ]
                       },
                       "value": {
@@ -6126,7 +6130,9 @@
                   "PostWorkoutsToTwitter",
                   "PostWorkoutsToFacebook",
                   "PostWorkoutsToBluesky",
-                  "SyncInstagramToGallery"
+                  "SyncInstagramToGallery",
+                  "NotifyTeamsWantedOnPlayersWanted",
+                  "NotifyPlayersWantedOnTeamsWanted"
                 ]
               },
               "label": {
@@ -6212,7 +6218,9 @@
                         "PostWorkoutsToTwitter",
                         "PostWorkoutsToFacebook",
                         "PostWorkoutsToBluesky",
-                        "SyncInstagramToGallery"
+                        "SyncInstagramToGallery",
+                        "NotifyTeamsWantedOnPlayersWanted",
+                        "NotifyPlayersWantedOnTeamsWanted"
                       ]
                     },
                     "value": {
@@ -6376,7 +6384,9 @@
           "PostWorkoutsToTwitter",
           "PostWorkoutsToFacebook",
           "PostWorkoutsToBluesky",
-          "SyncInstagramToGallery"
+          "SyncInstagramToGallery",
+          "NotifyTeamsWantedOnPlayersWanted",
+          "NotifyPlayersWantedOnTeamsWanted"
         ]
       },
       "Sponsor": {
@@ -7806,6 +7816,9 @@
           "positionsNeeded": {
             "type": "string"
           },
+          "notifyOptOut": {
+            "type": "boolean"
+          },
           "creator": {
             "type": "object",
             "properties": {
@@ -7857,6 +7870,7 @@
           "teamEventName",
           "description",
           "positionsNeeded",
+          "notifyOptOut",
           "creator",
           "account"
         ],
@@ -7894,6 +7908,9 @@
                 },
                 "positionsNeeded": {
                   "type": "string"
+                },
+                "notifyOptOut": {
+                  "type": "boolean"
                 },
                 "creator": {
                   "type": "object",
@@ -7946,6 +7963,7 @@
                 "teamEventName",
                 "description",
                 "positionsNeeded",
+                "notifyOptOut",
                 "creator",
                 "account"
               ],
@@ -8072,6 +8090,10 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 255
+          },
+          "notifyOptOut": {
+            "type": "boolean",
+            "default": false
           }
         },
         "required": [
@@ -8320,6 +8342,9 @@
             "type": "number",
             "nullable": true
           },
+          "notifyOptOut": {
+            "type": "boolean"
+          },
           "account": {
             "type": "object",
             "properties": {
@@ -8349,6 +8374,7 @@
           "positionsPlayed",
           "birthDate",
           "age",
+          "notifyOptOut",
           "account"
         ],
         "title": "TeamsWantedOwnerClassified",
@@ -8380,7 +8406,7 @@
           "experience": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 255
+            "maxLength": 2000
           },
           "positionsPlayed": {
             "type": "string",
@@ -8391,6 +8417,10 @@
             "type": "string",
             "nullable": true,
             "default": ""
+          },
+          "notifyOptOut": {
+            "type": "boolean",
+            "default": false
           }
         },
         "required": [
@@ -8434,11 +8464,15 @@
           "birthDate": {
             "type": "string",
             "nullable": true
+          },
+          "notifyOptOut": {
+            "type": "boolean"
           }
         },
         "required": [
           "email",
-          "phone"
+          "phone",
+          "notifyOptOut"
         ],
         "title": "TeamsWantedContactInfo",
         "description": "Contact information for a Teams Wanted classified"
@@ -28530,7 +28564,9 @@
                 "PostWorkoutsToTwitter",
                 "PostWorkoutsToFacebook",
                 "PostWorkoutsToBluesky",
-                "SyncInstagramToGallery"
+                "SyncInstagramToGallery",
+                "NotifyTeamsWantedOnPlayersWanted",
+                "NotifyPlayersWantedOnTeamsWanted"
               ]
             }
           }

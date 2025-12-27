@@ -49,6 +49,7 @@ export class TeamsWantedResponseFormatter {
       positionsPlayed: dbRecord.positionsplayed,
       birthDate: DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate),
       age: DateUtils.calculateAge(dbRecord.birthdate),
+      notifyOptOut: dbRecord.notifyoptout ?? false,
       account: {
         id: account.id.toString(),
         name: account.name,
@@ -135,6 +136,7 @@ export class TeamsWantedResponseFormatter {
       positionsPlayed: dbRecord.positionsplayed,
       birthDate: DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate),
       age: DateUtils.calculateAge(dbRecord.birthdate),
+      notifyOptOut: dbRecord.notifyoptout ?? false,
       account: {
         id: account.id.toString(),
         name: account.name,
@@ -191,11 +193,13 @@ export class TeamsWantedResponseFormatter {
     email: string | null;
     phone: string | null;
     birthDate: string | null;
+    notifyOptOut: boolean;
   } {
     return {
       email: dbResult.email,
       phone: dbResult.phone,
       birthDate: dbResult.birthDate,
+      notifyOptOut: dbResult.notifyOptOut,
     };
   }
 }

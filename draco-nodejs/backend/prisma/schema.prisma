@@ -1418,6 +1418,7 @@ model playerswantedclassified {
   teameventname      String   @db.VarChar(50)
   description        String
   positionsneeded    String   @db.VarChar(50)
+  notifyoptout       Boolean  @default(false)
   accounts           accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_playerswantedclassified_accounts")
   contacts           contacts @relation(fields: [createdbycontactid], references: [id], onDelete: Cascade, map: "fk_playerswantedclassified_contacts")
 }
@@ -1644,6 +1645,7 @@ model teamswantedclassified {
   positionsplayed String   @db.VarChar(50)
   accesscode      String   @db.VarChar(255)
   birthdate       DateTime @db.Date
+  notifyoptout    Boolean  @default(false)
   accounts        accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_teamswantedclassified_accounts")
 }
 

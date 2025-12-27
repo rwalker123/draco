@@ -35,6 +35,7 @@ export class PlayersWantedResponseFormatter {
       teamEventName: dbRecord.teameventname,
       description: dbRecord.description,
       positionsNeeded: dbRecord.positionsneeded,
+      notifyOptOut: dbRecord.notifyoptout ?? false,
       creator: {
         id: creator.id.toString(),
         firstName: creator.firstName,
@@ -63,6 +64,7 @@ export class PlayersWantedResponseFormatter {
       const contactId = (contact?.id ?? record.createdbycontactid).toString();
       const accountId = (account?.id ?? record.accountid).toString();
 
+      const recordWithNotify = record as typeof record & { notifyoptout?: boolean };
       return {
         id: record.id.toString(),
         accountId,
@@ -71,6 +73,7 @@ export class PlayersWantedResponseFormatter {
         teamEventName: record.teameventname,
         description: record.description,
         positionsNeeded: record.positionsneeded,
+        notifyOptOut: recordWithNotify.notifyoptout ?? false,
         creator: {
           id: contactId,
           firstName: contact?.firstname ?? '',

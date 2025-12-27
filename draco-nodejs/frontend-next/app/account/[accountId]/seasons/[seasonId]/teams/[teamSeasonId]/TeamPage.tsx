@@ -551,6 +551,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       teamEventName,
       description: '',
       positionsNeeded: '',
+      notifyOptOut: false,
     });
     setPlayersWantedDialogOpen(true);
   }, [teamData]);

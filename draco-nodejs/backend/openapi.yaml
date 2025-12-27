@@ -4338,6 +4338,8 @@ components:
                   - PostWorkoutsToFacebook
                   - PostWorkoutsToBluesky
                   - SyncInstagramToGallery
+                  - NotifyTeamsWantedOnPlayersWanted
+                  - NotifyPlayersWantedOnTeamsWanted
               label:
                 type: string
               description:
@@ -4404,6 +4406,8 @@ components:
                         - PostWorkoutsToFacebook
                         - PostWorkoutsToBluesky
                         - SyncInstagramToGallery
+                        - NotifyTeamsWantedOnPlayersWanted
+                        - NotifyPlayersWantedOnTeamsWanted
                     value:
                       anyOf:
                         - type: boolean
@@ -4506,6 +4510,8 @@ components:
                 - PostWorkoutsToFacebook
                 - PostWorkoutsToBluesky
                 - SyncInstagramToGallery
+                - NotifyTeamsWantedOnPlayersWanted
+                - NotifyPlayersWantedOnTeamsWanted
             label:
               type: string
             description:
@@ -4572,6 +4578,8 @@ components:
                       - PostWorkoutsToFacebook
                       - PostWorkoutsToBluesky
                       - SyncInstagramToGallery
+                      - NotifyTeamsWantedOnPlayersWanted
+                      - NotifyPlayersWantedOnTeamsWanted
                   value:
                     anyOf:
                       - type: boolean
@@ -4677,6 +4685,8 @@ components:
         - PostWorkoutsToFacebook
         - PostWorkoutsToBluesky
         - SyncInstagramToGallery
+        - NotifyTeamsWantedOnPlayersWanted
+        - NotifyPlayersWantedOnTeamsWanted
     Sponsor:
       type: object
       properties:
@@ -5722,6 +5732,8 @@ components:
           type: string
         positionsNeeded:
           type: string
+        notifyOptOut:
+          type: boolean
         creator:
           type: object
           properties:
@@ -5760,6 +5772,7 @@ components:
         - teamEventName
         - description
         - positionsNeeded
+        - notifyOptOut
         - creator
         - account
       title: PlayersWantedClassified
@@ -5789,6 +5802,8 @@ components:
                 type: string
               positionsNeeded:
                 type: string
+              notifyOptOut:
+                type: boolean
               creator:
                 type: object
                 properties:
@@ -5827,6 +5842,7 @@ components:
               - teamEventName
               - description
               - positionsNeeded
+              - notifyOptOut
               - creator
               - account
             title: PlayersWantedClassified
@@ -5920,6 +5936,9 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+        notifyOptOut:
+          type: boolean
+          default: false
       required:
         - teamEventName
         - description
@@ -6103,6 +6122,8 @@ components:
         age:
           type: number
           nullable: true
+        notifyOptOut:
+          type: boolean
         account:
           type: object
           properties:
@@ -6126,6 +6147,7 @@ components:
         - positionsPlayed
         - birthDate
         - age
+        - notifyOptOut
         - account
       title: TeamsWantedOwnerClassified
       description: Teams Wanted classified listing for the owner including contact
@@ -6152,7 +6174,7 @@ components:
         experience:
           type: string
           minLength: 1
-          maxLength: 255
+          maxLength: 2000
         positionsPlayed:
           type: string
           minLength: 1
@@ -6161,6 +6183,9 @@ components:
           type: string
           nullable: true
           default: ""
+        notifyOptOut:
+          type: boolean
+          default: false
       required:
         - name
         - email
@@ -6194,9 +6219,12 @@ components:
         birthDate:
           type: string
           nullable: true
+        notifyOptOut:
+          type: boolean
       required:
         - email
         - phone
+        - notifyOptOut
       title: TeamsWantedContactInfo
       description: Contact information for a Teams Wanted classified
     TeamsWantedContactQuery:
@@ -20827,6 +20855,8 @@ paths:
               - PostWorkoutsToFacebook
               - PostWorkoutsToBluesky
               - SyncInstagramToGallery
+              - NotifyTeamsWantedOnPlayersWanted
+              - NotifyPlayersWantedOnTeamsWanted
       requestBody:
         content:
           application/json:

@@ -24,4 +24,5 @@ export interface ITeamsWantedRepository extends IBaseRepository<teamswantedclass
   ): Promise<dbTeamsWanted>;
   deleteTeamsWanted(classifiedId: bigint): Promise<void>;
   findAllTeamsWantedByAccount(accountId: bigint): Promise<dbTeamsWanted[]>;
+  findTeamsWantedWithNotifyConsent(accountId: bigint): Promise<dbTeamsWanted[]>;
 }
