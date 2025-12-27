@@ -45,6 +45,8 @@ import rolesRouter from './routes/roles.js';
 import discordRouter from './routes/discord.js';
 import golfCoursesRouter from './routes/golf-courses.js';
 import golfTeesRouter from './routes/golf-tees.js';
+import golfLeaguesRouter from './routes/golf-leagues.js';
+import golfFlightsRouter from './routes/golf-flights.js';
 import { ServiceFactory } from './services/serviceFactory.js';
 import { socialIngestionConfig } from './config/socialIngestion.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
@@ -264,6 +266,8 @@ app.use('/api/roles', rolesRouter);
 app.use('/api/discord', discordRouter);
 app.use('/api/accounts/:accountId/golf/courses', golfCoursesRouter);
 app.use('/api/accounts/:accountId/golf/courses/:courseId/tees', golfTeesRouter);
+app.use('/api/golf/leagues', golfLeaguesRouter);
+app.use('/api/accounts/:accountId/golf/flights', golfFlightsRouter);
 // Global error handler
 app.use(globalErrorHandler as express.ErrorRequestHandler);
 
