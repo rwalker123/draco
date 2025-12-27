@@ -12,7 +12,6 @@ import {
   TableHead,
   TableRow,
   Checkbox,
-  Avatar,
   Chip,
   TextField,
   InputAdornment,
@@ -30,6 +29,7 @@ import {
 import { StreamPaginationControl } from '../../pagination';
 import { RecipientContact } from '../../../types/emails/recipients';
 import { hasValidEmail } from '../common/mailtoUtils';
+import UserAvatar from '../../users/UserAvatar';
 
 export interface ContactSelectionTableProps {
   // Data
@@ -133,15 +133,6 @@ const ContactSelectionTable: React.FC<ContactSelectionTableProps> = ({
   // Check if contact is selected
   const isContactSelected = (contactId: string) => {
     return allContactsSelected || selectedContactIds.has(contactId);
-  };
-
-  // Get contact initials for avatar
-  const getContactInitials = (contact: RecipientContact) => {
-    const names = contact.displayName.split(' ');
-    if (names.length >= 2) {
-      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-    }
-    return contact.displayName.substring(0, 2).toUpperCase();
   };
 
   // Handle select all toggle
@@ -282,24 +273,18 @@ const ContactSelectionTable: React.FC<ContactSelectionTableProps> = ({
 
                       <TableCell>
                         <Stack direction="row" alignItems="center" spacing={2}>
-                          <Avatar
-                            sx={{
-                              width: compact ? 32 : 40,
-                              height: compact ? 32 : 40,
-                              bgcolor: isSelected ? 'primary.main' : 'grey.400',
+                          <UserAvatar
+                            user={{
+                              id: contact.id,
+                              firstName: contact.displayName.split(' ')[0] || '',
+                              lastName:
+                                contact.displayName.split(' ').slice(1).join(' ') ||
+                                contact.displayName.split(' ')[0] ||
+                                '',
+                              photoUrl: contact.photoUrl,
                             }}
-                          >
-                            {contact.photoUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={contact.photoUrl}
-                                alt={contact.displayName}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                              />
-                            ) : (
-                              getContactInitials(contact)
-                            )}
-                          </Avatar>
+                            size={compact ? 32 : 40}
+                          />
                           <Box>
                             <Typography
                               variant="body2"
