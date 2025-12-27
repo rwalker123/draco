@@ -331,33 +331,9 @@ export function useWorkoutSelection({
     [],
   );
 
-  const handleWorkoutManagersOnlyToggle = useCallback(
-    (checked: boolean) => {
-      setWorkoutManagersOnly(checked);
-      if (checked) {
-        setSelectedWorkoutRegistrantIds((prev) => {
-          const next = new Map<string, Set<string>>();
-          visibleWorkouts.forEach((workout) => {
-            if (workout.registrants.length === 0) {
-              return;
-            }
-            const existingIds = prev.get(workout.id) ?? new Set<string>();
-            const allowedIds = new Set(
-              workout.registrants
-                .filter((registrant) => registrant.isManager)
-                .map((registrant) => registrant.id),
-            );
-            const filteredIds = new Set(Array.from(existingIds).filter((id) => allowedIds.has(id)));
-            if (filteredIds.size > 0) {
-              next.set(workout.id, filteredIds);
-            }
-          });
-          return next;
-        });
-      }
-    },
-    [visibleWorkouts],
-  );
+  const handleWorkoutManagersOnlyToggle = useCallback((checked: boolean) => {
+    setWorkoutManagersOnly(checked);
+  }, []);
 
   const handleOlderWorkoutSelect = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
