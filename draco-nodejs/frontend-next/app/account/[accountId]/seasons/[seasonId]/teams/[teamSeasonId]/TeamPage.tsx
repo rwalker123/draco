@@ -53,6 +53,7 @@ import TeamFeaturedVideosWidget from '../../../../../../../components/social/Tea
 import InformationWidget from '@/components/information/InformationWidget';
 import TeamForumWidget from '@/components/team/TeamForumWidget';
 import CommunityChatsWidget from '@/components/social/CommunityChatsWidget';
+import DiscordIntegrationCard from '@/components/profile/DiscordIntegrationCard';
 
 interface TeamPageProps {
   accountId: string;
@@ -686,6 +687,10 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 seasonId={seasonId}
                 teamSeasonId={teamSeasonId}
               />
+            ) : null}
+
+            {token && teamData?.teamId && canViewCommunityChats ? (
+              <DiscordIntegrationCard accountId={accountId} />
             ) : null}
 
             {showInformationWidget ? (
