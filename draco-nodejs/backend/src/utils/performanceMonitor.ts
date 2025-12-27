@@ -1,7 +1,7 @@
 import { QueryMetrics, ConnectionPoolMetrics, databaseConfig } from '../config/database.js';
 import { DateUtils } from './dateUtils.js';
 
-interface PerformanceStats {
+export interface PerformanceStats {
   totalQueries: number;
   slowQueries: number;
   averageDuration: number;
