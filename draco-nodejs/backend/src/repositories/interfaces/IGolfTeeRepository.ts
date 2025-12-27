@@ -1,10 +1,10 @@
-import { Prisma, golfteeinformation } from '#prisma/client';
+import { golfteeinformation } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 
 export interface IGolfTeeRepository extends IBaseRepository<
   golfteeinformation,
-  Prisma.golfteeinformationCreateInput,
-  Prisma.golfteeinformationUpdateInput
+  Partial<golfteeinformation>,
+  Partial<golfteeinformation>
 > {
   findByCourseId(courseId: bigint): Promise<golfteeinformation[]>;
   findByColor(courseId: bigint, teeColor: string): Promise<golfteeinformation | null>;

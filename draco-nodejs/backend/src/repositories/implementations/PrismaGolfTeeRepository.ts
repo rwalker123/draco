@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, golfteeinformation } from '#prisma/client';
+import { PrismaClient, golfteeinformation } from '#prisma/client';
 import { IGolfTeeRepository } from '../interfaces/IGolfTeeRepository.js';
 
 export class PrismaGolfTeeRepository implements IGolfTeeRepository {
@@ -44,14 +44,13 @@ export class PrismaGolfTeeRepository implements IGolfTeeRepository {
     });
   }
 
-  async create(data: Prisma.golfteeinformationCreateInput): Promise<golfteeinformation> {
-    return this.prisma.golfteeinformation.create({ data });
+  async create(data: Partial<golfteeinformation>): Promise<golfteeinformation> {
+    return this.prisma.golfteeinformation.create({
+      data: data as Parameters<typeof this.prisma.golfteeinformation.create>[0]['data'],
+    });
   }
 
-  async update(
-    id: bigint,
-    data: Prisma.golfteeinformationUpdateInput,
-  ): Promise<golfteeinformation> {
+  async update(id: bigint, data: Partial<golfteeinformation>): Promise<golfteeinformation> {
     return this.prisma.golfteeinformation.update({
       where: { id },
       data,

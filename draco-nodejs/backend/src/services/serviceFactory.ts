@@ -87,6 +87,8 @@ import { FacebookIntegrationService } from './facebookIntegrationService.js';
 import { InstagramIntegrationService } from './instagramIntegrationService.js';
 import { WelcomeMessageService } from './welcomeMessageService.js';
 import { WorkoutRegistrantAccessEmailService } from './workoutRegistrantAccessEmailService.js';
+import { GolfCourseService } from './golfCourseService.js';
+import { GolfTeeService } from './golfTeeService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -165,6 +167,8 @@ export class ServiceFactory {
   private static instagramIntegrationService: InstagramIntegrationService;
   private static welcomeMessageService: WelcomeMessageService;
   private static workoutRegistrantAccessEmailService: WorkoutRegistrantAccessEmailService;
+  private static golfCourseService: GolfCourseService;
+  private static golfTeeService: GolfTeeService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -888,5 +892,19 @@ export class ServiceFactory {
       this.workoutRegistrantAccessEmailService = new WorkoutRegistrantAccessEmailService();
     }
     return this.workoutRegistrantAccessEmailService;
+  }
+
+  static getGolfCourseService(): GolfCourseService {
+    if (!this.golfCourseService) {
+      this.golfCourseService = new GolfCourseService();
+    }
+    return this.golfCourseService;
+  }
+
+  static getGolfTeeService(): GolfTeeService {
+    if (!this.golfTeeService) {
+      this.golfTeeService = new GolfTeeService();
+    }
+    return this.golfTeeService;
   }
 }
