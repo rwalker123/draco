@@ -338,6 +338,10 @@ import {
   GolfTeamStandingSchema,
   GolfFlightStandingsSchema,
   GolfLeagueStandingsSchema,
+  GolfLeaderSchema,
+  GolfScoringAverageSchema,
+  GolfSkinsEntrySchema,
+  GolfFlightLeadersSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1313,6 +1317,16 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'GolfLeagueStandings',
     GolfLeagueStandingsSchema,
   );
+  const GolfLeaderSchemaRef = registry.register('GolfLeader', GolfLeaderSchema);
+  const GolfScoringAverageSchemaRef = registry.register(
+    'GolfScoringAverage',
+    GolfScoringAverageSchema,
+  );
+  const GolfSkinsEntrySchemaRef = registry.register('GolfSkinsEntry', GolfSkinsEntrySchema);
+  const GolfFlightLeadersSchemaRef = registry.register(
+    'GolfFlightLeaders',
+    GolfFlightLeadersSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1655,6 +1669,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     GolfTeamStandingSchemaRef,
     GolfFlightStandingsSchemaRef,
     GolfLeagueStandingsSchemaRef,
+    GolfLeaderSchemaRef,
+    GolfScoringAverageSchemaRef,
+    GolfSkinsEntrySchemaRef,
+    GolfFlightLeadersSchemaRef,
   };
 };
 

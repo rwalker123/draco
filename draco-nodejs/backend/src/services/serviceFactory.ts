@@ -97,6 +97,7 @@ import { GolfMatchService } from './golfMatchService.js';
 import { GolfScoreService } from './golfScoreService.js';
 import { GolfHandicapService } from './golfHandicapService.js';
 import { GolfStandingsService } from './golfStandingsService.js';
+import { GolfStatsService } from './golfStatsService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -185,6 +186,7 @@ export class ServiceFactory {
   private static golfScoreService: GolfScoreService;
   private static golfHandicapService: GolfHandicapService;
   private static golfStandingsService: GolfStandingsService;
+  private static golfStatsService: GolfStatsService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -978,5 +980,12 @@ export class ServiceFactory {
       this.golfStandingsService = new GolfStandingsService();
     }
     return this.golfStandingsService;
+  }
+
+  static getGolfStatsService(): GolfStatsService {
+    if (!this.golfStatsService) {
+      this.golfStatsService = new GolfStatsService();
+    }
+    return this.golfStatsService;
   }
 }

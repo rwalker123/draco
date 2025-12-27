@@ -27635,6 +27635,326 @@
         ],
         "title": "GolfLeagueStandings",
         "description": "Complete standings for all flights in a golf league"
+      },
+      "GolfLeader": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "teamName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "value": {
+            "type": "number"
+          },
+          "rank": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "contactId",
+          "firstName",
+          "lastName",
+          "value",
+          "rank"
+        ],
+        "title": "GolfLeader",
+        "description": "A leader entry in a golf statistic category"
+      },
+      "GolfScoringAverage": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "teamName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "roundsPlayed": {
+            "type": "integer"
+          },
+          "averageScore": {
+            "type": "number"
+          },
+          "averageNetScore": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "contactId",
+          "firstName",
+          "lastName",
+          "roundsPlayed",
+          "averageScore"
+        ],
+        "title": "GolfScoringAverage",
+        "description": "Scoring average for a player"
+      },
+      "GolfSkinsEntry": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "teamName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "skinsWon": {
+            "type": "integer"
+          },
+          "skinsValue": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "contactId",
+          "firstName",
+          "lastName",
+          "skinsWon"
+        ],
+        "title": "GolfSkinsEntry",
+        "description": "Skins game entry for a player"
+      },
+      "GolfFlightLeaders": {
+        "type": "object",
+        "properties": {
+          "flightId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "flightName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "lowActualScore": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "contactId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "firstName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "lastName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "teamName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "value": {
+                  "type": "number"
+                },
+                "rank": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "contactId",
+                "firstName",
+                "lastName",
+                "value",
+                "rank"
+              ],
+              "title": "GolfLeader",
+              "description": "A leader entry in a golf statistic category"
+            }
+          },
+          "lowNetScore": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "contactId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "firstName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "lastName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "teamName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "value": {
+                  "type": "number"
+                },
+                "rank": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "contactId",
+                "firstName",
+                "lastName",
+                "value",
+                "rank"
+              ],
+              "title": "GolfLeader",
+              "description": "A leader entry in a golf statistic category"
+            }
+          },
+          "scoringAverages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "contactId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "firstName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "lastName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "teamName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "roundsPlayed": {
+                  "type": "integer"
+                },
+                "averageScore": {
+                  "type": "number"
+                },
+                "averageNetScore": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "contactId",
+                "firstName",
+                "lastName",
+                "roundsPlayed",
+                "averageScore"
+              ],
+              "title": "GolfScoringAverage",
+              "description": "Scoring average for a player"
+            }
+          },
+          "skins": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "contactId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "firstName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "lastName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "teamName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "skinsWon": {
+                  "type": "integer"
+                },
+                "skinsValue": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "contactId",
+                "firstName",
+                "lastName",
+                "skinsWon"
+              ],
+              "title": "GolfSkinsEntry",
+              "description": "Skins game entry for a player"
+            }
+          }
+        },
+        "required": [
+          "flightId",
+          "flightName",
+          "lowActualScore",
+          "lowNetScore",
+          "scoringAverages"
+        ],
+        "title": "GolfFlightLeaders",
+        "description": "All leader categories for a flight"
       }
     },
     "securitySchemes": {
