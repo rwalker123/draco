@@ -293,6 +293,16 @@ import {
   SchedulerUmpireExclusionSchema,
   SchedulerUmpireExclusionUpsertSchema,
   SchedulerUmpireExclusionsSchema,
+  GolfCourseSchema,
+  GolfCourseWithTeesSchema,
+  GolfCourseTeeSchema,
+  GolfLeagueCourseSchema,
+  CreateGolfCourseSchema,
+  UpdateGolfCourseSchema,
+  CreateGolfCourseTeeSchema,
+  UpdateGolfCourseTeeSchema,
+  AddLeagueCourseSchema,
+  UpdateTeePrioritiesSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1187,6 +1197,28 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'ContactValidation',
     ContactValidationSchema,
   );
+  const GolfCourseSchemaRef = registry.register('GolfCourse', GolfCourseSchema);
+  const GolfCourseWithTeesSchemaRef = registry.register(
+    'GolfCourseWithTees',
+    GolfCourseWithTeesSchema,
+  );
+  const GolfCourseTeeSchemaRef = registry.register('GolfCourseTee', GolfCourseTeeSchema);
+  const GolfLeagueCourseSchemaRef = registry.register('GolfLeagueCourse', GolfLeagueCourseSchema);
+  const CreateGolfCourseSchemaRef = registry.register('CreateGolfCourse', CreateGolfCourseSchema);
+  const UpdateGolfCourseSchemaRef = registry.register('UpdateGolfCourse', UpdateGolfCourseSchema);
+  const CreateGolfCourseTeeSchemaRef = registry.register(
+    'CreateGolfCourseTee',
+    CreateGolfCourseTeeSchema,
+  );
+  const UpdateGolfCourseTeeSchemaRef = registry.register(
+    'UpdateGolfCourseTee',
+    UpdateGolfCourseTeeSchema,
+  );
+  const AddLeagueCourseSchemaRef = registry.register('AddLeagueCourse', AddLeagueCourseSchema);
+  const UpdateTeePrioritiesSchemaRef = registry.register(
+    'UpdateTeePriorities',
+    UpdateTeePrioritiesSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1484,6 +1516,16 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SchedulerUmpireExclusionsSchemaRef,
     RoleCheckResponseSchemaRef,
     DiscordTeamForumRemoveRequestSchemaRef,
+    GolfCourseSchemaRef,
+    GolfCourseWithTeesSchemaRef,
+    GolfCourseTeeSchemaRef,
+    GolfLeagueCourseSchemaRef,
+    CreateGolfCourseSchemaRef,
+    UpdateGolfCourseSchemaRef,
+    CreateGolfCourseTeeSchemaRef,
+    UpdateGolfCourseTeeSchemaRef,
+    AddLeagueCourseSchemaRef,
+    UpdateTeePrioritiesSchemaRef,
   };
 };
 

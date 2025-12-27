@@ -125,6 +125,22 @@ export const AddLeagueCourseSchema = z
     description: 'Data for adding an existing course to a league',
   });
 
+export const UpdateTeePrioritiesSchema = z
+  .object({
+    priorities: z
+      .array(
+        z.object({
+          id: bigintToStringSchema,
+          priority: z.number().int(),
+        }),
+      )
+      .min(1),
+  })
+  .openapi({
+    title: 'UpdateTeePriorities',
+    description: 'Request to update the display order of tees for a golf course',
+  });
+
 export type GolfCourseAddressType = z.infer<typeof GolfCourseAddressSchema>;
 export type GolfCourseParType = z.infer<typeof GolfCourseParSchema>;
 export type GolfCourseTeeRatingsType = z.infer<typeof GolfCourseTeeRatingsSchema>;
@@ -137,3 +153,4 @@ export type UpdateGolfCourseType = z.infer<typeof UpdateGolfCourseSchema>;
 export type CreateGolfCourseTeeType = z.infer<typeof CreateGolfCourseTeeSchema>;
 export type UpdateGolfCourseTeeType = z.infer<typeof UpdateGolfCourseTeeSchema>;
 export type AddLeagueCourseType = z.infer<typeof AddLeagueCourseSchema>;
+export type UpdateTeePrioritiesType = z.infer<typeof UpdateTeePrioritiesSchema>;

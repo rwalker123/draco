@@ -17740,6 +17740,754 @@ components:
         - firstName
         - lastName
         - validationType
+    GolfCourse:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        designer:
+          type: string
+          nullable: true
+          maxLength: 50
+        yearBuilt:
+          type: integer
+          nullable: true
+        numberOfHoles:
+          type: integer
+          minimum: 9
+          maximum: 18
+        address:
+          type: string
+          nullable: true
+          maxLength: 50
+        city:
+          type: string
+          nullable: true
+          maxLength: 50
+        state:
+          type: string
+          nullable: true
+          maxLength: 50
+        zip:
+          type: string
+          nullable: true
+          maxLength: 20
+        country:
+          type: string
+          nullable: true
+          maxLength: 30
+        mensPar:
+          type: array
+          items:
+            type: integer
+            minimum: 3
+            maximum: 6
+        womansPar:
+          type: array
+          items:
+            type: integer
+            minimum: 3
+            maximum: 6
+        mensHandicap:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 18
+        womansHandicap:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 18
+      required:
+        - id
+        - name
+        - numberOfHoles
+        - mensPar
+        - womansPar
+        - mensHandicap
+        - womansHandicap
+      title: GolfCourse
+      description: Golf course with par and handicap information for all 18 holes
+    GolfCourseWithTees:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        designer:
+          type: string
+          nullable: true
+          maxLength: 50
+        yearBuilt:
+          type: integer
+          nullable: true
+        numberOfHoles:
+          type: integer
+          minimum: 9
+          maximum: 18
+        address:
+          type: string
+          nullable: true
+          maxLength: 50
+        city:
+          type: string
+          nullable: true
+          maxLength: 50
+        state:
+          type: string
+          nullable: true
+          maxLength: 50
+        zip:
+          type: string
+          nullable: true
+          maxLength: 20
+        country:
+          type: string
+          nullable: true
+          maxLength: 30
+        mensPar:
+          type: array
+          items:
+            type: integer
+            minimum: 3
+            maximum: 6
+        womansPar:
+          type: array
+          items:
+            type: integer
+            minimum: 3
+            maximum: 6
+        mensHandicap:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 18
+        womansHandicap:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 18
+        tees:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              courseId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              teeColor:
+                type: string
+                maxLength: 20
+              teeName:
+                type: string
+                maxLength: 20
+              priority:
+                type: integer
+                default: 0
+              distances:
+                type: array
+                items:
+                  type: integer
+                  minimum: 0
+                  maximum: 700
+              mensRating:
+                type: number
+                minimum: 55
+                maximum: 80
+              mensSlope:
+                type: integer
+                minimum: 55
+                maximum: 155
+              womansRating:
+                type: number
+                minimum: 55
+                maximum: 80
+              womansSlope:
+                type: integer
+                minimum: 55
+                maximum: 155
+              mensRatingFront9:
+                type: number
+                minimum: 55
+                maximum: 80
+              mensSlopeFront9:
+                type: integer
+                minimum: 55
+                maximum: 155
+              womansRatingFront9:
+                type: number
+                minimum: 55
+                maximum: 80
+              womansSlopeFront9:
+                type: integer
+                minimum: 55
+                maximum: 155
+              mensRatingBack9:
+                type: number
+                minimum: 55
+                maximum: 80
+              mensSlopeBack9:
+                type: integer
+                minimum: 55
+                maximum: 155
+              womansRatingBack9:
+                type: number
+                minimum: 55
+                maximum: 80
+              womansSlopeBack9:
+                type: integer
+                minimum: 55
+                maximum: 155
+            required:
+              - id
+              - courseId
+              - teeColor
+              - teeName
+              - distances
+              - mensRating
+              - mensSlope
+              - womansRating
+              - womansSlope
+            title: GolfCourseTee
+            description: Tee information for a golf course including ratings, slopes, and
+              hole distances
+      required:
+        - id
+        - name
+        - numberOfHoles
+        - mensPar
+        - womansPar
+        - mensHandicap
+        - womansHandicap
+      title: GolfCourseWithTees
+      description: Golf course with associated tee information
+    GolfCourseTee:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        courseId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teeColor:
+          type: string
+          maxLength: 20
+        teeName:
+          type: string
+          maxLength: 20
+        priority:
+          type: integer
+          default: 0
+        distances:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 700
+        mensRating:
+          type: number
+          minimum: 55
+          maximum: 80
+        mensSlope:
+          type: integer
+          minimum: 55
+          maximum: 155
+        womansRating:
+          type: number
+          minimum: 55
+          maximum: 80
+        womansSlope:
+          type: integer
+          minimum: 55
+          maximum: 155
+        mensRatingFront9:
+          type: number
+          minimum: 55
+          maximum: 80
+        mensSlopeFront9:
+          type: integer
+          minimum: 55
+          maximum: 155
+        womansRatingFront9:
+          type: number
+          minimum: 55
+          maximum: 80
+        womansSlopeFront9:
+          type: integer
+          minimum: 55
+          maximum: 155
+        mensRatingBack9:
+          type: number
+          minimum: 55
+          maximum: 80
+        mensSlopeBack9:
+          type: integer
+          minimum: 55
+          maximum: 155
+        womansRatingBack9:
+          type: number
+          minimum: 55
+          maximum: 80
+        womansSlopeBack9:
+          type: integer
+          minimum: 55
+          maximum: 155
+      required:
+        - id
+        - courseId
+        - teeColor
+        - teeName
+        - distances
+        - mensRating
+        - mensSlope
+        - womansRating
+        - womansSlope
+      title: GolfCourseTee
+      description: Tee information for a golf course including ratings, slopes, and
+        hole distances
+    GolfLeagueCourse:
+      type: object
+      properties:
+        accountId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        course:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            designer:
+              type: string
+              nullable: true
+              maxLength: 50
+            yearBuilt:
+              type: integer
+              nullable: true
+            numberOfHoles:
+              type: integer
+              minimum: 9
+              maximum: 18
+            address:
+              type: string
+              nullable: true
+              maxLength: 50
+            city:
+              type: string
+              nullable: true
+              maxLength: 50
+            state:
+              type: string
+              nullable: true
+              maxLength: 50
+            zip:
+              type: string
+              nullable: true
+              maxLength: 20
+            country:
+              type: string
+              nullable: true
+              maxLength: 30
+            mensPar:
+              type: array
+              items:
+                type: integer
+                minimum: 3
+                maximum: 6
+            womansPar:
+              type: array
+              items:
+                type: integer
+                minimum: 3
+                maximum: 6
+            mensHandicap:
+              type: array
+              items:
+                type: integer
+                minimum: 1
+                maximum: 18
+            womansHandicap:
+              type: array
+              items:
+                type: integer
+                minimum: 1
+                maximum: 18
+          required:
+            - id
+            - name
+            - numberOfHoles
+            - mensPar
+            - womansPar
+            - mensHandicap
+            - womansHandicap
+          title: GolfCourse
+          description: Golf course with par and handicap information for all 18 holes
+        defaultMensTeeId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+        defaultWomansTeeId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+      required:
+        - accountId
+        - course
+      title: GolfLeagueCourse
+      description: Course associated with a golf league with default tee selections
+    CreateGolfCourse:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        designer:
+          type: string
+          nullable: true
+          maxLength: 50
+        yearBuilt:
+          type: integer
+          nullable: true
+        numberOfHoles:
+          type: integer
+          minimum: 9
+          maximum: 18
+        address:
+          type: string
+          nullable: true
+          maxLength: 50
+        city:
+          type: string
+          nullable: true
+          maxLength: 50
+        state:
+          type: string
+          nullable: true
+          maxLength: 50
+        zip:
+          type: string
+          nullable: true
+          maxLength: 20
+        country:
+          type: string
+          nullable: true
+          maxLength: 30
+        mensPar:
+          type: array
+          items:
+            type: integer
+            minimum: 3
+            maximum: 6
+        womansPar:
+          type: array
+          items:
+            type: integer
+            minimum: 3
+            maximum: 6
+        mensHandicap:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 18
+        womansHandicap:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 18
+      required:
+        - name
+        - numberOfHoles
+        - mensPar
+        - womansPar
+        - mensHandicap
+        - womansHandicap
+      title: CreateGolfCourse
+      description: Data required to create a new golf course
+    UpdateGolfCourse:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        designer:
+          type: string
+          nullable: true
+          maxLength: 50
+        yearBuilt:
+          type: integer
+          nullable: true
+        numberOfHoles:
+          type: integer
+          minimum: 9
+          maximum: 18
+        address:
+          type: string
+          nullable: true
+          maxLength: 50
+        city:
+          type: string
+          nullable: true
+          maxLength: 50
+        state:
+          type: string
+          nullable: true
+          maxLength: 50
+        zip:
+          type: string
+          nullable: true
+          maxLength: 20
+        country:
+          type: string
+          nullable: true
+          maxLength: 30
+        mensPar:
+          type: array
+          items:
+            type: integer
+            minimum: 3
+            maximum: 6
+        womansPar:
+          type: array
+          items:
+            type: integer
+            minimum: 3
+            maximum: 6
+        mensHandicap:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 18
+        womansHandicap:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 18
+      title: UpdateGolfCourse
+      description: Data for updating an existing golf course
+    CreateGolfCourseTee:
+      type: object
+      properties:
+        teeColor:
+          type: string
+          maxLength: 20
+        teeName:
+          type: string
+          maxLength: 20
+        priority:
+          type: integer
+          default: 0
+        distances:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 700
+        mensRating:
+          type: number
+          minimum: 55
+          maximum: 80
+        mensSlope:
+          type: integer
+          minimum: 55
+          maximum: 155
+        womansRating:
+          type: number
+          minimum: 55
+          maximum: 80
+        womansSlope:
+          type: integer
+          minimum: 55
+          maximum: 155
+        mensRatingFront9:
+          type: number
+          minimum: 55
+          maximum: 80
+        mensSlopeFront9:
+          type: integer
+          minimum: 55
+          maximum: 155
+        womansRatingFront9:
+          type: number
+          minimum: 55
+          maximum: 80
+        womansSlopeFront9:
+          type: integer
+          minimum: 55
+          maximum: 155
+        mensRatingBack9:
+          type: number
+          minimum: 55
+          maximum: 80
+        mensSlopeBack9:
+          type: integer
+          minimum: 55
+          maximum: 155
+        womansRatingBack9:
+          type: number
+          minimum: 55
+          maximum: 80
+        womansSlopeBack9:
+          type: integer
+          minimum: 55
+          maximum: 155
+      required:
+        - teeColor
+        - teeName
+        - distances
+        - mensRating
+        - mensSlope
+        - womansRating
+        - womansSlope
+      title: CreateGolfCourseTee
+      description: Data required to create a new tee for a course
+    UpdateGolfCourseTee:
+      type: object
+      properties:
+        teeColor:
+          type: string
+          maxLength: 20
+        teeName:
+          type: string
+          maxLength: 20
+        priority:
+          type: integer
+          default: 0
+        distances:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 700
+        mensRating:
+          type: number
+          minimum: 55
+          maximum: 80
+        mensSlope:
+          type: integer
+          minimum: 55
+          maximum: 155
+        womansRating:
+          type: number
+          minimum: 55
+          maximum: 80
+        womansSlope:
+          type: integer
+          minimum: 55
+          maximum: 155
+        mensRatingFront9:
+          type: number
+          minimum: 55
+          maximum: 80
+        mensSlopeFront9:
+          type: integer
+          minimum: 55
+          maximum: 155
+        womansRatingFront9:
+          type: number
+          minimum: 55
+          maximum: 80
+        womansSlopeFront9:
+          type: integer
+          minimum: 55
+          maximum: 155
+        mensRatingBack9:
+          type: number
+          minimum: 55
+          maximum: 80
+        mensSlopeBack9:
+          type: integer
+          minimum: 55
+          maximum: 155
+        womansRatingBack9:
+          type: number
+          minimum: 55
+          maximum: 80
+        womansSlopeBack9:
+          type: integer
+          minimum: 55
+          maximum: 155
+      title: UpdateGolfCourseTee
+      description: Data for updating an existing tee
+    AddLeagueCourse:
+      type: object
+      properties:
+        courseId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        defaultMensTeeId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+        defaultWomansTeeId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+      required:
+        - courseId
+      title: AddLeagueCourse
+      description: Data for adding an existing course to a league
+    UpdateTeePriorities:
+      type: object
+      properties:
+        priorities:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              priority:
+                type: integer
+            required:
+              - id
+              - priority
+          minItems: 1
+      required:
+        - priorities
+      title: UpdateTeePriorities
+      description: Request to update the display order of tees for a golf course
   securitySchemes:
     bearerAuth:
       type: http
@@ -25714,6 +26462,749 @@ paths:
                 $ref: "#/components/schemas/AuthorizationError"
         "404":
           description: Game not found for the provided context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/courses/league-courses:
+    get:
+      description: List golf courses associated with a league
+      operationId: listGolfLeagueCourses
+      summary: List league golf courses
+      tags:
+        - Golf Courses
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: League courses with tee information
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GolfLeagueCourse"
+                title: GolfLeagueCourseList
+                description: List of league courses with tee information
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      description: Add an existing course to the league
+      operationId: addGolfLeagueCourse
+      summary: Add league course
+      tags:
+        - Golf Courses
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddLeagueCourse"
+      responses:
+        "201":
+          description: Course added to league
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - golf management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Course already in league
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/courses/{courseId}:
+    get:
+      description: Retrieve a golf course with its tee information
+      operationId: getGolfCourse
+      summary: Get golf course
+      tags:
+        - Golf Courses
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Golf course with tees
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfCourseWithTees"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      description: Update an existing golf course
+      operationId: updateGolfCourse
+      summary: Update golf course
+      tags:
+        - Golf Courses
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGolfCourse"
+      responses:
+        "200":
+          description: Course updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfCourse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - golf management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Course with that name already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      description: Delete a golf course
+      operationId: deleteGolfCourse
+      summary: Delete golf course
+      tags:
+        - Golf Courses
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Course deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - golf management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Course is in use and cannot be deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/courses:
+    post:
+      description: Create a new golf course
+      operationId: createGolfCourse
+      summary: Create golf course
+      tags:
+        - Golf Courses
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGolfCourse"
+      responses:
+        "201":
+          description: Course created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfCourse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - golf management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "409":
+          description: Course with that name already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/courses/league-courses/{courseId}:
+    delete:
+      description: Remove a course from the league
+      operationId: removeGolfLeagueCourse
+      summary: Remove league course
+      tags:
+        - Golf Courses
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Course removed from league
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - golf management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Course not found in league
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/courses/{courseId}/tees:
+    get:
+      description: List tees for a golf course
+      operationId: listGolfCourseTees
+      summary: List course tees
+      tags:
+        - Golf Course Tees
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: List of tees for the course
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GolfCourseTee"
+                title: GolfCourseTeeList
+                description: List of tees for a course
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      description: Create a new tee for a golf course
+      operationId: createGolfCourseTee
+      summary: Create course tee
+      tags:
+        - Golf Course Tees
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGolfCourseTee"
+      responses:
+        "201":
+          description: Tee created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfCourseTee"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - golf management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Tee with that color already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/courses/{courseId}/tees/{teeId}:
+    get:
+      description: Retrieve a single tee for a golf course
+      operationId: getGolfCourseTee
+      summary: Get course tee
+      tags:
+        - Golf Course Tees
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Tee details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfCourseTee"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "404":
+          description: Tee or course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      description: Update an existing tee for a golf course
+      operationId: updateGolfCourseTee
+      summary: Update course tee
+      tags:
+        - Golf Course Tees
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGolfCourseTee"
+      responses:
+        "200":
+          description: Tee updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfCourseTee"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - golf management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Tee or course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Tee with that color already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      description: Delete a tee from a golf course
+      operationId: deleteGolfCourseTee
+      summary: Delete course tee
+      tags:
+        - Golf Course Tees
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Tee deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - golf management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Tee or course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Tee is in use and cannot be deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/courses/{courseId}/tees/priorities:
+    put:
+      description: Update the display order of tees for a golf course
+      operationId: updateGolfCourseTeesPriorities
+      summary: Update tee priorities
+      tags:
+        - Golf Course Tees
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTeePriorities"
+      responses:
+        "204":
+          description: Priorities updated
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - golf management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Course not found
           content:
             application/json:
               schema:
