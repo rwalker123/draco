@@ -310,6 +310,18 @@ import {
   GolfFlightWithTeamCountSchema,
   CreateGolfFlightSchema,
   UpdateGolfFlightSchema,
+  GolfTeamSchema,
+  GolfTeamWithRosterSchema,
+  CreateGolfTeamSchema,
+  UpdateGolfTeamSchema,
+  GolfPlayerSchema,
+  GolfRosterEntrySchema,
+  GolfSubstituteSchema,
+  CreateGolfPlayerSchema,
+  UpdateGolfPlayerSchema,
+  SignPlayerSchema,
+  ReleasePlayerSchema,
+  AvailablePlayerSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1239,6 +1251,21 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const CreateGolfFlightSchemaRef = registry.register('CreateGolfFlight', CreateGolfFlightSchema);
   const UpdateGolfFlightSchemaRef = registry.register('UpdateGolfFlight', UpdateGolfFlightSchema);
+  const GolfTeamSchemaRef = registry.register('GolfTeam', GolfTeamSchema);
+  const GolfTeamWithRosterSchemaRef = registry.register(
+    'GolfTeamWithRoster',
+    GolfTeamWithRosterSchema,
+  );
+  const CreateGolfTeamSchemaRef = registry.register('CreateGolfTeam', CreateGolfTeamSchema);
+  const UpdateGolfTeamSchemaRef = registry.register('UpdateGolfTeam', UpdateGolfTeamSchema);
+  const GolfPlayerSchemaRef = registry.register('GolfPlayer', GolfPlayerSchema);
+  const GolfRosterEntrySchemaRef = registry.register('GolfRosterEntry', GolfRosterEntrySchema);
+  const GolfSubstituteSchemaRef = registry.register('GolfSubstitute', GolfSubstituteSchema);
+  const CreateGolfPlayerSchemaRef = registry.register('CreateGolfPlayer', CreateGolfPlayerSchema);
+  const UpdateGolfPlayerSchemaRef = registry.register('UpdateGolfPlayer', UpdateGolfPlayerSchema);
+  const SignPlayerSchemaRef = registry.register('SignPlayer', SignPlayerSchema);
+  const ReleasePlayerSchemaRef = registry.register('ReleasePlayer', ReleasePlayerSchema);
+  const AvailablePlayerSchemaRef = registry.register('AvailablePlayer', AvailablePlayerSchema);
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1553,6 +1580,18 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     GolfFlightWithTeamCountSchemaRef,
     CreateGolfFlightSchemaRef,
     UpdateGolfFlightSchemaRef,
+    GolfTeamSchemaRef,
+    GolfTeamWithRosterSchemaRef,
+    CreateGolfTeamSchemaRef,
+    UpdateGolfTeamSchemaRef,
+    GolfPlayerSchemaRef,
+    GolfRosterEntrySchemaRef,
+    GolfSubstituteSchemaRef,
+    CreateGolfPlayerSchemaRef,
+    UpdateGolfPlayerSchemaRef,
+    SignPlayerSchemaRef,
+    ReleasePlayerSchemaRef,
+    AvailablePlayerSchemaRef,
   };
 };
 

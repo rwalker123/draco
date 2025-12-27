@@ -18920,6 +18920,457 @@ components:
           maxLength: 100
       title: UpdateGolfFlight
       description: Data for updating an existing golf flight
+    GolfTeam:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        flight:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            season:
+              type: object
+              properties:
+                id:
+                  type: string
+                  pattern: ^\d+$
+                  example: "12345"
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+              required:
+                - id
+                - name
+          required:
+            - id
+            - name
+          title: GolfFlight
+          description: A flight/division within a golf league season
+      required:
+        - id
+        - name
+      title: GolfTeam
+      description: A golf team in a flight
+    GolfTeamWithRoster:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        flight:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            season:
+              type: object
+              properties:
+                id:
+                  type: string
+                  pattern: ^\d+$
+                  example: "12345"
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+              required:
+                - id
+                - name
+          required:
+            - id
+            - name
+          title: GolfFlight
+          description: A flight/division within a golf league season
+        roster:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              contactId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              teamSeasonId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              isActive:
+                type: boolean
+                default: true
+              isSub:
+                type: boolean
+                default: false
+              initialDifferential:
+                type: number
+                nullable: true
+              player:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  firstName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  lastName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  middleName:
+                    type: string
+                    maxLength: 50
+                  handicapIndex:
+                    type: number
+                    nullable: true
+                  photoUrl:
+                    type: string
+                    nullable: true
+                    format: uri
+                required:
+                  - id
+                  - firstName
+                  - lastName
+                title: GolfPlayer
+                description: Golf player with handicap information
+            required:
+              - id
+              - contactId
+              - teamSeasonId
+              - player
+            title: GolfRosterEntry
+            description: A player on a golf team roster
+        playerCount:
+          type: integer
+          minimum: 0
+      required:
+        - id
+        - name
+        - roster
+        - playerCount
+      title: GolfTeamWithRoster
+      description: Golf team with full roster
+    CreateGolfTeam:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+        - name
+      title: CreateGolfTeam
+      description: Data required to create a new golf team
+    UpdateGolfTeam:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      title: UpdateGolfTeam
+      description: Data for updating an existing golf team
+    GolfPlayer:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 50
+        handicapIndex:
+          type: number
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+          format: uri
+      required:
+        - id
+        - firstName
+        - lastName
+      title: GolfPlayer
+      description: Golf player with handicap information
+    GolfRosterEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        isActive:
+          type: boolean
+          default: true
+        isSub:
+          type: boolean
+          default: false
+        initialDifferential:
+          type: number
+          nullable: true
+        player:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            firstName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            lastName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            middleName:
+              type: string
+              maxLength: 50
+            handicapIndex:
+              type: number
+              nullable: true
+            photoUrl:
+              type: string
+              nullable: true
+              format: uri
+          required:
+            - id
+            - firstName
+            - lastName
+          title: GolfPlayer
+          description: Golf player with handicap information
+      required:
+        - id
+        - contactId
+        - teamSeasonId
+        - player
+      title: GolfRosterEntry
+      description: A player on a golf team roster
+    GolfSubstitute:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        isActive:
+          type: boolean
+          default: true
+        isSub:
+          type: boolean
+          default: false
+        initialDifferential:
+          type: number
+          nullable: true
+        player:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            firstName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            lastName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            middleName:
+              type: string
+              maxLength: 50
+            handicapIndex:
+              type: number
+              nullable: true
+            photoUrl:
+              type: string
+              nullable: true
+              format: uri
+          required:
+            - id
+            - firstName
+            - lastName
+          title: GolfPlayer
+          description: Golf player with handicap information
+        subSeasonId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+      required:
+        - id
+        - contactId
+        - teamSeasonId
+        - player
+      title: GolfSubstitute
+      description: A substitute player available for the flight
+    CreateGolfPlayer:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          maxLength: 100
+          format: email
+        initialDifferential:
+          type: number
+          nullable: true
+        isSub:
+          type: boolean
+          default: false
+      required:
+        - firstName
+        - lastName
+      title: CreateGolfPlayer
+      description: Data required to create a new golf player
+    UpdateGolfPlayer:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          maxLength: 100
+          format: email
+        initialDifferential:
+          type: number
+          nullable: true
+        isSub:
+          type: boolean
+          default: false
+        isActive:
+          type: boolean
+      title: UpdateGolfPlayer
+      description: Data for updating an existing golf player
+    SignPlayer:
+      type: object
+      properties:
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        initialDifferential:
+          type: number
+          nullable: true
+        isSub:
+          type: boolean
+          default: false
+      required:
+        - contactId
+      title: SignPlayer
+      description: Data for signing an existing contact to a golf team
+    ReleasePlayer:
+      type: object
+      properties:
+        releaseAsSub:
+          type: boolean
+          default: false
+      title: ReleasePlayer
+      description: Options for releasing a player from a team
+    AvailablePlayer:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          maxLength: 100
+          format: email
+      required:
+        - id
+        - firstName
+        - lastName
+      title: AvailablePlayer
+      description: A contact available to be signed to a golf team
   securitySchemes:
     bearerAuth:
       type: http

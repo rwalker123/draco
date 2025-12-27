@@ -59,3 +59,5 @@ export * from './PrismaGolfCourseRepository.js';
 export * from './PrismaGolfTeeRepository.js';
 export * from './PrismaGolfLeagueRepository.js';
 export * from './PrismaGolfFlightRepository.js';
+export * from './PrismaGolfTeamRepository.js';
+export * from './PrismaGolfRosterRepository.js';

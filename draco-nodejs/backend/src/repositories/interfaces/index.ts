@@ -60,3 +60,5 @@ export * from './IGolfCourseRepository.js';
 export * from './IGolfTeeRepository.js';
 export * from './IGolfLeagueRepository.js';
 export * from './IGolfFlightRepository.js';
+export * from './IGolfTeamRepository.js';
+export * from './IGolfRosterRepository.js';
