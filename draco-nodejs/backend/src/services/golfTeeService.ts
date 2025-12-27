@@ -1,5 +1,9 @@
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
-import { RepositoryFactory } from '../repositories/repositoryFactory.js';
+import {
+  IGolfTeeRepository,
+  IGolfCourseRepository,
+  RepositoryFactory,
+} from '../repositories/index.js';
 import { GolfTeeResponseFormatter } from '../responseFormatters/index.js';
 import {
   GolfCourseTeeType,
@@ -8,8 +12,13 @@ import {
 } from '@draco/shared-schemas';
 
 export class GolfTeeService {
-  private readonly teeRepository = RepositoryFactory.getGolfTeeRepository();
-  private readonly courseRepository = RepositoryFactory.getGolfCourseRepository();
+  private readonly teeRepository: IGolfTeeRepository;
+  private readonly courseRepository: IGolfCourseRepository;
+
+  constructor(teeRepository?: IGolfTeeRepository, courseRepository?: IGolfCourseRepository) {
+    this.teeRepository = teeRepository ?? RepositoryFactory.getGolfTeeRepository();
+    this.courseRepository = courseRepository ?? RepositoryFactory.getGolfCourseRepository();
+  }
 
   private buildPrismaDistanceData(distances: number[]): Record<string, number> {
     const data: Record<string, number> = {};

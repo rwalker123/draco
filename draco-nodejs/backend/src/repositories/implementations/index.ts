@@ -57,3 +57,5 @@ export * from './PrismaAccountFacebookCredentialsRepository.js';
 export * from './PrismaInstagramIngestionRepository.js';
 export * from './PrismaGolfCourseRepository.js';
 export * from './PrismaGolfTeeRepository.js';
+export * from './PrismaGolfLeagueRepository.js';
+export * from './PrismaGolfFlightRepository.js';

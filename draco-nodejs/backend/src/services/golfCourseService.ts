@@ -1,5 +1,5 @@
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
-import { RepositoryFactory } from '../repositories/repositoryFactory.js';
+import { IGolfCourseRepository, RepositoryFactory } from '../repositories/index.js';
 import { GolfCourseResponseFormatter } from '../responseFormatters/index.js';
 import {
   GolfCourseType,
@@ -11,7 +11,11 @@ import {
 } from '@draco/shared-schemas';
 
 export class GolfCourseService {
-  private readonly courseRepository = RepositoryFactory.getGolfCourseRepository();
+  private readonly courseRepository: IGolfCourseRepository;
+
+  constructor(courseRepository?: IGolfCourseRepository) {
+    this.courseRepository = courseRepository ?? RepositoryFactory.getGolfCourseRepository();
+  }
 
   private sanitizeOptionalString(value: string | null | undefined): string {
     if (typeof value !== 'string') {

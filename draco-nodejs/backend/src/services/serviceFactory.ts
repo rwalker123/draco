@@ -89,6 +89,8 @@ import { WelcomeMessageService } from './welcomeMessageService.js';
 import { WorkoutRegistrantAccessEmailService } from './workoutRegistrantAccessEmailService.js';
 import { GolfCourseService } from './golfCourseService.js';
 import { GolfTeeService } from './golfTeeService.js';
+import { GolfLeagueService } from './golfLeagueService.js';
+import { GolfFlightService } from './golfFlightService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -169,6 +171,8 @@ export class ServiceFactory {
   private static workoutRegistrantAccessEmailService: WorkoutRegistrantAccessEmailService;
   private static golfCourseService: GolfCourseService;
   private static golfTeeService: GolfTeeService;
+  private static golfLeagueService: GolfLeagueService;
+  private static golfFlightService: GolfFlightService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -906,5 +910,19 @@ export class ServiceFactory {
       this.golfTeeService = new GolfTeeService();
     }
     return this.golfTeeService;
+  }
+
+  static getGolfLeagueService(): GolfLeagueService {
+    if (!this.golfLeagueService) {
+      this.golfLeagueService = new GolfLeagueService();
+    }
+    return this.golfLeagueService;
+  }
+
+  static getGolfFlightService(): GolfFlightService {
+    if (!this.golfFlightService) {
+      this.golfFlightService = new GolfFlightService();
+    }
+    return this.golfFlightService;
   }
 }

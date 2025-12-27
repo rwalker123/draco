@@ -58,3 +58,5 @@ export * from './IAccountFacebookCredentialsRepository.js';
 export * from './IInstagramIngestionRepository.js';
 export * from './IGolfCourseRepository.js';
 export * from './IGolfTeeRepository.js';
+export * from './IGolfLeagueRepository.js';
+export * from './IGolfFlightRepository.js';
