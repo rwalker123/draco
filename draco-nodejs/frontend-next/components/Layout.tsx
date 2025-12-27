@@ -93,8 +93,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const currentAccountId = currentAccount?.id ? String(currentAccount.id) : null;
   const shouldShowAdminMenuIcon =
     hasAccountManagementPrivileges ||
-    Boolean(user && hasRole('Administrator')) ||
-    Boolean(user && currentAccountId && hasRole('AccountAdmin', { accountId: currentAccountId }));
+    (user && currentAccountId && hasRole('AccountAdmin', { accountId: currentAccountId }));
 
   // Extract accountId from prop, URL path, query string, or context (in that order of preference)
   const accountIdFromQuery = searchParams.get('accountId');
