@@ -58,6 +58,8 @@ import {
   ISchedulerSeasonExclusionsRepository,
   ISchedulerTeamSeasonExclusionsRepository,
   ISchedulerUmpireExclusionsRepository,
+  IGolfCourseRepository,
+  IGolfTeeRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -117,6 +119,8 @@ import {
   PrismaSchedulerSeasonExclusionsRepository,
   PrismaSchedulerTeamSeasonExclusionsRepository,
   PrismaSchedulerUmpireExclusionsRepository,
+  PrismaGolfCourseRepository,
+  PrismaGolfTeeRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -183,6 +187,8 @@ export class RepositoryFactory {
   private static schedulerSeasonExclusionsRepository: ISchedulerSeasonExclusionsRepository;
   private static schedulerTeamSeasonExclusionsRepository: ISchedulerTeamSeasonExclusionsRepository;
   private static schedulerUmpireExclusionsRepository: ISchedulerUmpireExclusionsRepository;
+  private static golfCourseRepository: IGolfCourseRepository;
+  private static golfTeeRepository: IGolfTeeRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -611,5 +617,19 @@ export class RepositoryFactory {
     }
 
     return this.instagramIngestionRepository;
+  }
+
+  static getGolfCourseRepository(): IGolfCourseRepository {
+    if (!this.golfCourseRepository) {
+      this.golfCourseRepository = new PrismaGolfCourseRepository(prisma);
+    }
+    return this.golfCourseRepository;
+  }
+
+  static getGolfTeeRepository(): IGolfTeeRepository {
+    if (!this.golfTeeRepository) {
+      this.golfTeeRepository = new PrismaGolfTeeRepository(prisma);
+    }
+    return this.golfTeeRepository;
   }
 }

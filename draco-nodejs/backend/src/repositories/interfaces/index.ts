@@ -56,3 +56,5 @@ export * from './IAccountBlueskyCredentialsRepository.js';
 export * from './IAccountInstagramCredentialsRepository.js';
 export * from './IAccountFacebookCredentialsRepository.js';
 export * from './IInstagramIngestionRepository.js';
+export * from './IGolfCourseRepository.js';
+export * from './IGolfTeeRepository.js';

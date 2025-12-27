@@ -55,3 +55,5 @@ export * from './PrismaAccountBlueskyCredentialsRepository.js';
 export * from './PrismaAccountInstagramCredentialsRepository.js';
 export * from './PrismaAccountFacebookCredentialsRepository.js';
 export * from './PrismaInstagramIngestionRepository.js';
+export * from './PrismaGolfCourseRepository.js';
+export * from './PrismaGolfTeeRepository.js';
