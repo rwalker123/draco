@@ -5,6 +5,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
   ReactNode,
 } from 'react';
 import { useParams } from 'next/navigation';
@@ -44,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastFetchedAccountId, setLastFetchedAccountId] = useState<string | null>(null);
+  const lastFetchedAccountIdRef = useRef<string | null>(null);
   const params = useParams<{ accountId?: string | string[] }>();
   const accountIdFromPath = params?.accountId
     ? Array.isArray(params.accountId)
@@ -108,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setLoading(false);
         setInitialized(true);
-        setLastFetchedAccountId(null);
+        lastFetchedAccountIdRef.current = null;
         return;
       }
 
@@ -132,7 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const payload = unwrapApiResult(result, 'Failed to load current user');
 
         setUser(payload as RegisteredUserType);
-        setLastFetchedAccountId(effectiveAccountId ?? null);
+        lastFetchedAccountIdRef.current = effectiveAccountId ?? null;
       } catch {
         //const message = getApiErrorMessage(err, 'Failed to load current user');
         //console.error('Failed to fetch authenticated user:', err);
@@ -140,7 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setToken(null);
         localStorage.removeItem('jwtToken');
-        setLastFetchedAccountId(null);
+        lastFetchedAccountIdRef.current = null;
       } finally {
         setLoading(false);
         setInitialized(true);
@@ -153,7 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (token) {
       const effectiveAccountId = resolveAccountId();
 
-      if (lastFetchedAccountId !== effectiveAccountId) {
+      if (lastFetchedAccountIdRef.current !== effectiveAccountId) {
         fetchUser(undefined, effectiveAccountId);
       } else {
         fetchUser();
@@ -161,9 +162,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setUser(null);
       setInitialized(true);
-      setLastFetchedAccountId(null);
+      lastFetchedAccountIdRef.current = null;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- lastFetchedAccountId is intentionally omitted to prevent infinite refetch loops
   }, [token, accountIdFromPath, resolveAccountId, fetchUser]);
 
   const login = async (creds: SignInCredentialsType) => {
