@@ -334,10 +334,8 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   useEffect(() => {
     if (accountId) {
       fetchLeagueSeasons();
-      // Initial fetch for divisions is now handled per league season
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountId, seasonId]);
+  }, [accountId, fetchLeagueSeasons]);
 
   // Handler to open add division dialog
   const openAddDivisionDialog = (leagueSeason: LeagueSeasonType) => {
