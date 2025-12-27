@@ -19371,6 +19371,1499 @@ components:
         - lastName
       title: AvailablePlayer
       description: A contact available to be signed to a golf team
+    GolfMatch:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        team1:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+          required:
+            - id
+            - name
+        team2:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+          required:
+            - id
+            - name
+        leagueSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        matchDate:
+          type: string
+        matchTime:
+          type: string
+        course:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            designer:
+              type: string
+              nullable: true
+              maxLength: 50
+            yearBuilt:
+              type: integer
+              nullable: true
+            numberOfHoles:
+              type: integer
+              minimum: 9
+              maximum: 18
+            address:
+              type: string
+              nullable: true
+              maxLength: 50
+            city:
+              type: string
+              nullable: true
+              maxLength: 50
+            state:
+              type: string
+              nullable: true
+              maxLength: 50
+            zip:
+              type: string
+              nullable: true
+              maxLength: 20
+            country:
+              type: string
+              nullable: true
+              maxLength: 30
+            mensPar:
+              type: array
+              items:
+                type: integer
+                minimum: 3
+                maximum: 6
+            womansPar:
+              type: array
+              items:
+                type: integer
+                minimum: 3
+                maximum: 6
+            mensHandicap:
+              type: array
+              items:
+                type: integer
+                minimum: 1
+                maximum: 18
+            womansHandicap:
+              type: array
+              items:
+                type: integer
+                minimum: 1
+                maximum: 18
+          required:
+            - id
+            - name
+            - numberOfHoles
+            - mensPar
+            - womansPar
+            - mensHandicap
+            - womansHandicap
+          title: GolfCourse
+          description: Golf course with par and handicap information for all 18 holes
+        matchStatus:
+          type: integer
+        matchType:
+          type: integer
+        comment:
+          type: string
+          maxLength: 255
+      required:
+        - id
+        - team1
+        - team2
+        - leagueSeasonId
+        - matchDate
+        - matchTime
+        - matchStatus
+        - matchType
+      title: GolfMatch
+      description: A golf match between two teams
+    GolfMatchWithScores:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        team1:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+          required:
+            - id
+            - name
+        team2:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+          required:
+            - id
+            - name
+        leagueSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        matchDate:
+          type: string
+        matchTime:
+          type: string
+        course:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            designer:
+              type: string
+              nullable: true
+              maxLength: 50
+            yearBuilt:
+              type: integer
+              nullable: true
+            numberOfHoles:
+              type: integer
+              minimum: 9
+              maximum: 18
+            address:
+              type: string
+              nullable: true
+              maxLength: 50
+            city:
+              type: string
+              nullable: true
+              maxLength: 50
+            state:
+              type: string
+              nullable: true
+              maxLength: 50
+            zip:
+              type: string
+              nullable: true
+              maxLength: 20
+            country:
+              type: string
+              nullable: true
+              maxLength: 30
+            mensPar:
+              type: array
+              items:
+                type: integer
+                minimum: 3
+                maximum: 6
+            womansPar:
+              type: array
+              items:
+                type: integer
+                minimum: 3
+                maximum: 6
+            mensHandicap:
+              type: array
+              items:
+                type: integer
+                minimum: 1
+                maximum: 18
+            womansHandicap:
+              type: array
+              items:
+                type: integer
+                minimum: 1
+                maximum: 18
+          required:
+            - id
+            - name
+            - numberOfHoles
+            - mensPar
+            - womansPar
+            - mensHandicap
+            - womansHandicap
+          title: GolfCourse
+          description: Golf course with par and handicap information for all 18 holes
+        matchStatus:
+          type: integer
+        matchType:
+          type: integer
+        comment:
+          type: string
+          maxLength: 255
+        team1Scores:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              courseId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              contactId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              teeId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              datePlayed:
+                type: string
+              holesPlayed:
+                type: integer
+                minimum: 9
+                maximum: 18
+              totalScore:
+                type: integer
+                minimum: 18
+                maximum: 200
+              totalsOnly:
+                type: boolean
+                default: false
+              startIndex:
+                type: number
+                nullable: true
+              startIndex9:
+                type: number
+                nullable: true
+              holeScores:
+                type: array
+                items:
+                  type: integer
+                  minimum: 1
+                  maximum: 20
+                minItems: 9
+                maxItems: 18
+              player:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  firstName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  lastName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  middleName:
+                    type: string
+                    maxLength: 50
+                  handicapIndex:
+                    type: number
+                    nullable: true
+                  photoUrl:
+                    type: string
+                    nullable: true
+                    format: uri
+                required:
+                  - id
+                  - firstName
+                  - lastName
+                title: GolfPlayer
+                description: Golf player with handicap information
+              tee:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  courseId:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  teeColor:
+                    type: string
+                    maxLength: 20
+                  teeName:
+                    type: string
+                    maxLength: 20
+                  priority:
+                    type: integer
+                    default: 0
+                  distances:
+                    type: array
+                    items:
+                      type: integer
+                      minimum: 0
+                      maximum: 700
+                  mensRating:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  mensSlope:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  womansRating:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  womansSlope:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  mensRatingFront9:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  mensSlopeFront9:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  womansRatingFront9:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  womansSlopeFront9:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  mensRatingBack9:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  mensSlopeBack9:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  womansRatingBack9:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  womansSlopeBack9:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                required:
+                  - id
+                  - courseId
+                  - teeColor
+                  - teeName
+                  - distances
+                  - mensRating
+                  - mensSlope
+                  - womansRating
+                  - womansSlope
+                title: GolfCourseTee
+                description: Tee information for a golf course including ratings, slopes, and
+                  hole distances
+              differential:
+                type: number
+            required:
+              - id
+              - courseId
+              - contactId
+              - teeId
+              - datePlayed
+              - holesPlayed
+              - totalScore
+              - holeScores
+            title: GolfScoreWithDetails
+            description: Golf score with player and tee details
+        team2Scores:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              courseId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              contactId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              teeId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              datePlayed:
+                type: string
+              holesPlayed:
+                type: integer
+                minimum: 9
+                maximum: 18
+              totalScore:
+                type: integer
+                minimum: 18
+                maximum: 200
+              totalsOnly:
+                type: boolean
+                default: false
+              startIndex:
+                type: number
+                nullable: true
+              startIndex9:
+                type: number
+                nullable: true
+              holeScores:
+                type: array
+                items:
+                  type: integer
+                  minimum: 1
+                  maximum: 20
+                minItems: 9
+                maxItems: 18
+              player:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  firstName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  lastName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  middleName:
+                    type: string
+                    maxLength: 50
+                  handicapIndex:
+                    type: number
+                    nullable: true
+                  photoUrl:
+                    type: string
+                    nullable: true
+                    format: uri
+                required:
+                  - id
+                  - firstName
+                  - lastName
+                title: GolfPlayer
+                description: Golf player with handicap information
+              tee:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  courseId:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  teeColor:
+                    type: string
+                    maxLength: 20
+                  teeName:
+                    type: string
+                    maxLength: 20
+                  priority:
+                    type: integer
+                    default: 0
+                  distances:
+                    type: array
+                    items:
+                      type: integer
+                      minimum: 0
+                      maximum: 700
+                  mensRating:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  mensSlope:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  womansRating:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  womansSlope:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  mensRatingFront9:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  mensSlopeFront9:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  womansRatingFront9:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  womansSlopeFront9:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  mensRatingBack9:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  mensSlopeBack9:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  womansRatingBack9:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  womansSlopeBack9:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                required:
+                  - id
+                  - courseId
+                  - teeColor
+                  - teeName
+                  - distances
+                  - mensRating
+                  - mensSlope
+                  - womansRating
+                  - womansSlope
+                title: GolfCourseTee
+                description: Tee information for a golf course including ratings, slopes, and
+                  hole distances
+              differential:
+                type: number
+            required:
+              - id
+              - courseId
+              - contactId
+              - teeId
+              - datePlayed
+              - holesPlayed
+              - totalScore
+              - holeScores
+            title: GolfScoreWithDetails
+            description: Golf score with player and tee details
+        team1TotalScore:
+          type: integer
+        team2TotalScore:
+          type: integer
+        team1Points:
+          type: number
+        team2Points:
+          type: number
+      required:
+        - id
+        - team1
+        - team2
+        - leagueSeasonId
+        - matchDate
+        - matchTime
+        - matchStatus
+        - matchType
+      title: GolfMatchWithScores
+      description: Golf match with team scores and points
+    CreateGolfMatch:
+      type: object
+      properties:
+        team1Id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        team2Id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        matchDate:
+          type: string
+        matchTime:
+          type: string
+        courseId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        matchType:
+          type: integer
+          default: 0
+        comment:
+          type: string
+          maxLength: 255
+      required:
+        - team1Id
+        - team2Id
+        - matchDate
+        - matchTime
+      title: CreateGolfMatch
+      description: Data required to create a new golf match
+    UpdateGolfMatch:
+      type: object
+      properties:
+        team1Id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        team2Id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        matchDate:
+          type: string
+        matchTime:
+          type: string
+        courseId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        matchType:
+          type: integer
+          default: 0
+        comment:
+          type: string
+          maxLength: 255
+        matchStatus:
+          type: integer
+      title: UpdateGolfMatch
+      description: Data for updating an existing golf match
+    GolfScore:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        courseId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teeId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        datePlayed:
+          type: string
+        holesPlayed:
+          type: integer
+          minimum: 9
+          maximum: 18
+        totalScore:
+          type: integer
+          minimum: 18
+          maximum: 200
+        totalsOnly:
+          type: boolean
+          default: false
+        startIndex:
+          type: number
+          nullable: true
+        startIndex9:
+          type: number
+          nullable: true
+        holeScores:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 20
+          minItems: 9
+          maxItems: 18
+      required:
+        - id
+        - courseId
+        - contactId
+        - teeId
+        - datePlayed
+        - holesPlayed
+        - totalScore
+        - holeScores
+      title: GolfScore
+      description: A golf score with hole-by-hole scores
+    GolfScoreWithDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        courseId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teeId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        datePlayed:
+          type: string
+        holesPlayed:
+          type: integer
+          minimum: 9
+          maximum: 18
+        totalScore:
+          type: integer
+          minimum: 18
+          maximum: 200
+        totalsOnly:
+          type: boolean
+          default: false
+        startIndex:
+          type: number
+          nullable: true
+        startIndex9:
+          type: number
+          nullable: true
+        holeScores:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 20
+          minItems: 9
+          maxItems: 18
+        player:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            firstName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            lastName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            middleName:
+              type: string
+              maxLength: 50
+            handicapIndex:
+              type: number
+              nullable: true
+            photoUrl:
+              type: string
+              nullable: true
+              format: uri
+          required:
+            - id
+            - firstName
+            - lastName
+          title: GolfPlayer
+          description: Golf player with handicap information
+        tee:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            courseId:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            teeColor:
+              type: string
+              maxLength: 20
+            teeName:
+              type: string
+              maxLength: 20
+            priority:
+              type: integer
+              default: 0
+            distances:
+              type: array
+              items:
+                type: integer
+                minimum: 0
+                maximum: 700
+            mensRating:
+              type: number
+              minimum: 55
+              maximum: 80
+            mensSlope:
+              type: integer
+              minimum: 55
+              maximum: 155
+            womansRating:
+              type: number
+              minimum: 55
+              maximum: 80
+            womansSlope:
+              type: integer
+              minimum: 55
+              maximum: 155
+            mensRatingFront9:
+              type: number
+              minimum: 55
+              maximum: 80
+            mensSlopeFront9:
+              type: integer
+              minimum: 55
+              maximum: 155
+            womansRatingFront9:
+              type: number
+              minimum: 55
+              maximum: 80
+            womansSlopeFront9:
+              type: integer
+              minimum: 55
+              maximum: 155
+            mensRatingBack9:
+              type: number
+              minimum: 55
+              maximum: 80
+            mensSlopeBack9:
+              type: integer
+              minimum: 55
+              maximum: 155
+            womansRatingBack9:
+              type: number
+              minimum: 55
+              maximum: 80
+            womansSlopeBack9:
+              type: integer
+              minimum: 55
+              maximum: 155
+          required:
+            - id
+            - courseId
+            - teeColor
+            - teeName
+            - distances
+            - mensRating
+            - mensSlope
+            - womansRating
+            - womansSlope
+          title: GolfCourseTee
+          description: Tee information for a golf course including ratings, slopes, and
+            hole distances
+        differential:
+          type: number
+      required:
+        - id
+        - courseId
+        - contactId
+        - teeId
+        - datePlayed
+        - holesPlayed
+        - totalScore
+        - holeScores
+      title: GolfScoreWithDetails
+      description: Golf score with player and tee details
+    SubmitMatchScores:
+      type: object
+      properties:
+        courseId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        scores:
+          type: array
+          items:
+            type: object
+            properties:
+              rosterId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              contactId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              isAbsent:
+                type: boolean
+                default: false
+              isSubstitute:
+                type: boolean
+                default: false
+              substituteContactId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              score:
+                type: object
+                properties:
+                  courseId:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  teeId:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  datePlayed:
+                    type: string
+                  holesPlayed:
+                    type: integer
+                    minimum: 9
+                    maximum: 18
+                  totalsOnly:
+                    type: boolean
+                    default: false
+                  totalScore:
+                    type: integer
+                    minimum: 18
+                    maximum: 200
+                  holeScores:
+                    type: array
+                    items:
+                      type: integer
+                      minimum: 1
+                      maximum: 20
+                    minItems: 9
+                    maxItems: 18
+                  startIndex:
+                    type: number
+                    nullable: true
+                required:
+                  - courseId
+                  - teeId
+                  - datePlayed
+                  - holesPlayed
+                title: CreateGolfScore
+                description: Data required to create a new golf score
+            required:
+              - rosterId
+              - contactId
+            title: PlayerMatchScore
+            description: Score entry for a single player in a match
+      required:
+        - courseId
+        - scores
+      title: SubmitMatchScores
+      description: All player scores for a match
+    PlayerMatchScore:
+      type: object
+      properties:
+        rosterId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        isAbsent:
+          type: boolean
+          default: false
+        isSubstitute:
+          type: boolean
+          default: false
+        substituteContactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        score:
+          type: object
+          properties:
+            courseId:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            teeId:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            datePlayed:
+              type: string
+            holesPlayed:
+              type: integer
+              minimum: 9
+              maximum: 18
+            totalsOnly:
+              type: boolean
+              default: false
+            totalScore:
+              type: integer
+              minimum: 18
+              maximum: 200
+            holeScores:
+              type: array
+              items:
+                type: integer
+                minimum: 1
+                maximum: 20
+              minItems: 9
+              maxItems: 18
+            startIndex:
+              type: number
+              nullable: true
+          required:
+            - courseId
+            - teeId
+            - datePlayed
+            - holesPlayed
+          title: CreateGolfScore
+          description: Data required to create a new golf score
+      required:
+        - rosterId
+        - contactId
+      title: PlayerMatchScore
+      description: Score entry for a single player in a match
+    GolfDifferential:
+      type: object
+      properties:
+        scoreId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        datePlayed:
+          type: string
+        courseName:
+          type: string
+        score:
+          type: integer
+        rating:
+          type: number
+        slope:
+          type: integer
+        differential:
+          type: number
+        isUsedInCalculation:
+          type: boolean
+          default: false
+      required:
+        - scoreId
+        - datePlayed
+        - courseName
+        - score
+        - rating
+        - slope
+        - differential
+      title: GolfDifferential
+      description: A calculated differential for a single round
+    PlayerHandicap:
+      type: object
+      properties:
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        handicapIndex:
+          type: number
+          nullable: true
+        handicapIndex9:
+          type: number
+          nullable: true
+        roundsUsed:
+          type: integer
+        totalRounds:
+          type: integer
+        lastUpdated:
+          type: string
+        differentials:
+          type: array
+          items:
+            type: object
+            properties:
+              scoreId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              datePlayed:
+                type: string
+              courseName:
+                type: string
+              score:
+                type: integer
+              rating:
+                type: number
+              slope:
+                type: integer
+              differential:
+                type: number
+              isUsedInCalculation:
+                type: boolean
+                default: false
+            required:
+              - scoreId
+              - datePlayed
+              - courseName
+              - score
+              - rating
+              - slope
+              - differential
+            title: GolfDifferential
+            description: A calculated differential for a single round
+      required:
+        - contactId
+        - firstName
+        - lastName
+        - handicapIndex
+        - roundsUsed
+        - totalRounds
+      title: PlayerHandicap
+      description: Player handicap index with calculation details
+    LeagueHandicaps:
+      type: object
+      properties:
+        flightId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        flightName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        players:
+          type: array
+          items:
+            type: object
+            properties:
+              contactId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              firstName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              lastName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              handicapIndex:
+                type: number
+                nullable: true
+              handicapIndex9:
+                type: number
+                nullable: true
+              roundsUsed:
+                type: integer
+              totalRounds:
+                type: integer
+              lastUpdated:
+                type: string
+              differentials:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    scoreId:
+                      type: string
+                      pattern: ^\d+$
+                      example: "12345"
+                    datePlayed:
+                      type: string
+                    courseName:
+                      type: string
+                    score:
+                      type: integer
+                    rating:
+                      type: number
+                    slope:
+                      type: integer
+                    differential:
+                      type: number
+                    isUsedInCalculation:
+                      type: boolean
+                      default: false
+                  required:
+                    - scoreId
+                    - datePlayed
+                    - courseName
+                    - score
+                    - rating
+                    - slope
+                    - differential
+                  title: GolfDifferential
+                  description: A calculated differential for a single round
+            required:
+              - contactId
+              - firstName
+              - lastName
+              - handicapIndex
+              - roundsUsed
+              - totalRounds
+            title: PlayerHandicap
+            description: Player handicap index with calculation details
+      required:
+        - flightId
+        - flightName
+        - players
+      title: LeagueHandicaps
+      description: Handicap listing for all players in a flight
+    CourseHandicap:
+      type: object
+      properties:
+        handicapIndex:
+          type: number
+        courseRating:
+          type: number
+        slopeRating:
+          type: integer
+        par:
+          type: integer
+        courseHandicap:
+          type: integer
+      required:
+        - handicapIndex
+        - courseRating
+        - slopeRating
+        - par
+        - courseHandicap
+      title: CourseHandicap
+      description: Calculated course handicap for a specific tee
+    ESCMaxScore:
+      type: object
+      properties:
+        courseHandicap:
+          type: integer
+        maxScore:
+          type: integer
+      required:
+        - courseHandicap
+        - maxScore
+      title: ESCMaxScore
+      description: Equitable Stroke Control maximum score per hole
+    GolfTeamStanding:
+      type: object
+      properties:
+        teamSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        matchesPlayed:
+          type: integer
+        matchesWon:
+          type: integer
+        matchesLost:
+          type: integer
+        matchesTied:
+          type: integer
+        matchPoints:
+          type: number
+        strokePoints:
+          type: number
+        totalPoints:
+          type: number
+        totalStrokes:
+          type: integer
+        averageScore:
+          type: number
+        rank:
+          type: integer
+      required:
+        - teamSeasonId
+        - teamName
+        - matchesPlayed
+        - matchesWon
+        - matchesLost
+        - matchesTied
+        - matchPoints
+        - strokePoints
+        - totalPoints
+        - totalStrokes
+      title: GolfTeamStanding
+      description: Team standing in a golf league flight
+    GolfFlightStandings:
+      type: object
+      properties:
+        flightId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        flightName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        standings:
+          type: array
+          items:
+            type: object
+            properties:
+              teamSeasonId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              teamName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              matchesPlayed:
+                type: integer
+              matchesWon:
+                type: integer
+              matchesLost:
+                type: integer
+              matchesTied:
+                type: integer
+              matchPoints:
+                type: number
+              strokePoints:
+                type: number
+              totalPoints:
+                type: number
+              totalStrokes:
+                type: integer
+              averageScore:
+                type: number
+              rank:
+                type: integer
+            required:
+              - teamSeasonId
+              - teamName
+              - matchesPlayed
+              - matchesWon
+              - matchesLost
+              - matchesTied
+              - matchPoints
+              - strokePoints
+              - totalPoints
+              - totalStrokes
+            title: GolfTeamStanding
+            description: Team standing in a golf league flight
+      required:
+        - flightId
+        - flightName
+        - standings
+      title: GolfFlightStandings
+      description: Complete standings for a golf flight
+    GolfLeagueStandings:
+      type: object
+      properties:
+        seasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        flights:
+          type: array
+          items:
+            type: object
+            properties:
+              flightId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              flightName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              standings:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    teamSeasonId:
+                      type: string
+                      pattern: ^\d+$
+                      example: "12345"
+                    teamName:
+                      type: string
+                      minLength: 1
+                      maxLength: 100
+                    matchesPlayed:
+                      type: integer
+                    matchesWon:
+                      type: integer
+                    matchesLost:
+                      type: integer
+                    matchesTied:
+                      type: integer
+                    matchPoints:
+                      type: number
+                    strokePoints:
+                      type: number
+                    totalPoints:
+                      type: number
+                    totalStrokes:
+                      type: integer
+                    averageScore:
+                      type: number
+                    rank:
+                      type: integer
+                  required:
+                    - teamSeasonId
+                    - teamName
+                    - matchesPlayed
+                    - matchesWon
+                    - matchesLost
+                    - matchesTied
+                    - matchPoints
+                    - strokePoints
+                    - totalPoints
+                    - totalStrokes
+                  title: GolfTeamStanding
+                  description: Team standing in a golf league flight
+            required:
+              - flightId
+              - flightName
+              - standings
+            title: GolfFlightStandings
+            description: Complete standings for a golf flight
+      required:
+        - seasonId
+        - flights
+      title: GolfLeagueStandings
+      description: Complete standings for all flights in a golf league
   securitySchemes:
     bearerAuth:
       type: http

@@ -322,6 +322,22 @@ import {
   SignPlayerSchema,
   ReleasePlayerSchema,
   AvailablePlayerSchema,
+  GolfMatchSchema,
+  GolfMatchWithScoresSchema,
+  CreateGolfMatchSchema,
+  UpdateGolfMatchSchema,
+  GolfScoreSchema,
+  GolfScoreWithDetailsSchema,
+  SubmitMatchScoresSchema,
+  PlayerMatchScoreSchema,
+  GolfDifferentialSchema,
+  PlayerHandicapSchema,
+  LeagueHandicapsSchema,
+  CourseHandicapSchema,
+  ESCMaxScoreSchema,
+  GolfTeamStandingSchema,
+  GolfFlightStandingsSchema,
+  GolfLeagueStandingsSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1266,6 +1282,37 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const SignPlayerSchemaRef = registry.register('SignPlayer', SignPlayerSchema);
   const ReleasePlayerSchemaRef = registry.register('ReleasePlayer', ReleasePlayerSchema);
   const AvailablePlayerSchemaRef = registry.register('AvailablePlayer', AvailablePlayerSchema);
+  const GolfMatchSchemaRef = registry.register('GolfMatch', GolfMatchSchema);
+  const GolfMatchWithScoresSchemaRef = registry.register(
+    'GolfMatchWithScores',
+    GolfMatchWithScoresSchema,
+  );
+  const CreateGolfMatchSchemaRef = registry.register('CreateGolfMatch', CreateGolfMatchSchema);
+  const UpdateGolfMatchSchemaRef = registry.register('UpdateGolfMatch', UpdateGolfMatchSchema);
+  const GolfScoreSchemaRef = registry.register('GolfScore', GolfScoreSchema);
+  const GolfScoreWithDetailsSchemaRef = registry.register(
+    'GolfScoreWithDetails',
+    GolfScoreWithDetailsSchema,
+  );
+  const SubmitMatchScoresSchemaRef = registry.register(
+    'SubmitMatchScores',
+    SubmitMatchScoresSchema,
+  );
+  const PlayerMatchScoreSchemaRef = registry.register('PlayerMatchScore', PlayerMatchScoreSchema);
+  const GolfDifferentialSchemaRef = registry.register('GolfDifferential', GolfDifferentialSchema);
+  const PlayerHandicapSchemaRef = registry.register('PlayerHandicap', PlayerHandicapSchema);
+  const LeagueHandicapsSchemaRef = registry.register('LeagueHandicaps', LeagueHandicapsSchema);
+  const CourseHandicapSchemaRef = registry.register('CourseHandicap', CourseHandicapSchema);
+  const ESCMaxScoreSchemaRef = registry.register('ESCMaxScore', ESCMaxScoreSchema);
+  const GolfTeamStandingSchemaRef = registry.register('GolfTeamStanding', GolfTeamStandingSchema);
+  const GolfFlightStandingsSchemaRef = registry.register(
+    'GolfFlightStandings',
+    GolfFlightStandingsSchema,
+  );
+  const GolfLeagueStandingsSchemaRef = registry.register(
+    'GolfLeagueStandings',
+    GolfLeagueStandingsSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1592,6 +1639,22 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SignPlayerSchemaRef,
     ReleasePlayerSchemaRef,
     AvailablePlayerSchemaRef,
+    GolfMatchSchemaRef,
+    GolfMatchWithScoresSchemaRef,
+    CreateGolfMatchSchemaRef,
+    UpdateGolfMatchSchemaRef,
+    GolfScoreSchemaRef,
+    GolfScoreWithDetailsSchemaRef,
+    SubmitMatchScoresSchemaRef,
+    PlayerMatchScoreSchemaRef,
+    GolfDifferentialSchemaRef,
+    PlayerHandicapSchemaRef,
+    LeagueHandicapsSchemaRef,
+    CourseHandicapSchemaRef,
+    ESCMaxScoreSchemaRef,
+    GolfTeamStandingSchemaRef,
+    GolfFlightStandingsSchemaRef,
+    GolfLeagueStandingsSchemaRef,
   };
 };
 

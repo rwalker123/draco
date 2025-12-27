@@ -49,6 +49,10 @@ import golfLeaguesRouter from './routes/golf-leagues.js';
 import golfFlightsRouter from './routes/golf-flights.js';
 import golfTeamsRouter from './routes/golf-teams.js';
 import golfRostersRouter from './routes/golf-rosters.js';
+import golfMatchesRouter from './routes/golf-matches.js';
+import golfScoresRouter from './routes/golf-scores.js';
+import golfHandicapsRouter from './routes/golf-handicaps.js';
+import golfStandingsRouter from './routes/golf-standings.js';
 import { ServiceFactory } from './services/serviceFactory.js';
 import { socialIngestionConfig } from './config/socialIngestion.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
@@ -272,6 +276,10 @@ app.use('/api/golf/leagues', golfLeaguesRouter);
 app.use('/api/accounts/:accountId/golf/flights', golfFlightsRouter);
 app.use('/api/accounts/:accountId/golf/teams', golfTeamsRouter);
 app.use('/api/accounts/:accountId/golf/rosters', golfRostersRouter);
+app.use('/api/accounts/:accountId/golf/matches', golfMatchesRouter);
+app.use('/api/accounts/:accountId/golf/scores', golfScoresRouter);
+app.use('/api/accounts/:accountId/golf/handicaps', golfHandicapsRouter);
+app.use('/api/accounts/:accountId/golf/standings', golfStandingsRouter);
 // Global error handler
 app.use(globalErrorHandler as express.ErrorRequestHandler);
 

@@ -93,6 +93,10 @@ import { GolfLeagueService } from './golfLeagueService.js';
 import { GolfFlightService } from './golfFlightService.js';
 import { GolfTeamService } from './golfTeamService.js';
 import { GolfRosterService } from './golfRosterService.js';
+import { GolfMatchService } from './golfMatchService.js';
+import { GolfScoreService } from './golfScoreService.js';
+import { GolfHandicapService } from './golfHandicapService.js';
+import { GolfStandingsService } from './golfStandingsService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -177,6 +181,10 @@ export class ServiceFactory {
   private static golfFlightService: GolfFlightService;
   private static golfTeamService: GolfTeamService;
   private static golfRosterService: GolfRosterService;
+  private static golfMatchService: GolfMatchService;
+  private static golfScoreService: GolfScoreService;
+  private static golfHandicapService: GolfHandicapService;
+  private static golfStandingsService: GolfStandingsService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -942,5 +950,33 @@ export class ServiceFactory {
       this.golfRosterService = new GolfRosterService();
     }
     return this.golfRosterService;
+  }
+
+  static getGolfMatchService(): GolfMatchService {
+    if (!this.golfMatchService) {
+      this.golfMatchService = new GolfMatchService();
+    }
+    return this.golfMatchService;
+  }
+
+  static getGolfScoreService(): GolfScoreService {
+    if (!this.golfScoreService) {
+      this.golfScoreService = new GolfScoreService();
+    }
+    return this.golfScoreService;
+  }
+
+  static getGolfHandicapService(): GolfHandicapService {
+    if (!this.golfHandicapService) {
+      this.golfHandicapService = new GolfHandicapService();
+    }
+    return this.golfHandicapService;
+  }
+
+  static getGolfStandingsService(): GolfStandingsService {
+    if (!this.golfStandingsService) {
+      this.golfStandingsService = new GolfStandingsService();
+    }
+    return this.golfStandingsService;
   }
 }
