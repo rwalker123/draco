@@ -17,7 +17,6 @@ import {
   ListItemIcon,
   ListItemText,
   ListItemSecondaryAction,
-  Avatar,
   Chip,
   CircularProgress,
   Alert,
@@ -35,6 +34,7 @@ import {
 import { useContactVirtualization } from './hooks/useContactVirtualization';
 import { RecipientContact } from '../../../types/emails/recipients';
 import { StreamPaginationControl } from '../../pagination';
+import UserAvatar from '../../users/UserAvatar';
 
 import { hasValidEmail } from '../common/mailtoUtils';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
@@ -171,15 +171,6 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
     return allContactsSelected || selectedContactIds.has(contactId);
   };
 
-  // Get contact initials for avatar
-  const getContactInitials = (contact: RecipientContact) => {
-    const names = contact.displayName.split(' ');
-    if (names.length >= 2) {
-      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-    }
-    return contact.displayName.substring(0, 2).toUpperCase();
-  };
-
   // Get contact subtitle (available for future use)
   // const getContactSubtitle = (contact: RecipientContact) => {
   //   const parts = [];
@@ -222,26 +213,19 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
             />
           </ListItemIcon>
 
-          <Avatar
-            sx={{
-              width: compact ? 32 : 40,
-              height: compact ? 32 : 40,
-              mr: 2,
-              bgcolor: isSelected ? 'primary.main' : 'grey.400',
-              fontSize: compact ? '0.875rem' : '1rem',
+          <UserAvatar
+            user={{
+              id: contact.id,
+              firstName: contact.displayName.split(' ')[0] || '',
+              lastName:
+                contact.displayName.split(' ').slice(1).join(' ') ||
+                contact.displayName.split(' ')[0] ||
+                '',
+              photoUrl: contact.photoUrl,
             }}
-          >
-            {contact.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={contact.photoUrl}
-                alt={contact.displayName}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : (
-              getContactInitials(contact)
-            )}
-          </Avatar>
+            size={compact ? 32 : 40}
+            sx={{ mr: 2 }}
+          />
 
           <ListItemText
             primary={

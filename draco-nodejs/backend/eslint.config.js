@@ -6,7 +6,7 @@ import globals from 'globals';
 export default [
   // Base recommended rules
   js.configs.recommended,
-  
+
   // TypeScript files configuration
   {
     files: ['src/**/*.{js,ts}'],
@@ -27,11 +27,22 @@ export default [
     rules: {
       ...typescript.configs.recommended.rules,
       // Custom rules
-      '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_', 'varsIgnorePattern': '^_', 'caughtErrorsIgnorePattern': '^_' }],
-      '@typescript-eslint/no-namespace': ['error', { 'allowDeclarations': true }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/no-namespace': ['error', { allowDeclarations: true }],
     },
   },
-  
+
+  // TypeScript files - disable no-undef as TypeScript handles this better
+  {
+    files: ['**/*.ts'],
+    rules: {
+      'no-undef': 'off',
+    },
+  },
+
   // Test files configuration
   {
     files: ['**/*.test.ts', '**/*.test.js', '**/__tests__/**/*'],
@@ -39,15 +50,9 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
-  
+
   // Ignore patterns
   {
-    ignores: [
-      'node_modules/',
-      'dist/',
-      'src/generated/',
-      '*.generated.*',
-      '*.d.ts'
-    ],
+    ignores: ['node_modules/', 'dist/', 'src/generated/', '*.generated.*', '*.d.ts'],
   },
 ];

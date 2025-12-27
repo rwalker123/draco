@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { performanceMonitor } from '../utils/performanceMonitor.js';
+import { performanceMonitor, PerformanceStats } from '../utils/performanceMonitor.js';
 import { databaseConfig } from '../config/database.js';
 
 // Extend Express Request to include timing and query tracking
@@ -37,9 +37,12 @@ export const queryLoggerMiddleware = (req: Request, res: Response, next: NextFun
   req.queryDuration = 0;
 
   // Override the response end to log request completion
-  const originalEnd = res.end.bind(res);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  res.end = function (...args: any[]) {
+  const originalEnd = res.end;
+  res.end = function (
+    chunk?: string | Uint8Array,
+    encodingOrCallback?: BufferEncoding | (() => void),
+    callback?: () => void,
+  ) {
     const duration = Date.now() - (req.startTime || Date.now());
     const isSlowRequest = duration > 2000; // 2 seconds threshold for slow requests
 
@@ -63,8 +66,10 @@ export const queryLoggerMiddleware = (req: Request, res: Response, next: NextFun
     }
 
     // Call the original end method
-    return originalEnd(...args);
-  };
+    return originalEnd.apply(res, [chunk, encodingOrCallback, callback] as Parameters<
+      Response['end']
+    >);
+  } as typeof res.end;
 
   next();
 };
@@ -75,9 +80,12 @@ export const routePerformanceTracker = (routeName: string) => {
     const startTime = Date.now();
 
     // Override response end to track route-specific metrics
-    const originalEnd = res.end.bind(res);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    res.end = function (...args: any[]) {
+    const originalEnd = res.end;
+    res.end = function (
+      chunk?: string | Uint8Array,
+      encodingOrCallback?: BufferEncoding | (() => void),
+      callback?: () => void,
+    ) {
       const duration = Date.now() - startTime;
 
       // Track route performance if it's slow
@@ -90,8 +98,10 @@ export const routePerformanceTracker = (routeName: string) => {
         console.warn(`└─ Consider caching or optimization`);
       }
 
-      return originalEnd(...args);
-    };
+      return originalEnd.apply(res, [chunk, encodingOrCallback, callback] as Parameters<
+        Response['end']
+      >);
+    } as typeof res.end;
 
     next();
   };
@@ -148,10 +158,15 @@ declare global {
       databaseHealth?: {
         status: string;
         latency?: number;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        performance?: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        connectionPool?: any;
+        performance?: {
+          status: 'healthy' | 'warning' | 'critical';
+          message: string;
+          metrics: PerformanceStats;
+        };
+        connectionPool?: {
+          configured: number;
+          timeout: number;
+        };
         error?: string;
       };
     }

@@ -171,14 +171,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const [isCreatingNewPlayer, setIsCreatingNewPlayer] = useState(false);
   const [autoSignToRoster, setAutoSignToRoster] = useState(false);
   const [editingContact, setEditingContact] = useState<BaseContactType | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [phoneErrors, setPhoneErrors] = useState({
-    phone1: '',
-    phone2: '',
-    phone3: '',
-  });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [emailError, setEmailError] = useState('');
 
   // Initialize data on mount
   useEffect(() => {
@@ -291,14 +283,12 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         state: rosterMember.player.contact.contactDetails?.state || '',
         zip: rosterMember.player.contact.contactDetails?.zip || '',
         dateOfBirth: rosterMember.player.contact.contactDetails?.dateOfBirth || '',
-        // ❌ Removed: middlename (moved to top-level middleName)
       },
-      photoUrl: (rosterMember.player.contact as any).photoUrl || undefined, // eslint-disable-line @typescript-eslint/no-explicit-any
+      photoUrl: rosterMember.player.contact.photoUrl || undefined,
     };
 
     setEditingContact(contact);
 
-    setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
     setEditPlayerDialogOpen(true);
   };
 
@@ -306,7 +296,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setIsCreatingNewPlayer(true);
     setAutoSignToRoster(true);
     setEditingContact(null); // No contact when creating new
-    setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
     setEditPlayerDialogOpen(true);
   };
 
@@ -355,8 +344,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       setIsCreatingNewPlayer(false);
       setAutoSignToRoster(false);
       setEditingContact(null);
-      setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
-      setEmailError('');
       clearMessages();
     }
   }, [editPlayerDialogOpen, clearMessages]);

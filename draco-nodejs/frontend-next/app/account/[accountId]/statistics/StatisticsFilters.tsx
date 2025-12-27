@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   FormControl,
@@ -49,7 +49,7 @@ export default function StatisticsFilters({
   onChange,
 }: StatisticsFiltersProps) {
   const [seasons, setSeasons] = useState<Season[]>([]);
-  const [seasonsData, setSeasonsData] = useState<Season[]>([]); // Cache all data
+  const [seasonsData, setSeasonsData] = useState<Season[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [loading, setLoading] = useState({
@@ -59,35 +59,11 @@ export default function StatisticsFilters({
   });
   const apiClient = useApiClient();
 
-  // Load seasons on component mount
-  useEffect(() => {
-    loadSeasons();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Stable reference to onChange to avoid circular dependencies
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
-  // Load leagues when season changes or data is loaded
-  useEffect(() => {
-    if (filters.seasonId && seasonsData.length > 0) {
-      loadLeagues();
-    } else {
-      setLeagues([]);
-      setDivisions([]);
-      onChange({ leagueId: '', divisionId: '' });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.seasonId, filters.isHistorical, seasonsData]);
-
-  // Load divisions when league changes
-  useEffect(() => {
-    if (filters.leagueId && filters.leagueId !== '0' && seasonsData.length > 0) {
-      loadDivisions();
-    } else {
-      setDivisions([]);
-      onChange({ divisionId: '' });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.leagueId, seasonsData]);
-
+  // Data loading callbacks - defined before effects that use them
   const loadSeasons = useCallback(async () => {
     setLoading((prev) => ({ ...prev, seasons: true }));
     try {
@@ -114,16 +90,16 @@ export default function StatisticsFilters({
       const allSeasons = [allTimeOption, ...mappedSeasons];
       setSeasons(allSeasons);
 
-      if (!filters.seasonId && mappedSeasons.length > 0) {
+      if (mappedSeasons.length > 0) {
         const currentSeason = mappedSeasons.find((s) => s.isCurrent) ?? mappedSeasons[0];
-        onChange({ seasonId: currentSeason.id });
+        onChangeRef.current({ seasonId: currentSeason.id });
       }
     } catch (error) {
       console.error('Error loading seasons:', error);
     } finally {
       setLoading((prev) => ({ ...prev, seasons: false }));
     }
-  }, [accountId, apiClient, filters.seasonId, onChange]);
+  }, [accountId, apiClient]);
 
   const loadLeagues = useCallback(async () => {
     setLoading((prev) => ({ ...prev, leagues: true }));
@@ -131,7 +107,6 @@ export default function StatisticsFilters({
       let formattedLeagues: League[] = [];
 
       if (filters.isHistorical) {
-        // For all-time stats, use the shared API client to fetch leagues
         const result = await listAllTimeLeagues({
           client: apiClient,
           path: { accountId },
@@ -147,61 +122,68 @@ export default function StatisticsFilters({
           name: league.name,
         }));
       } else {
-        // For season stats, use cached season data
         const selectedSeason = seasonsData.find((s) => s.id === filters.seasonId);
         const leaguesData = selectedSeason?.leagues || [];
 
-        // Convert to the format expected by the dropdown
         formattedLeagues = leaguesData.map((league) => ({
-          id: league.id, // Use leagueseason.id for season stats
+          id: league.id,
           name: league.leagueName,
         }));
       }
 
       setLeagues(formattedLeagues);
 
-      // Auto-select first league if none selected
-      if (!filters.leagueId && formattedLeagues.length > 0) {
-        onChange({ leagueId: formattedLeagues[0].id });
+      if (formattedLeagues.length > 0) {
+        onChangeRef.current({ leagueId: formattedLeagues[0].id });
       }
     } catch (error) {
       console.error('Error loading leagues:', error);
     } finally {
       setLoading((prev) => ({ ...prev, leagues: false }));
     }
-  }, [
-    accountId,
-    apiClient,
-    seasonsData,
-    filters.seasonId,
-    filters.isHistorical,
-    onChange,
-    filters.leagueId,
-  ]);
+  }, [accountId, apiClient, seasonsData, filters.seasonId, filters.isHistorical]);
 
   const loadDivisions = useCallback(() => {
     setLoading((prev) => ({ ...prev, divisions: true }));
     try {
-      // Find the season and league from cached data
       const selectedSeason = seasonsData.find((s) => s.id === filters.seasonId);
       const selectedLeague = selectedSeason?.leagues.find((l) => l.id === filters.leagueId);
       const divisionsData = selectedLeague?.divisions || [];
 
-      // Add "All Divisions" option as the first item
       const allDivisions = [{ id: '0', name: 'All Divisions' }, ...divisionsData];
-
       setDivisions(allDivisions);
 
-      // Auto-select "All Divisions" if none selected
-      if (!filters.divisionId) {
-        onChange({ divisionId: '0' });
-      }
+      onChangeRef.current({ divisionId: '0' });
     } catch (error) {
       console.error('Error loading divisions:', error);
     } finally {
       setLoading((prev) => ({ ...prev, divisions: false }));
     }
-  }, [seasonsData, filters.seasonId, filters.leagueId, onChange, filters.divisionId]);
+  }, [seasonsData, filters.seasonId, filters.leagueId]);
+
+  // Load seasons on component mount
+  useEffect(() => {
+    loadSeasons();
+  }, [loadSeasons]);
+
+  // Load leagues when season changes or data is loaded
+  useEffect(() => {
+    if (filters.seasonId && seasonsData.length > 0) {
+      loadLeagues();
+    } else {
+      setLeagues([]);
+      setDivisions([]);
+    }
+  }, [filters.seasonId, filters.isHistorical, seasonsData, loadLeagues]);
+
+  // Load divisions when league changes
+  useEffect(() => {
+    if (filters.leagueId && filters.leagueId !== '0' && seasonsData.length > 0) {
+      loadDivisions();
+    } else {
+      setDivisions([]);
+    }
+  }, [filters.leagueId, seasonsData, loadDivisions]);
 
   const handleSeasonChange = (event: SelectChangeEvent) => {
     const seasonId = event.target.value;

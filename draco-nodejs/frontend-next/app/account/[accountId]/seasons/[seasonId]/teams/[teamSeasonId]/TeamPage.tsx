@@ -626,12 +626,12 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 2.2fr) minmax(0, 1fr)' },
+            gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 2.2fr) minmax(0, 1fr)' },
             gap: { xs: 4, lg: 6 },
             alignItems: 'start',
           }}
         >
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
             {(canManageTeamSponsors || isAccountMember) && (
               <TeamAdminPanel
                 accountId={accountId}

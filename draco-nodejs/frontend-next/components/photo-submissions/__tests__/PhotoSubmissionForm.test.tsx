@@ -18,17 +18,25 @@ const createTeamPhotoSubmission = vi.fn();
 
 const readAsDataURLMock = vi.fn();
 
-const originalFileReader = global.FileReader;
+class MockFileReader implements FileReader {
+  static readonly EMPTY = 0 as const;
+  static readonly LOADING = 1 as const;
+  static readonly DONE = 2 as const;
 
-class MockFileReader {
-  static readonly EMPTY = 0;
-  static readonly LOADING = 1;
-  static readonly DONE = 2;
+  readonly EMPTY = 0 as const;
+  readonly LOADING = 1 as const;
+  readonly DONE = 2 as const;
 
-  readyState = MockFileReader.EMPTY;
+  readyState: 0 | 1 | 2 = MockFileReader.EMPTY;
   result: string | ArrayBuffer | null = null;
-  onload: ((event: ProgressEvent<FileReader>) => unknown) | null = null;
-  onerror: ((event: ProgressEvent<FileReader>) => unknown) | null = null;
+  error: DOMException | null = null;
+
+  onabort: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
+  onerror: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
+  onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
+  onloadend: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
+  onloadstart: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
+  onprogress: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
 
   readAsDataURL = readAsDataURLMock.mockImplementation((_file: Blob) => {
     this.readyState = MockFileReader.LOADING;
@@ -36,24 +44,38 @@ class MockFileReader {
     const onload = this.onload;
     if (onload) {
       const loadEvent = new Event('load') as ProgressEvent<FileReader>;
-      onload(loadEvent);
+      onload.call(this, loadEvent);
     }
     this.readyState = MockFileReader.DONE;
   });
 
-  abort() {
+  readAsArrayBuffer(_blob: Blob): void {
     this.readyState = MockFileReader.DONE;
   }
+
+  readAsBinaryString(_blob: Blob): void {
+    this.readyState = MockFileReader.DONE;
+  }
+
+  readAsText(_blob: Blob, _encoding?: string): void {
+    this.readyState = MockFileReader.DONE;
+  }
+
+  abort(): void {
+    this.readyState = MockFileReader.DONE;
+  }
+
+  addEventListener = vi.fn();
+  removeEventListener = vi.fn();
+  dispatchEvent = vi.fn(() => true);
 }
 
 beforeAll(() => {
-  // jsdom's FileReader does not produce data URLs, so provide a deterministic mock.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (global as any).FileReader = MockFileReader as unknown as typeof FileReader;
+  vi.stubGlobal('FileReader', MockFileReader);
 });
 
 afterAll(() => {
-  global.FileReader = originalFileReader;
+  vi.unstubAllGlobals();
 });
 
 vi.mock('@draco/shared-api-client', () => ({
