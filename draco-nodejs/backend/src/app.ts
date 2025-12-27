@@ -43,6 +43,8 @@ import webhookRouter from './routes/webhook-routes.js';
 import cleanupRouter from './routes/cleanup.js';
 import rolesRouter from './routes/roles.js';
 import discordRouter from './routes/discord.js';
+import golfCoursesRouter from './routes/golf-courses.js';
+import golfTeesRouter from './routes/golf-tees.js';
 import { ServiceFactory } from './services/serviceFactory.js';
 import { socialIngestionConfig } from './config/socialIngestion.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
@@ -260,6 +262,8 @@ app.use('/api/webhooks', webhookRouter);
 app.use('/api/accounts', accountsRouter);
 app.use('/api/roles', rolesRouter);
 app.use('/api/discord', discordRouter);
+app.use('/api/accounts/:accountId/golf/courses', golfCoursesRouter);
+app.use('/api/accounts/:accountId/golf/courses/:courseId/tees', golfTeesRouter);
 // Global error handler
 app.use(globalErrorHandler as express.ErrorRequestHandler);
 
