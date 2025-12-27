@@ -93,7 +93,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const currentAccountId = currentAccount?.id ? String(currentAccount.id) : null;
   const shouldShowAdminMenuIcon =
     hasAccountManagementPrivileges ||
-    Boolean(user && currentAccountId && hasRole('AccountAdmin', { accountId: currentAccountId }));
+    (user && currentAccountId && hasRole('AccountAdmin', { accountId: currentAccountId }));
 
   // Extract accountId from prop, URL path, query string, or context (in that order of preference)
   const accountIdFromQuery = searchParams.get('accountId');
@@ -403,15 +403,15 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
 
           {/* Right side - User info and actions */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton
-              size="large"
-              edge="end"
-              color="inherit"
-              aria-label="menu"
-              aria-expanded={Boolean(anchorEl)}
-              onClick={handleMenuOpen}
-            >
-              {shouldShowAdminMenuIcon ? (
+            {shouldShowAdminMenuIcon && (
+              <IconButton
+                size="large"
+                edge="end"
+                color="inherit"
+                aria-label="menu"
+                aria-expanded={Boolean(anchorEl)}
+                onClick={handleMenuOpen}
+              >
                 <Box sx={{ position: 'relative', display: 'inline-flex' }}>
                   <MenuIcon />
                   <KeyIcon
@@ -427,10 +427,8 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                     }}
                   />
                 </Box>
-              ) : (
-                <MenuIcon />
-              )}
-            </IconButton>
+              </IconButton>
+            )}
             <TopBarQuickActions
               accountId={accountId}
               canViewHandouts={Boolean(accountId)}
@@ -520,12 +518,6 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
         {isSmallScreen && authMenuItems.length > 0 ? <Divider sx={{ my: 1 }} /> : null}
         {quickActionItems}
         {quickActionItems.length > 0 ? <Divider sx={{ my: 1 }} /> : null}
-        <MenuItem onClick={() => handleNavigation('/accounts')}>
-          <ListItemIcon>
-            <BusinessIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Organizations</ListItemText>
-        </MenuItem>
         {user && hasRole('Administrator') && (
           <MenuItem onClick={() => handleNavigation('/admin')}>
             <ListItemIcon>
