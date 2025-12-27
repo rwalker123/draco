@@ -303,6 +303,13 @@ import {
   UpdateGolfCourseTeeSchema,
   AddLeagueCourseSchema,
   UpdateTeePrioritiesSchema,
+  GolfLeagueSetupSchema,
+  UpdateGolfLeagueSetupSchema,
+  GolfAccountInfoSchema,
+  GolfFlightSchema,
+  GolfFlightWithTeamCountSchema,
+  CreateGolfFlightSchema,
+  UpdateGolfFlightSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1219,6 +1226,19 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'UpdateTeePriorities',
     UpdateTeePrioritiesSchema,
   );
+  const GolfLeagueSetupSchemaRef = registry.register('GolfLeagueSetup', GolfLeagueSetupSchema);
+  const UpdateGolfLeagueSetupSchemaRef = registry.register(
+    'UpdateGolfLeagueSetup',
+    UpdateGolfLeagueSetupSchema,
+  );
+  const GolfAccountInfoSchemaRef = registry.register('GolfAccountInfo', GolfAccountInfoSchema);
+  const GolfFlightSchemaRef = registry.register('GolfFlight', GolfFlightSchema);
+  const GolfFlightWithTeamCountSchemaRef = registry.register(
+    'GolfFlightWithTeamCount',
+    GolfFlightWithTeamCountSchema,
+  );
+  const CreateGolfFlightSchemaRef = registry.register('CreateGolfFlight', CreateGolfFlightSchema);
+  const UpdateGolfFlightSchemaRef = registry.register('UpdateGolfFlight', UpdateGolfFlightSchema);
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1526,6 +1546,13 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpdateGolfCourseTeeSchemaRef,
     AddLeagueCourseSchemaRef,
     UpdateTeePrioritiesSchemaRef,
+    GolfLeagueSetupSchemaRef,
+    UpdateGolfLeagueSetupSchemaRef,
+    GolfAccountInfoSchemaRef,
+    GolfFlightSchemaRef,
+    GolfFlightWithTeamCountSchemaRef,
+    CreateGolfFlightSchemaRef,
+    UpdateGolfFlightSchemaRef,
   };
 };
 

@@ -77,7 +77,20 @@ export const UpdateGolfLeagueSetupSchema = CreateGolfLeagueSetupSchema.omit({
     description: 'Data for updating golf league setup',
   });
 
+export const GolfAccountInfoSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    accountTypeName: z.string(),
+    hasGolfSetup: z.boolean(),
+  })
+  .openapi({
+    title: 'GolfAccountInfo',
+    description: 'Golf account information',
+  });
+
 export type GolfScoringConfigType = z.infer<typeof GolfScoringConfigSchema>;
 export type GolfLeagueSetupType = z.infer<typeof GolfLeagueSetupSchema>;
 export type CreateGolfLeagueSetupType = z.infer<typeof CreateGolfLeagueSetupSchema>;
 export type UpdateGolfLeagueSetupType = z.infer<typeof UpdateGolfLeagueSetupSchema>;
+export type GolfAccountInfoType = z.infer<typeof GolfAccountInfoSchema>;

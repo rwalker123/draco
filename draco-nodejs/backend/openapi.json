@@ -24539,6 +24539,576 @@
         ],
         "title": "UpdateTeePriorities",
         "description": "Request to update the display order of tees for a golf course"
+      },
+      "GolfLeagueSetup": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "leagueDay": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          },
+          "firstTeeTime": {
+            "type": "string"
+          },
+          "timeBetweenTeeTimes": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 30,
+            "default": 10
+          },
+          "holesPerMatch": {
+            "type": "integer",
+            "minimum": 9,
+            "maximum": 18,
+            "default": 9
+          },
+          "teeOffFormat": {
+            "type": "integer",
+            "default": 0
+          },
+          "president": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "middleName": {
+                "type": "string",
+                "maxLength": 50
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ]
+          },
+          "vicePresident": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "middleName": {
+                "type": "string",
+                "maxLength": 50
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ]
+          },
+          "secretary": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "middleName": {
+                "type": "string",
+                "maxLength": 50
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ]
+          },
+          "treasurer": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "middleName": {
+                "type": "string",
+                "maxLength": 50
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ]
+          },
+          "indNetPerHolePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indNetPerNinePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indNetPerMatchPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indNetTotalHolesPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indNetAgainstFieldPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indNetAgainstFieldDescPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indActPerHolePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indActPerNinePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indActPerMatchPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indActTotalHolesPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indActAgainstFieldPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indActAgainstFieldDescPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamNetPerHolePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamNetPerNinePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamNetPerMatchPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamNetTotalHolesPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamNetAgainstFieldPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamActPerHolePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamActPerNinePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamActPerMatchPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamActTotalHolesPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamActAgainstFieldPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamAgainstFieldDescPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamNetBestBallPerHolePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamActBestBallPerHolePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "useTeamScoring": {
+            "type": "boolean",
+            "default": true
+          },
+          "useIndividualScoring": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "leagueDay",
+          "firstTeeTime"
+        ],
+        "title": "GolfLeagueSetup",
+        "description": "Golf league configuration including tee times, scoring options, and officers"
+      },
+      "UpdateGolfLeagueSetup": {
+        "type": "object",
+        "properties": {
+          "leagueDay": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          },
+          "firstTeeTime": {
+            "type": "string"
+          },
+          "timeBetweenTeeTimes": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 30,
+            "default": 10
+          },
+          "holesPerMatch": {
+            "type": "integer",
+            "minimum": 9,
+            "maximum": 18,
+            "default": 9
+          },
+          "teeOffFormat": {
+            "type": "integer",
+            "default": 0
+          },
+          "indNetPerHolePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indNetPerNinePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indNetPerMatchPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indNetTotalHolesPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indNetAgainstFieldPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indNetAgainstFieldDescPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indActPerHolePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indActPerNinePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indActPerMatchPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indActTotalHolesPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indActAgainstFieldPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "indActAgainstFieldDescPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamNetPerHolePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamNetPerNinePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamNetPerMatchPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamNetTotalHolesPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamNetAgainstFieldPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamActPerHolePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamActPerNinePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamActPerMatchPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamActTotalHolesPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamActAgainstFieldPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamAgainstFieldDescPts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamNetBestBallPerHolePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "teamActBestBallPerHolePts": {
+            "type": "integer",
+            "default": 0
+          },
+          "useTeamScoring": {
+            "type": "boolean",
+            "default": true
+          },
+          "useIndividualScoring": {
+            "type": "boolean",
+            "default": true
+          },
+          "presidentId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "vicePresidentId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "secretaryId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "treasurerId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          }
+        },
+        "title": "UpdateGolfLeagueSetup",
+        "description": "Data for updating golf league setup"
+      },
+      "GolfAccountInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "accountTypeName": {
+            "type": "string"
+          },
+          "hasGolfSetup": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "accountTypeName",
+          "hasGolfSetup"
+        ],
+        "title": "GolfAccountInfo",
+        "description": "Golf account information"
+      },
+      "GolfFlight": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "season": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "GolfFlight",
+        "description": "A flight/division within a golf league season"
+      },
+      "GolfFlightWithTeamCount": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "season": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "teamCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "playerCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "GolfFlightWithTeamCount",
+        "description": "Golf flight with team and player counts"
+      },
+      "CreateGolfFlight": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CreateGolfFlight",
+        "description": "Data required to create a new golf flight"
+      },
+      "UpdateGolfFlight": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "title": "UpdateGolfFlight",
+        "description": "Data for updating an existing golf flight"
       }
     },
     "securitySchemes": {
@@ -38556,6 +39126,629 @@
           },
           "404": {
             "description": "Course not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golf/flights/{seasonId}": {
+      "get": {
+        "description": "List all flights for a golf season",
+        "operationId": "listGolfFlights",
+        "summary": "List flights for season",
+        "tags": [
+          "Golf Flights"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of flights with team counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GolfFlightWithTeamCount"
+                  },
+                  "title": "GolfFlightWithTeamCountList",
+                  "description": "List of golf flights with team counts"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Create a new flight in a golf season",
+        "operationId": "createGolfFlight",
+        "summary": "Create flight",
+        "tags": [
+          "Golf Flights"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGolfFlight"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Flight created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GolfFlight"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - account management permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "League season not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golf/flights/{seasonId}/{flightId}": {
+      "put": {
+        "description": "Update an existing golf flight",
+        "operationId": "updateGolfFlight",
+        "summary": "Update flight",
+        "tags": [
+          "Golf Flights"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "flightId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGolfFlight"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Flight updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GolfFlight"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - account management permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Flight not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a golf flight",
+        "operationId": "deleteGolfFlight",
+        "summary": "Delete flight",
+        "tags": [
+          "Golf Flights"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "flightId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Flight deleted"
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - account management permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Flight not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Cannot delete flight because it has teams assigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/golf/leagues": {
+      "get": {
+        "description": "List all golf league accounts",
+        "operationId": "listGolfAccounts",
+        "summary": "List golf accounts",
+        "tags": [
+          "Golf Leagues"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of golf accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GolfAccountInfo"
+                  },
+                  "title": "GolfAccountInfoList",
+                  "description": "List of golf accounts"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/golf/leagues/{accountId}/setup": {
+      "get": {
+        "description": "Get golf league setup configuration for an account",
+        "operationId": "getGolfLeagueSetup",
+        "summary": "Get league setup",
+        "tags": [
+          "Golf Leagues"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Golf league setup configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GolfLeagueSetup"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Golf league setup not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Update golf league setup configuration",
+        "operationId": "updateGolfLeagueSetup",
+        "summary": "Update league setup",
+        "tags": [
+          "Golf Leagues"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGolfLeagueSetup"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated golf league setup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GolfLeagueSetup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - account management permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Golf league setup not found",
             "content": {
               "application/json": {
                 "schema": {
