@@ -421,21 +421,17 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
    */
   useEffect(() => {
     const loadInitialTemplate = async () => {
-      // Only load if we have a templateId and email service is available
       if (!initialData?.templateId || !emailServiceRef.current || !token) {
         return;
       }
 
-      // Skip if this templateId has already been loaded initially
+      // Skip if this templateId has already been loaded by this effect
       if (initialTemplateLoadedRef.current === initialData.templateId) {
         return;
       }
 
-      // Skip if template is already loaded
-      if (state.selectedTemplate?.id === initialData.templateId) {
-        initialTemplateLoadedRef.current = initialData.templateId;
-        return;
-      }
+      // Mark as loading this template (prevents concurrent loads)
+      initialTemplateLoadedRef.current = initialData.templateId;
 
       dispatch({ type: 'SET_LOADING', payload: true });
 
@@ -457,10 +453,10 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
       dispatch({ type: 'SET_LOADING', payload: false });
 
       if (result.success) {
-        // Mark this templateId as loaded and apply the template
-        initialTemplateLoadedRef.current = initialData.templateId;
         dispatch({ type: 'SELECT_TEMPLATE', payload: result.data.template });
       } else {
+        // Clear the ref on failure so retry is possible
+        initialTemplateLoadedRef.current = null;
         logError(result.error, 'loadInitialTemplate');
         dispatch({
           type: 'ADD_ERROR',
@@ -478,7 +474,6 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     };
 
     loadInitialTemplate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Using ref to track loading state instead of state dependency
   }, [initialData?.templateId, accountId, token, onError]);
 
   // Actions
