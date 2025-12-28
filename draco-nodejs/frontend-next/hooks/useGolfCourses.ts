@@ -9,6 +9,7 @@ import {
   deleteGolfCourse,
   addGolfLeagueCourse,
   removeGolfLeagueCourse,
+  importExternalGolfCourse,
 } from '@draco/shared-api-client';
 import type {
   GolfCourseWithTeesType,
@@ -36,6 +37,9 @@ export interface GolfCourseService {
   deleteCourse: (courseId: string) => Promise<GolfCourseServiceResult<void>>;
   addCourseToLeague: (courseId: string) => Promise<GolfCourseServiceResult<GolfLeagueCourseType>>;
   removeCourseFromLeague: (courseId: string) => Promise<GolfCourseServiceResult<void>>;
+  importExternalCourse: (
+    externalId: string,
+  ) => Promise<GolfCourseServiceResult<GolfCourseWithTeesType>>;
 }
 
 export function useGolfCourses(accountId: string): GolfCourseService {
@@ -213,6 +217,34 @@ export function useGolfCourses(accountId: string): GolfCourseService {
     [accountId, apiClient],
   );
 
+  const importExternalCourse = useCallback<GolfCourseService['importExternalCourse']>(
+    async (externalId) => {
+      try {
+        const result = await importExternalGolfCourse({
+          client: apiClient,
+          path: { accountId },
+          body: { externalId },
+          throwOnError: false,
+        });
+
+        const course = unwrapApiResult(
+          result,
+          'Failed to import external course',
+        ) as GolfCourseWithTeesType;
+
+        return {
+          success: true,
+          data: course,
+          message: 'Course imported successfully',
+        } as const;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to import external course';
+        return { success: false, error: message } as const;
+      }
+    },
+    [accountId, apiClient],
+  );
+
   return {
     listCourses,
     getCourse,
@@ -221,5 +253,6 @@ export function useGolfCourses(accountId: string): GolfCourseService {
     deleteCourse,
     addCourseToLeague,
     removeCourseFromLeague,
+    importExternalCourse,
   };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   Alert,
   Box,
@@ -23,6 +23,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { FileDownload as ImportIcon } from '@mui/icons-material';
 import { useForm, Controller, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -30,7 +31,9 @@ import type {
   GolfCourseWithTeesType,
   CreateGolfCourseType,
   UpdateGolfCourseType,
+  ExternalCourseDetailType,
 } from '@draco/shared-schemas';
+import ImportCourseDialog from './ImportCourseDialog';
 
 const parValueSchema = z.coerce.number().int().min(3).max(6);
 const handicapValueSchema = z.coerce.number().int().min(1).max(18);
@@ -59,6 +62,8 @@ interface CourseFormProps {
   onCancel: () => void;
   submitLabel?: string;
   disabled?: boolean;
+  accountId?: string;
+  showImportButton?: boolean;
 }
 
 const DEFAULT_PAR = Array(18).fill(4);
@@ -106,6 +111,8 @@ const CourseForm: React.FC<CourseFormProps> = ({
   onCancel,
   submitLabel,
   disabled = false,
+  accountId,
+  showImportButton = false,
 }) => {
   const isEditMode = Boolean(course);
   const defaultSubmitLabel = isEditMode ? 'Save Changes' : 'Create Course';
@@ -124,6 +131,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
     control,
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<CourseFormValues>({
     resolver: formResolver,
@@ -131,6 +139,29 @@ const CourseForm: React.FC<CourseFormProps> = ({
   });
 
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+
+  const handleImport = useCallback(
+    (imported: ExternalCourseDetailType) => {
+      reset({
+        name: imported.name,
+        designer: imported.designer ?? null,
+        yearBuilt: imported.yearBuilt ?? null,
+        numberOfHoles: imported.numberOfHoles,
+        address: imported.address ?? null,
+        city: imported.city ?? null,
+        state: imported.state ?? null,
+        zip: imported.zip ?? null,
+        country: imported.country ?? null,
+        mensPar: imported.mensPar,
+        womansPar: imported.womansPar,
+        mensHandicap: imported.mensHandicap,
+        womansHandicap: imported.womansHandicap,
+      });
+      setImportDialogOpen(false);
+    },
+    [reset],
+  );
 
   const numberOfHoles = useWatch({ control, name: 'numberOfHoles' });
 
@@ -218,9 +249,22 @@ const CourseForm: React.FC<CourseFormProps> = ({
     <Box component="form" onSubmit={onFormSubmit} noValidate>
       <Stack spacing={3}>
         <Box>
-          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-            Course Information
-          </Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+            <Typography variant="subtitle1" fontWeight={600}>
+              Course Information
+            </Typography>
+            {showImportButton && accountId && !isEditMode && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ImportIcon />}
+                onClick={() => setImportDialogOpen(true)}
+                disabled={isProcessing}
+              >
+                Search & Import
+              </Button>
+            )}
+          </Stack>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
@@ -353,6 +397,15 @@ const CourseForm: React.FC<CourseFormProps> = ({
           </Button>
         </Stack>
       </Stack>
+
+      {showImportButton && accountId && (
+        <ImportCourseDialog
+          open={importDialogOpen}
+          onClose={() => setImportDialogOpen(false)}
+          onImport={handleImport}
+          accountId={accountId}
+        />
+      )}
     </Box>
   );
 };

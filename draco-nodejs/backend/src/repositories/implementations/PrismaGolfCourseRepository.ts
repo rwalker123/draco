@@ -129,6 +129,12 @@ export class PrismaGolfCourseRepository implements IGolfCourseRepository {
     });
   }
 
+  async findByExternalId(externalId: string): Promise<golfcourse | null> {
+    return this.prisma.golfcourse.findFirst({
+      where: { externalid: externalId },
+    });
+  }
+
   async isCourseInUse(courseId: bigint): Promise<boolean> {
     const matchCount = await this.prisma.golfmatch.count({
       where: { courseid: courseId },

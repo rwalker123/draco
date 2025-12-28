@@ -154,11 +154,8 @@ const CourseList: React.FC<CourseListProps> = ({
                 </Box>
               </ListItemAvatar>
               <ListItemText
-                primary={
-                  <Typography variant="subtitle1" fontWeight={500}>
-                    {leagueCourse.course.name}
-                  </Typography>
-                }
+                primary={leagueCourse.course.name}
+                primaryTypographyProps={{ variant: 'subtitle1', fontWeight: 500 }}
                 secondary={
                   <Stack
                     direction="row"
@@ -175,6 +172,7 @@ const CourseList: React.FC<CourseListProps> = ({
                     )}
                   </Stack>
                 }
+                secondaryTypographyProps={{ component: 'div' }}
               />
               <ListItemSecondaryAction>
                 <Stack direction="row" spacing={0.5} alignItems="center">

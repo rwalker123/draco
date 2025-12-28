@@ -680,11 +680,12 @@ model gamerecap {
 
 model golfcourse {
   id                   BigInt                 @id @default(autoincrement())
+  externalid           String?                @db.VarChar(50)
   name                 String                 @db.VarChar(100)
   designer             String?                @db.VarChar(50)
   yearbuilt            Int?
   numberofholes        Int
-  address              String?                @db.VarChar(50)
+  address              String?                @db.VarChar(200)
   city                 String?                @db.VarChar(50)
   state                String?                @db.VarChar(50)
   zip                  String?                @db.VarChar(20)
@@ -766,6 +767,8 @@ model golfcourse {
   golfmatch            golfmatch[]
   golfscore            golfscore[]
   golfteeinformation   golfteeinformation[]
+
+  @@index([externalid])
 }
 
 model golfcourseforcontact {

@@ -71,6 +71,7 @@ export class GolfCourseResponseFormatter {
   static format(course: golfcourse): GolfCourseType {
     return {
       id: course.id.toString(),
+      externalId: course.externalid ?? null,
       name: course.name,
       designer: this.normalize(course.designer),
       yearBuilt: course.yearbuilt,

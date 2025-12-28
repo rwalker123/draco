@@ -183,6 +183,9 @@ describe('GolfTeeService', () => {
       async findByNameExcludingId() {
         return null;
       },
+      async findByExternalId() {
+        return null;
+      },
       async isCourseInUse() {
         return false;
       },

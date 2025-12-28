@@ -6,11 +6,13 @@ import {
   CreateGolfCourseSchema,
   UpdateGolfCourseSchema,
   AddLeagueCourseSchema,
+  ImportExternalCourseSchema,
 } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = Router({ mergeParams: true });
 const golfCourseService = ServiceFactory.getGolfCourseService();
+const externalCourseSearchService = ServiceFactory.getExternalCourseSearchService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
 router.get(
@@ -39,6 +41,19 @@ router.post(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const courseData = CreateGolfCourseSchema.parse(req.body);
     const course = await golfCourseService.createCourse(courseData);
+    res.status(201).json(course);
+  }),
+);
+
+router.post(
+  '/import-external',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { externalId } = ImportExternalCourseSchema.parse(req.body);
+    const externalCourse = await externalCourseSearchService.getCourseDetails(externalId);
+    const course = await golfCourseService.findOrCreateFromExternal(externalCourse);
     res.status(201).json(course);
   }),
 );

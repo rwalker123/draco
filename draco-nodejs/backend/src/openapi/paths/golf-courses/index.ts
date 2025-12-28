@@ -12,6 +12,7 @@ export const registerGolfCoursesEndpoints = ({ registry, schemaRefs, z }: Regist
     GolfCourseTeeSchemaRef,
     GolfLeagueCourseSchemaRef,
     AddLeagueCourseSchemaRef,
+    ImportExternalCourseSchemaRef,
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
     UpdateGolfCourseSchemaRef,
@@ -210,6 +211,80 @@ export const registerGolfCoursesEndpoints = ({ registry, schemaRefs, z }: Regist
         content: {
           'application/json': {
             schema: ConflictErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // POST /api/accounts/{accountId}/golf/courses/import-external
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/golf/courses/import-external',
+    description:
+      'Import a golf course from external API by its ID. Creates the course with all tees if not already in database.',
+    operationId: 'importExternalGolfCourse',
+    summary: 'Import external course',
+    tags: ['Golf Courses'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: ImportExternalCourseSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Course imported with tees',
+        content: {
+          'application/json': {
+            schema: GolfCourseWithTeesSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error or external API error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied - golf management permission required',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
           },
         },
       },

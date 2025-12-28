@@ -303,6 +303,7 @@ import {
   UpdateGolfCourseTeeSchema,
   AddLeagueCourseSchema,
   UpdateTeePrioritiesSchema,
+  ImportExternalCourseSchema,
   GolfLeagueSetupSchema,
   UpdateGolfLeagueSetupSchema,
   GolfAccountInfoSchema,
@@ -342,6 +343,9 @@ import {
   GolfScoringAverageSchema,
   GolfSkinsEntrySchema,
   GolfFlightLeadersSchema,
+  ExternalCourseSearchResultSchema,
+  ExternalCourseDetailSchema,
+  ExternalCourseTeeSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1258,6 +1262,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'UpdateTeePriorities',
     UpdateTeePrioritiesSchema,
   );
+  const ImportExternalCourseSchemaRef = registry.register(
+    'ImportExternalCourse',
+    ImportExternalCourseSchema,
+  );
   const GolfLeagueSetupSchemaRef = registry.register('GolfLeagueSetup', GolfLeagueSetupSchema);
   const UpdateGolfLeagueSetupSchemaRef = registry.register(
     'UpdateGolfLeagueSetup',
@@ -1326,6 +1334,18 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const GolfFlightLeadersSchemaRef = registry.register(
     'GolfFlightLeaders',
     GolfFlightLeadersSchema,
+  );
+  const ExternalCourseSearchResultSchemaRef = registry.register(
+    'ExternalCourseSearchResult',
+    ExternalCourseSearchResultSchema,
+  );
+  const ExternalCourseDetailSchemaRef = registry.register(
+    'ExternalCourseDetail',
+    ExternalCourseDetailSchema,
+  );
+  const ExternalCourseTeeSchemaRef = registry.register(
+    'ExternalCourseTee',
+    ExternalCourseTeeSchema,
   );
   return {
     RosterMemberSchemaRef,
@@ -1634,6 +1654,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpdateGolfCourseTeeSchemaRef,
     AddLeagueCourseSchemaRef,
     UpdateTeePrioritiesSchemaRef,
+    ImportExternalCourseSchemaRef,
     GolfLeagueSetupSchemaRef,
     UpdateGolfLeagueSetupSchemaRef,
     GolfAccountInfoSchemaRef,
@@ -1673,6 +1694,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     GolfScoringAverageSchemaRef,
     GolfSkinsEntrySchemaRef,
     GolfFlightLeadersSchemaRef,
+    ExternalCourseSearchResultSchemaRef,
+    ExternalCourseDetailSchemaRef,
+    ExternalCourseTeeSchemaRef,
   };
 };
 

@@ -135,6 +135,9 @@ describe('GolfCourseService', () => {
       ): Promise<golfcourse | null> {
         return courses.find((c) => c.name === name && c.id !== excludeCourseId) ?? null;
       },
+      async findByExternalId(externalId: string): Promise<golfcourse | null> {
+        return courses.find((c) => c.externalid === externalId) ?? null;
+      },
       async isCourseInUse(): Promise<boolean> {
         return false;
       },

@@ -1,5 +1,9 @@
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
-import { IGolfCourseRepository, RepositoryFactory } from '../repositories/index.js';
+import {
+  IGolfCourseRepository,
+  IGolfTeeRepository,
+  RepositoryFactory,
+} from '../repositories/index.js';
 import { GolfCourseResponseFormatter } from '../responseFormatters/index.js';
 import {
   GolfCourseType,
@@ -8,13 +12,16 @@ import {
   CreateGolfCourseType,
   UpdateGolfCourseType,
   AddLeagueCourseType,
+  ExternalCourseDetailType,
 } from '@draco/shared-schemas';
 
 export class GolfCourseService {
   private readonly courseRepository: IGolfCourseRepository;
+  private readonly teeRepository: IGolfTeeRepository;
 
-  constructor(courseRepository?: IGolfCourseRepository) {
+  constructor(courseRepository?: IGolfCourseRepository, teeRepository?: IGolfTeeRepository) {
     this.courseRepository = courseRepository ?? RepositoryFactory.getGolfCourseRepository();
+    this.teeRepository = teeRepository ?? RepositoryFactory.getGolfTeeRepository();
   }
 
   private sanitizeOptionalString(value: string | null | undefined): string {
@@ -23,6 +30,15 @@ export class GolfCourseService {
     }
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : '';
+  }
+
+  private truncateString(value: string, maxLength: number): string {
+    return value.length > maxLength ? value.substring(0, maxLength) : value;
+  }
+
+  private sanitizeAndTruncate(value: string | null | undefined, maxLength: number): string {
+    const sanitized = this.sanitizeOptionalString(value);
+    return this.truncateString(sanitized, maxLength);
   }
 
   private buildPrismaParData(
@@ -225,5 +241,72 @@ export class GolfCourseService {
       defaultMensTeeId,
       defaultWomansTeeId,
     );
+  }
+
+  async findOrCreateFromExternal(
+    externalCourse: ExternalCourseDetailType,
+  ): Promise<GolfCourseWithTeesType> {
+    const existingCourse = await this.courseRepository.findByExternalId(externalCourse.externalId);
+    if (existingCourse) {
+      const courseWithTees = await this.courseRepository.findByIdWithTees(existingCourse.id);
+      if (!courseWithTees) {
+        throw new NotFoundError('Golf course not found');
+      }
+      return GolfCourseResponseFormatter.formatWithTees(courseWithTees);
+    }
+
+    const newCourse = await this.courseRepository.create({
+      externalid: this.sanitizeAndTruncate(externalCourse.externalId, 50),
+      name: this.truncateString(externalCourse.name, 100),
+      designer: this.sanitizeAndTruncate(externalCourse.designer, 50),
+      yearbuilt: externalCourse.yearBuilt ?? null,
+      numberofholes: externalCourse.numberOfHoles,
+      address: this.sanitizeAndTruncate(externalCourse.address, 200),
+      city: this.sanitizeAndTruncate(externalCourse.city, 50),
+      state: this.sanitizeAndTruncate(externalCourse.state, 50),
+      zip: this.sanitizeAndTruncate(externalCourse.zip, 20),
+      country: this.sanitizeAndTruncate(externalCourse.country, 30),
+      ...this.buildPrismaParData(externalCourse.mensPar, 'menspar'),
+      ...this.buildPrismaParData(externalCourse.womansPar, 'womanspar'),
+      ...this.buildPrismaHandicapData(externalCourse.mensHandicap, 'menshandicap'),
+      ...this.buildPrismaHandicapData(externalCourse.womansHandicap, 'womanshandicap'),
+    });
+
+    for (let i = 0; i < externalCourse.tees.length; i++) {
+      const tee = externalCourse.tees[i];
+      await this.teeRepository.create({
+        courseid: newCourse.id,
+        teecolor: tee.teeColor,
+        teename: tee.teeName,
+        priority: i + 1,
+        mensrating: tee.mensRating,
+        menslope: tee.mensSlope,
+        womansrating: tee.womansRating,
+        womanslope: tee.womansSlope,
+        mensratingfront9: tee.nineHoleMensRating ?? 0,
+        menslopefront9: tee.nineHoleMensSlope ?? 0,
+        womansratingfront9: tee.nineHoleWomansRating ?? 0,
+        womanslopefront9: tee.nineHoleWomansSlope ?? 0,
+        mensratingback9: 0,
+        menslopeback9: 0,
+        womansratingback9: 0,
+        womanslopeback9: 0,
+        ...this.buildPrismaDistanceData(tee.distances),
+      });
+    }
+
+    const courseWithTees = await this.courseRepository.findByIdWithTees(newCourse.id);
+    if (!courseWithTees) {
+      throw new NotFoundError('Golf course not found after creation');
+    }
+    return GolfCourseResponseFormatter.formatWithTees(courseWithTees);
+  }
+
+  private buildPrismaDistanceData(distances: number[]): Record<string, number> {
+    const data: Record<string, number> = {};
+    for (let i = 0; i < 18; i++) {
+      data[`distancehole${i + 1}`] = distances[i] ?? 0;
+    }
+    return data;
   }
 }

@@ -23595,6 +23595,11 @@
             "pattern": "^\\d+$",
             "example": "12345"
           },
+          "externalId": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
           "name": {
             "type": "string",
             "minLength": 1,
@@ -23691,6 +23696,11 @@
             "type": "string",
             "pattern": "^\\d+$",
             "example": "12345"
+          },
+          "externalId": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
           },
           "name": {
             "type": "string",
@@ -24016,6 +24026,11 @@
                 "pattern": "^\\d+$",
                 "example": "12345"
               },
+              "externalId": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 50
+              },
               "name": {
                 "type": "string",
                 "minLength": 1,
@@ -24128,6 +24143,11 @@
       "CreateGolfCourse": {
         "type": "object",
         "properties": {
+          "externalId": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
           "name": {
             "type": "string",
             "minLength": 1,
@@ -24219,6 +24239,11 @@
       "UpdateGolfCourse": {
         "type": "object",
         "properties": {
+          "externalId": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
           "name": {
             "type": "string",
             "minLength": 1,
@@ -24539,6 +24564,21 @@
         ],
         "title": "UpdateTeePriorities",
         "description": "Request to update the display order of tees for a golf course"
+      },
+      "ImportExternalCourse": {
+        "type": "object",
+        "properties": {
+          "externalId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "externalId"
+        ],
+        "title": "ImportExternalCourse",
+        "description": "Request to import a course from the external API by its ID"
       },
       "GolfLeagueSetup": {
         "type": "object",
@@ -25764,6 +25804,11 @@
                 "pattern": "^\\d+$",
                 "example": "12345"
               },
+              "externalId": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 50
+              },
               "name": {
                 "type": "string",
                 "minLength": 1,
@@ -25941,6 +25986,11 @@
                 "type": "string",
                 "pattern": "^\\d+$",
                 "example": "12345"
+              },
+              "externalId": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 50
               },
               "name": {
                 "type": "string",
@@ -27955,6 +28005,242 @@
         ],
         "title": "GolfFlightLeaders",
         "description": "All leader categories for a flight"
+      },
+      "ExternalCourseSearchResult": {
+        "type": "object",
+        "properties": {
+          "externalId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "numberOfHoles": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "externalId",
+          "name",
+          "city",
+          "state",
+          "country",
+          "numberOfHoles"
+        ],
+        "title": "ExternalCourseSearchResult",
+        "description": "Golf course search result from external API"
+      },
+      "ExternalCourseDetail": {
+        "type": "object",
+        "properties": {
+          "externalId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
+          "zip": {
+            "type": "string",
+            "nullable": true
+          },
+          "designer": {
+            "type": "string",
+            "nullable": true
+          },
+          "yearBuilt": {
+            "type": "integer",
+            "nullable": true
+          },
+          "numberOfHoles": {
+            "type": "integer"
+          },
+          "mensPar": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "womansPar": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "mensHandicap": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "womansHandicap": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "tees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "teeName": {
+                  "type": "string"
+                },
+                "teeColor": {
+                  "type": "string"
+                },
+                "distances": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                "mensRating": {
+                  "type": "number"
+                },
+                "mensSlope": {
+                  "type": "integer"
+                },
+                "womansRating": {
+                  "type": "number"
+                },
+                "womansSlope": {
+                  "type": "integer"
+                },
+                "nineHoleMensRating": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "nineHoleMensSlope": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "nineHoleWomansRating": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "nineHoleWomansSlope": {
+                  "type": "integer",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "teeName",
+                "teeColor",
+                "distances",
+                "mensRating",
+                "mensSlope",
+                "womansRating",
+                "womansSlope"
+              ],
+              "title": "ExternalCourseTee",
+              "description": "Tee information from external course data"
+            }
+          }
+        },
+        "required": [
+          "externalId",
+          "name",
+          "city",
+          "state",
+          "country",
+          "address",
+          "zip",
+          "designer",
+          "yearBuilt",
+          "numberOfHoles",
+          "mensPar",
+          "womansPar",
+          "mensHandicap",
+          "womansHandicap",
+          "tees"
+        ],
+        "title": "ExternalCourseDetail",
+        "description": "Detailed course information from external API for import"
+      },
+      "ExternalCourseTee": {
+        "type": "object",
+        "properties": {
+          "teeName": {
+            "type": "string"
+          },
+          "teeColor": {
+            "type": "string"
+          },
+          "distances": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "mensRating": {
+            "type": "number"
+          },
+          "mensSlope": {
+            "type": "integer"
+          },
+          "womansRating": {
+            "type": "number"
+          },
+          "womansSlope": {
+            "type": "integer"
+          },
+          "nineHoleMensRating": {
+            "type": "number",
+            "nullable": true
+          },
+          "nineHoleMensSlope": {
+            "type": "integer",
+            "nullable": true
+          },
+          "nineHoleWomansRating": {
+            "type": "number",
+            "nullable": true
+          },
+          "nineHoleWomansSlope": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "teeName",
+          "teeColor",
+          "distances",
+          "mensRating",
+          "mensSlope",
+          "womansRating",
+          "womansSlope"
+        ],
+        "title": "ExternalCourseTee",
+        "description": "Tee information from external course data"
       }
     },
     "securitySchemes": {
@@ -39976,6 +40262,187 @@
         }
       }
     },
+    "/api/accounts/{accountId}/golf/external-courses/search": {
+      "get": {
+        "description": "Search for golf courses in the external GolfCourseAPI.com database",
+        "operationId": "searchExternalCourses",
+        "summary": "Search external courses",
+        "tags": [
+          "External Golf Courses"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100,
+              "description": "Course or club name to search for"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of matching courses",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalCourseSearchResult"
+                  },
+                  "title": "ExternalCourseSearchResultList",
+                  "description": "List of course search results from external API"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golf/external-courses/{externalId}": {
+      "get": {
+        "description": "Get detailed course information from external API for import",
+        "operationId": "getExternalCourseDetails",
+        "summary": "Get external course details",
+        "tags": [
+          "External Golf Courses"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "externalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "External course ID from search results"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course details for import",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalCourseDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/seasons/{seasonId}/games/{gameId}/results": {
       "put": {
         "operationId": "updateGameResults",
@@ -41295,6 +41762,93 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golf/courses/import-external": {
+      "post": {
+        "description": "Import a golf course from external API by its ID. Creates the course with all tees if not already in database.",
+        "operationId": "importExternalGolfCourse",
+        "summary": "Import external course",
+        "tags": [
+          "Golf Courses"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportExternalCourse"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Course imported with tees",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GolfCourseWithTees"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or external API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - golf management permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
                 }
               }
             }

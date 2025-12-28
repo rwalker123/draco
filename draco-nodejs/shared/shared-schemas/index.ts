@@ -48,3 +48,4 @@ export * from './golfHandicap.js';
 export * from './golfStandings.js';
 export * from './golfStats.js';
 export * from './golfTeam.js';
+export * from './externalCourse.js';

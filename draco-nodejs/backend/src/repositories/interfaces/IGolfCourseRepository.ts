@@ -35,5 +35,7 @@ export interface IGolfCourseRepository extends IBaseRepository<
   ): Promise<void>;
   findByName(name: string): Promise<golfcourse | null>;
   findByNameExcludingId(name: string, excludeCourseId: bigint): Promise<golfcourse | null>;
+
+  findByExternalId(externalId: string): Promise<golfcourse | null>;
   isCourseInUse(courseId: bigint): Promise<boolean>;
 }
