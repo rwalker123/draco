@@ -35,6 +35,7 @@ export class PlayersWantedResponseFormatter {
       teamEventName: dbRecord.teameventname,
       description: dbRecord.description,
       positionsNeeded: dbRecord.positionsneeded,
+      notifyOptOut: dbRecord.notifyoptout ?? false,
       creator: {
         id: creator.id.toString(),
         firstName: creator.firstName,
@@ -71,6 +72,7 @@ export class PlayersWantedResponseFormatter {
         teamEventName: record.teameventname,
         description: record.description,
         positionsNeeded: record.positionsneeded,
+        notifyOptOut: record.notifyoptout ?? false,
         creator: {
           id: contactId,
           firstName: contact?.firstname ?? '',

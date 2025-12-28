@@ -1607,6 +1607,7 @@ export type dbTeamsWanted = Prisma.teamswantedclassifiedGetPayload<{
     experience: true;
     positionsplayed: true;
     birthdate: true;
+    notifyoptout: true;
   };
 }>;
 
@@ -1636,12 +1637,13 @@ export type dbPlayersWanted = Prisma.playerswantedclassifiedGetPayload<{
     teameventname: true;
     description: true;
     positionsneeded: true;
+    notifyoptout: true;
   };
 }>;
 
 export type dbPlayersWantedWithRelations = Prisma.playerswantedclassifiedGetPayload<{
   include: {
-    contacts: { select: { id: true; firstname: true; lastname: true } };
+    contacts: { select: { id: true; firstname: true; lastname: true; email: true } };
     accounts: { select: { id: true; name: true } };
   };
 }>;
@@ -1706,6 +1708,7 @@ export type dbContactInfo = {
   email: string | null;
   phone: string | null;
   birthDate: string | null;
+  notifyOptOut: boolean;
 };
 export type dbSponsor = Prisma.sponsorsGetPayload<{
   select: {

@@ -20,6 +20,8 @@ import {
   SelectChangeEvent,
   Autocomplete,
   CircularProgress,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import {
   UpsertPlayersWantedClassifiedType,
@@ -89,6 +91,7 @@ const EMPTY_FORM: UpsertPlayersWantedClassifiedType = {
   teamEventName: '',
   description: '',
   positionsNeeded: '',
+  notifyOptOut: false,
 };
 
 const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
@@ -143,7 +146,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
 
   const handleFieldChange = (
     field: keyof UpsertPlayersWantedClassifiedType,
-    value: string | string[],
+    value: string | string[] | boolean,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
@@ -205,6 +208,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
       teamEventName: formData.teamEventName.trim(),
       description: formData.description.trim(),
       positionsNeeded: selectedPositions.join(','),
+      notifyOptOut: formData.notifyOptOut ?? false,
     };
     return payload;
   }, [formData, selectedPositions]);
@@ -438,6 +442,19 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
                   'Select up to 3 positions you need players for (select "Any Position" if flexible)'}
               </FormHelperText>
             </FormControl>
+
+            <Box sx={{ mt: 2 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.notifyOptOut ?? false}
+                    onChange={(e) => handleFieldChange('notifyOptOut', e.target.checked)}
+                    disabled={operationLoading || !isAuthenticated}
+                  />
+                }
+                label="Do not email me when new Teams Wanted ads are posted"
+              />
+            </Box>
 
             {!editMode && (
               <Alert severity="warning">

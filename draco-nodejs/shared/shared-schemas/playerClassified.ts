@@ -43,6 +43,7 @@ export const PlayersWantedClassifiedSchema = z
     teamEventName: z.string(),
     description: z.string(),
     positionsNeeded: z.string(),
+    notifyOptOut: z.boolean(),
     creator: ClassifiedCreatorSchema,
     account: ClassifiedAccountSchema,
   })
@@ -79,6 +80,7 @@ export const TeamsWantedOwnerClassifiedSchema = z
     positionsPlayed: z.string(),
     birthDate: z.string().nullable(),
     age: z.number().nullable(),
+    notifyOptOut: z.boolean(),
     account: ClassifiedAccountSchema,
   })
   .openapi({
@@ -141,6 +143,7 @@ export const UpsertPlayersWantedClassifiedSchema = z
     teamEventName: nonEmptyString.max(50),
     description: z.string().trim().min(1).max(2000),
     positionsNeeded: nonEmptyString.max(255),
+    notifyOptOut: z.boolean().optional().default(false),
   })
   .openapi({
     title: 'UpsertPlayersWantedClassifiedRequest',
@@ -149,7 +152,7 @@ export const UpsertPlayersWantedClassifiedSchema = z
 
 const emailSchema = z.email().trim().max(320);
 const phoneSchema = z.string().trim().min(1).max(50);
-const experienceSchema = z.string().trim().min(1).max(255);
+const experienceSchema = z.string().trim().min(1).max(2000);
 const positionsSchema = z.string().trim().min(1).max(255);
 
 export const UpsertTeamsWantedClassifiedSchema = z
@@ -161,6 +164,7 @@ export const UpsertTeamsWantedClassifiedSchema = z
     experience: experienceSchema,
     positionsPlayed: positionsSchema,
     birthDate: birthDateSchema.optional().default(''),
+    notifyOptOut: z.boolean().optional().default(false),
   })
   .openapi({
     title: 'UpsertTeamsWantedClassifiedRequest',
@@ -190,6 +194,7 @@ export const TeamsWantedContactInfoSchema = z
     email: z.email().trim().max(320),
     phone: z.string().trim().min(1).max(50),
     birthDate: birthDateSchema,
+    notifyOptOut: z.boolean(),
   })
   .openapi({
     title: 'TeamsWantedContactInfo',

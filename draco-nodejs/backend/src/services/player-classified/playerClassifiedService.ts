@@ -25,7 +25,9 @@ import {
   TeamsWantedOwnerClassifiedType,
   UpsertTeamsWantedClassifiedType,
   ContactPlayersWantedCreatorType,
+  AccountSettingKey,
 } from '@draco/shared-schemas';
+import { AccountSettingsService } from '../accountSettingsService.js';
 import { ServiceFactory } from '../serviceFactory.js';
 import { ContactService } from '../contactService.js';
 import { AccountsService } from '../accountsService.js';
@@ -62,6 +64,7 @@ export class PlayerClassifiedService {
   private playersWantedRepository: IPlayersWantedRepository;
   private contactService: ContactService;
   private accountService: AccountsService;
+  private accountSettingsService: AccountSettingsService;
   public emailService: PlayerClassifiedEmailService;
   private accessService: PlayerClassifiedAccessService;
 
@@ -84,6 +87,7 @@ export class PlayerClassifiedService {
     this.accessService = ServiceFactory.getPlayerClassifiedAccessService();
     this.contactService = ServiceFactory.getContactService();
     this.accountService = ServiceFactory.getAccountsService();
+    this.accountSettingsService = ServiceFactory.getAccountSettingsService();
   }
 
   /**
@@ -126,6 +130,9 @@ export class PlayerClassifiedService {
     if (!creator || !account) {
       throw new InternalServerError('Failed to retrieve creator or account information');
     }
+
+    // Non-blocking notification to teams wanted creators
+    this.notifyTeamsWantedCreatorsSafe(accountId, classified, account);
 
     // Transform database record to response format using data service
     return PlayersWantedResponseFormatter.transformPlayersWantedToResponse(
@@ -263,6 +270,7 @@ export class PlayerClassifiedService {
       positionsplayed: request.positionsPlayed || '',
       accesscode: hashedAccessCode,
       birthdate: birthDateForDb,
+      notifyoptout: request.notifyOptOut ?? false,
     });
 
     // Get account details for response using data service
@@ -282,6 +290,9 @@ export class PlayerClassifiedService {
       },
       request,
     );
+
+    // Non-blocking notification to players wanted creators
+    this.notifyPlayersWantedCreatorsSafe(accountId, classified, account);
 
     // Transform database record to response format using data service
     return TeamsWantedResponseFormatter.transformTeamsWantedToOwnerResponse(classified, account);
@@ -359,6 +370,9 @@ export class PlayerClassifiedService {
       if (parsedBirthDate) {
         dbUpdateData.birthdate = parsedBirthDate;
       }
+    }
+    if (updateData.notifyOptOut !== undefined) {
+      dbUpdateData.notifyoptout = updateData.notifyOptOut;
     }
 
     // Update the classified using data service
@@ -498,6 +512,9 @@ export class PlayerClassifiedService {
     }
     if (request.positionsNeeded !== undefined) {
       updateData.positionsneeded = request.positionsNeeded;
+    }
+    if (request.notifyOptOut !== undefined) {
+      updateData.notifyoptout = request.notifyOptOut;
     }
 
     // Update the classified using data service
@@ -786,5 +803,133 @@ Your email address is kept private and is never shared with requesters.
 `;
 
     return { html, text };
+  }
+
+  private async isSettingEnabled(accountId: bigint, key: AccountSettingKey): Promise<boolean> {
+    try {
+      const settings = await this.accountSettingsService.getAccountSettings(accountId);
+      const match = settings.find((setting) => setting.definition.key === key);
+      return Boolean(match?.value);
+    } catch (error) {
+      console.error('[player-classifieds] Failed to resolve account setting', {
+        accountId: accountId.toString(),
+        key,
+        error,
+      });
+      return false;
+    }
+  }
+
+  private notifyTeamsWantedCreatorsSafe(
+    accountId: bigint,
+    classified: { id: bigint; teameventname: string; positionsneeded: string },
+    account: { id: string; name: string },
+  ): void {
+    this.notifyTeamsWantedCreatorsAsync(accountId, classified, account).catch((error) => {
+      console.error('[player-classifieds] Failed to send teams wanted notifications', {
+        accountId: accountId.toString(),
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+  }
+
+  private async notifyTeamsWantedCreatorsAsync(
+    accountId: bigint,
+    classified: { id: bigint; teameventname: string; positionsneeded: string },
+    account: { id: string; name: string },
+  ): Promise<void> {
+    const isEnabled = await this.isSettingEnabled(accountId, 'NotifyTeamsWantedOnPlayersWanted');
+    if (!isEnabled) {
+      return;
+    }
+
+    const teamsWanted =
+      await this.teamsWantedRepository.findTeamsWantedWithNotifyConsent(accountId);
+
+    if (teamsWanted.length === 0) {
+      return;
+    }
+
+    const recipientEmails = [
+      ...new Set(
+        teamsWanted
+          .map((tw) => tw.email?.toLowerCase().trim())
+          .filter((email): email is string => Boolean(email)),
+      ),
+    ];
+
+    if (recipientEmails.length === 0) {
+      return;
+    }
+
+    await this.emailService.sendPlayersWantedNotificationSafe(
+      recipientEmails,
+      {
+        teamEventName: classified.teameventname,
+        positionsNeeded: classified.positionsneeded,
+        classifiedId: classified.id,
+      },
+      {
+        id: BigInt(account.id),
+        name: account.name,
+      },
+    );
+  }
+
+  private notifyPlayersWantedCreatorsSafe(
+    accountId: bigint,
+    classified: { id: bigint; name: string; positionsplayed: string; experience: string },
+    account: { id: string; name: string },
+  ): void {
+    this.notifyPlayersWantedCreatorsAsync(accountId, classified, account).catch((error) => {
+      console.error('[player-classifieds] Failed to send players wanted notifications', {
+        accountId: accountId.toString(),
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+  }
+
+  private async notifyPlayersWantedCreatorsAsync(
+    accountId: bigint,
+    classified: { id: bigint; name: string; positionsplayed: string; experience: string },
+    account: { id: string; name: string },
+  ): Promise<void> {
+    const isEnabled = await this.isSettingEnabled(accountId, 'NotifyPlayersWantedOnTeamsWanted');
+    if (!isEnabled) {
+      return;
+    }
+
+    const playersWanted =
+      await this.playersWantedRepository.findPlayersWantedWithNotifyConsent(accountId);
+
+    if (playersWanted.length === 0) {
+      return;
+    }
+
+    const recipientEmails = [
+      ...new Set(
+        playersWanted
+          .map((pw) => pw.contacts?.email?.toLowerCase().trim())
+          .filter((email): email is string => Boolean(email)),
+      ),
+    ];
+
+    if (recipientEmails.length === 0) {
+      return;
+    }
+
+    await this.emailService.sendTeamsWantedNotificationSafe(
+      recipientEmails,
+      {
+        playerName: classified.name,
+        positionsPlayed: classified.positionsplayed,
+        experience: classified.experience,
+        classifiedId: classified.id,
+      },
+      {
+        id: BigInt(account.id),
+        name: account.name,
+      },
+    );
   }
 }

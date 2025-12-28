@@ -109,6 +109,7 @@ export const usePlayerClassifieds = (
           teamEventName: data.teamEventName,
           description: data.description,
           positionsNeeded: data.positionsNeeded,
+          notifyOptOut: data.notifyOptOut ?? false,
         };
 
         const newClassified = await playerClassifiedService.createPlayersWanted(
@@ -202,6 +203,7 @@ export const usePlayerClassifieds = (
           experience: data.experience,
           positionsPlayed: data.positionsPlayed,
           birthDate: data.birthDate,
+          notifyOptOut: data.notifyOptOut,
         };
 
         const newClassified = await playerClassifiedService.createTeamsWanted(

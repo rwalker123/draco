@@ -21,4 +21,5 @@ export interface IPlayersWantedRepository extends IBaseRepository<playerswantedc
     updateData: Prisma.playerswantedclassifiedUpdateInput,
   ): Promise<dbPlayersWantedWithRelations | null>;
   deletePlayersWanted(classifiedId: bigint): Promise<void>;
+  findPlayersWantedWithNotifyConsent(accountId: bigint): Promise<dbPlayersWantedWithRelations[]>;
 }
