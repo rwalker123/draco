@@ -18,11 +18,13 @@ export type GolfFlightWithCounts = GolfFlightWithDetails & {
 
 export interface IGolfFlightRepository {
   findBySeasonId(seasonId: bigint): Promise<GolfFlightWithCounts[]>;
+  findByLeagueSeasonId(leagueSeasonId: bigint): Promise<GolfFlightWithCounts[]>;
   findById(flightId: bigint): Promise<GolfFlightWithDetails | null>;
-  create(seasonId: bigint, divisionId: bigint, priority?: number): Promise<divisionseason>;
+  create(leagueSeasonId: bigint, divisionId: bigint, priority?: number): Promise<divisionseason>;
   update(flightId: bigint, data: Partial<divisionseason>): Promise<divisionseason>;
   delete(flightId: bigint): Promise<divisionseason>;
   findOrCreateDivision(accountId: bigint, name: string): Promise<divisiondefs>;
   getPlayerCountForFlight(flightId: bigint): Promise<number>;
-  leagueSeasonExists(seasonId: bigint): Promise<boolean>;
+  getLeagueSeasonWithHierarchy(leagueSeasonId: bigint): Promise<LeagueSeasonWithSeason | null>;
+  leagueSeasonExists(leagueSeasonId: bigint): Promise<boolean>;
 }

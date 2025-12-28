@@ -4,6 +4,7 @@ import {
   type IGolfFlightRepository,
   type GolfFlightWithDetails,
   type GolfFlightWithCounts,
+  type LeagueSeasonWithSeason,
 } from '../../repositories/index.js';
 import { NotFoundError, ValidationError } from '../../utils/customErrors.js';
 import type { divisionseason, divisiondefs, leagueseason, season } from '#prisma/client';
@@ -105,24 +106,27 @@ describe('GolfFlightService', () => {
 
     repository = {
       async findBySeasonId(seasonId: bigint): Promise<GolfFlightWithCounts[]> {
-        return flights.filter((f) => f.leagueseason.id === seasonId);
+        return flights.filter((f) => f.leagueseason.seasonid === seasonId);
+      },
+      async findByLeagueSeasonId(leagueSeasonId: bigint): Promise<GolfFlightWithCounts[]> {
+        return flights.filter((f) => f.leagueseasonid === leagueSeasonId);
       },
       async findById(flightId: bigint): Promise<GolfFlightWithDetails | null> {
         return flights.find((f) => f.id === flightId) ?? null;
       },
       async create(
-        seasonId: bigint,
+        leagueSeasonId: bigint,
         divisionId: bigint,
         priority?: number,
       ): Promise<divisionseason> {
         const division = divisions.find((d) => d.id === divisionId);
         const created: GolfFlightWithCounts = {
           id: nextFlightId,
-          leagueseasonid: seasonId,
+          leagueseasonid: leagueSeasonId,
           divisionid: divisionId,
           priority: priority ?? 0,
           divisiondefs: division ?? createMockDivision({ id: divisionId }),
-          leagueseason: createMockLeagueSeason({ id: seasonId }),
+          leagueseason: createMockLeagueSeason({ id: leagueSeasonId }),
           _count: { teamsseason: 0 },
         };
         nextFlightId += 1n;
@@ -172,6 +176,12 @@ describe('GolfFlightService', () => {
       },
       async getPlayerCountForFlight(): Promise<number> {
         return 0;
+      },
+      async getLeagueSeasonWithHierarchy(
+        leagueSeasonId: bigint,
+      ): Promise<LeagueSeasonWithSeason | null> {
+        if (!seasonExists) return null;
+        return createMockLeagueSeason({ id: leagueSeasonId });
       },
       async leagueSeasonExists(): Promise<boolean> {
         return seasonExists;
@@ -231,41 +241,41 @@ describe('GolfFlightService', () => {
 
   describe('createFlight', () => {
     it('creates flight with valid data', async () => {
-      const result = await service.createFlight(1n, 100n, { name: 'Flight C' });
+      const result = await service.createFlight(100n, 1n, 1n, { name: 'Flight C' });
 
       expect(result.name).toBe('Flight C');
       expect(flights).toHaveLength(3);
     });
 
     it('trims flight name', async () => {
-      const result = await service.createFlight(1n, 100n, { name: '  Flight C  ' });
+      const result = await service.createFlight(100n, 1n, 1n, { name: '  Flight C  ' });
 
       expect(result.name).toBe('Flight C');
     });
 
     it('assigns next priority value', async () => {
-      await service.createFlight(1n, 100n, { name: 'Flight C' });
+      await service.createFlight(100n, 1n, 1n, { name: 'Flight C' });
 
       const created = flights.find((f) => f.divisiondefs.name === 'Flight C');
       expect(created?.priority).toBe(2);
     });
 
-    it('throws NotFoundError when season does not exist', async () => {
+    it('throws NotFoundError when league season does not exist', async () => {
       seasonExists = false;
 
-      await expect(service.createFlight(999n, 100n, { name: 'New Flight' })).rejects.toBeInstanceOf(
-        NotFoundError,
-      );
+      await expect(
+        service.createFlight(100n, 1n, 999n, { name: 'New Flight' }),
+      ).rejects.toBeInstanceOf(NotFoundError);
     });
 
-    it('throws ValidationError for duplicate name in season', async () => {
-      await expect(service.createFlight(1n, 100n, { name: 'Flight A' })).rejects.toBeInstanceOf(
+    it('throws ValidationError for duplicate name in league season', async () => {
+      await expect(service.createFlight(100n, 1n, 1n, { name: 'Flight A' })).rejects.toBeInstanceOf(
         ValidationError,
       );
     });
 
     it('throws ValidationError for duplicate name case-insensitive', async () => {
-      await expect(service.createFlight(1n, 100n, { name: 'flight a' })).rejects.toBeInstanceOf(
+      await expect(service.createFlight(100n, 1n, 1n, { name: 'flight a' })).rejects.toBeInstanceOf(
         ValidationError,
       );
     });
@@ -273,7 +283,7 @@ describe('GolfFlightService', () => {
     it('reuses existing division with same name', async () => {
       const initialDivisionCount = divisions.length;
 
-      await service.createFlight(1n, 100n, { name: 'Flight A' }).catch(() => {});
+      await service.createFlight(100n, 1n, 1n, { name: 'Flight A' }).catch(() => {});
 
       expect(divisions.length).toBe(initialDivisionCount);
     });

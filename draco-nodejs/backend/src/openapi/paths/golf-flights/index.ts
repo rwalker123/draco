@@ -18,10 +18,10 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
     description: 'List of golf flights with team counts',
   });
 
-  // GET /api/accounts/{accountId}/golf/flights/{seasonId}
+  // GET /api/accounts/{accountId}/golf/flights/season/{seasonId}
   registry.registerPath({
     method: 'get',
-    path: '/api/accounts/{accountId}/golf/flights/{seasonId}',
+    path: '/api/accounts/{accountId}/golf/flights/season/{seasonId}',
     description: 'List all flights for a golf season',
     operationId: 'listGolfFlights',
     summary: 'List flights for season',
@@ -83,11 +83,93 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
     },
   });
 
-  // POST /api/accounts/{accountId}/golf/flights/{seasonId}
+  // GET /api/accounts/{accountId}/golf/flights/season/{seasonId}/league-season/{leagueSeasonId}
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/golf/flights/season/{seasonId}/league-season/{leagueSeasonId}',
+    description: 'List all flights for a league season',
+    operationId: 'listGolfFlightsForLeagueSeason',
+    summary: 'List flights for league season',
+    tags: ['Golf Flights'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'leagueSeasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'List of flights with team counts',
+        content: {
+          'application/json': {
+            schema: GolfFlightWithTeamCountListSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'League season not found or hierarchy mismatch',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // POST /api/accounts/{accountId}/golf/flights/season/{seasonId}/league-season/{leagueSeasonId}
   registry.registerPath({
     method: 'post',
-    path: '/api/accounts/{accountId}/golf/flights/{seasonId}',
-    description: 'Create a new flight in a golf season',
+    path: '/api/accounts/{accountId}/golf/flights/season/{seasonId}/league-season/{leagueSeasonId}',
+    description: 'Create a new flight in a league season',
     operationId: 'createGolfFlight',
     summary: 'Create flight',
     tags: ['Golf Flights'],
@@ -104,6 +186,15 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
       },
       {
         name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'leagueSeasonId',
         in: 'path',
         required: true,
         schema: {
@@ -147,7 +238,7 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
         },
       },
       403: {
-        description: 'Access denied - account management permission required',
+        description: 'Access denied - account management permission required or hierarchy mismatch',
         content: {
           'application/json': {
             schema: AuthorizationErrorSchemaRef,
@@ -173,10 +264,10 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
     },
   });
 
-  // PUT /api/accounts/{accountId}/golf/flights/{seasonId}/{flightId}
+  // PUT /api/accounts/{accountId}/golf/flights/{flightId}
   registry.registerPath({
     method: 'put',
-    path: '/api/accounts/{accountId}/golf/flights/{seasonId}/{flightId}',
+    path: '/api/accounts/{accountId}/golf/flights/{flightId}',
     description: 'Update an existing golf flight',
     operationId: 'updateGolfFlight',
     summary: 'Update flight',
@@ -185,15 +276,6 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
     parameters: [
       {
         name: 'accountId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'seasonId',
         in: 'path',
         required: true,
         schema: {
@@ -272,10 +354,10 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
     },
   });
 
-  // DELETE /api/accounts/{accountId}/golf/flights/{seasonId}/{flightId}
+  // DELETE /api/accounts/{accountId}/golf/flights/{flightId}
   registry.registerPath({
     method: 'delete',
-    path: '/api/accounts/{accountId}/golf/flights/{seasonId}/{flightId}',
+    path: '/api/accounts/{accountId}/golf/flights/{flightId}',
     description: 'Delete a golf flight',
     operationId: 'deleteGolfFlight',
     summary: 'Delete flight',
@@ -284,15 +366,6 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
     parameters: [
       {
         name: 'accountId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'seasonId',
         in: 'path',
         required: true,
         schema: {

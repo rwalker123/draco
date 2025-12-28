@@ -3,6 +3,7 @@ import {
   IGolfFlightRepository,
   GolfFlightWithDetails,
   GolfFlightWithCounts,
+  LeagueSeasonWithSeason,
 } from '../interfaces/IGolfFlightRepository.js';
 
 export class PrismaGolfFlightRepository implements IGolfFlightRepository {
@@ -10,7 +11,38 @@ export class PrismaGolfFlightRepository implements IGolfFlightRepository {
 
   async findBySeasonId(seasonId: bigint): Promise<GolfFlightWithCounts[]> {
     const flights = await this.prisma.divisionseason.findMany({
-      where: { leagueseasonid: seasonId },
+      where: {
+        leagueseason: {
+          seasonid: seasonId,
+        },
+      },
+      include: {
+        divisiondefs: true,
+        leagueseason: {
+          include: {
+            season: true,
+          },
+        },
+        _count: {
+          select: { teamsseason: true },
+        },
+      },
+      orderBy: { priority: 'asc' },
+    });
+
+    const flightsWithPlayerCount = await Promise.all(
+      flights.map(async (flight) => ({
+        ...flight,
+        playerCount: await this.getPlayerCountForFlight(flight.id),
+      })),
+    );
+
+    return flightsWithPlayerCount;
+  }
+
+  async findByLeagueSeasonId(leagueSeasonId: bigint): Promise<GolfFlightWithCounts[]> {
+    const flights = await this.prisma.divisionseason.findMany({
+      where: { leagueseasonid: leagueSeasonId },
       include: {
         divisiondefs: true,
         leagueseason: {
@@ -49,10 +81,10 @@ export class PrismaGolfFlightRepository implements IGolfFlightRepository {
     });
   }
 
-  async create(seasonId: bigint, divisionId: bigint, priority = 0): Promise<divisionseason> {
+  async create(leagueSeasonId: bigint, divisionId: bigint, priority = 0): Promise<divisionseason> {
     return this.prisma.divisionseason.create({
       data: {
-        leagueseasonid: seasonId,
+        leagueseasonid: leagueSeasonId,
         divisionid: divisionId,
         priority,
       },
@@ -104,9 +136,20 @@ export class PrismaGolfFlightRepository implements IGolfFlightRepository {
     return count;
   }
 
-  async leagueSeasonExists(seasonId: bigint): Promise<boolean> {
+  async getLeagueSeasonWithHierarchy(
+    leagueSeasonId: bigint,
+  ): Promise<LeagueSeasonWithSeason | null> {
+    return this.prisma.leagueseason.findUnique({
+      where: { id: leagueSeasonId },
+      include: {
+        season: true,
+      },
+    });
+  }
+
+  async leagueSeasonExists(leagueSeasonId: bigint): Promise<boolean> {
     const count = await this.prisma.leagueseason.count({
-      where: { id: seasonId },
+      where: { id: leagueSeasonId },
     });
     return count > 0;
   }

@@ -39,22 +39,16 @@ export type GolfTeamWithRoster = teamsseason & {
 
 export interface IGolfTeamRepository {
   findBySeasonId(seasonId: bigint): Promise<GolfTeamWithFlight[]>;
+  findByLeagueSeasonId(leagueSeasonId: bigint): Promise<GolfTeamWithFlight[]>;
   findByFlightId(flightId: bigint): Promise<GolfTeamWithFlight[]>;
   findById(teamSeasonId: bigint): Promise<GolfTeamWithFlight | null>;
   findByIdWithRoster(teamSeasonId: bigint): Promise<GolfTeamWithRoster | null>;
-  create(
-    seasonId: bigint,
-    accountId: bigint,
-    name: string,
-    flightId?: bigint,
-  ): Promise<teamsseason>;
+  create(leagueSeasonId: bigint, name: string, flightId?: bigint): Promise<teamsseason>;
   update(
     teamSeasonId: bigint,
     data: { name?: string; divisionseasonid?: bigint | null },
   ): Promise<teamsseason>;
   delete(teamSeasonId: bigint): Promise<teamsseason>;
   assignToFlight(teamSeasonId: bigint, flightId: bigint | null): Promise<teamsseason>;
-  findOrCreateTeamDef(accountId: bigint): Promise<teams>;
-  teamSeasonExists(teamSeasonId: bigint, seasonId: bigint): Promise<boolean>;
   hasMatches(teamSeasonId: bigint): Promise<boolean>;
 }

@@ -8,7 +8,7 @@ import { IGolfTeamRepository } from '../repositories/interfaces/IGolfTeamReposit
 import { IGolfFlightRepository } from '../repositories/interfaces/IGolfFlightRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { GolfTeamResponseFormatter } from '../responseFormatters/golfTeamResponseFormatter.js';
-import { NotFoundError, ValidationError } from '../utils/customErrors.js';
+import { AuthorizationError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 
 export class GolfTeamService {
   private readonly teamRepository: IGolfTeamRepository;
@@ -50,23 +50,21 @@ export class GolfTeamService {
   }
 
   async createTeam(
-    seasonId: bigint,
     accountId: bigint,
+    seasonId: bigint,
+    leagueSeasonId: bigint,
     data: CreateGolfTeamType,
   ): Promise<GolfTeamType> {
-    const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
-    if (!seasonExists) {
-      throw new NotFoundError('League season not found');
-    }
+    await this.validateLeagueSeasonHierarchy(accountId, seasonId, leagueSeasonId);
 
     const name = data.name.trim();
-    const existingTeams = await this.teamRepository.findBySeasonId(seasonId);
+    const existingTeams = await this.teamRepository.findByLeagueSeasonId(leagueSeasonId);
     const duplicateName = existingTeams.some((t) => t.name.toLowerCase() === name.toLowerCase());
     if (duplicateName) {
-      throw new ValidationError('A team with this name already exists in this season');
+      throw new ValidationError('A team with this name already exists in this league season');
     }
 
-    const teamsseason = await this.teamRepository.create(seasonId, accountId, name);
+    const teamsseason = await this.teamRepository.create(leagueSeasonId, name);
     const createdTeam = await this.teamRepository.findById(teamsseason.id);
     if (!createdTeam) {
       throw new NotFoundError('Created team not found');
@@ -74,11 +72,24 @@ export class GolfTeamService {
     return GolfTeamResponseFormatter.format(createdTeam);
   }
 
-  async updateTeam(
-    teamSeasonId: bigint,
+  private async validateLeagueSeasonHierarchy(
     accountId: bigint,
-    data: UpdateGolfTeamType,
-  ): Promise<GolfTeamType> {
+    seasonId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<void> {
+    const leagueSeason = await this.flightRepository.getLeagueSeasonWithHierarchy(leagueSeasonId);
+    if (!leagueSeason) {
+      throw new NotFoundError('League season not found');
+    }
+    if (leagueSeason.seasonid !== seasonId) {
+      throw new AuthorizationError('League season does not belong to the specified season');
+    }
+    if (leagueSeason.season.accountid !== accountId) {
+      throw new AuthorizationError('Season does not belong to the specified account');
+    }
+  }
+
+  async updateTeam(teamSeasonId: bigint, data: UpdateGolfTeamType): Promise<GolfTeamType> {
     const team = await this.teamRepository.findById(teamSeasonId);
     if (!team) {
       throw new NotFoundError('Golf team not found');
@@ -86,12 +97,12 @@ export class GolfTeamService {
 
     if (data.name !== undefined) {
       const name = data.name.trim();
-      const existingTeams = await this.teamRepository.findBySeasonId(team.leagueseasonid);
+      const existingTeams = await this.teamRepository.findByLeagueSeasonId(team.leagueseasonid);
       const duplicateName = existingTeams.some(
         (t) => t.id !== teamSeasonId && t.name.toLowerCase() === name.toLowerCase(),
       );
       if (duplicateName) {
-        throw new ValidationError('A team with this name already exists in this season');
+        throw new ValidationError('A team with this name already exists in this league season');
       }
 
       await this.teamRepository.update(teamSeasonId, { name });

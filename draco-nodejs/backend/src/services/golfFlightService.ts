@@ -1,4 +1,4 @@
-import { NotFoundError, ValidationError } from '../utils/customErrors.js';
+import { AuthorizationError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { IGolfFlightRepository, RepositoryFactory } from '../repositories/index.js';
 import { GolfFlightResponseFormatter } from '../responseFormatters/golfFlightResponseFormatter.js';
 import {
@@ -20,6 +20,16 @@ export class GolfFlightService {
     return GolfFlightResponseFormatter.formatManyWithCounts(flights);
   }
 
+  async getFlightsForLeagueSeason(
+    accountId: bigint,
+    seasonId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<GolfFlightWithTeamCountType[]> {
+    await this.validateLeagueSeasonHierarchy(accountId, seasonId, leagueSeasonId);
+    const flights = await this.flightRepository.findByLeagueSeasonId(leagueSeasonId);
+    return GolfFlightResponseFormatter.formatManyWithCounts(flights);
+  }
+
   async getFlightById(flightId: bigint): Promise<GolfFlightType> {
     const flight = await this.flightRepository.findById(flightId);
     if (!flight) {
@@ -29,22 +39,20 @@ export class GolfFlightService {
   }
 
   async createFlight(
-    seasonId: bigint,
     accountId: bigint,
+    seasonId: bigint,
+    leagueSeasonId: bigint,
     data: CreateGolfFlightType,
   ): Promise<GolfFlightType> {
-    const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
-    if (!seasonExists) {
-      throw new NotFoundError('League season not found');
-    }
+    await this.validateLeagueSeasonHierarchy(accountId, seasonId, leagueSeasonId);
 
     const name = data.name.trim();
-    const existingFlights = await this.flightRepository.findBySeasonId(seasonId);
+    const existingFlights = await this.flightRepository.findByLeagueSeasonId(leagueSeasonId);
     const duplicateName = existingFlights.some(
       (f) => f.divisiondefs.name.toLowerCase() === name.toLowerCase(),
     );
     if (duplicateName) {
-      throw new ValidationError('A flight with this name already exists in this season');
+      throw new ValidationError('A flight with this name already exists in this league season');
     }
 
     const division = await this.flightRepository.findOrCreateDivision(accountId, name);
@@ -52,7 +60,7 @@ export class GolfFlightService {
     const maxPriority = existingFlights.reduce((max, f) => Math.max(max, f.priority), -1);
 
     const divisionSeason = await this.flightRepository.create(
-      seasonId,
+      leagueSeasonId,
       division.id,
       maxPriority + 1,
     );
@@ -62,6 +70,23 @@ export class GolfFlightService {
       throw new NotFoundError('Created flight not found');
     }
     return GolfFlightResponseFormatter.format(createdFlight);
+  }
+
+  private async validateLeagueSeasonHierarchy(
+    accountId: bigint,
+    seasonId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<void> {
+    const leagueSeason = await this.flightRepository.getLeagueSeasonWithHierarchy(leagueSeasonId);
+    if (!leagueSeason) {
+      throw new NotFoundError('League season not found');
+    }
+    if (leagueSeason.seasonid !== seasonId) {
+      throw new AuthorizationError('League season does not belong to the specified season');
+    }
+    if (leagueSeason.season.accountid !== accountId) {
+      throw new AuthorizationError('Season does not belong to the specified account');
+    }
   }
 
   async updateFlight(
@@ -76,12 +101,14 @@ export class GolfFlightService {
 
     if (data.name !== undefined) {
       const name = data.name.trim();
-      const existingFlights = await this.flightRepository.findBySeasonId(flight.leagueseason.id);
+      const existingFlights = await this.flightRepository.findByLeagueSeasonId(
+        flight.leagueseasonid,
+      );
       const duplicateName = existingFlights.some(
         (f) => f.id !== flightId && f.divisiondefs.name.toLowerCase() === name.toLowerCase(),
       );
       if (duplicateName) {
-        throw new ValidationError('A flight with this name already exists in this season');
+        throw new ValidationError('A flight with this name already exists in this league season');
       }
 
       const newDivision = await this.flightRepository.findOrCreateDivision(accountId, name);
@@ -101,7 +128,7 @@ export class GolfFlightService {
       throw new NotFoundError('Golf flight not found');
     }
 
-    const flights = await this.flightRepository.findBySeasonId(flight.leagueseason.id);
+    const flights = await this.flightRepository.findByLeagueSeasonId(flight.leagueseasonid);
     const flightWithCounts = flights.find((f) => f.id === flightId);
 
     if (flightWithCounts && flightWithCounts._count.teamsseason > 0) {

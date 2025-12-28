@@ -65,15 +65,19 @@ router.get(
 );
 
 router.post(
-  '/season/:seasonId',
+  '/season/:seasonId/league-season/:leagueSeasonId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { seasonId } = extractBigIntParams(req.params, 'seasonId');
+    const { seasonId, leagueSeasonId } = extractBigIntParams(
+      req.params,
+      'seasonId',
+      'leagueSeasonId',
+    );
     const teamData = CreateGolfTeamSchema.parse(req.body);
-    const team = await golfTeamService.createTeam(seasonId, accountId, teamData);
+    const team = await golfTeamService.createTeam(accountId, seasonId, leagueSeasonId, teamData);
     res.status(201).json(team);
   }),
 );
@@ -84,10 +88,9 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId } = extractAccountParams(req.params);
     const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
     const teamData = UpdateGolfTeamSchema.parse(req.body);
-    const team = await golfTeamService.updateTeam(teamSeasonId, accountId, teamData);
+    const team = await golfTeamService.updateTeam(teamSeasonId, teamData);
     res.json(team);
   }),
 );

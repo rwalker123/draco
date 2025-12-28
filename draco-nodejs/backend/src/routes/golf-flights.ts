@@ -10,7 +10,7 @@ const golfFlightService = ServiceFactory.getGolfFlightService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
 router.get(
-  '/:seasonId',
+  '/season/:seasonId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -20,22 +20,51 @@ router.get(
   }),
 );
 
+router.get(
+  '/season/:seasonId/league-season/:leagueSeasonId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const { seasonId, leagueSeasonId } = extractBigIntParams(
+      req.params,
+      'seasonId',
+      'leagueSeasonId',
+    );
+    const flights = await golfFlightService.getFlightsForLeagueSeason(
+      accountId,
+      seasonId,
+      leagueSeasonId,
+    );
+    res.json(flights);
+  }),
+);
+
 router.post(
-  '/:seasonId',
+  '/season/:seasonId/league-season/:leagueSeasonId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { seasonId } = extractBigIntParams(req.params, 'seasonId');
+    const { seasonId, leagueSeasonId } = extractBigIntParams(
+      req.params,
+      'seasonId',
+      'leagueSeasonId',
+    );
     const flightData = CreateGolfFlightSchema.parse(req.body);
-    const flight = await golfFlightService.createFlight(seasonId, accountId, flightData);
+    const flight = await golfFlightService.createFlight(
+      accountId,
+      seasonId,
+      leagueSeasonId,
+      flightData,
+    );
     res.status(201).json(flight);
   }),
 );
 
 router.put(
-  '/:seasonId/:flightId',
+  '/:flightId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
@@ -49,7 +78,7 @@ router.put(
 );
 
 router.delete(
-  '/:seasonId/:flightId',
+  '/:flightId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),

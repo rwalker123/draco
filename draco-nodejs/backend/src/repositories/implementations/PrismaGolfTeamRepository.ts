@@ -1,4 +1,4 @@
-import { PrismaClient, teamsseason, teams } from '#prisma/client';
+import { PrismaClient, teamsseason } from '#prisma/client';
 import {
   IGolfTeamRepository,
   GolfTeamWithFlight,
@@ -10,7 +10,31 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
 
   async findBySeasonId(seasonId: bigint): Promise<GolfTeamWithFlight[]> {
     return this.prisma.teamsseason.findMany({
-      where: { leagueseasonid: seasonId },
+      where: {
+        leagueseason: {
+          seasonid: seasonId,
+        },
+      },
+      include: {
+        divisionseason: {
+          include: {
+            divisiondefs: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+        teams: true,
+        _count: {
+          select: { golfroster: true },
+        },
+      },
+      orderBy: [{ divisionseason: { priority: 'asc' } }, { name: 'asc' }],
+    });
+  }
+
+  async findByLeagueSeasonId(leagueSeasonId: bigint): Promise<GolfTeamWithFlight[]> {
+    return this.prisma.teamsseason.findMany({
+      where: { leagueseasonid: leagueSeasonId },
       include: {
         divisionseason: {
           include: {
@@ -90,20 +114,43 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
     });
   }
 
-  async create(
-    seasonId: bigint,
-    accountId: bigint,
-    name: string,
-    flightId?: bigint,
-  ): Promise<teamsseason> {
-    const teamDef = await this.findOrCreateTeamDef(accountId);
+  async create(leagueSeasonId: bigint, name: string, flightId?: bigint): Promise<teamsseason> {
+    const leagueseason = await this.prisma.leagueseason.findUnique({
+      where: { id: leagueSeasonId },
+      include: {
+        season: true,
+      },
+    });
+
+    if (!leagueseason) {
+      throw new Error('League season not found');
+    }
+
+    const teamDef = await this.findOrCreateTeamDef(leagueseason.season.accountid);
 
     return this.prisma.teamsseason.create({
       data: {
-        leagueseasonid: seasonId,
+        leagueseasonid: leagueSeasonId,
         teamid: teamDef.id,
         name,
         divisionseasonid: flightId ?? null,
+      },
+    });
+  }
+
+  private async findOrCreateTeamDef(accountId: bigint) {
+    const existing = await this.prisma.teams.findFirst({
+      where: { accountid: accountId },
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    return this.prisma.teams.create({
+      data: {
+        accountid: accountId,
+        webaddress: '',
       },
     });
   }
@@ -129,35 +176,6 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
       where: { id: teamSeasonId },
       data: { divisionseasonid: flightId },
     });
-  }
-
-  async findOrCreateTeamDef(accountId: bigint): Promise<teams> {
-    const existing = await this.prisma.teams.findFirst({
-      where: { accountid: accountId },
-    });
-
-    if (existing) {
-      return existing;
-    }
-
-    return this.prisma.teams.create({
-      data: {
-        accountid: accountId,
-        webaddress: '',
-      },
-    });
-  }
-
-  async teamSeasonExists(teamSeasonId: bigint, seasonId: bigint): Promise<boolean> {
-    const count = await this.prisma.teamsseason.count({
-      where: {
-        id: teamSeasonId,
-        leagueseason: {
-          seasonid: seasonId,
-        },
-      },
-    });
-    return count > 0;
   }
 
   async hasMatches(teamSeasonId: bigint): Promise<boolean> {
