@@ -26,6 +26,7 @@ import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import type { GameDialogProps } from '../types/sportAdapter';
+import { useGolfMatchOperations } from '../hooks/useGolfMatchOperations';
 
 const golfMatchSchema = z
   .object({
@@ -53,8 +54,8 @@ type GolfMatchFormValues = z.infer<typeof golfMatchSchema>;
 const GolfMatchDialog: React.FC<GameDialogProps> = ({
   open,
   mode,
-  accountId: _accountId,
-  timeZone: _timeZone,
+  accountId,
+  timeZone,
   selectedGame,
   leagues,
   locations,
@@ -63,12 +64,13 @@ const GolfMatchDialog: React.FC<GameDialogProps> = ({
   defaultLeagueSeasonId,
   defaultGameDate,
   onClose,
-  onSuccess: _onSuccess,
+  onSuccess,
   onError,
   onDelete,
 }) => {
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [keepDialogOpen, setKeepDialogOpen] = useState(false);
+  const { createMatch, updateMatch, loading } = useGolfMatchOperations({ accountId, timeZone });
 
   const defaultValues: GolfMatchFormValues = useMemo(() => {
     if (mode === 'edit' && selectedGame) {
@@ -135,22 +137,51 @@ const GolfMatchDialog: React.FC<GameDialogProps> = ({
 
   const onSubmit = useCallback(
     async (data: GolfMatchFormValues) => {
-      setLoading(true);
       setError(null);
 
       try {
-        // TODO: Implement when golf match API is available
-        console.log('Golf match form submitted:', data);
-        onError?.('Golf match API not yet implemented');
+        const result =
+          mode === 'create' ? await createMatch(data) : await updateMatch(selectedGame!.id, data);
+
+        onSuccess?.({ message: result.message, game: result.game });
+
+        if (mode === 'create' && keepDialogOpen) {
+          const preservedDate = data.matchDate;
+          const preservedTime = data.matchTime;
+          const preservedLeague = data.leagueSeasonId;
+          const preservedCourse = data.courseId;
+
+          reset({
+            leagueSeasonId: preservedLeague,
+            matchDate: preservedDate,
+            matchTime: preservedTime,
+            team1Id: '',
+            team2Id: '',
+            courseId: preservedCourse,
+            comment: '',
+            matchType: 0,
+          });
+          return;
+        }
+
+        handleClose();
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to save match';
         setError(message);
         onError?.(message);
-      } finally {
-        setLoading(false);
       }
     },
-    [onError],
+    [
+      mode,
+      selectedGame,
+      createMatch,
+      updateMatch,
+      onSuccess,
+      onError,
+      handleClose,
+      keepDialogOpen,
+      reset,
+    ],
   );
 
   const dialogTitle = mode === 'create' ? 'Create Match' : 'Edit Match';
@@ -346,6 +377,31 @@ const GolfMatchDialog: React.FC<GameDialogProps> = ({
                 Delete
               </Button>
             )}
+
+            {mode === 'create' && canEditSchedule && (
+              <Button
+                onClick={() => setKeepDialogOpen((prev) => !prev)}
+                variant={keepDialogOpen ? 'contained' : 'outlined'}
+                color="secondary"
+                size="small"
+                sx={{
+                  minWidth: 'auto',
+                  px: 2,
+                  '&.MuiButton-contained': {
+                    backgroundColor: 'secondary.main',
+                    color: 'secondary.contrastText',
+                    '&:hover': {
+                      backgroundColor: 'secondary.dark',
+                    },
+                  },
+                }}
+              >
+                Keep Open
+              </Button>
+            )}
+
+            <Box sx={{ flex: 1 }} />
+
             <Button onClick={handleClose}>Cancel</Button>
             <Button
               type="submit"
