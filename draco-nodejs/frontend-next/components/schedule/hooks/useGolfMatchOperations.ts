@@ -14,6 +14,7 @@ export interface GolfMatchFormValues {
   team1Id: string;
   team2Id: string;
   courseId?: string | null;
+  teeId?: string | null;
   comment?: string;
   matchType: number;
 }
@@ -82,6 +83,14 @@ function mapGolfMatchToGame(match: GolfMatch): Game {
           state: match.course.state ?? '',
         }
       : undefined,
+    teeId: match.tee?.id,
+    tee: match.tee
+      ? {
+          id: match.tee.id,
+          teeName: match.tee.teeName,
+          teeColor: match.tee.teeColor,
+        }
+      : undefined,
     gameStatus: match.matchStatus,
     gameStatusText: getGameStatusText(match.matchStatus),
     gameStatusShortText: getGameStatusShortText(match.matchStatus),
@@ -120,6 +129,7 @@ export const useGolfMatchOperations = ({ accountId, timeZone }: UseGolfMatchOper
             matchDate: datePart,
             matchTime: timeOnly,
             courseId: values.courseId ?? undefined,
+            teeId: values.teeId ?? undefined,
             matchType: values.matchType,
             comment: values.comment ?? '',
           },
@@ -156,6 +166,7 @@ export const useGolfMatchOperations = ({ accountId, timeZone }: UseGolfMatchOper
             matchDate: datePart,
             matchTime: timeOnly,
             courseId: values.courseId ?? undefined,
+            teeId: values.teeId ?? undefined,
             matchType: values.matchType,
             comment: values.comment ?? '',
           },

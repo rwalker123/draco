@@ -135,6 +135,7 @@ export class GolfMatchService {
       matchdate: matchDate,
       matchtime: matchTime,
       courseid: data.courseId ? BigInt(data.courseId) : null,
+      teeid: data.teeId ? BigInt(data.teeId) : null,
       matchstatus: 0,
       matchtype: data.matchType ?? 0,
       comment: data.comment ?? '',
@@ -184,6 +185,10 @@ export class GolfMatchService {
 
     if (data.courseId !== undefined) {
       updateData.courseid = data.courseId ? BigInt(data.courseId) : null;
+    }
+
+    if (data.teeId !== undefined) {
+      updateData.teeid = data.teeId ? BigInt(data.teeId) : null;
     }
 
     if (data.matchType !== undefined) {

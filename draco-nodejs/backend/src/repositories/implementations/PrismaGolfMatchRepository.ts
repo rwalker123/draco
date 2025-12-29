@@ -23,6 +23,7 @@ const matchTeamInclude = {
       golfteeinformation: true,
     },
   },
+  golfteeinformation: true,
 };
 
 const matchWithScoresInclude = {
@@ -142,6 +143,7 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
         matchdate: data.matchdate,
         matchtime: data.matchtime,
         courseid: data.courseid ?? null,
+        teeid: data.teeid ?? null,
         matchstatus: data.matchstatus,
         matchtype: data.matchtype,
         comment: data.comment,

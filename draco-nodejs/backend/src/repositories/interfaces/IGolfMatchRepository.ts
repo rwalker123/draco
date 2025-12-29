@@ -30,6 +30,7 @@ export type GolfMatchWithTeams = golfmatch & {
   teamsseason_golfmatch_team1Toteamsseason: GolfMatchTeamInfo;
   teamsseason_golfmatch_team2Toteamsseason: GolfMatchTeamInfo;
   golfcourse: GolfMatchCourseInfo | null;
+  golfteeinformation: golfteeinformation | null;
 };
 
 export type GolfMatchWithScores = GolfMatchWithTeams & {
@@ -43,6 +44,7 @@ export type CreateGolfMatchData = {
   matchdate: Date;
   matchtime: Date;
   courseid?: bigint | null;
+  teeid?: bigint | null;
   matchstatus: number;
   matchtype: number;
   comment: string;

@@ -74,6 +74,14 @@ function mapGolfMatchToGame(match: GolfMatch): Game {
           state: match.course.state ?? '',
         }
       : undefined,
+    teeId: match.tee?.id,
+    tee: match.tee
+      ? {
+          id: match.tee.id,
+          teeName: match.tee.teeName,
+          teeColor: match.tee.teeColor,
+        }
+      : undefined,
     gameStatus: match.matchStatus,
     gameStatusText: getGameStatusText(match.matchStatus),
     gameStatusShortText: getGameStatusShortText(match.matchStatus),

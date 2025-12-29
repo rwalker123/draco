@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -27,6 +27,9 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import type { GameDialogProps } from '../types/sportAdapter';
 import { useGolfMatchOperations } from '../hooks/useGolfMatchOperations';
+import { listGolfCourseTees } from '@draco/shared-api-client';
+import type { GolfCourseTee } from '@draco/shared-api-client';
+import { useApiClient } from '../../../hooks/useApiClient';
 
 const golfMatchSchema = z
   .object({
@@ -36,6 +39,7 @@ const golfMatchSchema = z
     team1Id: z.string().min(1, 'Team 1 is required'),
     team2Id: z.string().min(1, 'Team 2 is required'),
     courseId: z.string().nullable().optional(),
+    teeId: z.string().nullable().optional(),
     comment: z.string().max(255, 'Comment must be 255 characters or fewer').default(''),
     matchType: z.number().int().min(0).max(2).default(0),
   })
@@ -51,8 +55,29 @@ const golfMatchSchema = z
 
 type GolfMatchFormValues = z.infer<typeof golfMatchSchema>;
 
-const GolfMatchDialog: React.FC<GameDialogProps> = ({
-  open,
+// Wrapper component that handles remounting on key changes
+const GolfMatchDialog: React.FC<GameDialogProps> = (props) => {
+  if (!props.open) {
+    return null;
+  }
+
+  if (props.mode === 'edit' && !props.selectedGame) {
+    return null;
+  }
+
+  // Create a key that changes when we need to remount with fresh form state
+  const key = [
+    props.mode,
+    props.selectedGame?.id ?? 'new',
+    props.defaultLeagueSeasonId ?? 'none',
+    props.defaultGameDate ? props.defaultGameDate.getTime() : 'no-date',
+    props.timeZone,
+  ].join('-');
+
+  return <GolfMatchDialogInner key={key} {...props} />;
+};
+
+const GolfMatchDialogInner: React.FC<GameDialogProps> = ({
   mode,
   accountId,
   timeZone,
@@ -70,7 +95,10 @@ const GolfMatchDialog: React.FC<GameDialogProps> = ({
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [keepDialogOpen, setKeepDialogOpen] = useState(false);
+  const [availableTees, setAvailableTees] = useState<GolfCourseTee[]>([]);
+  const [loadingTees, setLoadingTees] = useState(false);
   const { createMatch, updateMatch, loading } = useGolfMatchOperations({ accountId, timeZone });
+  const apiClient = useApiClient();
 
   const defaultValues: GolfMatchFormValues = useMemo(() => {
     if (mode === 'edit' && selectedGame) {
@@ -81,6 +109,7 @@ const GolfMatchDialog: React.FC<GameDialogProps> = ({
         team1Id: selectedGame.homeTeamId,
         team2Id: selectedGame.visitorTeamId,
         courseId: selectedGame.fieldId ?? null,
+        teeId: selectedGame.teeId ?? null,
         comment: selectedGame.comment ?? '',
         matchType: selectedGame.gameType ?? 0,
       };
@@ -94,6 +123,7 @@ const GolfMatchDialog: React.FC<GameDialogProps> = ({
       team1Id: '',
       team2Id: '',
       courseId: initialCourseId,
+      teeId: null,
       comment: '',
       matchType: 0,
     };
@@ -119,21 +149,65 @@ const GolfMatchDialog: React.FC<GameDialogProps> = ({
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
     reset,
   } = methods;
 
   const selectedLeagueSeasonId = watch('leagueSeasonId');
+  const selectedCourseId = watch('courseId');
+
+  // Track the previous course ID to detect user-initiated changes
+  const prevCourseIdRef = useRef<string | null | undefined>(selectedCourseId);
+
   const leagueTeams = useMemo(() => {
     if (!selectedLeagueSeasonId) return [];
     return leagueTeamsCache.get(selectedLeagueSeasonId) ?? [];
   }, [selectedLeagueSeasonId, leagueTeamsCache]);
 
+  useEffect(() => {
+    const fetchTees = async () => {
+      if (!selectedCourseId) {
+        setAvailableTees([]);
+        return;
+      }
+
+      setLoadingTees(true);
+      try {
+        const result = await listGolfCourseTees({
+          client: apiClient,
+          path: { accountId, courseId: selectedCourseId },
+          throwOnError: false,
+        });
+
+        if (result.data) {
+          setAvailableTees(result.data);
+        } else {
+          setAvailableTees([]);
+        }
+      } catch {
+        setAvailableTees([]);
+      } finally {
+        setLoadingTees(false);
+      }
+    };
+
+    fetchTees();
+  }, [selectedCourseId, accountId, apiClient]);
+
+  // Clear tee when course changes (user action only)
+  useEffect(() => {
+    // If course changed from a previous value (user changed it), clear the tee
+    if (prevCourseIdRef.current !== undefined && prevCourseIdRef.current !== selectedCourseId) {
+      setValue('teeId', null);
+    }
+    prevCourseIdRef.current = selectedCourseId;
+  }, [selectedCourseId, setValue]);
+
   const handleClose = useCallback(() => {
     setError(null);
-    reset();
     onClose();
-  }, [onClose, reset]);
+  }, [onClose]);
 
   const onSubmit = useCallback(
     async (data: GolfMatchFormValues) => {
@@ -150,6 +224,7 @@ const GolfMatchDialog: React.FC<GameDialogProps> = ({
           const preservedTime = data.matchTime;
           const preservedLeague = data.leagueSeasonId;
           const preservedCourse = data.courseId;
+          const preservedTee = data.teeId;
 
           reset({
             leagueSeasonId: preservedLeague,
@@ -158,6 +233,7 @@ const GolfMatchDialog: React.FC<GameDialogProps> = ({
             team1Id: '',
             team2Id: '',
             courseId: preservedCourse,
+            teeId: preservedTee,
             comment: '',
             matchType: 0,
           });
@@ -187,7 +263,7 @@ const GolfMatchDialog: React.FC<GameDialogProps> = ({
   const dialogTitle = mode === 'create' ? 'Create Match' : 'Edit Match';
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
       <FormProvider {...methods}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Box sx={{ p: 3, pb: 1 }}>
@@ -303,37 +379,71 @@ const GolfMatchDialog: React.FC<GameDialogProps> = ({
                   />
                 </Box>
 
-                <Controller
-                  name="courseId"
-                  control={control}
-                  render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.courseId}>
-                      <InputLabel shrink>Course</InputLabel>
-                      <Select
-                        {...field}
-                        label="Course"
-                        displayEmpty
-                        value={field.value ?? ''}
-                        disabled={!canEditSchedule}
-                        renderValue={(selected) => {
-                          if (!selected) return 'None';
-                          const course = locations.find((l) => l.id === selected);
-                          return course?.name ?? 'Unknown';
-                        }}
-                      >
-                        <MenuItem value="">
-                          <em>None</em>
-                        </MenuItem>
-                        {locations.map((location) => (
-                          <MenuItem key={location.id} value={location.id}>
-                            {location.name}
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Controller
+                    name="courseId"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl fullWidth error={!!errors.courseId}>
+                        <InputLabel shrink>Course</InputLabel>
+                        <Select
+                          {...field}
+                          label="Course"
+                          displayEmpty
+                          value={field.value ?? ''}
+                          disabled={!canEditSchedule}
+                          renderValue={(selected) => {
+                            if (!selected) return 'None';
+                            const course = locations.find((l) => l.id === selected);
+                            return course?.name ?? 'Unknown';
+                          }}
+                        >
+                          <MenuItem value="">
+                            <em>None</em>
                           </MenuItem>
-                        ))}
-                      </Select>
-                      <FormHelperText>{errors.courseId?.message}</FormHelperText>
-                    </FormControl>
-                  )}
-                />
+                          {locations.map((location) => (
+                            <MenuItem key={location.id} value={location.id}>
+                              {location.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        <FormHelperText>{errors.courseId?.message}</FormHelperText>
+                      </FormControl>
+                    )}
+                  />
+
+                  <Controller
+                    name="teeId"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl fullWidth error={!!errors.teeId}>
+                        <InputLabel shrink>Tee</InputLabel>
+                        <Select
+                          {...field}
+                          label="Tee"
+                          displayEmpty
+                          value={field.value ?? ''}
+                          disabled={!canEditSchedule || !selectedCourseId || loadingTees}
+                          renderValue={(selected) => {
+                            if (!selected) return 'None';
+                            const tee = availableTees.find((t) => t.id === selected);
+                            return tee ? `${tee.teeName} (${tee.teeColor})` : 'Unknown';
+                          }}
+                        >
+                          <MenuItem value="">
+                            <em>None</em>
+                          </MenuItem>
+                          {availableTees.map((tee) => (
+                            <MenuItem key={tee.id} value={tee.id}>
+                              {tee.teeName} ({tee.teeColor})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        <FormHelperText>{errors.teeId?.message}</FormHelperText>
+                      </FormControl>
+                    )}
+                  />
+                </Box>
 
                 <Controller
                   name="matchType"

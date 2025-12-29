@@ -19525,6 +19525,93 @@ components:
             - womansHandicap
           title: GolfCourse
           description: Golf course with par and handicap information for all 18 holes
+        tee:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            courseId:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            teeColor:
+              type: string
+              maxLength: 20
+            teeName:
+              type: string
+              maxLength: 20
+            priority:
+              type: integer
+              default: 0
+            distances:
+              type: array
+              items:
+                type: integer
+                minimum: 0
+                maximum: 700
+            mensRating:
+              type: number
+              minimum: 55
+              maximum: 80
+            mensSlope:
+              type: integer
+              minimum: 55
+              maximum: 155
+            womansRating:
+              type: number
+              minimum: 55
+              maximum: 80
+            womansSlope:
+              type: integer
+              minimum: 55
+              maximum: 155
+            mensRatingFront9:
+              type: number
+              minimum: 55
+              maximum: 80
+            mensSlopeFront9:
+              type: integer
+              minimum: 55
+              maximum: 155
+            womansRatingFront9:
+              type: number
+              minimum: 55
+              maximum: 80
+            womansSlopeFront9:
+              type: integer
+              minimum: 55
+              maximum: 155
+            mensRatingBack9:
+              type: number
+              minimum: 55
+              maximum: 80
+            mensSlopeBack9:
+              type: integer
+              minimum: 55
+              maximum: 155
+            womansRatingBack9:
+              type: number
+              minimum: 55
+              maximum: 80
+            womansSlopeBack9:
+              type: integer
+              minimum: 55
+              maximum: 155
+          required:
+            - id
+            - courseId
+            - teeColor
+            - teeName
+            - distances
+            - mensRating
+            - mensSlope
+            - womansRating
+            - womansSlope
+          title: GolfCourseTee
+          description: Tee information for a golf course including ratings, slopes, and
+            hole distances
         matchStatus:
           type: integer
         matchType:
@@ -19666,6 +19753,93 @@ components:
             - womansHandicap
           title: GolfCourse
           description: Golf course with par and handicap information for all 18 holes
+        tee:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            courseId:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            teeColor:
+              type: string
+              maxLength: 20
+            teeName:
+              type: string
+              maxLength: 20
+            priority:
+              type: integer
+              default: 0
+            distances:
+              type: array
+              items:
+                type: integer
+                minimum: 0
+                maximum: 700
+            mensRating:
+              type: number
+              minimum: 55
+              maximum: 80
+            mensSlope:
+              type: integer
+              minimum: 55
+              maximum: 155
+            womansRating:
+              type: number
+              minimum: 55
+              maximum: 80
+            womansSlope:
+              type: integer
+              minimum: 55
+              maximum: 155
+            mensRatingFront9:
+              type: number
+              minimum: 55
+              maximum: 80
+            mensSlopeFront9:
+              type: integer
+              minimum: 55
+              maximum: 155
+            womansRatingFront9:
+              type: number
+              minimum: 55
+              maximum: 80
+            womansSlopeFront9:
+              type: integer
+              minimum: 55
+              maximum: 155
+            mensRatingBack9:
+              type: number
+              minimum: 55
+              maximum: 80
+            mensSlopeBack9:
+              type: integer
+              minimum: 55
+              maximum: 155
+            womansRatingBack9:
+              type: number
+              minimum: 55
+              maximum: 80
+            womansSlopeBack9:
+              type: integer
+              minimum: 55
+              maximum: 155
+          required:
+            - id
+            - courseId
+            - teeColor
+            - teeName
+            - distances
+            - mensRating
+            - mensSlope
+            - womansRating
+            - womansSlope
+          title: GolfCourseTee
+          description: Tee information for a golf course including ratings, slopes, and
+            hole distances
         matchStatus:
           type: integer
         matchType:
@@ -20069,6 +20243,10 @@ components:
           type: string
           pattern: ^\d+$
           example: "12345"
+        teeId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
         matchType:
           type: integer
           default: 0
@@ -20098,6 +20276,10 @@ components:
         matchTime:
           type: string
         courseId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teeId:
           type: string
           pattern: ^\d+$
           example: "12345"

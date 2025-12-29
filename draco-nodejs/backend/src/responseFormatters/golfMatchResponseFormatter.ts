@@ -5,6 +5,7 @@ import {
 } from '../repositories/interfaces/IGolfMatchRepository.js';
 import { GolfCourseResponseFormatter } from './golfCourseResponseFormatter.js';
 import { GolfScoreResponseFormatter } from './golfScoreResponseFormatter.js';
+import { GolfTeeResponseFormatter } from './golfTeeResponseFormatter.js';
 
 export class GolfMatchResponseFormatter {
   static format(match: GolfMatchWithTeams): GolfMatchType {
@@ -22,6 +23,9 @@ export class GolfMatchResponseFormatter {
       matchDate: match.matchdate.toISOString().split('T')[0],
       matchTime: match.matchtime.toISOString().split('T')[1].substring(0, 5),
       course: match.golfcourse ? GolfCourseResponseFormatter.format(match.golfcourse) : undefined,
+      tee: match.golfteeinformation
+        ? GolfTeeResponseFormatter.format(match.golfteeinformation)
+        : undefined,
       matchStatus: match.matchstatus,
       matchType: match.matchtype,
       comment: match.comment || undefined,

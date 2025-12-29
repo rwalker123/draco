@@ -18,6 +18,12 @@ export interface Game {
     city: string;
     state: string;
   };
+  teeId?: string;
+  tee?: {
+    id: string;
+    teeName: string;
+    teeColor: string;
+  };
   gameStatus: number;
   gameStatusText: string;
   gameStatusShortText: string;
