@@ -54,6 +54,7 @@ import { SeasonService } from './seasonService.js';
 import { TurnstileService } from './turnstileService.js';
 import { HandoutService } from './handoutService.js';
 import { AdminAnalyticsService } from './adminAnalyticsService.js';
+import { AdminDashboardService } from './adminDashboardService.js';
 import { PhotoSubmissionService } from './photoSubmissionService.js';
 import { PhotoGalleryService } from './photoGalleryService.js';
 import { PhotoGalleryAdminService } from './photoGalleryAdminService.js';
@@ -139,6 +140,7 @@ export class ServiceFactory {
   private static turnstileService: TurnstileService;
   private static handoutService: HandoutService;
   private static adminAnalyticsService: AdminAnalyticsService;
+  private static adminDashboardService: AdminDashboardService;
   private static photoSubmissionService: PhotoSubmissionService;
   private static photoGalleryService: PhotoGalleryService;
   private static photoGalleryAdminService: PhotoGalleryAdminService;
@@ -512,6 +514,14 @@ export class ServiceFactory {
     }
 
     return this.adminAnalyticsService;
+  }
+
+  static getAdminDashboardService(): AdminDashboardService {
+    if (!this.adminDashboardService) {
+      this.adminDashboardService = new AdminDashboardService();
+    }
+
+    return this.adminDashboardService;
   }
 
   static getPhotoSubmissionService(): PhotoSubmissionService {

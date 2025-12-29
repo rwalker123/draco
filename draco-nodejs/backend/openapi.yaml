@@ -17768,6 +17768,107 @@ components:
         - firstName
         - lastName
         - validationType
+    AdminDashboardSummary:
+      type: object
+      properties:
+        account:
+          type: object
+          properties:
+            userCount:
+              type: integer
+              minimum: 0
+            recentCommunicationsCount:
+              type: integer
+              minimum: 0
+            socialPlatformsConnected:
+              type: integer
+              minimum: 0
+            sponsorCount:
+              type: integer
+              minimum: 0
+            memberBusinessCount:
+              type: integer
+              minimum: 0
+          required:
+            - userCount
+            - recentCommunicationsCount
+            - socialPlatformsConnected
+            - sponsorCount
+            - memberBusinessCount
+          title: AdminDashboardAccountMetrics
+          description: Account-related metrics for the admin dashboard
+        season:
+          type: object
+          properties:
+            currentSeasonName:
+              type: string
+              nullable: true
+            fieldCount:
+              type: integer
+              minimum: 0
+            umpireCount:
+              type: integer
+              minimum: 0
+            upcomingWorkouts:
+              type: integer
+              minimum: 0
+          required:
+            - currentSeasonName
+            - fieldCount
+            - umpireCount
+            - upcomingWorkouts
+          title: AdminDashboardSeasonMetrics
+          description: Season-related metrics for the admin dashboard
+        community:
+          type: object
+          properties:
+            specialAnnouncementsCount:
+              type: integer
+              minimum: 0
+            activePollsCount:
+              type: integer
+              minimum: 0
+            surveysEnabled:
+              type: boolean
+            hallOfFameMembersCount:
+              type: integer
+              minimum: 0
+            pendingPhotosCount:
+              type: integer
+              minimum: 0
+          required:
+            - specialAnnouncementsCount
+            - activePollsCount
+            - surveysEnabled
+            - hallOfFameMembersCount
+            - pendingPhotosCount
+          title: AdminDashboardCommunityMetrics
+          description: Community engagement metrics for the admin dashboard
+        content:
+          type: object
+          properties:
+            faqCount:
+              type: integer
+              minimum: 0
+            handoutCount:
+              type: integer
+              minimum: 0
+            infoMessageCount:
+              type: integer
+              minimum: 0
+          required:
+            - faqCount
+            - handoutCount
+            - infoMessageCount
+          title: AdminDashboardContentMetrics
+          description: Content-related metrics for the admin dashboard
+      required:
+        - account
+        - season
+        - community
+        - content
+      title: AdminDashboardSummary
+      description: Aggregated metrics summary for the admin dashboard
   securitySchemes:
     bearerAuth:
       type: http
@@ -21699,6 +21800,47 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundError"
+  /api/accounts/{accountId}/admin/dashboard-summary:
+    get:
+      operationId: getAdminDashboardSummary
+      summary: Get admin dashboard summary
+      description: Returns aggregated metrics for the admin dashboard including
+        account, season, community, and content counts.
+      tags:
+        - Admin Dashboard
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+          description: The account ID to get dashboard summary for.
+      responses:
+        "200":
+          description: Admin dashboard summary data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDashboardSummary"
+        "401":
+          description: Authentication required.
+        "403":
+          description: Insufficient permissions to view admin dashboard.
+        "404":
+          description: Account not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/admin/analytics/summary:
     get:
       operationId: getAdminAnalyticsSummary

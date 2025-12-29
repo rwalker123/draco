@@ -78,6 +78,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     SocialFeedItemSchemaRef,
     SocialFeedListSchemaRef,
     SocialFeedQuerySchemaRef,
+    AdminDashboardSummarySchemaRef,
   } = schemaRefs;
 
   const TweetCreateSchemaRef = SocialFeedItemSchemaRef.pick({ content: true });
@@ -4321,6 +4322,45 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       404: {
         description: 'Account not found.',
         content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/admin/dashboard-summary
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/admin/dashboard-summary',
+    operationId: 'getAdminDashboardSummary',
+    summary: 'Get admin dashboard summary',
+    description:
+      'Returns aggregated metrics for the admin dashboard including account, season, community, and content counts.',
+    tags: ['Admin Dashboard'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+        description: 'The account ID to get dashboard summary for.',
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Admin dashboard summary data.',
+        content: {
+          'application/json': { schema: AdminDashboardSummarySchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to view admin dashboard.' },
+      404: {
+        description: 'Account not found.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Unexpected server error.',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
       },
     },
   });
