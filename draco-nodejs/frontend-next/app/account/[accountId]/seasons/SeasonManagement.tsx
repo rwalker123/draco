@@ -13,7 +13,6 @@ import {
   DialogActions,
   TextField,
   IconButton,
-  Chip,
   Alert,
   CircularProgress,
   List,
@@ -27,17 +26,8 @@ import {
   FormControlLabel,
   Checkbox,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  ContentCopy as CopyIcon,
-  Star as StarIcon,
-  StarBorder as StarBorderIcon,
-  Group as GroupIcon,
-  Remove as RemoveIcon,
-  Sports as SportsIcon,
-} from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Remove as RemoveIcon } from '@mui/icons-material';
+import SeasonCard from './SeasonCard';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
@@ -706,116 +696,20 @@ const SeasonManagement: React.FC = () => {
                 gap={3}
               >
                 {seasons.map((season) => (
-                  <Card key={season.id}>
-                    <CardContent>
-                      <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="flex-start"
-                        mb={2}
-                      >
-                        <Typography variant="h6" component="h2">
-                          {season.name}
-                        </Typography>
-                        {season.isCurrent && (
-                          <Chip icon={<StarIcon />} label="Current" color="primary" size="small" />
-                        )}
-                      </Box>
-
-                      <Typography variant="body2" color="textSecondary" mb={2}>
-                        {season.leagues.length} league{season.leagues.length !== 1 ? 's' : ''}
-                      </Typography>
-
-                      {season.leagues.length > 0 && (
-                        <Box mb={2}>
-                          <Typography variant="caption" color="textSecondary">
-                            Leagues:
-                          </Typography>
-                          <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
-                            {season.leagues.slice(0, 3).map((league) => (
-                              <Chip
-                                key={league.id}
-                                label={league.leagueName}
-                                size="small"
-                                variant="outlined"
-                              />
-                            ))}
-                            {season.leagues.length > 3 && (
-                              <Chip
-                                label={`+${season.leagues.length - 3} more`}
-                                size="small"
-                                variant="outlined"
-                              />
-                            )}
-                          </Box>
-                        </Box>
-                      )}
-
-                      <Box display="flex" gap={1} flexWrap="wrap">
-                        {canSetCurrent && !season.isCurrent && (
-                          <Tooltip title="Set as current season">
-                            <IconButton size="small" onClick={() => handleSetCurrentSeason(season)}>
-                              <StarBorderIcon />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-
-                        {canManageLeagues && (
-                          <Tooltip title="Manage leagues">
-                            <IconButton
-                              size="small"
-                              onClick={() => openLeagueManagementDialog(season)}
-                            >
-                              <GroupIcon />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-
-                        {canManageLeagues && (
-                          <Tooltip title="League Season Management">
-                            <IconButton
-                              size="small"
-                              onClick={() => navigateToLeagueSeasonManagement(season)}
-                            >
-                              <SportsIcon />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-
-                        {canEdit && (
-                          <Tooltip title="Edit season">
-                            <IconButton size="small" onClick={() => openEditDialog(season)}>
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-
-                        {canEdit && (
-                          <Tooltip title="Copy season">
-                            <IconButton
-                              size="small"
-                              aria-label={`Copy ${season.name}`}
-                              onClick={() => openCopyDialog(season)}
-                            >
-                              <CopyIcon />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-
-                        {canDelete && !season.isCurrent && (
-                          <Tooltip title="Delete season">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => openDeleteDialog(season)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </CardContent>
-                  </Card>
+                  <SeasonCard
+                    key={season.id}
+                    season={season}
+                    canSetCurrent={canSetCurrent}
+                    canManageLeagues={canManageLeagues}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    onSetCurrent={handleSetCurrentSeason}
+                    onManageLeagues={openLeagueManagementDialog}
+                    onLeagueSeasonManagement={navigateToLeagueSeasonManagement}
+                    onEdit={openEditDialog}
+                    onCopy={openCopyDialog}
+                    onDelete={openDeleteDialog}
+                  />
                 ))}
               </Box>
             )}

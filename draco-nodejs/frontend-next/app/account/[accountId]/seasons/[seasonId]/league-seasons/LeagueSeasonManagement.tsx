@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
+  Breadcrumbs,
   Card,
   CardContent,
   Typography,
@@ -23,6 +24,7 @@ import {
   Select,
   MenuItem,
   FormControl,
+  Link as MuiLink,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -32,6 +34,7 @@ import {
   Remove as RemoveIcon,
   Sports as SportsIcon,
   People as PeopleIcon,
+  NavigateNext as NavigateNextIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import {
@@ -63,6 +66,7 @@ import { assertNoApiError, unwrapApiResult } from '../../../../../../utils/apiRe
 import { mapLeagueSetup } from '../../../../../../utils/leagueSeasonMapper';
 import { useAuth } from '../../../../../../context/AuthContext';
 import PageSectionHeader from '../../../../../../components/common/PageSectionHeader';
+import AccountPageHeader from '../../../../../../components/AccountPageHeader';
 
 interface LeagueSeasonManagementProps {
   accountId: string;
@@ -851,15 +855,33 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
   return (
     <main className="min-h-screen bg-background">
-      <Box sx={{ maxWidth: 1200, mx: 'auto', px: 3 }}>
-        {/* Header */}
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <PageSectionHeader title="League Season Management" variant="h5" component="h1" />
-          <Button variant="outlined" onClick={onClose} startIcon={<RemoveIcon />}>
-            Back to Seasons
-          </Button>
+      <AccountPageHeader accountId={accountId} seasonName={seasonName} showSeasonInfo={true}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+            League Season Management
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Manage leagues, divisions, and team assignments for this season
+          </Typography>
         </Box>
+      </AccountPageHeader>
 
+      <Box sx={{ maxWidth: 1200, mx: 'auto', px: 3, mt: 2 }}>
+        <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ mb: 2 }}>
+          <MuiLink
+            component="button"
+            variant="body2"
+            onClick={onClose}
+            underline="hover"
+            color="inherit"
+            sx={{ cursor: 'pointer' }}
+          >
+            Season Management
+          </MuiLink>
+          <Typography variant="body2" color="text.primary">
+            {seasonName}
+          </Typography>
+        </Breadcrumbs>
         {/* Success/Error Messages */}
         {successMessage && (
           <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
@@ -871,16 +893,6 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             {error}
           </Alert>
         )}
-
-        {/* Season Info */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <PageSectionHeader title={`Season: ${seasonName}`} gutterBottom />
-            <Typography variant="body2" color="text.secondary">
-              Manage leagues, divisions, and team assignments for this season
-            </Typography>
-          </CardContent>
-        </Card>
 
         {/* League Seasons */}
         {leagueSeasons.length === 0 ? (
