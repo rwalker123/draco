@@ -27,6 +27,7 @@ interface UseScheduleDataProps {
   accountId: string;
   filterType: FilterType;
   filterDate: Date;
+  onError?: (message: string) => void;
 }
 
 interface UseScheduleDataReturn {
@@ -39,15 +40,11 @@ interface UseScheduleDataReturn {
   leagueTeamsCache: Map<string, TeamSeasonType[]>;
   loadingGames: boolean;
   loadingStaticData: boolean;
-  error: string | null;
-  success: string | null;
   loadStaticData: () => Promise<void>;
   loadGamesData: () => Promise<void>;
   loadLeagueTeams: (leagueSeasonId: string) => void;
   loadUmpires: () => Promise<void>;
   clearLeagueTeams: () => void;
-  setSuccess: (message: string | null) => void;
-  setError: (message: string | null) => void;
   upsertGameInCache: (game: Game) => void;
   removeGameFromCache: (gameId: string) => void;
   filteredGames: Game[];
@@ -69,6 +66,7 @@ export const useScheduleData = ({
   accountId,
   filterType,
   filterDate,
+  onError,
 }: UseScheduleDataProps): UseScheduleDataReturn => {
   const { loading: authLoading } = useAuth();
   const { fetchCurrentSeason } = useCurrentSeason(accountId);
@@ -97,8 +95,6 @@ export const useScheduleData = ({
 
   const [loadingGames, setLoadingGames] = useState(false);
   const [loadingStaticData, setLoadingStaticData] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const { startDate, endDate } = useMemo(() => {
     let start: Date;
@@ -209,7 +205,6 @@ export const useScheduleData = ({
   const loadStaticData = useCallback(async () => {
     try {
       setLoadingStaticData(true);
-      setError(null);
 
       const currentSeasonId = await fetchCurrentSeason();
 
@@ -219,7 +214,7 @@ export const useScheduleData = ({
           path: { accountId, seasonId: currentSeasonId },
           query: {
             includeTeams: true,
-            includeUnassignedTeams: true,
+            includeUnassignedTeams: false,
           },
           throwOnError: false,
         });
@@ -235,10 +230,6 @@ export const useScheduleData = ({
             division.teams.forEach((team) => {
               leagueTeamsForSeason.push(team);
             });
-          });
-
-          leagueSeason.unassignedTeams?.forEach((team) => {
-            leagueTeamsForSeason.push(team);
           });
 
           newLeagueTeamsCache.set(leagueSeason.id, leagueTeamsForSeason);
@@ -298,17 +289,17 @@ export const useScheduleData = ({
 
       setUmpires([]);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load static data');
+      console.error('Failed to load static data:', err);
+      onError?.('Unable to load schedule data. Please refresh the page.');
     } finally {
       setLoadingStaticData(false);
     }
-  }, [accountId, apiClient, fetchCurrentSeason]);
+  }, [accountId, apiClient, fetchCurrentSeason, onError]);
 
   const loadGamesData = useCallback(async () => {
     try {
       if (isMountedRef.current) {
         setLoadingGames(true);
-        setError(null);
       }
 
       const seasonId = await fetchCurrentSeason();
@@ -382,13 +373,11 @@ export const useScheduleData = ({
       if (isMountedRef.current) {
         const nextGames = collectGamesForRange(startDate, endDate);
         setGames(nextGames);
-        setError(null);
         lastRangeRef.current = { start: startDate.getTime(), end: endDate.getTime() };
       }
     } catch (err) {
-      if (isMountedRef.current) {
-        setError(err instanceof Error ? err.message : 'Failed to load games');
-      }
+      console.error('Failed to load games:', err);
+      onError?.('Unable to load games. Please refresh the page.');
     } finally {
       if (isMountedRef.current) {
         setLoadingGames(false);
@@ -402,6 +391,7 @@ export const useScheduleData = ({
     fetchCurrentSeason,
     getMonthKeysForRange,
     getMonthRangeForKey,
+    onError,
     startDate,
   ]);
 
@@ -467,11 +457,10 @@ export const useScheduleData = ({
     }
 
     loadGamesData().catch((err) => {
-      if (isMountedRef.current) {
-        setError(err instanceof Error ? err.message : 'Failed to load games');
-      }
+      console.error('Failed to load games:', err);
+      onError?.('Unable to load games. Please refresh the page.');
     });
-  }, [authLoading, loadGamesData]);
+  }, [authLoading, loadGamesData, onError]);
 
   const pruneGameFromCache = useCallback((gameId: string): boolean => {
     if (!gameId) {
@@ -534,15 +523,11 @@ export const useScheduleData = ({
     leagueTeamsCache,
     loadingGames,
     loadingStaticData,
-    error,
-    success,
     loadStaticData,
     loadGamesData,
     loadLeagueTeams,
     loadUmpires,
     clearLeagueTeams,
-    setSuccess,
-    setError,
     upsertGameInCache,
     removeGameFromCache,
     filteredGames,
