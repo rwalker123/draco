@@ -195,17 +195,6 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setFeedback(null);
   }, []);
 
-  // Helper function to split teams into balanced columns
-  const splitTeamsIntoColumns = useCallback((teams: TeamSeasonType[]) => {
-    if (!teams || teams.length === 0) return { leftColumn: [], rightColumn: [] };
-
-    const midPoint = Math.ceil(teams.length / 2);
-    return {
-      leftColumn: teams.slice(0, midPoint),
-      rightColumn: teams.slice(midPoint),
-    };
-  }, []);
-
   // Get available divisions (excluding those already assigned to the selected league)
   const availableDivisions = useMemo(() => {
     if (!selectedLeagueSeason) return [];
@@ -1173,253 +1162,264 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                     {leagueSeason.divisions?.map((division) => (
                       <Card key={division.id} sx={{ mb: 2 }}>
                         <CardContent>
-                          {/* Division Header with Team Assignment */}
+                          {/* Division Header */}
                           <Box
                             display="flex"
                             justifyContent="space-between"
                             alignItems="center"
                             mb={2}
                           >
-                            {/* Left side: Division info and action buttons */}
-                            <Box display="flex" alignItems="center" gap={1}>
-                              <Box>
-                                <Typography variant="h6">{division.division.name}</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  {division.teams?.length || 0} teams • Priority:{' '}
-                                  {division.priority}
-                                </Typography>
-                              </Box>
-                              <Box display="flex" gap={0.5} alignItems="center">
-                                <Tooltip title="Edit Division">
-                                  <IconButton
-                                    size="small"
-                                    color="primary"
-                                    onClick={() => openEditDivisionDialog(division, leagueSeason)}
-                                    disabled={formLoading}
-                                  >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Remove Division">
-                                  <IconButton
-                                    size="small"
-                                    color="error"
-                                    onClick={() => handleRemoveDivision(leagueSeason, division)}
-                                    disabled={formLoading}
-                                  >
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              </Box>
+                            {/* Left side: Division info */}
+                            <Box>
+                              <Typography variant="h6">{division.division.name}</Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {division.teams?.length || 0} teams • Priority: {division.priority}
+                              </Typography>
                             </Box>
 
-                            {/* Right side: Team assignment controls */}
-                            <Box display="flex" gap={1} alignItems="center">
-                              {/* Team Assignment Dropdown */}
-                              {(leagueSeason.unassignedTeams?.length ?? 0) > 0 && (
-                                <>
-                                  <FormControl size="small" sx={{ minWidth: 200 }}>
-                                    <Select
-                                      value={selectedTeamsPerDivision[division.id] || ''}
-                                      onChange={(e) =>
-                                        setSelectedTeamsPerDivision({
-                                          ...selectedTeamsPerDivision,
-                                          [division.id]: e.target.value,
-                                        })
-                                      }
-                                      displayEmpty
-                                      disabled={formLoading}
-                                      sx={{ bgcolor: 'background.paper' }}
-                                    >
-                                      <MenuItem value="">
-                                        <em>Select team to add...</em>
-                                      </MenuItem>
-                                      {leagueSeason.unassignedTeams?.map((team) => (
-                                        <MenuItem key={team.id} value={team.id}>
-                                          {team.name}
-                                        </MenuItem>
-                                      ))}
-                                    </Select>
-                                  </FormControl>
-                                  <Tooltip title="Add Selected Team">
-                                    <IconButton
-                                      color="primary"
-                                      onClick={() => {
-                                        const selectedTeamId =
-                                          selectedTeamsPerDivision[division.id];
-                                        const selectedTeam = leagueSeason.unassignedTeams?.find(
-                                          (t) => t.id === selectedTeamId,
-                                        );
-                                        if (selectedTeam) {
-                                          handleAssignTeamToDivisionDirectly(
-                                            selectedTeam,
-                                            leagueSeason,
-                                            division,
-                                          );
-                                          setSelectedTeamsPerDivision({
-                                            ...selectedTeamsPerDivision,
-                                            [division.id]: '',
-                                          });
-                                        }
-                                      }}
-                                      disabled={
-                                        !selectedTeamsPerDivision[division.id] || formLoading
-                                      }
-                                    >
-                                      <AddIcon />
-                                    </IconButton>
-                                  </Tooltip>
-                                </>
-                              )}
+                            {/* Right side: Edit and Delete icons */}
+                            <Box display="flex" gap={0.5} alignItems="center">
+                              <Tooltip title="Edit Division">
+                                <IconButton
+                                  size="small"
+                                  color="primary"
+                                  onClick={() => openEditDivisionDialog(division, leagueSeason)}
+                                  disabled={formLoading}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Remove Division">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleRemoveDivision(leagueSeason, division)}
+                                  disabled={formLoading}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
                             </Box>
                           </Box>
 
                           {/* Teams List */}
-                          {division.teams?.length > 0 && (
-                            <Box>
-                              {(() => {
-                                const { leftColumn, rightColumn } = splitTeamsIntoColumns(
-                                  division.teams || [],
-                                );
-                                return (
-                                  <Box
-                                    sx={{
-                                      display: 'grid',
-                                      gridTemplateColumns: {
-                                        xs: '1fr', // Single column on small screens
-                                        sm: '1fr 1fr', // Two columns on larger screens
-                                      },
-                                      gap: 1,
-                                    }}
-                                  >
-                                    {/* Left Column */}
-                                    <Box>
-                                      {leftColumn.map((team) => (
-                                        <Box
-                                          key={team.id}
-                                          sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            py: 1,
-                                            px: 1.5,
-                                            mb: 0.5,
-                                            borderRadius: 1,
-                                            backgroundColor: 'action.hover',
-                                            '&:hover': {
-                                              backgroundColor: 'action.selected',
-                                            },
-                                          }}
-                                        >
-                                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                            {team.name}
-                                          </Typography>
-                                          <Box display="flex" gap={0.5} alignItems="center">
-                                            <Tooltip title="Manage Roster">
-                                              <IconButton
-                                                size="small"
-                                                color="primary"
-                                                onClick={() => handleManageRoster(team)}
-                                                disabled={formLoading}
-                                              >
-                                                <PeopleIcon fontSize="small" />
-                                              </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Remove from Division">
-                                              <IconButton
-                                                size="small"
-                                                color="error"
-                                                onClick={() =>
-                                                  handleRemoveTeamFromDivision(team, leagueSeason)
-                                                }
-                                                disabled={formLoading}
-                                              >
-                                                <RemoveIcon fontSize="small" />
-                                              </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Remove Team from Season">
-                                              <IconButton
-                                                size="small"
-                                                color="error"
-                                                onClick={() =>
-                                                  openDeleteTeamDialog(team, leagueSeason)
-                                                }
-                                                disabled={formLoading}
-                                              >
-                                                <DeleteIcon fontSize="small" />
-                                              </IconButton>
-                                            </Tooltip>
-                                          </Box>
-                                        </Box>
-                                      ))}
-                                    </Box>
+                          <Box>
+                            {(() => {
+                              const teams = division.teams || [];
+                              const hasUnassignedTeams =
+                                (leagueSeason.unassignedTeams?.length ?? 0) > 0;
+                              // Calculate columns: teams split evenly, with add-team row as last item in right column
+                              const totalItems = teams.length + (hasUnassignedTeams ? 1 : 0);
+                              const midPoint = Math.ceil(totalItems / 2);
+                              const leftTeams = teams.slice(0, midPoint);
+                              const rightTeams = teams.slice(midPoint);
 
-                                    {/* Right Column */}
-                                    <Box>
-                                      {rightColumn.map((team) => (
-                                        <Box
-                                          key={team.id}
-                                          sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            py: 1,
-                                            px: 1.5,
-                                            mb: 0.5,
-                                            borderRadius: 1,
-                                            backgroundColor: 'action.hover',
-                                            '&:hover': {
-                                              backgroundColor: 'action.selected',
-                                            },
-                                          }}
-                                        >
-                                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                            {team.name}
-                                          </Typography>
-                                          <Box display="flex" gap={0.5} alignItems="center">
-                                            <Tooltip title="Manage Roster">
-                                              <IconButton
-                                                size="small"
-                                                color="primary"
-                                                onClick={() => handleManageRoster(team)}
-                                                disabled={formLoading}
-                                              >
-                                                <PeopleIcon fontSize="small" />
-                                              </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Remove from Division">
-                                              <IconButton
-                                                size="small"
-                                                color="error"
-                                                onClick={() =>
-                                                  handleRemoveTeamFromDivision(team, leagueSeason)
-                                                }
-                                                disabled={formLoading}
-                                              >
-                                                <RemoveIcon fontSize="small" />
-                                              </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Remove Team from Season">
-                                              <IconButton
-                                                size="small"
-                                                color="error"
-                                                onClick={() =>
-                                                  openDeleteTeamDialog(team, leagueSeason)
-                                                }
-                                                disabled={formLoading}
-                                              >
-                                                <DeleteIcon fontSize="small" />
-                                              </IconButton>
-                                            </Tooltip>
-                                          </Box>
+                              return (
+                                <Box
+                                  sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: {
+                                      xs: '1fr', // Single column on small screens
+                                      sm: '1fr 1fr', // Two columns on larger screens
+                                    },
+                                    gap: 1,
+                                  }}
+                                >
+                                  {/* Left Column */}
+                                  <Box>
+                                    {leftTeams.map((team) => (
+                                      <Box
+                                        key={team.id}
+                                        sx={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'space-between',
+                                          py: 1,
+                                          px: 1.5,
+                                          mb: 0.5,
+                                          borderRadius: 1,
+                                          backgroundColor: 'action.hover',
+                                          '&:hover': {
+                                            backgroundColor: 'action.selected',
+                                          },
+                                        }}
+                                      >
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                          {team.name}
+                                        </Typography>
+                                        <Box display="flex" gap={0.5} alignItems="center">
+                                          <Tooltip title="Manage Roster">
+                                            <IconButton
+                                              size="small"
+                                              color="primary"
+                                              onClick={() => handleManageRoster(team)}
+                                              disabled={formLoading}
+                                            >
+                                              <PeopleIcon fontSize="small" />
+                                            </IconButton>
+                                          </Tooltip>
+                                          <Tooltip title="Remove from Division">
+                                            <IconButton
+                                              size="small"
+                                              color="error"
+                                              onClick={() =>
+                                                handleRemoveTeamFromDivision(team, leagueSeason)
+                                              }
+                                              disabled={formLoading}
+                                            >
+                                              <RemoveIcon fontSize="small" />
+                                            </IconButton>
+                                          </Tooltip>
+                                          <Tooltip title="Remove Team from Season">
+                                            <IconButton
+                                              size="small"
+                                              color="error"
+                                              onClick={() =>
+                                                openDeleteTeamDialog(team, leagueSeason)
+                                              }
+                                              disabled={formLoading}
+                                            >
+                                              <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                          </Tooltip>
                                         </Box>
-                                      ))}
-                                    </Box>
+                                      </Box>
+                                    ))}
                                   </Box>
-                                );
-                              })()}
-                            </Box>
-                          )}
+
+                                  {/* Right Column */}
+                                  <Box>
+                                    {rightTeams.map((team) => (
+                                      <Box
+                                        key={team.id}
+                                        sx={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'space-between',
+                                          py: 1,
+                                          px: 1.5,
+                                          mb: 0.5,
+                                          borderRadius: 1,
+                                          backgroundColor: 'action.hover',
+                                          '&:hover': {
+                                            backgroundColor: 'action.selected',
+                                          },
+                                        }}
+                                      >
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                          {team.name}
+                                        </Typography>
+                                        <Box display="flex" gap={0.5} alignItems="center">
+                                          <Tooltip title="Manage Roster">
+                                            <IconButton
+                                              size="small"
+                                              color="primary"
+                                              onClick={() => handleManageRoster(team)}
+                                              disabled={formLoading}
+                                            >
+                                              <PeopleIcon fontSize="small" />
+                                            </IconButton>
+                                          </Tooltip>
+                                          <Tooltip title="Remove from Division">
+                                            <IconButton
+                                              size="small"
+                                              color="error"
+                                              onClick={() =>
+                                                handleRemoveTeamFromDivision(team, leagueSeason)
+                                              }
+                                              disabled={formLoading}
+                                            >
+                                              <RemoveIcon fontSize="small" />
+                                            </IconButton>
+                                          </Tooltip>
+                                          <Tooltip title="Remove Team from Season">
+                                            <IconButton
+                                              size="small"
+                                              color="error"
+                                              onClick={() =>
+                                                openDeleteTeamDialog(team, leagueSeason)
+                                              }
+                                              disabled={formLoading}
+                                            >
+                                              <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                          </Tooltip>
+                                        </Box>
+                                      </Box>
+                                    ))}
+                                    {/* Add team dropdown - last item in right column */}
+                                    {hasUnassignedTeams && (
+                                      <Box
+                                        sx={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'flex-end',
+                                          py: 1,
+                                          px: 1.5,
+                                          mb: 0.5,
+                                          borderRadius: 1,
+                                          gap: 1,
+                                        }}
+                                      >
+                                        <FormControl size="small" sx={{ minWidth: 180 }}>
+                                          <Select
+                                            value={selectedTeamsPerDivision[division.id] || ''}
+                                            onChange={(e) =>
+                                              setSelectedTeamsPerDivision({
+                                                ...selectedTeamsPerDivision,
+                                                [division.id]: e.target.value,
+                                              })
+                                            }
+                                            displayEmpty
+                                            disabled={formLoading}
+                                            sx={{ bgcolor: 'background.paper' }}
+                                          >
+                                            <MenuItem value="">
+                                              <em>Select team to add...</em>
+                                            </MenuItem>
+                                            {leagueSeason.unassignedTeams?.map((team) => (
+                                              <MenuItem key={team.id} value={team.id}>
+                                                {team.name}
+                                              </MenuItem>
+                                            ))}
+                                          </Select>
+                                        </FormControl>
+                                        <Tooltip title="Add Selected Team">
+                                          <IconButton
+                                            color="primary"
+                                            onClick={() => {
+                                              const selectedTeamId =
+                                                selectedTeamsPerDivision[division.id];
+                                              const selectedTeam =
+                                                leagueSeason.unassignedTeams?.find(
+                                                  (t) => t.id === selectedTeamId,
+                                                );
+                                              if (selectedTeam) {
+                                                handleAssignTeamToDivisionDirectly(
+                                                  selectedTeam,
+                                                  leagueSeason,
+                                                  division,
+                                                );
+                                                setSelectedTeamsPerDivision({
+                                                  ...selectedTeamsPerDivision,
+                                                  [division.id]: '',
+                                                });
+                                              }
+                                            }}
+                                            disabled={
+                                              !selectedTeamsPerDivision[division.id] || formLoading
+                                            }
+                                          >
+                                            <AddIcon />
+                                          </IconButton>
+                                        </Tooltip>
+                                      </Box>
+                                    )}
+                                  </Box>
+                                </Box>
+                              );
+                            })()}
+                          </Box>
                         </CardContent>
                       </Card>
                     ))}
