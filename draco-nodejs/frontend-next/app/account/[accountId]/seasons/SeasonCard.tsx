@@ -28,7 +28,6 @@ export interface SeasonCardProps {
   canEdit: boolean;
   canDelete: boolean;
   onSetCurrent: (season: SeasonSummary) => void;
-  onManageLeagues: (season: SeasonSummary) => void;
   onLeagueSeasonManagement: (season: SeasonSummary) => void;
   onEdit: (season: SeasonSummary) => void;
   onCopy: (season: SeasonSummary) => void;
@@ -42,7 +41,6 @@ const SeasonCard: React.FC<SeasonCardProps> = ({
   canEdit,
   canDelete,
   onSetCurrent,
-  onManageLeagues,
   onLeagueSeasonManagement,
   onEdit,
   onCopy,
@@ -104,14 +102,6 @@ const SeasonCard: React.FC<SeasonCardProps> = ({
             >
               Manage Leagues and Teams
             </Button>
-          )}
-
-          {canManageLeagues && (
-            <Tooltip title="Manage leagues">
-              <IconButton size="small" onClick={() => onManageLeagues(season)}>
-                <GroupIcon />
-              </IconButton>
-            </Tooltip>
           )}
 
           {canDelete && !season.isCurrent && (

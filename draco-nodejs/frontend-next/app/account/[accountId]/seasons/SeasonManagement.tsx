@@ -386,14 +386,6 @@ const SeasonManagement: React.FC = () => {
     setCopyDialogOpen(true);
   };
 
-  const openLeagueManagementDialog = (season: Season) => {
-    setSelectedSeason(season);
-    setSelectedLeague(null);
-    setDialogSuccessMessage(null);
-    setDialogErrorMessage(null);
-    setLeagueManagementDialogOpen(true);
-  };
-
   const navigateToLeagueSeasonManagement = (season: Season) => {
     router.push(`/account/${accountId}/seasons/${season.id}/league-seasons`);
   };
@@ -704,7 +696,6 @@ const SeasonManagement: React.FC = () => {
                     canEdit={canEdit}
                     canDelete={canDelete}
                     onSetCurrent={handleSetCurrentSeason}
-                    onManageLeagues={openLeagueManagementDialog}
                     onLeagueSeasonManagement={navigateToLeagueSeasonManagement}
                     onEdit={openEditDialog}
                     onCopy={openCopyDialog}
