@@ -15,7 +15,11 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { seasonId } = extractBigIntParams(req.params, 'seasonId');
-    const matches = await golfMatchService.getMatchesForSeason(seasonId);
+
+    const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+
+    const matches = await golfMatchService.getMatchesForSeason(seasonId, startDate, endDate);
     res.json(matches);
   }),
 );

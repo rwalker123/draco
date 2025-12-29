@@ -26,12 +26,20 @@ export class GolfMatchService {
     this.teamRepository = teamRepository ?? RepositoryFactory.getGolfTeamRepository();
   }
 
-  async getMatchesForSeason(seasonId: bigint): Promise<GolfMatchType[]> {
+  async getMatchesForSeason(
+    seasonId: bigint,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<GolfMatchType[]> {
     const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
     if (!seasonExists) {
       throw new NotFoundError('League season not found');
     }
-    const matches = await this.matchRepository.findBySeasonId(seasonId);
+    const matches = await this.matchRepository.findBySeasonIdWithDateRange(
+      seasonId,
+      startDate,
+      endDate,
+    );
     return GolfMatchResponseFormatter.formatMany(matches);
   }
 

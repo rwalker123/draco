@@ -52,6 +52,28 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
     });
   }
 
+  async findBySeasonIdWithDateRange(
+    seasonId: bigint,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<GolfMatchWithTeams[]> {
+    return this.prisma.golfmatch.findMany({
+      where: {
+        leagueid: seasonId,
+        ...(startDate || endDate
+          ? {
+              matchdate: {
+                ...(startDate ? { gte: startDate } : {}),
+                ...(endDate ? { lte: endDate } : {}),
+              },
+            }
+          : {}),
+      },
+      include: matchTeamInclude,
+      orderBy: [{ matchdate: 'asc' }, { matchtime: 'asc' }],
+    });
+  }
+
   async findByFlightId(flightId: bigint): Promise<GolfMatchWithTeams[]> {
     return this.prisma.golfmatch.findMany({
       where: {

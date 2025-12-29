@@ -122,10 +122,20 @@ async function loadLocations({
   }));
 }
 
-async function loadGames({ accountId, seasonId, apiClient }: LoadGamesParams): Promise<Game[]> {
+async function loadGames({
+  accountId,
+  seasonId,
+  startDate,
+  endDate,
+  apiClient,
+}: LoadGamesParams): Promise<Game[]> {
   const result = await listGolfMatchesForSeason({
     client: apiClient,
     path: { accountId, seasonId },
+    query: {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    },
     throwOnError: false,
   });
 

@@ -46,6 +46,26 @@ export const registerGolfMatchesEndpoints = ({ registry, schemaRefs, z }: Regist
           format: 'number',
         },
       },
+      {
+        name: 'startDate',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'string',
+          format: 'date-time',
+        },
+        description: 'Return matches occurring on or after this ISO date.',
+      },
+      {
+        name: 'endDate',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'string',
+          format: 'date-time',
+        },
+        description: 'Return matches occurring on or before this ISO date.',
+      },
     ],
     responses: {
       200: {

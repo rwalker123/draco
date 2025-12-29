@@ -54,6 +54,11 @@ export type UpdateGolfMatchData = Partial<Omit<CreateGolfMatchData, 'leagueid'>>
 
 export interface IGolfMatchRepository {
   findBySeasonId(seasonId: bigint): Promise<GolfMatchWithTeams[]>;
+  findBySeasonIdWithDateRange(
+    seasonId: bigint,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<GolfMatchWithTeams[]>;
   findByFlightId(flightId: bigint): Promise<GolfMatchWithTeams[]>;
   findById(matchId: bigint): Promise<GolfMatchWithTeams | null>;
   findByIdWithScores(matchId: bigint): Promise<GolfMatchWithScores | null>;
