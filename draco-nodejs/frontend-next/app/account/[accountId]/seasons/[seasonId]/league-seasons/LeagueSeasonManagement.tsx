@@ -138,12 +138,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   const [createDivisionInAddDialog, setCreateDivisionInAddDialog] = useState(false);
   const [newDivisionNameInAddDialog, setNewDivisionNameInAddDialog] = useState('');
 
-  // Team assignment state
-  const [assignTeamDialogOpen, setAssignTeamDialogOpen] = useState(false);
-  const [selectedTeamSeason] = useState<TeamSeasonType | null>(null);
-  const [selectedTeamLeagueSeason] = useState<LeagueSeasonWithDivisionTeamsType | null>(null);
-  const [targetDivisionSeason, setTargetDivisionSeason] =
-    useState<DivisionSeasonWithTeamsType | null>(null);
+  // Accordion state
   const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(new Set());
 
   // Delete league state
@@ -562,54 +557,6 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         severity: 'error',
         message: error instanceof Error ? error.message : 'Failed to assign team to division',
       });
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  // Handler to assign team to division (used by dialog)
-  const handleAssignTeamToDivision = async () => {
-    if (
-      !accountId ||
-      !token ||
-      !selectedTeamSeason ||
-      !targetDivisionSeason ||
-      !selectedTeamLeagueSeason
-    ) {
-      return;
-    }
-
-    setFormLoading(true);
-    try {
-      const result = await apiAssignLeagueSeasonTeamDivision({
-        client: apiClient,
-        path: {
-          accountId,
-          seasonId,
-          leagueSeasonId: selectedTeamLeagueSeason.id,
-          teamSeasonId: selectedTeamSeason.id,
-        },
-        body: { divisionSeasonId: targetDivisionSeason.id },
-        throwOnError: false,
-      });
-
-      const assigned = unwrapApiResult(result, 'Failed to assign team to division');
-
-      if (assigned) {
-        setFeedback({
-          severity: 'success',
-          message: `Team "${selectedTeamSeason.name}" assigned to division "${targetDivisionSeason.division.name}"`,
-        });
-        setAssignTeamDialogOpen(false);
-        addTeamToDivisionInState(
-          selectedTeamLeagueSeason.id,
-          targetDivisionSeason.id,
-          selectedTeamSeason,
-        );
-      }
-    } catch (error) {
-      console.error('Error assigning team to division:', error);
-      setDialogError(error instanceof Error ? error.message : 'Failed to assign team to division');
     } finally {
       setFormLoading(false);
     }
@@ -1644,61 +1591,6 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                 {formLoading ? <CircularProgress size={20} /> : 'Create Division'}
               </Button>
             )}
-          </DialogActions>
-        </Dialog>
-
-        {/* Assign Team Dialog */}
-        <Dialog
-          open={assignTeamDialogOpen}
-          onClose={() => setAssignTeamDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>Assign Team to Division</DialogTitle>
-          <DialogContent>
-            {dialogError && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setDialogError(null)}>
-                {dialogError}
-              </Alert>
-            )}
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              Assigning team: <strong>{selectedTeamSeason?.name}</strong>
-            </Typography>
-            {(selectedTeamLeagueSeason?.divisions?.length ?? 0) === 0 ? (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                No divisions are available in this league. Please add divisions to the league first.
-              </Alert>
-            ) : (
-              <Autocomplete
-                options={selectedTeamLeagueSeason?.divisions || []}
-                getOptionLabel={(option) => option.division.name}
-                value={targetDivisionSeason}
-                onChange={(_, newValue) => setTargetDivisionSeason(newValue)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Select Division"
-                    fullWidth
-                    variant="outlined"
-                    sx={{ mb: 2 }}
-                  />
-                )}
-              />
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setAssignTeamDialogOpen(false)} disabled={formLoading}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAssignTeamToDivision}
-              variant="contained"
-              disabled={
-                formLoading || !targetDivisionSeason || !selectedTeamLeagueSeason?.divisions?.length
-              }
-            >
-              {formLoading ? <CircularProgress size={20} /> : 'Assign Team'}
-            </Button>
           </DialogActions>
         </Dialog>
 
