@@ -28,7 +28,15 @@ export class AdminDashboardService {
   private async getAccountMetrics(
     accountId: bigint,
   ): Promise<AdminDashboardSummaryType['account']> {
-    const [userCount, sponsorCount, memberBusinessCount] = await Promise.all([
+    const [
+      userCount,
+      sponsorCount,
+      memberBusinessCount,
+      discordSettings,
+      twitterCreds,
+      facebookCreds,
+      blueskyCreds,
+    ] = await Promise.all([
       prisma.contacts.count({ where: { creatoraccountid: accountId } }),
       prisma.sponsors.count({ where: { accountid: accountId } }),
       prisma.memberbusiness.count({
@@ -36,12 +44,22 @@ export class AdminDashboardService {
           contacts: { creatoraccountid: accountId },
         },
       }),
+      prisma.accountdiscordsettings.findUnique({ where: { accountid: accountId } }),
+      prisma.accounttwittercredentials.findUnique({ where: { accountid: accountId } }),
+      prisma.accountfacebookcredentials.findUnique({ where: { accountid: accountId } }),
+      prisma.accountblueskycredentials.findUnique({ where: { accountid: accountId } }),
     ]);
+
+    let socialPlatformsConnected = 0;
+    if (discordSettings?.guildid) socialPlatformsConnected++;
+    if (twitterCreds?.useraccesstoken) socialPlatformsConnected++;
+    if (facebookCreds?.useraccesstoken) socialPlatformsConnected++;
+    if (blueskyCreds) socialPlatformsConnected++;
 
     return {
       userCount,
       recentCommunicationsCount: 0,
-      socialPlatformsConnected: 0,
+      socialPlatformsConnected,
       sponsorCount,
       memberBusinessCount,
     };
@@ -104,7 +122,12 @@ export class AdminDashboardService {
     const [faqCount, handoutCount, infoMessageCount] = await Promise.all([
       prisma.leaguefaq.count({ where: { accountid: accountId } }),
       prisma.accounthandouts.count({ where: { accountid: accountId } }),
-      prisma.accountwelcome.count({ where: { accountid: accountId } }),
+      prisma.accountwelcome.count({
+        where: {
+          accountid: accountId,
+          OR: [{ teamid: null }, { teamid: BigInt(0) }],
+        },
+      }),
     ]);
 
     return {
