@@ -53,7 +53,9 @@ import TeamFeaturedVideosWidget from '../../../../../../../components/social/Tea
 import InformationWidget from '@/components/information/InformationWidget';
 import TeamForumWidget from '@/components/team/TeamForumWidget';
 import CommunityChatsWidget from '@/components/social/CommunityChatsWidget';
-import DiscordIntegrationCard from '@/components/profile/DiscordIntegrationCard';
+import Link from '@mui/material/Link';
+import { useDiscordIntegration } from '../../../../../../../hooks/useDiscordIntegration';
+import type { DiscordLinkStatusType } from '@draco/shared-schemas';
 
 interface TeamPageProps {
   accountId: string;
@@ -111,6 +113,10 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const announcementService = React.useMemo(
     () => new AnnouncementService(token, apiClient),
     [token, apiClient],
+  );
+  const { getLinkStatus: getDiscordLinkStatus } = useDiscordIntegration();
+  const [discordLinkStatus, setDiscordLinkStatus] = React.useState<DiscordLinkStatusType | null>(
+    null,
   );
 
   React.useEffect(() => {
@@ -234,6 +240,40 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       isTeamMember
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, isTeamMember, teamSeasonId]);
+
+  React.useEffect(() => {
+    if (!token || !accountId || !canViewCommunityChats) {
+      setDiscordLinkStatus(null);
+      return;
+    }
+
+    let ignore = false;
+
+    const fetchDiscordStatus = async () => {
+      try {
+        const status = await getDiscordLinkStatus(accountId);
+        if (!ignore) {
+          setDiscordLinkStatus(status);
+        }
+      } catch {
+        if (!ignore) {
+          setDiscordLinkStatus(null);
+        }
+      }
+    };
+
+    void fetchDiscordStatus();
+
+    return () => {
+      ignore = true;
+    };
+  }, [token, accountId, canViewCommunityChats, getDiscordLinkStatus]);
+
+  const showDiscordLinkAlert =
+    token &&
+    canViewCommunityChats &&
+    discordLinkStatus?.linkingEnabled === true &&
+    discordLinkStatus?.linked === false;
 
   const shouldShowTeamPendingPanel = Boolean(
     token && canModerateTeamSubmissions && teamModerationTeamId,
@@ -682,16 +722,22 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               />
             ) : null}
 
+            {showDiscordLinkAlert ? (
+              <Alert severity="info">
+                You haven&apos;t linked a Discord account yet. Until you do, you won&apos;t be able
+                to see or post in the team&apos;s Discord channels.{' '}
+                <Link href="/profile" underline="hover">
+                  Link your Discord account
+                </Link>
+              </Alert>
+            ) : null}
+
             {teamData?.teamId && canViewCommunityChats ? (
               <CommunityChatsWidget
                 accountId={accountId}
                 seasonId={seasonId}
                 teamSeasonId={teamSeasonId}
               />
-            ) : null}
-
-            {token && teamData?.teamId && canViewCommunityChats ? (
-              <DiscordIntegrationCard accountId={accountId} />
             ) : null}
 
             {showInformationWidget ? (
