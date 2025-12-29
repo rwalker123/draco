@@ -115,9 +115,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         setSeason(seasonResult);
       } catch {
         if (!isMounted) return;
-        setFeedback(
-          (prev) => prev ?? { severity: 'error', message: 'Failed to load season details.' },
-        );
+        setFeedback({ severity: 'error', message: 'Failed to load season details.' });
       }
     };
 
@@ -364,6 +362,29 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             ...ls,
             divisions: ls.divisions?.filter((div) => div.id !== divisionSeasonId) || [],
             unassignedTeams: [...(ls.unassignedTeams || []), ...teamsToMove],
+          };
+        }),
+      );
+    },
+    [],
+  );
+
+  const updateDivisionInState = useCallback(
+    (leagueSeasonId: string, divisionSeasonId: string, name: string, priority: number) => {
+      setLeagueSeasons((prev) =>
+        prev.map((ls) => {
+          if (ls.id !== leagueSeasonId) return ls;
+
+          return {
+            ...ls,
+            divisions: ls.divisions?.map((div) => {
+              if (div.id !== divisionSeasonId) return div;
+              return {
+                ...div,
+                division: { ...div.division, name },
+                priority,
+              };
+            }),
           };
         }),
       );
@@ -893,11 +914,16 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       if (updated) {
         setFeedback({ severity: 'success', message: 'Division updated successfully' });
         setEditDivisionDialogOpen(false);
+        updateDivisionInState(
+          leagueSeasonForEdit.id,
+          divisionToEdit.id,
+          editDivisionName.trim(),
+          editDivisionPriority,
+        );
         setDivisionToEdit(null);
         setLeagueSeasonForEdit(null);
         setEditDivisionName('');
         setEditDivisionPriority(0);
-        fetchLeagueSeasons();
       } else {
         setDialogError('Failed to update division');
       }
