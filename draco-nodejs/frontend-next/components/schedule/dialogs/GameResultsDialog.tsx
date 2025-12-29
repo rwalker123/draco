@@ -6,6 +6,7 @@ import {
 } from '../../EnterGameResultsDialog';
 import EnterGameResultsDialog from '../../EnterGameResultsDialog';
 import { getGameStatusShortText, getGameStatusText } from '@/utils/gameUtils';
+import type { ScoreEntryDialogProps } from '../types/sportAdapter';
 
 const toDialogGame = (
   game: Game,
@@ -27,21 +28,7 @@ const toDialogGame = (
   recaps: [],
 });
 
-export interface ScheduleGameResultsSuccessPayload extends GameResultsSuccessPayload {
-  updatedGame: Game;
-}
-
-interface GameResultsDialogProps {
-  open: boolean;
-  accountId: string;
-  selectedGame: Game | null;
-  onClose: () => void;
-  onSuccess?: (payload: ScheduleGameResultsSuccessPayload) => void;
-  getTeamName: (teamId: string) => string;
-  timeZone: string;
-}
-
-const GameResultsDialog: React.FC<GameResultsDialogProps> = ({
+const GameResultsDialog: React.FC<ScoreEntryDialogProps> = ({
   open,
   accountId,
   selectedGame,
@@ -67,11 +54,8 @@ const GameResultsDialog: React.FC<GameResultsDialogProps> = ({
     };
 
     onSuccess?.({
-      gameId: payload.gameId,
-      seasonId: payload.seasonId,
-      request: payload.request,
-      result: payload.result,
-      updatedGame,
+      game: updatedGame,
+      message: 'Game results saved successfully',
     });
   };
 

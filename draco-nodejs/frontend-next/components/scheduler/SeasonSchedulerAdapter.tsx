@@ -3,8 +3,20 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import type { TeamSeasonType } from '@draco/shared-schemas';
-import type { Game, Field, League, Umpire } from '@/types/schedule';
+import type { Game, League } from '@/types/schedule';
 import { SeasonSchedulerWidget } from './SeasonSchedulerWidget';
+
+interface NamedEntity {
+  id: string;
+  name: string;
+}
+
+interface OfficialEntity {
+  id: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+}
 
 interface SeasonSchedulerAdapterProps {
   accountId: string;
@@ -13,8 +25,8 @@ interface SeasonSchedulerAdapterProps {
   timeZone: string;
   leagueSeasonIdFilter?: string;
   teamSeasonIdFilter?: string;
-  fields: Field[];
-  umpires: Umpire[];
+  fields: NamedEntity[];
+  umpires: OfficialEntity[];
   leagues: League[];
   teams: TeamSeasonType[];
   games: Game[];

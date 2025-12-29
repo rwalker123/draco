@@ -18,37 +18,13 @@ import {
 import { Controller, FormProvider, useForm, useWatch, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { TeamSeasonType, UpsertGameSchema } from '@draco/shared-schemas';
-import { Game, GameType, League, Field, Umpire, GameStatus } from '@/types/schedule';
+import { UpsertGameSchema } from '@draco/shared-schemas';
+import { Game, GameType, GameStatus } from '@/types/schedule';
 import { GameFormProvider } from '../contexts/GameFormContext';
 import GameFormFields from '../forms/GameFormFields';
 import { useGameOperations, GameFormValues } from '../hooks/useGameOperations';
 import { convertUTCToZonedDate, formatGameDateTime } from '../../../utils/dateUtils';
-
-interface GameDialogProps {
-  open: boolean;
-  mode: 'create' | 'edit';
-  title: string;
-  accountId: string;
-  timeZone: string;
-  selectedGame?: Game | null;
-  leagues: League[];
-  fields: Field[];
-  umpires: Umpire[];
-  leagueTeamsCache: Map<string, TeamSeasonType[]>;
-  currentSeasonName?: string;
-  canEditSchedule: boolean;
-  isAccountAdmin: boolean;
-  defaultLeagueSeasonId?: string;
-  defaultGameDate?: Date;
-  onClose: () => void;
-  onSuccess?: (result: { message: string; game?: Game }) => void;
-  onError?: (error: string) => void;
-  onDelete?: () => void;
-  getTeamName: (teamId: string) => string;
-  getFieldName: (fieldId?: string) => string;
-  getGameTypeText: (gameType: number | string) => string;
-}
+import type { GameDialogProps } from '../types/sportAdapter';
 
 const preprocessDate = (message: string) =>
   z.preprocess((value) => {
@@ -142,6 +118,7 @@ const buildInitialFormValues = (
   mode: 'create' | 'edit',
   selectedGame: Game | null | undefined,
   timeZone: string,
+  leagues: Array<{ id: string; name: string }>,
   defaultLeagueSeasonId?: string,
   defaultGameDate?: Date,
 ): GameDialogFormValues => {
@@ -167,9 +144,10 @@ const buildInitialFormValues = (
   }
 
   const initialDate = defaultGameDate ?? new Date();
+  const initialLeagueSeasonId = defaultLeagueSeasonId ?? leagues[0]?.id ?? '';
 
   return {
-    leagueSeasonId: defaultLeagueSeasonId ?? '',
+    leagueSeasonId: initialLeagueSeasonId,
     gameDate: initialDate,
     gameTime: initialDate,
     homeTeamId: '',
@@ -208,27 +186,22 @@ type GameDialogInnerProps = Omit<GameDialogProps, 'open'>;
 
 const GameDialogInner: React.FC<GameDialogInnerProps> = ({
   mode,
-  title,
   accountId,
   timeZone,
   selectedGame,
   leagues,
-  fields,
-  umpires,
+  locations,
+  officials = [],
   leagueTeamsCache,
-  currentSeasonName,
   canEditSchedule,
-  isAccountAdmin,
   defaultLeagueSeasonId,
   defaultGameDate,
   onClose,
   onSuccess,
   onError,
   onDelete,
-  getTeamName,
-  getFieldName,
-  getGameTypeText,
 }) => {
+  const hasOfficials = officials.length > 0;
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [keepDialogOpen, setKeepDialogOpen] = useState(false);
 
@@ -254,8 +227,15 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
 
   const initialFormValues = useMemo(
     () =>
-      buildInitialFormValues(mode, selectedGame, timeZone, defaultLeagueSeasonId, defaultGameDate),
-    [mode, selectedGame, timeZone, defaultLeagueSeasonId, defaultGameDate],
+      buildInitialFormValues(
+        mode,
+        selectedGame,
+        timeZone,
+        leagues,
+        defaultLeagueSeasonId,
+        defaultGameDate,
+      ),
+    [mode, selectedGame, timeZone, leagues, defaultLeagueSeasonId, defaultGameDate],
   );
 
   const formMethods = useForm<GameDialogFormValues>({
@@ -288,13 +268,44 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
             typeof value === 'string' && value.length > 0 && value !== currentValue,
         );
 
-      return umpires.filter((umpire) => !selected.includes(umpire.id));
+      return officials.filter((official) => !selected.includes(official.id));
     },
-    [getValues, umpires],
+    [getValues, officials],
   );
 
   const selectedLeague = leagues.find((league) => league.id === leagueSeasonId);
-  const seasonName = currentSeasonName || 'Loading season...';
+  const dialogTitle = mode === 'create' ? 'Add Game' : 'Edit Game';
+
+  const getTeamName = useCallback(
+    (teamId: string) => {
+      const team = dialogTeams.find((t) => t.id === teamId);
+      return team?.name ?? 'Unknown Team';
+    },
+    [dialogTeams],
+  );
+
+  const getFieldName = useCallback(
+    (fieldId?: string) => {
+      if (!fieldId) return 'No Field';
+      const field = locations.find((f) => f.id === fieldId);
+      return field?.name ?? 'Unknown Field';
+    },
+    [locations],
+  );
+
+  const getGameTypeText = useCallback((gameType: number | string) => {
+    const typeNum = typeof gameType === 'string' ? parseInt(gameType, 10) : gameType;
+    switch (typeNum) {
+      case GameType.RegularSeason:
+        return 'Regular Season';
+      case GameType.Playoff:
+        return 'Playoff';
+      case GameType.Exhibition:
+        return 'Exhibition';
+      default:
+        return 'Unknown';
+    }
+  }, []);
 
   const sanitizeFormValues = (values: GameDialogFormValues): GameFormValues => ({
     leagueSeasonId: values.leagueSeasonId,
@@ -388,7 +399,7 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
           }}
         >
           <Typography variant="h6" sx={{ fontWeight: 'bold' }} color="text.primary">
-            {title}
+            {dialogTitle}
           </Typography>
         </Box>
 
@@ -428,12 +439,6 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
               </Typography>
             )}
           </Box>
-
-          <Box sx={{ textAlign: { xs: 'left', sm: 'right' }, flex: 1 }}>
-            <Typography variant="body1" sx={{ fontWeight: 500, color: 'text.secondary' }}>
-              {seasonName} Season
-            </Typography>
-          </Box>
         </Stack>
       </Box>
 
@@ -449,10 +454,11 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
             <GameFormProvider
               value={{
                 leagueTeams: dialogTeams,
-                fields,
-                umpires,
+                fields: locations,
+                umpires: officials,
                 canEditSchedule,
-                isAccountAdmin,
+                isAccountAdmin: false,
+                hasOfficials,
                 getAvailableUmpires,
                 getTeamName,
                 getFieldName,
