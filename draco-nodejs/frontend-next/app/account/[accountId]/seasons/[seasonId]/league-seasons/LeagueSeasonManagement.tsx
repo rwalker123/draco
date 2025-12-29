@@ -163,6 +163,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   const [teamToCreateLeagueSeason, setTeamToCreateLeagueSeason] = useState<LeagueSeasonType | null>(
     null,
   );
+  const [teamToCreateDivision, setTeamToCreateDivision] = useState<DivisionSeasonType | null>(null);
   const [newTeamName, setNewTeamName] = useState('');
   const seasonName = season?.name ?? 'Season';
 
@@ -826,8 +827,9 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   };
 
   // Handler to open create team dialog
-  const openCreateTeamDialog = (leagueSeason: LeagueSeasonType) => {
+  const openCreateTeamDialog = (leagueSeason: LeagueSeasonType, division?: DivisionSeasonType) => {
     setTeamToCreateLeagueSeason(leagueSeason);
+    setTeamToCreateDivision(division ?? null);
     setNewTeamName('');
     setDialogError(null);
     setCreateTeamDialogOpen(true);
@@ -847,12 +849,59 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       });
 
       const mappedTeam = unwrapApiResult(createResult, 'Failed to create team');
-      setFeedback({ severity: 'success', message: `Team "${mappedTeam.name}" has been created.` });
-      setCreateTeamDialogOpen(false);
       const leagueSeasonId = teamToCreateLeagueSeason.id;
+      const targetDivision = teamToCreateDivision;
+
+      // If a division was specified, auto-assign the team to it
+      if (targetDivision) {
+        try {
+          const assignResult = await apiAssignLeagueSeasonTeamDivision({
+            client: apiClient,
+            path: {
+              accountId,
+              seasonId,
+              leagueSeasonId,
+              teamSeasonId: mappedTeam.id,
+            },
+            body: { divisionSeasonId: targetDivision.id },
+            throwOnError: false,
+          });
+
+          const assigned = unwrapApiResult(assignResult, 'Failed to assign team to division');
+
+          if (assigned) {
+            setFeedback({
+              severity: 'success',
+              message: `Team "${mappedTeam.name}" created and added to division "${targetDivision.division.name}"`,
+            });
+            addTeamToDivisionInState(leagueSeasonId, targetDivision.id, mappedTeam);
+          } else {
+            setFeedback({
+              severity: 'success',
+              message: `Team "${mappedTeam.name}" created but could not be assigned to division`,
+            });
+            addTeamToLeagueSeasonInState(leagueSeasonId, mappedTeam);
+          }
+        } catch (assignError) {
+          console.error('Error assigning team to division:', assignError);
+          setFeedback({
+            severity: 'success',
+            message: `Team "${mappedTeam.name}" created but could not be assigned to division`,
+          });
+          addTeamToLeagueSeasonInState(leagueSeasonId, mappedTeam);
+        }
+      } else {
+        setFeedback({
+          severity: 'success',
+          message: `Team "${mappedTeam.name}" has been created.`,
+        });
+        addTeamToLeagueSeasonInState(leagueSeasonId, mappedTeam);
+      }
+
+      setCreateTeamDialogOpen(false);
       setTeamToCreateLeagueSeason(null);
+      setTeamToCreateDivision(null);
       setNewTeamName('');
-      addTeamToLeagueSeasonInState(leagueSeasonId, mappedTeam);
     } catch (error: unknown) {
       console.error('Error creating team:', error);
       setDialogError(error instanceof Error ? error.message : 'Failed to create team');
@@ -1142,14 +1191,6 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                 >
                   Add Division
                 </Button>
-                <Button
-                  size="small"
-                  color="primary"
-                  onClick={() => openCreateTeamDialog(leagueSeason)}
-                  startIcon={<AddIcon />}
-                >
-                  Create Team
-                </Button>
               </AccordionActions>
               <AccordionDetails>
                 {/* Divisions with integrated team assignment */}
@@ -1206,10 +1247,8 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                           <Box>
                             {(() => {
                               const teams = division.teams || [];
-                              const hasUnassignedTeams =
-                                (leagueSeason.unassignedTeams?.length ?? 0) > 0;
-                              // Calculate columns: teams split evenly, with add-team row as last item in right column
-                              const totalItems = teams.length + (hasUnassignedTeams ? 1 : 0);
+                              // Calculate columns: teams split evenly, with add-team dropdown as last item in right column
+                              const totalItems = teams.length + 1; // +1 for the add team dropdown
                               const midPoint = Math.ceil(totalItems / 2);
                               const leftTeams = teams.slice(0, midPoint);
                               const rightTeams = teams.slice(midPoint);
@@ -1348,42 +1387,56 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                                       </Box>
                                     ))}
                                     {/* Add team dropdown - last item in right column */}
-                                    {hasUnassignedTeams && (
-                                      <Box
-                                        sx={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'flex-end',
-                                          py: 1,
-                                          px: 1.5,
-                                          mb: 0.5,
-                                          borderRadius: 1,
-                                          gap: 1,
-                                        }}
-                                      >
-                                        <FormControl size="small" sx={{ minWidth: 180 }}>
-                                          <Select
-                                            value={selectedTeamsPerDivision[division.id] || ''}
-                                            onChange={(e) =>
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        py: 1,
+                                        px: 1.5,
+                                        mb: 0.5,
+                                        borderRadius: 1,
+                                      }}
+                                    >
+                                      <FormControl size="small" sx={{ flex: 1 }}>
+                                        <Select
+                                          value={selectedTeamsPerDivision[division.id] || ''}
+                                          onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === '__CREATE_NEW__') {
+                                              openCreateTeamDialog(leagueSeason, division);
                                               setSelectedTeamsPerDivision({
                                                 ...selectedTeamsPerDivision,
-                                                [division.id]: e.target.value,
-                                              })
+                                                [division.id]: '',
+                                              });
+                                            } else {
+                                              setSelectedTeamsPerDivision({
+                                                ...selectedTeamsPerDivision,
+                                                [division.id]: value,
+                                              });
                                             }
-                                            displayEmpty
-                                            disabled={formLoading}
-                                            sx={{ bgcolor: 'background.paper' }}
-                                          >
-                                            <MenuItem value="">
-                                              <em>Select team to add...</em>
+                                          }}
+                                          displayEmpty
+                                          disabled={formLoading}
+                                          sx={{ bgcolor: 'background.paper' }}
+                                        >
+                                          <MenuItem value="">
+                                            <em>Add or create team...</em>
+                                          </MenuItem>
+                                          {leagueSeason.unassignedTeams?.map((team) => (
+                                            <MenuItem key={team.id} value={team.id}>
+                                              {team.name}
                                             </MenuItem>
-                                            {leagueSeason.unassignedTeams?.map((team) => (
-                                              <MenuItem key={team.id} value={team.id}>
-                                                {team.name}
-                                              </MenuItem>
-                                            ))}
-                                          </Select>
-                                        </FormControl>
+                                          ))}
+                                          <MenuItem
+                                            value="__CREATE_NEW__"
+                                            sx={{ fontStyle: 'italic', color: 'primary.main' }}
+                                          >
+                                            + Create new team...
+                                          </MenuItem>
+                                        </Select>
+                                      </FormControl>
+                                      <Box display="flex" gap={0.5} alignItems="center">
                                         <Tooltip title="Add Selected Team">
                                           <IconButton
                                             color="primary"
@@ -1414,7 +1467,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                                           </IconButton>
                                         </Tooltip>
                                       </Box>
-                                    )}
+                                    </Box>
                                   </Box>
                                 </Box>
                               );
@@ -1710,6 +1763,12 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             )}
             <Typography variant="body2" sx={{ mb: 2 }}>
               Creating team for league: <strong>{teamToCreateLeagueSeason?.league.name}</strong>
+              {teamToCreateDivision && (
+                <>
+                  {' '}
+                  in division: <strong>{teamToCreateDivision.division.name}</strong>
+                </>
+              )}
             </Typography>
             <TextField
               autoFocus
@@ -1721,7 +1780,11 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
               onChange={(e) => setNewTeamName(e.target.value)}
               disabled={formLoading}
               sx={{ mb: 2 }}
-              helperText="Enter a unique name for the new team"
+              helperText={
+                teamToCreateDivision
+                  ? 'The team will be automatically added to the division'
+                  : 'Enter a unique name for the new team'
+              }
             />
           </DialogContent>
           <DialogActions>
