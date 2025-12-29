@@ -219,7 +219,7 @@ export const useScheduleData = ({
           path: { accountId, seasonId: currentSeasonId },
           query: {
             includeTeams: true,
-            includeUnassignedTeams: true,
+            includeUnassignedTeams: false,
           },
           throwOnError: false,
         });
@@ -235,10 +235,6 @@ export const useScheduleData = ({
             division.teams.forEach((team) => {
               leagueTeamsForSeason.push(team);
             });
-          });
-
-          leagueSeason.unassignedTeams?.forEach((team) => {
-            leagueTeamsForSeason.push(team);
           });
 
           newLeagueTeamsCache.set(leagueSeason.id, leagueTeamsForSeason);

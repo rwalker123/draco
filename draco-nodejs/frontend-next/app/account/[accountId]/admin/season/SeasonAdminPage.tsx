@@ -8,6 +8,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import StadiumIcon from '@mui/icons-material/Stadium';
 import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import ScheduleIcon from '@mui/icons-material/Schedule';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
 import {
   AdminBreadcrumbs,
@@ -47,6 +48,13 @@ const SeasonAdminPage: React.FC = () => {
         data && data.season.currentSeasonName
           ? [{ value: data.season.currentSeasonName, label: '' }]
           : [],
+    },
+    {
+      title: 'Schedule Management',
+      description: 'Create and manage game schedules for your leagues and divisions.',
+      icon: <ScheduleIcon />,
+      href: `/account/${accountId}/schedule`,
+      getMetrics: () => [],
     },
     {
       title: 'Field Management',
