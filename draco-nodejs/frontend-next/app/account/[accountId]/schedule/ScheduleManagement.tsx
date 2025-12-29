@@ -608,21 +608,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
         {recapDialogs}
 
-        {recapError && (
-          <Alert
-            severity="error"
-            sx={{
-              position: 'fixed',
-              bottom: 24,
-              right: 24,
-              zIndex: (theme) => theme.zIndex.snackbar,
-            }}
-            onClose={clearRecapError}
-          >
-            {recapError}
-          </Alert>
-        )}
-
         {canEditSchedule ? (
           <Fab
             color="primary"
@@ -653,6 +638,24 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               sx={{ width: '100%' }}
             >
               {feedback.message}
+            </Alert>
+          ) : undefined}
+        </Snackbar>
+
+        <Snackbar
+          open={Boolean(recapError)}
+          autoHideDuration={6000}
+          onClose={clearRecapError}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          {recapError ? (
+            <Alert
+              onClose={clearRecapError}
+              severity="error"
+              variant="filled"
+              sx={{ width: '100%' }}
+            >
+              {recapError}
             </Alert>
           ) : undefined}
         </Snackbar>
