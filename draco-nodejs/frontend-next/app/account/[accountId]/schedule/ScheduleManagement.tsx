@@ -12,6 +12,7 @@ import {
   useMediaQuery,
   Fab,
   Paper,
+  Snackbar,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -82,6 +83,32 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [manualViewMode, setManualViewMode] = useState<ViewMode | null>(null);
   const viewMode = manualViewMode ?? defaultViewMode;
 
+  // Snackbar feedback state
+  const [feedback, setFeedback] = useState<{
+    severity: 'success' | 'error';
+    message: string;
+  } | null>(null);
+
+  const handleFeedbackClose = useCallback(() => {
+    setFeedback(null);
+  }, []);
+
+  const setSuccess = useCallback((message: string | null) => {
+    if (message) {
+      setFeedback({ severity: 'success', message });
+    } else {
+      setFeedback(null);
+    }
+  }, []);
+
+  const setError = useCallback((message: string | null) => {
+    if (message) {
+      setFeedback({ severity: 'error', message });
+    } else {
+      setFeedback(null);
+    }
+  }, []);
+
   // Use modular schedule hooks
   const {
     games,
@@ -93,14 +120,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     leagueTeamsCache,
     loadingGames,
     loadingStaticData,
-    error,
-    success,
     loadLeagueTeams,
     loadUmpires,
     loadGamesData,
     clearLeagueTeams,
-    setSuccess,
-    setError,
     upsertGameInCache,
     removeGameFromCache,
     startDate,
@@ -339,18 +362,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           </Box>
         </AccountPageHeader>
         <AdPlacement wrapperSx={{ mt: 2 }} />
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
-            {success}
-          </Alert>
-        )}
 
         {/* View Mode Tabs */}
         <Paper
@@ -627,6 +638,24 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             <AddIcon />
           </Fab>
         ) : null}
+
+        <Snackbar
+          open={Boolean(feedback)}
+          autoHideDuration={6000}
+          onClose={handleFeedbackClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          {feedback ? (
+            <Alert
+              onClose={handleFeedbackClose}
+              severity={feedback.severity}
+              variant="filled"
+              sx={{ width: '100%' }}
+            >
+              {feedback.message}
+            </Alert>
+          ) : undefined}
+        </Snackbar>
       </main>
     </LocalizationProvider>
   );
