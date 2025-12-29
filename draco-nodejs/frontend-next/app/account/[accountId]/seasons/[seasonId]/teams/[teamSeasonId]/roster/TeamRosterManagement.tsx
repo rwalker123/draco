@@ -29,7 +29,6 @@ import {
 import {
   PersonAdd as PersonAddIcon,
   Delete as DeleteIcon,
-  ArrowBack as ArrowBackIcon,
   Warning as WarningIcon,
   Edit as EditIcon,
   SportsBasketball as SportsIcon,
@@ -42,6 +41,7 @@ import EditContactDialog from '../../../../../../../../components/users/EditCont
 import UserAvatar from '../../../../../../../../components/users/UserAvatar';
 import SignPlayerDialog from '../../../../../../../../components/roster/SignPlayerDialog';
 import PageSectionHeader from '../../../../../../../../components/common/PageSectionHeader';
+import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
 import {
   formatRosterContactInfo,
   formatRosterVerificationInfo,
@@ -606,8 +606,22 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   return (
     <main className="min-h-screen bg-background">
+      {/* Account Header */}
+      <AccountPageHeader accountId={accountId} seasonName={season?.name} showSeasonInfo={true}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+            {league?.name
+              ? `${league.name} – ${rosterData?.teamSeason?.name} Roster`
+              : `${rosterData?.teamSeason?.name} Roster`}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Manage team roster, players, and managers
+          </Typography>
+        </Box>
+      </AccountPageHeader>
+
       {/* Breadcrumbs */}
-      <Breadcrumbs sx={{ mb: 3 }}>
+      <Breadcrumbs sx={{ mb: 3, mt: 2 }}>
         <Link
           color="inherit"
           href="#"
@@ -634,20 +648,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
             : `${rosterData?.teamSeason?.name} Roster`}
         </Typography>
       </Breadcrumbs>
-
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <IconButton onClick={() => router.back()} sx={{ mr: 2 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h4" component="h1">
-            {league?.name
-              ? `${league.name} – ${rosterData?.teamSeason?.name} Roster`
-              : `${rosterData?.teamSeason?.name} Roster`}
-          </Typography>
-        </Box>
-      </Box>
 
       {/* Action Buttons */}
       <Box
