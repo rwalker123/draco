@@ -6,11 +6,6 @@ import {
   CardContent,
   Typography,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   IconButton,
   Chip,
   Alert,
@@ -20,7 +15,6 @@ import {
   AccordionSummary,
   AccordionDetails,
   AccordionActions,
-  Autocomplete,
   Select,
   MenuItem,
   FormControl,
@@ -40,26 +34,15 @@ import {
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import {
-  deleteLeague,
-  deleteSeasonTeam as apiDeleteSeasonTeam,
-  deleteAccountTeam as apiDeleteAccountTeam,
-  createLeagueSeasonTeam as apiCreateLeagueSeasonTeam,
   listSeasonLeagueSeasons,
   getAccountSeason,
-  addDivisionToLeagueSeason as apiAddDivisionToLeagueSeason,
   deleteLeagueSeasonDivision as apiDeleteLeagueSeasonDivision,
-  updateLeagueSeasonDivision as apiUpdateLeagueSeasonDivision,
   assignLeagueSeasonTeamDivision as apiAssignLeagueSeasonTeamDivision,
   removeLeagueSeasonTeamDivision as apiRemoveLeagueSeasonTeamDivision,
-  removeLeagueFromSeason as apiRemoveLeagueFromSeason,
-  createLeague as apiCreateLeague,
-  addLeagueToSeason as apiAddLeagueToSeason,
-  updateLeague as apiUpdateLeague,
 } from '@draco/shared-api-client';
 import type {
   DivisionSeasonType,
   DivisionSeasonWithTeamsType,
-  DivisionType,
   LeagueSeasonType,
   LeagueSeasonWithDivisionTeamsAndUnassignedType,
   LeagueSeasonWithDivisionTeamsType,
@@ -67,11 +50,22 @@ import type {
   TeamSeasonType,
 } from '@draco/shared-schemas';
 import { createApiClient } from '../../../../../../lib/apiClientFactory';
-import { assertNoApiError, unwrapApiResult } from '../../../../../../utils/apiResult';
+import { unwrapApiResult } from '../../../../../../utils/apiResult';
 import { mapLeagueSetup } from '../../../../../../utils/leagueSeasonMapper';
 import { useAuth } from '../../../../../../context/AuthContext';
-import PageSectionHeader from '../../../../../../components/common/PageSectionHeader';
 import AccountPageHeader from '../../../../../../components/AccountPageHeader';
+import {
+  AddDivisionDialog,
+  CreateLeagueDialog,
+  CreateTeamDialog,
+  DeleteLeagueDialog,
+  DeleteTeamDialog,
+  EditDivisionDialog,
+  EditLeagueDialog,
+  type AddDivisionResult,
+  type CreateTeamResult,
+  type EditDivisionResult,
+} from '../../../../../../components/league-seasons';
 
 interface LeagueSeasonManagementProps {
   accountId: string;
@@ -129,12 +123,6 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   // Division management state
   const [addDivisionDialogOpen, setAddDivisionDialogOpen] = useState(false);
   const [selectedLeagueSeason, setSelectedLeagueSeason] = useState<LeagueSeasonType | null>(null);
-  const [selectedDivision, setSelectedDivision] = useState<DivisionType | null>(null);
-  const [divisionPriority, setDivisionPriority] = useState(0);
-
-  // Division creation within Add Division dialog state
-  const [createDivisionInAddDialog, setCreateDivisionInAddDialog] = useState(false);
-  const [newDivisionNameInAddDialog, setNewDivisionNameInAddDialog] = useState('');
 
   // Accordion state
   const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(new Set());
@@ -157,33 +145,25 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     null,
   );
   const [teamToCreateDivision, setTeamToCreateDivision] = useState<DivisionSeasonType | null>(null);
-  const [newTeamName, setNewTeamName] = useState('');
   const seasonName = season?.name ?? 'Season';
 
   // Edit division state
   const [editDivisionDialogOpen, setEditDivisionDialogOpen] = useState(false);
   const [divisionToEdit, setDivisionToEdit] = useState<DivisionSeasonType | null>(null);
   const [leagueSeasonForEdit, setLeagueSeasonForEdit] = useState<LeagueSeasonType | null>(null);
-  const [editDivisionName, setEditDivisionName] = useState('');
-  const [editDivisionPriority, setEditDivisionPriority] = useState(0);
 
   // Create league state
   const [createLeagueDialogOpen, setCreateLeagueDialogOpen] = useState(false);
-  const [newLeagueName, setNewLeagueName] = useState('');
 
   // Edit league state
   const [editLeagueDialogOpen, setEditLeagueDialogOpen] = useState(false);
   const [leagueToEdit, setLeagueToEdit] =
     useState<LeagueSeasonWithDivisionTeamsAndUnassignedType | null>(null);
-  const [editLeagueName, setEditLeagueName] = useState('');
 
   // State for managing selected teams per division
   const [selectedTeamsPerDivision, setSelectedTeamsPerDivision] = useState<Record<string, string>>(
     {},
   );
-
-  // Dialog-specific error state (for inline errors in dialogs)
-  const [dialogError, setDialogError] = useState<string | null>(null);
 
   const handleFeedbackClose = useCallback(() => {
     setFeedback(null);
@@ -401,56 +381,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   // Handler to open add division dialog
   const openAddDivisionDialog = (leagueSeason: LeagueSeasonType) => {
     setSelectedLeagueSeason(leagueSeason);
-    setSelectedDivision(null);
-    setDivisionPriority(0);
-    setDialogError(null);
     setAddDivisionDialogOpen(true);
-  };
-
-  // Handler to add division to league season
-  const handleAddDivision = async () => {
-    if (!accountId || !token || !selectedLeagueSeason || !selectedDivision) return;
-
-    setFormLoading(true);
-    try {
-      const result = await apiAddDivisionToLeagueSeason({
-        client: apiClient,
-        path: {
-          accountId,
-          seasonId,
-          leagueSeasonId: selectedLeagueSeason.id,
-        },
-        body: {
-          divisionId: selectedDivision.id,
-          priority: divisionPriority,
-        },
-        throwOnError: false,
-      });
-
-      const divisionSeason = unwrapApiResult(result, 'Failed to add division to league season');
-
-      const mappedDivisionSeason: DivisionSeasonWithTeamsType = {
-        id: divisionSeason.id,
-        division: {
-          id: divisionSeason.division.id,
-          name: divisionSeason.division.name,
-        },
-        priority: divisionSeason.priority,
-        teams: [] as TeamSeasonType[],
-      };
-
-      setFeedback({
-        severity: 'success',
-        message: `Division added to ${selectedLeagueSeason.league.name}`,
-      });
-      setAddDivisionDialogOpen(false);
-      addDivisionToLeagueSeasonInState(selectedLeagueSeason.id, mappedDivisionSeason);
-    } catch (error) {
-      console.error('Error adding division:', error);
-      setDialogError(error instanceof Error ? error.message : 'Failed to add division');
-    } finally {
-      setFormLoading(false);
-    }
   };
 
   // Handler to remove division from league season
@@ -488,54 +419,6 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         severity: 'error',
         message: error instanceof Error ? error.message : 'Failed to remove division',
       });
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  // Handler to create division within Add Division dialog
-  const handleCreateDivisionInAddDialog = async () => {
-    if (!accountId || !token || !newDivisionNameInAddDialog.trim() || !selectedLeagueSeason) return;
-
-    setFormLoading(true);
-    try {
-      const result = await apiAddDivisionToLeagueSeason({
-        client: apiClient,
-        path: {
-          accountId,
-          seasonId,
-          leagueSeasonId: selectedLeagueSeason.id,
-        },
-        body: {
-          name: newDivisionNameInAddDialog.trim(),
-          priority: divisionPriority,
-        },
-        throwOnError: false,
-      });
-
-      const divisionSeason = unwrapApiResult(result, 'Failed to create division');
-
-      const mappedDivisionSeason: DivisionSeasonWithTeamsType = {
-        id: divisionSeason.id,
-        division: {
-          id: divisionSeason.division.id,
-          name: divisionSeason.division.name,
-        },
-        priority: divisionSeason.priority,
-        teams: [] as TeamSeasonType[],
-      };
-
-      setFeedback({
-        severity: 'success',
-        message: `Division "${mappedDivisionSeason.division.name}" created and added to league "${selectedLeagueSeason.league.name}"`,
-      });
-      addDivisionToLeagueSeasonInState(selectedLeagueSeason.id, mappedDivisionSeason);
-
-      setCreateDivisionInAddDialog(false);
-      setNewDivisionNameInAddDialog('');
-      setAddDivisionDialogOpen(false);
-    } catch (err) {
-      setDialogError(err instanceof Error ? err.message : 'Failed to create division');
     } finally {
       setFormLoading(false);
     }
@@ -648,383 +531,39 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   // Handler to open delete league dialog
   const openDeleteLeagueDialog = (leagueSeason: LeagueSeasonType) => {
     setLeagueToDelete(leagueSeason);
-    setDialogError(null);
     setDeleteLeagueDialogOpen(true);
-  };
-
-  // Handler to delete league
-  const handleDeleteLeague = async () => {
-    if (!accountId || !token || !leagueToDelete) return;
-
-    setFormLoading(true);
-    try {
-      const removeResult = await apiRemoveLeagueFromSeason({
-        client: apiClient,
-        path: { accountId, seasonId, leagueSeasonId: leagueToDelete.id },
-        throwOnError: false,
-      });
-
-      const removed = unwrapApiResult(removeResult, 'Failed to remove league from season');
-
-      if (removed) {
-        try {
-          const deleteLeagueResult = await deleteLeague({
-            client: apiClient,
-            path: { accountId, leagueId: leagueToDelete.league.id },
-            throwOnError: false,
-          });
-
-          const deleteLeagueSuccess = unwrapApiResult(
-            deleteLeagueResult,
-            'Failed to delete league',
-          );
-
-          if (deleteLeagueSuccess) {
-            setFeedback({
-              severity: 'success',
-              message: `League "${leagueToDelete.league.name}" has been completely deleted from the system.`,
-            });
-          } else {
-            setFeedback({
-              severity: 'success',
-              message: `League "${leagueToDelete.league.name}" has been removed from this season. The league definition was kept because it's used in other seasons.`,
-            });
-          }
-        } catch (leagueDeleteError: unknown) {
-          const message =
-            leagueDeleteError instanceof Error ? leagueDeleteError.message : undefined;
-
-          if (typeof message === 'string' && message.includes('associated with seasons')) {
-            setFeedback({
-              severity: 'success',
-              message: `League "${leagueToDelete.league.name}" has been removed from this season. The league definition was kept because it's used in other seasons.`,
-            });
-          } else {
-            setFeedback({
-              severity: 'success',
-              message: `League "${leagueToDelete.league.name}" has been removed from this season. There was an issue deleting the league definition, but it may still be removed later.`,
-            });
-            console.warn('League definition deletion failed:', leagueDeleteError);
-          }
-        }
-
-        setDeleteLeagueDialogOpen(false);
-        setLeagueToDelete(null);
-        // Use targeted update instead of full refresh
-        removeLeagueSeasonFromState(leagueToDelete.id);
-      } else {
-        setDialogError('Failed to remove league from season');
-      }
-    } catch (error: unknown) {
-      console.error('Error removing league from season:', error);
-      const message =
-        error instanceof Error ? error.message : 'Failed to remove league from season';
-      setDialogError(message);
-    } finally {
-      setFormLoading(false);
-    }
   };
 
   // Handler to open delete team dialog
   const openDeleteTeamDialog = (teamSeason: TeamSeasonType, leagueSeason: LeagueSeasonType) => {
     setTeamToDelete(teamSeason);
     setTeamToDeleteLeagueSeason(leagueSeason);
-    setDialogError(null);
     setDeleteTeamDialogOpen(true);
-  };
-
-  // Handler to delete team
-  const handleDeleteTeam = async () => {
-    if (!accountId || !token || !teamToDelete || !teamToDeleteLeagueSeason) return;
-
-    setFormLoading(true);
-    try {
-      const removeResult = await apiDeleteSeasonTeam({
-        path: { accountId, seasonId, teamSeasonId: teamToDelete.id },
-        client: apiClient,
-        throwOnError: false,
-      });
-
-      assertNoApiError(removeResult, 'Failed to remove team from season');
-
-      let deletedTeamDefinition = false;
-      const deleteResult = await apiDeleteAccountTeam({
-        path: { accountId, teamId: teamToDelete.team.id },
-        client: apiClient,
-        throwOnError: false,
-      });
-
-      try {
-        assertNoApiError(deleteResult, 'Failed to delete team definition');
-        deletedTeamDefinition = true;
-      } catch (error) {
-        const status = deleteResult.response?.status;
-        if (status === 409) {
-          setFeedback({
-            severity: 'success',
-            message: `Team "${teamToDelete.name}" has been removed from this season. The team definition was kept because it's used in other seasons.`,
-          });
-        } else {
-          setFeedback({
-            severity: 'success',
-            message: `Team "${teamToDelete.name}" has been removed from this season. There was an issue deleting the team definition, but it may still be removed later.`,
-          });
-          console.warn('Team definition deletion failed:', error);
-        }
-      }
-
-      if (deletedTeamDefinition) {
-        setFeedback({
-          severity: 'success',
-          message: `Team "${teamToDelete.name}" has been completely deleted from the system.`,
-        });
-      }
-
-      setDeleteTeamDialogOpen(false);
-      const leagueSeasonId = teamToDeleteLeagueSeason.id;
-      const teamSeasonId = teamToDelete.id;
-      setTeamToDelete(null);
-      setTeamToDeleteLeagueSeason(null);
-      removeTeamFromLeagueSeasonInState(leagueSeasonId, teamSeasonId);
-    } catch (error: unknown) {
-      console.error('Error removing team from season:', error);
-      setDialogError(error instanceof Error ? error.message : 'Failed to remove team from season');
-    } finally {
-      setFormLoading(false);
-    }
   };
 
   // Handler to open create team dialog
   const openCreateTeamDialog = (leagueSeason: LeagueSeasonType, division?: DivisionSeasonType) => {
     setTeamToCreateLeagueSeason(leagueSeason);
     setTeamToCreateDivision(division ?? null);
-    setNewTeamName('');
-    setDialogError(null);
     setCreateTeamDialogOpen(true);
-  };
-
-  // Handler to create team
-  const handleCreateTeam = async () => {
-    if (!accountId || !token || !teamToCreateLeagueSeason || !newTeamName.trim()) return;
-
-    setFormLoading(true);
-    try {
-      const createResult = await apiCreateLeagueSeasonTeam({
-        path: { accountId, seasonId, leagueSeasonId: teamToCreateLeagueSeason.id },
-        client: apiClient,
-        body: { name: newTeamName.trim() },
-        throwOnError: false,
-      });
-
-      const mappedTeam = unwrapApiResult(createResult, 'Failed to create team');
-      const leagueSeasonId = teamToCreateLeagueSeason.id;
-      const targetDivision = teamToCreateDivision;
-
-      // If a division was specified, auto-assign the team to it
-      if (targetDivision) {
-        try {
-          const assignResult = await apiAssignLeagueSeasonTeamDivision({
-            client: apiClient,
-            path: {
-              accountId,
-              seasonId,
-              leagueSeasonId,
-              teamSeasonId: mappedTeam.id,
-            },
-            body: { divisionSeasonId: targetDivision.id },
-            throwOnError: false,
-          });
-
-          const assigned = unwrapApiResult(assignResult, 'Failed to assign team to division');
-
-          if (assigned) {
-            setFeedback({
-              severity: 'success',
-              message: `Team "${mappedTeam.name}" created and added to division "${targetDivision.division.name}"`,
-            });
-            addTeamToDivisionInState(leagueSeasonId, targetDivision.id, mappedTeam);
-          } else {
-            setFeedback({
-              severity: 'success',
-              message: `Team "${mappedTeam.name}" created but could not be assigned to division`,
-            });
-            addTeamToLeagueSeasonInState(leagueSeasonId, mappedTeam);
-          }
-        } catch (assignError) {
-          console.error('Error assigning team to division:', assignError);
-          setFeedback({
-            severity: 'success',
-            message: `Team "${mappedTeam.name}" created but could not be assigned to division`,
-          });
-          addTeamToLeagueSeasonInState(leagueSeasonId, mappedTeam);
-        }
-      } else {
-        setFeedback({
-          severity: 'success',
-          message: `Team "${mappedTeam.name}" has been created.`,
-        });
-        addTeamToLeagueSeasonInState(leagueSeasonId, mappedTeam);
-      }
-
-      setCreateTeamDialogOpen(false);
-      setTeamToCreateLeagueSeason(null);
-      setTeamToCreateDivision(null);
-      setNewTeamName('');
-    } catch (error: unknown) {
-      console.error('Error creating team:', error);
-      setDialogError(error instanceof Error ? error.message : 'Failed to create team');
-    } finally {
-      setFormLoading(false);
-    }
   };
 
   // Handler to open edit division dialog
   const openEditDivisionDialog = (division: DivisionSeasonType, leagueSeason: LeagueSeasonType) => {
     setDivisionToEdit(division);
     setLeagueSeasonForEdit(leagueSeason);
-    setEditDivisionName(division.division.name);
-    setEditDivisionPriority(division.priority);
-    setDialogError(null);
     setEditDivisionDialogOpen(true);
-  };
-
-  // Handler to update division
-  const handleUpdateDivision = async () => {
-    if (!accountId || !token || !divisionToEdit || !leagueSeasonForEdit) return;
-
-    setFormLoading(true);
-    try {
-      const result = await apiUpdateLeagueSeasonDivision({
-        client: apiClient,
-        path: {
-          accountId,
-          seasonId,
-          leagueSeasonId: leagueSeasonForEdit.id,
-          divisionSeasonId: divisionToEdit.id,
-        },
-        body: {
-          name: editDivisionName.trim(),
-          priority: editDivisionPriority,
-        },
-        throwOnError: false,
-      });
-
-      const updated = unwrapApiResult(result, 'Failed to update division');
-
-      if (updated) {
-        setFeedback({ severity: 'success', message: 'Division updated successfully' });
-        setEditDivisionDialogOpen(false);
-        updateDivisionInState(
-          leagueSeasonForEdit.id,
-          divisionToEdit.id,
-          editDivisionName.trim(),
-          editDivisionPriority,
-        );
-        setDivisionToEdit(null);
-        setLeagueSeasonForEdit(null);
-        setEditDivisionName('');
-        setEditDivisionPriority(0);
-      } else {
-        setDialogError('Failed to update division');
-      }
-    } catch (error) {
-      console.error('Error updating division:', error);
-      setDialogError(error instanceof Error ? error.message : 'Failed to update division');
-    } finally {
-      setFormLoading(false);
-    }
   };
 
   // Handler to open create league dialog
   const openCreateLeagueDialog = () => {
-    setNewLeagueName('');
-    setDialogError(null);
     setCreateLeagueDialogOpen(true);
-  };
-
-  // Handler to create a new league and add it to this season
-  const handleCreateLeague = async () => {
-    if (!accountId || !token || !newLeagueName.trim()) return;
-
-    setFormLoading(true);
-    try {
-      const createResult = await apiCreateLeague({
-        client: apiClient,
-        path: { accountId },
-        body: { name: newLeagueName.trim() },
-        throwOnError: false,
-      });
-
-      const newLeague = unwrapApiResult(createResult, 'Failed to create league');
-
-      const addResult = await apiAddLeagueToSeason({
-        client: apiClient,
-        path: { accountId, seasonId },
-        body: { leagueId: newLeague.id },
-        throwOnError: false,
-      });
-
-      const addedLeagueSeason = unwrapApiResult(addResult, 'Failed to add league to season');
-
-      const mappedLeagueSeason: LeagueSeasonWithDivisionTeamsAndUnassignedType = {
-        id: addedLeagueSeason.id,
-        league: {
-          id: addedLeagueSeason.league.id,
-          name: addedLeagueSeason.league.name,
-        },
-        divisions: [],
-        unassignedTeams: [],
-      };
-
-      setFeedback({
-        severity: 'success',
-        message: `League "${newLeague.name}" created and added to this season`,
-      });
-      setCreateLeagueDialogOpen(false);
-      setNewLeagueName('');
-      addLeagueSeasonToState(mappedLeagueSeason);
-    } catch (error) {
-      console.error('Error creating league:', error);
-      setDialogError(error instanceof Error ? error.message : 'Failed to create league');
-    } finally {
-      setFormLoading(false);
-    }
   };
 
   // Handler to open edit league dialog
   const openEditLeagueDialog = (leagueSeason: LeagueSeasonWithDivisionTeamsAndUnassignedType) => {
     setLeagueToEdit(leagueSeason);
-    setEditLeagueName(leagueSeason.league.name);
-    setDialogError(null);
     setEditLeagueDialogOpen(true);
-  };
-
-  // Handler to update league name
-  const handleUpdateLeague = async () => {
-    if (!accountId || !token || !leagueToEdit || !editLeagueName.trim()) return;
-
-    setFormLoading(true);
-    try {
-      const result = await apiUpdateLeague({
-        client: apiClient,
-        path: { accountId, leagueId: leagueToEdit.league.id },
-        body: { name: editLeagueName.trim() },
-        throwOnError: false,
-      });
-
-      const updatedLeague = unwrapApiResult(result, 'Failed to update league');
-
-      setFeedback({ severity: 'success', message: `League renamed to "${updatedLeague.name}"` });
-      setEditLeagueDialogOpen(false);
-      updateLeagueNameInState(leagueToEdit.id, updatedLeague.name);
-      setLeagueToEdit(null);
-      setEditLeagueName('');
-    } catch (error) {
-      console.error('Error updating league:', error);
-      setDialogError(error instanceof Error ? error.message : 'Failed to update league');
-    } finally {
-      setFormLoading(false);
-    }
   };
 
   if (loading) {
@@ -1473,442 +1012,128 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         )}
 
         {/* Add Division Dialog */}
-        <Dialog
+        <AddDivisionDialog
           open={addDivisionDialogOpen}
           onClose={() => setAddDivisionDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>Add Division to League</DialogTitle>
-          <DialogContent>
-            {dialogError && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setDialogError(null)}>
-                {dialogError}
-              </Alert>
-            )}
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              Adding division to: <strong>{selectedLeagueSeason?.league.name}</strong>
-            </Typography>
-
-            {!createDivisionInAddDialog ? (
-              <>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <PageSectionHeader title="Select Existing Division" gutterBottom />
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => {
-                      setCreateDivisionInAddDialog(true);
-                      setNewDivisionNameInAddDialog('');
-                      setDialogError(null);
-                    }}
-                    startIcon={<AddIcon />}
-                    disabled={formLoading}
-                  >
-                    Create New Division
-                  </Button>
-                </Box>
-                <Autocomplete
-                  options={availableDivisions}
-                  getOptionLabel={(option) => option.name}
-                  value={selectedDivision}
-                  onChange={(_, newValue) => setSelectedDivision(newValue)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Select Division"
-                      fullWidth
-                      variant="outlined"
-                      sx={{ mb: 2 }}
-                    />
-                  )}
-                  noOptionsText={
-                    availableDivisions.length === 0
-                      ? 'All divisions are already assigned to this league'
-                      : 'No divisions available'
-                  }
-                />
-                <TextField
-                  margin="dense"
-                  label="Priority"
-                  type="number"
-                  fullWidth
-                  variant="outlined"
-                  value={divisionPriority}
-                  onChange={(e) => setDivisionPriority(parseInt(e.target.value) || 0)}
-                  disabled={formLoading}
-                  helperText="Lower numbers have higher priority"
-                />
-              </>
-            ) : (
-              <>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <PageSectionHeader title="Create New Division" gutterBottom />
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => {
-                      setCreateDivisionInAddDialog(false);
-                      setSelectedDivision(null);
-                      setDialogError(null);
-                    }}
-                    disabled={formLoading}
-                  >
-                    Select Existing
-                  </Button>
-                </Box>
-                <TextField
-                  autoFocus
-                  margin="dense"
-                  label="Division Name"
-                  fullWidth
-                  variant="outlined"
-                  value={newDivisionNameInAddDialog}
-                  onChange={(e) => setNewDivisionNameInAddDialog(e.target.value)}
-                  disabled={formLoading}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  margin="dense"
-                  label="Priority"
-                  type="number"
-                  fullWidth
-                  variant="outlined"
-                  value={divisionPriority}
-                  onChange={(e) => setDivisionPriority(parseInt(e.target.value) || 0)}
-                  disabled={formLoading}
-                  helperText="Lower numbers have higher priority"
-                  sx={{ mb: 2 }}
-                />
-                {selectedLeagueSeason && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    This division will be created and added to league
-                    {selectedLeagueSeason.league.name}.
-                  </Typography>
-                )}
-              </>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => {
-                setAddDivisionDialogOpen(false);
-                setCreateDivisionInAddDialog(false);
-                setDialogError(null);
-              }}
-              disabled={formLoading}
-            >
-              Cancel
-            </Button>
-            {!createDivisionInAddDialog ? (
-              <Button
-                onClick={handleAddDivision}
-                variant="contained"
-                disabled={formLoading || !selectedDivision}
-              >
-                {formLoading ? <CircularProgress size={20} /> : 'Add Division'}
-              </Button>
-            ) : (
-              <Button
-                onClick={handleCreateDivisionInAddDialog}
-                variant="contained"
-                disabled={formLoading || !newDivisionNameInAddDialog.trim()}
-              >
-                {formLoading ? <CircularProgress size={20} /> : 'Create Division'}
-              </Button>
-            )}
-          </DialogActions>
-        </Dialog>
+          accountId={accountId}
+          seasonId={seasonId}
+          leagueSeason={selectedLeagueSeason}
+          availableDivisions={availableDivisions}
+          onSuccess={(result: AddDivisionResult, message: string) => {
+            addDivisionToLeagueSeasonInState(result.leagueSeasonId, result.divisionSeason);
+            setFeedback({ severity: 'success', message });
+          }}
+        />
 
         {/* Delete League Confirmation Dialog */}
-        <Dialog
+        <DeleteLeagueDialog
           open={deleteLeagueDialogOpen}
-          onClose={() => setDeleteLeagueDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>Remove League from Season</DialogTitle>
-          <DialogContent>
-            {dialogError && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setDialogError(null)}>
-                {dialogError}
-              </Alert>
-            )}
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              Are you sure you want to remove the league{' '}
-              <strong>{`'${leagueToDelete?.league.name}'`}</strong> from this season?
-            </Typography>
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              This action will remove the league from this season and all its associated data
-              (divisions, teams, etc.). The system will also attempt to delete the league definition
-              {" if it's not used in other seasons."}
-            </Alert>
-            {leagueToDelete && (
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  This league currently has:
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  • {leagueToDelete.divisions?.length || 0} divisions
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  • {leagueToDelete.unassignedTeams?.length || 0} unassigned teams
-                </Typography>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDeleteLeagueDialogOpen(false)} disabled={formLoading}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDeleteLeague}
-              variant="contained"
-              color="error"
-              disabled={formLoading}
-            >
-              {formLoading ? <CircularProgress size={20} /> : 'Remove League'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          onClose={() => {
+            setDeleteLeagueDialogOpen(false);
+            setLeagueToDelete(null);
+          }}
+          accountId={accountId}
+          seasonId={seasonId}
+          leagueSeason={leagueToDelete}
+          onSuccess={(leagueSeasonId: string, message: string) => {
+            removeLeagueSeasonFromState(leagueSeasonId);
+            setFeedback({ severity: 'success', message });
+          }}
+        />
 
         {/* Create Team Dialog */}
-        <Dialog
+        <CreateTeamDialog
           open={createTeamDialogOpen}
-          onClose={() => setCreateTeamDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>Create New Team</DialogTitle>
-          <DialogContent>
-            {dialogError && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setDialogError(null)}>
-                {dialogError}
-              </Alert>
-            )}
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              Creating team for league: <strong>{teamToCreateLeagueSeason?.league.name}</strong>
-              {teamToCreateDivision && (
-                <>
-                  {' '}
-                  in division: <strong>{teamToCreateDivision.division.name}</strong>
-                </>
-              )}
-            </Typography>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Team Name"
-              fullWidth
-              variant="outlined"
-              value={newTeamName}
-              onChange={(e) => setNewTeamName(e.target.value)}
-              disabled={formLoading}
-              sx={{ mb: 2 }}
-              helperText={
-                teamToCreateDivision
-                  ? 'The team will be automatically added to the division'
-                  : 'Enter a unique name for the new team'
-              }
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setCreateTeamDialogOpen(false)} disabled={formLoading}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateTeam}
-              variant="contained"
-              disabled={formLoading || !newTeamName.trim()}
-            >
-              {formLoading ? <CircularProgress size={20} /> : 'Create Team'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          onClose={() => {
+            setCreateTeamDialogOpen(false);
+            setTeamToCreateLeagueSeason(null);
+            setTeamToCreateDivision(null);
+          }}
+          accountId={accountId}
+          seasonId={seasonId}
+          leagueSeason={teamToCreateLeagueSeason}
+          division={teamToCreateDivision}
+          onSuccess={(result: CreateTeamResult, message: string) => {
+            if (result.divisionSeasonId) {
+              addTeamToDivisionInState(
+                result.leagueSeasonId,
+                result.divisionSeasonId,
+                result.teamSeason,
+              );
+            } else {
+              addTeamToLeagueSeasonInState(result.leagueSeasonId, result.teamSeason);
+            }
+            setFeedback({ severity: 'success', message });
+          }}
+        />
 
         {/* Delete Team Confirmation Dialog */}
-        <Dialog
+        <DeleteTeamDialog
           open={deleteTeamDialogOpen}
-          onClose={() => setDeleteTeamDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>Remove Team from Season</DialogTitle>
-          <DialogContent>
-            {dialogError && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setDialogError(null)}>
-                {dialogError}
-              </Alert>
-            )}
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              Are you sure you want to remove the team <strong>{teamToDelete?.name}</strong> from
-              this season?
-            </Typography>
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              This action will remove the team from this season and all its associated data
-              (divisions, etc.). The system will also attempt to delete the team definition if
-              {" it's not used in other seasons."}
-            </Alert>
-            {teamToDelete && (
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  This team will be removed from the current season.
-                </Typography>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDeleteTeamDialogOpen(false)} disabled={formLoading}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDeleteTeam}
-              variant="contained"
-              color="error"
-              disabled={formLoading}
-            >
-              {formLoading ? <CircularProgress size={20} /> : 'Remove Team'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          onClose={() => {
+            setDeleteTeamDialogOpen(false);
+            setTeamToDelete(null);
+            setTeamToDeleteLeagueSeason(null);
+          }}
+          accountId={accountId}
+          seasonId={seasonId}
+          teamSeason={teamToDelete}
+          leagueSeason={teamToDeleteLeagueSeason}
+          onSuccess={(leagueSeasonId: string, teamSeasonId: string, message: string) => {
+            removeTeamFromLeagueSeasonInState(leagueSeasonId, teamSeasonId);
+            setFeedback({ severity: 'success', message });
+          }}
+        />
 
         {/* Edit Division Dialog */}
-        <Dialog
+        <EditDivisionDialog
           open={editDivisionDialogOpen}
-          onClose={() => setEditDivisionDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>Edit Division</DialogTitle>
-          <DialogContent>
-            {dialogError && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setDialogError(null)}>
-                {dialogError}
-              </Alert>
-            )}
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              Editing division in league: <strong>{leagueSeasonForEdit?.league.name}</strong>
-            </Typography>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Division Name"
-              fullWidth
-              variant="outlined"
-              value={editDivisionName}
-              onChange={(e) => setEditDivisionName(e.target.value)}
-              disabled={formLoading}
-              sx={{ mb: 2 }}
-              helperText="Enter the new name for the division"
-            />
-            <TextField
-              margin="dense"
-              label="Priority"
-              type="number"
-              fullWidth
-              variant="outlined"
-              value={editDivisionPriority}
-              onChange={(e) => setEditDivisionPriority(parseInt(e.target.value) || 0)}
-              disabled={formLoading}
-              helperText="Lower numbers have higher priority"
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditDivisionDialogOpen(false)} disabled={formLoading}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUpdateDivision}
-              variant="contained"
-              disabled={formLoading || !editDivisionName.trim()}
-            >
-              {formLoading ? <CircularProgress size={20} /> : 'Update Division'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          onClose={() => {
+            setEditDivisionDialogOpen(false);
+            setDivisionToEdit(null);
+            setLeagueSeasonForEdit(null);
+          }}
+          accountId={accountId}
+          seasonId={seasonId}
+          divisionSeason={divisionToEdit}
+          leagueSeason={leagueSeasonForEdit}
+          onSuccess={(result: EditDivisionResult, message: string) => {
+            updateDivisionInState(
+              result.leagueSeasonId,
+              result.divisionSeasonId,
+              result.name,
+              result.priority,
+            );
+            setFeedback({ severity: 'success', message });
+          }}
+        />
 
         {/* Create League Dialog */}
-        <Dialog
+        <CreateLeagueDialog
           open={createLeagueDialogOpen}
           onClose={() => setCreateLeagueDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>Create New League</DialogTitle>
-          <DialogContent>
-            {dialogError && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setDialogError(null)}>
-                {dialogError}
-              </Alert>
-            )}
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              Create a new league and add it to this season.
-            </Typography>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="League Name"
-              fullWidth
-              variant="outlined"
-              value={newLeagueName}
-              onChange={(e) => setNewLeagueName(e.target.value)}
-              disabled={formLoading}
-              helperText="Enter a unique name for the new league"
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setCreateLeagueDialogOpen(false)} disabled={formLoading}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateLeague}
-              variant="contained"
-              disabled={formLoading || !newLeagueName.trim()}
-            >
-              {formLoading ? <CircularProgress size={20} /> : 'Create League'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          accountId={accountId}
+          seasonId={seasonId}
+          onSuccess={(leagueSeason, message: string) => {
+            addLeagueSeasonToState(leagueSeason);
+            setFeedback({ severity: 'success', message });
+          }}
+        />
 
         {/* Edit League Dialog */}
-        <Dialog
+        <EditLeagueDialog
           open={editLeagueDialogOpen}
-          onClose={() => setEditLeagueDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>Edit League</DialogTitle>
-          <DialogContent>
-            {dialogError && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setDialogError(null)}>
-                {dialogError}
-              </Alert>
-            )}
-            <TextField
-              autoFocus
-              margin="dense"
-              label="League Name"
-              fullWidth
-              variant="outlined"
-              value={editLeagueName}
-              onChange={(e) => setEditLeagueName(e.target.value)}
-              disabled={formLoading}
-              helperText="Enter the new name for the league"
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditLeagueDialogOpen(false)} disabled={formLoading}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUpdateLeague}
-              variant="contained"
-              disabled={formLoading || !editLeagueName.trim()}
-            >
-              {formLoading ? <CircularProgress size={20} /> : 'Update League'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          onClose={() => {
+            setEditLeagueDialogOpen(false);
+            setLeagueToEdit(null);
+          }}
+          accountId={accountId}
+          leagueSeason={leagueToEdit}
+          onSuccess={(leagueSeasonId: string, newName: string, message: string) => {
+            updateLeagueNameInState(leagueSeasonId, newName);
+            setFeedback({ severity: 'success', message });
+          }}
+        />
       </Box>
 
       {/* FAB for creating new league */}
