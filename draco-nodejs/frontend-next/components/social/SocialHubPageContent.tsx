@@ -19,7 +19,7 @@ const SocialHubPageContent: React.FC<SocialHubPageContentProps> = ({ accountId }
           </p>
         </div>
       </AccountPageHeader>
-      <AdPlacement wrapperSx={{ mt: 2 }} />
+      <AdPlacement />
 
       <section className="max-w-7xl w-full mx-auto px-4 py-8">
         <SocialHubContainer accountId={accountId} />
