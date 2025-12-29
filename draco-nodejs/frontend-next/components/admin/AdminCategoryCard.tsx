@@ -115,9 +115,9 @@ const AdminCategoryCard: React.FC<AdminCategoryCardProps> = ({
 
         {metrics.length > 0 && (
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            {metrics.map((metric, index) => (
+            {metrics.map((metric) => (
               <Chip
-                key={index}
+                key={metric.label}
                 label={`${metric.value} ${metric.label}`}
                 size="small"
                 color={statusColorMap[metric.status || 'default']}
