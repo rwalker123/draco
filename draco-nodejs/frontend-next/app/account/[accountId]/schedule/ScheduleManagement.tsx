@@ -97,7 +97,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     if (message) {
       setFeedback({ severity: 'success', message });
     } else {
-      setFeedback(null);
+      setFeedback((prev) => (prev?.severity === 'success' ? null : prev));
     }
   }, []);
 
@@ -105,7 +105,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     if (message) {
       setFeedback({ severity: 'error', message });
     } else {
-      setFeedback(null);
+      setFeedback((prev) => (prev?.severity === 'error' ? null : prev));
     }
   }, []);
 
@@ -624,13 +624,13 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           </Fab>
         ) : null}
 
-        <Snackbar
-          open={Boolean(feedback)}
-          autoHideDuration={6000}
-          onClose={handleFeedbackClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          {feedback ? (
+        {feedback && (
+          <Snackbar
+            open
+            autoHideDuration={6000}
+            onClose={handleFeedbackClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
             <Alert
               onClose={handleFeedbackClose}
               severity={feedback.severity}
@@ -639,16 +639,16 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             >
               {feedback.message}
             </Alert>
-          ) : undefined}
-        </Snackbar>
+          </Snackbar>
+        )}
 
-        <Snackbar
-          open={Boolean(recapError)}
-          autoHideDuration={6000}
-          onClose={clearRecapError}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          {recapError ? (
+        {recapError && (
+          <Snackbar
+            open
+            autoHideDuration={6000}
+            onClose={clearRecapError}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
             <Alert
               onClose={clearRecapError}
               severity="error"
@@ -657,8 +657,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             >
               {recapError}
             </Alert>
-          ) : undefined}
-        </Snackbar>
+          </Snackbar>
+        )}
       </main>
     </LocalizationProvider>
   );
