@@ -1185,9 +1185,9 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
               <AccordionActions>
                 <Button
                   size="small"
+                  variant="outlined"
                   color="primary"
                   onClick={() => openAddDivisionDialog(leagueSeason)}
-                  startIcon={<AddIcon />}
                 >
                   Add Division
                 </Button>
@@ -1196,7 +1196,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                 {/* Divisions with integrated team assignment */}
                 {leagueSeason.divisions?.length === 0 ? (
                   <Typography variant="body2" color="text.secondary">
-                    No divisions created yet. Click &quote;Add Division&quote; to create one.
+                    No divisions created yet. Add a division before adding teams.
                   </Typography>
                 ) : (
                   <Box>
@@ -1430,9 +1430,16 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                                           ))}
                                           <MenuItem
                                             value="__CREATE_NEW__"
-                                            sx={{ fontStyle: 'italic', color: 'primary.main' }}
+                                            sx={{
+                                              color: 'primary.main',
+                                              fontWeight: 500,
+                                              borderTop: '1px solid',
+                                              borderColor: 'divider',
+                                              mt: 0.5,
+                                              pt: 1,
+                                            }}
                                           >
-                                            + Create new team...
+                                            Create new team
                                           </MenuItem>
                                         </Select>
                                       </FormControl>
@@ -1602,8 +1609,8 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                 />
                 {selectedLeagueSeason && (
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    This division will be created and added to league &quote;
-                    {selectedLeagueSeason.league.name}&quote;
+                    This division will be created and added to league
+                    {selectedLeagueSeason.league.name}.
                   </Typography>
                 )}
               </>
@@ -1816,8 +1823,8 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
               </Alert>
             )}
             <Typography variant="body1" sx={{ mb: 2 }}>
-              Are you sure you want to remove the team{' '}
-              <strong>&quot;{teamToDelete?.name}&quot;</strong> from this season?
+              Are you sure you want to remove the team <strong>{teamToDelete?.name}</strong> from
+              this season?
             </Typography>
             <Alert severity="warning" sx={{ mb: 2 }}>
               This action will remove the team from this season and all its associated data
