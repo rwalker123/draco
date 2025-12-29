@@ -20,6 +20,7 @@ import { useParams } from 'next/navigation';
 import { Forum } from '@mui/icons-material';
 import CommunityMessageList from '@/components/social/CommunityMessageList';
 import AccountPageHeader from '@/components/AccountPageHeader';
+import AdPlacement from '@/components/ads/AdPlacement';
 import { useCurrentSeason } from '@/hooks/useCurrentSeason';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
 import type { CommunityChannelType, CommunityMessagePreviewType } from '@draco/shared-schemas';
@@ -190,6 +191,8 @@ const AccountCommunityMessagesPage: React.FC = () => {
           </Typography>
         </Box>
       </AccountPageHeader>
+
+      <AdPlacement />
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box
