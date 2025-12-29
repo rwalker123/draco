@@ -362,7 +362,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             </Box>
           </Box>
         </AccountPageHeader>
-        <AdPlacement wrapperSx={{ mt: 2 }} />
+        <AdPlacement />
 
         {/* View Mode Tabs */}
         <Paper

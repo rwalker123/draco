@@ -63,7 +63,7 @@ export default function StandingsPage({ accountId, seasonId }: StandingsPageProp
             </Box>
           </Box>
         </AccountPageHeader>
-        <AdPlacement wrapperSx={{ mt: 2 }} />
+        <AdPlacement />
         <Container maxWidth="lg" sx={{ py: 4 }}>
           <Typography variant="body1" color="text.secondary">
             Invalid season for standings.
@@ -89,7 +89,7 @@ export default function StandingsPage({ accountId, seasonId }: StandingsPageProp
           </Box>
         </Box>
       </AccountPageHeader>
-      <AdPlacement wrapperSx={{ mt: 2 }} />
+      <AdPlacement />
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Standings accountId={accountId} seasonId={seasonId} showHeader={true} />

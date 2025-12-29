@@ -18,6 +18,7 @@ import {
 import NextLink from 'next/link';
 import { useParams } from 'next/navigation';
 import AccountPageHeader from '@/components/AccountPageHeader';
+import AdPlacement from '@/components/ads/AdPlacement';
 import { useCurrentSeason } from '@/hooks/useCurrentSeason';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
 import { useApiClient } from '@/hooks/useApiClient';
@@ -238,6 +239,8 @@ const AccountVideosPage: React.FC = () => {
           </Typography>
         </Box>
       </AccountPageHeader>
+
+      <AdPlacement />
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box

@@ -84,7 +84,7 @@ export default function Statistics({ accountId }: StatisticsProps) {
           </Box>
         </Box>
       </AccountPageHeader>
-      <AdPlacement wrapperSx={{ mt: 2 }} />
+      <AdPlacement />
 
       <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, sm: 3 } }}>
         {/* Filters */}

@@ -652,7 +652,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           </Box>
         </Box>
       </AccountPageHeader>
-      <AdPlacement wrapperSx={{ mt: 2 }} />
+      <AdPlacement />
 
       {/* Hidden TeamInfoCard to load data */}
       <div style={{ display: 'none' }}>
