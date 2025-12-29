@@ -19441,10 +19441,11 @@ components:
           type: string
           pattern: ^\d+$
           example: "12345"
-        matchDate:
+        matchDateTime:
           type: string
-        matchTime:
-          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         course:
           type: object
           properties:
@@ -19452,79 +19453,24 @@ components:
               type: string
               pattern: ^\d+$
               example: "12345"
-            externalId:
-              type: string
-              nullable: true
-              maxLength: 50
             name:
               type: string
               minLength: 1
               maxLength: 100
-            designer:
-              type: string
-              nullable: true
-              maxLength: 50
-            yearBuilt:
-              type: integer
-              nullable: true
-            numberOfHoles:
-              type: integer
-              minimum: 9
-              maximum: 18
             address:
               type: string
               nullable: true
-              maxLength: 50
             city:
               type: string
               nullable: true
-              maxLength: 50
             state:
               type: string
               nullable: true
-              maxLength: 50
-            zip:
-              type: string
-              nullable: true
-              maxLength: 20
-            country:
-              type: string
-              nullable: true
-              maxLength: 30
-            mensPar:
-              type: array
-              items:
-                type: integer
-                minimum: 3
-                maximum: 6
-            womansPar:
-              type: array
-              items:
-                type: integer
-                minimum: 3
-                maximum: 6
-            mensHandicap:
-              type: array
-              items:
-                type: integer
-                minimum: 1
-                maximum: 18
-            womansHandicap:
-              type: array
-              items:
-                type: integer
-                minimum: 1
-                maximum: 18
           required:
             - id
             - name
-            - numberOfHoles
-            - mensPar
-            - womansPar
-            - mensHandicap
-            - womansHandicap
-          title: GolfCourse
-          description: Golf course with par and handicap information for all 18 holes
+          title: GolfCourseSlim
+          description: Minimal golf course info for match listings
         tee:
           type: object
           properties:
@@ -19532,86 +19478,16 @@ components:
               type: string
               pattern: ^\d+$
               example: "12345"
-            courseId:
-              type: string
-              pattern: ^\d+$
-              example: "12345"
-            teeColor:
-              type: string
-              maxLength: 20
             teeName:
               type: string
-              maxLength: 20
-            priority:
-              type: integer
-              default: 0
-            distances:
-              type: array
-              items:
-                type: integer
-                minimum: 0
-                maximum: 700
-            mensRating:
-              type: number
-              minimum: 55
-              maximum: 80
-            mensSlope:
-              type: integer
-              minimum: 55
-              maximum: 155
-            womansRating:
-              type: number
-              minimum: 55
-              maximum: 80
-            womansSlope:
-              type: integer
-              minimum: 55
-              maximum: 155
-            mensRatingFront9:
-              type: number
-              minimum: 55
-              maximum: 80
-            mensSlopeFront9:
-              type: integer
-              minimum: 55
-              maximum: 155
-            womansRatingFront9:
-              type: number
-              minimum: 55
-              maximum: 80
-            womansSlopeFront9:
-              type: integer
-              minimum: 55
-              maximum: 155
-            mensRatingBack9:
-              type: number
-              minimum: 55
-              maximum: 80
-            mensSlopeBack9:
-              type: integer
-              minimum: 55
-              maximum: 155
-            womansRatingBack9:
-              type: number
-              minimum: 55
-              maximum: 80
-            womansSlopeBack9:
-              type: integer
-              minimum: 55
-              maximum: 155
+            teeColor:
+              type: string
           required:
             - id
-            - courseId
-            - teeColor
             - teeName
-            - distances
-            - mensRating
-            - mensSlope
-            - womansRating
-            - womansSlope
-          title: GolfCourseTee
-          description: Tee information for a golf course including ratings, slopes, and
-            hole distances
+            - teeColor
+          title: GolfCourseTeeSlim
+          description: Minimal tee info for match listings
         matchStatus:
           type: integer
         matchType:
@@ -19624,8 +19500,7 @@ components:
         - team1
         - team2
         - leagueSeasonId
-        - matchDate
-        - matchTime
+        - matchDateTime
         - matchStatus
         - matchType
       title: GolfMatch
@@ -19669,10 +19544,11 @@ components:
           type: string
           pattern: ^\d+$
           example: "12345"
-        matchDate:
+        matchDateTime:
           type: string
-        matchTime:
-          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         course:
           type: object
           properties:
@@ -19680,79 +19556,24 @@ components:
               type: string
               pattern: ^\d+$
               example: "12345"
-            externalId:
-              type: string
-              nullable: true
-              maxLength: 50
             name:
               type: string
               minLength: 1
               maxLength: 100
-            designer:
-              type: string
-              nullable: true
-              maxLength: 50
-            yearBuilt:
-              type: integer
-              nullable: true
-            numberOfHoles:
-              type: integer
-              minimum: 9
-              maximum: 18
             address:
               type: string
               nullable: true
-              maxLength: 50
             city:
               type: string
               nullable: true
-              maxLength: 50
             state:
               type: string
               nullable: true
-              maxLength: 50
-            zip:
-              type: string
-              nullable: true
-              maxLength: 20
-            country:
-              type: string
-              nullable: true
-              maxLength: 30
-            mensPar:
-              type: array
-              items:
-                type: integer
-                minimum: 3
-                maximum: 6
-            womansPar:
-              type: array
-              items:
-                type: integer
-                minimum: 3
-                maximum: 6
-            mensHandicap:
-              type: array
-              items:
-                type: integer
-                minimum: 1
-                maximum: 18
-            womansHandicap:
-              type: array
-              items:
-                type: integer
-                minimum: 1
-                maximum: 18
           required:
             - id
             - name
-            - numberOfHoles
-            - mensPar
-            - womansPar
-            - mensHandicap
-            - womansHandicap
-          title: GolfCourse
-          description: Golf course with par and handicap information for all 18 holes
+          title: GolfCourseSlim
+          description: Minimal golf course info for match listings
         tee:
           type: object
           properties:
@@ -19760,86 +19581,16 @@ components:
               type: string
               pattern: ^\d+$
               example: "12345"
-            courseId:
-              type: string
-              pattern: ^\d+$
-              example: "12345"
-            teeColor:
-              type: string
-              maxLength: 20
             teeName:
               type: string
-              maxLength: 20
-            priority:
-              type: integer
-              default: 0
-            distances:
-              type: array
-              items:
-                type: integer
-                minimum: 0
-                maximum: 700
-            mensRating:
-              type: number
-              minimum: 55
-              maximum: 80
-            mensSlope:
-              type: integer
-              minimum: 55
-              maximum: 155
-            womansRating:
-              type: number
-              minimum: 55
-              maximum: 80
-            womansSlope:
-              type: integer
-              minimum: 55
-              maximum: 155
-            mensRatingFront9:
-              type: number
-              minimum: 55
-              maximum: 80
-            mensSlopeFront9:
-              type: integer
-              minimum: 55
-              maximum: 155
-            womansRatingFront9:
-              type: number
-              minimum: 55
-              maximum: 80
-            womansSlopeFront9:
-              type: integer
-              minimum: 55
-              maximum: 155
-            mensRatingBack9:
-              type: number
-              minimum: 55
-              maximum: 80
-            mensSlopeBack9:
-              type: integer
-              minimum: 55
-              maximum: 155
-            womansRatingBack9:
-              type: number
-              minimum: 55
-              maximum: 80
-            womansSlopeBack9:
-              type: integer
-              minimum: 55
-              maximum: 155
+            teeColor:
+              type: string
           required:
             - id
-            - courseId
-            - teeColor
             - teeName
-            - distances
-            - mensRating
-            - mensSlope
-            - womansRating
-            - womansSlope
-          title: GolfCourseTee
-          description: Tee information for a golf course including ratings, slopes, and
-            hole distances
+            - teeColor
+          title: GolfCourseTeeSlim
+          description: Minimal tee info for match listings
         matchStatus:
           type: integer
         matchType:
@@ -20218,8 +19969,7 @@ components:
         - team1
         - team2
         - leagueSeasonId
-        - matchDate
-        - matchTime
+        - matchDateTime
         - matchStatus
         - matchType
       title: GolfMatchWithScores
@@ -20227,6 +19977,10 @@ components:
     CreateGolfMatch:
       type: object
       properties:
+        leagueSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
         team1Id:
           type: string
           pattern: ^\d+$
@@ -20235,10 +19989,11 @@ components:
           type: string
           pattern: ^\d+$
           example: "12345"
-        matchDate:
+        matchDateTime:
           type: string
-        matchTime:
-          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         courseId:
           type: string
           pattern: ^\d+$
@@ -20254,15 +20009,19 @@ components:
           type: string
           maxLength: 255
       required:
+        - leagueSeasonId
         - team1Id
         - team2Id
-        - matchDate
-        - matchTime
+        - matchDateTime
       title: CreateGolfMatch
       description: Data required to create a new golf match
     UpdateGolfMatch:
       type: object
       properties:
+        leagueSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
         team1Id:
           type: string
           pattern: ^\d+$
@@ -20271,10 +20030,11 @@ components:
           type: string
           pattern: ^\d+$
           example: "12345"
-        matchDate:
+        matchDateTime:
           type: string
-        matchTime:
-          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         courseId:
           type: string
           pattern: ^\d+$

@@ -14,9 +14,7 @@ export type GolfMatchTeamInfo = teamsseason & {
   teams: teams;
 };
 
-export type GolfMatchCourseInfo = golfcourse & {
-  golfteeinformation: golfteeinformation[];
-};
+export type GolfMatchCourseInfo = golfcourse;
 
 export type GolfMatchScoreEntry = golfmatchscores & {
   golfscore: golfscore;
@@ -42,7 +40,6 @@ export type CreateGolfMatchData = {
   team2: bigint;
   leagueid: bigint;
   matchdate: Date;
-  matchtime: Date;
   courseid?: bigint | null;
   teeid?: bigint | null;
   matchstatus: number;
@@ -71,4 +68,5 @@ export interface IGolfMatchRepository {
   delete(matchId: bigint): Promise<golfmatch>;
   updateStatus(matchId: bigint, status: number): Promise<golfmatch>;
   hasScores(matchId: bigint): Promise<boolean>;
+  seasonHasLeagueSeasons(seasonId: bigint): Promise<boolean>;
 }

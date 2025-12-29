@@ -66,7 +66,7 @@ function getGameStatusShortText(status: number): string {
 function mapGolfMatchToGame(match: GolfMatch): Game {
   return {
     id: match.id,
-    gameDate: match.matchDate,
+    gameDate: match.matchDateTime,
     homeTeamId: match.team1.id,
     visitorTeamId: match.team2.id,
     homeScore: 0,
@@ -116,18 +116,16 @@ export const useGolfMatchOperations = ({ accountId, timeZone }: UseGolfMatchOper
       setLoading(true);
       try {
         const currentSeasonId = await fetchCurrentSeason();
-        const formattedDateTime = formatGameDateTime(values.matchDate, values.matchTime, timeZone);
-        const [datePart, timePart] = formattedDateTime.split('T');
-        const timeOnly = timePart?.split(/[+-]/)[0] ?? '12:00:00';
+        const matchDateTime = formatGameDateTime(values.matchDate, values.matchTime, timeZone);
 
         const result = await createGolfMatch({
           client: apiClient,
           path: { accountId, seasonId: currentSeasonId },
           body: {
+            leagueSeasonId: values.leagueSeasonId,
             team1Id: values.team1Id,
             team2Id: values.team2Id,
-            matchDate: datePart,
-            matchTime: timeOnly,
+            matchDateTime,
             courseId: values.courseId ?? undefined,
             teeId: values.teeId ?? undefined,
             matchType: values.matchType,
@@ -153,9 +151,7 @@ export const useGolfMatchOperations = ({ accountId, timeZone }: UseGolfMatchOper
     async (matchId: string, values: GolfMatchFormValues): Promise<GolfMatchOperationResult> => {
       setLoading(true);
       try {
-        const formattedDateTime = formatGameDateTime(values.matchDate, values.matchTime, timeZone);
-        const [datePart, timePart] = formattedDateTime.split('T');
-        const timeOnly = timePart?.split(/[+-]/)[0] ?? '12:00:00';
+        const matchDateTime = formatGameDateTime(values.matchDate, values.matchTime, timeZone);
 
         const result = await updateGolfMatch({
           client: apiClient,
@@ -163,8 +159,7 @@ export const useGolfMatchOperations = ({ accountId, timeZone }: UseGolfMatchOper
           body: {
             team1Id: values.team1Id,
             team2Id: values.team2Id,
-            matchDate: datePart,
-            matchTime: timeOnly,
+            matchDateTime,
             courseId: values.courseId ?? undefined,
             teeId: values.teeId ?? undefined,
             matchType: values.matchType,

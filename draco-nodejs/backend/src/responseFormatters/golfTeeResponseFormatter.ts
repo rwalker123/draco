@@ -1,5 +1,5 @@
 import { golfteeinformation } from '#prisma/client';
-import { GolfCourseTeeType } from '@draco/shared-schemas';
+import { GolfCourseTeeType, GolfCourseTeeSlimType } from '@draco/shared-schemas';
 
 export class GolfTeeResponseFormatter {
   static format(tee: golfteeinformation): GolfCourseTeeType {
@@ -46,5 +46,13 @@ export class GolfTeeResponseFormatter {
 
   static formatMany(tees: golfteeinformation[]): GolfCourseTeeType[] {
     return tees.map((tee) => this.format(tee));
+  }
+
+  static formatSlim(tee: golfteeinformation): GolfCourseTeeSlimType {
+    return {
+      id: tee.id.toString(),
+      teeName: tee.teename,
+      teeColor: tee.teecolor,
+    };
   }
 }

@@ -57,7 +57,7 @@ function getGameStatusShortText(status: number): string {
 function mapGolfMatchToGame(match: GolfMatch): Game {
   return {
     id: match.id,
-    gameDate: match.matchDate,
+    gameDate: match.matchDateTime,
     homeTeamId: match.team1.id,
     visitorTeamId: match.team2.id,
     homeScore: 0,

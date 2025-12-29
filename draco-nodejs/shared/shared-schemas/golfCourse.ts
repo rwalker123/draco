@@ -151,6 +151,30 @@ export const ImportExternalCourseSchema = z
     description: 'Request to import a course from the external API by its ID',
   });
 
+export const GolfCourseSlimSchema = z
+  .object({
+    id: bigintToStringSchema,
+    name: nameSchema,
+    address: z.string().nullable().optional(),
+    city: z.string().nullable().optional(),
+    state: z.string().nullable().optional(),
+  })
+  .openapi({
+    title: 'GolfCourseSlim',
+    description: 'Minimal golf course info for match listings',
+  });
+
+export const GolfCourseTeeSlimSchema = z
+  .object({
+    id: bigintToStringSchema,
+    teeName: z.string(),
+    teeColor: z.string(),
+  })
+  .openapi({
+    title: 'GolfCourseTeeSlim',
+    description: 'Minimal tee info for match listings',
+  });
+
 export type GolfCourseAddressType = z.infer<typeof GolfCourseAddressSchema>;
 export type GolfCourseParType = z.infer<typeof GolfCourseParSchema>;
 export type GolfCourseTeeRatingsType = z.infer<typeof GolfCourseTeeRatingsSchema>;
@@ -165,3 +189,5 @@ export type UpdateGolfCourseTeeType = z.infer<typeof UpdateGolfCourseTeeSchema>;
 export type AddLeagueCourseType = z.infer<typeof AddLeagueCourseSchema>;
 export type UpdateTeePrioritiesType = z.infer<typeof UpdateTeePrioritiesSchema>;
 export type ImportExternalCourseType = z.infer<typeof ImportExternalCourseSchema>;
+export type GolfCourseSlimType = z.infer<typeof GolfCourseSlimSchema>;
+export type GolfCourseTeeSlimType = z.infer<typeof GolfCourseTeeSlimSchema>;

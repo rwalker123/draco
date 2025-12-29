@@ -20,11 +20,12 @@ export class GolfMatchResponseFormatter {
         name: match.teamsseason_golfmatch_team2Toteamsseason.name,
       },
       leagueSeasonId: match.leagueid.toString(),
-      matchDate: match.matchdate.toISOString().split('T')[0],
-      matchTime: match.matchtime.toISOString().split('T')[1].substring(0, 5),
-      course: match.golfcourse ? GolfCourseResponseFormatter.format(match.golfcourse) : undefined,
+      matchDateTime: match.matchdate.toISOString(),
+      course: match.golfcourse
+        ? GolfCourseResponseFormatter.formatSlim(match.golfcourse)
+        : undefined,
       tee: match.golfteeinformation
-        ? GolfTeeResponseFormatter.format(match.golfteeinformation)
+        ? GolfTeeResponseFormatter.formatSlim(match.golfteeinformation)
         : undefined,
       matchStatus: match.matchstatus,
       matchType: match.matchtype,

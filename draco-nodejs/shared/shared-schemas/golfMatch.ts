@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { bigintToStringSchema, nameSchema } from './standardSchema.js';
-import { GolfCourseSchema, GolfCourseTeeSchema } from './golfCourse.js';
+import { GolfCourseSlimSchema, GolfCourseTeeSlimSchema } from './golfCourse.js';
 import { GolfScoreWithDetailsSchema } from './golfScore.js';
+import { isoDateTimeSchema } from './date.js';
 
 extendZodWithOpenApi(z);
 
@@ -21,10 +22,9 @@ export const GolfMatchSchema = z
     team1: GolfMatchTeamSchema,
     team2: GolfMatchTeamSchema,
     leagueSeasonId: bigintToStringSchema,
-    matchDate: z.string(),
-    matchTime: z.string(),
-    course: GolfCourseSchema.optional(),
-    tee: GolfCourseTeeSchema.optional(),
+    matchDateTime: isoDateTimeSchema,
+    course: GolfCourseSlimSchema.optional(),
+    tee: GolfCourseTeeSlimSchema.optional(),
     matchStatus: z.number().int(),
     matchType: z.number().int(),
     comment: z.string().max(255).optional(),
@@ -63,10 +63,10 @@ export const GolfMatchResultSchema = z
 
 export const CreateGolfMatchSchema = z
   .object({
+    leagueSeasonId: bigintToStringSchema,
     team1Id: bigintToStringSchema,
     team2Id: bigintToStringSchema,
-    matchDate: z.string(),
-    matchTime: z.string(),
+    matchDateTime: isoDateTimeSchema,
     courseId: bigintToStringSchema.optional(),
     teeId: bigintToStringSchema.optional(),
     matchType: z.number().int().default(0),

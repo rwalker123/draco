@@ -31,9 +31,9 @@ export class GolfMatchService {
     startDate?: Date,
     endDate?: Date,
   ): Promise<GolfMatchType[]> {
-    const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
-    if (!seasonExists) {
-      throw new NotFoundError('League season not found');
+    const hasLeagueSeasons = await this.matchRepository.seasonHasLeagueSeasons(seasonId);
+    if (!hasLeagueSeasons) {
+      throw new NotFoundError('Season not found or has no league seasons');
     }
     const matches = await this.matchRepository.findBySeasonIdWithDateRange(
       seasonId,
@@ -69,18 +69,18 @@ export class GolfMatchService {
   }
 
   async getUpcomingMatches(seasonId: bigint, limit = 10): Promise<GolfMatchType[]> {
-    const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
-    if (!seasonExists) {
-      throw new NotFoundError('League season not found');
+    const hasLeagueSeasons = await this.matchRepository.seasonHasLeagueSeasons(seasonId);
+    if (!hasLeagueSeasons) {
+      throw new NotFoundError('Season not found or has no league seasons');
     }
     const matches = await this.matchRepository.findUpcoming(seasonId, limit);
     return GolfMatchResponseFormatter.formatMany(matches);
   }
 
   async getCompletedMatches(seasonId: bigint, limit = 10): Promise<GolfMatchType[]> {
-    const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
-    if (!seasonExists) {
-      throw new NotFoundError('League season not found');
+    const hasLeagueSeasons = await this.matchRepository.seasonHasLeagueSeasons(seasonId);
+    if (!hasLeagueSeasons) {
+      throw new NotFoundError('Season not found or has no league seasons');
     }
     const matches = await this.matchRepository.findCompleted(seasonId, limit);
     return GolfMatchResponseFormatter.formatMany(matches);
@@ -96,9 +96,9 @@ export class GolfMatchService {
   }
 
   async getMatchesByDate(seasonId: bigint, date: string): Promise<GolfMatchType[]> {
-    const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
-    if (!seasonExists) {
-      throw new NotFoundError('League season not found');
+    const hasLeagueSeasons = await this.matchRepository.seasonHasLeagueSeasons(seasonId);
+    if (!hasLeagueSeasons) {
+      throw new NotFoundError('Season not found or has no league seasons');
     }
     const parsedDate = new Date(date);
     if (isNaN(parsedDate.getTime())) {
@@ -109,9 +109,16 @@ export class GolfMatchService {
   }
 
   async createMatch(seasonId: bigint, data: CreateGolfMatchType): Promise<GolfMatchType> {
-    const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
-    if (!seasonExists) {
+    const leagueSeasonId = BigInt(data.leagueSeasonId);
+
+    const leagueSeasonExists = await this.flightRepository.leagueSeasonExists(leagueSeasonId);
+    if (!leagueSeasonExists) {
       throw new NotFoundError('League season not found');
+    }
+
+    const hasLeagueSeasons = await this.matchRepository.seasonHasLeagueSeasons(seasonId);
+    if (!hasLeagueSeasons) {
+      throw new NotFoundError('Season not found or has no league seasons');
     }
 
     const team1Id = BigInt(data.team1Id);
@@ -133,15 +140,13 @@ export class GolfMatchService {
       throw new NotFoundError('Team 2 not found');
     }
 
-    const matchDate = new Date(data.matchDate);
-    const matchTime = this.parseTimeToDate(data.matchTime, matchDate);
+    const matchDateTime = this.parseDateTime(data.matchDateTime);
 
     const match = await this.matchRepository.create({
       team1: team1Id,
       team2: team2Id,
-      leagueid: seasonId,
-      matchdate: matchDate,
-      matchtime: matchTime,
+      leagueid: leagueSeasonId,
+      matchdate: matchDateTime,
       courseid: data.courseId ? BigInt(data.courseId) : null,
       teeid: data.teeId ? BigInt(data.teeId) : null,
       matchstatus: 0,
@@ -182,13 +187,9 @@ export class GolfMatchService {
       updateData.team2 = team2Id;
     }
 
-    if (data.matchDate !== undefined) {
-      updateData.matchdate = new Date(data.matchDate);
-    }
-
-    if (data.matchTime !== undefined) {
-      const baseDate = data.matchDate ? new Date(data.matchDate) : match.matchdate;
-      updateData.matchtime = this.parseTimeToDate(data.matchTime, baseDate);
+    if (data.matchDateTime !== undefined) {
+      const matchDateTime = this.parseDateTime(data.matchDateTime);
+      updateData.matchdate = matchDateTime;
     }
 
     if (data.courseId !== undefined) {
@@ -255,10 +256,12 @@ export class GolfMatchService {
     return GolfMatchResponseFormatter.format(updatedMatch);
   }
 
-  private parseTimeToDate(timeString: string, baseDate: Date): Date {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const result = new Date(baseDate);
-    result.setUTCHours(hours, minutes, 0, 0);
-    return result;
+  private parseDateTime(dateString: string): Date {
+    const parsed = new Date(dateString);
+    const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(dateString);
+    if (Number.isNaN(parsed.getTime()) || !hasTimezone) {
+      throw new ValidationError('Invalid date format. Expected ISO 8601 datetime with timezone');
+    }
+    return parsed;
   }
 }

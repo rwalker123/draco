@@ -18,11 +18,7 @@ const matchTeamInclude = {
       teams: true,
     },
   },
-  golfcourse: {
-    include: {
-      golfteeinformation: true,
-    },
-  },
+  golfcourse: true,
   golfteeinformation: true,
 };
 
@@ -46,9 +42,9 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
 
   async findBySeasonId(seasonId: bigint): Promise<GolfMatchWithTeams[]> {
     return this.prisma.golfmatch.findMany({
-      where: { leagueid: seasonId },
+      where: { leagueseason: { seasonid: seasonId } },
       include: matchTeamInclude,
-      orderBy: [{ matchdate: 'asc' }, { matchtime: 'asc' }],
+      orderBy: { matchdate: 'asc' },
     });
   }
 
@@ -59,7 +55,7 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
   ): Promise<GolfMatchWithTeams[]> {
     return this.prisma.golfmatch.findMany({
       where: {
-        leagueid: seasonId,
+        leagueseason: { seasonid: seasonId },
         ...(startDate || endDate
           ? {
               matchdate: {
@@ -70,7 +66,7 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
           : {}),
       },
       include: matchTeamInclude,
-      orderBy: [{ matchdate: 'asc' }, { matchtime: 'asc' }],
+      orderBy: { matchdate: 'asc' },
     });
   }
 
@@ -83,7 +79,7 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
         ],
       },
       include: matchTeamInclude,
-      orderBy: [{ matchdate: 'asc' }, { matchtime: 'asc' }],
+      orderBy: { matchdate: 'asc' },
     });
   }
 
@@ -105,12 +101,12 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
     const now = new Date();
     return this.prisma.golfmatch.findMany({
       where: {
-        leagueid: seasonId,
+        leagueseason: { seasonid: seasonId },
         matchdate: { gte: now },
         matchstatus: { in: [0, 1] },
       },
       include: matchTeamInclude,
-      orderBy: [{ matchdate: 'asc' }, { matchtime: 'asc' }],
+      orderBy: { matchdate: 'asc' },
       take: limit,
     });
   }
@@ -118,11 +114,11 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
   async findCompleted(seasonId: bigint, limit = 10): Promise<GolfMatchWithTeams[]> {
     return this.prisma.golfmatch.findMany({
       where: {
-        leagueid: seasonId,
+        leagueseason: { seasonid: seasonId },
         matchstatus: 2,
       },
       include: matchTeamInclude,
-      orderBy: [{ matchdate: 'desc' }, { matchtime: 'desc' }],
+      orderBy: { matchdate: 'desc' },
       take: limit,
     });
   }
@@ -133,7 +129,7 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
         OR: [{ team1: teamSeasonId }, { team2: teamSeasonId }],
       },
       include: matchTeamInclude,
-      orderBy: [{ matchdate: 'asc' }, { matchtime: 'asc' }],
+      orderBy: { matchdate: 'asc' },
     });
   }
 
@@ -145,14 +141,14 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
 
     return this.prisma.golfmatch.findMany({
       where: {
-        leagueid: seasonId,
+        leagueseason: { seasonid: seasonId },
         matchdate: {
           gte: startOfDay,
           lte: endOfDay,
         },
       },
       include: matchTeamInclude,
-      orderBy: [{ matchtime: 'asc' }],
+      orderBy: { matchdate: 'asc' },
     });
   }
 
@@ -163,7 +159,6 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
         team2: data.team2,
         leagueid: data.leagueid,
         matchdate: data.matchdate,
-        matchtime: data.matchtime,
         courseid: data.courseid ?? null,
         teeid: data.teeid ?? null,
         matchstatus: data.matchstatus,
@@ -196,6 +191,13 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
   async hasScores(matchId: bigint): Promise<boolean> {
     const count = await this.prisma.golfmatchscores.count({
       where: { matchid: matchId },
+    });
+    return count > 0;
+  }
+
+  async seasonHasLeagueSeasons(seasonId: bigint): Promise<boolean> {
+    const count = await this.prisma.leagueseason.count({
+      where: { seasonid: seasonId },
     });
     return count > 0;
   }

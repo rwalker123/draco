@@ -3,6 +3,7 @@ import {
   GolfCourseType,
   GolfCourseWithTeesType,
   GolfLeagueCourseType,
+  GolfCourseSlimType,
 } from '@draco/shared-schemas';
 import {
   GolfCourseWithTees,
@@ -114,5 +115,15 @@ export class GolfCourseResponseFormatter {
 
   static formatLeagueCourses(leagueCourses: GolfLeagueCourseRaw[]): GolfLeagueCourseType[] {
     return leagueCourses.map((lc) => this.formatLeagueCourse(lc));
+  }
+
+  static formatSlim(course: golfcourse): GolfCourseSlimType {
+    return {
+      id: course.id.toString(),
+      name: course.name,
+      address: this.normalize(course.address),
+      city: this.normalize(course.city),
+      state: this.normalize(course.state),
+    };
   }
 }
