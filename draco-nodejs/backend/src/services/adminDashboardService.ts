@@ -28,10 +28,14 @@ export class AdminDashboardService {
   private async getAccountMetrics(
     accountId: bigint,
   ): Promise<AdminDashboardSummaryType['account']> {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     const [
       userCount,
       sponsorCount,
       memberBusinessCount,
+      recentCommunicationsCount,
       discordSettings,
       twitterCreds,
       facebookCreds,
@@ -42,6 +46,12 @@ export class AdminDashboardService {
       prisma.memberbusiness.count({
         where: {
           contacts: { creatoraccountid: accountId },
+        },
+      }),
+      prisma.emails.count({
+        where: {
+          account_id: accountId,
+          sent_at: { gte: thirtyDaysAgo },
         },
       }),
       prisma.accountdiscordsettings.findUnique({ where: { accountid: accountId } }),
@@ -58,7 +68,7 @@ export class AdminDashboardService {
 
     return {
       userCount,
-      recentCommunicationsCount: 0,
+      recentCommunicationsCount,
       socialPlatformsConnected,
       sponsorCount,
       memberBusinessCount,
@@ -91,17 +101,25 @@ export class AdminDashboardService {
   private async getCommunityMetrics(
     accountId: bigint,
   ): Promise<AdminDashboardSummaryType['community']> {
-    const [specialAnnouncementsCount, accountSettings, hallOfFameMembersCount, pendingPhotosCount] =
-      await Promise.all([
-        prisma.leaguenews.count({
-          where: { accountid: accountId, specialannounce: true },
-        }),
-        this.accountSettingsService.getAccountSettings(accountId),
-        prisma.hof.count({ where: { accountid: accountId } }),
-        prisma.photogallerysubmission.count({
-          where: { accountid: accountId, status: 'Pending' },
-        }),
-      ]);
+    const [
+      specialAnnouncementsCount,
+      activePollsCount,
+      accountSettings,
+      hallOfFameMembersCount,
+      pendingPhotosCount,
+    ] = await Promise.all([
+      prisma.leaguenews.count({
+        where: { accountid: accountId, specialannounce: true },
+      }),
+      prisma.votequestion.count({
+        where: { accountid: accountId, active: true },
+      }),
+      this.accountSettingsService.getAccountSettings(accountId),
+      prisma.hof.count({ where: { accountid: accountId } }),
+      prisma.photogallerysubmission.count({
+        where: { accountid: accountId, status: 'Pending' },
+      }),
+    ]);
 
     const surveySetting = accountSettings.find(
       (setting) => setting.definition.key === 'ShowPlayerSurvey',
@@ -109,7 +127,7 @@ export class AdminDashboardService {
 
     return {
       specialAnnouncementsCount,
-      activePollsCount: 0,
+      activePollsCount,
       surveysEnabled: Boolean(surveySetting?.effectiveValue),
       hallOfFameMembersCount,
       pendingPhotosCount,

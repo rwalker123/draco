@@ -17,37 +17,8 @@ export function useAdminDashboardSummary(accountId: string): UseAdminDashboardSu
   const [error, setError] = useState<string | null>(null);
   const apiClient = useApiClient();
 
-  const fetchSummary = useCallback(async () => {
-    if (!accountId) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await getAdminDashboardSummary({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult(result, 'Failed to fetch dashboard summary');
-      setSummary(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load dashboard summary';
-      setError(message);
-      setSummary(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, apiClient]);
-
-  useEffect(() => {
-    let ignore = false;
-
-    const load = async () => {
+  const fetchSummary = useCallback(
+    async (signal?: AbortSignal) => {
       if (!accountId) {
         setLoading(false);
         return;
@@ -63,28 +34,29 @@ export function useAdminDashboardSummary(accountId: string): UseAdminDashboardSu
           throwOnError: false,
         });
 
-        if (ignore) return;
+        if (signal?.aborted) return;
 
         const data = unwrapApiResult(result, 'Failed to fetch dashboard summary');
         setSummary(data);
       } catch (err) {
-        if (ignore) return;
+        if (signal?.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load dashboard summary';
         setError(message);
         setSummary(null);
       } finally {
-        if (!ignore) {
+        if (!signal?.aborted) {
           setLoading(false);
         }
       }
-    };
+    },
+    [accountId, apiClient],
+  );
 
-    void load();
-
-    return () => {
-      ignore = true;
-    };
-  }, [accountId, apiClient]);
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchSummary(controller.signal);
+    return () => controller.abort();
+  }, [fetchSummary]);
 
   return {
     summary,
