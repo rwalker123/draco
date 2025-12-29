@@ -25,6 +25,7 @@ import accountsDiscordRouter from './accounts-discord.js';
 import accountsTwitterRouter from './accounts-twitter.js';
 import accountsBlueskyRouter from './accounts-bluesky.js';
 import accountsFacebookRouter from './accounts-facebook.js';
+import accountsAdminDashboardRouter from './accounts-admin-dashboard.js';
 
 const router = Router({ mergeParams: true });
 
@@ -98,5 +99,8 @@ router.use('/', accountsAnnouncementsRouter);
 
 // Social feed endpoints
 router.use('/', accountsSocialRouter);
+
+// Admin dashboard summary endpoints
+router.use('/', accountsAdminDashboardRouter);
 
 export default router;

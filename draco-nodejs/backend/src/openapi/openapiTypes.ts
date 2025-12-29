@@ -293,6 +293,7 @@ import {
   SchedulerUmpireExclusionSchema,
   SchedulerUmpireExclusionUpsertSchema,
   SchedulerUmpireExclusionsSchema,
+  AdminDashboardSummarySchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1187,6 +1188,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'ContactValidation',
     ContactValidationSchema,
   );
+  const AdminDashboardSummarySchemaRef = registry.register(
+    'AdminDashboardSummary',
+    AdminDashboardSummarySchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1484,6 +1489,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SchedulerUmpireExclusionsSchemaRef,
     RoleCheckResponseSchemaRef,
     DiscordTeamForumRemoveRequestSchemaRef,
+    AdminDashboardSummarySchemaRef,
   };
 };
 

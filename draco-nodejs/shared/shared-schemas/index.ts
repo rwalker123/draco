@@ -38,3 +38,4 @@ export * from './facebook.js';
 export * from './accountDiscord.js';
 export * from './welcomeMessage.js';
 export * from './scheduler.js';
+export * from './adminDashboard.js';
