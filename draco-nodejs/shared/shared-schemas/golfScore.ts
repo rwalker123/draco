@@ -86,6 +86,7 @@ export const CreateGolfScoreSchema = z
 
 export const PlayerMatchScoreSchema = z
   .object({
+    teamSeasonId: bigintToStringSchema,
     rosterId: bigintToStringSchema,
     contactId: bigintToStringSchema,
     isAbsent: z.boolean().default(false),
@@ -98,14 +99,14 @@ export const PlayerMatchScoreSchema = z
     description: 'Score entry for a single player in a match',
   });
 
-export const SubmitMatchScoresSchema = z
+export const SubmitMatchResultsSchema = z
   .object({
     courseId: bigintToStringSchema,
     scores: z.array(PlayerMatchScoreSchema),
   })
   .openapi({
-    title: 'SubmitMatchScores',
-    description: 'All player scores for a match',
+    title: 'SubmitMatchResults',
+    description: 'All player scores for a match (all teams)',
   });
 
 export type GolfHoleScoresType = z.infer<typeof GolfHoleScoresSchema>;
@@ -113,4 +114,4 @@ export type GolfScoreType = z.infer<typeof GolfScoreSchema>;
 export type GolfScoreWithDetailsType = z.infer<typeof GolfScoreWithDetailsSchema>;
 export type CreateGolfScoreType = z.infer<typeof CreateGolfScoreSchema>;
 export type PlayerMatchScoreType = z.infer<typeof PlayerMatchScoreSchema>;
-export type SubmitMatchScoresType = z.infer<typeof SubmitMatchScoresSchema>;
+export type SubmitMatchResultsType = z.infer<typeof SubmitMatchResultsSchema>;

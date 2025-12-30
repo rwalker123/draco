@@ -7,8 +7,10 @@ export const registerGolfMatchesEndpoints = ({ registry, schemaRefs, z }: Regist
     CreateGolfMatchSchemaRef,
     GolfMatchSchemaRef,
     GolfMatchWithScoresSchemaRef,
+    GolfScoreWithDetailsSchemaRef,
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
+    SubmitMatchResultsSchemaRef,
     UpdateGolfMatchSchemaRef,
     ValidationErrorSchemaRef,
   } = schemaRefs;
@@ -16,6 +18,11 @@ export const registerGolfMatchesEndpoints = ({ registry, schemaRefs, z }: Regist
   const GolfMatchListSchemaRef = z.array(GolfMatchSchemaRef).openapi({
     title: 'GolfMatchList',
     description: 'List of golf matches',
+  });
+
+  const GolfScoreWithDetailsListSchemaRef = z.array(GolfScoreWithDetailsSchemaRef).openapi({
+    title: 'GolfScoreWithDetailsList',
+    description: 'List of golf scores with player and tee details',
   });
 
   // GET /api/accounts/{accountId}/golf/matches/season/{seasonId}
@@ -516,6 +523,96 @@ export const registerGolfMatchesEndpoints = ({ registry, schemaRefs, z }: Regist
         content: {
           'application/json': {
             schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Match not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // POST /api/accounts/{accountId}/golf/matches/{matchId}/results
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/golf/matches/{matchId}/results',
+    description: 'Submit scores for all players in a match',
+    operationId: 'submitGolfMatchResults',
+    summary: 'Submit match results',
+    tags: ['Golf Matches'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'matchId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: SubmitMatchResultsSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Scores submitted successfully',
+        content: {
+          'application/json': {
+            schema: GolfScoreWithDetailsListSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied - account management permission required',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
           },
         },
       },

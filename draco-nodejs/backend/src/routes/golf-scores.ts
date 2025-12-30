@@ -2,7 +2,6 @@ import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
-import { SubmitMatchScoresSchema } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = Router({ mergeParams: true });
@@ -62,19 +61,6 @@ router.get(
     const { scoreId } = extractBigIntParams(req.params, 'scoreId');
     const score = await golfScoreService.getScoreById(scoreId);
     res.json(score);
-  }),
-);
-
-router.post(
-  '/match/:matchId/team/:teamId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.manage'),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { matchId, teamId } = extractBigIntParams(req.params, 'matchId', 'teamId');
-    const scoresData = SubmitMatchScoresSchema.parse(req.body);
-    const scores = await golfScoreService.submitMatchScores(matchId, teamId, scoresData);
-    res.status(201).json(scores);
   }),
 );
 

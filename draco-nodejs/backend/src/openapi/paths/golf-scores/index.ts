@@ -5,10 +5,8 @@ export const registerGolfScoresEndpoints = ({ registry, schemaRefs, z }: Registe
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
     GolfScoreWithDetailsSchemaRef,
-    SubmitMatchScoresSchemaRef,
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
-    ValidationErrorSchemaRef,
   } = schemaRefs;
 
   const GolfScoreWithDetailsListSchemaRef = z.array(GolfScoreWithDetailsSchemaRef).openapi({
@@ -320,105 +318,6 @@ export const registerGolfScoresEndpoints = ({ registry, schemaRefs, z }: Registe
       },
       404: {
         description: 'Score not found',
-        content: {
-          'application/json': {
-            schema: NotFoundErrorSchemaRef,
-          },
-        },
-      },
-      500: {
-        description: 'Internal server error',
-        content: {
-          'application/json': {
-            schema: InternalServerErrorSchemaRef,
-          },
-        },
-      },
-    },
-  });
-
-  // POST /api/accounts/{accountId}/golf/scores/match/{matchId}/team/{teamId}
-  registry.registerPath({
-    method: 'post',
-    path: '/api/accounts/{accountId}/golf/scores/match/{matchId}/team/{teamId}',
-    description: 'Submit scores for a team in a match',
-    operationId: 'submitGolfMatchScores',
-    summary: 'Submit match scores',
-    tags: ['Golf Scores'],
-    security: [{ bearerAuth: [] }],
-    parameters: [
-      {
-        name: 'accountId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'matchId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'teamId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-    ],
-    request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: SubmitMatchScoresSchemaRef,
-          },
-        },
-      },
-    },
-    responses: {
-      201: {
-        description: 'Scores submitted successfully',
-        content: {
-          'application/json': {
-            schema: GolfScoreWithDetailsListSchemaRef,
-          },
-        },
-      },
-      400: {
-        description: 'Validation error',
-        content: {
-          'application/json': {
-            schema: ValidationErrorSchemaRef,
-          },
-        },
-      },
-      401: {
-        description: 'Authentication required',
-        content: {
-          'application/json': {
-            schema: AuthenticationErrorSchemaRef,
-          },
-        },
-      },
-      403: {
-        description: 'Access denied - account management permission required',
-        content: {
-          'application/json': {
-            schema: AuthorizationErrorSchemaRef,
-          },
-        },
-      },
-      404: {
-        description: 'Match or team not found',
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,

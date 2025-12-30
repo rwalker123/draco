@@ -20416,7 +20416,7 @@ components:
         - holeScores
       title: GolfScoreWithDetails
       description: Golf score with player and tee details
-    SubmitMatchScores:
+    SubmitMatchResults:
       type: object
       properties:
         courseId:
@@ -20428,6 +20428,10 @@ components:
           items:
             type: object
             properties:
+              teamSeasonId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
               rosterId:
                 type: string
                 pattern: ^\d+$
@@ -20489,6 +20493,7 @@ components:
                 title: CreateGolfScore
                 description: Data required to create a new golf score
             required:
+              - teamSeasonId
               - rosterId
               - contactId
             title: PlayerMatchScore
@@ -20496,11 +20501,15 @@ components:
       required:
         - courseId
         - scores
-      title: SubmitMatchScores
-      description: All player scores for a match
+      title: SubmitMatchResults
+      description: All player scores for a match (all teams)
     PlayerMatchScore:
       type: object
       properties:
+        teamSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
         rosterId:
           type: string
           pattern: ^\d+$
@@ -20562,6 +20571,7 @@ components:
           title: CreateGolfScore
           description: Data required to create a new golf score
       required:
+        - teamSeasonId
         - rosterId
         - contactId
       title: PlayerMatchScore
@@ -31333,6 +31343,74 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/matches/{matchId}/results:
+    post:
+      description: Submit scores for all players in a match
+      operationId: submitGolfMatchResults
+      summary: Submit match results
+      tags:
+        - Golf Matches
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitMatchResults"
+      responses:
+        "201":
+          description: Scores submitted successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GolfScoreWithDetails"
+                title: GolfScoreWithDetailsList
+                description: List of golf scores with player and tee details
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - account management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Match not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/golf/matches/{matchId}/status:
     put:
       description: Update the status of a golf match
@@ -32178,79 +32256,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthenticationError"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InternalServerError"
-    post:
-      description: Submit scores for a team in a match
-      operationId: submitGolfMatchScores
-      summary: Submit match scores
-      tags:
-        - Golf Scores
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: matchId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: teamId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SubmitMatchScores"
-      responses:
-        "201":
-          description: Scores submitted successfully
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/GolfScoreWithDetails"
-                title: GolfScoreWithDetailsList
-                description: List of golf scores with player and tee details
-        "400":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ValidationError"
-        "401":
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthenticationError"
-        "403":
-          description: Access denied - account management permission required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthorizationError"
-        "404":
-          description: Match or team not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NotFoundError"
         "500":
           description: Internal server error
           content:

@@ -23,7 +23,7 @@ import type { ScoreEntryDialogProps } from '../types/sportAdapter';
 import type {
   GolfRosterEntryType,
   GolfSubstituteType,
-  SubmitMatchScoresType,
+  SubmitMatchResultsType,
   PlayerMatchScoreType,
   GolfCourseTeeType,
   GolfScoreWithDetailsType,
@@ -239,11 +239,12 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
   }, [open]);
 
   const buildPlayerScores = useCallback(
-    (scores: Record<string, PlayerScoreData>): PlayerMatchScoreType[] => {
+    (scores: Record<string, PlayerScoreData>, teamSeasonId: string): PlayerMatchScoreType[] => {
       return Object.values(scores)
         .filter((score) => !score.isAbsent || score.substituteContactId)
         .map((score) => {
           const playerScore: PlayerMatchScoreType = {
+            teamSeasonId,
             rosterId: score.rosterId,
             contactId: score.substituteContactId || score.contactId,
             isAbsent: score.isAbsent,
@@ -276,36 +277,19 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     setError(null);
 
     try {
-      const team1PlayerScores = buildPlayerScores(team1Scores);
-      const team2PlayerScores = buildPlayerScores(team2Scores);
+      const team1PlayerScores = buildPlayerScores(team1Scores, selectedGame.homeTeamId);
+      const team2PlayerScores = buildPlayerScores(team2Scores, selectedGame.visitorTeamId);
 
-      if (team1PlayerScores.length > 0 && selectedGame.fieldId) {
-        const team1Payload: SubmitMatchScoresType = {
-          courseId: selectedGame.fieldId,
-          scores: team1PlayerScores,
-        };
-        const result1 = await scoreService.submitMatchScores(
-          selectedGame.id,
-          selectedGame.homeTeamId,
-          team1Payload,
-        );
-        if (!result1.success) {
-          throw new Error(result1.error);
-        }
-      }
+      const allScores = [...team1PlayerScores, ...team2PlayerScores];
 
-      if (team2PlayerScores.length > 0 && selectedGame.fieldId) {
-        const team2Payload: SubmitMatchScoresType = {
+      if (allScores.length > 0 && selectedGame.fieldId) {
+        const payload: SubmitMatchResultsType = {
           courseId: selectedGame.fieldId,
-          scores: team2PlayerScores,
+          scores: allScores,
         };
-        const result2 = await scoreService.submitMatchScores(
-          selectedGame.id,
-          selectedGame.visitorTeamId,
-          team2Payload,
-        );
-        if (!result2.success) {
-          throw new Error(result2.error);
+        const result = await scoreService.submitMatchResults(selectedGame.id, payload);
+        if (!result.success) {
+          throw new Error(result.error);
         }
       }
 

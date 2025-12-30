@@ -7,10 +7,10 @@ import {
   getGolfPlayerScores,
   getGolfPlayerSeasonScores,
   getGolfScore,
-  submitGolfMatchScores,
+  submitGolfMatchResults,
   deleteGolfMatchScores,
 } from '@draco/shared-api-client';
-import type { GolfScoreWithDetailsType, SubmitMatchScoresType } from '@draco/shared-schemas';
+import type { GolfScoreWithDetailsType, SubmitMatchResultsType } from '@draco/shared-schemas';
 import { useApiClient } from './useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 
@@ -33,10 +33,9 @@ export interface GolfScoreService {
     seasonId: string,
   ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
   getScore: (scoreId: string) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType>>;
-  submitMatchScores: (
+  submitMatchResults: (
     matchId: string,
-    teamId: string,
-    payload: SubmitMatchScoresType,
+    payload: SubmitMatchResultsType,
   ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
   deleteMatchScores: (matchId: string) => Promise<GolfScoreServiceResult<void>>;
 }
@@ -166,28 +165,28 @@ export function useGolfScores(accountId: string): GolfScoreService {
     [accountId, apiClient],
   );
 
-  const submitMatchScores = useCallback<GolfScoreService['submitMatchScores']>(
-    async (matchId, teamId, payload) => {
+  const submitMatchResults = useCallback<GolfScoreService['submitMatchResults']>(
+    async (matchId, payload) => {
       try {
-        const result = await submitGolfMatchScores({
+        const result = await submitGolfMatchResults({
           client: apiClient,
-          path: { accountId, matchId, teamId },
+          path: { accountId, matchId },
           body: payload,
           throwOnError: false,
         });
 
         const scores = unwrapApiResult(
           result,
-          'Failed to submit match scores',
+          'Failed to submit match results',
         ) as GolfScoreWithDetailsType[];
 
         return {
           success: true,
           data: scores,
-          message: 'Match scores submitted successfully',
+          message: 'Match results submitted successfully',
         } as const;
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to submit match scores';
+        const message = error instanceof Error ? error.message : 'Failed to submit match results';
         return { success: false, error: message } as const;
       }
     },
@@ -224,7 +223,7 @@ export function useGolfScores(accountId: string): GolfScoreService {
     getPlayerScores,
     getPlayerSeasonScores,
     getScore,
-    submitMatchScores,
+    submitMatchResults,
     deleteMatchScores,
   };
 }

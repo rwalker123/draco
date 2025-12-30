@@ -330,7 +330,7 @@ import {
   UpdateGolfMatchSchema,
   GolfScoreSchema,
   GolfScoreWithDetailsSchema,
-  SubmitMatchScoresSchema,
+  SubmitMatchResultsSchema,
   PlayerMatchScoreSchema,
   GolfDifferentialSchema,
   PlayerHandicapSchema,
@@ -1311,9 +1311,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'GolfScoreWithDetails',
     GolfScoreWithDetailsSchema,
   );
-  const SubmitMatchScoresSchemaRef = registry.register(
-    'SubmitMatchScores',
-    SubmitMatchScoresSchema,
+  const SubmitMatchResultsSchemaRef = registry.register(
+    'SubmitMatchResults',
+    SubmitMatchResultsSchema,
   );
   const PlayerMatchScoreSchemaRef = registry.register('PlayerMatchScore', PlayerMatchScoreSchema);
   const GolfDifferentialSchemaRef = registry.register('GolfDifferential', GolfDifferentialSchema);
@@ -1686,7 +1686,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpdateGolfMatchSchemaRef,
     GolfScoreSchemaRef,
     GolfScoreWithDetailsSchemaRef,
-    SubmitMatchScoresSchemaRef,
+    SubmitMatchResultsSchemaRef,
     PlayerMatchScoreSchemaRef,
     GolfDifferentialSchemaRef,
     PlayerHandicapSchemaRef,
