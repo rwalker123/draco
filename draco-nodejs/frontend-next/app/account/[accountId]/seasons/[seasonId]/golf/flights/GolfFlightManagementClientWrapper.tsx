@@ -1,11 +1,11 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import ProtectedRoute from '../../../../../../components/auth/ProtectedRoute';
-import AccountTypeGuard from '../../../../../../components/auth/AccountTypeGuard';
-import LeagueSeasonManagement from './LeagueSeasonManagement';
+import ProtectedRoute from '../../../../../../../components/auth/ProtectedRoute';
+import AccountTypeGuard from '../../../../../../../components/auth/AccountTypeGuard';
+import GolfFlightManagement from './GolfFlightManagement';
 
-export default function LeagueSeasonManagementClientWrapper() {
+export default function GolfFlightManagementClientWrapper() {
   const params = useParams();
   const router = useRouter();
 
@@ -20,9 +20,9 @@ export default function LeagueSeasonManagementClientWrapper() {
   };
 
   return (
-    <AccountTypeGuard requiredAccountType="baseball">
+    <AccountTypeGuard requiredAccountType="golf">
       <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
-        <LeagueSeasonManagement
+        <GolfFlightManagement
           accountId={accountIdStr}
           seasonId={seasonIdStr}
           onClose={handleClose}

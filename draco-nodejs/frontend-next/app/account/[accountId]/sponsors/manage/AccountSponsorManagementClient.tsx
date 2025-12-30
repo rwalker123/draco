@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
+import AccountTypeGuard from '../../../../../components/auth/AccountTypeGuard';
 import AccountSponsorManagement from './AccountSponsorManagement';
 
 export default function AccountSponsorManagementClient() {
@@ -13,8 +14,10 @@ export default function AccountSponsorManagementClient() {
   }
 
   return (
-    <ProtectedRoute requiredPermission="account.sponsors.manage" checkAccountBoundary>
-      <AccountSponsorManagement accountId={accountId} />
-    </ProtectedRoute>
+    <AccountTypeGuard requiredAccountType="baseball">
+      <ProtectedRoute requiredPermission="account.sponsors.manage" checkAccountBoundary>
+        <AccountSponsorManagement accountId={accountId} />
+      </ProtectedRoute>
+    </AccountTypeGuard>
   );
 }

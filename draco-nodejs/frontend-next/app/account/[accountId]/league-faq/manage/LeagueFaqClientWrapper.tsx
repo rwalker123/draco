@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
+import AccountTypeGuard from '../../../../../components/auth/AccountTypeGuard';
 import { LeagueFaqManagement } from '../../../../../components/league-faq/LeagueFaqManagement';
 
 export default function LeagueFaqClientWrapper() {
@@ -14,8 +15,10 @@ export default function LeagueFaqClientWrapper() {
   }
 
   return (
-    <ProtectedRoute requiredPermission="league.faq.manage" checkAccountBoundary={true}>
-      <LeagueFaqManagement accountId={accountId} />
-    </ProtectedRoute>
+    <AccountTypeGuard requiredAccountType="baseball">
+      <ProtectedRoute requiredPermission="league.faq.manage" checkAccountBoundary={true}>
+        <LeagueFaqManagement accountId={accountId} />
+      </ProtectedRoute>
+    </AccountTypeGuard>
   );
 }

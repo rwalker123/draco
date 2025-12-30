@@ -5,3 +5,5 @@ export { default as GolfRoster } from './GolfRoster';
 export { default as GolfPlayerForm } from './GolfPlayerForm';
 export { default as SubstituteList } from './SubstituteList';
 export { default as SignPlayerDialog } from './SignPlayerDialog';
+export { default as CreateGolfTeamDialog } from './CreateGolfTeamDialog';
+export { default as DeleteGolfTeamDialog } from './DeleteGolfTeamDialog';

@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
+import AccountTypeGuard from '../../../../../components/auth/AccountTypeGuard';
 import { PhotoGalleryAdminManagement } from '../../../../../components/photo-gallery/admin/PhotoGalleryAdminManagement';
 
 export default function PhotoGalleryAdminClientWrapper() {
@@ -14,11 +15,13 @@ export default function PhotoGalleryAdminClientWrapper() {
   }
 
   return (
-    <ProtectedRoute
-      requiredRole={['AccountAdmin', 'AccountPhotoAdmin']}
-      checkAccountBoundary={true}
-    >
-      <PhotoGalleryAdminManagement accountId={accountId} />
-    </ProtectedRoute>
+    <AccountTypeGuard requiredAccountType="baseball">
+      <ProtectedRoute
+        requiredRole={['AccountAdmin', 'AccountPhotoAdmin']}
+        checkAccountBoundary={true}
+      >
+        <PhotoGalleryAdminManagement accountId={accountId} />
+      </ProtectedRoute>
+    </AccountTypeGuard>
   );
 }
