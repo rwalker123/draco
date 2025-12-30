@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   getGolfMatchScores,
   getGolfTeamMatchScores,
@@ -217,13 +217,24 @@ export function useGolfScores(accountId: string): GolfScoreService {
     [accountId, apiClient],
   );
 
-  return {
-    getMatchScores,
-    getTeamMatchScores,
-    getPlayerScores,
-    getPlayerSeasonScores,
-    getScore,
-    submitMatchResults,
-    deleteMatchScores,
-  };
+  return useMemo(
+    () => ({
+      getMatchScores,
+      getTeamMatchScores,
+      getPlayerScores,
+      getPlayerSeasonScores,
+      getScore,
+      submitMatchResults,
+      deleteMatchScores,
+    }),
+    [
+      getMatchScores,
+      getTeamMatchScores,
+      getPlayerScores,
+      getPlayerSeasonScores,
+      getScore,
+      submitMatchResults,
+      deleteMatchScores,
+    ],
+  );
 }

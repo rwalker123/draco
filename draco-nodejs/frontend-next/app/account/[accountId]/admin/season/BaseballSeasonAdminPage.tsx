@@ -27,7 +27,7 @@ interface SubItemConfig {
   ) => AdminSubItemMetric[];
 }
 
-const SeasonAdminPage: React.FC = () => {
+const BaseballSeasonAdminPage: React.FC = () => {
   const params = useParams();
   const accountIdParam = params?.accountId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
@@ -128,4 +128,4 @@ const SeasonAdminPage: React.FC = () => {
   );
 };
 
-export default SeasonAdminPage;
+export default BaseballSeasonAdminPage;

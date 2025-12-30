@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   listGolfFlights,
   listGolfFlightsForLeagueSeason,
@@ -166,11 +166,14 @@ export function useGolfFlights(accountId: string): GolfFlightService {
     [accountId, apiClient],
   );
 
-  return {
-    listFlights,
-    listFlightsForLeagueSeason,
-    createFlight,
-    updateFlight,
-    deleteFlight,
-  };
+  return useMemo(
+    () => ({
+      listFlights,
+      listFlightsForLeagueSeason,
+      createFlight,
+      updateFlight,
+      deleteFlight,
+    }),
+    [listFlights, listFlightsForLeagueSeason, createFlight, updateFlight, deleteFlight],
+  );
 }

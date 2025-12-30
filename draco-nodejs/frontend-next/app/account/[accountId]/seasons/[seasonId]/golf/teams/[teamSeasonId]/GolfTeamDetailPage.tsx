@@ -27,7 +27,7 @@ import {
   PersonAdd as SignIcon,
   PersonAddAlt as CreateIcon,
 } from '@mui/icons-material';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import type {
   GolfTeamWithRosterType,
   GolfRosterEntryType,
@@ -38,14 +38,14 @@ import type {
   UpdateGolfPlayerType,
   ReleasePlayerType,
 } from '@draco/shared-schemas';
-import AccountPageHeader from '../../../../../../components/AccountPageHeader';
-import GolfRoster from '../../../../../../components/golf/teams/GolfRoster';
-import SubstituteList from '../../../../../../components/golf/teams/SubstituteList';
-import GolfPlayerForm from '../../../../../../components/golf/teams/GolfPlayerForm';
-import SignPlayerDialog from '../../../../../../components/golf/teams/SignPlayerDialog';
-import { useGolfTeams } from '../../../../../../hooks/useGolfTeams';
-import { useGolfRosters } from '../../../../../../hooks/useGolfRosters';
-import { useRole } from '../../../../../../context/RoleContext';
+import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
+import GolfRoster from '../../../../../../../../components/golf/teams/GolfRoster';
+import SubstituteList from '../../../../../../../../components/golf/teams/SubstituteList';
+import GolfPlayerForm from '../../../../../../../../components/golf/teams/GolfPlayerForm';
+import SignPlayerDialog from '../../../../../../../../components/golf/teams/SignPlayerDialog';
+import { useGolfTeams } from '../../../../../../../../hooks/useGolfTeams';
+import { useGolfRosters } from '../../../../../../../../hooks/useGolfRosters';
+import { useRole } from '../../../../../../../../context/RoleContext';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -79,12 +79,12 @@ function a11yProps(index: number) {
 const GolfTeamDetailPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const accountIdParam = params?.accountId;
+  const seasonIdParam = params?.seasonId;
   const teamSeasonIdParam = params?.teamSeasonId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
+  const seasonId = Array.isArray(seasonIdParam) ? seasonIdParam[0] : seasonIdParam;
   const teamSeasonId = Array.isArray(teamSeasonIdParam) ? teamSeasonIdParam[0] : teamSeasonIdParam;
-  const seasonId = searchParams.get('seasonId') || '';
   const { hasPermission } = useRole();
 
   const canManage = accountId ? hasPermission('account.manage', { accountId }) : false;
@@ -203,8 +203,8 @@ const GolfTeamDetailPage: React.FC = () => {
   }, []);
 
   const handleBack = useCallback(() => {
-    router.push(`/account/${accountId}/golf/teams`);
-  }, [accountId, router]);
+    router.push(`/account/${accountId}/seasons/${seasonId}/golf/flights`);
+  }, [accountId, seasonId, router]);
 
   const handleAddMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAddMenuAnchor(event.currentTarget);
@@ -367,7 +367,7 @@ const GolfTeamDetailPage: React.FC = () => {
     [teamSeasonId, seasonId, signPlayer, loadRoster, loadSubstitutes],
   );
 
-  if (!accountId || !teamSeasonId) {
+  if (!accountId || !teamSeasonId || !seasonId) {
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
         <Alert severity="error">Team information could not be determined.</Alert>
@@ -393,7 +393,7 @@ const GolfTeamDetailPage: React.FC = () => {
         <Container maxWidth="md" sx={{ py: 6 }}>
           <Alert severity="error">Team not found.</Alert>
           <Button startIcon={<BackIcon />} onClick={handleBack} sx={{ mt: 2 }}>
-            Back to Teams
+            Back to Flights
           </Button>
         </Container>
       </main>
@@ -422,7 +422,7 @@ const GolfTeamDetailPage: React.FC = () => {
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
           <Button startIcon={<BackIcon />} onClick={handleBack} size="small">
-            Back to Teams
+            Back to Flights
           </Button>
         </Stack>
 

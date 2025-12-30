@@ -304,7 +304,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   };
 
   const handleManageRoster = (team: GolfTeamType) => {
-    router.push(`/account/${accountId}/seasons/${seasonId}/golf/teams/${team.id}/roster`);
+    router.push(`/account/${accountId}/seasons/${seasonId}/golf/teams/${team.id}`);
   };
 
   const handleAssignTeamToFlight = async (flightId: string, teamId: string) => {
@@ -457,6 +457,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           />
           <Tooltip title="Edit Flight">
             <IconButton
+              component="span"
               size="small"
               onClick={(e) => {
                 e.stopPropagation();
@@ -468,6 +469,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           </Tooltip>
           <Tooltip title="Delete Flight">
             <IconButton
+              component="span"
               size="small"
               onClick={(e) => {
                 e.stopPropagation();

@@ -220,8 +220,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, selectedGame?.id, accountId]);
+  }, [open, selectedGame, accountId, rosterService, scoreService, courseService]);
 
   useEffect(() => {
     if (!open) {

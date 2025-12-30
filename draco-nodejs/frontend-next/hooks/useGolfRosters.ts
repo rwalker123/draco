@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   getGolfTeamRoster,
   listGolfSubstitutesForSeason,
@@ -314,16 +314,30 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     [accountId, apiClient],
   );
 
-  return {
-    getTeamRoster,
-    listSubstitutesForSeason,
-    listSubstitutesForFlight,
-    listAvailablePlayers,
-    getRosterEntry,
-    createAndSignPlayer,
-    signPlayer,
-    updatePlayer,
-    releasePlayer,
-    deletePlayer,
-  };
+  return useMemo(
+    () => ({
+      getTeamRoster,
+      listSubstitutesForSeason,
+      listSubstitutesForFlight,
+      listAvailablePlayers,
+      getRosterEntry,
+      createAndSignPlayer,
+      signPlayer,
+      updatePlayer,
+      releasePlayer,
+      deletePlayer,
+    }),
+    [
+      getTeamRoster,
+      listSubstitutesForSeason,
+      listSubstitutesForFlight,
+      listAvailablePlayers,
+      getRosterEntry,
+      createAndSignPlayer,
+      signPlayer,
+      updatePlayer,
+      releasePlayer,
+      deletePlayer,
+    ],
+  );
 }

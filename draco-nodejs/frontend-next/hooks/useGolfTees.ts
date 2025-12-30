@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   listGolfCourseTees,
   getGolfCourseTee,
@@ -190,12 +190,15 @@ export function useGolfTees(accountId: string): GolfTeeService {
     [accountId, apiClient],
   );
 
-  return {
-    listTees,
-    getTee,
-    createTee,
-    updateTee,
-    deleteTee,
-    updatePriorities,
-  };
+  return useMemo(
+    () => ({
+      listTees,
+      getTee,
+      createTee,
+      updateTee,
+      deleteTee,
+      updatePriorities,
+    }),
+    [listTees, getTee, createTee, updateTee, deleteTee, updatePriorities],
+  );
 }

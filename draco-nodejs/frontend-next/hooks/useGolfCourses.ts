@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   listGolfLeagueCourses,
   getGolfCourse,
@@ -245,14 +245,26 @@ export function useGolfCourses(accountId: string): GolfCourseService {
     [accountId, apiClient],
   );
 
-  return {
-    listCourses,
-    getCourse,
-    createCourse,
-    updateCourse,
-    deleteCourse,
-    addCourseToLeague,
-    removeCourseFromLeague,
-    importExternalCourse,
-  };
+  return useMemo(
+    () => ({
+      listCourses,
+      getCourse,
+      createCourse,
+      updateCourse,
+      deleteCourse,
+      addCourseToLeague,
+      removeCourseFromLeague,
+      importExternalCourse,
+    }),
+    [
+      listCourses,
+      getCourse,
+      createCourse,
+      updateCourse,
+      deleteCourse,
+      addCourseToLeague,
+      removeCourseFromLeague,
+      importExternalCourse,
+    ],
+  );
 }

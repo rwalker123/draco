@@ -48,7 +48,7 @@ interface SeasonFormData {
   name: string;
 }
 
-const SeasonManagement: React.FC = () => {
+const BaseballSeasonManagement: React.FC = () => {
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const router = useRouter();
@@ -545,4 +545,4 @@ const SeasonManagement: React.FC = () => {
   );
 };
 
-export default SeasonManagement;
+export default BaseballSeasonManagement;

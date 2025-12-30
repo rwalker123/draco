@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import SeasonManagement from '../SeasonManagement';
+import BaseballSeasonManagement from '../BaseballSeasonManagement';
 import type { LeagueSeasonWithDivisionType } from '@draco/shared-schemas';
 
 const mockListAccountSeasons = vi.fn();
@@ -50,7 +50,7 @@ const theme = createTheme();
 const renderComponent = () =>
   render(
     <ThemeProvider theme={theme}>
-      <SeasonManagement />
+      <BaseballSeasonManagement />
     </ThemeProvider>,
   );
 

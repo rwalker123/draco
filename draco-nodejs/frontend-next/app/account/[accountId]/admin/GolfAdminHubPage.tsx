@@ -44,7 +44,7 @@ const GolfAdminHubPage: React.FC = () => {
       title: 'Seasons & Flights',
       description: 'Configure seasons, flights, and team assignments.',
       icon: <CalendarMonthIcon />,
-      href: `/account/${accountId}/seasons`,
+      href: `/account/${accountId}/admin/season`,
     },
     {
       title: 'Golf Courses',
