@@ -61,6 +61,7 @@ export class PrismaRosterRepository implements IRosterRepository {
       where: {
         playerid: playerId,
         teamsseason: { leagueseasonid: leagueSeasonId },
+        inactive: false,
       },
       include: { roster: { include: { contacts: true } } },
     });

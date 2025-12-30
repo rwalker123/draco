@@ -17,14 +17,14 @@ declare global {
 
 type AdPlacementProps = {
   slot?: string | null;
-  layout?: 'auto' | 'in-article' | 'fluid';
+  layout?: 'auto' | 'in-article' | 'fluid' | 'horizontal';
   minHeight?: number;
   wrapperSx?: SxProps<Theme>;
 };
 
 const AdPlacement: React.FC<AdPlacementProps> = ({
   slot = DEFAULT_AD_SLOT ?? undefined,
-  layout = 'auto',
+  layout = 'horizontal',
   minHeight = 90,
   wrapperSx,
 }) => {

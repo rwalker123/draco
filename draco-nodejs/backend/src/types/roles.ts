@@ -46,6 +46,7 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
     permissions: [
       'account.communications.manage',
       'account.contacts.manage',
+      'account.dashboard.view',
       'account.handouts.manage',
       'account.fields.manage',
       'account.games.manage',

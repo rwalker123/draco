@@ -293,6 +293,7 @@ import {
   SchedulerUmpireExclusionSchema,
   SchedulerUmpireExclusionUpsertSchema,
   SchedulerUmpireExclusionsSchema,
+  AdminDashboardSummarySchema,
   GolfCourseSchema,
   GolfCourseWithTeesSchema,
   GolfCourseTeeSchema,
@@ -1240,6 +1241,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'ContactValidation',
     ContactValidationSchema,
   );
+  const AdminDashboardSummarySchemaRef = registry.register(
+    'AdminDashboardSummary',
+    AdminDashboardSummarySchema,
+  );
   const GolfCourseSchemaRef = registry.register('GolfCourse', GolfCourseSchema);
   const GolfCourseWithTeesSchemaRef = registry.register(
     'GolfCourseWithTees',
@@ -1644,6 +1649,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SchedulerUmpireExclusionsSchemaRef,
     RoleCheckResponseSchemaRef,
     DiscordTeamForumRemoveRequestSchemaRef,
+    AdminDashboardSummarySchemaRef,
     GolfCourseSchemaRef,
     GolfCourseWithTeesSchemaRef,
     GolfCourseTeeSchemaRef,

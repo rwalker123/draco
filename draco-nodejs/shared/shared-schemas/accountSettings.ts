@@ -31,6 +31,8 @@ export const ACCOUNT_SETTING_KEYS = [
   'PostWorkoutsToFacebook',
   'PostWorkoutsToBluesky',
   'SyncInstagramToGallery',
+  'NotifyTeamsWantedOnPlayersWanted',
+  'NotifyPlayersWantedOnTeamsWanted',
 ] as const;
 
 export const AccountSettingKeySchema = z.enum(ACCOUNT_SETTING_KEYS);
@@ -364,6 +366,38 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
     groupId: AccountSettingGroupEnum.enum.accountFeatures,
     groupLabel: 'Account Features',
     sortOrder: 101,
+  }),
+  booleanSetting({
+    key: 'NotifyTeamsWantedOnPlayersWanted',
+    label: 'Notify Teams Wanted on new Players Wanted ads',
+    description:
+      'Sends email notifications to teams wanted ad creators when new players wanted ads are posted.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 103,
+    requires: [
+      {
+        key: 'ShowPlayerClassified',
+        value: true,
+        description: 'Player classifieds must be enabled for this notification.',
+      },
+    ],
+  }),
+  booleanSetting({
+    key: 'NotifyPlayersWantedOnTeamsWanted',
+    label: 'Notify Players Wanted on new Teams Wanted ads',
+    description:
+      'Sends email notifications to players wanted ad creators when new teams wanted ads are posted.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 104,
+    requires: [
+      {
+        key: 'ShowPlayerClassified',
+        value: true,
+        description: 'Player classifieds must be enabled for this notification.',
+      },
+    ],
   }),
   booleanSetting({
     key: 'TrackWaiver',

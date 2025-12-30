@@ -257,6 +257,20 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
     return [];
   }, [leagueSeasonId, leagueTeamsCache]);
 
+  const hasUnassignedTeams = useMemo((): boolean => {
+    if (mode !== 'edit' || !selectedGame) return false;
+
+    const teamIds = new Set(dialogTeams.map((t) => t.id));
+    const homeTeamMissing = Boolean(
+      selectedGame.homeTeamId && !teamIds.has(selectedGame.homeTeamId),
+    );
+    const visitorTeamMissing = Boolean(
+      selectedGame.visitorTeamId && !teamIds.has(selectedGame.visitorTeamId),
+    );
+
+    return homeTeamMissing || visitorTeamMissing;
+  }, [mode, selectedGame, dialogTeams]);
+
   const getAvailableUmpires = useCallback(
     (currentPosition: string, currentValue: string) => {
       const formValues = getValues();
@@ -449,6 +463,15 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
           </Box>
         )}
 
+        {hasUnassignedTeams && (
+          <Box sx={{ mb: 2 }}>
+            <Alert severity="warning">
+              This game has teams that are no longer assigned to a division. Please reassign the
+              teams in League Management before editing this game.
+            </Alert>
+          </Box>
+        )}
+
         <FormProvider {...formMethods}>
           <Box sx={{ mt: 1 }}>
             <GameFormProvider
@@ -512,7 +535,7 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
             onClick={handleDialogSubmit}
             variant="contained"
             color="primary"
-            disabled={loading}
+            disabled={loading || hasUnassignedTeams}
             startIcon={loading ? <CircularProgress size={18} color="inherit" /> : undefined}
           >
             {mode === 'create' ? 'Create' : 'Update'}

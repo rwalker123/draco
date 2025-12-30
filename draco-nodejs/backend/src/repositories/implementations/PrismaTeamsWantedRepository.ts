@@ -196,6 +196,7 @@ export class PrismaTeamsWantedRepository implements ITeamsWantedRepository {
         email: true,
         phone: true,
         birthdate: true,
+        notifyoptout: true,
       },
     });
 
@@ -207,6 +208,7 @@ export class PrismaTeamsWantedRepository implements ITeamsWantedRepository {
       email: classified.email,
       phone: classified.phone,
       birthDate: DateUtils.formatDateOfBirthForResponse(classified.birthdate),
+      notifyOptOut: classified.notifyoptout,
     };
   }
 
@@ -313,6 +315,15 @@ export class PrismaTeamsWantedRepository implements ITeamsWantedRepository {
     return await this.prisma.teamswantedclassified.findMany({
       where: {
         accountid: accountId,
+      },
+    });
+  }
+
+  async findTeamsWantedWithNotifyConsent(accountId: bigint): Promise<dbTeamsWanted[]> {
+    return await this.prisma.teamswantedclassified.findMany({
+      where: {
+        accountid: accountId,
+        notifyoptout: false,
       },
     });
   }

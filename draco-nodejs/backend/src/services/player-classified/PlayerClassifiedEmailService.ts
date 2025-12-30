@@ -485,4 +485,267 @@ If you didn't create this classified, please ignore this email.
   sanitizeTextContent(content: string): string {
     return sanitizePlainText(content);
   }
+
+  async sendPlayersWantedNotificationSafe(
+    recipientEmails: string[],
+    playersWantedData: {
+      teamEventName: string;
+      positionsNeeded: string;
+      classifiedId: bigint;
+    },
+    account: { id: bigint; name: string },
+  ): Promise<void> {
+    try {
+      await this.sendPlayersWantedNotification(recipientEmails, playersWantedData, account);
+    } catch (error) {
+      logSecurely('error', 'Failed to send players wanted notification emails', {
+        error: error instanceof Error ? error.message : String(error),
+        recipientCount: recipientEmails.length,
+      });
+    }
+  }
+
+  private async sendPlayersWantedNotification(
+    recipientEmails: string[],
+    playersWantedData: {
+      teamEventName: string;
+      positionsNeeded: string;
+      classifiedId: bigint;
+    },
+    account: { id: bigint; name: string },
+  ): Promise<void> {
+    if (recipientEmails.length === 0) {
+      return;
+    }
+
+    const { htmlBody } = this.generatePlayersWantedNotificationEmail(playersWantedData, account);
+
+    const emailService = ServiceFactory.getEmailService();
+    await emailService.composeAndSendSystemEmailToAddresses(
+      account.id,
+      {
+        subject: `New Players Wanted: ${this.sanitizeTextContent(playersWantedData.teamEventName)}`,
+        bodyHtml: htmlBody,
+        recipients: { emails: recipientEmails },
+      },
+      { isSystemEmail: true },
+    );
+  }
+
+  private generatePlayersWantedNotificationEmail(
+    playersWantedData: {
+      teamEventName: string;
+      positionsNeeded: string;
+      classifiedId: bigint;
+    },
+    account: { id: bigint; name: string },
+  ): { htmlBody: string; textBody: string } {
+    const baseUrl = getFrontendBaseUrlOrFallback();
+    const viewUrl = `${baseUrl}/account/${account.id}/player-classifieds`;
+
+    const sanitizedAccountName = this.sanitizeHtmlContent(account.name);
+    const sanitizedTeamEventName = this.sanitizeHtmlContent(playersWantedData.teamEventName);
+    const sanitizedPositionsNeeded = this.sanitizeHtmlContent(playersWantedData.positionsNeeded);
+
+    const htmlBody = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${sanitizedAccountName} - New Players Wanted Ad</title>
+        <style>${this.generateEmailStyles()}
+        </style>
+      </head>
+      <body>
+        <div class="email-container">
+          <div class="header-banner">
+            <h1>${sanitizedAccountName}</h1>
+          </div>
+
+          <div class="content-area">
+            <h2 class="main-heading">New Players Wanted Ad Posted</h2>
+
+            <p>A new players wanted ad has been posted. A team is looking for players!</p>
+
+            <div class="data-summary">
+              <div class="data-row">
+                <span class="data-label">Team/Event:</span>
+                <span class="data-value">${sanitizedTeamEventName}</span>
+              </div>
+              <div class="data-row">
+                <span class="data-label">Positions Needed:</span>
+                <span class="data-value">${sanitizedPositionsNeeded}</span>
+              </div>
+            </div>
+
+            <p>
+              <a href="${viewUrl}" class="verification-button">View Players Wanted Ads</a>
+            </p>
+
+            <div class="footer">
+              <p>You received this email because you have a Teams Wanted ad posted in ${sanitizedAccountName}.</p>
+              <p>To stop receiving these notifications, you can update your Teams Wanted ad preferences.</p>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const textBody = `
+${account.name}
+
+New Players Wanted Ad Posted
+
+A new players wanted ad has been posted. A team is looking for players!
+
+Team/Event: ${playersWantedData.teamEventName}
+Positions Needed: ${playersWantedData.positionsNeeded}
+
+View the ad at: ${viewUrl}
+
+---
+You received this email because you have a Teams Wanted ad posted in ${account.name}.
+To stop receiving these notifications, you can update your Teams Wanted ad preferences.
+    `.trim();
+
+    return { htmlBody, textBody };
+  }
+
+  async sendTeamsWantedNotificationSafe(
+    recipientEmails: string[],
+    teamsWantedData: {
+      playerName: string;
+      positionsPlayed: string;
+      experience: string;
+      classifiedId: bigint;
+    },
+    account: { id: bigint; name: string },
+  ): Promise<void> {
+    try {
+      await this.sendTeamsWantedNotification(recipientEmails, teamsWantedData, account);
+    } catch (error) {
+      logSecurely('error', 'Failed to send teams wanted notification emails', {
+        error: error instanceof Error ? error.message : String(error),
+        recipientCount: recipientEmails.length,
+      });
+    }
+  }
+
+  private async sendTeamsWantedNotification(
+    recipientEmails: string[],
+    teamsWantedData: {
+      playerName: string;
+      positionsPlayed: string;
+      experience: string;
+      classifiedId: bigint;
+    },
+    account: { id: bigint; name: string },
+  ): Promise<void> {
+    if (recipientEmails.length === 0) {
+      return;
+    }
+
+    const { htmlBody } = this.generateTeamsWantedNotificationEmail(teamsWantedData, account);
+
+    const emailService = ServiceFactory.getEmailService();
+    await emailService.composeAndSendSystemEmailToAddresses(
+      account.id,
+      {
+        subject: `New Player Looking for Team: ${this.sanitizeTextContent(teamsWantedData.playerName)}`,
+        bodyHtml: htmlBody,
+        recipients: { emails: recipientEmails },
+      },
+      { isSystemEmail: true },
+    );
+  }
+
+  private generateTeamsWantedNotificationEmail(
+    teamsWantedData: {
+      playerName: string;
+      positionsPlayed: string;
+      experience: string;
+      classifiedId: bigint;
+    },
+    account: { id: bigint; name: string },
+  ): { htmlBody: string; textBody: string } {
+    const baseUrl = getFrontendBaseUrlOrFallback();
+    const viewUrl = `${baseUrl}/account/${account.id}/player-classifieds`;
+
+    const sanitizedAccountName = this.sanitizeHtmlContent(account.name);
+    const sanitizedPlayerName = this.sanitizeHtmlContent(teamsWantedData.playerName);
+    const sanitizedPositionsPlayed = this.sanitizeHtmlContent(teamsWantedData.positionsPlayed);
+    const sanitizedExperience = this.sanitizeHtmlContent(teamsWantedData.experience);
+
+    const htmlBody = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${sanitizedAccountName} - New Player Looking for Team</title>
+        <style>${this.generateEmailStyles()}
+        </style>
+      </head>
+      <body>
+        <div class="email-container">
+          <div class="header-banner">
+            <h1>${sanitizedAccountName}</h1>
+          </div>
+
+          <div class="content-area">
+            <h2 class="main-heading">New Player Looking for Team</h2>
+
+            <p>A new player has posted a Teams Wanted ad. They are looking for a team to join!</p>
+
+            <div class="data-summary">
+              <div class="data-row">
+                <span class="data-label">Player:</span>
+                <span class="data-value">${sanitizedPlayerName}</span>
+              </div>
+              <div class="data-row">
+                <span class="data-label">Positions:</span>
+                <span class="data-value">${sanitizedPositionsPlayed}</span>
+              </div>
+              <div class="data-row">
+                <span class="data-label">Experience:</span>
+                <span class="data-value">${sanitizedExperience}</span>
+              </div>
+            </div>
+
+            <p>
+              <a href="${viewUrl}" class="verification-button">View Teams Wanted Ads</a>
+            </p>
+
+            <div class="footer">
+              <p>You received this email because you have a Players Wanted ad posted in ${sanitizedAccountName}.</p>
+              <p>To stop receiving these notifications, you can update your Players Wanted ad preferences.</p>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const textBody = `
+${account.name}
+
+New Player Looking for Team
+
+A new player has posted a Teams Wanted ad. They are looking for a team to join!
+
+Player: ${teamsWantedData.playerName}
+Positions: ${teamsWantedData.positionsPlayed}
+Experience: ${teamsWantedData.experience}
+
+View the ad at: ${viewUrl}
+
+---
+You received this email because you have a Players Wanted ad posted in ${account.name}.
+To stop receiving these notifications, you can update your Players Wanted ad preferences.
+    `.trim();
+
+    return { htmlBody, textBody };
+  }
 }

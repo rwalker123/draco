@@ -17,6 +17,8 @@ import {
   Chip,
   OutlinedInput,
   FormHelperText,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -143,7 +145,7 @@ const PositionEnum = z.enum(POSITION_OPTIONS);
 const NAME_MAX_LENGTH = 50;
 const EMAIL_MAX_LENGTH = 320;
 const PHONE_MAX_LENGTH = 50;
-const EXPERIENCE_MAX_LENGTH = 255;
+const EXPERIENCE_MAX_LENGTH = 2000;
 
 const TeamsWantedFormSchema = z.object({
   name: z
@@ -198,6 +200,7 @@ const TeamsWantedFormSchema = z.object({
     .refine(isAtLeastThirteen, {
       message: 'You must be at least 13 years old',
     }),
+  notifyOptOut: z.boolean().default(false),
 });
 
 type TeamsWantedFormValues = z.infer<typeof TeamsWantedFormSchema>;
@@ -345,6 +348,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
       experience: initialData?.experience ?? '',
       positionsPlayed: positions,
       birthDate,
+      notifyOptOut: initialData?.notifyOptOut ?? false,
     };
   }, [initialData, editMode, contactPrefill]);
 
@@ -415,6 +419,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
             '0',
           )}-${String(values.birthDate.getDate()).padStart(2, '0')}`
         : '',
+      notifyOptOut: values.notifyOptOut,
     };
 
     let result: Awaited<ReturnType<typeof updateTeamsWanted>>;
@@ -657,6 +662,27 @@ Examples:
                   )}
                 />
               </Box>
+            </Box>
+
+            {/* Notification Opt-Out */}
+            <Box sx={{ mt: 2 }}>
+              <Controller
+                name="notifyOptOut"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={field.value ?? false}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          field.onChange(e.target.checked)
+                        }
+                      />
+                    }
+                    label="Do not email me when new Players Wanted ads are posted"
+                  />
+                )}
+              />
             </Box>
 
             {/* Help Text */}

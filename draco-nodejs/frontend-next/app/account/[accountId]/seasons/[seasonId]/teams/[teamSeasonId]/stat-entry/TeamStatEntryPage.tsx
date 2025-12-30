@@ -24,6 +24,7 @@ import { useRole } from '../../../../../../../../context/RoleContext';
 import { useApiClient } from '../../../../../../../../hooks/useApiClient';
 import { useAccountSettings } from '../../../../../../../../hooks/useAccountSettings';
 import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
+import AdPlacement from '../../../../../../../../components/ads/AdPlacement';
 import TeamAvatar from '../../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../../components/TeamInfoCard';
 import { TeamStatsEntryService } from '../../../../../../../../services/teamStatsEntryService';
@@ -1438,6 +1439,8 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
             </Box>
           </Box>
         </AccountPageHeader>
+
+        <AdPlacement />
 
         <Box sx={{ mb: 3 }}>
           <Breadcrumbs aria-label="breadcrumb">

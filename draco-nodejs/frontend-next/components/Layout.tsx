@@ -15,29 +15,15 @@ import {
   ListItemText,
   Divider,
   CircularProgress,
+  Badge,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
-  Business as BusinessIcon,
-  Settings as SettingsIcon,
-  CalendarMonth as CalendarMonthIcon,
   Home as HomeIcon,
   Key as KeyIcon,
   Person as PersonIcon,
-  SportsBaseball as SportsBaseballIcon,
-  Email as EmailIcon,
-  FitnessCenter as FitnessCenterIcon,
   Handshake as HandshakeIcon,
-  HowToVote as HowToVoteIcon,
-  Description as DescriptionIcon,
-  QuestionAnswer as QuestionAnswerIcon,
-  PhotoLibrary as PhotoLibraryIcon,
-  EmojiEvents as EmojiEventsIcon,
-  HelpOutline as HelpOutlineIcon,
-  Campaign as CampaignIcon,
-  InfoOutlined as InfoOutlinedIcon,
-  Public as PublicIcon,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -76,6 +62,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const lastSyncedAccountIdRef = React.useRef<string | null>(null);
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -93,7 +80,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const currentAccountId = currentAccount?.id ? String(currentAccount.id) : null;
   const shouldShowAdminMenuIcon =
     hasAccountManagementPrivileges ||
-    Boolean(user && currentAccountId && hasRole('AccountAdmin', { accountId: currentAccountId }));
+    (user && currentAccountId && hasRole('AccountAdmin', { accountId: currentAccountId }));
 
   // Extract accountId from prop, URL path, query string, or context (in that order of preference)
   const accountIdFromQuery = searchParams.get('accountId');
@@ -168,14 +155,6 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     logout(); // Will automatically handle redirect if on protected page
     handleMenuClose();
   }, [clearAllContexts, handleMenuClose, logout]);
-
-  const handleNavigation = React.useCallback(
-    (path: string) => {
-      router.push(path);
-      handleMenuClose();
-    },
-    [handleMenuClose, router],
-  );
 
   const handleLogin = React.useCallback(() => {
     const params = new URLSearchParams();
@@ -390,47 +369,61 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
             </Box>
           </Box>
 
-          {/* Center - Baseball menu (only for baseball accounts) */}
-          {accountType?.toLowerCase() === 'baseball' && accountId && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {/* Center - Sport menu and Admin Hub */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {/* Baseball menu (only for baseball accounts) */}
+            {accountType?.toLowerCase() === 'baseball' && accountId && (
               <BaseballMenu
                 accountId={accountId}
                 useUnifiedMenu
                 onOverflowItemsChange={setSportOverflowItems}
               />
-            </Box>
-          )}
+            )}
+
+            {/* Admin Hub button - shown on large screens only, collapses to hamburger first */}
+            {isLargeScreen && shouldShowAdminMenuIcon && currentAccount?.id && (
+              <Button
+                color="inherit"
+                startIcon={
+                  <Badge
+                    variant="dot"
+                    color="secondary"
+                    sx={{
+                      '& .MuiBadge-badge': {
+                        top: 2,
+                        right: 2,
+                      },
+                    }}
+                  >
+                    <AdminPanelSettingsIcon />
+                  </Badge>
+                }
+                onClick={() => router.push(`/account/${String(currentAccount.id)}/admin`)}
+                sx={{ textTransform: 'none', ml: 1 }}
+              >
+                Admin Hub
+              </Button>
+            )}
+          </Box>
 
           {/* Right side - User info and actions */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton
-              size="large"
-              edge="end"
-              color="inherit"
-              aria-label="menu"
-              aria-expanded={Boolean(anchorEl)}
-              onClick={handleMenuOpen}
-            >
-              {shouldShowAdminMenuIcon ? (
-                <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                  <MenuIcon />
-                  <KeyIcon
-                    sx={{
-                      position: 'absolute',
-                      top: -2,
-                      right: -2,
-                      fontSize: '0.7rem',
-                      color: 'primary.main',
-                      backgroundColor: 'background.paper',
-                      borderRadius: '50%',
-                      padding: '1px',
-                    }}
-                  />
-                </Box>
-              ) : (
+            {/* Hamburger menu for overflow items */}
+            {(sportOverflowItems.length > 0 ||
+              (isSmallScreen && authMenuItems.length > 0) ||
+              quickActionItems.length > 0 ||
+              (!isLargeScreen && shouldShowAdminMenuIcon && currentAccount?.id)) && (
+              <IconButton
+                size="large"
+                edge="end"
+                color="inherit"
+                aria-label="menu"
+                aria-expanded={Boolean(anchorEl)}
+                onClick={handleMenuOpen}
+              >
                 <MenuIcon />
-              )}
-            </IconButton>
+              </IconButton>
+            )}
             <TopBarQuickActions
               accountId={accountId}
               canViewHandouts={Boolean(accountId)}
@@ -515,440 +508,27 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
             </ListItemText>
           </MenuItem>
         ))}
-        {sportOverflowItems.length > 0 ? <Divider sx={{ my: 1 }} /> : null}
-        {isSmallScreen ? authMenuItems : null}
-        {isSmallScreen && authMenuItems.length > 0 ? <Divider sx={{ my: 1 }} /> : null}
-        {quickActionItems}
-        {quickActionItems.length > 0 ? <Divider sx={{ my: 1 }} /> : null}
-        <MenuItem onClick={() => handleNavigation('/accounts')}>
-          <ListItemIcon>
-            <BusinessIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Organizations</ListItemText>
-        </MenuItem>
-        {user && hasRole('Administrator') && (
-          <MenuItem onClick={() => handleNavigation('/admin')}>
+        {/* Admin Hub - shown in hamburger menu when not on large screens (first to collapse) */}
+        {!isLargeScreen && shouldShowAdminMenuIcon && currentAccount?.id && (
+          <MenuItem
+            onClick={() => {
+              router.push(`/account/${String(currentAccount.id)}/admin`);
+              handleMenuClose();
+            }}
+          >
             <ListItemIcon>
               <AdminPanelSettingsIcon fontSize="small" />
             </ListItemIcon>
-            <ListItemText>Admin Dashboard</ListItemText>
+            <ListItemText>Admin Hub</ListItemText>
           </MenuItem>
         )}
-        {user && hasRole('Administrator') && (
-          <MenuItem onClick={() => handleNavigation('/admin/alerts')}>
-            <ListItemIcon>
-              <CampaignIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Alert Management</ListItemText>
-          </MenuItem>
+        {(sportOverflowItems.length > 0 ||
+          (!isLargeScreen && shouldShowAdminMenuIcon && currentAccount?.id)) && (
+          <Divider sx={{ my: 1 }} />
         )}
-        {hasAccountManagementPrivileges && (
-          <MenuItem onClick={() => handleNavigation('/account-management')}>
-            <ListItemIcon>
-              <BusinessIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Account Management</ListItemText>
-          </MenuItem>
-        )}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            (hasRole('Administrator') ||
-              hasRole('AccountAdmin', { accountId: String(currentAccount.id) }))
-          ) {
-            return (
-              <MenuItem
-                onClick={() => handleNavigation(`/account/${String(currentAccount.id)}/seasons`)}
-              >
-                <ListItemIcon>
-                  <CalendarMonthIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Season Management</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {/* Account Admin Only */}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() => handleNavigation(`/account/${String(currentAccount.id)}/settings`)}
-                key="account-settings"
-              >
-                <ListItemIcon>
-                  <SettingsIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Account Settings</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/social-media`)
-                }
-                key="social-media-management"
-              >
-                <ListItemIcon>
-                  <PublicIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Social Media Management</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/fields/manage`)
-                }
-                key="fields-management"
-              >
-                <ListItemIcon>
-                  <BusinessIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Field Management</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/sponsors/manage`)
-                }
-                key="account-sponsors"
-              >
-                <ListItemIcon>
-                  <HandshakeIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Account Sponsors</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/member-businesses/manage`)
-                }
-                key="member-business-management"
-              >
-                <ListItemIcon>
-                  <BusinessIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Member Businesses</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/polls/manage`)
-                }
-                key="poll-management"
-              >
-                <ListItemIcon>
-                  <HowToVoteIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Poll Management</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/surveys/manage`)
-                }
-                key="survey-management"
-              >
-                <ListItemIcon>
-                  <QuestionAnswerIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Survey Management</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/league-faq/manage`)
-                }
-                key="league-faq-management"
-              >
-                <ListItemIcon>
-                  <HelpOutlineIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>FAQ Management</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/hall-of-fame/manage`)
-                }
-                key="hall-of-fame-management"
-              >
-                <ListItemIcon>
-                  <EmojiEventsIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Hall of Fame</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/handouts/manage`)
-                }
-                key="account-handouts"
-              >
-                <ListItemIcon>
-                  <DescriptionIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Handout Management</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(
-                    `/account/${String(currentAccount.id)}/information-messages/manage`,
-                  )
-                }
-                key="account-information-messages"
-              >
-                <ListItemIcon>
-                  <InfoOutlinedIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Information Messages</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/announcements/manage`)
-                }
-                key="account-announcements"
-              >
-                <ListItemIcon>
-                  <CampaignIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Announcement Management</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {/* User Management - Account Admin Only */}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            (hasRole('Administrator') ||
-              hasRole('AccountAdmin', { accountId: String(currentAccount.id) }))
-          ) {
-            return (
-              <MenuItem
-                onClick={() => handleNavigation(`/account/${String(currentAccount.id)}/users`)}
-                key="user-management"
-              >
-                <ListItemIcon>
-                  <PersonIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>User Management</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            (hasRole('Administrator') ||
-              hasRole('AccountAdmin', { accountId: String(currentAccount.id) }))
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/umpires/manage`)
-                }
-                key="umpire-management"
-              >
-                <ListItemIcon>
-                  <SportsBaseballIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Umpires</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {/* Communications - AccountAdmin Role and above */}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/communications`)
-                }
-                key="communications"
-              >
-                <ListItemIcon>
-                  <EmailIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Communications</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {/* Workout Management - AccountAdmin Role and above */}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
-          ) {
-            return (
-              <MenuItem
-                onClick={() => handleNavigation(`/account/${String(currentAccount.id)}/workouts`)}
-                key="workout-management"
-              >
-                <ListItemIcon>
-                  <FitnessCenterIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Workout Management</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {/* Photo Gallery Management - AccountAdmin Role and above */}
-        {(() => {
-          if (
-            user &&
-            currentAccount?.id &&
-            (hasRole('AccountAdmin', { accountId: String(currentAccount.id) }) ||
-              hasRole('AccountPhotoAdmin', { accountId: String(currentAccount.id) }))
-          ) {
-            return (
-              <MenuItem
-                onClick={() =>
-                  handleNavigation(`/account/${String(currentAccount.id)}/photo-gallery/admin`)
-                }
-                key="photo-gallery-management"
-              >
-                <ListItemIcon>
-                  <PhotoLibraryIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Photo Gallery Management</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
-        {quickActionItems.length > 0 && <Divider sx={{ my: 1 }} />}
+        {isSmallScreen ? authMenuItems : null}
+        {isSmallScreen && authMenuItems.length > 0 ? <Divider sx={{ my: 1 }} /> : null}
+        {quickActionItems}
       </Menu>
 
       <AlertsTicker />

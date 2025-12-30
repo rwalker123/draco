@@ -12,12 +12,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Autocomplete,
   Alert,
   CircularProgress,
   Breadcrumbs,
@@ -25,12 +19,11 @@ import {
   Card,
   CardContent,
   IconButton,
+  Snackbar,
 } from '@mui/material';
 import {
   PersonAdd as PersonAddIcon,
   Delete as DeleteIcon,
-  ArrowBack as ArrowBackIcon,
-  Warning as WarningIcon,
   Edit as EditIcon,
   SportsBasketball as SportsIcon,
   Block as BlockIcon,
@@ -41,7 +34,10 @@ import { useRouter } from 'next/navigation';
 import EditContactDialog from '../../../../../../../../components/users/EditContactDialog';
 import UserAvatar from '../../../../../../../../components/users/UserAvatar';
 import SignPlayerDialog from '../../../../../../../../components/roster/SignPlayerDialog';
+import DeleteRosterMemberDialog from '../../../../../../../../components/roster/DeleteRosterMemberDialog';
+import AssignTeamManagerDialog from '../../../../../../../../components/roster/AssignTeamManagerDialog';
 import PageSectionHeader from '../../../../../../../../components/common/PageSectionHeader';
+import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
 import {
   formatRosterContactInfo,
   formatRosterVerificationInfo,
@@ -162,9 +158,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   // Add at the top, after other dialog states
   const [addManagerDialogOpen, setAddManagerDialogOpen] = useState(false);
-  const [selectedManagerContactId, setSelectedManagerContactId] = useState<string | null>(null);
-  const [addManagerLoading, setAddManagerLoading] = useState(false);
-  const [addManagerError, setAddManagerError] = useState<string | null>(null);
 
   // Enhanced dialog states for EditContactDialog
   const [editPlayerDialogOpen, setEditPlayerDialogOpen] = useState(false);
@@ -228,25 +221,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
     try {
       await activatePlayer(rosterMember.id);
-    } catch {
-      // Error is handled by the data manager
-    } finally {
-      setFormLoading(false);
-      restoreScrollPosition();
-    }
-  };
-
-  // Handler to delete player
-  const handleDeletePlayer = async () => {
-    if (!playerToDelete) return;
-
-    setFormLoading(true);
-    saveScrollPosition();
-
-    try {
-      await deletePlayer(playerToDelete.id);
-      setDeleteDialogOpen(false);
-      setPlayerToDelete(null);
     } catch {
       // Error is handled by the data manager
     } finally {
@@ -494,23 +468,22 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   // format helpers moved to reusable formatter module
 
-  const handleAddManager = async () => {
-    if (!selectedManagerContactId) return;
-    setAddManagerLoading(true);
-    setAddManagerError(null);
-    saveScrollPosition();
-
-    try {
-      await addManager(selectedManagerContactId);
+  const handleManagerAssigned = useCallback(
+    (result: { message: string; managerId: string }) => {
+      setSuccessMessage(result.message);
       setAddManagerDialogOpen(false);
-      setSelectedManagerContactId(null);
-    } catch {
-      // Error is handled by the data manager
-    } finally {
-      setAddManagerLoading(false);
-      restoreScrollPosition();
-    }
-  };
+    },
+    [setSuccessMessage],
+  );
+
+  const handleDeleteSuccess = useCallback(
+    (result: { message: string; memberId: string }) => {
+      setSuccessMessage(result.message);
+      setDeleteDialogOpen(false);
+      setPlayerToDelete(null);
+    },
+    [setSuccessMessage],
+  );
 
   // Memoized handlers to prevent UserAvatar re-renders
   const handleEditDialog = useCallback((member: RosterMemberType) => {
@@ -606,8 +579,22 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   return (
     <main className="min-h-screen bg-background">
+      {/* Account Header */}
+      <AccountPageHeader accountId={accountId} seasonName={season?.name} showSeasonInfo={true}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+            {league?.name
+              ? `${league.name} – ${rosterData?.teamSeason?.name} Roster`
+              : `${rosterData?.teamSeason?.name} Roster`}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Manage team roster, players, and managers
+          </Typography>
+        </Box>
+      </AccountPageHeader>
+
       {/* Breadcrumbs */}
-      <Breadcrumbs sx={{ mb: 3 }}>
+      <Breadcrumbs sx={{ mb: 3, mt: 2 }}>
         <Link
           color="inherit"
           href="#"
@@ -635,20 +622,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         </Typography>
       </Breadcrumbs>
 
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <IconButton onClick={() => router.back()} sx={{ mr: 2 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h4" component="h1">
-            {league?.name
-              ? `${league.name} – ${rosterData?.teamSeason?.name} Roster`
-              : `${rosterData?.teamSeason?.name} Roster`}
-          </Typography>
-        </Box>
-      </Box>
-
       {/* Action Buttons */}
       <Box
         sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3, gap: 2 }}
@@ -670,18 +643,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
           Sign Player
         </Button>
       </Box>
-
-      {/* Messages */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={clearMessages}>
-          {error}
-        </Alert>
-      )}
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={clearMessages}>
-          {successMessage}
-        </Alert>
-      )}
 
       {/* Roster Statistics */}
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
@@ -1034,41 +995,13 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       />
 
       {/* Delete Player Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          <Box display="flex" alignItems="center">
-            <WarningIcon color="error" sx={{ mr: 1 }} />
-            Delete Player
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            Are you sure you want to permanently delete{' '}
-            <strong>
-              {playerToDelete ? getContactDisplayName(playerToDelete.player.contact) : ''}
-            </strong>{' '}
-            from the roster?
-          </Typography>
-          <Alert severity="warning">
-            This action cannot be undone. The player will be permanently removed from the team
-            roster.
-          </Alert>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteDialog} disabled={formLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDeletePlayer}
-            variant="contained"
-            color="error"
-            disabled={formLoading}
-            startIcon={formLoading ? <CircularProgress size={20} /> : <DeleteIcon />}
-          >
-            Delete Player
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteRosterMemberDialog
+        open={deleteDialogOpen}
+        member={playerToDelete}
+        onClose={closeDeleteDialog}
+        onSuccess={handleDeleteSuccess}
+        deletePlayer={deletePlayer}
+      />
 
       {/* Enhanced Edit Contact Dialog */}
       <EditContactDialog
@@ -1084,52 +1017,32 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       />
 
       {/* Assign Manager Dialog */}
-      <Dialog
+      <AssignTeamManagerDialog
         open={addManagerDialogOpen}
         onClose={() => setAddManagerDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
+        onSuccess={handleManagerAssigned}
+        addManager={addManager}
+        availablePlayers={activePlayers}
+        existingManagers={managers}
+      />
+
+      {/* Feedback Snackbar */}
+      <Snackbar
+        open={Boolean(error || successMessage)}
+        autoHideDuration={6000}
+        onClose={clearMessages}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <DialogTitle>Assign Team Manager</DialogTitle>
-        <DialogContent>
-          {addManagerError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {addManagerError}
-            </Alert>
-          )}
-          <Autocomplete
-            options={activePlayers.filter(
-              (member) => !managers.some((m) => m.contact.id === member.player.contact.id),
-            )}
-            getOptionLabel={(option) => getContactDisplayName(option.player.contact)}
-            value={
-              activePlayers.find(
-                (member) => member.player.contact.id === selectedManagerContactId,
-              ) || null
-            }
-            onChange={(_, newValue) =>
-              setSelectedManagerContactId(newValue ? newValue.player.contact.id : null)
-            }
-            renderInput={(params) => (
-              <TextField {...params} label="Select Player" fullWidth variant="outlined" />
-            )}
-            noOptionsText={activePlayers.length === 0 ? 'No active players' : 'No eligible players'}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddManagerDialogOpen(false)} disabled={addManagerLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAddManager}
-            variant="contained"
-            disabled={!selectedManagerContactId || addManagerLoading}
-            startIcon={addManagerLoading ? <CircularProgress size={20} /> : <ManagerIcon />}
-          >
-            Assign
-          </Button>
-        </DialogActions>
-      </Dialog>
+        {error ? (
+          <Alert onClose={clearMessages} severity="error" variant="filled" sx={{ width: '100%' }}>
+            {error}
+          </Alert>
+        ) : successMessage ? (
+          <Alert onClose={clearMessages} severity="success" variant="filled" sx={{ width: '100%' }}>
+            {successMessage}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </main>
   );
 };

@@ -192,6 +192,7 @@ export class PrismaPlayersWantedRepository implements IPlayersWantedRepository {
         teameventname: true,
         description: true,
         positionsneeded: true,
+        notifyoptout: true,
       },
     });
   }
@@ -222,7 +223,7 @@ export class PrismaPlayersWantedRepository implements IPlayersWantedRepository {
       data: updateData,
       include: {
         contacts: {
-          select: { id: true, firstname: true, lastname: true },
+          select: { id: true, firstname: true, lastname: true, email: true },
         },
         accounts: {
           select: { id: true, name: true },
@@ -247,6 +248,25 @@ export class PrismaPlayersWantedRepository implements IPlayersWantedRepository {
   async deletePlayersWanted(classifiedId: bigint): Promise<void> {
     await this.prisma.playerswantedclassified.delete({
       where: { id: classifiedId },
+    });
+  }
+
+  async findPlayersWantedWithNotifyConsent(
+    accountId: bigint,
+  ): Promise<dbPlayersWantedWithRelations[]> {
+    return await this.prisma.playerswantedclassified.findMany({
+      where: {
+        accountid: accountId,
+        notifyoptout: false,
+      },
+      include: {
+        contacts: {
+          select: { id: true, firstname: true, lastname: true, email: true },
+        },
+        accounts: {
+          select: { id: true, name: true },
+        },
+      },
     });
   }
 }

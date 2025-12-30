@@ -12,6 +12,7 @@ import {
   useMediaQuery,
   Fab,
   Paper,
+  Snackbar,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -81,6 +82,32 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [manualViewMode, setManualViewMode] = useState<ViewMode | null>(null);
   const viewMode = manualViewMode ?? defaultViewMode;
 
+  // Snackbar feedback state
+  const [feedback, setFeedback] = useState<{
+    severity: 'success' | 'error';
+    message: string;
+  } | null>(null);
+
+  const handleFeedbackClose = useCallback(() => {
+    setFeedback(null);
+  }, []);
+
+  const setSuccess = useCallback((message: string | null) => {
+    if (message) {
+      setFeedback({ severity: 'success', message });
+    } else {
+      setFeedback((prev) => (prev?.severity === 'success' ? null : prev));
+    }
+  }, []);
+
+  const setError = useCallback((message: string | null) => {
+    if (message) {
+      setFeedback({ severity: 'error', message });
+    } else {
+      setFeedback((prev) => (prev?.severity === 'error' ? null : prev));
+    }
+  }, []);
+
   // Use modular schedule hooks
   const {
     games,
@@ -93,14 +120,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     leagueTeamsCache,
     loadingGames,
     loadingStaticData,
-    error,
-    success,
     loadLeagueTeams,
     loadOfficials,
     loadGamesData,
     clearLeagueTeams,
-    setSuccess,
-    setError,
     upsertGameInCache,
     removeGameFromCache,
     startDate,
@@ -112,6 +135,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     accountType,
     filterType,
     filterDate,
+    onError: setError,
   });
 
   const {
@@ -338,19 +362,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             </Box>
           </Box>
         </AccountPageHeader>
-        <AdPlacement wrapperSx={{ mt: 2 }} />
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
-            {success}
-          </Alert>
-        )}
+        <AdPlacement />
 
         {/* View Mode Tabs */}
         <Paper
@@ -585,21 +597,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
         {recapDialogs}
 
-        {recapError && (
-          <Alert
-            severity="error"
-            sx={{
-              position: 'fixed',
-              bottom: 24,
-              right: 24,
-              zIndex: (theme) => theme.zIndex.snackbar,
-            }}
-            onClose={clearRecapError}
-          >
-            {recapError}
-          </Alert>
-        )}
-
         {canEditSchedule ? (
           <Fab
             color="primary"
@@ -615,6 +612,42 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             <AddIcon />
           </Fab>
         ) : null}
+
+        {feedback && (
+          <Snackbar
+            open
+            autoHideDuration={6000}
+            onClose={handleFeedbackClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert
+              onClose={handleFeedbackClose}
+              severity={feedback.severity}
+              variant="filled"
+              sx={{ width: '100%' }}
+            >
+              {feedback.message}
+            </Alert>
+          </Snackbar>
+        )}
+
+        {recapError && (
+          <Snackbar
+            open
+            autoHideDuration={6000}
+            onClose={clearRecapError}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert
+              onClose={clearRecapError}
+              severity="error"
+              variant="filled"
+              sx={{ width: '100%' }}
+            >
+              {recapError}
+            </Alert>
+          </Snackbar>
+        )}
       </main>
     </LocalizationProvider>
   );

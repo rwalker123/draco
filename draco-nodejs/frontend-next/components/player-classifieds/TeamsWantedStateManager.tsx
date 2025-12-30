@@ -278,6 +278,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
       experience: accessCodeResult.classified.experience,
       positionsPlayed: accessCodeResult.classified.positionsPlayed,
       birthDate: contactInfo?.birthDate ?? accessCodeResult.classified.birthDate ?? '',
+      notifyOptOut: accessCodeResult.classified.notifyOptOut,
     };
 
     setEditingClassified(classifiedWithAccount);
