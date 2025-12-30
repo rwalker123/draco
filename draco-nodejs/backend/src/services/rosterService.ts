@@ -322,6 +322,27 @@ export class RosterService {
       throw new ConflictError('Player is already active');
     }
 
+    // When activating, check if player is already active on another team in the same league season
+    if (!inactive) {
+      const teamSeason = await this.teamRepository.findTeamSeason(
+        teamSeasonId,
+        seasonId,
+        accountId,
+      );
+      if (!teamSeason) {
+        throw new NotFoundError('Team season not found');
+      }
+
+      const existingActiveRoster = await this.rosterRepository.findRosterMemberInLeagueSeason(
+        rosterMember.playerid,
+        teamSeason.leagueseasonid,
+      );
+
+      if (existingActiveRoster) {
+        throw new ConflictError('Player is already active on another team in this season');
+      }
+    }
+
     // Remove Discord roles before flipping inactive to ensure removal runs
     console.info('[discord] roster status change -> sync team forum members', {
       accountId: accountId.toString(),
