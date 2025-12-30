@@ -642,6 +642,15 @@ export type dbSeasonCopySource = Prisma.seasonGetPayload<{
     id: true;
     name: true;
     accountid: true;
+    accounts: {
+      select: {
+        accounttypes: {
+          select: {
+            name: true;
+          };
+        };
+      };
+    };
     leagueseason: {
       select: {
         id: true;
@@ -665,6 +674,16 @@ export type dbSeasonCopySource = Prisma.seasonGetPayload<{
                 playerid: true;
                 playernumber: true;
                 dateadded: true;
+              };
+            };
+            golfroster: {
+              where: { isactive: true };
+              select: {
+                contactid: true;
+                isactive: true;
+                initialdifferential: true;
+                issub: true;
+                subseasonid: true;
               };
             };
             teamseasonmanager: {

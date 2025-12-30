@@ -220,6 +220,15 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
         id: true,
         name: true,
         accountid: true,
+        accounts: {
+          select: {
+            accounttypes: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
         leagueseason: {
           select: {
             id: true,
@@ -245,6 +254,16 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
                     dateadded: true,
                   },
                 },
+                golfroster: {
+                  where: { isactive: true },
+                  select: {
+                    contactid: true,
+                    isactive: true,
+                    initialdifferential: true,
+                    issub: true,
+                    subseasonid: true,
+                  },
+                },
                 teamseasonmanager: {
                   select: {
                     contactid: true,
@@ -263,6 +282,9 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
     sourceSeason: dbSeasonCopySource,
     newSeasonName: string,
   ): Promise<dbSeasonWithLeagues> {
+    const accountTypeName = sourceSeason.accounts.accounttypes.name;
+    const isGolfAccount = accountTypeName.toLowerCase().includes('golf');
+
     return this.prisma.$transaction(async (tx) => {
       const createdSeason = await tx.season.create({
         data: {
@@ -317,17 +339,33 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
             select: { id: true },
           });
 
-          if (teamSeason.rosterseason.length > 0) {
-            await tx.rosterseason.createMany({
-              data: teamSeason.rosterseason.map((roster) => ({
-                playerid: roster.playerid,
-                playernumber: roster.playernumber,
-                dateadded: roster.dateadded,
-                teamseasonid: createdTeamSeason.id,
-                inactive: false,
-                submittedwaiver: false,
-              })),
-            });
+          if (isGolfAccount) {
+            if (teamSeason.golfroster.length > 0) {
+              await tx.golfroster.createMany({
+                data: teamSeason.golfroster.map((roster) => ({
+                  contactid: roster.contactid,
+                  teamseasonid: createdTeamSeason.id,
+                  isactive: true,
+                  initialdifferential: roster.initialdifferential,
+                  issub: roster.issub,
+                  subseasonid:
+                    roster.subseasonid === leagueSeason.id ? createdLeagueSeason.id : null,
+                })),
+              });
+            }
+          } else {
+            if (teamSeason.rosterseason.length > 0) {
+              await tx.rosterseason.createMany({
+                data: teamSeason.rosterseason.map((roster) => ({
+                  playerid: roster.playerid,
+                  playernumber: roster.playernumber,
+                  dateadded: roster.dateadded,
+                  teamseasonid: createdTeamSeason.id,
+                  inactive: false,
+                  submittedwaiver: false,
+                })),
+              });
+            }
           }
 
           if (teamSeason.teamseasonmanager.length > 0) {

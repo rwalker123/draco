@@ -45,6 +45,11 @@ const createSourceSeason = (): dbSeasonCopySource => ({
   id: seasonId,
   name: 'Spring 2024',
   accountid: accountId,
+  accounts: {
+    accounttypes: {
+      name: 'Baseball',
+    },
+  },
   leagueseason: [
     {
       id: 50n,
@@ -69,6 +74,7 @@ const createSourceSeason = (): dbSeasonCopySource => ({
               dateadded: new Date('2024-02-01T00:00:00.000Z'),
             },
           ],
+          golfroster: [],
           teamseasonmanager: [
             {
               contactid: 600n,
@@ -149,13 +155,14 @@ describe('SeasonService.copySeason', () => {
             {
               id: copiedSeasonRecord.leagueseason[0].divisionseason?.[0].id.toString() ?? '0',
               division: {
-                id: copiedSeasonRecord.leagueseason[0].divisionseason?.[0].divisiondefs?.id.toString() ?? '0',
+                id:
+                  copiedSeasonRecord.leagueseason[0].divisionseason?.[0].divisiondefs?.id.toString() ??
+                  '0',
                 name:
                   copiedSeasonRecord.leagueseason[0].divisionseason?.[0].divisiondefs?.name ??
                   'Unknown Division',
               },
-              priority:
-                copiedSeasonRecord.leagueseason[0].divisionseason?.[0].priority ?? 0,
+              priority: copiedSeasonRecord.leagueseason[0].divisionseason?.[0].priority ?? 0,
             },
           ],
         },
