@@ -405,6 +405,7 @@ export class PrismaLeagueRepository implements ILeagueRepository {
     const results = await this.prisma.rosterseason.groupBy({
       by: ['teamseasonid'],
       where: {
+        inactive: false,
         teamsseason: {
           leagueseasonid: {
             in: leagueSeasonIds,

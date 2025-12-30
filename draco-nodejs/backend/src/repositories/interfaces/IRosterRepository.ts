@@ -6,7 +6,10 @@ import {
 } from '../types/dbTypes.js';
 
 export interface IRosterRepository {
-  findRosterMembersByTeamSeason(teamSeasonId: bigint): Promise<dbRosterSeason[]>;
+  findRosterMembersByTeamSeason(
+    teamSeasonId: bigint,
+    includeInactive?: boolean,
+  ): Promise<dbRosterSeason[]>;
   findActiveTeamSeasonIdsForUser(
     accountId: bigint,
     seasonId: bigint,

@@ -46,6 +46,7 @@ router.get(
       seasonId,
       accountId,
       trackGamesPlayed,
+      true,
     );
 
     res.json(rosterMembers);
