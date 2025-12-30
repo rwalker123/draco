@@ -3,7 +3,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
 import { CreateGolfMatchSchema, UpdateGolfMatchSchema } from '@draco/shared-schemas';
-import { authenticateToken } from '../middleware/authMiddleware.js';
+import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
 
 const router = Router({ mergeParams: true });
 const golfMatchService = ServiceFactory.getGolfMatchService();
@@ -11,8 +11,7 @@ const routeProtection = ServiceFactory.getRouteProtection();
 
 router.get(
   '/season/:seasonId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
+  optionalAuth,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { seasonId } = extractBigIntParams(req.params, 'seasonId');
 

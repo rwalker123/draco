@@ -35,7 +35,6 @@ import {
   ViewFactory,
   ViewModeTabs,
   DeleteGameDialog,
-  GameResultsDialog,
   Game,
   FilterType,
   ViewMode,
@@ -107,6 +106,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     startDate,
     endDate,
     GameDialog,
+    ScoreEntryDialog,
   } = useScheduleData({
     accountId,
     accountType,
@@ -568,7 +568,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           accountId={accountId}
         />
 
-        <GameResultsDialog
+        <ScoreEntryDialog
           open={gameResultsDialogOpen}
           accountId={accountId}
           onClose={() => {
