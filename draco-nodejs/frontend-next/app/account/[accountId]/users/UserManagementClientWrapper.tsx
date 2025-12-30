@@ -3,7 +3,6 @@
 import { useParams } from 'next/navigation';
 import UserManagement from './UserManagement';
 import ProtectedRoute from '../../../../components/auth/ProtectedRoute';
-import AccountTypeGuard from '../../../../components/auth/AccountTypeGuard';
 
 export default function UserManagementClientWrapper() {
   const { accountId } = useParams();
@@ -14,10 +13,8 @@ export default function UserManagementClientWrapper() {
   }
 
   return (
-    <AccountTypeGuard requiredAccountType="baseball">
-      <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
-        <UserManagement accountId={accountIdStr} />
-      </ProtectedRoute>
-    </AccountTypeGuard>
+    <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
+      <UserManagement accountId={accountIdStr} />
+    </ProtectedRoute>
   );
 }

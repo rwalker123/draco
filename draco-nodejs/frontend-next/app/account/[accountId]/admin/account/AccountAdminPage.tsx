@@ -17,12 +17,14 @@ import {
   type AdminSubItemMetric,
 } from '../../../../../components/admin';
 import { useAdminDashboardSummary } from '../../../../../hooks/useAdminDashboardSummary';
+import { useAccount } from '../../../../../context/AccountContext';
 
 interface SubItemConfig {
   title: string;
   description: string;
   icon: React.ReactNode;
   href: string;
+  baseballOnly?: boolean;
   getMetrics: (
     summary: ReturnType<typeof useAdminDashboardSummary>['summary'],
   ) => AdminSubItemMetric[];
@@ -32,14 +34,18 @@ const AccountAdminPage: React.FC = () => {
   const params = useParams();
   const accountIdParam = params?.accountId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
+  const { currentAccount } = useAccount();
 
   const { summary, loading, error } = useAdminDashboardSummary(accountId || '');
+
+  const accountType = currentAccount?.accountType?.toLowerCase() ?? '';
+  const isGolf = accountType.includes('golf');
 
   if (!accountId) {
     return null;
   }
 
-  const subItems: SubItemConfig[] = [
+  const allSubItems: SubItemConfig[] = [
     {
       title: 'My Accounts',
       description: 'View and manage all accounts you own or administer.',
@@ -74,6 +80,7 @@ const AccountAdminPage: React.FC = () => {
       description: 'Manage sponsor relationships and display sponsor information.',
       icon: <HandshakeIcon />,
       href: `/account/${accountId}/sponsors/manage`,
+      baseballOnly: true,
       getMetrics: (data) => (data ? [{ value: data.account.sponsorCount, label: 'sponsors' }] : []),
     },
     {
@@ -81,10 +88,13 @@ const AccountAdminPage: React.FC = () => {
       description: 'Showcase businesses owned or operated by your members.',
       icon: <BusinessIcon />,
       href: `/account/${accountId}/member-businesses/manage`,
+      baseballOnly: true,
       getMetrics: (data) =>
         data ? [{ value: data.account.memberBusinessCount, label: 'businesses' }] : [],
     },
   ];
+
+  const subItems = allSubItems.filter((item) => !item.baseballOnly || !isGolf);
 
   return (
     <main className="min-h-screen bg-background">
