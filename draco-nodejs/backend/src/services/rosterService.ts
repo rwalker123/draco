@@ -40,6 +40,7 @@ export class RosterService {
     seasonId: bigint,
     accountId: bigint,
     includeGamesPlayed = false,
+    includeInactive = false,
   ): Promise<TeamRosterMembersType> {
     const teamSeason: dbTeamSeason | null = await this.teamRepository.findTeamSeasonSummary(
       teamSeasonId,
@@ -51,7 +52,10 @@ export class RosterService {
       throw new NotFoundError('Team season not found');
     }
 
-    const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId);
+    const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(
+      teamSeasonId,
+      includeInactive,
+    );
 
     let gamesPlayedMap: Map<string, number> | undefined;
     if (includeGamesPlayed) {

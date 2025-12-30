@@ -10,9 +10,15 @@ import {
 export class PrismaRosterRepository implements IRosterRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async findRosterMembersByTeamSeason(teamSeasonId: bigint): Promise<dbRosterSeason[]> {
+  async findRosterMembersByTeamSeason(
+    teamSeasonId: bigint,
+    includeInactive = false,
+  ): Promise<dbRosterSeason[]> {
     return this.prisma.rosterseason.findMany({
-      where: { teamseasonid: teamSeasonId },
+      where: {
+        teamseasonid: teamSeasonId,
+        ...(includeInactive ? {} : { inactive: false }),
+      },
       include: { roster: { include: { contacts: true } } },
       orderBy: [{ inactive: 'asc' }, { playernumber: 'asc' }],
     });
