@@ -7,7 +7,6 @@ import Grid from '@mui/material/Grid';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import GolfCourseIcon from '@mui/icons-material/GolfCourse';
-import GroupsIcon from '@mui/icons-material/Groups';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
@@ -41,8 +40,8 @@ const GolfAdminHubPage: React.FC = () => {
       href: `/account/${accountId}/admin/account`,
     },
     {
-      title: 'Seasons & Flights',
-      description: 'Configure seasons, flights, and team assignments.',
+      title: 'Seasons',
+      description: 'Configure seasons, flights, and teams.',
       icon: <CalendarMonthIcon />,
       href: `/account/${accountId}/admin/season`,
     },
@@ -51,12 +50,6 @@ const GolfAdminHubPage: React.FC = () => {
       description: 'Manage golf courses and tee configurations.',
       icon: <GolfCourseIcon />,
       href: `/account/${accountId}/golf/courses`,
-    },
-    {
-      title: 'Teams',
-      description: 'Manage teams and rosters.',
-      icon: <GroupsIcon />,
-      href: `/account/${accountId}/golf/teams`,
     },
   ];
 
