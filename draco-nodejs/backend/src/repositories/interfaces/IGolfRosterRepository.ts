@@ -58,8 +58,6 @@ export interface IGolfRosterRepository {
   ): Promise<golfleaguesub>;
   deleteRosterEntry(rosterId: bigint): Promise<golfroster>;
   deleteLeagueSub(subId: bigint): Promise<golfleaguesub>;
-  releasePlayerToSubPool(rosterId: bigint, seasonId: bigint): Promise<golfleaguesub>;
-  signSubToTeam(subId: bigint, teamSeasonId: bigint): Promise<golfroster>;
   findAvailableContacts(accountId: bigint, seasonId: bigint): Promise<AvailableContact[]>;
   contactExistsInAccount(contactId: bigint, accountId: bigint): Promise<boolean>;
   createContact(

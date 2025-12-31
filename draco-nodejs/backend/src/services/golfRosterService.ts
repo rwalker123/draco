@@ -222,7 +222,22 @@ export class GolfRosterService {
     }
 
     if (data.releaseAsSub) {
-      await this.rosterRepository.releasePlayerToSubPool(rosterId, seasonId);
+      const existingSub = await this.rosterRepository.findLeagueSubByGolferAndSeason(
+        entry.golferid,
+        seasonId,
+      );
+
+      if (existingSub) {
+        await this.rosterRepository.updateLeagueSub(existingSub.id, { isactive: true });
+      } else {
+        await this.rosterRepository.createLeagueSub({
+          golferid: entry.golferid,
+          seasonid: seasonId,
+          isactive: true,
+        });
+      }
+
+      await this.rosterRepository.deleteRosterEntry(rosterId);
     } else {
       await this.rosterRepository.deleteRosterEntry(rosterId);
     }
@@ -255,7 +270,22 @@ export class GolfRosterService {
       throw new NotFoundError('Substitute not found');
     }
 
-    const rosterEntry = await this.rosterRepository.signSubToTeam(subId, teamSeasonId);
+    const existingRoster = await this.rosterRepository.findByGolferAndTeam(
+      sub.golferid,
+      teamSeasonId,
+    );
+    if (existingRoster) {
+      throw new ValidationError('Golfer is already on this team');
+    }
+
+    const rosterEntry = await this.rosterRepository.createRosterEntry({
+      golferid: sub.golferid,
+      teamseasonid: teamSeasonId,
+      isactive: true,
+    });
+
+    await this.rosterRepository.deleteLeagueSub(subId);
+
     const createdEntry = await this.rosterRepository.findById(rosterEntry.id);
     if (!createdEntry) {
       throw new NotFoundError('Created roster entry not found');
