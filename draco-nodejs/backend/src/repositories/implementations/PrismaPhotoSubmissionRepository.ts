@@ -256,7 +256,7 @@ export class PrismaPhotoSubmissionRepository implements IPhotoSubmissionReposito
           moderatedat: data.moderatedat,
           updatedat: data.updatedat,
           denialreason: data.denialreason,
-        } as unknown as Prisma.photogallerysubmissionUpdateManyMutationInput,
+        } as Prisma.photogallerysubmissionUpdateManyMutationInput,
       });
 
       const submission = await tx.photogallerysubmission.findUnique({

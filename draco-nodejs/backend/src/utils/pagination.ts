@@ -92,7 +92,7 @@ export class PaginationHelper {
   ): Promise<{ data: TTransformed[]; total: number }> {
     const [items, total] = await Promise.all([queryFn(), countFn()]);
 
-    const data = transformFn ? transformFn(items) : (items as unknown as TTransformed[]);
+    const data = transformFn ? transformFn(items) : (items as TTransformed[]);
 
     return { data, total };
   }
