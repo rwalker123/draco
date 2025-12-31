@@ -38,8 +38,8 @@ export class GolfScoreService {
     return GolfScoreResponseFormatter.formatWithDetails(score);
   }
 
-  async getScoresForPlayer(contactId: bigint, limit = 20): Promise<GolfScoreType[]> {
-    const scores = await this.scoreRepository.findByContactId(contactId, limit);
+  async getScoresForPlayer(golferId: bigint, limit = 20): Promise<GolfScoreType[]> {
+    const scores = await this.scoreRepository.findByGolferId(golferId, limit);
     return GolfScoreResponseFormatter.formatMany(scores);
   }
 
@@ -124,7 +124,7 @@ export class GolfScoreService {
 
         const score = await this.scoreRepository.create({
           courseid: courseId,
-          contactid: BigInt(playerScore.contactId),
+          golferid: rosterEntry.golferid,
           teeid: teeId,
           dateplayed: new Date(scoreData.datePlayed),
           holesplayed: scoreData.holesPlayed,
@@ -154,7 +154,7 @@ export class GolfScoreService {
         await this.scoreRepository.createMatchScore({
           matchid: matchId,
           teamid: teamId,
-          playerid: rosterId,
+          golferid: rosterEntry.golferid,
           scoreid: score.id,
         });
 
@@ -190,10 +190,10 @@ export class GolfScoreService {
   }
 
   async getPlayerSeasonScores(
-    contactId: bigint,
+    golferId: bigint,
     seasonId: bigint,
   ): Promise<GolfScoreWithDetailsType[]> {
-    const scores = await this.scoreRepository.getPlayerScoresForSeason(contactId, seasonId);
+    const scores = await this.scoreRepository.getPlayerScoresForSeason(golferId, seasonId);
     return scores.map((s) => GolfScoreResponseFormatter.formatWithDetails(s));
   }
 }

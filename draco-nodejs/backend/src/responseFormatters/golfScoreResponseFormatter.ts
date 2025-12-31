@@ -1,10 +1,9 @@
 import { GolfScoreType, GolfScoreWithDetailsType } from '@draco/shared-schemas';
-import { golfscore } from '#prisma/client';
 import { GolfScoreWithDetails } from '../repositories/interfaces/IGolfScoreRepository.js';
 import { GolfMatchScoreEntry } from '../repositories/interfaces/IGolfMatchRepository.js';
 
 export class GolfScoreResponseFormatter {
-  static format(score: golfscore): GolfScoreType {
+  static format(score: GolfScoreWithDetails): GolfScoreType {
     const holeScores = [
       score.holescrore1,
       score.holescrore2,
@@ -34,7 +33,7 @@ export class GolfScoreResponseFormatter {
     return {
       id: score.id.toString(),
       courseId: score.courseid.toString(),
-      contactId: score.contactid.toString(),
+      golferId: score.golferid.toString(),
       teeId: score.teeid.toString(),
       datePlayed: score.dateplayed.toISOString().split('T')[0],
       holesPlayed: score.holesplayed,
@@ -46,7 +45,7 @@ export class GolfScoreResponseFormatter {
     };
   }
 
-  static formatMany(scores: golfscore[]): GolfScoreType[] {
+  static formatMany(scores: GolfScoreWithDetails[]): GolfScoreType[] {
     return scores.map((score) => this.format(score));
   }
 
@@ -80,10 +79,10 @@ export class GolfScoreResponseFormatter {
     return {
       ...baseScore,
       player: {
-        id: score.contacts.id.toString(),
-        firstName: score.contacts.firstname,
-        lastName: score.contacts.lastname,
-        middleName: score.contacts.middlename || undefined,
+        id: score.golfer.contact.id.toString(),
+        firstName: score.golfer.contact.firstname,
+        lastName: score.golfer.contact.lastname,
+        middleName: score.golfer.contact.middlename || undefined,
       },
       tee: {
         id: teeInfo.id.toString(),
@@ -132,7 +131,7 @@ export class GolfScoreResponseFormatter {
     return {
       id: score.id.toString(),
       courseId: score.courseid.toString(),
-      contactId: score.contactid.toString(),
+      golferId: score.golferid.toString(),
       teeId: score.teeid.toString(),
       datePlayed: score.dateplayed.toISOString().split('T')[0],
       holesPlayed: score.holesplayed,
@@ -142,10 +141,10 @@ export class GolfScoreResponseFormatter {
       startIndex9: score.startindex9 ?? undefined,
       holeScores,
       player: {
-        id: matchScore.golfroster.contacts.id.toString(),
-        firstName: matchScore.golfroster.contacts.firstname,
-        lastName: matchScore.golfroster.contacts.lastname,
-        middleName: matchScore.golfroster.contacts.middlename || undefined,
+        id: matchScore.golfer.contact.id.toString(),
+        firstName: matchScore.golfer.contact.firstname,
+        lastName: matchScore.golfer.contact.lastname,
+        middleName: matchScore.golfer.contact.middlename || undefined,
       },
     };
   }

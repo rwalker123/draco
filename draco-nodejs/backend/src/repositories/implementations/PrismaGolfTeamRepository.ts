@@ -106,9 +106,13 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
         golfroster: {
           where: { isactive: true },
           include: {
-            contacts: true,
+            golfer: {
+              include: {
+                contact: true,
+              },
+            },
           },
-          orderBy: { contacts: { lastname: 'asc' } },
+          orderBy: { golfer: { contact: { lastname: 'asc' } } },
         },
       },
     });

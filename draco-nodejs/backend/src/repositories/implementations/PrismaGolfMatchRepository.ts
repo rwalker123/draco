@@ -26,10 +26,18 @@ const matchWithScoresInclude = {
   ...matchTeamInclude,
   golfmatchscores: {
     include: {
-      golfscore: true,
-      golfroster: {
+      golfscore: {
         include: {
-          contacts: true,
+          golfer: {
+            include: {
+              contact: true,
+            },
+          },
+        },
+      },
+      golfer: {
+        include: {
+          contact: true,
         },
       },
       teamsseason: true,

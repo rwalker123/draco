@@ -4,7 +4,6 @@ import { useCallback, useMemo } from 'react';
 import {
   getGolfTeamRoster,
   listGolfSubstitutesForSeason,
-  listGolfSubstitutesForFlight,
   listAvailableGolfPlayers,
   getGolfRosterEntry,
   createAndSignGolfPlayer,
@@ -30,48 +29,52 @@ export type GolfRosterServiceResult<T> =
   | { success: false; error: string };
 
 export interface GolfRosterService {
-  getTeamRoster: (teamSeasonId: string) => Promise<GolfRosterServiceResult<GolfRosterEntryType[]>>;
+  getTeamRoster: (
+    seasonId: string,
+    teamSeasonId: string,
+  ) => Promise<GolfRosterServiceResult<GolfRosterEntryType[]>>;
   listSubstitutesForSeason: (
     seasonId: string,
-  ) => Promise<GolfRosterServiceResult<GolfSubstituteType[]>>;
-  listSubstitutesForFlight: (
-    flightId: string,
   ) => Promise<GolfRosterServiceResult<GolfSubstituteType[]>>;
   listAvailablePlayers: (
     seasonId: string,
   ) => Promise<GolfRosterServiceResult<AvailablePlayerType[]>>;
-  getRosterEntry: (rosterId: string) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
-  createAndSignPlayer: (
-    teamSeasonId: string,
+  getRosterEntry: (
     seasonId: string,
+    rosterId: string,
+  ) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
+  createAndSignPlayer: (
+    seasonId: string,
+    teamSeasonId: string,
     payload: CreateGolfPlayerType,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
   signPlayer: (
-    teamSeasonId: string,
     seasonId: string,
+    teamSeasonId: string,
     payload: SignPlayerType,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
   updatePlayer: (
+    seasonId: string,
     rosterId: string,
     payload: UpdateGolfPlayerType,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
   releasePlayer: (
-    rosterId: string,
     seasonId: string,
+    rosterId: string,
     payload: ReleasePlayerType,
   ) => Promise<GolfRosterServiceResult<void>>;
-  deletePlayer: (rosterId: string) => Promise<GolfRosterServiceResult<void>>;
+  deletePlayer: (seasonId: string, rosterId: string) => Promise<GolfRosterServiceResult<void>>;
 }
 
 export function useGolfRosters(accountId: string): GolfRosterService {
   const apiClient = useApiClient();
 
   const getTeamRoster = useCallback<GolfRosterService['getTeamRoster']>(
-    async (teamSeasonId) => {
+    async (seasonId, teamSeasonId) => {
       try {
         const result = await getGolfTeamRoster({
           client: apiClient,
-          path: { accountId, teamSeasonId },
+          path: { accountId, seasonId, teamSeasonId },
           throwOnError: false,
         });
 
@@ -114,31 +117,6 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     [accountId, apiClient],
   );
 
-  const listSubstitutesForFlight = useCallback<GolfRosterService['listSubstitutesForFlight']>(
-    async (flightId) => {
-      try {
-        const result = await listGolfSubstitutesForFlight({
-          client: apiClient,
-          path: { accountId, flightId },
-          throwOnError: false,
-        });
-
-        const subs = unwrapApiResult(result, 'Failed to load flight substitutes');
-
-        return {
-          success: true,
-          data: subs as GolfSubstituteType[],
-          message: 'Flight substitutes loaded successfully',
-        } as const;
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to load flight substitutes';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
-
   const listAvailablePlayers = useCallback<GolfRosterService['listAvailablePlayers']>(
     async (seasonId) => {
       try {
@@ -164,11 +142,11 @@ export function useGolfRosters(accountId: string): GolfRosterService {
   );
 
   const getRosterEntry = useCallback<GolfRosterService['getRosterEntry']>(
-    async (rosterId) => {
+    async (seasonId, rosterId) => {
       try {
         const result = await getGolfRosterEntry({
           client: apiClient,
-          path: { accountId, rosterId },
+          path: { accountId, seasonId, rosterId },
           throwOnError: false,
         });
 
@@ -188,12 +166,12 @@ export function useGolfRosters(accountId: string): GolfRosterService {
   );
 
   const createAndSignPlayer = useCallback<GolfRosterService['createAndSignPlayer']>(
-    async (teamSeasonId, seasonId, payload) => {
+    async (seasonId, teamSeasonId, payload) => {
       try {
         const result = await createAndSignGolfPlayer({
           client: apiClient,
-          path: { accountId, teamSeasonId },
-          body: { ...payload, seasonId },
+          path: { accountId, seasonId, teamSeasonId },
+          body: payload,
           throwOnError: false,
         });
 
@@ -216,12 +194,12 @@ export function useGolfRosters(accountId: string): GolfRosterService {
   );
 
   const signPlayer = useCallback<GolfRosterService['signPlayer']>(
-    async (teamSeasonId, seasonId, payload) => {
+    async (seasonId, teamSeasonId, payload) => {
       try {
         const result = await signGolfPlayer({
           client: apiClient,
-          path: { accountId, teamSeasonId },
-          body: { ...payload, seasonId },
+          path: { accountId, seasonId, teamSeasonId },
+          body: payload,
           throwOnError: false,
         });
 
@@ -241,11 +219,11 @@ export function useGolfRosters(accountId: string): GolfRosterService {
   );
 
   const updatePlayer = useCallback<GolfRosterService['updatePlayer']>(
-    async (rosterId, payload) => {
+    async (seasonId, rosterId, payload) => {
       try {
         const result = await updateGolfPlayer({
           client: apiClient,
-          path: { accountId, rosterId },
+          path: { accountId, seasonId, rosterId },
           body: payload,
           throwOnError: false,
         });
@@ -266,12 +244,12 @@ export function useGolfRosters(accountId: string): GolfRosterService {
   );
 
   const releasePlayer = useCallback<GolfRosterService['releasePlayer']>(
-    async (rosterId, seasonId, payload) => {
+    async (seasonId, rosterId, payload) => {
       try {
         const result = await releaseGolfPlayer({
           client: apiClient,
-          path: { accountId, rosterId },
-          body: { ...payload, seasonId },
+          path: { accountId, seasonId, rosterId },
+          body: payload,
           throwOnError: false,
         });
 
@@ -291,11 +269,11 @@ export function useGolfRosters(accountId: string): GolfRosterService {
   );
 
   const deletePlayer = useCallback<GolfRosterService['deletePlayer']>(
-    async (rosterId) => {
+    async (seasonId, rosterId) => {
       try {
         const result = await deleteGolfPlayer({
           client: apiClient,
-          path: { accountId, rosterId },
+          path: { accountId, seasonId, rosterId },
           throwOnError: false,
         });
 
@@ -318,7 +296,6 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     () => ({
       getTeamRoster,
       listSubstitutesForSeason,
-      listSubstitutesForFlight,
       listAvailablePlayers,
       getRosterEntry,
       createAndSignPlayer,
@@ -330,7 +307,6 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     [
       getTeamRoster,
       listSubstitutesForSeason,
-      listSubstitutesForFlight,
       listAvailablePlayers,
       getRosterEntry,
       createAndSignPlayer,

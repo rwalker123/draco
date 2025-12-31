@@ -574,8 +574,7 @@ model contacts {
   golfleaguesetup_golfleaguesetup_vicepresidentidTocontacts                    golfleaguesetup[]          @relation("golfleaguesetup_vicepresidentidTocontacts")
   golfleaguesetup_golfleaguesetup_secretaryidTocontacts                        golfleaguesetup[]          @relation("golfleaguesetup_secretaryidTocontacts")
   golfleaguesetup_golfleaguesetup_treasureridTocontacts                        golfleaguesetup[]          @relation("golfleaguesetup_treasureridTocontacts")
-  golfroster                                                                   golfroster[]
-  golfscore                                                                    golfscore[]
+  golfer                                                                       golfer?
   hof                                                                          hof[]
   leagueumpires                                                                leagueumpires[]
   memberbusiness                                                               memberbusiness[]
@@ -873,37 +872,58 @@ model golfmatch {
   golfmatchscores                          golfmatchscores[]
 }
 
-model golfmatchscores {
-  matchid     BigInt
-  teamid      BigInt
-  playerid    BigInt
-  scoreid     BigInt
-  golfmatch   golfmatch   @relation(fields: [matchid], references: [id], onDelete: Cascade, map: "fk_golfmatchscores_golfmatch")
-  golfroster  golfroster  @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_golfmatchscores_golfroster")
-  golfscore   golfscore   @relation(fields: [scoreid], references: [id], onDelete: Cascade, map: "fk_golfmatchscores_golfscore")
-  teamsseason teamsseason @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_golfmatchscores_teamsseason")
+model golfer {
+  id                  BigInt            @id @default(autoincrement())
+  contactid           BigInt            @unique
+  initialdifferential Float?
+  contact             contacts          @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_golfer_contact")
+  rosters             golfroster[]
+  leaguesubs          golfleaguesub[]
+  matchscores         golfmatchscores[]
+  scores              golfscore[]
+}
 
-  @@id([matchid, teamid, playerid, scoreid])
+model golfleaguesub {
+  id           BigInt       @id @default(autoincrement())
+  golferid     BigInt
+  seasonid     BigInt
+  isactive     Boolean      @default(true)
+  golfer       golfer       @relation(fields: [golferid], references: [id], onDelete: Cascade, map: "fk_golfleaguesub_golfer")
+  leagueseason leagueseason @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_golfleaguesub_leagueseason")
+
+  @@unique([golferid, seasonid], map: "uq_golfleaguesub_golfer_season")
+}
+
+model golfmatchscores {
+  matchid       BigInt
+  teamid        BigInt
+  golferid      BigInt
+  scoreid       BigInt
+  substitutefor BigInt?
+  golfmatch     golfmatch   @relation(fields: [matchid], references: [id], onDelete: Cascade, map: "fk_golfmatchscores_golfmatch")
+  golfer        golfer      @relation(fields: [golferid], references: [id], onDelete: Cascade, map: "fk_golfmatchscores_golfer")
+  golfscore     golfscore   @relation(fields: [scoreid], references: [id], onDelete: Cascade, map: "fk_golfmatchscores_golfscore")
+  teamsseason   teamsseason @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_golfmatchscores_teamsseason")
+  rosterSpot    golfroster? @relation("SubstituteFor", fields: [substitutefor], references: [id], onDelete: SetNull, map: "fk_golfmatchscores_substitutefor")
+
+  @@id([matchid, teamid, golferid, scoreid])
 }
 
 model golfroster {
-  id                  BigInt            @id @default(autoincrement())
-  contactid           BigInt
-  teamseasonid        BigInt
-  isactive            Boolean
-  initialdifferential Float?
-  issub               Boolean           @default(false)
-  subseasonid         BigInt?
-  golfmatchscores     golfmatchscores[]
-  contacts            contacts          @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_golfroster_contacts")
-  teamsseason         teamsseason       @relation(fields: [teamseasonid], references: [id], onDelete: Cascade, map: "fk_golfroster_teamsseason")
-  leagueseason        leagueseason?     @relation(fields: [subseasonid], references: [id])
+  id            BigInt            @id @default(autoincrement())
+  teamseasonid  BigInt
+  isactive      Boolean           @default(true)
+  golferid      BigInt
+  golfer        golfer            @relation(fields: [golferid], references: [id], onDelete: Cascade, map: "fk_golfroster_golfer")
+  teamsseason   teamsseason       @relation(fields: [teamseasonid], references: [id], onDelete: Cascade, map: "fk_golfroster_teamsseason")
+  substitutedin golfmatchscores[] @relation("SubstituteFor")
+
+  @@unique([golferid, teamseasonid], map: "uq_golfroster_golfer_team")
 }
 
 model golfscore {
   id                 BigInt             @id @default(autoincrement())
   courseid           BigInt
-  contactid          BigInt
   teeid              BigInt
   dateplayed         DateTime           @db.Timestamptz(6)
   holesplayed        Int
@@ -929,9 +949,10 @@ model golfscore {
   holescrore18       Int
   startindex         Float?
   startindex9        Float?
+  golferid           BigInt
   golferstatsvalue   golferstatsvalue[]
   golfmatchscores    golfmatchscores[]
-  contacts           contacts           @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_golfscore_contacts")
+  golfer             golfer             @relation(fields: [golferid], references: [id], onDelete: Cascade, map: "fk_golfscore_golfer")
   golfcourse         golfcourse         @relation(fields: [courseid], references: [id], onDelete: Cascade, map: "fk_golfscore_golfcourse")
   golfteeinformation golfteeinformation @relation(fields: [teeid], references: [id], onDelete: Cascade, map: "fk_golfscore_golfteeinformation")
 }
@@ -1215,7 +1236,7 @@ model leagueseason {
   divisionseason divisionseason[]
   gameejections  gameejections[]
   golfmatch      golfmatch[]
-  golfroster     golfroster[]
+  golfleaguesub  golfleaguesub[]
   leagueevents   leagueevents[]
   leagueschedule leagueschedule[]
   league         league           @relation(fields: [leagueid], references: [id], onDelete: Cascade, map: "fk_leagueseason_league")

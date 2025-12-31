@@ -16,10 +16,9 @@ export const GolfPlayerSchema = NamedContactSchema.extend({
 export const GolfRosterEntrySchema = z
   .object({
     id: bigintToStringSchema,
-    contactId: bigintToStringSchema,
+    golferId: bigintToStringSchema,
     teamSeasonId: bigintToStringSchema,
     isActive: z.boolean().default(true),
-    isSub: z.boolean().default(false),
     initialDifferential: z.number().nullable().optional(),
     player: GolfPlayerSchema,
   })
@@ -28,12 +27,19 @@ export const GolfRosterEntrySchema = z
     description: 'A player on a golf team roster',
   });
 
-export const GolfSubstituteSchema = GolfRosterEntrySchema.extend({
-  subSeasonId: bigintToStringSchema.nullable().optional(),
-}).openapi({
-  title: 'GolfSubstitute',
-  description: 'A substitute player available for the flight',
-});
+export const GolfSubstituteSchema = z
+  .object({
+    id: bigintToStringSchema,
+    golferId: bigintToStringSchema,
+    seasonId: bigintToStringSchema,
+    isActive: z.boolean().default(true),
+    initialDifferential: z.number().nullable().optional(),
+    player: GolfPlayerSchema,
+  })
+  .openapi({
+    title: 'GolfSubstitute',
+    description: 'A substitute player available for the season',
+  });
 
 export const GolfTeamRosterSchema = z
   .object({

@@ -5,13 +5,13 @@ import {
   AvailablePlayerType,
 } from '@draco/shared-schemas';
 import {
-  GolfRosterWithContact,
-  GolfSubstituteEntry,
+  GolfRosterWithGolfer,
+  GolfLeagueSubWithGolfer,
   AvailableContact,
 } from '../repositories/interfaces/IGolfRosterRepository.js';
 
 export class GolfRosterResponseFormatter {
-  private static formatPlayer(contact: GolfRosterWithContact['contacts']): GolfPlayerType {
+  private static formatPlayer(contact: GolfRosterWithGolfer['golfer']['contact']): GolfPlayerType {
     return {
       id: contact.id.toString(),
       firstName: contact.firstname,
@@ -20,36 +20,33 @@ export class GolfRosterResponseFormatter {
     };
   }
 
-  static format(entry: GolfRosterWithContact): GolfRosterEntryType {
+  static format(entry: GolfRosterWithGolfer): GolfRosterEntryType {
     return {
       id: entry.id.toString(),
-      contactId: entry.contactid.toString(),
+      golferId: entry.golferid.toString(),
       teamSeasonId: entry.teamseasonid.toString(),
       isActive: entry.isactive,
-      isSub: entry.issub,
-      initialDifferential: entry.initialdifferential ?? undefined,
-      player: this.formatPlayer(entry.contacts),
+      initialDifferential: entry.golfer.initialdifferential ?? undefined,
+      player: this.formatPlayer(entry.golfer.contact),
     };
   }
 
-  static formatMany(entries: GolfRosterWithContact[]): GolfRosterEntryType[] {
+  static formatMany(entries: GolfRosterWithGolfer[]): GolfRosterEntryType[] {
     return entries.map((entry) => this.format(entry));
   }
 
-  static formatSubstitute(entry: GolfSubstituteEntry): GolfSubstituteType {
+  static formatSubstitute(entry: GolfLeagueSubWithGolfer): GolfSubstituteType {
     return {
       id: entry.id.toString(),
-      contactId: entry.contactid.toString(),
-      teamSeasonId: entry.teamseasonid.toString(),
+      golferId: entry.golferid.toString(),
+      seasonId: entry.seasonid.toString(),
       isActive: entry.isactive,
-      isSub: entry.issub,
-      initialDifferential: entry.initialdifferential ?? undefined,
-      subSeasonId: entry.subseasonid?.toString() ?? undefined,
-      player: this.formatPlayer(entry.contacts),
+      initialDifferential: entry.golfer.initialdifferential ?? undefined,
+      player: this.formatPlayer(entry.golfer.contact),
     };
   }
 
-  static formatSubstitutes(entries: GolfSubstituteEntry[]): GolfSubstituteType[] {
+  static formatSubstitutes(entries: GolfLeagueSubWithGolfer[]): GolfSubstituteType[] {
     return entries.map((entry) => this.formatSubstitute(entry));
   }
 
@@ -65,7 +62,10 @@ export class GolfRosterResponseFormatter {
 
   static formatAvailablePlayers(contacts: AvailableContact[]): AvailablePlayerType[] {
     return contacts
-      .filter((contact) => contact.golfroster.length === 0)
+      .filter((contact) => {
+        if (!contact.golfer) return true;
+        return contact.golfer.rosters.length === 0 && contact.golfer.leaguesubs.length === 0;
+      })
       .map((contact) => this.formatAvailablePlayer(contact));
   }
 }

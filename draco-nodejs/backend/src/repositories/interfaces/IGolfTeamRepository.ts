@@ -1,4 +1,4 @@
-import { teamsseason, teams, divisionseason, contacts } from '#prisma/client';
+import { teamsseason, teams, divisionseason, golfer, contacts } from '#prisma/client';
 
 export type GolfTeamWithFlight = teamsseason & {
   divisionseason:
@@ -27,13 +27,12 @@ export type GolfTeamWithRoster = teamsseason & {
   teams: teams;
   golfroster: Array<{
     id: bigint;
-    contactid: bigint;
+    golferid: bigint;
     teamseasonid: bigint;
     isactive: boolean;
-    issub: boolean;
-    initialdifferential: number | null;
-    subseasonid: bigint | null;
-    contacts: contacts;
+    golfer: golfer & {
+      contact: contacts;
+    };
   }>;
 };
 

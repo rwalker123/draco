@@ -69,7 +69,7 @@ const GolfPlayerForm: React.FC<GolfPlayerFormProps> = ({
         middleName: player.player.middleName || '',
         email: '',
         initialDifferential: player.initialDifferential ?? null,
-        isSub: player.isSub,
+        isSub: false,
       });
     } else {
       reset({

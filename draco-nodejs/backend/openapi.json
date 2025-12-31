@@ -25441,7 +25441,7 @@
                   "pattern": "^\\d+$",
                   "example": "12345"
                 },
-                "contactId": {
+                "golferId": {
                   "type": "string",
                   "pattern": "^\\d+$",
                   "example": "12345"
@@ -25454,10 +25454,6 @@
                 "isActive": {
                   "type": "boolean",
                   "default": true
-                },
-                "isSub": {
-                  "type": "boolean",
-                  "default": false
                 },
                 "initialDifferential": {
                   "type": "number",
@@ -25506,7 +25502,7 @@
               },
               "required": [
                 "id",
-                "contactId",
+                "golferId",
                 "teamSeasonId",
                 "player"
               ],
@@ -25603,7 +25599,7 @@
             "pattern": "^\\d+$",
             "example": "12345"
           },
-          "contactId": {
+          "golferId": {
             "type": "string",
             "pattern": "^\\d+$",
             "example": "12345"
@@ -25616,10 +25612,6 @@
           "isActive": {
             "type": "boolean",
             "default": true
-          },
-          "isSub": {
-            "type": "boolean",
-            "default": false
           },
           "initialDifferential": {
             "type": "number",
@@ -25668,7 +25660,7 @@
         },
         "required": [
           "id",
-          "contactId",
+          "golferId",
           "teamSeasonId",
           "player"
         ],
@@ -25683,12 +25675,12 @@
             "pattern": "^\\d+$",
             "example": "12345"
           },
-          "contactId": {
+          "golferId": {
             "type": "string",
             "pattern": "^\\d+$",
             "example": "12345"
           },
-          "teamSeasonId": {
+          "seasonId": {
             "type": "string",
             "pattern": "^\\d+$",
             "example": "12345"
@@ -25696,10 +25688,6 @@
           "isActive": {
             "type": "boolean",
             "default": true
-          },
-          "isSub": {
-            "type": "boolean",
-            "default": false
           },
           "initialDifferential": {
             "type": "number",
@@ -25744,22 +25732,16 @@
             ],
             "title": "GolfPlayer",
             "description": "Golf player with handicap information"
-          },
-          "subSeasonId": {
-            "type": "string",
-            "nullable": true,
-            "pattern": "^\\d+$",
-            "example": "12345"
           }
         },
         "required": [
           "id",
-          "contactId",
-          "teamSeasonId",
+          "golferId",
+          "seasonId",
           "player"
         ],
         "title": "GolfSubstitute",
-        "description": "A substitute player available for the flight"
+        "description": "A substitute player available for the season"
       },
       "CreateGolfPlayer": {
         "type": "object",
@@ -26180,7 +26162,7 @@
                   "pattern": "^\\d+$",
                   "example": "12345"
                 },
-                "contactId": {
+                "golferId": {
                   "type": "string",
                   "pattern": "^\\d+$",
                   "example": "12345"
@@ -26380,7 +26362,7 @@
               "required": [
                 "id",
                 "courseId",
-                "contactId",
+                "golferId",
                 "teeId",
                 "datePlayed",
                 "holesPlayed",
@@ -26406,7 +26388,7 @@
                   "pattern": "^\\d+$",
                   "example": "12345"
                 },
-                "contactId": {
+                "golferId": {
                   "type": "string",
                   "pattern": "^\\d+$",
                   "example": "12345"
@@ -26606,7 +26588,7 @@
               "required": [
                 "id",
                 "courseId",
-                "contactId",
+                "golferId",
                 "teeId",
                 "datePlayed",
                 "holesPlayed",
@@ -26756,7 +26738,7 @@
             "pattern": "^\\d+$",
             "example": "12345"
           },
-          "contactId": {
+          "golferId": {
             "type": "string",
             "pattern": "^\\d+$",
             "example": "12345"
@@ -26805,7 +26787,7 @@
         "required": [
           "id",
           "courseId",
-          "contactId",
+          "golferId",
           "teeId",
           "datePlayed",
           "holesPlayed",
@@ -26828,7 +26810,7 @@
             "pattern": "^\\d+$",
             "example": "12345"
           },
-          "contactId": {
+          "golferId": {
             "type": "string",
             "pattern": "^\\d+$",
             "example": "12345"
@@ -27028,7 +27010,7 @@
         "required": [
           "id",
           "courseId",
-          "contactId",
+          "golferId",
           "teeId",
           "datePlayed",
           "holesPlayed",
@@ -27061,11 +27043,6 @@
                   "pattern": "^\\d+$",
                   "example": "12345"
                 },
-                "contactId": {
-                  "type": "string",
-                  "pattern": "^\\d+$",
-                  "example": "12345"
-                },
                 "isAbsent": {
                   "type": "boolean",
                   "default": false
@@ -27074,7 +27051,7 @@
                   "type": "boolean",
                   "default": false
                 },
-                "substituteContactId": {
+                "substituteGolferId": {
                   "type": "string",
                   "pattern": "^\\d+$",
                   "example": "12345"
@@ -27136,8 +27113,7 @@
               },
               "required": [
                 "teamSeasonId",
-                "rosterId",
-                "contactId"
+                "rosterId"
               ],
               "title": "PlayerMatchScore",
               "description": "Score entry for a single player in a match"
@@ -27164,11 +27140,6 @@
             "pattern": "^\\d+$",
             "example": "12345"
           },
-          "contactId": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "example": "12345"
-          },
           "isAbsent": {
             "type": "boolean",
             "default": false
@@ -27177,7 +27148,7 @@
             "type": "boolean",
             "default": false
           },
-          "substituteContactId": {
+          "substituteGolferId": {
             "type": "string",
             "pattern": "^\\d+$",
             "example": "12345"
@@ -27239,8 +27210,7 @@
         },
         "required": [
           "teamSeasonId",
-          "rosterId",
-          "contactId"
+          "rosterId"
         ],
         "title": "PlayerMatchScore",
         "description": "Score entry for a single player in a match"
@@ -44571,1024 +44541,6 @@
         }
       }
     },
-    "/api/accounts/{accountId}/golf/rosters/team/{teamSeasonId}": {
-      "get": {
-        "description": "Get roster for a specific team",
-        "operationId": "getGolfTeamRoster",
-        "summary": "Get team roster",
-        "tags": [
-          "Golf Rosters"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "teamSeasonId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Team roster",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GolfRosterEntry"
-                  },
-                  "title": "GolfRosterEntryList",
-                  "description": "List of golf roster entries"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Access denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Team not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/accounts/{accountId}/golf/rosters/substitutes/season/{seasonId}": {
-      "get": {
-        "description": "List all substitutes for a season",
-        "operationId": "listGolfSubstitutesForSeason",
-        "summary": "List season substitutes",
-        "tags": [
-          "Golf Rosters"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "seasonId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of substitutes",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GolfSubstitute"
-                  },
-                  "title": "GolfSubstituteList",
-                  "description": "List of golf substitutes"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Access denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/accounts/{accountId}/golf/rosters/substitutes/flight/{flightId}": {
-      "get": {
-        "description": "List substitutes for a specific flight",
-        "operationId": "listGolfSubstitutesForFlight",
-        "summary": "List flight substitutes",
-        "tags": [
-          "Golf Rosters"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "flightId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of substitutes in the flight",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GolfSubstitute"
-                  },
-                  "title": "GolfSubstituteList",
-                  "description": "List of golf substitutes"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Access denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/accounts/{accountId}/golf/rosters/available/{seasonId}": {
-      "get": {
-        "description": "List contacts available to be signed to a golf team",
-        "operationId": "listAvailableGolfPlayers",
-        "summary": "List available players",
-        "tags": [
-          "Golf Rosters"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "seasonId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of available players",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AvailablePlayer"
-                  },
-                  "title": "AvailablePlayerList",
-                  "description": "List of available players"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Access denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/accounts/{accountId}/golf/rosters/{rosterId}": {
-      "get": {
-        "description": "Get a specific roster entry",
-        "operationId": "getGolfRosterEntry",
-        "summary": "Get roster entry",
-        "tags": [
-          "Golf Rosters"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "rosterId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Roster entry details",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GolfRosterEntry"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Access denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Roster entry not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalServerError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "description": "Update a player on the roster",
-        "operationId": "updateGolfPlayer",
-        "summary": "Update player",
-        "tags": [
-          "Golf Rosters"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "rosterId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateGolfPlayer"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Player updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GolfRosterEntry"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Access denied - account management permission required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Roster entry not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalServerError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "description": "Delete a player from the roster entirely",
-        "operationId": "deleteGolfPlayer",
-        "summary": "Delete player",
-        "tags": [
-          "Golf Rosters"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "rosterId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Player deleted"
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Access denied - account management permission required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Roster entry not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Cannot delete player with match scores",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/accounts/{accountId}/golf/rosters/team/{teamSeasonId}/create": {
-      "post": {
-        "description": "Create a new player and add them to a team roster",
-        "operationId": "createAndSignGolfPlayer",
-        "summary": "Create and sign player",
-        "tags": [
-          "Golf Rosters"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "teamSeasonId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "firstName": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
-                  },
-                  "lastName": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
-                  },
-                  "middleName": {
-                    "type": "string",
-                    "maxLength": 50
-                  },
-                  "email": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "format": "email"
-                  },
-                  "initialDifferential": {
-                    "type": "number",
-                    "nullable": true
-                  },
-                  "isSub": {
-                    "type": "boolean",
-                    "default": false
-                  },
-                  "seasonId": {
-                    "type": "string",
-                    "description": "Season ID for the roster entry"
-                  }
-                },
-                "required": [
-                  "firstName",
-                  "lastName",
-                  "seasonId"
-                ],
-                "title": "CreateGolfPlayerWithSeason",
-                "description": "Data required to create a new golf player with season context"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Player created and signed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GolfRosterEntry"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Access denied - account management permission required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Team not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/accounts/{accountId}/golf/rosters/team/{teamSeasonId}/sign": {
-      "post": {
-        "description": "Sign an existing contact to a team roster",
-        "operationId": "signGolfPlayer",
-        "summary": "Sign player to team",
-        "tags": [
-          "Golf Rosters"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "teamSeasonId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "contactId": {
-                    "type": "string",
-                    "pattern": "^\\d+$",
-                    "example": "12345"
-                  },
-                  "initialDifferential": {
-                    "type": "number",
-                    "nullable": true
-                  },
-                  "isSub": {
-                    "type": "boolean",
-                    "default": false
-                  },
-                  "seasonId": {
-                    "type": "string",
-                    "description": "Season ID for the roster entry"
-                  }
-                },
-                "required": [
-                  "contactId",
-                  "seasonId"
-                ],
-                "title": "SignPlayerWithSeason",
-                "description": "Data for signing an existing contact to a golf team with season context"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Player signed to team",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GolfRosterEntry"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Access denied - account management permission required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Team or contact not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Player already on roster",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/accounts/{accountId}/golf/rosters/{rosterId}/release": {
-      "post": {
-        "description": "Release a player from a team",
-        "operationId": "releaseGolfPlayer",
-        "summary": "Release player",
-        "tags": [
-          "Golf Rosters"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "rosterId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "releaseAsSub": {
-                    "type": "boolean",
-                    "default": false
-                  },
-                  "seasonId": {
-                    "type": "string",
-                    "description": "Season ID for the roster entry"
-                  }
-                },
-                "required": [
-                  "seasonId"
-                ],
-                "title": "ReleasePlayerWithSeason",
-                "description": "Options for releasing a player from a team with season context"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "Player released"
-          },
-          "400": {
-            "description": "Validation error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Access denied - account management permission required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Roster entry not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/accounts/{accountId}/golf/scores/match/{matchId}": {
       "get": {
         "description": "Get all scores for a golf match",
@@ -59758,6 +58710,986 @@
           },
           "500": {
             "description": "Unexpected error while retrieving the participant count.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/golf/rosters/substitutes": {
+      "get": {
+        "description": "List all substitutes for a season",
+        "operationId": "listGolfSubstitutesForSeason",
+        "summary": "List season substitutes",
+        "tags": [
+          "Golf Rosters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of substitutes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GolfSubstitute"
+                  },
+                  "title": "GolfSubstituteList",
+                  "description": "List of golf substitutes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/golf/rosters/available": {
+      "get": {
+        "description": "List contacts available to be signed to a golf team",
+        "operationId": "listAvailableGolfPlayers",
+        "summary": "List available players",
+        "tags": [
+          "Golf Rosters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of available players",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvailablePlayer"
+                  },
+                  "title": "AvailablePlayerList",
+                  "description": "List of available players"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/golf/rosters/{rosterId}": {
+      "get": {
+        "description": "Get a specific roster entry",
+        "operationId": "getGolfRosterEntry",
+        "summary": "Get roster entry",
+        "tags": [
+          "Golf Rosters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "rosterId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Roster entry details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GolfRosterEntry"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Roster entry not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Update a player on the roster",
+        "operationId": "updateGolfPlayer",
+        "summary": "Update player",
+        "tags": [
+          "Golf Rosters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "rosterId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGolfPlayer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Player updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GolfRosterEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - account management permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Roster entry not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a player from the roster entirely",
+        "operationId": "deleteGolfPlayer",
+        "summary": "Delete player",
+        "tags": [
+          "Golf Rosters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "rosterId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Player deleted"
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - account management permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Roster entry not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Cannot delete player with match scores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/golf/rosters/{rosterId}/release": {
+      "post": {
+        "description": "Release a player from a team",
+        "operationId": "releaseGolfPlayer",
+        "summary": "Release player",
+        "tags": [
+          "Golf Rosters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "rosterId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "releaseAsSub": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "title": "ReleasePlayer",
+                "description": "Options for releasing a player from a team"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Player released"
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - account management permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Roster entry not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/golf/teams/{teamSeasonId}/roster": {
+      "get": {
+        "description": "Get roster for a specific team",
+        "operationId": "getGolfTeamRoster",
+        "summary": "Get team roster",
+        "tags": [
+          "Golf Rosters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team roster",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GolfRosterEntry"
+                  },
+                  "title": "GolfRosterEntryList",
+                  "description": "List of golf roster entries"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Create a new player and add them to a team roster",
+        "operationId": "createAndSignGolfPlayer",
+        "summary": "Create and sign player",
+        "tags": [
+          "Golf Rosters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "middleName": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "email": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "format": "email"
+                  },
+                  "initialDifferential": {
+                    "type": "number",
+                    "nullable": true
+                  },
+                  "isSub": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "firstName",
+                  "lastName"
+                ],
+                "title": "CreateGolfPlayer",
+                "description": "Data required to create a new golf player"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Player created and signed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GolfRosterEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - account management permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/golf/teams/{teamSeasonId}/roster/sign": {
+      "post": {
+        "description": "Sign an existing contact to a team roster",
+        "operationId": "signGolfPlayer",
+        "summary": "Sign player to team",
+        "tags": [
+          "Golf Rosters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contactId": {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "example": "12345"
+                  },
+                  "initialDifferential": {
+                    "type": "number",
+                    "nullable": true
+                  },
+                  "isSub": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "contactId"
+                ],
+                "title": "SignPlayer",
+                "description": "Data for signing an existing contact to a golf team"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Player signed to team",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GolfRosterEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - account management permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team or contact not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Player already on roster",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
             "content": {
               "application/json": {
                 "schema": {

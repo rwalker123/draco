@@ -127,12 +127,12 @@ export class GolfStatsService {
       for (const entry of roster) {
         if (!entry.isactive) continue;
 
-        const contactIdStr = entry.contactid.toString();
-        if (!playerDataMap.has(contactIdStr)) {
-          playerDataMap.set(contactIdStr, {
-            contactId: entry.contactid,
-            firstName: entry.contacts.firstname,
-            lastName: entry.contacts.lastname,
+        const golferIdStr = entry.golferid.toString();
+        if (!playerDataMap.has(golferIdStr)) {
+          playerDataMap.set(golferIdStr, {
+            contactId: entry.golfer.contact.id,
+            firstName: entry.golfer.contact.firstname,
+            lastName: entry.golfer.contact.lastname,
             teamName: team.name,
             scores: [],
             netScores: [],
@@ -146,15 +146,15 @@ export class GolfStatsService {
       const matchScores = await this.scoreRepository.findByMatchId(match.id);
 
       for (const ms of matchScores) {
-        const contactIdStr = ms.golfscore.contactid.toString();
-        const playerData = playerDataMap.get(contactIdStr);
+        const golferIdStr = ms.golfscore.golferid.toString();
+        const playerData = playerDataMap.get(golferIdStr);
 
         if (playerData) {
           const score = ms.golfscore.totalscore;
           playerData.scores.push(score);
 
           const handicapIndex = await this.handicapService.calculateHandicapIndex(
-            ms.golfscore.contactid,
+            ms.golfscore.golferid,
           );
           if (handicapIndex !== null) {
             const courseRating = Number(ms.golfscore.golfteeinformation.mensrating) || 72;
@@ -334,7 +334,7 @@ export class GolfStatsService {
 
     for (const ms of match.golfmatchscores) {
       const score = ms.golfscore;
-      const contact = ms.golfroster.contacts;
+      const contact = ms.golfer.contact;
       const teamName = ms.teamsseason.name;
 
       const holes = [

@@ -22,7 +22,6 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   PersonOff as InactiveIcon,
-  SwapHoriz as SubIcon,
 } from '@mui/icons-material';
 import type { GolfRosterEntryType } from '@draco/shared-schemas';
 import ConfirmationDialog from '../../common/ConfirmationDialog';
@@ -144,9 +143,8 @@ const GolfRoster: React.FC<GolfRosterProps> = ({
     );
   }
 
-  const activePlayers = roster.filter((entry) => entry.isActive && !entry.isSub);
-  const substitutes = roster.filter((entry) => entry.isSub);
-  const inactivePlayers = roster.filter((entry) => !entry.isActive && !entry.isSub);
+  const activePlayers = roster.filter((entry) => entry.isActive);
+  const inactivePlayers = roster.filter((entry) => !entry.isActive);
 
   const renderPlayerList = (
     players: GolfRosterEntryType[],
@@ -189,7 +187,7 @@ const GolfRoster: React.FC<GolfRosterProps> = ({
                   <Avatar
                     src={entry.player.photoUrl || undefined}
                     sx={{
-                      bgcolor: entry.isSub ? 'secondary.main' : 'primary.main',
+                      bgcolor: 'primary.main',
                       width: 36,
                       height: 36,
                     }}
@@ -203,16 +201,6 @@ const GolfRoster: React.FC<GolfRosterProps> = ({
                       <Typography variant="body1" fontWeight={500}>
                         {playerName}
                       </Typography>
-                      {entry.isSub && (
-                        <Chip
-                          icon={<SubIcon />}
-                          label="Sub"
-                          size="small"
-                          color="secondary"
-                          variant="outlined"
-                          sx={{ height: 20 }}
-                        />
-                      )}
                       {!entry.isActive && (
                         <Chip
                           icon={<InactiveIcon />}
@@ -294,7 +282,6 @@ const GolfRoster: React.FC<GolfRosterProps> = ({
     <>
       <Stack spacing={3}>
         {renderPlayerList(activePlayers, activePlayers.length > 0 ? 'Active Players' : undefined)}
-        {renderPlayerList(substitutes, 'Substitutes')}
         {renderPlayerList(inactivePlayers, 'Inactive Players', 'text.secondary')}
       </Stack>
 

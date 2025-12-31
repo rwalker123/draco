@@ -140,11 +140,11 @@ const GolfTeamDetailPage: React.FC = () => {
   }, [teamSeasonId, getTeamWithRoster]);
 
   const loadRoster = useCallback(async () => {
-    if (!teamSeasonId) return;
+    if (!teamSeasonId || !seasonId) return;
 
     setRosterLoading(true);
     try {
-      const result = await getTeamRoster(teamSeasonId);
+      const result = await getTeamRoster(seasonId, teamSeasonId);
       if (result.success) {
         setRoster(result.data);
       } else {
@@ -153,7 +153,7 @@ const GolfTeamDetailPage: React.FC = () => {
     } finally {
       setRosterLoading(false);
     }
-  }, [teamSeasonId, getTeamRoster]);
+  }, [teamSeasonId, seasonId, getTeamRoster]);
 
   const loadSubstitutes = useCallback(async () => {
     if (!seasonId) return;
@@ -236,7 +236,7 @@ const GolfTeamDetailPage: React.FC = () => {
 
       setFormLoading(true);
       try {
-        const result = await createAndSignPlayer(teamSeasonId, seasonId, data);
+        const result = await createAndSignPlayer(seasonId, teamSeasonId, data);
         if (result.success) {
           setSuccessMessage('Player added to roster');
           setCreatePlayerOpen(false);
@@ -257,7 +257,7 @@ const GolfTeamDetailPage: React.FC = () => {
 
       setFormLoading(true);
       try {
-        const result = await signPlayer(teamSeasonId, seasonId, data);
+        const result = await signPlayer(seasonId, teamSeasonId, data);
         if (result.success) {
           setSuccessMessage('Player signed to roster');
           setSignPlayerOpen(false);
@@ -275,7 +275,7 @@ const GolfTeamDetailPage: React.FC = () => {
 
   const handleUpdatePlayer = useCallback(
     async (data: CreateGolfPlayerType) => {
-      if (!editingPlayer) return;
+      if (!editingPlayer || !seasonId) return;
 
       setFormLoading(true);
       try {
@@ -284,7 +284,7 @@ const GolfTeamDetailPage: React.FC = () => {
           isSub: data.isSub,
           isActive: editingPlayer.isActive,
         };
-        const result = await updatePlayer(editingPlayer.id, updateData);
+        const result = await updatePlayer(seasonId, editingPlayer.id, updateData);
         if (result.success) {
           setSuccessMessage('Player updated');
           setEditPlayerOpen(false);
@@ -297,7 +297,7 @@ const GolfTeamDetailPage: React.FC = () => {
         setFormLoading(false);
       }
     },
-    [editingPlayer, updatePlayer, loadRoster],
+    [editingPlayer, seasonId, updatePlayer, loadRoster],
   );
 
   const handleReleasePlayer = useCallback(
@@ -309,7 +309,7 @@ const GolfTeamDetailPage: React.FC = () => {
         const releaseData: ReleasePlayerType = {
           releaseAsSub: false,
         };
-        const result = await releasePlayer(entry.id, seasonId, releaseData);
+        const result = await releasePlayer(seasonId, entry.id, releaseData);
         if (result.success) {
           setSuccessMessage('Player released');
           await loadRoster();
@@ -325,9 +325,11 @@ const GolfTeamDetailPage: React.FC = () => {
 
   const handleDeletePlayer = useCallback(
     async (entry: GolfRosterEntryType) => {
+      if (!seasonId) return;
+
       setFormLoading(true);
       try {
-        const result = await deletePlayer(entry.id);
+        const result = await deletePlayer(seasonId, entry.id);
         if (result.success) {
           setSuccessMessage('Player removed from roster');
           await loadRoster();
@@ -338,7 +340,7 @@ const GolfTeamDetailPage: React.FC = () => {
         setFormLoading(false);
       }
     },
-    [deletePlayer, loadRoster],
+    [seasonId, deletePlayer, loadRoster],
   );
 
   const handleSignSubToTeam = useCallback(
@@ -352,7 +354,7 @@ const GolfTeamDetailPage: React.FC = () => {
           initialDifferential: sub.initialDifferential,
           isSub: false,
         };
-        const result = await signPlayer(teamSeasonId, seasonId, signData);
+        const result = await signPlayer(seasonId, teamSeasonId, signData);
         if (result.success) {
           setSuccessMessage('Substitute signed to team');
           await loadRoster();

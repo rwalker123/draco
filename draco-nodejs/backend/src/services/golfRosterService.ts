@@ -55,15 +55,6 @@ export class GolfRosterService {
     return GolfRosterResponseFormatter.formatSubstitutes(subs);
   }
 
-  async getSubstitutesForFlight(flightId: bigint): Promise<GolfSubstituteType[]> {
-    const flight = await this.flightRepository.findById(flightId);
-    if (!flight) {
-      throw new NotFoundError('Golf flight not found');
-    }
-    const subs = await this.rosterRepository.findSubstitutesForFlight(flightId);
-    return GolfRosterResponseFormatter.formatSubstitutes(subs);
-  }
-
   async getAvailablePlayers(accountId: bigint, seasonId: bigint): Promise<AvailablePlayerType[]> {
     const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
     if (!seasonExists) {
@@ -91,13 +82,36 @@ export class GolfRosterService {
       email: data.email?.trim() ?? null,
     });
 
-    const rosterEntry = await this.rosterRepository.create({
-      contactid: contact.id,
+    const golfer = await this.rosterRepository.findOrCreateGolfer(
+      contact.id,
+      data.initialDifferential ?? null,
+    );
+
+    if (data.isSub) {
+      const sub = await this.rosterRepository.createLeagueSub({
+        golferid: golfer.id,
+        seasonid: seasonId,
+        isactive: true,
+      });
+      const subEntry = await this.rosterRepository.findLeagueSubById(sub.id);
+      if (!subEntry) {
+        throw new NotFoundError('Created substitute entry not found');
+      }
+      const formatted = GolfRosterResponseFormatter.formatSubstitute(subEntry);
+      return {
+        id: formatted.id,
+        golferId: formatted.golferId,
+        teamSeasonId: teamSeasonId.toString(),
+        isActive: formatted.isActive,
+        initialDifferential: formatted.initialDifferential,
+        player: formatted.player,
+      };
+    }
+
+    const rosterEntry = await this.rosterRepository.createRosterEntry({
+      golferid: golfer.id,
       teamseasonid: teamSeasonId,
       isactive: true,
-      issub: data.isSub ?? false,
-      initialdifferential: data.initialDifferential ?? null,
-      subseasonid: data.isSub ? seasonId : null,
     });
 
     const createdEntry = await this.rosterRepository.findById(rosterEntry.id);
@@ -124,21 +138,49 @@ export class GolfRosterService {
       throw new NotFoundError('Contact not found in this account');
     }
 
-    const existingRoster = await this.rosterRepository.findByContactAndTeam(
+    const golfer = await this.rosterRepository.findOrCreateGolfer(
       contactId,
-      teamSeasonId,
+      data.initialDifferential ?? null,
     );
+
+    const existingRoster = await this.rosterRepository.findByGolferAndTeam(golfer.id, teamSeasonId);
     if (existingRoster) {
       throw new ValidationError('This player is already on this team');
     }
 
-    const rosterEntry = await this.rosterRepository.create({
-      contactid: contactId,
+    const existingSub = await this.rosterRepository.findLeagueSubByGolferAndSeason(
+      golfer.id,
+      seasonId,
+    );
+    if (existingSub) {
+      throw new ValidationError('This player is already in the substitute pool for this season');
+    }
+
+    if (data.isSub) {
+      const sub = await this.rosterRepository.createLeagueSub({
+        golferid: golfer.id,
+        seasonid: seasonId,
+        isactive: true,
+      });
+      const subEntry = await this.rosterRepository.findLeagueSubById(sub.id);
+      if (!subEntry) {
+        throw new NotFoundError('Created substitute entry not found');
+      }
+      const formatted = GolfRosterResponseFormatter.formatSubstitute(subEntry);
+      return {
+        id: formatted.id,
+        golferId: formatted.golferId,
+        teamSeasonId: teamSeasonId.toString(),
+        isActive: formatted.isActive,
+        initialDifferential: formatted.initialDifferential,
+        player: formatted.player,
+      };
+    }
+
+    const rosterEntry = await this.rosterRepository.createRosterEntry({
+      golferid: golfer.id,
       teamseasonid: teamSeasonId,
       isactive: true,
-      issub: data.isSub ?? false,
-      initialdifferential: data.initialDifferential ?? null,
-      subseasonid: data.isSub ? seasonId : null,
     });
 
     const createdEntry = await this.rosterRepository.findById(rosterEntry.id);
@@ -154,24 +196,16 @@ export class GolfRosterService {
       throw new NotFoundError('Roster entry not found');
     }
 
-    const updateData: Partial<{
-      isactive: boolean;
-      issub: boolean;
-      initialdifferential: number | null;
-    }> = {};
-
     if (data.isActive !== undefined) {
-      updateData.isactive = data.isActive;
-    }
-    if (data.isSub !== undefined) {
-      updateData.issub = data.isSub;
-    }
-    if (data.initialDifferential !== undefined) {
-      updateData.initialdifferential = data.initialDifferential ?? null;
+      await this.rosterRepository.updateRosterEntry(rosterId, {
+        isactive: data.isActive,
+      });
     }
 
-    if (Object.keys(updateData).length > 0) {
-      await this.rosterRepository.update(rosterId, updateData);
+    if (data.initialDifferential !== undefined) {
+      await this.rosterRepository.updateGolfer(entry.golferid, {
+        initialdifferential: data.initialDifferential ?? null,
+      });
     }
 
     const updatedEntry = await this.rosterRepository.findById(rosterId);
@@ -187,7 +221,11 @@ export class GolfRosterService {
       throw new NotFoundError('Roster entry not found');
     }
 
-    await this.rosterRepository.releasePlayer(rosterId, data.releaseAsSub ?? false, seasonId);
+    if (data.releaseAsSub) {
+      await this.rosterRepository.releasePlayerToSubPool(rosterId, seasonId);
+    } else {
+      await this.rosterRepository.deleteRosterEntry(rosterId);
+    }
   }
 
   async deletePlayer(rosterId: bigint): Promise<void> {
@@ -196,13 +234,71 @@ export class GolfRosterService {
       throw new NotFoundError('Roster entry not found');
     }
 
-    const hasScores = await this.rosterRepository.hasScores(rosterId);
+    const hasScores = await this.rosterRepository.hasMatchScores(entry.golferid);
     if (hasScores) {
       throw new ValidationError(
         'Cannot delete player because they have recorded scores. Use release instead.',
       );
     }
 
-    await this.rosterRepository.delete(rosterId);
+    await this.rosterRepository.deleteRosterEntry(rosterId);
+  }
+
+  async signSubToTeam(subId: bigint, teamSeasonId: bigint): Promise<GolfRosterEntryType> {
+    const team = await this.teamRepository.findById(teamSeasonId);
+    if (!team) {
+      throw new NotFoundError('Golf team not found');
+    }
+
+    const sub = await this.rosterRepository.findLeagueSubById(subId);
+    if (!sub) {
+      throw new NotFoundError('Substitute not found');
+    }
+
+    const rosterEntry = await this.rosterRepository.signSubToTeam(subId, teamSeasonId);
+    const createdEntry = await this.rosterRepository.findById(rosterEntry.id);
+    if (!createdEntry) {
+      throw new NotFoundError('Created roster entry not found');
+    }
+    return GolfRosterResponseFormatter.format(createdEntry);
+  }
+
+  async updateSubstitute(subId: bigint, data: UpdateGolfPlayerType): Promise<GolfSubstituteType> {
+    const sub = await this.rosterRepository.findLeagueSubById(subId);
+    if (!sub) {
+      throw new NotFoundError('Substitute not found');
+    }
+
+    if (data.isActive !== undefined) {
+      await this.rosterRepository.updateLeagueSub(subId, {
+        isactive: data.isActive,
+      });
+    }
+
+    if (data.initialDifferential !== undefined) {
+      await this.rosterRepository.updateGolfer(sub.golferid, {
+        initialdifferential: data.initialDifferential ?? null,
+      });
+    }
+
+    const updatedSub = await this.rosterRepository.findLeagueSubById(subId);
+    if (!updatedSub) {
+      throw new NotFoundError('Updated substitute not found');
+    }
+    return GolfRosterResponseFormatter.formatSubstitute(updatedSub);
+  }
+
+  async deleteSubstitute(subId: bigint): Promise<void> {
+    const sub = await this.rosterRepository.findLeagueSubById(subId);
+    if (!sub) {
+      throw new NotFoundError('Substitute not found');
+    }
+
+    const hasScores = await this.rosterRepository.hasMatchScores(sub.golferid);
+    if (hasScores) {
+      throw new ValidationError('Cannot delete substitute because they have recorded scores.');
+    }
+
+    await this.rosterRepository.deleteLeagueSub(subId);
   }
 }

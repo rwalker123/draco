@@ -33,7 +33,7 @@ export const GolfScoreSchema = z
   .object({
     id: bigintToStringSchema,
     courseId: bigintToStringSchema,
-    contactId: bigintToStringSchema,
+    golferId: bigintToStringSchema,
     teeId: bigintToStringSchema,
     datePlayed: z.string(),
     holesPlayed: z.number().int().min(9).max(18),
@@ -88,10 +88,9 @@ export const PlayerMatchScoreSchema = z
   .object({
     teamSeasonId: bigintToStringSchema,
     rosterId: bigintToStringSchema,
-    contactId: bigintToStringSchema,
     isAbsent: z.boolean().default(false),
     isSubstitute: z.boolean().default(false),
-    substituteContactId: bigintToStringSchema.optional(),
+    substituteGolferId: bigintToStringSchema.optional(),
     score: CreateGolfScoreSchema.optional(),
   })
   .openapi({

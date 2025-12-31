@@ -121,14 +121,13 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     const scores: Record<string, PlayerScoreData> = {};
 
     roster.forEach((player) => {
-      const existingScore = existing.find((s) => s.contactId === player.contactId);
+      const existingScore = existing.find((s) => s.golferId === player.golferId);
 
       scores[player.id] = {
         rosterId: player.id,
-        contactId: player.contactId,
         isAbsent: false,
         isSubstitute: false,
-        substituteContactId: undefined,
+        substituteGolferId: undefined,
         totalsOnly: existingScore?.totalsOnly ?? true,
         totalScore: existingScore?.totalScore ?? 0,
         holeScores: existingScore?.holeScores ?? [],
@@ -148,10 +147,11 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
       setError(null);
 
       try {
+        const seasonId = selectedGame.season.id;
         const [roster1Result, roster2Result, subsResult, scoresResult] = await Promise.all([
-          rosterService.getTeamRoster(selectedGame.homeTeamId),
-          rosterService.getTeamRoster(selectedGame.visitorTeamId),
-          rosterService.listSubstitutesForSeason(selectedGame.season.id),
+          rosterService.getTeamRoster(seasonId, selectedGame.homeTeamId),
+          rosterService.getTeamRoster(seasonId, selectedGame.visitorTeamId),
+          rosterService.listSubstitutesForSeason(seasonId),
           scoreService.getMatchScores(selectedGame.id),
         ]);
 
@@ -196,10 +196,10 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
         if (cancelled) return;
 
         const team1ExistingScores = existingScoresData.filter((s) =>
-          roster1Result.data.some((p) => p.contactId === s.contactId),
+          roster1Result.data.some((p) => p.golferId === s.golferId),
         );
         const team2ExistingScores = existingScoresData.filter((s) =>
-          roster2Result.data.some((p) => p.contactId === s.contactId),
+          roster2Result.data.some((p) => p.golferId === s.golferId),
         );
 
         setTeam1Scores(initializeScoresFromRoster(roster1Result.data, team1ExistingScores));
@@ -240,15 +240,14 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
   const buildPlayerScores = useCallback(
     (scores: Record<string, PlayerScoreData>, teamSeasonId: string): PlayerMatchScoreType[] => {
       return Object.values(scores)
-        .filter((score) => !score.isAbsent || score.substituteContactId)
+        .filter((score) => !score.isAbsent || score.substituteGolferId)
         .map((score) => {
           const playerScore: PlayerMatchScoreType = {
             teamSeasonId,
             rosterId: score.rosterId,
-            contactId: score.substituteContactId || score.contactId,
             isAbsent: score.isAbsent,
             isSubstitute: score.isSubstitute,
-            substituteContactId: score.substituteContactId,
+            substituteGolferId: score.substituteGolferId,
           };
 
           if (score.totalScore > 0) {

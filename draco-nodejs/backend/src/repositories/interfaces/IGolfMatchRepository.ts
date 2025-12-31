@@ -6,9 +6,8 @@ import {
   golfteeinformation,
   golfmatchscores,
   golfscore,
-  golfroster,
-  contacts,
 } from '#prisma/client';
+import { GolferWithContact } from './IGolfRosterRepository.js';
 
 export type GolfMatchTeamInfo = teamsseason & {
   teams: teams;
@@ -16,11 +15,13 @@ export type GolfMatchTeamInfo = teamsseason & {
 
 export type GolfMatchCourseInfo = golfcourse;
 
+export type GolfScoreWithGolfer = golfscore & {
+  golfer: GolferWithContact;
+};
+
 export type GolfMatchScoreEntry = golfmatchscores & {
-  golfscore: golfscore;
-  golfroster: golfroster & {
-    contacts: contacts;
-  };
+  golfscore: GolfScoreWithGolfer;
+  golfer: GolferWithContact;
   teamsseason: teamsseason;
 };
 

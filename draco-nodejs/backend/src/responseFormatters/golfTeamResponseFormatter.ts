@@ -36,7 +36,7 @@ export class GolfTeamResponseFormatter {
       name: team.name,
       flight: this.formatFlight(team.divisionseason),
       roster: GolfRosterResponseFormatter.formatMany(team.golfroster),
-      playerCount: team.golfroster.filter((r) => r.isactive && !r.issub).length,
+      playerCount: team.golfroster.filter((r) => r.isactive).length,
     };
   }
 }

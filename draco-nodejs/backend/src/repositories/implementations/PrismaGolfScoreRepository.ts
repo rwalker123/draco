@@ -9,7 +9,11 @@ import {
 } from '../interfaces/IGolfScoreRepository.js';
 
 const scoreWithDetailsInclude = {
-  contacts: true,
+  golfer: {
+    include: {
+      contact: true,
+    },
+  },
   golfcourse: true,
   golfteeinformation: true,
 };
@@ -30,9 +34,9 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     });
   }
 
-  async findByContactId(contactId: bigint, limit = 20): Promise<GolfScoreWithDetails[]> {
+  async findByGolferId(golferId: bigint, limit = 20): Promise<GolfScoreWithDetails[]> {
     return this.prisma.golfscore.findMany({
-      where: { contactid: contactId },
+      where: { golferid: golferId },
       include: scoreWithDetailsInclude,
       orderBy: { dateplayed: 'desc' },
       take: limit,
@@ -60,7 +64,7 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     return this.prisma.golfscore.create({
       data: {
         courseid: data.courseid,
-        contactid: data.contactid,
+        golferid: data.golferid,
         teeid: data.teeid,
         dateplayed: data.dateplayed,
         holesplayed: data.holesplayed,
@@ -108,8 +112,9 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
       data: {
         matchid: data.matchid,
         teamid: data.teamid,
-        playerid: data.playerid,
+        golferid: data.golferid,
         scoreid: data.scoreid,
+        substitutefor: data.substitutefor ?? null,
       },
     });
   }
@@ -132,12 +137,12 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
   }
 
   async getPlayerScoresForSeason(
-    contactId: bigint,
+    golferId: bigint,
     seasonId: bigint,
   ): Promise<GolfScoreWithDetails[]> {
     return this.prisma.golfscore.findMany({
       where: {
-        contactid: contactId,
+        golferid: golferId,
         golfmatchscores: {
           some: {
             golfmatch: {

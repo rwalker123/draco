@@ -679,11 +679,8 @@ export type dbSeasonCopySource = Prisma.seasonGetPayload<{
             golfroster: {
               where: { isactive: true };
               select: {
-                contactid: true;
+                golferid: true;
                 isactive: true;
-                initialdifferential: true;
-                issub: true;
-                subseasonid: true;
               };
             };
             teamseasonmanager: {

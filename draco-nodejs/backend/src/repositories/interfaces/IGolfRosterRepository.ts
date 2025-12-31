@@ -1,47 +1,64 @@
-import { golfroster, contacts } from '#prisma/client';
+import { golfroster, golfer, golfleaguesub, contacts } from '#prisma/client';
 
-export type GolfRosterWithContact = golfroster & {
-  contacts: contacts;
+export type GolferWithContact = golfer & {
+  contact: contacts;
 };
 
-export type GolfSubstituteEntry = golfroster & {
-  contacts: contacts;
-  teamsseason: {
-    id: bigint;
-    name: string;
-    divisionseasonid: bigint | null;
-  };
+export type GolfRosterWithGolfer = golfroster & {
+  golfer: GolferWithContact;
+};
+
+export type GolfLeagueSubWithGolfer = golfleaguesub & {
+  golfer: GolferWithContact;
 };
 
 export type AvailableContact = contacts & {
-  golfroster: Array<{ id: bigint; teamseasonid: bigint }>;
+  golfer: {
+    id: bigint;
+    rosters: Array<{ id: bigint; teamseasonid: bigint }>;
+    leaguesubs: Array<{ id: bigint; seasonid: bigint }>;
+  } | null;
 };
 
 export interface IGolfRosterRepository {
-  findByTeamSeasonId(teamSeasonId: bigint): Promise<GolfRosterWithContact[]>;
-  findById(rosterId: bigint): Promise<GolfRosterWithContact | null>;
-  findByContactAndTeam(contactId: bigint, teamSeasonId: bigint): Promise<golfroster | null>;
-  findSubstitutesForSeason(seasonId: bigint): Promise<GolfSubstituteEntry[]>;
-  findSubstitutesForFlight(flightId: bigint): Promise<GolfSubstituteEntry[]>;
-  create(data: {
-    contactid: bigint;
+  findByTeamSeasonId(teamSeasonId: bigint): Promise<GolfRosterWithGolfer[]>;
+  findById(rosterId: bigint): Promise<GolfRosterWithGolfer | null>;
+  findByGolferAndTeam(golferId: bigint, teamSeasonId: bigint): Promise<golfroster | null>;
+  findSubstitutesForSeason(seasonId: bigint): Promise<GolfLeagueSubWithGolfer[]>;
+  findGolferByContactId(contactId: bigint): Promise<golfer | null>;
+  findOrCreateGolfer(contactId: bigint, initialDifferential?: number | null): Promise<golfer>;
+  createRosterEntry(data: {
+    golferid: bigint;
     teamseasonid: bigint;
     isactive: boolean;
-    issub: boolean;
-    initialdifferential?: number | null;
-    subseasonid?: bigint | null;
   }): Promise<golfroster>;
-  update(
+  createLeagueSub(data: {
+    golferid: bigint;
+    seasonid: bigint;
+    isactive: boolean;
+  }): Promise<golfleaguesub>;
+  updateRosterEntry(
     rosterId: bigint,
     data: Partial<{
       isactive: boolean;
-      issub: boolean;
-      initialdifferential: number | null;
-      subseasonid: bigint | null;
     }>,
   ): Promise<golfroster>;
-  delete(rosterId: bigint): Promise<golfroster>;
-  releasePlayer(rosterId: bigint, releaseAsSub: boolean, seasonId: bigint): Promise<golfroster>;
+  updateGolfer(
+    golferId: bigint,
+    data: Partial<{
+      initialdifferential: number | null;
+    }>,
+  ): Promise<golfer>;
+  updateLeagueSub(
+    subId: bigint,
+    data: Partial<{
+      isactive: boolean;
+    }>,
+  ): Promise<golfleaguesub>;
+  deleteRosterEntry(rosterId: bigint): Promise<golfroster>;
+  deleteLeagueSub(subId: bigint): Promise<golfleaguesub>;
+  releasePlayerToSubPool(rosterId: bigint, seasonId: bigint): Promise<golfleaguesub>;
+  signSubToTeam(subId: bigint, teamSeasonId: bigint): Promise<golfroster>;
   findAvailableContacts(accountId: bigint, seasonId: bigint): Promise<AvailableContact[]>;
   contactExistsInAccount(contactId: bigint, accountId: bigint): Promise<boolean>;
   createContact(
@@ -53,5 +70,7 @@ export interface IGolfRosterRepository {
       email?: string | null;
     },
   ): Promise<contacts>;
-  hasScores(rosterId: bigint): Promise<boolean>;
+  hasMatchScores(golferId: bigint): Promise<boolean>;
+  findLeagueSubById(subId: bigint): Promise<GolfLeagueSubWithGolfer | null>;
+  findLeagueSubByGolferAndSeason(golferId: bigint, seasonId: bigint): Promise<golfleaguesub | null>;
 }

@@ -48,7 +48,8 @@ import golfTeesRouter from './routes/golf-tees.js';
 import golfLeaguesRouter from './routes/golf-leagues.js';
 import golfFlightsRouter from './routes/golf-flights.js';
 import golfTeamsRouter from './routes/golf-teams.js';
-import golfRostersRouter from './routes/golf-rosters.js';
+import seasonsGolfRostersRouter from './routes/seasons-golf-rosters.js';
+import seasonsGolfTeamRosterRouter from './routes/seasons-golf-team-roster.js';
 import golfMatchesRouter from './routes/golf-matches.js';
 import golfScoresRouter from './routes/golf-scores.js';
 import golfHandicapsRouter from './routes/golf-handicaps.js';
@@ -278,7 +279,11 @@ app.use('/api/accounts/:accountId/golf/external-courses', externalCoursesRouter)
 app.use('/api/golf/leagues', golfLeaguesRouter);
 app.use('/api/accounts/:accountId/golf/flights', golfFlightsRouter);
 app.use('/api/accounts/:accountId/golf/teams', golfTeamsRouter);
-app.use('/api/accounts/:accountId/golf/rosters', golfRostersRouter);
+app.use('/api/accounts/:accountId/seasons/:seasonId/golf/rosters', seasonsGolfRostersRouter);
+app.use(
+  '/api/accounts/:accountId/seasons/:seasonId/golf/teams/:teamSeasonId/roster',
+  seasonsGolfTeamRosterRouter,
+);
 app.use('/api/accounts/:accountId/golf/matches', golfMatchesRouter);
 app.use('/api/accounts/:accountId/golf/scores', golfScoresRouter);
 app.use('/api/accounts/:accountId/golf/handicaps', golfHandicapsRouter);

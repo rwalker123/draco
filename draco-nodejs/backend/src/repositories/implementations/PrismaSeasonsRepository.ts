@@ -257,11 +257,8 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
                 golfroster: {
                   where: { isactive: true },
                   select: {
-                    contactid: true,
+                    golferid: true,
                     isactive: true,
-                    initialdifferential: true,
-                    issub: true,
-                    subseasonid: true,
                   },
                 },
                 teamseasonmanager: {
@@ -343,13 +340,9 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
             if (teamSeason.golfroster.length > 0) {
               await tx.golfroster.createMany({
                 data: teamSeason.golfroster.map((roster) => ({
-                  contactid: roster.contactid,
+                  golferid: roster.golferid,
                   teamseasonid: createdTeamSeason.id,
                   isactive: true,
-                  initialdifferential: roster.initialdifferential,
-                  issub: roster.issub,
-                  subseasonid:
-                    roster.subseasonid === leagueSeason.id ? createdLeagueSeason.id : null,
                 })),
               });
             }

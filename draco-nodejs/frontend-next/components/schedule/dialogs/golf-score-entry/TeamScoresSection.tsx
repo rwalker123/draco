@@ -41,13 +41,13 @@ export function TeamScoresSection({
 
   const teamTotal = useMemo(() => {
     return Object.values(scores).reduce((sum, score) => {
-      if (score.isAbsent && !score.substituteContactId) return sum;
+      if (score.isAbsent && !score.substituteGolferId) return sum;
       return sum + (score.totalScore || 0);
     }, 0);
   }, [scores]);
 
   const activePlayerCount = useMemo(() => {
-    return Object.values(scores).filter((score) => !score.isAbsent || score.substituteContactId)
+    return Object.values(scores).filter((score) => !score.isAbsent || score.substituteGolferId)
       .length;
   }, [scores]);
 
@@ -93,7 +93,6 @@ export function TeamScoresSection({
           players.map((player) => {
             const scoreData = scores[player.id] || {
               rosterId: player.id,
-              contactId: player.contactId,
               isAbsent: false,
               isSubstitute: false,
               totalsOnly: !showHoleByHole,

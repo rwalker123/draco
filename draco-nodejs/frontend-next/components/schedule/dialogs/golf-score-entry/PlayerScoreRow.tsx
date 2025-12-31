@@ -20,10 +20,9 @@ import { HoleScoreGrid } from './HoleScoreGrid';
 
 export interface PlayerScoreData {
   rosterId: string;
-  contactId: string;
   isAbsent: boolean;
   isSubstitute: boolean;
-  substituteContactId?: string;
+  substituteGolferId?: string;
   totalsOnly: boolean;
   totalScore: number;
   holeScores: number[];
@@ -52,8 +51,8 @@ export function PlayerScoreRow({
   const [expanded, setExpanded] = React.useState(false);
 
   const playerName = `${player.player.firstName} ${player.player.lastName}`;
-  const substitutePlayer = scoreData.substituteContactId
-    ? substitutes.find((s) => s.contactId === scoreData.substituteContactId)
+  const substitutePlayer = scoreData.substituteGolferId
+    ? substitutes.find((s) => s.golferId === scoreData.substituteGolferId)
     : null;
   const displayName = substitutePlayer
     ? `${substitutePlayer.player.firstName} ${substitutePlayer.player.lastName} (sub for ${playerName})`
@@ -64,15 +63,15 @@ export function PlayerScoreRow({
       ...scoreData,
       isAbsent: checked,
       isSubstitute: checked ? scoreData.isSubstitute : false,
-      substituteContactId: checked ? scoreData.substituteContactId : undefined,
+      substituteGolferId: checked ? scoreData.substituteGolferId : undefined,
     });
   };
 
-  const handleSubstituteChange = (substituteContactId: string) => {
+  const handleSubstituteChange = (substituteGolferId: string) => {
     onChange({
       ...scoreData,
-      isSubstitute: !!substituteContactId,
-      substituteContactId: substituteContactId || undefined,
+      isSubstitute: !!substituteGolferId,
+      substituteGolferId: substituteGolferId || undefined,
     });
   };
 
@@ -152,7 +151,7 @@ export function PlayerScoreRow({
         {scoreData.isAbsent && substitutes.length > 0 && (
           <Select
             size="small"
-            value={scoreData.substituteContactId || ''}
+            value={scoreData.substituteGolferId || ''}
             onChange={(e) => handleSubstituteChange(e.target.value)}
             displayEmpty
             disabled={disabled}
@@ -162,7 +161,7 @@ export function PlayerScoreRow({
               <em>No substitute</em>
             </MenuItem>
             {substitutes.map((sub) => (
-              <MenuItem key={sub.contactId} value={sub.contactId}>
+              <MenuItem key={sub.golferId} value={sub.golferId}>
                 {sub.player.firstName} {sub.player.lastName}
               </MenuItem>
             ))}

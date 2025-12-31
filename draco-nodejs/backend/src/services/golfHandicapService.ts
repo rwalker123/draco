@@ -73,8 +73,8 @@ export class GolfHandicapService {
     return Math.round(differential * 10) / 10;
   }
 
-  async calculateHandicapIndex(contactId: bigint): Promise<number | null> {
-    const scores = await this.scoreRepository.findByContactId(contactId, 40);
+  async calculateHandicapIndex(golferId: bigint): Promise<number | null> {
+    const scores = await this.scoreRepository.findByGolferId(golferId, 40);
 
     if (scores.length === 0) {
       return null;
@@ -149,13 +149,13 @@ export class GolfHandicapService {
     return Math.max(0, handicapIndex);
   }
 
-  async getPlayerHandicap(contactId: bigint, includeDetails = false): Promise<PlayerHandicapType> {
-    const scores = await this.scoreRepository.findByContactId(contactId, 40);
+  async getPlayerHandicap(golferId: bigint, includeDetails = false): Promise<PlayerHandicapType> {
+    const scores = await this.scoreRepository.findByGolferId(golferId, 40);
 
     if (scores.length === 0) {
-      const contact = scores[0]?.contacts;
+      const contact = scores[0]?.golfer?.contact;
       return {
-        contactId: contactId.toString(),
+        contactId: contact?.id?.toString() ?? '',
         firstName: contact?.firstname ?? '',
         lastName: contact?.lastname ?? '',
         handicapIndex: null,
@@ -174,9 +174,9 @@ export class GolfHandicapService {
       handicapIndex = this.computeHandicapFromDifferentials(differentials);
     }
 
-    const contact = scores[0].contacts;
+    const contact = scores[0].golfer.contact;
     const result: PlayerHandicapType = {
-      contactId: contactId.toString(),
+      contactId: contact.id.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
       handicapIndex,
@@ -225,7 +225,7 @@ export class GolfHandicapService {
       for (const entry of roster) {
         if (!entry.isactive) continue;
 
-        const handicap = await this.getPlayerHandicap(entry.contactid);
+        const handicap = await this.getPlayerHandicap(entry.golferid);
         playerHandicaps.push(handicap);
       }
     }
