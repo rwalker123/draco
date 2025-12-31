@@ -4,7 +4,10 @@ import {
   SubmitMatchResultsType,
   PlayerMatchScoreType,
 } from '@draco/shared-schemas';
-import { IGolfScoreRepository } from '../repositories/interfaces/IGolfScoreRepository.js';
+import {
+  IGolfScoreRepository,
+  MatchScoreSubmission,
+} from '../repositories/interfaces/IGolfScoreRepository.js';
 import { IGolfMatchRepository } from '../repositories/interfaces/IGolfMatchRepository.js';
 import { IGolfRosterRepository } from '../repositories/interfaces/IGolfRosterRepository.js';
 import { IGolfCourseRepository } from '../repositories/interfaces/IGolfCourseRepository.js';
@@ -93,11 +96,7 @@ export class GolfScoreService {
       scoresByTeam.get(teamSeasonId)!.push(playerScore);
     }
 
-    for (const teamId of scoresByTeam.keys()) {
-      await this.scoreRepository.deleteMatchScoresForTeam(matchId, teamId);
-    }
-
-    const createdScores: GolfScoreWithDetailsType[] = [];
+    const submissions: MatchScoreSubmission[] = [];
 
     for (const [teamId, teamScores] of scoresByTeam) {
       for (const playerScore of teamScores) {
@@ -122,46 +121,53 @@ export class GolfScoreService {
         const totalScore =
           scoreData.totalScore ?? holeScores.reduce((sum: number, s: number) => sum + s, 0);
 
-        const score = await this.scoreRepository.create({
-          courseid: courseId,
-          golferid: rosterEntry.golferid,
-          teeid: teeId,
-          dateplayed: new Date(scoreData.datePlayed),
-          holesplayed: scoreData.holesPlayed,
-          totalscore: totalScore,
-          totalsonly: scoreData.totalsOnly,
-          holescrore1: holeScores[0] ?? 0,
-          holescrore2: holeScores[1] ?? 0,
-          holescrore3: holeScores[2] ?? 0,
-          holescrore4: holeScores[3] ?? 0,
-          holescrore5: holeScores[4] ?? 0,
-          holescrore6: holeScores[5] ?? 0,
-          holescrore7: holeScores[6] ?? 0,
-          holescrore8: holeScores[7] ?? 0,
-          holescrore9: holeScores[8] ?? 0,
-          holescrore10: holeScores[9] ?? 0,
-          holescrore11: holeScores[10] ?? 0,
-          holescrore12: holeScores[11] ?? 0,
-          holescrore13: holeScores[12] ?? 0,
-          holescrore14: holeScores[13] ?? 0,
-          holescrore15: holeScores[14] ?? 0,
-          holescrore16: holeScores[15] ?? 0,
-          holescrore17: holeScores[16] ?? 0,
-          holescrore18: holeScores[17] ?? 0,
-          startindex: scoreData.startIndex ?? null,
+        submissions.push({
+          teamId,
+          golferId: rosterEntry.golferid,
+          scoreData: {
+            courseid: courseId,
+            golferid: rosterEntry.golferid,
+            teeid: teeId,
+            dateplayed: new Date(scoreData.datePlayed),
+            holesplayed: scoreData.holesPlayed,
+            totalscore: totalScore,
+            totalsonly: scoreData.totalsOnly,
+            holescrore1: holeScores[0] ?? 0,
+            holescrore2: holeScores[1] ?? 0,
+            holescrore3: holeScores[2] ?? 0,
+            holescrore4: holeScores[3] ?? 0,
+            holescrore5: holeScores[4] ?? 0,
+            holescrore6: holeScores[5] ?? 0,
+            holescrore7: holeScores[6] ?? 0,
+            holescrore8: holeScores[7] ?? 0,
+            holescrore9: holeScores[8] ?? 0,
+            holescrore10: holeScores[9] ?? 0,
+            holescrore11: holeScores[10] ?? 0,
+            holescrore12: holeScores[11] ?? 0,
+            holescrore13: holeScores[12] ?? 0,
+            holescrore14: holeScores[13] ?? 0,
+            holescrore15: holeScores[14] ?? 0,
+            holescrore16: holeScores[15] ?? 0,
+            holescrore17: holeScores[16] ?? 0,
+            holescrore18: holeScores[17] ?? 0,
+            startindex: scoreData.startIndex ?? null,
+          },
         });
+      }
+    }
 
-        await this.scoreRepository.createMatchScore({
-          matchid: matchId,
-          teamid: teamId,
-          golferid: rosterEntry.golferid,
-          scoreid: score.id,
-        });
+    const teamIds = Array.from(scoresByTeam.keys());
+    const result = await this.scoreRepository.submitMatchScoresTransactional(
+      matchId,
+      teamIds,
+      submissions,
+    );
 
-        const createdScore = await this.scoreRepository.findById(score.id);
-        if (createdScore) {
-          createdScores.push(GolfScoreResponseFormatter.formatWithDetails(createdScore));
-        }
+    const createdScores: GolfScoreWithDetailsType[] = [];
+    for (const scoreId of result.createdScoreIds) {
+      const createdScore = await this.scoreRepository.findById(scoreId);
+      if (createdScore) {
+        createdScores.push(GolfScoreResponseFormatter.formatWithDetails(createdScore));
       }
     }
 

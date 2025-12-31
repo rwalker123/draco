@@ -6,6 +6,8 @@ import {
   CreateGolfScoreData,
   UpdateGolfScoreData,
   CreateMatchScoreData,
+  MatchScoreSubmission,
+  SubmitMatchScoresResult,
 } from '../interfaces/IGolfScoreRepository.js';
 
 const scoreWithDetailsInclude = {
@@ -163,5 +165,71 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     const differential = ((score.totalscore - courseRating) * 113) / slopeRating;
 
     return Math.round(differential * 10) / 10;
+  }
+
+  async submitMatchScoresTransactional(
+    matchId: bigint,
+    teamIds: bigint[],
+    submissions: MatchScoreSubmission[],
+  ): Promise<SubmitMatchScoresResult> {
+    return this.prisma.$transaction(async (tx) => {
+      for (const teamId of teamIds) {
+        await tx.golfmatchscores.deleteMany({
+          where: {
+            matchid: matchId,
+            teamid: teamId,
+          },
+        });
+      }
+
+      const createdScoreIds: bigint[] = [];
+
+      for (const submission of submissions) {
+        const score = await tx.golfscore.create({
+          data: {
+            courseid: submission.scoreData.courseid,
+            golferid: submission.scoreData.golferid,
+            teeid: submission.scoreData.teeid,
+            dateplayed: submission.scoreData.dateplayed,
+            holesplayed: submission.scoreData.holesplayed,
+            totalscore: submission.scoreData.totalscore,
+            totalsonly: submission.scoreData.totalsonly,
+            holescrore1: submission.scoreData.holescrore1,
+            holescrore2: submission.scoreData.holescrore2,
+            holescrore3: submission.scoreData.holescrore3,
+            holescrore4: submission.scoreData.holescrore4,
+            holescrore5: submission.scoreData.holescrore5,
+            holescrore6: submission.scoreData.holescrore6,
+            holescrore7: submission.scoreData.holescrore7,
+            holescrore8: submission.scoreData.holescrore8,
+            holescrore9: submission.scoreData.holescrore9,
+            holescrore10: submission.scoreData.holescrore10,
+            holescrore11: submission.scoreData.holescrore11,
+            holescrore12: submission.scoreData.holescrore12,
+            holescrore13: submission.scoreData.holescrore13,
+            holescrore14: submission.scoreData.holescrore14,
+            holescrore15: submission.scoreData.holescrore15,
+            holescrore16: submission.scoreData.holescrore16,
+            holescrore17: submission.scoreData.holescrore17,
+            holescrore18: submission.scoreData.holescrore18,
+            startindex: submission.scoreData.startindex ?? null,
+            startindex9: submission.scoreData.startindex9 ?? null,
+          },
+        });
+
+        await tx.golfmatchscores.create({
+          data: {
+            matchid: matchId,
+            teamid: submission.teamId,
+            golferid: submission.golferId,
+            scoreid: score.id,
+          },
+        });
+
+        createdScoreIds.push(score.id);
+      }
+
+      return { createdScoreIds };
+    });
   }
 }

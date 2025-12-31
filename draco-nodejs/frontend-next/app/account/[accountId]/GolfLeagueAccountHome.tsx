@@ -53,18 +53,13 @@ const GolfLeagueAccountHome: React.FC = () => {
           return;
         }
 
-        const {
-          account: accountData,
-          seasons,
-          currentSeason: responseCurrentSeason,
-        } = unwrapApiResult(result, 'Account not found or not publicly accessible');
+        const { account: accountData, currentSeason: responseCurrentSeason } = unwrapApiResult(
+          result,
+          'Account not found or not publicly accessible',
+        );
         setAccount(accountData as AccountType);
 
-        const currentSeasonCandidate = seasons?.find((season) => season.isCurrent) ?? {
-          ...responseCurrentSeason,
-          isCurrent: true,
-        };
-        setCurrentSeason(currentSeasonCandidate as AccountSeasonWithStatusType);
+        setCurrentSeason(responseCurrentSeason as AccountSeasonWithStatusType | null);
       } catch (err) {
         if (!isMounted) {
           return;

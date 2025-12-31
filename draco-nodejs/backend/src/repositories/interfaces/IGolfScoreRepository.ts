@@ -51,6 +51,16 @@ export type CreateMatchScoreData = {
   substitutefor?: bigint | null;
 };
 
+export type MatchScoreSubmission = {
+  teamId: bigint;
+  golferId: bigint;
+  scoreData: CreateGolfScoreData;
+};
+
+export type SubmitMatchScoresResult = {
+  createdScoreIds: bigint[];
+};
+
 export interface IGolfScoreRepository {
   findById(scoreId: bigint): Promise<GolfScoreWithDetails | null>;
   findByGolferId(golferId: bigint, limit?: number): Promise<GolfScoreWithDetails[]>;
@@ -64,4 +74,9 @@ export interface IGolfScoreRepository {
   deleteMatchScoresForTeam(matchId: bigint, teamId: bigint): Promise<number>;
   getPlayerScoresForSeason(golferId: bigint, seasonId: bigint): Promise<GolfScoreWithDetails[]>;
   calculateDifferential(score: golfscore, teeInfo: golfteeinformation): number;
+  submitMatchScoresTransactional(
+    matchId: bigint,
+    teamIds: bigint[],
+    submissions: MatchScoreSubmission[],
+  ): Promise<SubmitMatchScoresResult>;
 }
