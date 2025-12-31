@@ -898,6 +898,7 @@ model golfmatchscores {
   rosterSpot    golfroster? @relation("SubstituteFor", fields: [substitutefor], references: [id], onDelete: SetNull, map: "fk_golfmatchscores_substitutefor")
 
   @@id([matchid, teamid, golferid, scoreid])
+  @@index([matchid, teamid], map: "idx_golfmatchscores_match_team")
 }
 
 model golfroster {
@@ -946,6 +947,8 @@ model golfscore {
   golfer             golfer             @relation(fields: [golferid], references: [id], onDelete: Cascade, map: "fk_golfscore_golfer")
   golfcourse         golfcourse         @relation(fields: [courseid], references: [id], onDelete: Cascade, map: "fk_golfscore_golfcourse")
   golfteeinformation golfteeinformation @relation(fields: [teeid], references: [id], onDelete: Cascade, map: "fk_golfscore_golfteeinformation")
+
+  @@index([golferid, dateplayed(sort: Desc)], map: "idx_golfscore_golfer_dateplayed")
 }
 
 model golfstatdef {
