@@ -75,6 +75,7 @@ export interface GameDialogProps {
 export interface ScoreEntryDialogProps {
   open: boolean;
   accountId: string;
+  seasonId?: string;
   selectedGame: Game | null;
   timeZone: string;
   onClose: () => void;

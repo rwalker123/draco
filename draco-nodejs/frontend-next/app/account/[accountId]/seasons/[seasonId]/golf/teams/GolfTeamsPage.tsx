@@ -5,6 +5,7 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
   Container,
   Dialog,
@@ -14,6 +15,7 @@ import {
   FormControl,
   IconButton,
   InputLabel,
+  Link as MuiLink,
   MenuItem,
   Select,
   Snackbar,
@@ -21,6 +23,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Add as AddIcon, Close as CloseIcon, ArrowBack as BackIcon } from '@mui/icons-material';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import type {
   GolfTeamType,
@@ -34,6 +37,7 @@ import GolfTeamList from '../../../../../../../components/golf/teams/GolfTeamLis
 import GolfTeamForm from '../../../../../../../components/golf/teams/GolfTeamForm';
 import { useGolfTeams } from '../../../../../../../hooks/useGolfTeams';
 import { useGolfFlights } from '../../../../../../../hooks/useGolfFlights';
+import { useGolfLeagueSetup } from '../../../../../../../hooks/useGolfLeagueSetup';
 import { useRole } from '../../../../../../../context/RoleContext';
 import { useApiClient } from '../../../../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../../../../utils/apiResult';
@@ -64,6 +68,23 @@ const GolfTeamsPage: React.FC = () => {
 
   const [season, setSeason] = useState<SeasonType | null>(null);
   const [leagueSeasonId, setLeagueSeasonId] = useState<string>('');
+
+  const { setup: leagueSetup } = useGolfLeagueSetup(accountId, seasonId, leagueSeasonId);
+
+  const getTeamSizeLabel = (size: number) => {
+    switch (size) {
+      case 1:
+        return 'Individual';
+      case 2:
+        return 'Pairs';
+      case 3:
+        return 'Threesomes';
+      case 4:
+        return 'Foursomes';
+      default:
+        return `${size} players`;
+    }
+  };
   const [flights, setFlights] = useState<GolfFlightWithTeamCountType[]>([]);
   const [selectedFlightId, setSelectedFlightId] = useState<string>('all');
   const [teams, setTeams] = useState<GolfTeamType[]>([]);
@@ -319,6 +340,38 @@ const GolfTeamsPage: React.FC = () => {
             </Select>
           </FormControl>
         </Stack>
+
+        {leagueSetup && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              mb: 3,
+              p: 1.5,
+              bgcolor: 'action.hover',
+              borderRadius: 1,
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Team Size:
+            </Typography>
+            <Chip
+              label={getTeamSizeLabel(leagueSetup.teamSize ?? 2)}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
+            <MuiLink
+              component={Link}
+              href={`/account/${accountId}/seasons/${seasonId}/golf/leagues/${leagueSeasonId}/setup`}
+              underline="hover"
+              sx={{ ml: 1, fontSize: '0.875rem' }}
+            >
+              Change
+            </MuiLink>
+          </Box>
+        )}
 
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>

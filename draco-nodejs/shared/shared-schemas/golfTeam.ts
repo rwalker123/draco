@@ -19,9 +19,15 @@ export const GolfTeamSchema = z
     description: 'A golf team in a flight',
   });
 
-export const GolfTeamWithRosterSchema = GolfTeamSchema.extend({
-  roster: z.array(GolfRosterEntrySchema),
+export const GolfTeamWithPlayerCountSchema = GolfTeamSchema.extend({
   playerCount: z.number().int().nonnegative(),
+}).openapi({
+  title: 'GolfTeamWithPlayerCount',
+  description: 'Golf team with player count',
+});
+
+export const GolfTeamWithRosterSchema = GolfTeamWithPlayerCountSchema.extend({
+  roster: z.array(GolfRosterEntrySchema),
 }).openapi({
   title: 'GolfTeamWithRoster',
   description: 'Golf team with full roster',
@@ -61,6 +67,7 @@ export const UpdateGolfTeamSchema = CreateGolfTeamSchema.partial().openapi({
 });
 
 export type GolfTeamType = z.infer<typeof GolfTeamSchema>;
+export type GolfTeamWithPlayerCountType = z.infer<typeof GolfTeamWithPlayerCountSchema>;
 export type GolfTeamWithRosterType = z.infer<typeof GolfTeamWithRosterSchema>;
 export type GolfTeamWithScheduleType = z.infer<typeof GolfTeamWithScheduleSchema>;
 export type GolfTeamDetailType = z.infer<typeof GolfTeamDetailSchema>;

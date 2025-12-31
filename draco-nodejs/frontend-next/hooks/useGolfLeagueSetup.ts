@@ -19,18 +19,22 @@ interface GolfLeagueSetupState {
   updating: boolean;
 }
 
-export function useGolfLeagueSetup(accountId?: string | null) {
+export function useGolfLeagueSetup(
+  accountId?: string | null,
+  seasonId?: string | null,
+  leagueSeasonId?: string | null,
+) {
   const { token } = useAuth();
   const apiClient = useApiClient();
   const [state, setState] = useState<GolfLeagueSetupState>({
     data: null,
-    loading: Boolean(accountId),
+    loading: Boolean(accountId && seasonId && leagueSeasonId),
     error: null,
     initialized: false,
     updating: false,
   });
 
-  const canRequest = Boolean(accountId && token);
+  const canRequest = Boolean(accountId && seasonId && leagueSeasonId && token);
 
   const fetchSetup = useCallback(async (): Promise<void> => {
     if (!canRequest) {
@@ -47,7 +51,11 @@ export function useGolfLeagueSetup(accountId?: string | null) {
     try {
       const result = await getGolfLeagueSetup({
         client: apiClient,
-        path: { accountId: accountId as string },
+        path: {
+          accountId: accountId as string,
+          seasonId: seasonId as string,
+          leagueSeasonId: leagueSeasonId as string,
+        },
         throwOnError: false,
       });
 
@@ -82,7 +90,7 @@ export function useGolfLeagueSetup(accountId?: string | null) {
         initialized: true,
       }));
     }
-  }, [accountId, apiClient, canRequest]);
+  }, [accountId, seasonId, leagueSeasonId, apiClient, canRequest]);
 
   useEffect(() => {
     const load = async () => {
@@ -111,7 +119,11 @@ export function useGolfLeagueSetup(accountId?: string | null) {
       try {
         const result = await updateGolfLeagueSetup({
           client: apiClient,
-          path: { accountId: accountId as string },
+          path: {
+            accountId: accountId as string,
+            seasonId: seasonId as string,
+            leagueSeasonId: leagueSeasonId as string,
+          },
           body: updates,
           throwOnError: false,
         });
@@ -132,7 +144,7 @@ export function useGolfLeagueSetup(accountId?: string | null) {
         }));
       }
     },
-    [accountId, apiClient, canRequest, fetchSetup],
+    [accountId, seasonId, leagueSeasonId, apiClient, canRequest, fetchSetup],
   );
 
   const clearError = useCallback(() => {

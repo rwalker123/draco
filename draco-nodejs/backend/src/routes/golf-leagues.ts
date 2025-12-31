@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { extractAccountParams } from '../utils/paramExtraction.js';
+import { extractLeagueSeasonParams } from '../utils/paramExtraction.js';
 import { UpdateGolfLeagueSetupSchema } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
@@ -19,25 +19,25 @@ router.get(
 );
 
 router.get(
-  '/:accountId/setup',
+  '/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/setup',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId } = extractAccountParams(req.params);
-    const setup = await golfLeagueService.getLeagueSetup(accountId);
+    const { accountId, leagueSeasonId } = extractLeagueSeasonParams(req.params);
+    const setup = await golfLeagueService.getLeagueSetup(accountId, leagueSeasonId);
     res.json(setup);
   }),
 );
 
 router.put(
-  '/:accountId/setup',
+  '/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/setup',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId } = extractAccountParams(req.params);
+    const { accountId, leagueSeasonId } = extractLeagueSeasonParams(req.params);
     const updateData = UpdateGolfLeagueSetupSchema.parse(req.body);
-    const setup = await golfLeagueService.updateLeagueSetup(accountId, updateData);
+    const setup = await golfLeagueService.updateLeagueSetup(accountId, leagueSeasonId, updateData);
     res.json(setup);
   }),
 );

@@ -583,6 +583,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         <ScoreEntryDialog
           open={gameResultsDialogOpen}
           accountId={accountId}
+          seasonId={currentSeasonId ?? undefined}
           onClose={() => {
             setGameResultsDialogOpen(false);
             setSelectedGameForResults(null);

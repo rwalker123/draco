@@ -10,14 +10,20 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
+  Breadcrumbs,
+  Link as MuiLink,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import Link from 'next/link';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { UpdateGolfLeagueSetupSchema } from '@draco/shared-schemas';
-import { UpdateGolfLeagueSetup } from '@draco/shared-api-client';
+import { UpdateGolfLeagueSetup, getAccountSeason } from '@draco/shared-api-client';
 import AccountPageHeader from '../../AccountPageHeader';
 import { useGolfLeagueSetup } from '../../../hooks/useGolfLeagueSetup';
+import { useApiClient } from '../../../hooks/useApiClient';
+import { unwrapApiResult } from '../../../utils/apiResult';
 import { ScheduleSettingsSection } from './ScheduleSettingsSection';
 import { LeagueOfficersSection } from './LeagueOfficersSection';
 import { ScoringConfigurationSection } from './ScoringConfigurationSection';
@@ -32,22 +38,76 @@ interface FormData extends UpdateGolfLeagueSetup {
 export function GolfLeagueSetupPage() {
   const params = useParams();
   const router = useRouter();
+  const apiClient = useApiClient();
   const accountIdParam = params?.accountId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
+  const seasonIdParam = params?.seasonId;
+  const seasonId = Array.isArray(seasonIdParam) ? seasonIdParam[0] : seasonIdParam;
+  const leagueSeasonIdParam = params?.leagueSeasonId;
+  const leagueSeasonId = Array.isArray(leagueSeasonIdParam)
+    ? leagueSeasonIdParam[0]
+    : leagueSeasonIdParam;
 
-  const { setup, loading, updating, error, updateSetup, clearError } = useGolfLeagueSetup(accountId);
+  const { setup, loading, updating, error, updateSetup, clearError } = useGolfLeagueSetup(
+    accountId,
+    seasonId,
+    leagueSeasonId,
+  );
 
+  const [leagueName, setLeagueName] = useState<string>('');
+  const [seasonName, setSeasonName] = useState<string>('');
   const [scheduleExpanded, setScheduleExpanded] = useState(true);
-  const [officersExpanded, setOfficersExpanded] = useState(true);
-  const [scoringExpanded, setScoringExpanded] = useState(false);
+  const [scoringExpanded, setScoringExpanded] = useState(true);
+  const [officersExpanded, setOfficersExpanded] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!accountId || !seasonId || !leagueSeasonId) return;
+
+    let isMounted = true;
+
+    const fetchSeasonData = async () => {
+      try {
+        const result = await getAccountSeason({
+          client: apiClient,
+          path: { accountId, seasonId },
+          throwOnError: false,
+        });
+
+        const seasonResult = unwrapApiResult(result, 'Failed to fetch season');
+        if (!isMounted) return;
+
+        if (seasonResult.name) {
+          setSeasonName(seasonResult.name);
+        }
+
+        const league = seasonResult.leagues?.find((l) => l.id === leagueSeasonId);
+        if (league?.league?.name) {
+          setLeagueName(league.league.name);
+        }
+      } catch {
+        // Silently fail - we'll just show generic title
+      }
+    };
+
+    void fetchSeasonData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accountId, seasonId, leagueSeasonId, apiClient]);
 
   const methods = useForm<FormData>({
     resolver: zodResolver(UpdateGolfLeagueSetupSchema),
     defaultValues: {},
   });
 
-  const { control, handleSubmit, reset, formState: { isDirty } } = methods;
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { isDirty },
+  } = methods;
 
   useEffect(() => {
     if (setup) {
@@ -56,6 +116,7 @@ export function GolfLeagueSetupPage() {
         firstTeeTime: setup.firstTeeTime,
         timeBetweenTeeTimes: setup.timeBetweenTeeTimes,
         holesPerMatch: setup.holesPerMatch,
+        teamSize: setup.teamSize,
         presidentId: setup.president?.id,
         vicePresidentId: setup.vicePresident?.id,
         secretaryId: setup.secretary?.id,
@@ -82,7 +143,7 @@ export function GolfLeagueSetupPage() {
     }
   };
 
-  if (!accountId) {
+  if (!accountId || !seasonId || !leagueSeasonId) {
     return null;
   }
 
@@ -102,14 +163,33 @@ export function GolfLeagueSetupPage() {
           component="h1"
           sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
         >
-          League Setup
+          {leagueName ? `${leagueName} Setup` : 'League Setup'}
         </Typography>
-        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
-          Configure your golf league settings
+        {seasonName && (
+          <Typography variant="body1" sx={{ mt: 0.5, textAlign: 'center', color: 'text.secondary' }}>
+            {seasonName}
+          </Typography>
+        )}
+        <Typography variant="body2" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Configure league day, tee times, and scoring
         </Typography>
       </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ mb: 3 }}>
+          <MuiLink
+            component={Link}
+            href={`/account/${accountId}/seasons/${seasonId}/golf/admin`}
+            underline="hover"
+            color="inherit"
+          >
+            Golf Admin
+          </MuiLink>
+          <Typography color="text.primary">
+            {leagueName ? `${leagueName} Setup` : 'League Setup'}
+          </Typography>
+        </Breadcrumbs>
+
         <FormProvider {...methods}>
           <form onSubmit={handleSubmit(onSubmit)}>
             <ScheduleSettingsSection
@@ -118,17 +198,17 @@ export function GolfLeagueSetupPage() {
               onExpandedChange={setScheduleExpanded}
             />
 
+            <ScoringConfigurationSection
+              control={control}
+              expanded={scoringExpanded}
+              onExpandedChange={setScoringExpanded}
+            />
+
             <LeagueOfficersSection
               control={control}
               accountId={accountId}
               expanded={officersExpanded}
               onExpandedChange={setOfficersExpanded}
-            />
-
-            <ScoringConfigurationSection
-              control={control}
-              expanded={scoringExpanded}
-              onExpandedChange={setScoringExpanded}
             />
 
             <Box
@@ -147,7 +227,7 @@ export function GolfLeagueSetupPage() {
             >
               <Button
                 variant="outlined"
-                onClick={() => router.push(`/account/${accountId}/admin`)}
+                onClick={() => router.push(`/account/${accountId}/seasons/${seasonId}`)}
               >
                 Cancel
               </Button>

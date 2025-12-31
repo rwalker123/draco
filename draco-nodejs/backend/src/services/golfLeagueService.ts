@@ -14,22 +14,26 @@ export class GolfLeagueService {
     this.leagueRepository = leagueRepository ?? RepositoryFactory.getGolfLeagueRepository();
   }
 
-  async getLeagueSetup(accountId: bigint): Promise<GolfLeagueSetupType> {
-    const setup = await this.leagueRepository.findByAccountId(accountId);
+  async getLeagueSetup(
+    accountId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<GolfLeagueSetupType> {
+    const setup = await this.leagueRepository.findByLeagueSeasonId(leagueSeasonId);
     if (!setup) {
       throw new NotFoundError('Golf league setup not found');
     }
-    return GolfLeagueResponseFormatter.format(setup);
+    return GolfLeagueResponseFormatter.format(setup, accountId);
   }
 
   async updateLeagueSetup(
     accountId: bigint,
+    leagueSeasonId: bigint,
     data: UpdateGolfLeagueSetupType,
   ): Promise<GolfLeagueSetupType> {
-    const existingSetup = await this.leagueRepository.findByAccountId(accountId);
+    const existingSetup = await this.leagueRepository.findByLeagueSeasonId(leagueSeasonId);
 
     if (!existingSetup) {
-      return this.createLeagueSetup(accountId, data);
+      return this.createLeagueSetup(accountId, leagueSeasonId, data);
     }
 
     const updateData: Record<string, unknown> = {};
@@ -91,22 +95,29 @@ export class GolfLeagueService {
       updateData.againstfielddescpoints = data.againstFieldDescPoints;
     }
 
-    await this.leagueRepository.update(accountId, updateData);
+    if (Object.keys(updateData).length > 0) {
+      await this.leagueRepository.update(leagueSeasonId, updateData);
+    }
 
-    const updated = await this.leagueRepository.findByAccountId(accountId);
+    if (data.teamSize !== undefined) {
+      await this.leagueRepository.upsertSeasonConfig(leagueSeasonId, data.teamSize);
+    }
+
+    const updated = await this.leagueRepository.findByLeagueSeasonId(leagueSeasonId);
     if (!updated) {
       throw new NotFoundError('Golf league setup not found after update');
     }
-    return GolfLeagueResponseFormatter.format(updated);
+    return GolfLeagueResponseFormatter.format(updated, accountId);
   }
 
   private async createLeagueSetup(
     accountId: bigint,
+    leagueSeasonId: bigint,
     data: UpdateGolfLeagueSetupType,
   ): Promise<GolfLeagueSetupType> {
     const createData: Record<string, unknown> = {
-      id: accountId,
       accountid: accountId,
+      leagueseasonid: leagueSeasonId,
       leagueday: data.leagueDay ?? 2,
       firstteetime: data.firstTeeTime
         ? DateUtils.parseTimeToUtcEpochDate(data.firstTeeTime)
@@ -131,11 +142,14 @@ export class GolfLeagueService {
 
     await this.leagueRepository.create(createData);
 
-    const created = await this.leagueRepository.findByAccountId(accountId);
+    const teamSize = data.teamSize ?? 2;
+    await this.leagueRepository.upsertSeasonConfig(leagueSeasonId, teamSize);
+
+    const created = await this.leagueRepository.findByLeagueSeasonId(leagueSeasonId);
     if (!created) {
       throw new NotFoundError('Golf league setup not found after creation');
     }
-    return GolfLeagueResponseFormatter.format(created);
+    return GolfLeagueResponseFormatter.format(created, accountId);
   }
 
   async getGolfAccounts(): Promise<GolfAccountInfoResponse[]> {

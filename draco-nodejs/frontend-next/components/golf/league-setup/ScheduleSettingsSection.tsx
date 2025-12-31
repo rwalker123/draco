@@ -19,7 +19,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { Control, Controller, FieldValues, Path } from 'react-hook-form';
 import { parse, format } from 'date-fns';
-import { DAYS_OF_WEEK, HOLES_PER_MATCH_OPTIONS, SCHEDULE_TOOLTIPS } from './constants';
+import { DAYS_OF_WEEK, HOLES_PER_MATCH_OPTIONS, TEAM_SIZE_OPTIONS, SCHEDULE_TOOLTIPS } from './constants';
 
 interface ScheduleSettingsSectionProps<T extends FieldValues> {
   control: Control<T>;
@@ -75,7 +75,7 @@ export function ScheduleSettingsSection<T extends FieldValues>({
               control={control}
               render={({ field, fieldState }) => {
                 const timeValue = field.value
-                  ? parse(field.value as string, 'HH:mm:ss', new Date())
+                  ? parse(field.value as string, 'HH:mm', new Date())
                   : null;
 
                 return (
@@ -86,7 +86,7 @@ export function ScheduleSettingsSection<T extends FieldValues>({
                         value={timeValue}
                         onChange={(newValue) => {
                           if (newValue) {
-                            field.onChange(format(newValue, 'HH:mm:ss'));
+                            field.onChange(format(newValue, 'HH:mm'));
                           } else {
                             field.onChange(null);
                           }
@@ -147,6 +147,32 @@ export function ScheduleSettingsSection<T extends FieldValues>({
                       value={field.value ?? 9}
                     >
                       {HOLES_PER_MATCH_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Tooltip>
+              )}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Controller
+              name={'teamSize' as Path<T>}
+              control={control}
+              render={({ field, fieldState }) => (
+                <Tooltip title={SCHEDULE_TOOLTIPS.teamSize} placement="top" arrow>
+                  <FormControl fullWidth error={!!fieldState.error}>
+                    <InputLabel id="team-size-label">Team Size</InputLabel>
+                    <Select
+                      {...field}
+                      labelId="team-size-label"
+                      label="Team Size"
+                      value={field.value ?? 2}
+                    >
+                      {TEAM_SIZE_OPTIONS.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
                           {option.label}
                         </MenuItem>

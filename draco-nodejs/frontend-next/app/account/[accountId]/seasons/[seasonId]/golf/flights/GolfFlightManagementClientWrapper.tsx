@@ -16,7 +16,7 @@ export default function GolfFlightManagementClientWrapper() {
   const seasonIdStr = seasonId ?? '';
 
   const handleClose = () => {
-    router.push(`/account/${accountIdStr}/seasons`);
+    router.push(`/account/${accountIdStr}/seasons/${seasonIdStr}/golf/admin`);
   };
 
   return (

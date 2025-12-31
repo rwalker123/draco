@@ -23,11 +23,14 @@ export const GolfLeagueSetupSchema = z
   .object({
     id: bigintToStringSchema,
     accountId: bigintToStringSchema,
+    seasonId: bigintToStringSchema,
+    leagueSeasonId: bigintToStringSchema,
     leagueDay: z.number().int().min(0).max(6),
     firstTeeTime: z.string(),
     timeBetweenTeeTimes: z.number().int().min(5).max(30).default(10),
     holesPerMatch: z.number().int().min(9).max(18).default(9),
     teeOffFormat: z.number().int().default(0),
+    teamSize: z.number().int().min(1).max(4).default(2),
     president: NamedContactSchema.optional(),
     vicePresident: NamedContactSchema.optional(),
     secretary: NamedContactSchema.optional(),
@@ -54,6 +57,8 @@ export const CreateGolfLeagueSetupSchema = GolfLeagueSetupSchema.omit({
 
 export const UpdateGolfLeagueSetupSchema = CreateGolfLeagueSetupSchema.omit({
   accountId: true,
+  seasonId: true,
+  leagueSeasonId: true,
 })
   .partial()
   .openapi({

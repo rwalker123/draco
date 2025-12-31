@@ -54,11 +54,11 @@ export const registerGolfLeaguesEndpoints = ({ registry, schemaRefs, z }: Regist
     },
   });
 
-  // GET /api/golf/leagues/{accountId}/setup
+  // GET /api/golf/leagues/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/setup
   registry.registerPath({
     method: 'get',
-    path: '/api/golf/leagues/{accountId}/setup',
-    description: 'Get golf league setup configuration for an account',
+    path: '/api/golf/leagues/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/setup',
+    description: 'Get golf league setup configuration for a league season',
     operationId: 'getGolfLeagueSetup',
     summary: 'Get league setup',
     tags: ['Golf Leagues'],
@@ -66,6 +66,24 @@ export const registerGolfLeaguesEndpoints = ({ registry, schemaRefs, z }: Regist
     parameters: [
       {
         name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'leagueSeasonId',
         in: 'path',
         required: true,
         schema: {
@@ -118,11 +136,11 @@ export const registerGolfLeaguesEndpoints = ({ registry, schemaRefs, z }: Regist
     },
   });
 
-  // PUT /api/golf/leagues/{accountId}/setup
+  // PUT /api/golf/leagues/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/setup
   registry.registerPath({
     method: 'put',
-    path: '/api/golf/leagues/{accountId}/setup',
-    description: 'Update golf league setup configuration',
+    path: '/api/golf/leagues/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/setup',
+    description: 'Update golf league setup configuration for a league season',
     operationId: 'updateGolfLeagueSetup',
     summary: 'Update league setup',
     tags: ['Golf Leagues'],
@@ -130,6 +148,24 @@ export const registerGolfLeaguesEndpoints = ({ registry, schemaRefs, z }: Regist
     parameters: [
       {
         name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'leagueSeasonId',
         in: 'path',
         required: true,
         schema: {

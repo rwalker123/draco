@@ -5,6 +5,7 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
   Container,
   Dialog,
@@ -12,12 +13,11 @@ import {
   DialogTitle,
   Fab,
   IconButton,
+  Link as MuiLink,
   Menu,
   MenuItem,
   Snackbar,
   Stack,
-  Tab,
-  Tabs,
   Typography,
 } from '@mui/material';
 import {
@@ -27,54 +27,28 @@ import {
   PersonAdd as SignIcon,
   PersonAddAlt as CreateIcon,
 } from '@mui/icons-material';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import type {
   GolfTeamWithRosterType,
   GolfRosterEntryType,
-  GolfSubstituteType,
   AvailablePlayerType,
   CreateGolfPlayerType,
   SignPlayerType,
   UpdateGolfPlayerType,
   ReleasePlayerType,
 } from '@draco/shared-schemas';
+import { getAccountSeason } from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
 import GolfRoster from '../../../../../../../../components/golf/teams/GolfRoster';
-import SubstituteList from '../../../../../../../../components/golf/teams/SubstituteList';
 import GolfPlayerForm from '../../../../../../../../components/golf/teams/GolfPlayerForm';
 import SignPlayerDialog from '../../../../../../../../components/golf/teams/SignPlayerDialog';
 import { useGolfTeams } from '../../../../../../../../hooks/useGolfTeams';
 import { useGolfRosters } from '../../../../../../../../hooks/useGolfRosters';
+import { useGolfLeagueSetup } from '../../../../../../../../hooks/useGolfLeagueSetup';
 import { useRole } from '../../../../../../../../context/RoleContext';
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`team-tabpanel-${index}`}
-      aria-labelledby={`team-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
-function a11yProps(index: number) {
-  return {
-    id: `team-tab-${index}`,
-    'aria-controls': `team-tabpanel-${index}`,
-  };
-}
+import { useApiClient } from '../../../../../../../../hooks/useApiClient';
+import { unwrapApiResult } from '../../../../../../../../utils/apiResult';
 
 const GolfTeamDetailPage: React.FC = () => {
   const params = useParams();
@@ -86,13 +60,13 @@ const GolfTeamDetailPage: React.FC = () => {
   const seasonId = Array.isArray(seasonIdParam) ? seasonIdParam[0] : seasonIdParam;
   const teamSeasonId = Array.isArray(teamSeasonIdParam) ? teamSeasonIdParam[0] : teamSeasonIdParam;
   const { hasPermission } = useRole();
+  const apiClient = useApiClient();
 
   const canManage = accountId ? hasPermission('account.manage', { accountId }) : false;
 
   const { getTeamWithRoster } = useGolfTeams(accountId || '');
   const {
     getTeamRoster,
-    listSubstitutesForSeason,
     listAvailablePlayers,
     createAndSignPlayer,
     signPlayer,
@@ -103,15 +77,30 @@ const GolfTeamDetailPage: React.FC = () => {
 
   const [team, setTeam] = useState<GolfTeamWithRosterType | null>(null);
   const [roster, setRoster] = useState<GolfRosterEntryType[]>([]);
-  const [substitutes, setSubstitutes] = useState<GolfSubstituteType[]>([]);
   const [availablePlayers, setAvailablePlayers] = useState<AvailablePlayerType[]>([]);
+  const [leagueSeasonId, setLeagueSeasonId] = useState<string>('');
+
+  const { setup: leagueSetup } = useGolfLeagueSetup(accountId, seasonId, leagueSeasonId);
+
+  const getTeamSizeLabel = (size: number) => {
+    switch (size) {
+      case 1:
+        return 'Individual';
+      case 2:
+        return 'Pairs';
+      case 3:
+        return 'Threesomes';
+      case 4:
+        return 'Foursomes';
+      default:
+        return `${size} players`;
+    }
+  };
 
   const [loading, setLoading] = useState(true);
   const [rosterLoading, setRosterLoading] = useState(false);
-  const [subsLoading, setSubsLoading] = useState(false);
   const [availableLoading, setAvailableLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tabValue, setTabValue] = useState(0);
 
   const [addMenuAnchor, setAddMenuAnchor] = useState<null | HTMLElement>(null);
   const [createPlayerOpen, setCreatePlayerOpen] = useState(false);
@@ -155,22 +144,6 @@ const GolfTeamDetailPage: React.FC = () => {
     }
   }, [teamSeasonId, seasonId, getTeamRoster]);
 
-  const loadSubstitutes = useCallback(async () => {
-    if (!seasonId) return;
-
-    setSubsLoading(true);
-    try {
-      const result = await listSubstitutesForSeason(seasonId);
-      if (result.success) {
-        setSubstitutes(result.data);
-      } else {
-        setError(result.error);
-      }
-    } finally {
-      setSubsLoading(false);
-    }
-  }, [seasonId, listSubstitutesForSeason]);
-
   const loadAvailablePlayers = useCallback(async () => {
     if (!seasonId) return;
 
@@ -185,6 +158,26 @@ const GolfTeamDetailPage: React.FC = () => {
     }
   }, [seasonId, listAvailablePlayers]);
 
+  const loadSeason = useCallback(async () => {
+    if (!accountId || !seasonId) return;
+
+    try {
+      const result = await getAccountSeason({
+        client: apiClient,
+        path: { accountId, seasonId },
+        throwOnError: false,
+      });
+
+      const seasonData = unwrapApiResult(result, 'Failed to load season');
+
+      if (seasonData.leagues && seasonData.leagues.length > 0) {
+        setLeagueSeasonId(seasonData.leagues[0].id);
+      }
+    } catch {
+      // Silently fail - team size just won't display
+    }
+  }, [accountId, seasonId, apiClient]);
+
   useEffect(() => {
     if (teamSeasonId) {
       loadTeam();
@@ -193,14 +186,10 @@ const GolfTeamDetailPage: React.FC = () => {
   }, [teamSeasonId, loadTeam, loadRoster]);
 
   useEffect(() => {
-    if (seasonId) {
-      loadSubstitutes();
+    if (accountId && seasonId) {
+      loadSeason();
     }
-  }, [seasonId, loadSubstitutes]);
-
-  const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  }, []);
+  }, [accountId, seasonId, loadSeason]);
 
   const handleBack = useCallback(() => {
     router.push(`/account/${accountId}/seasons/${seasonId}/golf/flights`);
@@ -343,32 +332,6 @@ const GolfTeamDetailPage: React.FC = () => {
     [seasonId, deletePlayer, loadRoster],
   );
 
-  const handleSignSubToTeam = useCallback(
-    async (sub: GolfSubstituteType) => {
-      if (!teamSeasonId || !seasonId) return;
-
-      setFormLoading(true);
-      try {
-        const signData: SignPlayerType = {
-          contactId: sub.player.id,
-          initialDifferential: sub.initialDifferential,
-          isSub: false,
-        };
-        const result = await signPlayer(seasonId, teamSeasonId, signData);
-        if (result.success) {
-          setSuccessMessage('Substitute signed to team');
-          await loadRoster();
-          await loadSubstitutes();
-        } else {
-          setError(result.error);
-        }
-      } finally {
-        setFormLoading(false);
-      }
-    },
-    [teamSeasonId, seasonId, signPlayer, loadRoster, loadSubstitutes],
-  );
-
   if (!accountId || !teamSeasonId || !seasonId) {
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
@@ -428,40 +391,72 @@ const GolfTeamDetailPage: React.FC = () => {
           </Button>
         </Stack>
 
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange} aria-label="team roster tabs">
-            <Tab label="Roster" {...a11yProps(0)} />
-            <Tab label="Substitutes" {...a11yProps(1)} />
-          </Tabs>
-        </Box>
+        {leagueSetup && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              mb: 3,
+              p: 1.5,
+              bgcolor: 'action.hover',
+              borderRadius: 1,
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Team Size:
+            </Typography>
+            <Chip
+              label={getTeamSizeLabel(leagueSetup.teamSize ?? 2)}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
+            <MuiLink
+              component={Link}
+              href={`/account/${accountId}/seasons/${seasonId}/golf/leagues/${leagueSeasonId}/setup`}
+              underline="hover"
+              sx={{ ml: 1, fontSize: '0.875rem' }}
+            >
+              Change
+            </MuiLink>
+          </Box>
+        )}
 
-        <TabPanel value={tabValue} index={0}>
-          <GolfRoster
-            roster={roster}
-            loading={rosterLoading}
-            error={error}
-            onRetry={loadRoster}
-            onEdit={canManage ? handleEditPlayer : undefined}
-            onRelease={canManage ? handleReleasePlayer : undefined}
-            onDelete={canManage ? handleDeletePlayer : undefined}
-            emptyMessage="No players on this team yet."
-            actionsDisabled={formLoading}
-            showDifferential
-          />
-        </TabPanel>
+        {leagueSetup && team.playerCount !== (leagueSetup.teamSize ?? 2) && (
+          <Alert
+            severity={team.playerCount < (leagueSetup.teamSize ?? 2) ? 'warning' : 'info'}
+            sx={{ mb: 3 }}
+          >
+            {team.playerCount < (leagueSetup.teamSize ?? 2) ? (
+              <>
+                This team has {team.playerCount} player{team.playerCount !== 1 ? 's' : ''} but
+                requires {leagueSetup.teamSize ?? 2}. Add{' '}
+                {(leagueSetup.teamSize ?? 2) - team.playerCount} more player
+                {(leagueSetup.teamSize ?? 2) - team.playerCount !== 1 ? 's' : ''} to complete the
+                roster.
+              </>
+            ) : (
+              <>
+                This team has {team.playerCount} players but only {leagueSetup.teamSize ?? 2} can
+                play per match. You&apos;ll need to select which players participate in each match.
+              </>
+            )}
+          </Alert>
+        )}
 
-        <TabPanel value={tabValue} index={1}>
-          <SubstituteList
-            substitutes={substitutes}
-            loading={subsLoading}
-            error={error}
-            onRetry={loadSubstitutes}
-            onSignToTeam={canManage ? handleSignSubToTeam : undefined}
-            emptyMessage="No substitutes available for this season."
-            actionsDisabled={formLoading}
-            showDifferential
-          />
-        </TabPanel>
+        <GolfRoster
+          roster={roster}
+          loading={rosterLoading}
+          error={error}
+          onRetry={loadRoster}
+          onEdit={canManage ? handleEditPlayer : undefined}
+          onRelease={canManage ? handleReleasePlayer : undefined}
+          onDelete={canManage ? handleDeletePlayer : undefined}
+          emptyMessage="No players on this team yet."
+          actionsDisabled={formLoading}
+          showDifferential
+        />
       </Container>
 
       {canManage && (

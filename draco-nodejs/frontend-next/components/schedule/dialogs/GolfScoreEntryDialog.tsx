@@ -38,6 +38,7 @@ import type { UpdateGolfMatch } from '@draco/shared-api-client';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { GameStatus } from '@/types/schedule';
+import { useGolfLeagueSetup } from '@/hooks/useGolfLeagueSetup';
 
 const MATCH_STATUS_OPTIONS = [
   { value: 0, label: 'Scheduled' },
@@ -84,6 +85,7 @@ function getGameStatusShortText(status: number): string {
 const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
   open,
   accountId,
+  seasonId,
   selectedGame,
   timeZone,
   onClose,
@@ -96,6 +98,10 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
   const scoreService = useGolfScores(accountId);
   const rosterService = useGolfRosters(accountId);
   const courseService = useGolfCourses(accountId);
+
+  const leagueSeasonId = selectedGame?.season.id;
+  const { setup: leagueSetup } = useGolfLeagueSetup(accountId, seasonId, leagueSeasonId);
+  const teamSize = leagueSetup?.teamSize ?? 2;
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -114,28 +120,34 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
   const [team1Scores, setTeam1Scores] = useState<Record<string, PlayerScoreData>>({});
   const [team2Scores, setTeam2Scores] = useState<Record<string, PlayerScoreData>>({});
 
-  const initializeScoresFromRoster = (
-    roster: GolfRosterEntryType[],
-    existing: GolfScoreWithDetailsType[],
-  ): Record<string, PlayerScoreData> => {
-    const scores: Record<string, PlayerScoreData> = {};
+  const initializeScoresFromRoster = useCallback(
+    (
+      roster: GolfRosterEntryType[],
+      existing: GolfScoreWithDetailsType[],
+      maxPlayers: number,
+    ): Record<string, PlayerScoreData> => {
+      const scores: Record<string, PlayerScoreData> = {};
+      const hasMoreThanAllowed = roster.length > maxPlayers;
 
-    roster.forEach((player) => {
-      const existingScore = existing.find((s) => s.golferId === player.golferId);
+      roster.forEach((player, index) => {
+        const existingScore = existing.find((s) => s.golferId === player.golferId);
+        const shouldBeAbsent = hasMoreThanAllowed && index >= maxPlayers;
 
-      scores[player.id] = {
-        rosterId: player.id,
-        isAbsent: false,
-        isSubstitute: false,
-        substituteGolferId: undefined,
-        totalsOnly: existingScore?.totalsOnly ?? true,
-        totalScore: existingScore?.totalScore ?? 0,
-        holeScores: existingScore?.holeScores ?? [],
-      };
-    });
+        scores[player.id] = {
+          rosterId: player.id,
+          isAbsent: existingScore ? false : shouldBeAbsent,
+          isSubstitute: false,
+          substituteGolferId: undefined,
+          totalsOnly: existingScore?.totalsOnly ?? true,
+          totalScore: existingScore?.totalScore ?? 0,
+          holeScores: existingScore?.holeScores ?? [],
+        };
+      });
 
-    return scores;
-  };
+      return scores;
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!open || !selectedGame) return;
@@ -202,8 +214,8 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
           roster2Result.data.some((p) => p.golferId === s.golferId),
         );
 
-        setTeam1Scores(initializeScoresFromRoster(roster1Result.data, team1ExistingScores));
-        setTeam2Scores(initializeScoresFromRoster(roster2Result.data, team2ExistingScores));
+        setTeam1Scores(initializeScoresFromRoster(roster1Result.data, team1ExistingScores, teamSize));
+        setTeam2Scores(initializeScoresFromRoster(roster2Result.data, team2ExistingScores, teamSize));
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -220,7 +232,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [open, selectedGame, accountId, rosterService, scoreService, courseService]);
+  }, [open, selectedGame, accountId, rosterService, scoreService, courseService, teamSize, initializeScoresFromRoster]);
 
   useEffect(() => {
     if (!open) {
@@ -472,6 +484,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
               showHoleByHole={showHoleByHole}
               disabled={!selectedGame.fieldId || !selectedTeeId}
               defaultExpanded={true}
+              teamSize={teamSize}
             />
 
             <TeamScoresSection
@@ -487,6 +500,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
               showHoleByHole={showHoleByHole}
               disabled={!selectedGame.fieldId || !selectedTeeId}
               defaultExpanded={true}
+              teamSize={teamSize}
             />
           </>
         )}

@@ -268,6 +268,24 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
                 },
               },
             },
+            golfleaguesetup: {
+              select: {
+                leagueday: true,
+                firstteetime: true,
+                timebetweenteetimes: true,
+                holespermatch: true,
+                teeoffformat: true,
+                scoringtype: true,
+                usebestball: true,
+                usehandicapscoring: true,
+                perholepoints: true,
+                perninepoints: true,
+                permatchpoints: true,
+                totalholespoints: true,
+                againstfieldpoints: true,
+                againstfielddescpoints: true,
+              },
+            },
           },
         },
       },
@@ -369,6 +387,29 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
               })),
             });
           }
+        }
+
+        if (isGolfAccount && leagueSeason.golfleaguesetup) {
+          await tx.golfleaguesetup.create({
+            data: {
+              accountid: accountId,
+              leagueseasonid: createdLeagueSeason.id,
+              leagueday: leagueSeason.golfleaguesetup.leagueday,
+              firstteetime: leagueSeason.golfleaguesetup.firstteetime,
+              timebetweenteetimes: leagueSeason.golfleaguesetup.timebetweenteetimes,
+              holespermatch: leagueSeason.golfleaguesetup.holespermatch,
+              teeoffformat: leagueSeason.golfleaguesetup.teeoffformat,
+              scoringtype: leagueSeason.golfleaguesetup.scoringtype,
+              usebestball: leagueSeason.golfleaguesetup.usebestball,
+              usehandicapscoring: leagueSeason.golfleaguesetup.usehandicapscoring,
+              perholepoints: leagueSeason.golfleaguesetup.perholepoints,
+              perninepoints: leagueSeason.golfleaguesetup.perninepoints,
+              permatchpoints: leagueSeason.golfleaguesetup.permatchpoints,
+              totalholespoints: leagueSeason.golfleaguesetup.totalholespoints,
+              againstfieldpoints: leagueSeason.golfleaguesetup.againstfieldpoints,
+              againstfielddescpoints: leagueSeason.golfleaguesetup.againstfielddescpoints,
+            },
+          });
         }
       }
 

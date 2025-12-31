@@ -7,7 +7,6 @@ import Grid from '@mui/material/Grid';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import GolfCourseIcon from '@mui/icons-material/GolfCourse';
-import TuneIcon from '@mui/icons-material/Tune';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
@@ -51,12 +50,6 @@ const GolfAdminHubPage: React.FC = () => {
       description: 'Manage golf courses and tee configurations.',
       icon: <GolfCourseIcon />,
       href: `/account/${accountId}/golf/courses`,
-    },
-    {
-      title: 'League Setup',
-      description: 'Configure schedule, officers, and scoring rules.',
-      icon: <TuneIcon />,
-      href: `/account/${accountId}/admin/league-setup`,
     },
   ];
 

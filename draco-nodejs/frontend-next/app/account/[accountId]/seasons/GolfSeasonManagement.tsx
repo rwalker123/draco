@@ -322,7 +322,7 @@ const GolfSeasonManagement: React.FC = () => {
   };
 
   const navigateToFlightManagement = (season: Season) => {
-    router.push(`/account/${accountId}/seasons/${season.id}/golf/flights`);
+    router.push(`/account/${accountId}/seasons/${season.id}/golf/admin`);
   };
 
   const closeDialogs = () => {

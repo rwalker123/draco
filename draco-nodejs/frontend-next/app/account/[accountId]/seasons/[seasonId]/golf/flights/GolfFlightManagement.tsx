@@ -33,6 +33,7 @@ import {
   People as PeopleIcon,
   NavigateNext as NavigateNextIcon,
   GolfCourse as GolfCourseIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -41,6 +42,7 @@ import type {
   GolfFlightWithTeamCountType,
   GolfFlightType,
   GolfTeamType,
+  GolfTeamWithPlayerCountType,
   SeasonType,
 } from '@draco/shared-schemas';
 import { useApiClient } from '../../../../../../../hooks/useApiClient';
@@ -48,6 +50,7 @@ import { unwrapApiResult } from '../../../../../../../utils/apiResult';
 import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
 import { useGolfFlights } from '../../../../../../../hooks/useGolfFlights';
 import { useGolfTeams } from '../../../../../../../hooks/useGolfTeams';
+import { useGolfLeagueSetup } from '../../../../../../../hooks/useGolfLeagueSetup';
 import {
   CreateFlightDialog,
   EditFlightDialog,
@@ -59,7 +62,7 @@ import {
 } from '../../../../../../../components/golf/teams';
 
 interface GolfFlightWithTeams extends GolfFlightWithTeamCountType {
-  teams: GolfTeamType[];
+  teams: GolfTeamWithPlayerCountType[];
 }
 
 interface GolfFlightManagementProps {
@@ -88,6 +91,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
 
   const flightService = useGolfFlights(accountId);
   const teamService = useGolfTeams(accountId);
+  const { setup: leagueSetup } = useGolfLeagueSetup(accountId, seasonId, leagueSeasonId);
 
   const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(new Set());
 
@@ -104,6 +108,21 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   const [selectedTeamPerFlight, setSelectedTeamPerFlight] = useState<Record<string, string>>({});
 
   const seasonName = season?.name ?? 'Season';
+
+  const getTeamSizeLabel = (size: number) => {
+    switch (size) {
+      case 1:
+        return 'Individual';
+      case 2:
+        return 'Pairs';
+      case 3:
+        return 'Threesomes';
+      case 4:
+        return 'Foursomes';
+      default:
+        return `${size} players`;
+    }
+  };
 
   const handleFeedbackClose = useCallback(() => {
     setFeedback(null);
@@ -172,6 +191,10 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
 
       setFlights(flightsWithTeams);
       setUnassignedTeams(unassignedResult.data);
+
+      if (flightsWithTeams.length > 0) {
+        setExpandedAccordions(new Set([flightsWithTeams[0].id]));
+      }
     } catch (error) {
       console.error('Error fetching flights:', error);
       setFeedback({
@@ -217,19 +240,26 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
     });
   }, []);
 
-  const addTeamToFlightInState = useCallback((flightId: string, team: GolfTeamType) => {
-    setFlights((prev) =>
-      prev.map((f) => {
-        if (f.id !== flightId) return f;
-        return {
-          ...f,
-          teams: [...f.teams, team],
-          teamCount: (f.teamCount || 0) + 1,
-        };
-      }),
-    );
-    setUnassignedTeams((prev) => prev.filter((t) => t.id !== team.id));
-  }, []);
+  const addTeamToFlightInState = useCallback(
+    (flightId: string, team: GolfTeamType | GolfTeamWithPlayerCountType) => {
+      const teamWithCount: GolfTeamWithPlayerCountType = {
+        ...team,
+        playerCount: 'playerCount' in team ? team.playerCount : 0,
+      };
+      setFlights((prev) =>
+        prev.map((f) => {
+          if (f.id !== flightId) return f;
+          return {
+            ...f,
+            teams: [...f.teams, teamWithCount],
+            teamCount: (f.teamCount || 0) + 1,
+          };
+        }),
+      );
+      setUnassignedTeams((prev) => prev.filter((t) => t.id !== team.id));
+    },
+    [],
+  );
 
   const removeTeamFromFlightInState = useCallback((flightId: string, teamId: string) => {
     setFlights((prev) =>
@@ -393,48 +423,79 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
     setTeamTargetFlight(null);
   };
 
-  const renderTeamRow = (team: GolfTeamType, flight: GolfFlightWithTeams | null) => (
-    <Box
-      key={team.id}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        p: 1.5,
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        '&:last-child': { borderBottom: 'none' },
-        '&:hover': { bgcolor: 'action.hover' },
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography variant="body1">{team.name}</Typography>
-      </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        <Tooltip title="Manage Roster">
-          <IconButton size="small" onClick={() => handleManageRoster(team)} color="primary">
-            <PeopleIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        {flight && (
-          <Tooltip title="Remove from Flight">
-            <IconButton
-              size="small"
-              onClick={() => handleRemoveTeamFromFlight(flight.id, team)}
-              disabled={formLoading}
+  const renderTeamRow = (team: GolfTeamWithPlayerCountType, flight: GolfFlightWithTeams | null) => {
+    const expectedTeamSize = leagueSetup?.teamSize ?? 2;
+    const hasPlayerCountMismatch = team.playerCount !== expectedTeamSize;
+    const playerCountLabel =
+      team.playerCount === 1
+        ? '1 player'
+        : `${team.playerCount} players`;
+    const expectedLabel =
+      expectedTeamSize === 1
+        ? '1 player'
+        : `${expectedTeamSize} players`;
+
+    return (
+      <Box
+        key={team.id}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          p: 1.5,
+          borderBottom: '1px solid',
+          borderColor: hasPlayerCountMismatch ? 'warning.main' : 'divider',
+          bgcolor: hasPlayerCountMismatch ? 'warning.lighter' : 'transparent',
+          '&:last-child': { borderBottom: 'none' },
+          '&:hover': { bgcolor: hasPlayerCountMismatch ? 'warning.light' : 'action.hover' },
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="body1">{team.name}</Typography>
+          {hasPlayerCountMismatch ? (
+            <Tooltip
+              title={`Team has ${playerCountLabel} but expected ${expectedLabel}`}
+              placement="top"
+              arrow
             >
-              <RemoveIcon fontSize="small" />
+              <Chip
+                icon={<WarningIcon />}
+                label={playerCountLabel}
+                size="small"
+                color="warning"
+                variant="outlined"
+              />
+            </Tooltip>
+          ) : (
+            <Chip label={playerCountLabel} size="small" variant="outlined" />
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Tooltip title="Manage Roster">
+            <IconButton size="small" onClick={() => handleManageRoster(team)} color="primary">
+              <PeopleIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-        )}
-        <Tooltip title="Delete Team">
-          <IconButton size="small" onClick={() => handleDeleteTeam(team, flight)} color="error">
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+          {flight && (
+            <Tooltip title="Remove from Flight">
+              <IconButton
+                size="small"
+                onClick={() => handleRemoveTeamFromFlight(flight.id, team)}
+                disabled={formLoading}
+              >
+                <RemoveIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title="Delete Team">
+            <IconButton size="small" onClick={() => handleDeleteTeam(team, flight)} color="error">
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
-    </Box>
-  );
+    );
+  };
 
   const renderFlightAccordion = (flight: GolfFlightWithTeams) => (
     <Accordion
@@ -561,8 +622,16 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
         >
           Golf Flight Management
         </Typography>
-        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
-          Manage flights and teams for {seasonName}
+        {seasonName && (
+          <Typography
+            variant="body1"
+            sx={{ mt: 0.5, textAlign: 'center', color: 'text.secondary' }}
+          >
+            {seasonName}
+          </Typography>
+        )}
+        <Typography variant="body2" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Manage flights and teams
         </Typography>
       </AccountPageHeader>
 
@@ -570,22 +639,46 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
         <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ mb: 3 }}>
           <MuiLink
             component={Link}
-            href={`/account/${accountId}/seasons`}
+            href={`/account/${accountId}/seasons/${seasonId}/golf/admin`}
             underline="hover"
             color="inherit"
           >
-            Seasons
+            Golf Admin
           </MuiLink>
-          <MuiLink
-            component={Link}
-            href={`/account/${accountId}/seasons/${seasonId}`}
-            underline="hover"
-            color="inherit"
-          >
-            {seasonName}
-          </MuiLink>
-          <Typography color="text.primary">Golf Flights</Typography>
+          <Typography color="text.primary">Flights</Typography>
         </Breadcrumbs>
+
+        {leagueSetup && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              mb: 3,
+              p: 1.5,
+              bgcolor: 'action.hover',
+              borderRadius: 1,
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Team Size:
+            </Typography>
+            <Chip
+              label={getTeamSizeLabel(leagueSetup.teamSize ?? 2)}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
+            <MuiLink
+              component={Link}
+              href={`/account/${accountId}/seasons/${seasonId}/golf/leagues/${leagueSeasonId}/setup`}
+              underline="hover"
+              sx={{ ml: 1, fontSize: '0.875rem' }}
+            >
+              Change
+            </MuiLink>
+          </Box>
+        )}
 
         {feedback && (
           <Snackbar

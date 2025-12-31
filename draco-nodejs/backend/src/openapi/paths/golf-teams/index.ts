@@ -5,6 +5,7 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
     GolfTeamSchemaRef,
+    GolfTeamWithPlayerCountSchemaRef,
     GolfTeamWithRosterSchemaRef,
     CreateGolfTeamSchemaRef,
     UpdateGolfTeamSchemaRef,
@@ -16,6 +17,11 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
   const GolfTeamListSchemaRef = z.array(GolfTeamSchemaRef).openapi({
     title: 'GolfTeamList',
     description: 'List of golf teams',
+  });
+
+  const GolfTeamWithPlayerCountListSchemaRef = z.array(GolfTeamWithPlayerCountSchemaRef).openapi({
+    title: 'GolfTeamWithPlayerCountList',
+    description: 'List of golf teams with player counts',
   });
 
   // GET /api/accounts/{accountId}/golf/teams/season/{seasonId}
@@ -179,10 +185,10 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     ],
     responses: {
       200: {
-        description: 'List of teams in the flight',
+        description: 'List of teams in the flight with player counts',
         content: {
           'application/json': {
-            schema: GolfTeamListSchemaRef,
+            schema: GolfTeamWithPlayerCountListSchemaRef,
           },
         },
       },

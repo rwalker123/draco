@@ -808,31 +808,33 @@ model golfleaguecourses {
 }
 
 model golfleaguesetup {
-  id                                                 BigInt    @id
+  id                                                 BigInt        @id @default(autoincrement())
   accountid                                          BigInt
+  leagueseasonid                                     BigInt?       @unique
   presidentid                                        BigInt?
   vicepresidentid                                    BigInt?
   secretaryid                                        BigInt?
   treasurerid                                        BigInt?
   leagueday                                          Int
-  firstteetime                                       DateTime  @db.Timestamptz(6)
+  firstteetime                                       DateTime      @db.Timestamptz(6)
   timebetweenteetimes                                Int
   holespermatch                                      Int
   teeoffformat                                       Int
-  scoringtype                                        String    @default("team") @db.VarChar(20)
-  usebestball                                        Boolean   @default(false)
-  usehandicapscoring                                 Boolean   @default(true)
-  perholepoints                                      Int       @default(0)
-  perninepoints                                      Int       @default(0)
-  permatchpoints                                     Int       @default(0)
-  totalholespoints                                   Int       @default(0)
-  againstfieldpoints                                 Int       @default(0)
-  againstfielddescpoints                             Int       @default(0)
-  accounts                                           accounts  @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_golfleaguesetup_accounts")
-  contacts_golfleaguesetup_presidentidTocontacts     contacts? @relation("golfleaguesetup_presidentidTocontacts", fields: [presidentid], references: [id], onDelete: SetNull, map: "fk_golfleaguesetup_contacts")
-  contacts_golfleaguesetup_vicepresidentidTocontacts contacts? @relation("golfleaguesetup_vicepresidentidTocontacts", fields: [vicepresidentid], references: [id], onDelete: SetNull, map: "fk_golfleaguesetup_contacts1")
-  contacts_golfleaguesetup_secretaryidTocontacts     contacts? @relation("golfleaguesetup_secretaryidTocontacts", fields: [secretaryid], references: [id], onDelete: SetNull, map: "fk_golfleaguesetup_contacts2")
-  contacts_golfleaguesetup_treasureridTocontacts     contacts? @relation("golfleaguesetup_treasureridTocontacts", fields: [treasurerid], references: [id], onDelete: SetNull, map: "fk_golfleaguesetup_contacts3")
+  scoringtype                                        String        @default("team") @db.VarChar(20)
+  usebestball                                        Boolean       @default(false)
+  usehandicapscoring                                 Boolean       @default(true)
+  perholepoints                                      Int           @default(0)
+  perninepoints                                      Int           @default(0)
+  permatchpoints                                     Int           @default(0)
+  totalholespoints                                   Int           @default(0)
+  againstfieldpoints                                 Int           @default(0)
+  againstfielddescpoints                             Int           @default(0)
+  accounts                                           accounts      @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_golfleaguesetup_accounts")
+  leagueseason                                       leagueseason? @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_golfleaguesetup_leagueseason")
+  contacts_golfleaguesetup_presidentidTocontacts     contacts?     @relation("golfleaguesetup_presidentidTocontacts", fields: [presidentid], references: [id], onDelete: SetNull, map: "fk_golfleaguesetup_contacts")
+  contacts_golfleaguesetup_vicepresidentidTocontacts contacts?     @relation("golfleaguesetup_vicepresidentidTocontacts", fields: [vicepresidentid], references: [id], onDelete: SetNull, map: "fk_golfleaguesetup_contacts1")
+  contacts_golfleaguesetup_secretaryidTocontacts     contacts?     @relation("golfleaguesetup_secretaryidTocontacts", fields: [secretaryid], references: [id], onDelete: SetNull, map: "fk_golfleaguesetup_contacts2")
+  contacts_golfleaguesetup_treasureridTocontacts     contacts?     @relation("golfleaguesetup_treasureridTocontacts", fields: [treasurerid], references: [id], onDelete: SetNull, map: "fk_golfleaguesetup_contacts3")
 }
 
 model golfseasonconfig {
@@ -1226,6 +1228,7 @@ model leagueseason {
   gameejections  gameejections[]
   golfmatch      golfmatch[]
   golfleaguesub  golfleaguesub[]
+  golfleaguesetup golfleaguesetup?
   golfseasonconfig golfseasonconfig?
   leagueevents   leagueevents[]
   leagueschedule leagueschedule[]

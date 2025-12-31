@@ -1,4 +1,9 @@
-import { GolfTeamType, GolfTeamWithRosterType, GolfFlightType } from '@draco/shared-schemas';
+import {
+  GolfTeamType,
+  GolfTeamWithPlayerCountType,
+  GolfTeamWithRosterType,
+  GolfFlightType,
+} from '@draco/shared-schemas';
 import {
   GolfTeamWithFlight,
   GolfTeamWithRoster,
@@ -28,6 +33,19 @@ export class GolfTeamResponseFormatter {
 
   static formatMany(teams: GolfTeamWithFlight[]): GolfTeamType[] {
     return teams.map((team) => this.format(team));
+  }
+
+  static formatWithPlayerCount(team: GolfTeamWithFlight): GolfTeamWithPlayerCountType {
+    return {
+      id: team.id.toString(),
+      name: team.name,
+      flight: this.formatFlight(team.divisionseason),
+      playerCount: team._count.golfroster,
+    };
+  }
+
+  static formatManyWithPlayerCount(teams: GolfTeamWithFlight[]): GolfTeamWithPlayerCountType[] {
+    return teams.map((team) => this.formatWithPlayerCount(team));
   }
 
   static formatWithRoster(team: GolfTeamWithRoster): GolfTeamWithRosterType {

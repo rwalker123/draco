@@ -13,11 +13,19 @@ export const HOLES_PER_MATCH_OPTIONS = [
   { value: 18, label: '18 Holes' },
 ] as const;
 
+export const TEAM_SIZE_OPTIONS = [
+  { value: 1, label: '1 (Individual)' },
+  { value: 2, label: '2 (Pairs)' },
+  { value: 3, label: '3 (Threesomes)' },
+  { value: 4, label: '4 (Foursomes)' },
+] as const;
+
 export const SCHEDULE_TOOLTIPS = {
   leagueDay: 'Day of the week when league matches are played',
   firstTeeTime: 'Time when the first group tees off',
   timeBetweenTeeTimes: 'Minutes between consecutive tee times',
   holesPerMatch: 'Number of holes played per match',
+  teamSize: 'Number of players per team (1 = individual play)',
 } as const;
 
 export const OFFICER_TOOLTIPS = {

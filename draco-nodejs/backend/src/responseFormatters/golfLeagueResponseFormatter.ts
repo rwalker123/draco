@@ -32,15 +32,18 @@ export class GolfLeagueResponseFormatter {
     return `${hours}:${minutes}`;
   }
 
-  static format(setup: GolfLeagueSetupWithOfficers): GolfLeagueSetupType {
+  static format(setup: GolfLeagueSetupWithOfficers, accountId?: bigint): GolfLeagueSetupType {
     return {
       id: setup.id.toString(),
-      accountId: setup.accountid.toString(),
+      accountId: accountId?.toString() ?? setup.accountid.toString(),
+      seasonId: setup.leagueseason?.seasonid.toString() ?? '',
+      leagueSeasonId: setup.leagueseasonid?.toString() ?? '',
       leagueDay: setup.leagueday,
       firstTeeTime: this.formatTime(setup.firstteetime),
       timeBetweenTeeTimes: setup.timebetweenteetimes,
       holesPerMatch: setup.holespermatch,
       teeOffFormat: setup.teeoffformat,
+      teamSize: setup.leagueseason?.golfseasonconfig?.teamsize ?? 2,
       president: this.formatContact(setup.contacts_golfleaguesetup_presidentidTocontacts),
       vicePresident: this.formatContact(setup.contacts_golfleaguesetup_vicepresidentidTocontacts),
       secretary: this.formatContact(setup.contacts_golfleaguesetup_secretaryidTocontacts),

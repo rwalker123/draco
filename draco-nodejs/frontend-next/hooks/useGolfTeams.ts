@@ -15,6 +15,7 @@ import {
 } from '@draco/shared-api-client';
 import type {
   GolfTeamType,
+  GolfTeamWithPlayerCountType,
   GolfTeamWithRosterType,
   CreateGolfTeamType,
   UpdateGolfTeamType,
@@ -29,7 +30,9 @@ export type GolfTeamServiceResult<T> =
 export interface GolfTeamService {
   listTeams: (seasonId: string) => Promise<GolfTeamServiceResult<GolfTeamType[]>>;
   listUnassignedTeams: (seasonId: string) => Promise<GolfTeamServiceResult<GolfTeamType[]>>;
-  listTeamsForFlight: (flightId: string) => Promise<GolfTeamServiceResult<GolfTeamType[]>>;
+  listTeamsForFlight: (
+    flightId: string,
+  ) => Promise<GolfTeamServiceResult<GolfTeamWithPlayerCountType[]>>;
   getTeam: (teamSeasonId: string) => Promise<GolfTeamServiceResult<GolfTeamType>>;
   getTeamWithRoster: (
     teamSeasonId: string,
@@ -115,7 +118,7 @@ export function useGolfTeams(accountId: string): GolfTeamService {
 
         return {
           success: true,
-          data: teams as GolfTeamType[],
+          data: teams as GolfTeamWithPlayerCountType[],
           message: 'Flight teams loaded successfully',
         } as const;
       } catch (error) {

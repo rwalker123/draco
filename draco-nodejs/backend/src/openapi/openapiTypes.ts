@@ -313,6 +313,7 @@ import {
   CreateGolfFlightSchema,
   UpdateGolfFlightSchema,
   GolfTeamSchema,
+  GolfTeamWithPlayerCountSchema,
   GolfTeamWithRosterSchema,
   CreateGolfTeamSchema,
   UpdateGolfTeamSchema,
@@ -1285,6 +1286,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const CreateGolfFlightSchemaRef = registry.register('CreateGolfFlight', CreateGolfFlightSchema);
   const UpdateGolfFlightSchemaRef = registry.register('UpdateGolfFlight', UpdateGolfFlightSchema);
   const GolfTeamSchemaRef = registry.register('GolfTeam', GolfTeamSchema);
+  const GolfTeamWithPlayerCountSchemaRef = registry.register(
+    'GolfTeamWithPlayerCount',
+    GolfTeamWithPlayerCountSchema,
+  );
   const GolfTeamWithRosterSchemaRef = registry.register(
     'GolfTeamWithRoster',
     GolfTeamWithRosterSchema,
@@ -1669,6 +1674,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     CreateGolfFlightSchemaRef,
     UpdateGolfFlightSchemaRef,
     GolfTeamSchemaRef,
+    GolfTeamWithPlayerCountSchemaRef,
     GolfTeamWithRosterSchemaRef,
     CreateGolfTeamSchemaRef,
     UpdateGolfTeamSchemaRef,

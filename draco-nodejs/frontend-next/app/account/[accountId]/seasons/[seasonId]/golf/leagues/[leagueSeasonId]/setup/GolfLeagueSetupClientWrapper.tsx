@@ -1,13 +1,12 @@
 'use client';
 
-import React from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import AccountTypeGuard from '../../../../../components/auth/AccountTypeGuard';
-import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
-import { GolfLeagueSetupPage } from '../../../../../components/golf/league-setup';
+import AccountTypeGuard from '../../../../../../../../../components/auth/AccountTypeGuard';
+import ProtectedRoute from '../../../../../../../../../components/auth/ProtectedRoute';
+import { GolfLeagueSetupPage } from '../../../../../../../../../components/golf/league-setup';
 
-export default function GolfLeagueSetupPageClient() {
+export default function GolfLeagueSetupClientWrapper() {
   return (
     <AccountTypeGuard requiredAccountType="golf">
       <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary>

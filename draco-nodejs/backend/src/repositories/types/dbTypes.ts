@@ -690,6 +690,24 @@ export type dbSeasonCopySource = Prisma.seasonGetPayload<{
             };
           };
         };
+        golfleaguesetup: {
+          select: {
+            leagueday: true;
+            firstteetime: true;
+            timebetweenteetimes: true;
+            holespermatch: true;
+            teeoffformat: true;
+            scoringtype: true;
+            usebestball: true;
+            usehandicapscoring: true;
+            perholepoints: true;
+            perninepoints: true;
+            permatchpoints: true;
+            totalholespoints: true;
+            againstfieldpoints: true;
+            againstfielddescpoints: true;
+          };
+        };
       };
     };
   };

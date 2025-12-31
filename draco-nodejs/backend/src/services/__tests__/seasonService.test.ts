@@ -82,6 +82,7 @@ const createSourceSeason = (): dbSeasonCopySource => ({
           ],
         },
       ],
+      golfleaguesetup: null,
     },
   ],
 });

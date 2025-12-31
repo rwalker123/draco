@@ -24760,6 +24760,16 @@
             "pattern": "^\\d+$",
             "example": "12345"
           },
+          "seasonId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "leagueSeasonId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
           "leagueDay": {
             "type": "integer",
             "minimum": 0,
@@ -24783,6 +24793,12 @@
           "teeOffFormat": {
             "type": "integer",
             "default": 0
+          },
+          "teamSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4,
+            "default": 2
           },
           "president": {
             "type": "object",
@@ -24944,6 +24960,8 @@
         "required": [
           "id",
           "accountId",
+          "seasonId",
+          "leagueSeasonId",
           "leagueDay",
           "firstTeeTime"
         ],
@@ -24976,6 +24994,12 @@
           "teeOffFormat": {
             "type": "integer",
             "default": 0
+          },
+          "teamSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4,
+            "default": 2
           },
           "scoringType": {
             "type": "string",
@@ -25242,6 +25266,72 @@
         "title": "GolfTeam",
         "description": "A golf team in a flight"
       },
+      "GolfTeamWithPlayerCount": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "flight": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "season": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "example": "12345"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "title": "GolfFlight",
+            "description": "A flight/division within a golf league season"
+          },
+          "playerCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "playerCount"
+        ],
+        "title": "GolfTeamWithPlayerCount",
+        "description": "Golf team with player count"
+      },
       "GolfTeamWithRoster": {
         "type": "object",
         "properties": {
@@ -25294,6 +25384,10 @@
             ],
             "title": "GolfFlight",
             "description": "A flight/division within a golf league season"
+          },
+          "playerCount": {
+            "type": "integer",
+            "minimum": 0
           },
           "roster": {
             "type": "array",
@@ -25373,17 +25467,13 @@
               "title": "GolfRosterEntry",
               "description": "A player on a golf team roster"
             }
-          },
-          "playerCount": {
-            "type": "integer",
-            "minimum": 0
           }
         },
         "required": [
           "id",
           "name",
-          "roster",
-          "playerCount"
+          "playerCount",
+          "roster"
         ],
         "title": "GolfTeamWithRoster",
         "description": "Golf team with full roster"
@@ -43095,9 +43185,9 @@
         }
       }
     },
-    "/api/golf/leagues/{accountId}/setup": {
+    "/api/golf/leagues/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/setup": {
       "get": {
-        "description": "Get golf league setup configuration for an account",
+        "description": "Get golf league setup configuration for a league season",
         "operationId": "getGolfLeagueSetup",
         "summary": "Get league setup",
         "tags": [
@@ -43111,6 +43201,24 @@
         "parameters": [
           {
             "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "leagueSeasonId",
             "in": "path",
             "required": true,
             "schema": {
@@ -43173,7 +43281,7 @@
         }
       },
       "put": {
-        "description": "Update golf league setup configuration",
+        "description": "Update golf league setup configuration for a league season",
         "operationId": "updateGolfLeagueSetup",
         "summary": "Update league setup",
         "tags": [
@@ -43187,6 +43295,24 @@
         "parameters": [
           {
             "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "leagueSeasonId",
             "in": "path",
             "required": true,
             "schema": {
@@ -45075,16 +45201,16 @@
         ],
         "responses": {
           "200": {
-            "description": "List of teams in the flight",
+            "description": "List of teams in the flight with player counts",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/GolfTeam"
+                    "$ref": "#/components/schemas/GolfTeamWithPlayerCount"
                   },
-                  "title": "GolfTeamList",
-                  "description": "List of golf teams"
+                  "title": "GolfTeamWithPlayerCountList",
+                  "description": "List of golf teams with player counts"
                 }
               }
             }

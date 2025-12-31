@@ -1,5 +1,6 @@
 import {
   GolfTeamType,
+  GolfTeamWithPlayerCountType,
   GolfTeamWithRosterType,
   CreateGolfTeamType,
   UpdateGolfTeamType,
@@ -24,13 +25,13 @@ export class GolfTeamService {
     return GolfTeamResponseFormatter.formatMany(teams);
   }
 
-  async getTeamsForFlight(flightId: bigint): Promise<GolfTeamType[]> {
+  async getTeamsForFlight(flightId: bigint): Promise<GolfTeamWithPlayerCountType[]> {
     const flight = await this.flightRepository.findById(flightId);
     if (!flight) {
       throw new NotFoundError('Golf flight not found');
     }
     const teams = await this.teamRepository.findByFlightId(flightId);
-    return GolfTeamResponseFormatter.formatMany(teams);
+    return GolfTeamResponseFormatter.formatManyWithPlayerCount(teams);
   }
 
   async getTeamById(teamSeasonId: bigint): Promise<GolfTeamType> {
