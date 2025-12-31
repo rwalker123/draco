@@ -8,6 +8,17 @@ extendZodWithOpenApi(z);
 
 const holeScoreSchema = z.number().int().min(1).max(20);
 
+const pastOrTodayDateSchema = z.string().refine(
+  (val) => {
+    const date = new Date(val);
+    if (isNaN(date.getTime())) return false;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return date <= today;
+  },
+  { message: 'Date must be today or in the past' },
+);
+
 export const GolfHoleScoresSchema = z.object({
   hole1: holeScoreSchema,
   hole2: holeScoreSchema,
@@ -61,7 +72,7 @@ export const CreateGolfScoreSchema = z
   .object({
     courseId: bigintToStringSchema,
     teeId: bigintToStringSchema,
-    datePlayed: z.string(),
+    datePlayed: pastOrTodayDateSchema,
     holesPlayed: z.number().int().min(9).max(18),
     totalsOnly: z.boolean().default(false),
     totalScore: z.number().int().min(18).max(200).optional(),

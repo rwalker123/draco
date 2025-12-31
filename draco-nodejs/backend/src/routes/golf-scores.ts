@@ -31,24 +31,24 @@ router.get(
 );
 
 router.get(
-  '/player/:contactId',
+  '/season/:seasonId/player/:golferId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { contactId } = extractBigIntParams(req.params, 'contactId');
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
-    const scores = await golfScoreService.getScoresForPlayer(contactId, limit);
+    const { seasonId, golferId } = extractBigIntParams(req.params, 'seasonId', 'golferId');
+    const scores = await golfScoreService.getPlayerSeasonScores(golferId, seasonId);
     res.json(scores);
   }),
 );
 
 router.get(
-  '/player/:contactId/season/:seasonId',
+  '/player/:golferId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { contactId, seasonId } = extractBigIntParams(req.params, 'contactId', 'seasonId');
-    const scores = await golfScoreService.getPlayerSeasonScores(contactId, seasonId);
+    const { golferId } = extractBigIntParams(req.params, 'golferId');
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+    const scores = await golfScoreService.getScoresForPlayer(golferId, limit);
     res.json(scores);
   }),
 );

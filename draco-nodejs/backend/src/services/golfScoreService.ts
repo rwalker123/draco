@@ -14,6 +14,7 @@ import { IGolfCourseRepository } from '../repositories/interfaces/IGolfCourseRep
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { GolfScoreResponseFormatter } from '../responseFormatters/golfScoreResponseFormatter.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
+import { GolfMatchStatus } from '../utils/golfConstants.js';
 
 export class GolfScoreService {
   private readonly scoreRepository: IGolfScoreRepository;
@@ -175,10 +176,10 @@ export class GolfScoreService {
     const team2Scores = await this.scoreRepository.findByTeamAndMatch(matchId, match.team2);
 
     if (team1Scores.length > 0 && team2Scores.length > 0) {
-      await this.matchRepository.updateStatus(matchId, 2);
+      await this.matchRepository.updateStatus(matchId, GolfMatchStatus.COMPLETED);
     } else if (team1Scores.length > 0 || team2Scores.length > 0) {
-      if (match.matchstatus === 0) {
-        await this.matchRepository.updateStatus(matchId, 1);
+      if (match.matchstatus === GolfMatchStatus.NOT_STARTED) {
+        await this.matchRepository.updateStatus(matchId, GolfMatchStatus.IN_PROGRESS);
       }
     }
 
@@ -192,7 +193,7 @@ export class GolfScoreService {
     }
 
     await this.scoreRepository.deleteMatchScores(matchId);
-    await this.matchRepository.updateStatus(matchId, 0);
+    await this.matchRepository.updateStatus(matchId, GolfMatchStatus.NOT_STARTED);
   }
 
   async getPlayerSeasonScores(
