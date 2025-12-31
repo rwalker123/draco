@@ -23,6 +23,7 @@ export type AvailableContact = contacts & {
 export interface IGolfRosterRepository {
   findByTeamSeasonId(teamSeasonId: bigint): Promise<GolfRosterWithGolfer[]>;
   findById(rosterId: bigint): Promise<GolfRosterWithGolfer | null>;
+  findByIds(rosterIds: bigint[]): Promise<GolfRosterWithGolfer[]>;
   findByGolferAndTeam(golferId: bigint, teamSeasonId: bigint): Promise<golfroster | null>;
   findSubstitutesForSeason(seasonId: bigint): Promise<GolfLeagueSubWithGolfer[]>;
   findGolferByContactId(contactId: bigint): Promise<golfer | null>;

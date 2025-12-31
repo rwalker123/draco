@@ -97,6 +97,10 @@ export class GolfScoreService {
       scoresByTeam.get(teamSeasonId)!.push(playerScore);
     }
 
+    const rosterIds = data.scores.filter((ps) => !ps.isAbsent).map((ps) => BigInt(ps.rosterId));
+    const rosterEntries = await this.rosterRepository.findByIds(rosterIds);
+    const rosterMap = new Map(rosterEntries.map((r) => [r.id, r]));
+
     const submissions: MatchScoreSubmission[] = [];
 
     for (const [teamId, teamScores] of scoresByTeam) {
@@ -106,7 +110,7 @@ export class GolfScoreService {
         }
 
         const rosterId = BigInt(playerScore.rosterId);
-        const rosterEntry = await this.rosterRepository.findById(rosterId);
+        const rosterEntry = rosterMap.get(rosterId);
         if (!rosterEntry) {
           throw new NotFoundError(`Roster entry ${playerScore.rosterId} not found`);
         }
