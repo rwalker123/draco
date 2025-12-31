@@ -9,18 +9,6 @@ const router = Router({ mergeParams: true });
 const golfRosterService = ServiceFactory.getGolfRosterService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
-// GET /api/accounts/{accountId}/seasons/{seasonId}/golf/rosters/substitutes
-router.get(
-  '/substitutes',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { seasonId } = extractBigIntParams(req.params, 'seasonId');
-    const subs = await golfRosterService.getSubstitutesForSeason(seasonId);
-    res.json(subs);
-  }),
-);
-
 // GET /api/accounts/{accountId}/seasons/{seasonId}/golf/rosters/available
 router.get(
   '/available',

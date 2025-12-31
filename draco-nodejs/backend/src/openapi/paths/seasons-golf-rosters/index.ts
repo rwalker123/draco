@@ -10,18 +10,12 @@ export const registerSeasonsGolfRostersEndpoints = ({
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
     GolfRosterEntrySchemaRef,
-    GolfSubstituteSchemaRef,
     AvailablePlayerSchemaRef,
     UpdateGolfPlayerSchemaRef,
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
     ValidationErrorSchemaRef,
   } = schemaRefs;
-
-  const GolfSubstituteListSchemaRef = z.array(GolfSubstituteSchemaRef).openapi({
-    title: 'GolfSubstituteList',
-    description: 'List of golf substitutes',
-  });
 
   const AvailablePlayerListSchemaRef = z.array(AvailablePlayerSchemaRef).openapi({
     title: 'AvailablePlayerList',
@@ -31,71 +25,6 @@ export const registerSeasonsGolfRostersEndpoints = ({
   const ReleasePlayerSchemaRef = ReleasePlayerSchema.openapi({
     title: 'ReleasePlayer',
     description: 'Options for releasing a player from a team',
-  });
-
-  // GET /api/accounts/{accountId}/seasons/{seasonId}/golf/rosters/substitutes
-  registry.registerPath({
-    method: 'get',
-    path: '/api/accounts/{accountId}/seasons/{seasonId}/golf/rosters/substitutes',
-    description: 'List all substitutes for a season',
-    operationId: 'listGolfSubstitutesForSeason',
-    summary: 'List season substitutes',
-    tags: ['Golf Rosters'],
-    security: [{ bearerAuth: [] }],
-    parameters: [
-      {
-        name: 'accountId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'seasonId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-    ],
-    responses: {
-      200: {
-        description: 'List of substitutes',
-        content: {
-          'application/json': {
-            schema: GolfSubstituteListSchemaRef,
-          },
-        },
-      },
-      401: {
-        description: 'Authentication required',
-        content: {
-          'application/json': {
-            schema: AuthenticationErrorSchemaRef,
-          },
-        },
-      },
-      403: {
-        description: 'Access denied',
-        content: {
-          'application/json': {
-            schema: AuthorizationErrorSchemaRef,
-          },
-        },
-      },
-      500: {
-        description: 'Internal server error',
-        content: {
-          'application/json': {
-            schema: InternalServerErrorSchemaRef,
-          },
-        },
-      },
-    },
   });
 
   // GET /api/accounts/{accountId}/seasons/{seasonId}/golf/rosters/available
