@@ -27,8 +27,9 @@ export class GolfLeagueService {
     data: UpdateGolfLeagueSetupType,
   ): Promise<GolfLeagueSetupType> {
     const existingSetup = await this.leagueRepository.findByAccountId(accountId);
+
     if (!existingSetup) {
-      throw new NotFoundError('Golf league setup not found');
+      return this.createLeagueSetup(accountId, data);
     }
 
     const updateData: Record<string, unknown> = {};
@@ -50,98 +51,44 @@ export class GolfLeagueService {
     }
 
     if (data.presidentId !== undefined) {
-      updateData.presidentid = data.presidentId ? BigInt(data.presidentId) : 0n;
+      updateData.presidentid = data.presidentId ? BigInt(data.presidentId) : null;
     }
     if (data.vicePresidentId !== undefined) {
-      updateData.vicepresidentid = data.vicePresidentId ? BigInt(data.vicePresidentId) : 0n;
+      updateData.vicepresidentid = data.vicePresidentId ? BigInt(data.vicePresidentId) : null;
     }
     if (data.secretaryId !== undefined) {
-      updateData.secretaryid = data.secretaryId ? BigInt(data.secretaryId) : 0n;
+      updateData.secretaryid = data.secretaryId ? BigInt(data.secretaryId) : null;
     }
     if (data.treasurerId !== undefined) {
-      updateData.treasurerid = data.treasurerId ? BigInt(data.treasurerId) : 0n;
+      updateData.treasurerid = data.treasurerId ? BigInt(data.treasurerId) : null;
     }
 
-    if (data.indNetPerHolePts !== undefined) {
-      updateData.indnetperholepts = data.indNetPerHolePts;
+    if (data.scoringType !== undefined) {
+      updateData.scoringtype = data.scoringType;
     }
-    if (data.indNetPerNinePts !== undefined) {
-      updateData.indnetperninepts = data.indNetPerNinePts;
+    if (data.useBestBall !== undefined) {
+      updateData.usebestball = data.useBestBall;
     }
-    if (data.indNetPerMatchPts !== undefined) {
-      updateData.indnetpermatchpts = data.indNetPerMatchPts;
+    if (data.useHandicapScoring !== undefined) {
+      updateData.usehandicapscoring = data.useHandicapScoring;
     }
-    if (data.indNetTotalHolesPts !== undefined) {
-      updateData.indnettotalholespts = data.indNetTotalHolesPts;
+    if (data.perHolePoints !== undefined) {
+      updateData.perholepoints = data.perHolePoints;
     }
-    if (data.indNetAgainstFieldPts !== undefined) {
-      updateData.indnetagainstfieldpts = data.indNetAgainstFieldPts;
+    if (data.perNinePoints !== undefined) {
+      updateData.perninepoints = data.perNinePoints;
     }
-    if (data.indNetAgainstFieldDescPts !== undefined) {
-      updateData.indnetagainstfielddescpts = data.indNetAgainstFieldDescPts;
+    if (data.perMatchPoints !== undefined) {
+      updateData.permatchpoints = data.perMatchPoints;
     }
-    if (data.indActPerHolePts !== undefined) {
-      updateData.indactperholepts = data.indActPerHolePts;
+    if (data.totalHolesPoints !== undefined) {
+      updateData.totalholespoints = data.totalHolesPoints;
     }
-    if (data.indActPerNinePts !== undefined) {
-      updateData.indactperninepts = data.indActPerNinePts;
+    if (data.againstFieldPoints !== undefined) {
+      updateData.againstfieldpoints = data.againstFieldPoints;
     }
-    if (data.indActPerMatchPts !== undefined) {
-      updateData.indactpermatchpts = data.indActPerMatchPts;
-    }
-    if (data.indActTotalHolesPts !== undefined) {
-      updateData.indacttotalholespts = data.indActTotalHolesPts;
-    }
-    if (data.indActAgainstFieldPts !== undefined) {
-      updateData.indactagainstfieldpts = data.indActAgainstFieldPts;
-    }
-    if (data.indActAgainstFieldDescPts !== undefined) {
-      updateData.indactagainstfielddescpts = data.indActAgainstFieldDescPts;
-    }
-    if (data.teamNetPerHolePts !== undefined) {
-      updateData.teamnetperholepts = data.teamNetPerHolePts;
-    }
-    if (data.teamNetPerNinePts !== undefined) {
-      updateData.teamnetperninepts = data.teamNetPerNinePts;
-    }
-    if (data.teamNetPerMatchPts !== undefined) {
-      updateData.teamnetpermatchpts = data.teamNetPerMatchPts;
-    }
-    if (data.teamNetTotalHolesPts !== undefined) {
-      updateData.teamnettotalholespts = data.teamNetTotalHolesPts;
-    }
-    if (data.teamNetAgainstFieldPts !== undefined) {
-      updateData.teamnetagainstfieldpts = data.teamNetAgainstFieldPts;
-    }
-    if (data.teamActPerHolePts !== undefined) {
-      updateData.teamactperholepts = data.teamActPerHolePts;
-    }
-    if (data.teamActPerNinePts !== undefined) {
-      updateData.teamactperninepts = data.teamActPerNinePts;
-    }
-    if (data.teamActPerMatchPts !== undefined) {
-      updateData.teamactpermatchpts = data.teamActPerMatchPts;
-    }
-    if (data.teamActTotalHolesPts !== undefined) {
-      updateData.teamacttotalholespts = data.teamActTotalHolesPts;
-    }
-    if (data.teamActAgainstFieldPts !== undefined) {
-      updateData.teamactagainstfieldpts = data.teamActAgainstFieldPts;
-    }
-    if (data.teamAgainstFieldDescPts !== undefined) {
-      updateData.teamagainstfielddescpts = data.teamAgainstFieldDescPts;
-    }
-    if (data.teamNetBestBallPerHolePts !== undefined) {
-      updateData.teamnetbestballperholepts = data.teamNetBestBallPerHolePts;
-    }
-    if (data.teamActBestBallPerHolePts !== undefined) {
-      updateData.teamactbestballperholepts = data.teamActBestBallPerHolePts;
-    }
-    if (data.useTeamScoring !== undefined) {
-      updateData.useteamscoring = data.useTeamScoring;
-    }
-    if (data.useIndividualScoring !== undefined) {
-      updateData.useindividualscoring = data.useIndividualScoring;
+    if (data.againstFieldDescPoints !== undefined) {
+      updateData.againstfielddescpoints = data.againstFieldDescPoints;
     }
 
     await this.leagueRepository.update(accountId, updateData);
@@ -151,6 +98,44 @@ export class GolfLeagueService {
       throw new NotFoundError('Golf league setup not found after update');
     }
     return GolfLeagueResponseFormatter.format(updated);
+  }
+
+  private async createLeagueSetup(
+    accountId: bigint,
+    data: UpdateGolfLeagueSetupType,
+  ): Promise<GolfLeagueSetupType> {
+    const createData: Record<string, unknown> = {
+      id: accountId,
+      accountid: accountId,
+      leagueday: data.leagueDay ?? 2,
+      firstteetime: data.firstTeeTime
+        ? DateUtils.parseTimeToUtcEpochDate(data.firstTeeTime)
+        : new Date(Date.UTC(1970, 0, 1, 8, 0, 0)),
+      timebetweenteetimes: data.timeBetweenTeeTimes ?? 10,
+      holespermatch: data.holesPerMatch ?? 9,
+      teeoffformat: data.teeOffFormat ?? 0,
+      presidentid: data.presidentId ? BigInt(data.presidentId) : null,
+      vicepresidentid: data.vicePresidentId ? BigInt(data.vicePresidentId) : null,
+      secretaryid: data.secretaryId ? BigInt(data.secretaryId) : null,
+      treasurerid: data.treasurerId ? BigInt(data.treasurerId) : null,
+      scoringtype: data.scoringType ?? 'team',
+      usebestball: data.useBestBall ?? false,
+      usehandicapscoring: data.useHandicapScoring ?? true,
+      perholepoints: data.perHolePoints ?? 0,
+      perninepoints: data.perNinePoints ?? 0,
+      permatchpoints: data.perMatchPoints ?? 0,
+      totalholespoints: data.totalHolesPoints ?? 0,
+      againstfieldpoints: data.againstFieldPoints ?? 0,
+      againstfielddescpoints: data.againstFieldDescPoints ?? 0,
+    };
+
+    await this.leagueRepository.create(createData);
+
+    const created = await this.leagueRepository.findByAccountId(accountId);
+    if (!created) {
+      throw new NotFoundError('Golf league setup not found after creation');
+    }
+    return GolfLeagueResponseFormatter.format(created);
   }
 
   async getGolfAccounts(): Promise<GolfAccountInfoResponse[]> {

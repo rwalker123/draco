@@ -57,37 +57,19 @@ function createMockLeagueSetup(
     timebetweenteetimes: 10,
     holespermatch: 9,
     teeoffformat: 0,
-    presidentid: 0n,
-    vicepresidentid: 0n,
-    secretaryid: 0n,
-    treasurerid: 0n,
-    indnetperholepts: 1,
-    indnetperninepts: 2,
-    indnetpermatchpts: 3,
-    indnettotalholespts: 0,
-    indnetagainstfieldpts: 0,
-    indnetagainstfielddescpts: 0,
-    indactperholepts: 0,
-    indactperninepts: 0,
-    indactpermatchpts: 0,
-    indacttotalholespts: 0,
-    indactagainstfieldpts: 0,
-    indactagainstfielddescpts: 0,
-    teamnetperholepts: 1,
-    teamnetperninepts: 2,
-    teamnetpermatchpts: 3,
-    teamnettotalholespts: 0,
-    teamnetagainstfieldpts: 0,
-    teamactperholepts: 0,
-    teamactperninepts: 0,
-    teamactpermatchpts: 0,
-    teamacttotalholespts: 0,
-    teamactagainstfieldpts: 0,
-    teamagainstfielddescpts: 0,
-    teamnetbestballperholepts: 0,
-    teamactbestballperholepts: 0,
-    useteamscoring: true,
-    useindividualscoring: true,
+    presidentid: null,
+    vicepresidentid: null,
+    secretaryid: null,
+    treasurerid: null,
+    scoringtype: 'team',
+    usebestball: false,
+    usehandicapscoring: true,
+    perholepoints: 1,
+    perninepoints: 2,
+    permatchpoints: 3,
+    totalholespoints: 0,
+    againstfieldpoints: 0,
+    againstfielddescpoints: 0,
     contacts_golfleaguesetup_presidentidTocontacts: null,
     contacts_golfleaguesetup_vicepresidentidTocontacts: null,
     contacts_golfleaguesetup_secretaryidTocontacts: null,
@@ -150,12 +132,12 @@ describe('GolfLeagueService', () => {
     it('returns scoring config values', async () => {
       const result = await service.getLeagueSetup(100n);
 
-      expect(result.indNetPerHolePts).toBe(1);
-      expect(result.indNetPerNinePts).toBe(2);
-      expect(result.indNetPerMatchPts).toBe(3);
-      expect(result.teamNetPerHolePts).toBe(1);
-      expect(result.useTeamScoring).toBe(true);
-      expect(result.useIndividualScoring).toBe(true);
+      expect(result.scoringType).toBe('team');
+      expect(result.useBestBall).toBe(false);
+      expect(result.useHandicapScoring).toBe(true);
+      expect(result.perHolePoints).toBe(1);
+      expect(result.perNinePoints).toBe(2);
+      expect(result.perMatchPoints).toBe(3);
     });
 
     it('returns null officers when not set', async () => {
@@ -217,14 +199,18 @@ describe('GolfLeagueService', () => {
 
     it('updates scoring config values', async () => {
       const result = await service.updateLeagueSetup(100n, {
-        indNetPerHolePts: 5,
-        teamNetPerMatchPts: 10,
-        useTeamScoring: false,
+        scoringType: 'individual',
+        useBestBall: true,
+        useHandicapScoring: false,
+        perHolePoints: 5,
+        perMatchPoints: 10,
       });
 
-      expect(result.indNetPerHolePts).toBe(5);
-      expect(result.teamNetPerMatchPts).toBe(10);
-      expect(result.useTeamScoring).toBe(false);
+      expect(result.scoringType).toBe('individual');
+      expect(result.useBestBall).toBe(true);
+      expect(result.useHandicapScoring).toBe(false);
+      expect(result.perHolePoints).toBe(5);
+      expect(result.perMatchPoints).toBe(10);
     });
 
     it('updates officer IDs', async () => {
@@ -242,13 +228,16 @@ describe('GolfLeagueService', () => {
 
       await service.updateLeagueSetup(100n, { presidentId: '' });
 
-      expect(setups[0].presidentid).toBe(0n);
+      expect(setups[0].presidentid).toBeNull();
     });
 
-    it('throws NotFoundError when setup not found', async () => {
-      await expect(service.updateLeagueSetup(999n, { leagueDay: 1 })).rejects.toBeInstanceOf(
-        NotFoundError,
-      );
+    it('creates new setup when not found', async () => {
+      const result = await service.updateLeagueSetup(999n, { leagueDay: 1 });
+
+      expect(result.accountId).toBe('999');
+      expect(result.leagueDay).toBe(1);
+      expect(result.scoringType).toBe('team');
+      expect(result.useHandicapScoring).toBe(true);
     });
 
     it('handles partial updates', async () => {

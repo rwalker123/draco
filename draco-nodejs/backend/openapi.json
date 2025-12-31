@@ -24900,113 +24900,45 @@
               "lastName"
             ]
           },
-          "indNetPerHolePts": {
-            "type": "integer",
-            "default": 0
+          "scoringType": {
+            "type": "string",
+            "enum": [
+              "individual",
+              "team"
+            ],
+            "default": "team"
           },
-          "indNetPerNinePts": {
-            "type": "integer",
-            "default": 0
+          "useBestBall": {
+            "type": "boolean",
+            "default": false
           },
-          "indNetPerMatchPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indNetTotalHolesPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indNetAgainstFieldPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indNetAgainstFieldDescPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indActPerHolePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indActPerNinePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indActPerMatchPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indActTotalHolesPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indActAgainstFieldPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indActAgainstFieldDescPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamNetPerHolePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamNetPerNinePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamNetPerMatchPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamNetTotalHolesPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamNetAgainstFieldPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamActPerHolePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamActPerNinePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamActPerMatchPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamActTotalHolesPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamActAgainstFieldPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamAgainstFieldDescPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamNetBestBallPerHolePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamActBestBallPerHolePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "useTeamScoring": {
+          "useHandicapScoring": {
             "type": "boolean",
             "default": true
           },
-          "useIndividualScoring": {
-            "type": "boolean",
-            "default": true
+          "perHolePoints": {
+            "type": "integer",
+            "default": 0
+          },
+          "perNinePoints": {
+            "type": "integer",
+            "default": 0
+          },
+          "perMatchPoints": {
+            "type": "integer",
+            "default": 0
+          },
+          "totalHolesPoints": {
+            "type": "integer",
+            "default": 0
+          },
+          "againstFieldPoints": {
+            "type": "integer",
+            "default": 0
+          },
+          "againstFieldDescPoints": {
+            "type": "integer",
+            "default": 0
           }
         },
         "required": [
@@ -25045,113 +24977,45 @@
             "type": "integer",
             "default": 0
           },
-          "indNetPerHolePts": {
-            "type": "integer",
-            "default": 0
+          "scoringType": {
+            "type": "string",
+            "enum": [
+              "individual",
+              "team"
+            ],
+            "default": "team"
           },
-          "indNetPerNinePts": {
-            "type": "integer",
-            "default": 0
+          "useBestBall": {
+            "type": "boolean",
+            "default": false
           },
-          "indNetPerMatchPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indNetTotalHolesPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indNetAgainstFieldPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indNetAgainstFieldDescPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indActPerHolePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indActPerNinePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indActPerMatchPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indActTotalHolesPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indActAgainstFieldPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "indActAgainstFieldDescPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamNetPerHolePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamNetPerNinePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamNetPerMatchPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamNetTotalHolesPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamNetAgainstFieldPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamActPerHolePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamActPerNinePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamActPerMatchPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamActTotalHolesPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamActAgainstFieldPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamAgainstFieldDescPts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamNetBestBallPerHolePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "teamActBestBallPerHolePts": {
-            "type": "integer",
-            "default": 0
-          },
-          "useTeamScoring": {
+          "useHandicapScoring": {
             "type": "boolean",
             "default": true
           },
-          "useIndividualScoring": {
-            "type": "boolean",
-            "default": true
+          "perHolePoints": {
+            "type": "integer",
+            "default": 0
+          },
+          "perNinePoints": {
+            "type": "integer",
+            "default": 0
+          },
+          "perMatchPoints": {
+            "type": "integer",
+            "default": 0
+          },
+          "totalHolesPoints": {
+            "type": "integer",
+            "default": 0
+          },
+          "againstFieldPoints": {
+            "type": "integer",
+            "default": 0
+          },
+          "againstFieldDescPoints": {
+            "type": "integer",
+            "default": 0
           },
           "presidentId": {
             "type": "string",
