@@ -153,11 +153,10 @@ export class GolfHandicapService {
     const scores = await this.scoreRepository.findByGolferId(golferId, 40);
 
     if (scores.length === 0) {
-      const contact = scores[0]?.golfer?.contact;
       return {
-        contactId: contact?.id?.toString() ?? '',
-        firstName: contact?.firstname ?? '',
-        lastName: contact?.lastname ?? '',
+        contactId: '',
+        firstName: '',
+        lastName: '',
         handicapIndex: null,
         roundsUsed: 0,
         totalRounds: 0,
