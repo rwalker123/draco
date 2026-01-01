@@ -1,4 +1,4 @@
-import { golfcourse, golfteeinformation } from '#prisma/client';
+import { golfcourse, golfteeinformation, Prisma } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 
 export type GolfCourseWithTees = golfcourse & {
@@ -13,10 +13,14 @@ export type GolfLeagueCourseRaw = {
   golfcourse: GolfCourseWithTees;
 };
 
+export type CreateGolfCourseData = Partial<Prisma.golfcourseUncheckedCreateInput> &
+  Pick<Prisma.golfcourseUncheckedCreateInput, 'name' | 'numberofholes'>;
+export type UpdateGolfCourseData = Partial<Prisma.golfcourseUncheckedUpdateInput>;
+
 export interface IGolfCourseRepository extends IBaseRepository<
   golfcourse,
-  Partial<golfcourse>,
-  Partial<golfcourse>
+  CreateGolfCourseData,
+  UpdateGolfCourseData
 > {
   findByIdWithTees(courseId: bigint): Promise<GolfCourseWithTees | null>;
   findLeagueCourses(accountId: bigint): Promise<GolfLeagueCourseRaw[]>;

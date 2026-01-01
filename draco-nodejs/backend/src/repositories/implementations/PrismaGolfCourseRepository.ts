@@ -1,8 +1,10 @@
-import { PrismaClient, golfcourse } from '#prisma/client';
+import { PrismaClient, golfcourse, Prisma } from '#prisma/client';
 import {
   IGolfCourseRepository,
   GolfCourseWithTees,
   GolfLeagueCourseRaw,
+  CreateGolfCourseData,
+  UpdateGolfCourseData,
 } from '../interfaces/IGolfCourseRepository.js';
 
 export class PrismaGolfCourseRepository implements IGolfCourseRepository {
@@ -91,16 +93,16 @@ export class PrismaGolfCourseRepository implements IGolfCourseRepository {
     });
   }
 
-  async create(data: Partial<golfcourse>): Promise<golfcourse> {
+  async create(data: CreateGolfCourseData): Promise<golfcourse> {
     return this.prisma.golfcourse.create({
-      data: data as Parameters<typeof this.prisma.golfcourse.create>[0]['data'],
+      data: data as Prisma.golfcourseUncheckedCreateInput,
     });
   }
 
-  async update(id: bigint, data: Partial<golfcourse>): Promise<golfcourse> {
+  async update(id: bigint, data: UpdateGolfCourseData): Promise<golfcourse> {
     return this.prisma.golfcourse.update({
       where: { id },
-      data,
+      data: data as Prisma.golfcourseUncheckedUpdateInput,
     });
   }
 

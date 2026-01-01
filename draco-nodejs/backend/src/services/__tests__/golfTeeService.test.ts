@@ -166,10 +166,10 @@ describe('GolfTeeService', () => {
       async removeLeagueCourse() {},
       async updateLeagueCourseDefaults() {},
       async create(data) {
-        return createMockCourse(data);
+        return createMockCourse(data as Partial<golfcourse>);
       },
       async update(id, data) {
-        return createMockCourse({ id, ...data });
+        return createMockCourse({ id, ...(data as Partial<golfcourse>) });
       },
       async delete(id) {
         return createMockCourse({ id });

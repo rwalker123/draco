@@ -100,7 +100,7 @@ describe('GolfCourseService', () => {
       },
       async updateLeagueCourseDefaults(): Promise<void> {},
       async create(data): Promise<golfcourse> {
-        const created = createMockCourse({ id: nextId, ...data });
+        const created = createMockCourse({ id: nextId, ...(data as Partial<golfcourse>) });
         nextId += 1n;
         courses.push(created);
         return created;
@@ -110,7 +110,7 @@ describe('GolfCourseService', () => {
         if (index === -1) {
           throw new NotFoundError('Course not found');
         }
-        const updated = { ...courses[index], ...data };
+        const updated = { ...courses[index], ...(data as Partial<golfcourse>) } as golfcourse;
         courses[index] = updated;
         return updated;
       },
