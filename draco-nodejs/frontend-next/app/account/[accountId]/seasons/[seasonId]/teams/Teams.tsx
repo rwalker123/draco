@@ -30,6 +30,7 @@ import {
 } from '@draco/shared-api-client';
 import type { UpdateTeamMetadataResult } from '@/hooks/useTeamManagement';
 import { unwrapApiResult } from '@/utils/apiResult';
+import { downloadBlob } from '@/utils/downloadUtils';
 import { mapLeagueSetup } from '@/utils/leagueSeasonMapper';
 import {
   DivisionSeasonWithTeamsType,
@@ -75,17 +76,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   // Edit dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<TeamSeasonType | null>(null);
-
-  const downloadBlob = (blob: Blob, fileName: string) => {
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  };
 
   const handleExportRoster = async (leagueSeason: LeagueSeasonType) => {
     try {

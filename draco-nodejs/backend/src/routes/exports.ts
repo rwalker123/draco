@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import contentDisposition from 'content-disposition';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -42,7 +43,10 @@ router.get(
     );
 
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.setHeader(
+      'Content-Disposition',
+      contentDisposition(result.fileName, { type: 'attachment' }),
+    );
     res.send(result.buffer);
   }),
 );
@@ -78,7 +82,10 @@ router.get(
     );
 
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.setHeader(
+      'Content-Disposition',
+      contentDisposition(result.fileName, { type: 'attachment' }),
+    );
     res.send(result.buffer);
   }),
 );
@@ -104,7 +111,10 @@ router.get(
     const result = await csvExportService.exportSeasonRoster(seasonId, accountId, season.name);
 
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.setHeader(
+      'Content-Disposition',
+      contentDisposition(result.fileName, { type: 'attachment' }),
+    );
     res.send(result.buffer);
   }),
 );
@@ -130,7 +140,10 @@ router.get(
     const result = await csvExportService.exportSeasonManagers(seasonId, accountId, season.name);
 
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.setHeader(
+      'Content-Disposition',
+      contentDisposition(result.fileName, { type: 'attachment' }),
+    );
     res.send(result.buffer);
   }),
 );

@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import contentDisposition from 'content-disposition';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -272,7 +273,7 @@ router.delete(
 router.get(
   '/:teamSeasonId/roster/export',
   authenticateToken,
-  routeProtection.requireAccountAdmin(),
+  routeProtection.requirePermission('manage-users'),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
@@ -293,7 +294,10 @@ router.get(
     const result = await csvExportService.exportTeamRoster(teamSeasonId, seasonId, teamSeason.name);
 
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.setHeader(
+      'Content-Disposition',
+      contentDisposition(result.fileName, { type: 'attachment' }),
+    );
     res.send(result.buffer);
   }),
 );
