@@ -1,7 +1,11 @@
 import { useState, useCallback } from 'react';
 import { Game } from '@/types/schedule';
-import { ScheduleGameResultsSuccessPayload } from '../dialogs/GameResultsDialog';
 import type { DeleteGameResult } from './useGameDeletion';
+
+interface ScoreEntrySuccessPayload {
+  game: Game;
+  message: string;
+}
 
 interface UseGameManagementProps {
   accountId: string;
@@ -28,7 +32,7 @@ interface UseGameManagementReturn {
   setSelectedGameForResults: (game: Game | null) => void;
 
   handleDeleteSuccess: (result: DeleteGameResult) => void;
-  handleGameResultsSuccess: (payload: ScheduleGameResultsSuccessPayload) => void;
+  handleGameResultsSuccess: (payload: ScoreEntrySuccessPayload) => void;
 
   openCreateDialog: () => void;
   openEditDialog: (game: Game) => void;
@@ -71,8 +75,8 @@ export const useGameManagement = ({
   );
 
   const handleGameResultsSuccess = useCallback(
-    (payload: ScheduleGameResultsSuccessPayload) => {
-      const { updatedGame } = payload;
+    (payload: ScoreEntrySuccessPayload) => {
+      const { game: updatedGame, message } = payload;
 
       upsertGameInCache(updatedGame);
       setSelectedGameForResults(updatedGame);
@@ -80,7 +84,7 @@ export const useGameManagement = ({
         setSelectedGame(updatedGame);
       }
 
-      setSuccess('Game results saved successfully');
+      setSuccess(message);
       setGameResultsDialogOpen(false);
       setSelectedGameForResults(null);
     },

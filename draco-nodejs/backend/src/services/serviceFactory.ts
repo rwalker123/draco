@@ -88,6 +88,18 @@ import { FacebookIntegrationService } from './facebookIntegrationService.js';
 import { InstagramIntegrationService } from './instagramIntegrationService.js';
 import { WelcomeMessageService } from './welcomeMessageService.js';
 import { WorkoutRegistrantAccessEmailService } from './workoutRegistrantAccessEmailService.js';
+import { GolfCourseService } from './golfCourseService.js';
+import { GolfTeeService } from './golfTeeService.js';
+import { GolfLeagueService } from './golfLeagueService.js';
+import { GolfFlightService } from './golfFlightService.js';
+import { GolfTeamService } from './golfTeamService.js';
+import { GolfRosterService } from './golfRosterService.js';
+import { GolfMatchService } from './golfMatchService.js';
+import { GolfScoreService } from './golfScoreService.js';
+import { GolfHandicapService } from './golfHandicapService.js';
+import { GolfStandingsService } from './golfStandingsService.js';
+import { GolfStatsService } from './golfStatsService.js';
+import { ExternalCourseSearchService } from './externalCourseSearchService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -167,6 +179,18 @@ export class ServiceFactory {
   private static instagramIntegrationService: InstagramIntegrationService;
   private static welcomeMessageService: WelcomeMessageService;
   private static workoutRegistrantAccessEmailService: WorkoutRegistrantAccessEmailService;
+  private static golfCourseService: GolfCourseService;
+  private static golfTeeService: GolfTeeService;
+  private static golfLeagueService: GolfLeagueService;
+  private static golfFlightService: GolfFlightService;
+  private static golfTeamService: GolfTeamService;
+  private static golfRosterService: GolfRosterService;
+  private static golfMatchService: GolfMatchService;
+  private static golfScoreService: GolfScoreService;
+  private static golfHandicapService: GolfHandicapService;
+  private static golfStandingsService: GolfStandingsService;
+  private static golfStatsService: GolfStatsService;
+  private static externalCourseSearchService: ExternalCourseSearchService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -898,5 +922,89 @@ export class ServiceFactory {
       this.workoutRegistrantAccessEmailService = new WorkoutRegistrantAccessEmailService();
     }
     return this.workoutRegistrantAccessEmailService;
+  }
+
+  static getGolfCourseService(): GolfCourseService {
+    if (!this.golfCourseService) {
+      this.golfCourseService = new GolfCourseService();
+    }
+    return this.golfCourseService;
+  }
+
+  static getGolfTeeService(): GolfTeeService {
+    if (!this.golfTeeService) {
+      this.golfTeeService = new GolfTeeService();
+    }
+    return this.golfTeeService;
+  }
+
+  static getGolfLeagueService(): GolfLeagueService {
+    if (!this.golfLeagueService) {
+      this.golfLeagueService = new GolfLeagueService();
+    }
+    return this.golfLeagueService;
+  }
+
+  static getGolfFlightService(): GolfFlightService {
+    if (!this.golfFlightService) {
+      this.golfFlightService = new GolfFlightService();
+    }
+    return this.golfFlightService;
+  }
+
+  static getGolfTeamService(): GolfTeamService {
+    if (!this.golfTeamService) {
+      this.golfTeamService = new GolfTeamService();
+    }
+    return this.golfTeamService;
+  }
+
+  static getGolfRosterService(): GolfRosterService {
+    if (!this.golfRosterService) {
+      this.golfRosterService = new GolfRosterService();
+    }
+    return this.golfRosterService;
+  }
+
+  static getGolfMatchService(): GolfMatchService {
+    if (!this.golfMatchService) {
+      this.golfMatchService = new GolfMatchService();
+    }
+    return this.golfMatchService;
+  }
+
+  static getGolfScoreService(): GolfScoreService {
+    if (!this.golfScoreService) {
+      this.golfScoreService = new GolfScoreService();
+    }
+    return this.golfScoreService;
+  }
+
+  static getGolfHandicapService(): GolfHandicapService {
+    if (!this.golfHandicapService) {
+      this.golfHandicapService = new GolfHandicapService();
+    }
+    return this.golfHandicapService;
+  }
+
+  static getGolfStandingsService(): GolfStandingsService {
+    if (!this.golfStandingsService) {
+      this.golfStandingsService = new GolfStandingsService();
+    }
+    return this.golfStandingsService;
+  }
+
+  static getGolfStatsService(): GolfStatsService {
+    if (!this.golfStatsService) {
+      this.golfStatsService = new GolfStatsService();
+    }
+    return this.golfStatsService;
+  }
+
+  static getExternalCourseSearchService(): ExternalCourseSearchService {
+    if (!this.externalCourseSearchService) {
+      this.externalCourseSearchService = new ExternalCourseSearchService();
+    }
+    return this.externalCourseSearchService;
   }
 }

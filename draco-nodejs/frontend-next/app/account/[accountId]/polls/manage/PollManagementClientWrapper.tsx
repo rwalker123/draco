@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
+import AccountTypeGuard from '../../../../../components/auth/AccountTypeGuard';
 import PollManagementPage from './PollManagementPage';
 
 export default function PollManagementClientWrapper() {
@@ -16,8 +17,10 @@ export default function PollManagementClientWrapper() {
   }
 
   return (
-    <ProtectedRoute requiredRole={['AccountAdmin', 'TeamAdmin']} checkAccountBoundary={true}>
-      <PollManagementPage accountId={accountId} />
-    </ProtectedRoute>
+    <AccountTypeGuard requiredAccountType="baseball">
+      <ProtectedRoute requiredRole={['AccountAdmin', 'TeamAdmin']} checkAccountBoundary={true}>
+        <PollManagementPage accountId={accountId} />
+      </ProtectedRoute>
+    </AccountTypeGuard>
   );
 }

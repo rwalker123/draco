@@ -2,6 +2,7 @@
 import { useParams } from 'next/navigation';
 import TeamRosterManagement from './TeamRosterManagement';
 import ProtectedRoute from '../../../../../../../../components/auth/ProtectedRoute';
+import AccountTypeGuard from '../../../../../../../../components/auth/AccountTypeGuard';
 
 export default function TeamRosterManagementClientWrapper() {
   const params = useParams();
@@ -14,8 +15,14 @@ export default function TeamRosterManagementClientWrapper() {
     : (params.teamSeasonId ?? '');
 
   return (
-    <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
-      <TeamRosterManagement accountId={accountId} seasonId={seasonId} teamSeasonId={teamSeasonId} />
-    </ProtectedRoute>
+    <AccountTypeGuard requiredAccountType="baseball">
+      <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
+        <TeamRosterManagement
+          accountId={accountId}
+          seasonId={seasonId}
+          teamSeasonId={teamSeasonId}
+        />
+      </ProtectedRoute>
+    </AccountTypeGuard>
   );
 }

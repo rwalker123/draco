@@ -16,9 +16,19 @@ import {
   CircularProgress,
   Fab,
   Snackbar,
+  IconButton,
+  Chip,
+  Tooltip,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
-import SeasonCard from './SeasonCard';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  ContentCopy as CopyIcon,
+  Star as StarIcon,
+  StarBorder as StarBorderIcon,
+  Flight as FlightIcon,
+} from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
@@ -48,7 +58,7 @@ interface SeasonFormData {
   name: string;
 }
 
-const SeasonManagement: React.FC = () => {
+const GolfSeasonManagement: React.FC = () => {
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const router = useRouter();
@@ -63,24 +73,21 @@ const SeasonManagement: React.FC = () => {
     message: string;
   } | null>(null);
 
-  // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
 
-  // Form states
   const [formData, setFormData] = useState<SeasonFormData>({ name: '' });
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
-  // Check permissions - all season management actions require the same permissions
   const hasSeasonManagementPermissions = isAccountAdministrator(hasRole, accountIdStr);
   const canCreate = hasSeasonManagementPermissions;
   const canEdit = hasSeasonManagementPermissions;
   const canDelete = hasSeasonManagementPermissions;
   const canSetCurrent = hasSeasonManagementPermissions;
-  const canManageLeagues = hasSeasonManagementPermissions;
+  const canManageFlights = hasSeasonManagementPermissions;
 
   const handleFeedbackClose = useCallback(() => {
     setFeedback(null);
@@ -116,7 +123,6 @@ const SeasonManagement: React.FC = () => {
     }
   }, [accountIdStr, fetchSeasons]);
 
-  // Targeted update functions for better UX
   const addSeasonToState = useCallback((newSeason: Season) => {
     setSeasons((prev) => [...prev, newSeason]);
   }, []);
@@ -253,8 +259,7 @@ const SeasonManagement: React.FC = () => {
 
       setFeedback({
         severity: 'success',
-        message:
-          'Season copied successfully. All leagues, divisions, teams, active rosters, and managers were duplicated.',
+        message: 'Season copied successfully. All flights and teams were duplicated.',
       });
       setCopyDialogOpen(false);
       setSelectedSeason(null);
@@ -316,8 +321,8 @@ const SeasonManagement: React.FC = () => {
     setCopyDialogOpen(true);
   };
 
-  const navigateToLeagueSeasonManagement = (season: Season) => {
-    router.push(`/account/${accountId}/seasons/${season.id}/league-seasons`);
+  const navigateToFlightManagement = (season: Season) => {
+    router.push(`/account/${accountId}/seasons/${season.id}/golf/admin`);
   };
 
   const closeDialogs = () => {
@@ -345,19 +350,17 @@ const SeasonManagement: React.FC = () => {
             Season Management
           </Typography>
           <Typography variant="subtitle1" color="text.secondary" sx={{ opacity: 0.8 }}>
-            Manage seasons, leagues, and current season settings for your organization.
+            Manage seasons and flight configurations for your golf league.
           </Typography>
         </Box>
       </AccountPageHeader>
 
       <Box sx={{ p: 3 }}>
-        {/* Loading State */}
         {loading ? (
           <Box display="flex" justifyContent="center" p={4}>
             <CircularProgress />
           </Box>
         ) : (
-          /* Seasons List */
           <Box>
             {seasons.length === 0 ? (
               <Card>
@@ -383,19 +386,74 @@ const SeasonManagement: React.FC = () => {
                 gap={3}
               >
                 {seasons.map((season) => (
-                  <SeasonCard
-                    key={season.id}
-                    season={season}
-                    canSetCurrent={canSetCurrent}
-                    canManageLeagues={canManageLeagues}
-                    canEdit={canEdit}
-                    canDelete={canDelete}
-                    onSetCurrent={handleSetCurrentSeason}
-                    onLeagueSeasonManagement={navigateToLeagueSeasonManagement}
-                    onEdit={openEditDialog}
-                    onCopy={openCopyDialog}
-                    onDelete={openDeleteDialog}
-                  />
+                  <Card key={season.id}>
+                    <CardContent>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                          <Typography variant="h6" component="h2">
+                            {season.name}
+                          </Typography>
+                          {canEdit && (
+                            <Tooltip title="Edit season">
+                              <IconButton size="small" onClick={() => openEditDialog(season)}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {canEdit && (
+                            <Tooltip title="Copy season">
+                              <IconButton
+                                size="small"
+                                aria-label={`Copy ${season.name}`}
+                                onClick={() => openCopyDialog(season)}
+                              >
+                                <CopyIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Box>
+                        {season.isCurrent ? (
+                          <Chip icon={<StarIcon />} label="Current" color="primary" size="small" />
+                        ) : (
+                          canSetCurrent && (
+                            <Tooltip title="Set as current season">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleSetCurrentSeason(season)}
+                              >
+                                <StarBorderIcon />
+                              </IconButton>
+                            </Tooltip>
+                          )
+                        )}
+                      </Box>
+
+                      <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
+                        {canManageFlights && (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<FlightIcon />}
+                            onClick={() => navigateToFlightManagement(season)}
+                          >
+                            Manage Flights
+                          </Button>
+                        )}
+
+                        {canDelete && !season.isCurrent && (
+                          <Tooltip title="Delete season">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => openDeleteDialog(season)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </CardContent>
+                  </Card>
                 ))}
               </Box>
             )}
@@ -403,7 +461,6 @@ const SeasonManagement: React.FC = () => {
         )}
       </Box>
 
-      {/* Create Season Dialog */}
       <Dialog open={createDialogOpen} onClose={closeDialogs} maxWidth="sm" fullWidth>
         <DialogTitle>Create New Season</DialogTitle>
         <DialogContent>
@@ -433,7 +490,6 @@ const SeasonManagement: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Edit Season Dialog */}
       <Dialog open={editDialogOpen} onClose={closeDialogs} maxWidth="sm" fullWidth>
         <DialogTitle>Edit Season</DialogTitle>
         <DialogContent>
@@ -463,7 +519,6 @@ const SeasonManagement: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Season Dialog */}
       <Dialog open={deleteDialogOpen} onClose={closeDialogs} maxWidth="sm" fullWidth>
         <DialogTitle>Delete Season</DialogTitle>
         <DialogContent>
@@ -490,7 +545,6 @@ const SeasonManagement: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Copy Season Dialog */}
       <Dialog open={copyDialogOpen} onClose={closeDialogs} maxWidth="sm" fullWidth>
         <DialogTitle>Copy Season</DialogTitle>
         <DialogContent>
@@ -499,7 +553,7 @@ const SeasonManagement: React.FC = () => {
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             This will create a new season with the name &quot;{selectedSeason?.name} Copy&quot; and
-            copy all associated leagues.
+            copy all associated flights and teams.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -512,7 +566,6 @@ const SeasonManagement: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Floating Action Button for Create */}
       {canCreate && (
         <Fab
           color="primary"
@@ -545,4 +598,4 @@ const SeasonManagement: React.FC = () => {
   );
 };
 
-export default SeasonManagement;
+export default GolfSeasonManagement;

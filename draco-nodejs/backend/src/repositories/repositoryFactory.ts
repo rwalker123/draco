@@ -58,6 +58,14 @@ import {
   ISchedulerSeasonExclusionsRepository,
   ISchedulerTeamSeasonExclusionsRepository,
   ISchedulerUmpireExclusionsRepository,
+  IGolfCourseRepository,
+  IGolfTeeRepository,
+  IGolfLeagueRepository,
+  IGolfFlightRepository,
+  IGolfTeamRepository,
+  IGolfRosterRepository,
+  IGolfMatchRepository,
+  IGolfScoreRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -117,6 +125,14 @@ import {
   PrismaSchedulerSeasonExclusionsRepository,
   PrismaSchedulerTeamSeasonExclusionsRepository,
   PrismaSchedulerUmpireExclusionsRepository,
+  PrismaGolfCourseRepository,
+  PrismaGolfTeeRepository,
+  PrismaGolfLeagueRepository,
+  PrismaGolfFlightRepository,
+  PrismaGolfTeamRepository,
+  PrismaGolfRosterRepository,
+  PrismaGolfMatchRepository,
+  PrismaGolfScoreRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -183,6 +199,14 @@ export class RepositoryFactory {
   private static schedulerSeasonExclusionsRepository: ISchedulerSeasonExclusionsRepository;
   private static schedulerTeamSeasonExclusionsRepository: ISchedulerTeamSeasonExclusionsRepository;
   private static schedulerUmpireExclusionsRepository: ISchedulerUmpireExclusionsRepository;
+  private static golfCourseRepository: IGolfCourseRepository;
+  private static golfTeeRepository: IGolfTeeRepository;
+  private static golfLeagueRepository: IGolfLeagueRepository;
+  private static golfFlightRepository: IGolfFlightRepository;
+  private static golfTeamRepository: IGolfTeamRepository;
+  private static golfRosterRepository: IGolfRosterRepository;
+  private static golfMatchRepository: IGolfMatchRepository;
+  private static golfScoreRepository: IGolfScoreRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -611,5 +635,61 @@ export class RepositoryFactory {
     }
 
     return this.instagramIngestionRepository;
+  }
+
+  static getGolfCourseRepository(): IGolfCourseRepository {
+    if (!this.golfCourseRepository) {
+      this.golfCourseRepository = new PrismaGolfCourseRepository(prisma);
+    }
+    return this.golfCourseRepository;
+  }
+
+  static getGolfTeeRepository(): IGolfTeeRepository {
+    if (!this.golfTeeRepository) {
+      this.golfTeeRepository = new PrismaGolfTeeRepository(prisma);
+    }
+    return this.golfTeeRepository;
+  }
+
+  static getGolfLeagueRepository(): IGolfLeagueRepository {
+    if (!this.golfLeagueRepository) {
+      this.golfLeagueRepository = new PrismaGolfLeagueRepository(prisma);
+    }
+    return this.golfLeagueRepository;
+  }
+
+  static getGolfFlightRepository(): IGolfFlightRepository {
+    if (!this.golfFlightRepository) {
+      this.golfFlightRepository = new PrismaGolfFlightRepository(prisma);
+    }
+    return this.golfFlightRepository;
+  }
+
+  static getGolfTeamRepository(): IGolfTeamRepository {
+    if (!this.golfTeamRepository) {
+      this.golfTeamRepository = new PrismaGolfTeamRepository(prisma);
+    }
+    return this.golfTeamRepository;
+  }
+
+  static getGolfRosterRepository(): IGolfRosterRepository {
+    if (!this.golfRosterRepository) {
+      this.golfRosterRepository = new PrismaGolfRosterRepository(prisma);
+    }
+    return this.golfRosterRepository;
+  }
+
+  static getGolfMatchRepository(): IGolfMatchRepository {
+    if (!this.golfMatchRepository) {
+      this.golfMatchRepository = new PrismaGolfMatchRepository(prisma);
+    }
+    return this.golfMatchRepository;
+  }
+
+  static getGolfScoreRepository(): IGolfScoreRepository {
+    if (!this.golfScoreRepository) {
+      this.golfScoreRepository = new PrismaGolfScoreRepository(prisma);
+    }
+    return this.golfScoreRepository;
   }
 }

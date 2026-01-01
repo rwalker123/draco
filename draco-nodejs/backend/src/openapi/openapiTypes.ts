@@ -294,6 +294,60 @@ import {
   SchedulerUmpireExclusionUpsertSchema,
   SchedulerUmpireExclusionsSchema,
   AdminDashboardSummarySchema,
+  GolfCourseSchema,
+  GolfCourseWithTeesSchema,
+  GolfCourseTeeSchema,
+  GolfLeagueCourseSchema,
+  CreateGolfCourseSchema,
+  UpdateGolfCourseSchema,
+  CreateGolfCourseTeeSchema,
+  UpdateGolfCourseTeeSchema,
+  AddLeagueCourseSchema,
+  UpdateTeePrioritiesSchema,
+  ImportExternalCourseSchema,
+  GolfLeagueSetupSchema,
+  UpdateGolfLeagueSetupSchema,
+  GolfAccountInfoSchema,
+  GolfFlightSchema,
+  GolfFlightWithTeamCountSchema,
+  CreateGolfFlightSchema,
+  UpdateGolfFlightSchema,
+  GolfTeamSchema,
+  GolfTeamWithPlayerCountSchema,
+  GolfTeamWithRosterSchema,
+  CreateGolfTeamSchema,
+  UpdateGolfTeamSchema,
+  GolfPlayerSchema,
+  GolfRosterEntrySchema,
+  GolfSubstituteSchema,
+  CreateGolfPlayerSchema,
+  UpdateGolfPlayerSchema,
+  SignPlayerSchema,
+  ReleasePlayerSchema,
+  AvailablePlayerSchema,
+  GolfMatchSchema,
+  GolfMatchWithScoresSchema,
+  CreateGolfMatchSchema,
+  UpdateGolfMatchSchema,
+  GolfScoreSchema,
+  GolfScoreWithDetailsSchema,
+  SubmitMatchResultsSchema,
+  PlayerMatchScoreSchema,
+  GolfDifferentialSchema,
+  PlayerHandicapSchema,
+  LeagueHandicapsSchema,
+  CourseHandicapSchema,
+  ESCMaxScoreSchema,
+  GolfTeamStandingSchema,
+  GolfFlightStandingsSchema,
+  GolfLeagueStandingsSchema,
+  GolfLeaderSchema,
+  GolfScoringAverageSchema,
+  GolfSkinsEntrySchema,
+  GolfFlightLeadersSchema,
+  ExternalCourseSearchResultSchema,
+  ExternalCourseDetailSchema,
+  ExternalCourseTeeSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1192,6 +1246,117 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'AdminDashboardSummary',
     AdminDashboardSummarySchema,
   );
+  const GolfCourseSchemaRef = registry.register('GolfCourse', GolfCourseSchema);
+  const GolfCourseWithTeesSchemaRef = registry.register(
+    'GolfCourseWithTees',
+    GolfCourseWithTeesSchema,
+  );
+  const GolfCourseTeeSchemaRef = registry.register('GolfCourseTee', GolfCourseTeeSchema);
+  const GolfLeagueCourseSchemaRef = registry.register('GolfLeagueCourse', GolfLeagueCourseSchema);
+  const CreateGolfCourseSchemaRef = registry.register('CreateGolfCourse', CreateGolfCourseSchema);
+  const UpdateGolfCourseSchemaRef = registry.register('UpdateGolfCourse', UpdateGolfCourseSchema);
+  const CreateGolfCourseTeeSchemaRef = registry.register(
+    'CreateGolfCourseTee',
+    CreateGolfCourseTeeSchema,
+  );
+  const UpdateGolfCourseTeeSchemaRef = registry.register(
+    'UpdateGolfCourseTee',
+    UpdateGolfCourseTeeSchema,
+  );
+  const AddLeagueCourseSchemaRef = registry.register('AddLeagueCourse', AddLeagueCourseSchema);
+  const UpdateTeePrioritiesSchemaRef = registry.register(
+    'UpdateTeePriorities',
+    UpdateTeePrioritiesSchema,
+  );
+  const ImportExternalCourseSchemaRef = registry.register(
+    'ImportExternalCourse',
+    ImportExternalCourseSchema,
+  );
+  const GolfLeagueSetupSchemaRef = registry.register('GolfLeagueSetup', GolfLeagueSetupSchema);
+  const UpdateGolfLeagueSetupSchemaRef = registry.register(
+    'UpdateGolfLeagueSetup',
+    UpdateGolfLeagueSetupSchema,
+  );
+  const GolfAccountInfoSchemaRef = registry.register('GolfAccountInfo', GolfAccountInfoSchema);
+  const GolfFlightSchemaRef = registry.register('GolfFlight', GolfFlightSchema);
+  const GolfFlightWithTeamCountSchemaRef = registry.register(
+    'GolfFlightWithTeamCount',
+    GolfFlightWithTeamCountSchema,
+  );
+  const CreateGolfFlightSchemaRef = registry.register('CreateGolfFlight', CreateGolfFlightSchema);
+  const UpdateGolfFlightSchemaRef = registry.register('UpdateGolfFlight', UpdateGolfFlightSchema);
+  const GolfTeamSchemaRef = registry.register('GolfTeam', GolfTeamSchema);
+  const GolfTeamWithPlayerCountSchemaRef = registry.register(
+    'GolfTeamWithPlayerCount',
+    GolfTeamWithPlayerCountSchema,
+  );
+  const GolfTeamWithRosterSchemaRef = registry.register(
+    'GolfTeamWithRoster',
+    GolfTeamWithRosterSchema,
+  );
+  const CreateGolfTeamSchemaRef = registry.register('CreateGolfTeam', CreateGolfTeamSchema);
+  const UpdateGolfTeamSchemaRef = registry.register('UpdateGolfTeam', UpdateGolfTeamSchema);
+  const GolfPlayerSchemaRef = registry.register('GolfPlayer', GolfPlayerSchema);
+  const GolfRosterEntrySchemaRef = registry.register('GolfRosterEntry', GolfRosterEntrySchema);
+  const GolfSubstituteSchemaRef = registry.register('GolfSubstitute', GolfSubstituteSchema);
+  const CreateGolfPlayerSchemaRef = registry.register('CreateGolfPlayer', CreateGolfPlayerSchema);
+  const UpdateGolfPlayerSchemaRef = registry.register('UpdateGolfPlayer', UpdateGolfPlayerSchema);
+  const SignPlayerSchemaRef = registry.register('SignPlayer', SignPlayerSchema);
+  const ReleasePlayerSchemaRef = registry.register('ReleasePlayer', ReleasePlayerSchema);
+  const AvailablePlayerSchemaRef = registry.register('AvailablePlayer', AvailablePlayerSchema);
+  const GolfMatchSchemaRef = registry.register('GolfMatch', GolfMatchSchema);
+  const GolfMatchWithScoresSchemaRef = registry.register(
+    'GolfMatchWithScores',
+    GolfMatchWithScoresSchema,
+  );
+  const CreateGolfMatchSchemaRef = registry.register('CreateGolfMatch', CreateGolfMatchSchema);
+  const UpdateGolfMatchSchemaRef = registry.register('UpdateGolfMatch', UpdateGolfMatchSchema);
+  const GolfScoreSchemaRef = registry.register('GolfScore', GolfScoreSchema);
+  const GolfScoreWithDetailsSchemaRef = registry.register(
+    'GolfScoreWithDetails',
+    GolfScoreWithDetailsSchema,
+  );
+  const SubmitMatchResultsSchemaRef = registry.register(
+    'SubmitMatchResults',
+    SubmitMatchResultsSchema,
+  );
+  const PlayerMatchScoreSchemaRef = registry.register('PlayerMatchScore', PlayerMatchScoreSchema);
+  const GolfDifferentialSchemaRef = registry.register('GolfDifferential', GolfDifferentialSchema);
+  const PlayerHandicapSchemaRef = registry.register('PlayerHandicap', PlayerHandicapSchema);
+  const LeagueHandicapsSchemaRef = registry.register('LeagueHandicaps', LeagueHandicapsSchema);
+  const CourseHandicapSchemaRef = registry.register('CourseHandicap', CourseHandicapSchema);
+  const ESCMaxScoreSchemaRef = registry.register('ESCMaxScore', ESCMaxScoreSchema);
+  const GolfTeamStandingSchemaRef = registry.register('GolfTeamStanding', GolfTeamStandingSchema);
+  const GolfFlightStandingsSchemaRef = registry.register(
+    'GolfFlightStandings',
+    GolfFlightStandingsSchema,
+  );
+  const GolfLeagueStandingsSchemaRef = registry.register(
+    'GolfLeagueStandings',
+    GolfLeagueStandingsSchema,
+  );
+  const GolfLeaderSchemaRef = registry.register('GolfLeader', GolfLeaderSchema);
+  const GolfScoringAverageSchemaRef = registry.register(
+    'GolfScoringAverage',
+    GolfScoringAverageSchema,
+  );
+  const GolfSkinsEntrySchemaRef = registry.register('GolfSkinsEntry', GolfSkinsEntrySchema);
+  const GolfFlightLeadersSchemaRef = registry.register(
+    'GolfFlightLeaders',
+    GolfFlightLeadersSchema,
+  );
+  const ExternalCourseSearchResultSchemaRef = registry.register(
+    'ExternalCourseSearchResult',
+    ExternalCourseSearchResultSchema,
+  );
+  const ExternalCourseDetailSchemaRef = registry.register(
+    'ExternalCourseDetail',
+    ExternalCourseDetailSchema,
+  );
+  const ExternalCourseTeeSchemaRef = registry.register(
+    'ExternalCourseTee',
+    ExternalCourseTeeSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1490,6 +1655,60 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RoleCheckResponseSchemaRef,
     DiscordTeamForumRemoveRequestSchemaRef,
     AdminDashboardSummarySchemaRef,
+    GolfCourseSchemaRef,
+    GolfCourseWithTeesSchemaRef,
+    GolfCourseTeeSchemaRef,
+    GolfLeagueCourseSchemaRef,
+    CreateGolfCourseSchemaRef,
+    UpdateGolfCourseSchemaRef,
+    CreateGolfCourseTeeSchemaRef,
+    UpdateGolfCourseTeeSchemaRef,
+    AddLeagueCourseSchemaRef,
+    UpdateTeePrioritiesSchemaRef,
+    ImportExternalCourseSchemaRef,
+    GolfLeagueSetupSchemaRef,
+    UpdateGolfLeagueSetupSchemaRef,
+    GolfAccountInfoSchemaRef,
+    GolfFlightSchemaRef,
+    GolfFlightWithTeamCountSchemaRef,
+    CreateGolfFlightSchemaRef,
+    UpdateGolfFlightSchemaRef,
+    GolfTeamSchemaRef,
+    GolfTeamWithPlayerCountSchemaRef,
+    GolfTeamWithRosterSchemaRef,
+    CreateGolfTeamSchemaRef,
+    UpdateGolfTeamSchemaRef,
+    GolfPlayerSchemaRef,
+    GolfRosterEntrySchemaRef,
+    GolfSubstituteSchemaRef,
+    CreateGolfPlayerSchemaRef,
+    UpdateGolfPlayerSchemaRef,
+    SignPlayerSchemaRef,
+    ReleasePlayerSchemaRef,
+    AvailablePlayerSchemaRef,
+    GolfMatchSchemaRef,
+    GolfMatchWithScoresSchemaRef,
+    CreateGolfMatchSchemaRef,
+    UpdateGolfMatchSchemaRef,
+    GolfScoreSchemaRef,
+    GolfScoreWithDetailsSchemaRef,
+    SubmitMatchResultsSchemaRef,
+    PlayerMatchScoreSchemaRef,
+    GolfDifferentialSchemaRef,
+    PlayerHandicapSchemaRef,
+    LeagueHandicapsSchemaRef,
+    CourseHandicapSchemaRef,
+    ESCMaxScoreSchemaRef,
+    GolfTeamStandingSchemaRef,
+    GolfFlightStandingsSchemaRef,
+    GolfLeagueStandingsSchemaRef,
+    GolfLeaderSchemaRef,
+    GolfScoringAverageSchemaRef,
+    GolfSkinsEntrySchemaRef,
+    GolfFlightLeadersSchemaRef,
+    ExternalCourseSearchResultSchemaRef,
+    ExternalCourseDetailSchemaRef,
+    ExternalCourseTeeSchemaRef,
   };
 };
 

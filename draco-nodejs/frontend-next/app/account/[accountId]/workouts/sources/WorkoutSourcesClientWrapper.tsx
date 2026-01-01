@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { WorkoutSourcesForm } from '../../../../../components/workouts/WorkoutSourcesForm';
 import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
+import AccountTypeGuard from '../../../../../components/auth/AccountTypeGuard';
 
 export default function WorkoutSourcesClientWrapper() {
   const params = useParams();
@@ -14,8 +15,10 @@ export default function WorkoutSourcesClientWrapper() {
   }
 
   return (
-    <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
-      <WorkoutSourcesForm />
-    </ProtectedRoute>
+    <AccountTypeGuard requiredAccountType="baseball">
+      <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
+        <WorkoutSourcesForm />
+      </ProtectedRoute>
+    </AccountTypeGuard>
   );
 }

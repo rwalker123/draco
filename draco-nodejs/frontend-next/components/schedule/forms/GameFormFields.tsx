@@ -35,6 +35,7 @@ const GameFormFields: React.FC = () => {
     umpires,
     canEditSchedule,
     isAccountAdmin,
+    hasOfficials,
     getAvailableUmpires,
     getTeamName,
     getFieldName,
@@ -218,7 +219,7 @@ const GameFormFields: React.FC = () => {
         </Box>
 
         {/* Umpires Row 1 */}
-        {isAccountAdmin && (
+        {isAccountAdmin && hasOfficials && (
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Controller
               name="umpire1"
@@ -314,7 +315,7 @@ const GameFormFields: React.FC = () => {
         )}
 
         {/* Umpires Row 2 */}
-        {isAccountAdmin && (
+        {isAccountAdmin && hasOfficials && (
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Controller
               name="umpire3"

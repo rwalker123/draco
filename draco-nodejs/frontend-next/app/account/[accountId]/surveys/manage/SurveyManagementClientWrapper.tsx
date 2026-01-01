@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
+import AccountTypeGuard from '../../../../../components/auth/AccountTypeGuard';
 import SurveyManagementPage from './SurveyManagementPage';
 
 export default function SurveyManagementClientWrapper() {
@@ -16,8 +17,10 @@ export default function SurveyManagementClientWrapper() {
   }
 
   return (
-    <ProtectedRoute requiredRole={['AccountAdmin']} checkAccountBoundary>
-      <SurveyManagementPage accountId={accountId} />
-    </ProtectedRoute>
+    <AccountTypeGuard requiredAccountType="baseball">
+      <ProtectedRoute requiredRole={['AccountAdmin']} checkAccountBoundary>
+        <SurveyManagementPage accountId={accountId} />
+      </ProtectedRoute>
+    </AccountTypeGuard>
   );
 }

@@ -444,4 +444,17 @@ export class DateUtils {
     parsed.setUTCDate(parsed.getUTCDate() + days);
     return DateUtils.formatDateForResponse(parsed);
   }
+
+  /**
+   * Parse a time-only string (HH:MM) into a Date at UTC epoch (1970-01-01)
+   * Used for storing time-of-day values like tee times that have no date context.
+   * IMPORTANT: Never apply timezone conversions to this value - it represents
+   * a time-of-day template, not an actual moment in time.
+   * @param timeString - Time string in HH:MM format
+   * @returns Date at 1970-01-01 with the specified time in UTC
+   */
+  static parseTimeToUtcEpochDate(timeString: string): Date {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0));
+  }
 }

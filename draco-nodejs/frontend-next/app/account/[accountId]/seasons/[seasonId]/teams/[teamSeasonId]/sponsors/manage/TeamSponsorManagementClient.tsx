@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import ProtectedRoute from '../../../../../../../../../components/auth/ProtectedRoute';
+import AccountTypeGuard from '../../../../../../../../../components/auth/AccountTypeGuard';
 import TeamSponsorManagement from './TeamSponsorManagement';
 
 export default function TeamSponsorManagementClient() {
@@ -17,12 +18,14 @@ export default function TeamSponsorManagementClient() {
   }
 
   return (
-    <ProtectedRoute requiredRole={['AccountAdmin', 'TeamAdmin']} checkAccountBoundary={true}>
-      <TeamSponsorManagement
-        accountId={accountId}
-        seasonId={seasonId}
-        teamSeasonId={teamSeasonId}
-      />
-    </ProtectedRoute>
+    <AccountTypeGuard requiredAccountType="baseball">
+      <ProtectedRoute requiredRole={['AccountAdmin', 'TeamAdmin']} checkAccountBoundary={true}>
+        <TeamSponsorManagement
+          accountId={accountId}
+          seasonId={seasonId}
+          teamSeasonId={teamSeasonId}
+        />
+      </ProtectedRoute>
+    </AccountTypeGuard>
   );
 }

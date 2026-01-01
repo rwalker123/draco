@@ -71,7 +71,7 @@ const getBodyAccessCode = (req: Request): unknown => {
 };
 
 const requireAccessCodeForRequest = (req: Request): string => {
-  const candidate = (req.query?.accessCode as unknown) ?? getBodyAccessCode(req);
+  const candidate = req.query?.accessCode ?? getBodyAccessCode(req);
   return parseAccessCodeValue(candidate);
 };
 

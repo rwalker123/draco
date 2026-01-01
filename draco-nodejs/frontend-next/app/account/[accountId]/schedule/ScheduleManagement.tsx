@@ -22,9 +22,8 @@ import { useAuth } from '../../../../context/AuthContext';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import AdPlacement from '../../../../components/ads/AdPlacement';
 import { useCurrentSeason } from '../../../../hooks/useCurrentSeason';
-import { useAccountTimezone } from '../../../../context/AccountContext';
+import { useAccountTimezone, useAccount } from '../../../../context/AccountContext';
 import { GameCardData } from '../../../../components/GameCard';
-import { getGameTypeText } from '../../../../utils/gameUtils';
 import { getGameSummary } from '../../../../lib/utils';
 import { convertGameToGameCardData } from '../../../../utils/gameTransformers';
 import { useGameRecapFlow } from '../../../../hooks/useGameRecapFlow';
@@ -36,9 +35,7 @@ import {
   useGameManagement,
   ViewFactory,
   ViewModeTabs,
-  GameDialog,
   DeleteGameDialog,
-  GameResultsDialog,
   Game,
   FilterType,
   ViewMode,
@@ -60,6 +57,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const { user, token } = useAuth();
   const { currentSeasonId, currentSeasonName, fetchCurrentSeason } = useCurrentSeason(accountId);
   const timeZone = useAccountTimezone();
+  const { currentAccount } = useAccount();
+  const accountType = currentAccount?.accountType;
 
   // Fetch current season when component mounts
   useEffect(() => {
@@ -113,23 +112,27 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const {
     games,
     teams,
-    fields,
-    umpires,
+    locations,
+    officials,
+    hasOfficials,
     leagues,
     leagueTeams,
     leagueTeamsCache,
     loadingGames,
     loadingStaticData,
     loadLeagueTeams,
-    loadUmpires,
+    loadOfficials,
     loadGamesData,
     clearLeagueTeams,
     upsertGameInCache,
     removeGameFromCache,
     startDate,
     endDate,
+    GameDialog,
+    ScoreEntryDialog,
   } = useScheduleData({
     accountId,
+    accountType,
     filterType,
     filterDate,
     onError: setError,
@@ -188,14 +191,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   // Convert Game to GameCardData for display using the unified transformer
   const convertGameToGameCardDataWithTeams = useCallback(
     (game: Game): GameCardData => {
-      return convertGameToGameCardData(game, teams, fields);
+      return convertGameToGameCardData(game, teams, locations);
     },
-    [teams, fields],
-  );
-
-  const getFieldNameById = useCallback(
-    (fieldId?: string) => fields.find((field) => field.id === fieldId)?.name || '',
-    [fields],
+    [teams, locations],
   );
 
   const computeInitialGameDate = useCallback((): Date => {
@@ -218,17 +216,21 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       leagueSeasonId: filterLeagueSeasonId || undefined,
       gameDate: initialDate,
     });
-    loadUmpires().catch(console.error);
+    if (hasOfficials) {
+      loadOfficials().catch(console.error);
+    }
     openCreateDialog();
-  }, [computeInitialGameDate, filterLeagueSeasonId, loadUmpires, openCreateDialog]);
+  }, [computeInitialGameDate, filterLeagueSeasonId, hasOfficials, loadOfficials, openCreateDialog]);
 
   // Handle edit game
   const handleEditGame = useCallback(
     (game: Game) => {
-      loadUmpires().catch(console.error);
+      if (hasOfficials) {
+        loadOfficials().catch(console.error);
+      }
       openEditDialog(game);
     },
-    [loadUmpires, openEditDialog],
+    [hasOfficials, loadOfficials, openEditDialog],
   );
 
   // Handle game results
@@ -326,8 +328,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     },
     [defaultViewMode],
   );
-
-  const editDialogTitle = canEditSchedule ? 'Edit Game' : 'View Game';
 
   if (loadingStaticData) {
     return (
@@ -477,8 +477,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           timeZone={timeZone}
           leagueSeasonIdFilter={filterLeagueSeasonId || undefined}
           teamSeasonIdFilter={filterTeamSeasonId || undefined}
-          fields={fields}
-          umpires={umpires}
+          fields={locations}
+          umpires={officials}
           leagues={leagues}
           teams={teams}
           games={games}
@@ -519,16 +519,13 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         <GameDialog
           open={createDialogOpen}
           mode="create"
-          title="Add Game"
           accountId={accountId}
           timeZone={timeZone}
           leagues={leagues}
-          fields={fields}
-          umpires={umpires}
+          locations={locations}
+          officials={officials}
           leagueTeamsCache={leagueTeamsCache}
-          currentSeasonName={currentSeasonName || undefined}
           canEditSchedule={!!canEditSchedule}
-          isAccountAdmin={!!canEditSchedule}
           defaultLeagueSeasonId={createDialogDefaults?.leagueSeasonId}
           defaultGameDate={createDialogDefaults?.gameDate}
           onClose={() => {
@@ -542,25 +539,19 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             }
           }}
           onError={(message) => setError(message)}
-          getTeamName={getTeamName}
-          getFieldName={getFieldNameById}
-          getGameTypeText={getGameTypeText}
         />
 
         <GameDialog
           open={editDialogOpen}
           mode="edit"
-          title={editDialogTitle}
           accountId={accountId}
           timeZone={timeZone}
           selectedGame={selectedGame || undefined}
           leagues={leagues}
-          fields={fields}
-          umpires={umpires}
+          locations={locations}
+          officials={officials}
           leagueTeamsCache={leagueTeamsCache}
-          currentSeasonName={currentSeasonName || undefined}
           canEditSchedule={!!canEditSchedule}
-          isAccountAdmin={!!canEditSchedule}
           onClose={() => {
             setEditDialogOpen(false);
             setSelectedGame(null);
@@ -577,9 +568,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               openDeleteDialog(selectedGame);
             }
           }}
-          getTeamName={getTeamName}
-          getFieldName={getFieldNameById}
-          getGameTypeText={getGameTypeText}
         />
 
         <DeleteGameDialog
@@ -592,9 +580,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           accountId={accountId}
         />
 
-        <GameResultsDialog
+        <ScoreEntryDialog
           open={gameResultsDialogOpen}
           accountId={accountId}
+          seasonId={currentSeasonId ?? undefined}
           onClose={() => {
             setGameResultsDialogOpen(false);
             setSelectedGameForResults(null);

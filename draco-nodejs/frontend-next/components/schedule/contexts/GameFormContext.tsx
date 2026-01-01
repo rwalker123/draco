@@ -1,19 +1,32 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { Field, Umpire, Game } from '@/types/schedule';
+import { Game } from '@/types/schedule';
 import { TeamSeasonType } from '@draco/shared-schemas';
+
+interface NamedEntity {
+  id: string;
+  name: string;
+}
+
+interface OfficialEntity {
+  id: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+}
 
 interface GameFormContextValue {
   // Data
   leagueTeams: TeamSeasonType[];
-  fields: Field[];
-  umpires: Umpire[];
+  fields: NamedEntity[];
+  umpires: OfficialEntity[];
 
   // Configuration
   canEditSchedule: boolean;
   isAccountAdmin: boolean;
+  hasOfficials: boolean;
 
   // Helper functions
-  getAvailableUmpires: (currentPosition: string, currentValue: string) => Umpire[];
+  getAvailableUmpires: (currentPosition: string, currentValue: string) => OfficialEntity[];
   getTeamName: (teamId: string) => string;
   getFieldName: (fieldId?: string) => string;
   getGameTypeText: (gameType: number | string) => string;

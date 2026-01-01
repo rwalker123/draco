@@ -642,6 +642,15 @@ export type dbSeasonCopySource = Prisma.seasonGetPayload<{
     id: true;
     name: true;
     accountid: true;
+    accounts: {
+      select: {
+        accounttypes: {
+          select: {
+            name: true;
+          };
+        };
+      };
+    };
     leagueseason: {
       select: {
         id: true;
@@ -667,11 +676,36 @@ export type dbSeasonCopySource = Prisma.seasonGetPayload<{
                 dateadded: true;
               };
             };
+            golfroster: {
+              where: { isactive: true };
+              select: {
+                golferid: true;
+                isactive: true;
+              };
+            };
             teamseasonmanager: {
               select: {
                 contactid: true;
               };
             };
+          };
+        };
+        golfleaguesetup: {
+          select: {
+            leagueday: true;
+            firstteetime: true;
+            timebetweenteetimes: true;
+            holespermatch: true;
+            teeoffformat: true;
+            scoringtype: true;
+            usebestball: true;
+            usehandicapscoring: true;
+            perholepoints: true;
+            perninepoints: true;
+            permatchpoints: true;
+            totalholespoints: true;
+            againstfieldpoints: true;
+            againstfielddescpoints: true;
           };
         };
       };

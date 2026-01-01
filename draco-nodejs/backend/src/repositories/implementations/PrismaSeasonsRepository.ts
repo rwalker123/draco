@@ -220,6 +220,15 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
         id: true,
         name: true,
         accountid: true,
+        accounts: {
+          select: {
+            accounttypes: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
         leagueseason: {
           select: {
             id: true,
@@ -245,11 +254,36 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
                     dateadded: true,
                   },
                 },
+                golfroster: {
+                  where: { isactive: true },
+                  select: {
+                    golferid: true,
+                    isactive: true,
+                  },
+                },
                 teamseasonmanager: {
                   select: {
                     contactid: true,
                   },
                 },
+              },
+            },
+            golfleaguesetup: {
+              select: {
+                leagueday: true,
+                firstteetime: true,
+                timebetweenteetimes: true,
+                holespermatch: true,
+                teeoffformat: true,
+                scoringtype: true,
+                usebestball: true,
+                usehandicapscoring: true,
+                perholepoints: true,
+                perninepoints: true,
+                permatchpoints: true,
+                totalholespoints: true,
+                againstfieldpoints: true,
+                againstfielddescpoints: true,
               },
             },
           },
@@ -263,6 +297,9 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
     sourceSeason: dbSeasonCopySource,
     newSeasonName: string,
   ): Promise<dbSeasonWithLeagues> {
+    const accountTypeName = sourceSeason.accounts.accounttypes.name;
+    const isGolfAccount = accountTypeName.toLowerCase().includes('golf');
+
     return this.prisma.$transaction(async (tx) => {
       const createdSeason = await tx.season.create({
         data: {
@@ -317,17 +354,29 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
             select: { id: true },
           });
 
-          if (teamSeason.rosterseason.length > 0) {
-            await tx.rosterseason.createMany({
-              data: teamSeason.rosterseason.map((roster) => ({
-                playerid: roster.playerid,
-                playernumber: roster.playernumber,
-                dateadded: roster.dateadded,
-                teamseasonid: createdTeamSeason.id,
-                inactive: false,
-                submittedwaiver: false,
-              })),
-            });
+          if (isGolfAccount) {
+            if (teamSeason.golfroster.length > 0) {
+              await tx.golfroster.createMany({
+                data: teamSeason.golfroster.map((roster) => ({
+                  golferid: roster.golferid,
+                  teamseasonid: createdTeamSeason.id,
+                  isactive: true,
+                })),
+              });
+            }
+          } else {
+            if (teamSeason.rosterseason.length > 0) {
+              await tx.rosterseason.createMany({
+                data: teamSeason.rosterseason.map((roster) => ({
+                  playerid: roster.playerid,
+                  playernumber: roster.playernumber,
+                  dateadded: roster.dateadded,
+                  teamseasonid: createdTeamSeason.id,
+                  inactive: false,
+                  submittedwaiver: false,
+                })),
+              });
+            }
           }
 
           if (teamSeason.teamseasonmanager.length > 0) {
@@ -338,6 +387,29 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
               })),
             });
           }
+        }
+
+        if (isGolfAccount && leagueSeason.golfleaguesetup) {
+          await tx.golfleaguesetup.create({
+            data: {
+              accountid: accountId,
+              leagueseasonid: createdLeagueSeason.id,
+              leagueday: leagueSeason.golfleaguesetup.leagueday,
+              firstteetime: leagueSeason.golfleaguesetup.firstteetime,
+              timebetweenteetimes: leagueSeason.golfleaguesetup.timebetweenteetimes,
+              holespermatch: leagueSeason.golfleaguesetup.holespermatch,
+              teeoffformat: leagueSeason.golfleaguesetup.teeoffformat,
+              scoringtype: leagueSeason.golfleaguesetup.scoringtype,
+              usebestball: leagueSeason.golfleaguesetup.usebestball,
+              usehandicapscoring: leagueSeason.golfleaguesetup.usehandicapscoring,
+              perholepoints: leagueSeason.golfleaguesetup.perholepoints,
+              perninepoints: leagueSeason.golfleaguesetup.perninepoints,
+              permatchpoints: leagueSeason.golfleaguesetup.permatchpoints,
+              totalholespoints: leagueSeason.golfleaguesetup.totalholespoints,
+              againstfieldpoints: leagueSeason.golfleaguesetup.againstfieldpoints,
+              againstfielddescpoints: leagueSeason.golfleaguesetup.againstfielddescpoints,
+            },
+          });
         }
       }
 

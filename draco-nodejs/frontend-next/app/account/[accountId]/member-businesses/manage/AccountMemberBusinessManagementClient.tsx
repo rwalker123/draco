@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import AccountTypeGuard from '@/components/auth/AccountTypeGuard';
 import AccountMemberBusinessManagement from './AccountMemberBusinessManagement';
 
 export default function AccountMemberBusinessManagementClient() {
@@ -13,8 +14,10 @@ export default function AccountMemberBusinessManagementClient() {
   }
 
   return (
-    <ProtectedRoute requiredPermission="account.contacts.manage" checkAccountBoundary>
-      <AccountMemberBusinessManagement accountId={accountId} />
-    </ProtectedRoute>
+    <AccountTypeGuard requiredAccountType="baseball">
+      <ProtectedRoute requiredPermission="account.contacts.manage" checkAccountBoundary>
+        <AccountMemberBusinessManagement accountId={accountId} />
+      </ProtectedRoute>
+    </AccountTypeGuard>
   );
 }

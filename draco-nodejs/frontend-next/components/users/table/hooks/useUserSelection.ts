@@ -25,11 +25,11 @@ export const enhanceUser = (user: ContactType): EnhancedUser => {
   // Check if user has any contact information
   const hasContactInfo = Boolean(
     contact?.phone1 ||
-      contact?.phone2 ||
-      contact?.phone3 ||
-      contact?.streetAddress ||
-      fullAddress ||
-      contact?.dateOfBirth,
+    contact?.phone2 ||
+    contact?.phone3 ||
+    contact?.streetAddress ||
+    fullAddress ||
+    contact?.dateOfBirth,
   );
 
   const enhancedUser: EnhancedUser = {
@@ -110,14 +110,8 @@ export const sortEnhancedUsers = (
     // Handle nested field access
     if (field.includes('.')) {
       const fields = field.split('.');
-      aValue = fields.reduce(
-        (obj: unknown, key) => (obj as Record<string, unknown>)?.[key],
-        a as unknown,
-      );
-      bValue = fields.reduce(
-        (obj: unknown, key) => (obj as Record<string, unknown>)?.[key],
-        b as unknown,
-      );
+      aValue = fields.reduce((obj: unknown, key) => (obj as Record<string, unknown>)?.[key], a);
+      bValue = fields.reduce((obj: unknown, key) => (obj as Record<string, unknown>)?.[key], b);
     } else {
       aValue = a[field as keyof EnhancedUser];
       bValue = b[field as keyof EnhancedUser];

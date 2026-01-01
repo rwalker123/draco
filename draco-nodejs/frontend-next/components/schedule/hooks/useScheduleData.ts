@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import type { ComponentType } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { useApiClient } from '../../../hooks/useApiClient';
@@ -12,19 +13,21 @@ import {
   startOfWeek,
   startOfYear,
 } from 'date-fns';
-import {
-  listAccountFields,
-  listAccountUmpires,
-  listSeasonGames,
-  listSeasonLeagueSeasons,
-} from '@draco/shared-api-client';
-import { ApiClientError, unwrapApiResult } from '../../../utils/apiResult';
+import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
+import { unwrapApiResult } from '../../../utils/apiResult';
 import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
-import { mapGameResponseToScheduleGame } from '../../../utils/gameTransformers';
 import { TeamSeasonType } from '@draco/shared-schemas';
+import { getSportAdapter } from '../adapters';
+import type {
+  ScheduleLocation,
+  ScheduleOfficial,
+  GameDialogProps,
+  ScoreEntryDialogProps,
+} from '../types/sportAdapter';
 
 interface UseScheduleDataProps {
   accountId: string;
+  accountType?: string;
   filterType: FilterType;
   filterDate: Date;
   onError?: (message: string) => void;
@@ -33,8 +36,8 @@ interface UseScheduleDataProps {
 interface UseScheduleDataReturn {
   games: Game[];
   teams: TeamSeasonType[];
-  fields: Field[];
-  umpires: Umpire[];
+  locations: ScheduleLocation[];
+  officials: ScheduleOfficial[];
   leagues: League[];
   leagueTeams: TeamSeasonType[];
   leagueTeamsCache: Map<string, TeamSeasonType[]>;
@@ -43,16 +46,25 @@ interface UseScheduleDataReturn {
   loadStaticData: () => Promise<void>;
   loadGamesData: () => Promise<void>;
   loadLeagueTeams: (leagueSeasonId: string) => void;
-  loadUmpires: () => Promise<void>;
+  loadOfficials: () => Promise<void>;
   clearLeagueTeams: () => void;
   upsertGameInCache: (game: Game) => void;
   removeGameFromCache: (gameId: string) => void;
   filteredGames: Game[];
   startDate: Date;
   endDate: Date;
+  locationLabel: string;
+  hasOfficials: boolean;
+  officialLabel: string;
+  GameDialog: ComponentType<GameDialogProps>;
+  ScoreEntryDialog: ComponentType<ScoreEntryDialogProps>;
+  /** @deprecated Use locations instead */
+  fields: Field[];
+  /** @deprecated Use officials instead */
+  umpires: Umpire[];
+  /** @deprecated Use loadOfficials instead */
+  loadUmpires: () => Promise<void>;
 }
-
-const API_PAGE_LIMIT = 100;
 
 const sortGamesAscending = (a: Game, b: Game): number => {
   const diff = new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime();
@@ -64,6 +76,7 @@ const sortGamesAscending = (a: Game, b: Game): number => {
 
 export const useScheduleData = ({
   accountId,
+  accountType,
   filterType,
   filterDate,
   onError,
@@ -72,9 +85,11 @@ export const useScheduleData = ({
   const { fetchCurrentSeason } = useCurrentSeason(accountId);
   const apiClient = useApiClient();
 
+  const adapter = useMemo(() => getSportAdapter(accountType), [accountType]);
+
   const [teams, setTeams] = useState<TeamSeasonType[]>([]);
-  const [fields, setFields] = useState<Field[]>([]);
-  const [umpires, setUmpires] = useState<Umpire[]>([]);
+  const [locations, setLocations] = useState<ScheduleLocation[]>([]);
+  const [officials, setOfficials] = useState<ScheduleOfficial[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
   const [leagueTeams, setLeagueTeams] = useState<TeamSeasonType[]>([]);
   const [leagueTeamsCache, setLeagueTeamsCache] = useState<Map<string, TeamSeasonType[]>>(
@@ -260,41 +275,21 @@ export const useScheduleData = ({
       }
 
       try {
-        const fieldsResult = await listAccountFields({
-          client: apiClient,
-          path: { accountId },
-          throwOnError: false,
-        });
-
-        const fieldsData = unwrapApiResult(fieldsResult, 'Failed to load fields');
-        const mappedFields: Field[] = fieldsData.fields.map((field) => ({
-          id: field.id,
-          name: field.name,
-          shortName: field.shortName,
-          comment: field.comment ?? '',
-          address: field.address ?? '',
-          city: field.city ?? '',
-          state: field.state ?? '',
-          zipCode: field.zip ?? '',
-          directions: field.directions ?? '',
-          rainoutNumber: field.rainoutNumber ?? '',
-          latitude: field.latitude ? String(field.latitude) : '',
-          longitude: field.longitude ? String(field.longitude) : '',
-        }));
-        setFields(mappedFields);
-      } catch (fieldsError) {
-        console.warn('Failed to load fields:', fieldsError);
-        setFields([]);
+        const loadedLocations = await adapter.loadLocations({ accountId, apiClient });
+        setLocations(loadedLocations);
+      } catch (locationsError) {
+        console.warn(`Failed to load ${adapter.locationLabel.toLowerCase()}s:`, locationsError);
+        setLocations([]);
       }
 
-      setUmpires([]);
+      setOfficials([]);
     } catch (err: unknown) {
       console.error('Failed to load static data:', err);
       onError?.('Unable to load schedule data. Please refresh the page.');
     } finally {
       setLoadingStaticData(false);
     }
-  }, [accountId, apiClient, fetchCurrentSeason, onError]);
+  }, [accountId, apiClient, fetchCurrentSeason, onError, adapter]);
 
   const loadGamesData = useCallback(async () => {
     try {
@@ -323,40 +318,16 @@ export const useScheduleData = ({
           const { start, end } = getMonthRangeForKey(monthKey);
 
           requestPromise = (async () => {
-            const aggregated = new Map<string, Game>();
-            let page = 1;
+            const loadedGames = await adapter.loadGames({
+              accountId,
+              seasonId,
+              startDate: start,
+              endDate: end,
+              apiClient,
+            });
 
-            while (true) {
-              const gamesResult = await listSeasonGames({
-                client: apiClient,
-                path: { accountId, seasonId },
-                query: {
-                  startDate: start.toISOString(),
-                  endDate: end.toISOString(),
-                  sortOrder: 'asc',
-                  page,
-                  limit: API_PAGE_LIMIT,
-                },
-                throwOnError: false,
-              });
-
-              const gamesData = unwrapApiResult(gamesResult, 'Failed to load games');
-              const mappedGames = gamesData.games.map(mapGameResponseToScheduleGame);
-
-              mappedGames.forEach((game) => {
-                aggregated.set(game.id, game);
-              });
-
-              const { total, limit } = gamesData.pagination;
-              if (limit === 0 || page * limit >= total) {
-                break;
-              }
-              page += 1;
-            }
-
-            const sortedGames = Array.from(aggregated.values()).sort(sortGamesAscending);
-            gamesCacheRef.current.set(monthKey, sortedGames);
-            return sortedGames;
+            gamesCacheRef.current.set(monthKey, loadedGames);
+            return loadedGames;
           })();
 
           gamesRequestCacheRef.current.set(monthKey, requestPromise);
@@ -386,6 +357,7 @@ export const useScheduleData = ({
   }, [
     accountId,
     apiClient,
+    adapter,
     collectGamesForRange,
     endDate,
     fetchCurrentSeason,
@@ -412,34 +384,20 @@ export const useScheduleData = ({
     [leagueTeamsCache],
   );
 
-  const loadUmpires = useCallback(async () => {
-    try {
-      const result = await listAccountUmpires({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult(result, 'Failed to load umpires');
-      const mapped: Umpire[] = data.umpires.map((umpire) => ({
-        id: umpire.id,
-        contactId: umpire.contactId,
-        firstName: umpire.firstName,
-        lastName: umpire.lastName,
-        email: umpire.email ?? '',
-        displayName: umpire.displayName,
-      }));
-      setUmpires(mapped);
-    } catch (err) {
-      if (err instanceof ApiClientError && err.status === 401) {
-        setUmpires([]);
-        return;
-      }
-
-      console.warn('Failed to load umpires:', err);
-      setUmpires([]);
+  const loadOfficials = useCallback(async () => {
+    if (!adapter.hasOfficials || !adapter.loadOfficials) {
+      setOfficials([]);
+      return;
     }
-  }, [accountId, apiClient]);
+
+    try {
+      const loadedOfficials = await adapter.loadOfficials({ accountId, apiClient });
+      setOfficials(loadedOfficials);
+    } catch (err) {
+      console.warn(`Failed to load ${adapter.officialLabel?.toLowerCase() ?? 'officials'}:`, err);
+      setOfficials([]);
+    }
+  }, [accountId, apiClient, adapter]);
 
   const clearLeagueTeams = useCallback(() => {
     setLeagueTeams([]);
@@ -513,11 +471,43 @@ export const useScheduleData = ({
 
   const filteredGames = games;
 
+  const fields: Field[] = useMemo(
+    () =>
+      locations.map((loc) => ({
+        id: loc.id,
+        name: loc.name,
+        shortName: loc.shortName ?? loc.name,
+        comment: '',
+        address: loc.address ?? '',
+        city: loc.city ?? '',
+        state: loc.state ?? '',
+        zipCode: loc.zipCode ?? '',
+        directions: '',
+        rainoutNumber: '',
+        latitude: loc.latitude ?? '',
+        longitude: loc.longitude ?? '',
+      })),
+    [locations],
+  );
+
+  const umpires: Umpire[] = useMemo(
+    () =>
+      officials.map((off) => ({
+        id: off.id,
+        contactId: off.contactId,
+        firstName: off.firstName,
+        lastName: off.lastName,
+        email: off.email,
+        displayName: off.displayName,
+      })),
+    [officials],
+  );
+
   return {
     games,
     teams,
-    fields,
-    umpires,
+    locations,
+    officials,
     leagues,
     leagueTeams,
     leagueTeamsCache,
@@ -526,12 +516,20 @@ export const useScheduleData = ({
     loadStaticData,
     loadGamesData,
     loadLeagueTeams,
-    loadUmpires,
+    loadOfficials,
     clearLeagueTeams,
     upsertGameInCache,
     removeGameFromCache,
     filteredGames,
     startDate,
     endDate,
+    locationLabel: adapter.locationLabel,
+    hasOfficials: adapter.hasOfficials,
+    officialLabel: adapter.officialLabel ?? 'Official',
+    GameDialog: adapter.GameDialog,
+    ScoreEntryDialog: adapter.ScoreEntryDialog,
+    fields,
+    umpires,
+    loadUmpires: loadOfficials,
   };
 };

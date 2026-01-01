@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
+import AccountTypeGuard from '../../../../../components/auth/AccountTypeGuard';
 import HallOfFameManagementPage from './HallOfFameManagementPage';
 
 export default function HallOfFameManagementClient() {
@@ -14,8 +15,10 @@ export default function HallOfFameManagementClient() {
   }
 
   return (
-    <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary>
-      <HallOfFameManagementPage accountId={accountId} />
-    </ProtectedRoute>
+    <AccountTypeGuard requiredAccountType="baseball">
+      <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary>
+        <HallOfFameManagementPage accountId={accountId} />
+      </ProtectedRoute>
+    </AccountTypeGuard>
   );
 }

@@ -994,7 +994,7 @@ const BattingStatsEditableGrid = forwardRef<
             editableFields.includes(params.field as EditableBattingField)
           }
           getRowClassName={(params) => {
-            const { id } = params as unknown as { id: string | number };
+            const { id } = params as { id: string | number };
             return id === TOTALS_ROW_ID ? 'totals-row' : '';
           }}
           onCellClick={(params) => {
