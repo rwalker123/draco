@@ -8,12 +8,14 @@ import {
   SignRosterMemberSchema,
   UpdateRosterMemberSchema,
 } from '@draco/shared-schemas';
-import { AuthorizationError } from '../utils/customErrors.js';
+import { AuthorizationError, NotFoundError } from '../utils/customErrors.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const rosterService = ServiceFactory.getRosterService();
 const accountSettingsService = ServiceFactory.getAccountSettingsService();
+const csvExportService = ServiceFactory.getCsvExportService();
 
 const isSettingEnabled = (settings: AccountSettingState[], key: string): boolean =>
   settings.some((setting) => setting.definition.key === key && Boolean(setting.effectiveValue));
@@ -260,6 +262,39 @@ router.delete(
     await rosterService.deleteRosterMember(rosterMemberId, teamSeasonId, seasonId, accountId);
 
     res.json(true);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster/export
+ * Export team roster to CSV
+ */
+router.get(
+  '/:teamSeasonId/roster/export',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+
+    const teamSeason = await prisma.teamsseason.findFirst({
+      where: {
+        id: teamSeasonId,
+        leagueseason: {
+          seasonid: seasonId,
+          league: { accountid: accountId },
+        },
+      },
+    });
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found');
+    }
+
+    const result = await csvExportService.exportTeamRoster(teamSeasonId, seasonId, teamSeason.name);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.send(result.buffer);
   }),
 );
 

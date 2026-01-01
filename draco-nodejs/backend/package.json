@@ -38,6 +38,7 @@
     "@aws-sdk/s3-request-presigner": "^3.934.0",
     "@draco/shared-schemas": "*",
     "@draco/stoplight-assets": "*",
+    "@fast-csv/format": "^5.0.5",
     "@mui/x-date-pickers": "^8.6.0",
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
@@ -85,7 +86,7 @@
     "supertest": "^7.1.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
-    "vitest": "^4.0.10",
-    "typescript-eslint": "^8.39.1"
+    "typescript-eslint": "^8.39.1",
+    "vitest": "^4.0.10"
   }
 }

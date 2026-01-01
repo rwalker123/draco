@@ -1,4 +1,5 @@
 import {
+  dbRosterExportData,
   dbRosterMember,
   dbRosterPlayer,
   dbRosterSeason,
@@ -55,4 +56,13 @@ export interface IRosterRepository {
     inactive?: boolean,
   ): Promise<dbRosterMember>;
   deleteRosterMember(rosterMemberId: bigint): Promise<void>;
+  findRosterMembersForExport(
+    teamSeasonId: bigint,
+    _seasonId: bigint,
+  ): Promise<dbRosterExportData[]>;
+  findLeagueRosterForExport(
+    leagueSeasonId: bigint,
+    _seasonId: bigint,
+  ): Promise<dbRosterExportData[]>;
+  findSeasonRosterForExport(seasonId: bigint, accountId: bigint): Promise<dbRosterExportData[]>;
 }

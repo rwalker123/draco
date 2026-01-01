@@ -57,6 +57,7 @@ import golfHandicapsRouter from './routes/golf-handicaps.js';
 import golfStandingsRouter from './routes/golf-standings.js';
 import golfStatsRouter from './routes/golf-stats.js';
 import externalCoursesRouter from './routes/external-courses.js';
+import exportsRouter from './routes/exports.js';
 import { ServiceFactory } from './services/serviceFactory.js';
 import { socialIngestionConfig } from './config/socialIngestion.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
@@ -268,6 +269,7 @@ app.use(
   teamManagersRouter,
 );
 app.use('/api/accounts/:accountId/seasons/:seasonId/managers', seasonManagersRouter);
+app.use('/api/accounts/:accountId/seasons/:seasonId', exportsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/standings', standingsRouter);
 app.use('/api', emailsRouter);
 app.use('/api/webhooks', webhookRouter);

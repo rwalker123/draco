@@ -21,7 +21,13 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 import EditTeamDialog from '../../../../../../components/EditTeamDialog';
 import TeamAvatar from '../../../../../../components/TeamAvatar';
 import { useApiClient } from '@/hooks/useApiClient';
-import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
+import {
+  listSeasonLeagueSeasons,
+  exportLeagueRoster,
+  exportLeagueManagers,
+  exportSeasonRoster,
+  exportSeasonManagers,
+} from '@draco/shared-api-client';
 import type { UpdateTeamMetadataResult } from '@/hooks/useTeamManagement';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { mapLeagueSetup } from '@/utils/leagueSeasonMapper';
@@ -70,53 +76,48 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<TeamSeasonType | null>(null);
 
-  // Export roster to CSV function (placeholder)
+  const downloadBlob = (blob: Blob, fileName: string) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   const handleExportRoster = async (leagueSeason: LeagueSeasonType) => {
     try {
-      // TODO: Implement backend endpoint for CSV export
+      const result = await exportLeagueRoster({
+        client: apiClient,
+        path: { accountId, seasonId, leagueSeasonId: String(leagueSeason.id) },
+        throwOnError: false,
+        parseAs: 'blob',
+      });
 
-      // Placeholder implementation
-      alert(`Export roster for ${leagueSeason.league.name} - Backend implementation pending`);
-
-      // Future implementation would be:
-      // const response = await {someAPiCall};
-      // const result = apiUnwrapResult(response, 'Failed to export managers');
-      //   const blob = await response.blob();
-      //   const url = window.URL.createObjectURL(blob);
-      //   const a = document.createElement('a');
-      //   a.href = url;
-      //   a.download = `${leagueSeason.leagueName}-roster.csv`;
-      //   document.body.appendChild(a);
-      //   a.click();
-      //   window.URL.revokeObjectURL(url);
-      //   document.body.removeChild(a);
-    } catch (error) {
-      alert('Failed to export roster: ' + error);
+      const blob = unwrapApiResult(result, 'Failed to export roster') as Blob;
+      const sanitizedName = leagueSeason.league.name.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+      downloadBlob(blob, `${sanitizedName}-roster.csv`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export roster');
     }
   };
 
-  // Export managers to CSV function (placeholder)
   const handleExportManagers = async (leagueSeason: LeagueSeasonType) => {
     try {
-      // TODO: Implement backend endpoint for CSV export
+      const result = await exportLeagueManagers({
+        client: apiClient,
+        path: { accountId, seasonId, leagueSeasonId: String(leagueSeason.id) },
+        throwOnError: false,
+        parseAs: 'blob',
+      });
 
-      // Placeholder implementation
-      alert(`Export managers for ${leagueSeason.league.name} - Backend implementation pending`);
-
-      // Future implementation would be:
-      // const response = await {someAPiCall};
-      // const result = apiUnwrapResult(response, 'Failed to export managers');
-      //   const blob = await response.blob();
-      //   const url = window.URL.createObjectURL(blob);
-      //   const a = document.createElement('a');
-      //   a.href = url;
-      //   a.download = `${leagueSeason.leagueName}-managers.csv`;
-      //   document.body.appendChild(a);
-      //   a.click();
-      //   window.URL.revokeObjectURL(url);
-      //   document.body.removeChild(a);
-    } catch (error) {
-      alert('Failed to export managers: ' + error);
+      const blob = unwrapApiResult(result, 'Failed to export managers') as Blob;
+      const sanitizedName = leagueSeason.league.name.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+      downloadBlob(blob, `${sanitizedName}-managers.csv`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export managers');
     }
   };
 
@@ -145,52 +146,41 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     handleExportMenuClose();
   };
 
-  // Season-level export functions
   const handleExportSeasonRoster = async () => {
     try {
-      // TODO: Implement backend endpoint for season roster export
+      const result = await exportSeasonRoster({
+        client: apiClient,
+        path: { accountId, seasonId },
+        throwOnError: false,
+        parseAs: 'blob',
+      });
 
-      // Placeholder implementation
-      alert(`Export season roster - Backend implementation pending`);
-
-      // Future implementation would be:
-      // const response = await {someAPiCall};
-      // const result = apiUnwrapResult(response, 'Failed to export managers');
-      //   const blob = await response.blob();
-      //   const url = window.URL.createObjectURL(blob);
-      //   const a = document.createElement('a');
-      //   a.href = url;
-      //   a.download = `${teamsData?.season.name}-roster.csv`;
-      //   document.body.appendChild(a);
-      //   a.click();
-      //   window.URL.revokeObjectURL(url);
-      //   document.body.removeChild(a);
-    } catch (error) {
-      alert('Failed to export season roster: ' + error);
+      const blob = unwrapApiResult(result, 'Failed to export season roster') as Blob;
+      const sanitizedName = (teamsData?.season?.name ?? 'season')
+        .replace(/[^a-zA-Z0-9-_]/g, '-')
+        .toLowerCase();
+      downloadBlob(blob, `${sanitizedName}-roster.csv`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export season roster');
     }
   };
 
   const handleExportSeasonManagers = async () => {
     try {
-      // TODO: Implement backend endpoint for season managers export
+      const result = await exportSeasonManagers({
+        client: apiClient,
+        path: { accountId, seasonId },
+        throwOnError: false,
+        parseAs: 'blob',
+      });
 
-      // Placeholder implementation
-      alert(`Export season managers - Backend implementation pending`);
-
-      // Future implementation would be:
-      // const response = await {someAPiCall};
-      // const result = apiUnwrapResult(response, 'Failed to export managers');
-      //   const blob = await response.blob();
-      //   const url = window.URL.createObjectURL(blob);
-      //   const a = document.createElement('a');
-      //   a.href = url;
-      //   a.download = `${teamsData?.season.name}-managers.csv`;
-      //   document.body.appendChild(a);
-      //   a.click();
-      //   window.URL.revokeObjectURL(url);
-      //   document.body.removeChild(a);
-    } catch (error) {
-      alert('Failed to export season managers: ' + error);
+      const blob = unwrapApiResult(result, 'Failed to export season managers') as Blob;
+      const sanitizedName = (teamsData?.season?.name ?? 'season')
+        .replace(/[^a-zA-Z0-9-_]/g, '-')
+        .toLowerCase();
+      downloadBlob(blob, `${sanitizedName}-managers.csv`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export season managers');
     }
   };
 
