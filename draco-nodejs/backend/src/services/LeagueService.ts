@@ -385,6 +385,15 @@ export class LeagueService {
 
       if (conflictingDivision && conflictingDivision.id !== divisionSeason.divisionid) {
         if (input.switchToExistingDivision) {
+          const existingDivisionSeason = await this.leagueRepository.findDivisionSeasonByDivision(
+            leagueSeasonId,
+            conflictingDivision.id,
+          );
+          if (existingDivisionSeason) {
+            throw new ConflictError(
+              `Cannot switch to "${conflictingDivision.name}" - it is already used in this league season`,
+            );
+          }
           await this.leagueRepository.updateDivisionSeasonDivisionId(
             divisionSeasonId,
             conflictingDivision.id,

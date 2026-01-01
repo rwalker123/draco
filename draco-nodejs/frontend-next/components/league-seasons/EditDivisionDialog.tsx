@@ -13,11 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { updateLeagueSeasonDivision as apiUpdateLeagueSeasonDivision } from '@draco/shared-api-client';
-import type {
-  DivisionSeasonType,
-  LeagueSeasonType,
-  UpdateDivisionSeasonResponseType,
-} from '@draco/shared-schemas';
+import type { DivisionSeasonType, LeagueSeasonType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
 
@@ -104,10 +100,7 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
           throwOnError: false,
         });
 
-        const response = unwrapApiResult(
-          result,
-          'Failed to update division',
-        ) as UpdateDivisionSeasonResponseType;
+        const response = unwrapApiResult(result, 'Failed to update division');
 
         if (response.conflict) {
           setConflict(response.conflict);
