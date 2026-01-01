@@ -3,6 +3,7 @@ import { CsvExportService } from '../csvExportService.js';
 import { IRosterRepository } from '../../repositories/interfaces/IRosterRepository.js';
 import { IManagerRepository } from '../../repositories/interfaces/IManagerRepository.js';
 import { dbRosterExportData, dbManagerExportData } from '../../repositories/types/dbTypes.js';
+import { PayloadTooLargeError } from '../../utils/customErrors.js';
 
 class RosterRepositoryStub implements IRosterRepository {
   findRosterMembersByTeamSeason = vi.fn<IRosterRepository['findRosterMembersByTeamSeason']>();
@@ -38,8 +39,11 @@ class ManagerRepositoryStub implements IManagerRepository {
   findSeasonManagersForExport = vi.fn<IManagerRepository['findSeasonManagersForExport']>();
 }
 
+let mockPlayerIdCounter = 1n;
+
 const createMockRosterExportData = (
   overrides: Partial<{
+    playerid: bigint;
     firstname: string | null;
     lastname: string | null;
     middlename: string | null;
@@ -64,6 +68,7 @@ const createMockRosterExportData = (
   };
 
   return {
+    playerid: overrides.playerid ?? mockPlayerIdCounter++,
     roster: {
       contacts: contacts as dbRosterExportData['roster']['contacts'],
       playerseasonaffiliationdues:
@@ -464,6 +469,98 @@ describe('CsvExportService', () => {
       const csvContent = result.buffer.toString();
 
       expect(csvContent).toContain('John Michael Doe');
+    });
+  });
+
+  describe('export limits', () => {
+    const createLargeDataset = (count: number): dbRosterExportData[] => {
+      return Array.from({ length: count }, (_, i) =>
+        createMockRosterExportData({
+          firstname: `User${i}`,
+          lastname: 'Test',
+          seasonid: 1n,
+          affiliationduespaid: 'Yes',
+        }),
+      );
+    };
+
+    const createLargeManagerDataset = (count: number): dbManagerExportData[] => {
+      return Array.from({ length: count }, (_, i) =>
+        createMockManagerExportData({
+          firstname: `Manager${i}`,
+          lastname: 'Test',
+        }),
+      );
+    };
+
+    it('should throw PayloadTooLargeError when team roster exceeds 10,000 rows', async () => {
+      rosterRepository.findRosterMembersForExport.mockResolvedValue(createLargeDataset(10001));
+
+      await expect(service.exportTeamRoster(100n, 1n, 'Large Team')).rejects.toThrow(
+        PayloadTooLargeError,
+      );
+      await expect(service.exportTeamRoster(100n, 1n, 'Large Team')).rejects.toThrow(
+        /Export limit exceeded: 10001 rows requested, maximum is 10000/,
+      );
+    });
+
+    it('should throw PayloadTooLargeError when league roster exceeds 10,000 rows', async () => {
+      rosterRepository.findLeagueRosterForExport.mockResolvedValue(createLargeDataset(10001));
+
+      await expect(service.exportLeagueRoster(50n, 1n, 'Large League')).rejects.toThrow(
+        PayloadTooLargeError,
+      );
+    });
+
+    it('should throw PayloadTooLargeError when season roster exceeds 10,000 rows', async () => {
+      rosterRepository.findSeasonRosterForExport.mockResolvedValue(createLargeDataset(10001));
+
+      await expect(service.exportSeasonRoster(1n, 10n, 'Large Season')).rejects.toThrow(
+        PayloadTooLargeError,
+      );
+    });
+
+    it('should throw PayloadTooLargeError when league managers exceeds 10,000 rows', async () => {
+      managerRepository.findLeagueManagersForExport.mockResolvedValue(
+        createLargeManagerDataset(10001),
+      );
+
+      await expect(service.exportLeagueManagers(50n, 'Large League')).rejects.toThrow(
+        PayloadTooLargeError,
+      );
+    });
+
+    it('should throw PayloadTooLargeError when season managers exceeds 10,000 rows', async () => {
+      managerRepository.findSeasonManagersForExport.mockResolvedValue(
+        createLargeManagerDataset(10001),
+      );
+
+      await expect(service.exportSeasonManagers(1n, 10n, 'Large Season')).rejects.toThrow(
+        PayloadTooLargeError,
+      );
+    });
+
+    it('should allow export at exactly 10,000 rows', async () => {
+      rosterRepository.findRosterMembersForExport.mockResolvedValue(createLargeDataset(10000));
+
+      const result = await service.exportTeamRoster(100n, 1n, 'Max Team');
+
+      expect(result.fileName).toBe('max-team-roster.csv');
+      expect(Buffer.isBuffer(result.buffer)).toBe(true);
+    });
+
+    it('should include row count and limit in error message', async () => {
+      rosterRepository.findRosterMembersForExport.mockResolvedValue(createLargeDataset(15000));
+
+      try {
+        await service.exportTeamRoster(100n, 1n, 'Huge Team');
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(PayloadTooLargeError);
+        expect((error as Error).message).toBe(
+          'Export limit exceeded: 15000 rows requested, maximum is 10000',
+        );
+      }
     });
   });
 });

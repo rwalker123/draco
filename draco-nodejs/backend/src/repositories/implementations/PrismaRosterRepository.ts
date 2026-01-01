@@ -218,6 +218,7 @@ export class PrismaRosterRepository implements IRosterRepository {
   }
 
   private readonly exportSelect = {
+    playerid: true,
     roster: {
       select: {
         contacts: {

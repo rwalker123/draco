@@ -8,6 +8,9 @@ import {
   ROSTER_EXPORT_HEADERS,
   MANAGER_EXPORT_HEADERS,
 } from '../utils/csvGenerator.js';
+import { PayloadTooLargeError } from '../utils/customErrors.js';
+
+const MAX_EXPORT_ROWS = 10000;
 
 export interface CsvExportResult {
   buffer: Buffer;
@@ -25,13 +28,16 @@ export class CsvExportService {
     seasonId: bigint,
     teamName: string,
   ): Promise<CsvExportResult> {
+    const startTime = Date.now();
     const rosterData = await this.rosterRepository.findRosterMembersForExport(
       teamSeasonId,
       seasonId,
     );
+    this.checkExportLimit(rosterData.length, 'team roster', teamName);
     const rows = this.mapRosterToExportRows(rosterData, seasonId);
     const buffer = await generateCsv(rows, ROSTER_EXPORT_HEADERS);
     const sanitizedName = this.sanitizeFileName(teamName);
+    this.logExportMetrics('team roster', teamName, rows.length, buffer.length, startTime);
     return {
       buffer,
       fileName: `${sanitizedName}-roster.csv`,
@@ -43,13 +49,16 @@ export class CsvExportService {
     seasonId: bigint,
     leagueName: string,
   ): Promise<CsvExportResult> {
+    const startTime = Date.now();
     const rosterData = await this.rosterRepository.findLeagueRosterForExport(
       leagueSeasonId,
       seasonId,
     );
+    this.checkExportLimit(rosterData.length, 'league roster', leagueName);
     const rows = this.mapRosterToExportRows(rosterData, seasonId);
     const buffer = await generateCsv(rows, ROSTER_EXPORT_HEADERS);
     const sanitizedName = this.sanitizeFileName(leagueName);
+    this.logExportMetrics('league roster', leagueName, rows.length, buffer.length, startTime);
     return {
       buffer,
       fileName: `${sanitizedName}-roster.csv`,
@@ -61,10 +70,13 @@ export class CsvExportService {
     accountId: bigint,
     seasonName: string,
   ): Promise<CsvExportResult> {
+    const startTime = Date.now();
     const rosterData = await this.rosterRepository.findSeasonRosterForExport(seasonId, accountId);
+    this.checkExportLimit(rosterData.length, 'season roster', seasonName);
     const rows = this.mapRosterToExportRows(rosterData, seasonId);
     const buffer = await generateCsv(rows, ROSTER_EXPORT_HEADERS);
     const sanitizedName = this.sanitizeFileName(seasonName);
+    this.logExportMetrics('season roster', seasonName, rows.length, buffer.length, startTime);
     return {
       buffer,
       fileName: `${sanitizedName}-roster.csv`,
@@ -72,10 +84,13 @@ export class CsvExportService {
   }
 
   async exportLeagueManagers(leagueSeasonId: bigint, leagueName: string): Promise<CsvExportResult> {
+    const startTime = Date.now();
     const managerData = await this.managerRepository.findLeagueManagersForExport(leagueSeasonId);
+    this.checkExportLimit(managerData.length, 'league managers', leagueName);
     const rows = this.mapManagersToExportRows(managerData);
     const buffer = await generateCsv(rows, MANAGER_EXPORT_HEADERS);
     const sanitizedName = this.sanitizeFileName(leagueName);
+    this.logExportMetrics('league managers', leagueName, rows.length, buffer.length, startTime);
     return {
       buffer,
       fileName: `${sanitizedName}-managers.csv`,
@@ -87,13 +102,16 @@ export class CsvExportService {
     accountId: bigint,
     seasonName: string,
   ): Promise<CsvExportResult> {
+    const startTime = Date.now();
     const managerData = await this.managerRepository.findSeasonManagersForExport(
       seasonId,
       accountId,
     );
+    this.checkExportLimit(managerData.length, 'season managers', seasonName);
     const rows = this.mapManagersToExportRows(managerData);
     const buffer = await generateCsv(rows, MANAGER_EXPORT_HEADERS);
     const sanitizedName = this.sanitizeFileName(seasonName);
+    this.logExportMetrics('season managers', seasonName, rows.length, buffer.length, startTime);
     return {
       buffer,
       fileName: `${sanitizedName}-managers.csv`,
@@ -147,5 +165,29 @@ export class CsvExportService {
 
   private sanitizeFileName(name: string): string {
     return name.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+  }
+
+  private checkExportLimit(rowCount: number, exportType: string, name: string): void {
+    if (rowCount > MAX_EXPORT_ROWS) {
+      console.warn(
+        `📊 Export limit exceeded for ${exportType} "${name}": ${rowCount} rows (limit: ${MAX_EXPORT_ROWS})`,
+      );
+      throw new PayloadTooLargeError(
+        `Export limit exceeded: ${rowCount} rows requested, maximum is ${MAX_EXPORT_ROWS}`,
+      );
+    }
+  }
+
+  private logExportMetrics(
+    exportType: string,
+    name: string,
+    rowCount: number,
+    bufferSize: number,
+    startTime: number,
+  ): void {
+    const durationMs = Date.now() - startTime;
+    console.log(
+      `📊 CSV Export: ${exportType} "${name}" - ${rowCount} rows, ${(bufferSize / 1024).toFixed(1)} KB, ${durationMs}ms`,
+    );
   }
 }

@@ -2321,6 +2321,7 @@ export type dbHofClassSummary = {
 
 export type dbRosterExportData = Prisma.rosterseasonGetPayload<{
   select: {
+    playerid: true;
     roster: {
       select: {
         contacts: {
