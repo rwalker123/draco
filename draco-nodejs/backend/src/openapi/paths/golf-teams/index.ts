@@ -504,10 +504,10 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     },
     responses: {
       200: {
-        description: 'Team updated',
+        description: 'Team updated with player count',
         content: {
           'application/json': {
-            schema: GolfTeamSchemaRef,
+            schema: GolfTeamWithPlayerCountSchemaRef,
           },
         },
       },

@@ -31978,11 +31978,11 @@ paths:
               $ref: "#/components/schemas/UpdateGolfTeam"
       responses:
         "200":
-          description: Team updated
+          description: Team updated with player count
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GolfTeam"
+                $ref: "#/components/schemas/GolfTeamWithPlayerCount"
         "400":
           description: Validation error
           content:

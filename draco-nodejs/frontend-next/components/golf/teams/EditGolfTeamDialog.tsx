@@ -11,7 +11,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import type { GolfTeamType } from '@draco/shared-schemas';
+import type { GolfTeamType, GolfTeamWithPlayerCountType } from '@draco/shared-schemas';
 import { useGolfTeams } from '../../../hooks/useGolfTeams';
 
 interface EditGolfTeamDialogProps {
@@ -19,7 +19,7 @@ interface EditGolfTeamDialogProps {
   onClose: () => void;
   accountId: string;
   team: GolfTeamType | null;
-  onSuccess: (team: GolfTeamType, message: string) => void;
+  onSuccess: (team: GolfTeamWithPlayerCountType, message: string) => void;
   onError?: (error: string) => void;
 }
 

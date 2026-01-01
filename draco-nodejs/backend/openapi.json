@@ -45377,11 +45377,11 @@
         },
         "responses": {
           "200": {
-            "description": "Team updated",
+            "description": "Team updated with player count",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GolfTeam"
+                  "$ref": "#/components/schemas/GolfTeamWithPlayerCount"
                 }
               }
             }
