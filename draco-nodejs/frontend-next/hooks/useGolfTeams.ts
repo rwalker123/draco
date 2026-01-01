@@ -29,7 +29,9 @@ export type GolfTeamServiceResult<T> =
 
 export interface GolfTeamService {
   listTeams: (seasonId: string) => Promise<GolfTeamServiceResult<GolfTeamType[]>>;
-  listUnassignedTeams: (seasonId: string) => Promise<GolfTeamServiceResult<GolfTeamType[]>>;
+  listUnassignedTeams: (
+    seasonId: string,
+  ) => Promise<GolfTeamServiceResult<GolfTeamWithPlayerCountType[]>>;
   listTeamsForFlight: (
     flightId: string,
   ) => Promise<GolfTeamServiceResult<GolfTeamWithPlayerCountType[]>>;
@@ -45,7 +47,7 @@ export interface GolfTeamService {
   updateTeam: (
     teamSeasonId: string,
     payload: UpdateGolfTeamType,
-  ) => Promise<GolfTeamServiceResult<GolfTeamType>>;
+  ) => Promise<GolfTeamServiceResult<GolfTeamWithPlayerCountType>>;
   assignToFlight: (
     teamSeasonId: string,
     flightId: string,
@@ -94,7 +96,7 @@ export function useGolfTeams(accountId: string): GolfTeamService {
 
         return {
           success: true,
-          data: teams as GolfTeamType[],
+          data: teams,
           message: 'Unassigned teams loaded successfully',
         } as const;
       } catch (error) {
@@ -212,7 +214,7 @@ export function useGolfTeams(accountId: string): GolfTeamService {
           throwOnError: false,
         });
 
-        const team = unwrapApiResult(result, 'Failed to update team') as GolfTeamType;
+        const team = unwrapApiResult(result, 'Failed to update team');
 
         return {
           success: true,

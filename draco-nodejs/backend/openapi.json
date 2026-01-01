@@ -45119,16 +45119,16 @@
         ],
         "responses": {
           "200": {
-            "description": "List of unassigned teams",
+            "description": "List of unassigned teams with player counts",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/GolfTeam"
+                    "$ref": "#/components/schemas/GolfTeamWithPlayerCount"
                   },
-                  "title": "GolfTeamList",
-                  "description": "List of golf teams"
+                  "title": "GolfTeamWithPlayerCountList",
+                  "description": "List of golf teams with player counts"
                 }
               }
             }
@@ -45377,11 +45377,11 @@
         },
         "responses": {
           "200": {
-            "description": "Team updated",
+            "description": "Team updated with player count",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GolfTeam"
+                  "$ref": "#/components/schemas/GolfTeamWithPlayerCount"
                 }
               }
             }

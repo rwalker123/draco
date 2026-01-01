@@ -90,7 +90,10 @@ export class GolfTeamService {
     }
   }
 
-  async updateTeam(teamSeasonId: bigint, data: UpdateGolfTeamType): Promise<GolfTeamType> {
+  async updateTeam(
+    teamSeasonId: bigint,
+    data: UpdateGolfTeamType,
+  ): Promise<GolfTeamWithPlayerCountType> {
     const team = await this.teamRepository.findById(teamSeasonId);
     if (!team) {
       throw new NotFoundError('Golf team not found');
@@ -113,7 +116,7 @@ export class GolfTeamService {
     if (!updatedTeam) {
       throw new NotFoundError('Updated team not found');
     }
-    return GolfTeamResponseFormatter.format(updatedTeam);
+    return GolfTeamResponseFormatter.formatWithPlayerCount(updatedTeam);
   }
 
   async deleteTeam(teamSeasonId: bigint): Promise<void> {
@@ -156,9 +159,9 @@ export class GolfTeamService {
     return GolfTeamResponseFormatter.format(updatedTeam);
   }
 
-  async getUnassignedTeams(seasonId: bigint): Promise<GolfTeamType[]> {
+  async getUnassignedTeams(seasonId: bigint): Promise<GolfTeamWithPlayerCountType[]> {
     const teams = await this.teamRepository.findBySeasonId(seasonId);
     const unassigned = teams.filter((t) => t.divisionseason === null);
-    return GolfTeamResponseFormatter.formatMany(unassigned);
+    return GolfTeamResponseFormatter.formatManyWithPlayerCount(unassigned);
   }
 }

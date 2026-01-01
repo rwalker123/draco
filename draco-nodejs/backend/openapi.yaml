@@ -31819,15 +31819,15 @@ paths:
             format: number
       responses:
         "200":
-          description: List of unassigned teams
+          description: List of unassigned teams with player counts
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/GolfTeam"
-                title: GolfTeamList
-                description: List of golf teams
+                  $ref: "#/components/schemas/GolfTeamWithPlayerCount"
+                title: GolfTeamWithPlayerCountList
+                description: List of golf teams with player counts
         "401":
           description: Authentication required
           content:
@@ -31978,11 +31978,11 @@ paths:
               $ref: "#/components/schemas/UpdateGolfTeam"
       responses:
         "200":
-          description: Team updated
+          description: Team updated with player count
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GolfTeam"
+                $ref: "#/components/schemas/GolfTeamWithPlayerCount"
         "400":
           description: Validation error
           content:
