@@ -27,10 +27,12 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
   const { user, token, loading: authLoading, initialized: authInitialized } = useAuth();
   const {
     userRoles,
+    roleMetadata,
     hasRole,
     hasPermission,
     loading: roleLoading,
     initialized: roleInitialized,
+    error: roleError,
   } = useRole();
   const { currentAccount, loading: accountLoading, initialized: accountInitialized } = useAccount();
 
@@ -90,6 +92,18 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     }
 
     if (requiredPermission) {
+      if (!roleMetadata) {
+        if (roleError) {
+          const params = new URLSearchParams({
+            from: pathname,
+            required: `permission:${requiredPermission}`,
+            error: 'Failed to load role permissions',
+          });
+          return { status: 'redirect', url: `/unauthorized?${params.toString()}` };
+        }
+        return { status: 'pending' };
+      }
+
       const hasRequiredPermission =
         checkAccountBoundary && currentAccount
           ? hasPermission(requiredPermission, { accountId: currentAccount.id })
@@ -114,8 +128,10 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     authLoading,
     pathname,
     requiredPermission,
+    roleError,
     roleInitialized,
     roleLoading,
+    roleMetadata,
     routeData,
     shouldWaitForAccount,
     token,
