@@ -192,12 +192,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
       );
 
       setFlights(flightsWithTeams);
-      setUnassignedTeams(
-        unassignedResult.data.map((team) => ({
-          ...team,
-          playerCount: 0,
-        })),
-      );
+      setUnassignedTeams(unassignedResult.data);
 
       if (flightsWithTeams.length > 0) {
         setExpandedAccordions(new Set([flightsWithTeams[0].id]));
@@ -268,10 +263,21 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
     [],
   );
 
-  const removeTeamFromFlightInState = useCallback((flightId: string, teamId: string) => {
-    setFlights((prev) => {
-      const flight = prev.find((f) => f.id === flightId);
+  const removeTeamFromFlightInState = useCallback(
+    (flightId: string, teamId: string) => {
+      const flight = flights.find((f) => f.id === flightId);
       const removedTeam = flight?.teams.find((t) => t.id === teamId);
+
+      setFlights((prev) =>
+        prev.map((f) => {
+          if (f.id !== flightId) return f;
+          return {
+            ...f,
+            teams: f.teams.filter((t) => t.id !== teamId),
+            teamCount: Math.max((f.teamCount || 0) - 1, 0),
+          };
+        }),
+      );
 
       if (removedTeam) {
         setUnassignedTeams((prevUnassigned) => {
@@ -281,17 +287,9 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           return [...prevUnassigned, removedTeam];
         });
       }
-
-      return prev.map((f) => {
-        if (f.id !== flightId) return f;
-        return {
-          ...f,
-          teams: f.teams.filter((t) => t.id !== teamId),
-          teamCount: Math.max((f.teamCount || 0) - 1, 0),
-        };
-      });
-    });
-  }, []);
+    },
+    [flights],
+  );
 
   const addTeamToUnassignedInState = useCallback(
     (team: GolfTeamType | GolfTeamWithPlayerCountType) => {
@@ -450,12 +448,16 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           if (f.id !== teamTargetFlight.id) return f;
           return {
             ...f,
-            teams: f.teams.map((t) => (t.id === team.id ? { ...t, ...team } : t)),
+            teams: f.teams.map((t) =>
+              t.id === team.id ? { ...team, playerCount: t.playerCount } : t,
+            ),
           };
         }),
       );
     } else {
-      setUnassignedTeams((prev) => prev.map((t) => (t.id === team.id ? { ...t, ...team } : t)));
+      setUnassignedTeams((prev) =>
+        prev.map((t) => (t.id === team.id ? { ...team, playerCount: t.playerCount } : t)),
+      );
     }
     setFeedback({ severity: 'success', message });
     setEditTeamDialogOpen(false);

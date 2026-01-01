@@ -100,6 +100,11 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
           variant="outlined"
           value={teamName}
           onChange={(e) => setTeamName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && hasChanges && !loading) {
+              void handleSubmit();
+            }
+          }}
           disabled={loading}
           sx={{ mt: 1 }}
         />

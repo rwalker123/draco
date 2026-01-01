@@ -29,7 +29,9 @@ export type GolfTeamServiceResult<T> =
 
 export interface GolfTeamService {
   listTeams: (seasonId: string) => Promise<GolfTeamServiceResult<GolfTeamType[]>>;
-  listUnassignedTeams: (seasonId: string) => Promise<GolfTeamServiceResult<GolfTeamType[]>>;
+  listUnassignedTeams: (
+    seasonId: string,
+  ) => Promise<GolfTeamServiceResult<GolfTeamWithPlayerCountType[]>>;
   listTeamsForFlight: (
     flightId: string,
   ) => Promise<GolfTeamServiceResult<GolfTeamWithPlayerCountType[]>>;
@@ -94,7 +96,7 @@ export function useGolfTeams(accountId: string): GolfTeamService {
 
         return {
           success: true,
-          data: teams as GolfTeamType[],
+          data: teams as GolfTeamWithPlayerCountType[],
           message: 'Unassigned teams loaded successfully',
         } as const;
       } catch (error) {

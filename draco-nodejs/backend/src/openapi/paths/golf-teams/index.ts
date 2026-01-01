@@ -120,10 +120,10 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     ],
     responses: {
       200: {
-        description: 'List of unassigned teams',
+        description: 'List of unassigned teams with player counts',
         content: {
           'application/json': {
-            schema: GolfTeamListSchemaRef,
+            schema: GolfTeamWithPlayerCountListSchemaRef,
           },
         },
       },

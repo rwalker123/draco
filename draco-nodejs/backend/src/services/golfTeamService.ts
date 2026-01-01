@@ -156,9 +156,9 @@ export class GolfTeamService {
     return GolfTeamResponseFormatter.format(updatedTeam);
   }
 
-  async getUnassignedTeams(seasonId: bigint): Promise<GolfTeamType[]> {
+  async getUnassignedTeams(seasonId: bigint): Promise<GolfTeamWithPlayerCountType[]> {
     const teams = await this.teamRepository.findBySeasonId(seasonId);
     const unassigned = teams.filter((t) => t.divisionseason === null);
-    return GolfTeamResponseFormatter.formatMany(unassigned);
+    return GolfTeamResponseFormatter.formatManyWithPlayerCount(unassigned);
   }
 }
