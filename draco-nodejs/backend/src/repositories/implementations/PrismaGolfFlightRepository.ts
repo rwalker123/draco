@@ -30,14 +30,13 @@ export class PrismaGolfFlightRepository implements IGolfFlightRepository {
       orderBy: { priority: 'asc' },
     });
 
-    const flightsWithPlayerCount = await Promise.all(
-      flights.map(async (flight) => ({
-        ...flight,
-        playerCount: await this.getPlayerCountForFlight(flight.id),
-      })),
-    );
+    const flightIds = flights.map((f) => f.id);
+    const playerCountMap = await this.getPlayerCountsForFlights(flightIds);
 
-    return flightsWithPlayerCount;
+    return flights.map((flight) => ({
+      ...flight,
+      playerCount: playerCountMap.get(flight.id) ?? 0,
+    }));
   }
 
   async findByLeagueSeasonId(leagueSeasonId: bigint): Promise<GolfFlightWithCounts[]> {
@@ -57,14 +56,13 @@ export class PrismaGolfFlightRepository implements IGolfFlightRepository {
       orderBy: { priority: 'asc' },
     });
 
-    const flightsWithPlayerCount = await Promise.all(
-      flights.map(async (flight) => ({
-        ...flight,
-        playerCount: await this.getPlayerCountForFlight(flight.id),
-      })),
-    );
+    const flightIds = flights.map((f) => f.id);
+    const playerCountMap = await this.getPlayerCountsForFlights(flightIds);
 
-    return flightsWithPlayerCount;
+    return flights.map((flight) => ({
+      ...flight,
+      playerCount: playerCountMap.get(flight.id) ?? 0,
+    }));
   }
 
   async findById(flightId: bigint): Promise<GolfFlightWithDetails | null> {
@@ -134,6 +132,34 @@ export class PrismaGolfFlightRepository implements IGolfFlightRepository {
     });
 
     return count;
+  }
+
+  private async getPlayerCountsForFlights(flightIds: bigint[]): Promise<Map<bigint, number>> {
+    if (flightIds.length === 0) {
+      return new Map();
+    }
+
+    const counts = await this.prisma.teamsseason.findMany({
+      where: {
+        divisionseasonid: { in: flightIds },
+      },
+      select: {
+        divisionseasonid: true,
+        _count: {
+          select: { rosterseason: true },
+        },
+      },
+    });
+
+    const countMap = new Map<bigint, number>();
+    for (const item of counts) {
+      const flightId = item.divisionseasonid;
+      if (flightId === null) continue;
+      const currentCount = countMap.get(flightId) ?? 0;
+      countMap.set(flightId, currentCount + item._count.rosterseason);
+    }
+
+    return countMap;
   }
 
   async getLeagueSeasonWithHierarchy(
