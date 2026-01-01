@@ -58,6 +58,7 @@ import {
 } from '../../../../../../../components/golf/flights';
 import {
   CreateGolfTeamDialog,
+  EditGolfTeamDialog,
   DeleteGolfTeamDialog,
 } from '../../../../../../../components/golf/teams';
 
@@ -77,7 +78,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   onClose: _onClose,
 }) => {
   const [flights, setFlights] = useState<GolfFlightWithTeams[]>([]);
-  const [unassignedTeams, setUnassignedTeams] = useState<GolfTeamType[]>([]);
+  const [unassignedTeams, setUnassignedTeams] = useState<GolfTeamWithPlayerCountType[]>([]);
   const [leagueSeasonId, setLeagueSeasonId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
@@ -101,6 +102,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   const [selectedFlight, setSelectedFlight] = useState<GolfFlightWithTeams | null>(null);
 
   const [createTeamDialogOpen, setCreateTeamDialogOpen] = useState(false);
+  const [editTeamDialogOpen, setEditTeamDialogOpen] = useState(false);
   const [deleteTeamDialogOpen, setDeleteTeamDialogOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<GolfTeamType | null>(null);
   const [teamTargetFlight, setTeamTargetFlight] = useState<GolfFlightWithTeams | null>(null);
@@ -190,7 +192,12 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
       );
 
       setFlights(flightsWithTeams);
-      setUnassignedTeams(unassignedResult.data);
+      setUnassignedTeams(
+        unassignedResult.data.map((team) => ({
+          ...team,
+          playerCount: 0,
+        })),
+      );
 
       if (flightsWithTeams.length > 0) {
         setExpandedAccordions(new Set([flightsWithTeams[0].id]));
@@ -262,25 +269,40 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   );
 
   const removeTeamFromFlightInState = useCallback((flightId: string, teamId: string) => {
-    setFlights((prev) =>
-      prev.map((f) => {
+    setFlights((prev) => {
+      const flight = prev.find((f) => f.id === flightId);
+      const removedTeam = flight?.teams.find((t) => t.id === teamId);
+
+      if (removedTeam) {
+        setUnassignedTeams((prevUnassigned) => {
+          if (prevUnassigned.some((t) => t.id === teamId)) {
+            return prevUnassigned;
+          }
+          return [...prevUnassigned, removedTeam];
+        });
+      }
+
+      return prev.map((f) => {
         if (f.id !== flightId) return f;
-        const removedTeam = f.teams.find((t) => t.id === teamId);
-        if (removedTeam) {
-          setUnassignedTeams((prevUnassigned) => [...prevUnassigned, removedTeam]);
-        }
         return {
           ...f,
           teams: f.teams.filter((t) => t.id !== teamId),
           teamCount: Math.max((f.teamCount || 0) - 1, 0),
         };
-      }),
-    );
+      });
+    });
   }, []);
 
-  const addTeamToUnassignedInState = useCallback((team: GolfTeamType) => {
-    setUnassignedTeams((prev) => [...prev, team]);
-  }, []);
+  const addTeamToUnassignedInState = useCallback(
+    (team: GolfTeamType | GolfTeamWithPlayerCountType) => {
+      const teamWithCount: GolfTeamWithPlayerCountType = {
+        ...team,
+        playerCount: 'playerCount' in team ? team.playerCount : 0,
+      };
+      setUnassignedTeams((prev) => [...prev, teamWithCount]);
+    },
+    [],
+  );
 
   const removeTeamFromState = useCallback((teamId: string) => {
     setFlights((prev) =>
@@ -325,6 +347,12 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   const handleCreateTeam = (flight: GolfFlightWithTeams | null) => {
     setTeamTargetFlight(flight);
     setCreateTeamDialogOpen(true);
+  };
+
+  const handleEditTeam = (team: GolfTeamType, flight: GolfFlightWithTeams | null) => {
+    setSelectedTeam(team);
+    setTeamTargetFlight(flight);
+    setEditTeamDialogOpen(true);
   };
 
   const handleDeleteTeam = (team: GolfTeamType, flight: GolfFlightWithTeams | null) => {
@@ -415,6 +443,26 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
     setTeamTargetFlight(null);
   };
 
+  const handleTeamUpdated = (team: GolfTeamType, message: string) => {
+    if (teamTargetFlight) {
+      setFlights((prev) =>
+        prev.map((f) => {
+          if (f.id !== teamTargetFlight.id) return f;
+          return {
+            ...f,
+            teams: f.teams.map((t) => (t.id === team.id ? { ...t, ...team } : t)),
+          };
+        }),
+      );
+    } else {
+      setUnassignedTeams((prev) => prev.map((t) => (t.id === team.id ? { ...t, ...team } : t)));
+    }
+    setFeedback({ severity: 'success', message });
+    setEditTeamDialogOpen(false);
+    setSelectedTeam(null);
+    setTeamTargetFlight(null);
+  };
+
   const handleTeamDeleted = (teamId: string, message: string) => {
     removeTeamFromState(teamId);
     setFeedback({ severity: 'success', message });
@@ -426,14 +474,8 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   const renderTeamRow = (team: GolfTeamWithPlayerCountType, flight: GolfFlightWithTeams | null) => {
     const expectedTeamSize = leagueSetup?.teamSize ?? 2;
     const hasPlayerCountMismatch = team.playerCount !== expectedTeamSize;
-    const playerCountLabel =
-      team.playerCount === 1
-        ? '1 player'
-        : `${team.playerCount} players`;
-    const expectedLabel =
-      expectedTeamSize === 1
-        ? '1 player'
-        : `${expectedTeamSize} players`;
+    const playerCountLabel = team.playerCount === 1 ? '1 player' : `${team.playerCount} players`;
+    const expectedLabel = expectedTeamSize === 1 ? '1 player' : `${expectedTeamSize} players`;
 
     return (
       <Box
@@ -474,6 +516,11 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           <Tooltip title="Manage Roster">
             <IconButton size="small" onClick={() => handleManageRoster(team)} color="primary">
               <PeopleIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Edit Team">
+            <IconButton size="small" onClick={() => handleEditTeam(team, flight)}>
+              <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
           {flight && (
@@ -685,7 +732,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
             open={!!feedback}
             autoHideDuration={6000}
             onClose={handleFeedbackClose}
-            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           >
             <Alert
               severity={feedback.severity}
@@ -782,6 +829,18 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           flightId={teamTargetFlight?.id}
           flightName={teamTargetFlight?.name}
           onSuccess={handleTeamCreated}
+        />
+
+        <EditGolfTeamDialog
+          open={editTeamDialogOpen}
+          onClose={() => {
+            setEditTeamDialogOpen(false);
+            setSelectedTeam(null);
+            setTeamTargetFlight(null);
+          }}
+          accountId={accountId}
+          team={selectedTeam}
+          onSuccess={handleTeamUpdated}
         />
 
         <DeleteGolfTeamDialog
