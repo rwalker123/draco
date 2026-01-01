@@ -24,6 +24,7 @@ interface UserRoles {
 
 export interface RoleContextType {
   userRoles: UserRoles | null;
+  roleMetadata: RoleMetadataSchemaType | null;
   loading: boolean;
   initialized: boolean;
   error: string | null;
@@ -437,6 +438,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     <RoleContext.Provider
       value={{
         userRoles,
+        roleMetadata,
         loading,
         initialized,
         error,

@@ -27,6 +27,7 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
   const { user, token, loading: authLoading, initialized: authInitialized } = useAuth();
   const {
     userRoles,
+    roleMetadata,
     hasRole,
     hasPermission,
     loading: roleLoading,
@@ -90,6 +91,10 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     }
 
     if (requiredPermission) {
+      if (!roleMetadata) {
+        return { status: 'pending' };
+      }
+
       const hasRequiredPermission =
         checkAccountBoundary && currentAccount
           ? hasPermission(requiredPermission, { accountId: currentAccount.id })
@@ -116,6 +121,7 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     requiredPermission,
     roleInitialized,
     roleLoading,
+    roleMetadata,
     routeData,
     shouldWaitForAccount,
     token,
