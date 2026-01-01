@@ -6,6 +6,7 @@ import {
   LeagueSeasonWithDivisionTeamsAndUnassignedType,
   LeagueSetupType,
   LeagueType,
+  UpdateDivisionSeasonResponseType,
   UpsertDivisionSeasonType,
   UpsertLeagueType,
 } from '@draco/shared-schemas';
@@ -354,7 +355,7 @@ export class LeagueService {
     leagueSeasonId: bigint,
     divisionSeasonId: bigint,
     input: UpsertDivisionSeasonType,
-  ): Promise<boolean> {
+  ): Promise<UpdateDivisionSeasonResponseType> {
     await this.ensureLeagueSeasonRecord(accountId, seasonId, leagueSeasonId);
 
     const divisionSeason = await this.leagueRepository.findDivisionSeasonById(
@@ -383,7 +384,20 @@ export class LeagueService {
       );
 
       if (conflictingDivision && conflictingDivision.id !== divisionSeason.divisionid) {
-        throw new ValidationError('A division with this name already exists');
+        if (input.switchToExistingDivision) {
+          await this.leagueRepository.updateDivisionSeasonDivisionId(
+            divisionSeasonId,
+            conflictingDivision.id,
+          );
+          return { success: true };
+        }
+        return {
+          success: false,
+          conflict: {
+            existingDivisionId: conflictingDivision.id.toString(),
+            existingDivisionName: conflictingDivision.name,
+          },
+        };
       }
 
       await this.leagueRepository.updateDivisionDefinitionName(
@@ -392,7 +406,7 @@ export class LeagueService {
       );
     }
 
-    return true;
+    return { success: true };
   }
 
   async removeDivisionSeason(

@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Paper, Alert, CircularProgress, IconButton, Link } from '@mui/material';
-import { Edit as EditIcon } from '@mui/icons-material';
-import { useAuth } from '../../../../../../context/AuthContext';
-import { useRole } from '../../../../../../context/RoleContext';
+import { Box, Typography, Paper, Alert, CircularProgress, Link } from '@mui/material';
 import { getLogoSize } from '../../../../../../config/teams';
 import AccountPageHeader from '../../../../../../components/AccountPageHeader';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import EditTeamDialog from '../../../../../../components/EditTeamDialog';
 import TeamAvatar from '../../../../../../components/TeamAvatar';
 import { useApiClient } from '@/hooks/useApiClient';
 import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
-import type { UpdateTeamMetadataResult } from '@/hooks/useTeamManagement';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { mapLeagueSetup } from '@/utils/leagueSeasonMapper';
 import {
@@ -27,28 +22,14 @@ interface TeamsProps {
 }
 
 const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
-  const { user } = useAuth();
-  const { hasRole } = useRole();
   const apiClient = useApiClient();
-
-  // Check if user has edit permissions for teams
-  const canEditTeams =
-    user &&
-    (hasRole('Administrator') ||
-      hasRole('AccountAdmin', { accountId }) ||
-      hasRole('LeagueAdmin', { accountId }));
 
   const [teamsData, setTeamsData] = useState<LeagueSetupType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   // Logo configuration
   const LOGO_SIZE = getLogoSize();
-
-  // Edit dialog states
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedTeam, setSelectedTeam] = useState<TeamSeasonType | null>(null);
 
   // Load teams data
   const loadTeamsData = useCallback(async () => {
@@ -81,49 +62,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   useEffect(() => {
     loadTeamsData();
   }, [loadTeamsData]);
-
-  const handleEditTeam = (teamSeason: TeamSeasonType) => {
-    setSelectedTeam(teamSeason);
-    setEditDialogOpen(true);
-  };
-
-  const handleCloseEditDialog = () => {
-    setEditDialogOpen(false);
-    setSelectedTeam(null);
-  };
-
-  const handleTeamUpdateSuccess = useCallback(
-    (result: UpdateTeamMetadataResult) => {
-      setTeamsData((prevData) => {
-        if (!prevData) {
-          return prevData;
-        }
-
-        const updatedTeam = result.teamSeason;
-
-        return {
-          ...prevData,
-          leagueSeasons: prevData.leagueSeasons.map((leagueSeason) => ({
-            ...leagueSeason,
-            divisions: leagueSeason.divisions?.map((division) => ({
-              ...division,
-              teams: division.teams.map((teamSeason) =>
-                teamSeason.id === updatedTeam.id ? updatedTeam : teamSeason,
-              ),
-            })),
-            unassignedTeams: leagueSeason.unassignedTeams?.map((teamSeason) =>
-              teamSeason.id === updatedTeam.id ? updatedTeam : teamSeason,
-            ),
-          })),
-        };
-      });
-      setSuccess(result.message);
-      setSelectedTeam((prev) =>
-        prev && prev.id === result.teamSeason.id ? result.teamSeason : prev,
-      );
-    },
-    [setTeamsData, setSuccess, setSelectedTeam],
-  );
 
   const renderTeamCard = (teamSeason: TeamSeasonType) => {
     return (
@@ -176,17 +114,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             {teamSeason.name || 'Unknown Team'}
           </Link>
         </Box>
-
-        {canEditTeams && (
-          <IconButton
-            onClick={() => handleEditTeam(teamSeason)}
-            size="small"
-            title="Edit team"
-            sx={{ flexShrink: 0, color: 'text.secondary' }}
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-        )}
       </Box>
     );
   };
@@ -287,12 +214,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         </Box>
       </AccountPageHeader>
 
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
-          {success}
-        </Alert>
-      )}
-
       <Paper sx={{ p: 2 }}>
         <Box
           sx={{
@@ -305,15 +226,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
           {teamsData?.leagueSeasons?.map(renderLeagueSeason) || null}
         </Box>
       </Paper>
-
-      <EditTeamDialog
-        open={editDialogOpen}
-        accountId={accountId}
-        seasonId={seasonId}
-        teamSeason={selectedTeam}
-        onClose={handleCloseEditDialog}
-        onSuccess={handleTeamUpdateSuccess}
-      />
     </main>
   );
 };

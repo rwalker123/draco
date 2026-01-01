@@ -27,12 +27,11 @@ export interface LeagueSeasonGameFilters {
   teamId?: bigint;
 }
 
-export interface ILeagueRepository
-  extends IBaseRepository<
-    leagueseason,
-    Prisma.leagueseasonCreateInput,
-    Prisma.leagueseasonUpdateInput
-  > {
+export interface ILeagueRepository extends IBaseRepository<
+  leagueseason,
+  Prisma.leagueseasonCreateInput,
+  Prisma.leagueseasonUpdateInput
+> {
   findAccountLeagues(accountId: bigint): Promise<dbLeague[]>;
   findLeaguesWithSeasons(accountId: bigint): Promise<dbLeague[]>;
   findLeagueById(accountId: bigint, leagueId: bigint): Promise<dbLeague | null>;
@@ -104,6 +103,7 @@ export interface ILeagueRepository
     priority: number,
   ): Promise<dbDivisionSeasonWithDefinition>;
   updateDivisionSeasonPriority(divisionSeasonId: bigint, priority: number): Promise<void>;
+  updateDivisionSeasonDivisionId(divisionSeasonId: bigint, divisionId: bigint): Promise<void>;
   deleteDivisionSeason(divisionSeasonId: bigint): Promise<void>;
   divisionSeasonHasTeams(divisionSeasonId: bigint): Promise<boolean>;
   findDivisionDefinitionById(

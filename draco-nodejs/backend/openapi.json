@@ -20237,8 +20237,39 @@
           "priority": {
             "type": "integer",
             "nullable": true
+          },
+          "switchToExistingDivision": {
+            "type": "boolean"
           }
         }
+      },
+      "UpdateDivisionSeasonResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "conflict": {
+            "type": "object",
+            "properties": {
+              "existingDivisionId": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "existingDivisionName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "existingDivisionId",
+              "existingDivisionName"
+            ]
+          }
+        },
+        "required": [
+          "success"
+        ]
       },
       "ValidationError": {
         "type": "object",
@@ -49652,6 +49683,9 @@
                   "priority": {
                     "type": "integer",
                     "nullable": true
+                  },
+                  "switchToExistingDivision": {
+                    "type": "boolean"
                   }
                 }
               }
@@ -49660,11 +49694,11 @@
         },
         "responses": {
           "200": {
-            "description": "Division updated",
+            "description": "Division update result. If successful, success is true. If a conflict exists with another division, conflict info is returned.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean"
+                  "$ref": "#/components/schemas/UpdateDivisionSeasonResponse"
                 }
               }
             }

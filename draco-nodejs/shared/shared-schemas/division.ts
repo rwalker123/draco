@@ -25,9 +25,21 @@ export const UpsertDivisionSeasonSchema = z.object({
   divisionId: bigintToStringSchema.optional(),
   name: nameSchema.optional(),
   priority: z.coerce.number().int().optional(),
+  switchToExistingDivision: z.boolean().optional(),
+});
+
+export const UpdateDivisionSeasonResponseSchema = z.object({
+  success: z.boolean(),
+  conflict: z
+    .object({
+      existingDivisionId: bigintToStringSchema,
+      existingDivisionName: z.string(),
+    })
+    .optional(),
 });
 
 export type DivisionNameType = z.infer<typeof DivisionNameSchema>;
 export type DivisionType = z.infer<typeof DivisionSchema>;
 export type DivisionSeasonType = z.infer<typeof DivisionSeasonSchema>;
 export type UpsertDivisionSeasonType = z.infer<typeof UpsertDivisionSeasonSchema>;
+export type UpdateDivisionSeasonResponseType = z.infer<typeof UpdateDivisionSeasonResponseSchema>;
