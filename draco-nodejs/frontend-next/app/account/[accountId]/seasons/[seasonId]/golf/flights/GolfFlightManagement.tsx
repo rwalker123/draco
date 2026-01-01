@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Breadcrumbs,
@@ -78,6 +78,8 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   onClose: _onClose,
 }) => {
   const [flights, setFlights] = useState<GolfFlightWithTeams[]>([]);
+  const flightsRef = useRef<GolfFlightWithTeams[]>(flights);
+  flightsRef.current = flights;
   const [unassignedTeams, setUnassignedTeams] = useState<GolfTeamWithPlayerCountType[]>([]);
   const [leagueSeasonId, setLeagueSeasonId] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -263,33 +265,30 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
     [],
   );
 
-  const removeTeamFromFlightInState = useCallback(
-    (flightId: string, teamId: string) => {
-      const flight = flights.find((f) => f.id === flightId);
-      const removedTeam = flight?.teams.find((t) => t.id === teamId);
+  const removeTeamFromFlightInState = useCallback((flightId: string, teamId: string) => {
+    const flight = flightsRef.current.find((f) => f.id === flightId);
+    const removedTeam = flight?.teams.find((t) => t.id === teamId);
 
-      setFlights((prev) =>
-        prev.map((f) => {
-          if (f.id !== flightId) return f;
-          return {
-            ...f,
-            teams: f.teams.filter((t) => t.id !== teamId),
-            teamCount: Math.max((f.teamCount || 0) - 1, 0),
-          };
-        }),
-      );
+    setFlights((prev) =>
+      prev.map((f) => {
+        if (f.id !== flightId) return f;
+        return {
+          ...f,
+          teams: f.teams.filter((t) => t.id !== teamId),
+          teamCount: Math.max((f.teamCount || 0) - 1, 0),
+        };
+      }),
+    );
 
-      if (removedTeam) {
-        setUnassignedTeams((prevUnassigned) => {
-          if (prevUnassigned.some((t) => t.id === teamId)) {
-            return prevUnassigned;
-          }
-          return [...prevUnassigned, removedTeam];
-        });
-      }
-    },
-    [flights],
-  );
+    if (removedTeam) {
+      setUnassignedTeams((prevUnassigned) => {
+        if (prevUnassigned.some((t) => t.id === teamId)) {
+          return prevUnassigned;
+        }
+        return [...prevUnassigned, removedTeam];
+      });
+    }
+  }, []);
 
   const addTeamToUnassignedInState = useCallback(
     (team: GolfTeamType | GolfTeamWithPlayerCountType) => {
