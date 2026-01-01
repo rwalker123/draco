@@ -194,6 +194,7 @@ import {
   ContactSearchParamsSchema,
   DivisionSeasonSchema,
   DivisionSeasonWithTeamsSchema,
+  UpdateDivisionSeasonResponseSchema,
   LeagueSchema,
   LeagueFaqListSchema,
   LeagueFaqSchema,
@@ -1112,6 +1113,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'UpsertDivisionSeason',
     UpsertDivisionSeasonSchema,
   );
+  const UpdateDivisionSeasonResponseSchemaRef = registry.register(
+    'UpdateDivisionSeasonResponse',
+    UpdateDivisionSeasonResponseSchema,
+  );
 
   const ValidationErrorSchemaRef = registry.register('ValidationError', ValidationErrorSchema);
   const AuthenticationErrorSchemaRef = registry.register(
@@ -1585,6 +1590,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpsertGameRecapSchemaRef,
     UpsertSeasonSchemaRef,
     UpsertDivisionSeasonSchemaRef,
+    UpdateDivisionSeasonResponseSchemaRef,
     ValidationErrorSchemaRef,
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,

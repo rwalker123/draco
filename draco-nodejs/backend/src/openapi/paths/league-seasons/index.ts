@@ -16,6 +16,7 @@ export const registerLeagueSeasonsEndpoints = ({ registry, schemaRefs, z }: Regi
     LeagueSetupSchemaRef,
     NotFoundErrorSchemaRef,
     SeasonStandingsResponseSchemaRef,
+    UpdateDivisionSeasonResponseSchemaRef,
     UpsertDivisionSeasonSchemaRef,
     ValidationErrorSchemaRef,
   } = schemaRefs;
@@ -717,10 +718,11 @@ export const registerLeagueSeasonsEndpoints = ({ registry, schemaRefs, z }: Regi
     },
     responses: {
       200: {
-        description: 'Division updated',
+        description:
+          'Division update result. If successful, success is true. If a conflict exists with another division, conflict info is returned.',
         content: {
           'application/json': {
-            schema: z.boolean(),
+            schema: UpdateDivisionSeasonResponseSchemaRef,
           },
         },
       },

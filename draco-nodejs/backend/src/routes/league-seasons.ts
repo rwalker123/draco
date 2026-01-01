@@ -204,7 +204,7 @@ router.put(
 
     const input = UpsertDivisionSeasonSchema.parse(req.body);
 
-    await leagueService.updateDivisionSeason(
+    const result = await leagueService.updateDivisionSeason(
       accountId,
       seasonId,
       leagueSeasonId,
@@ -212,7 +212,7 @@ router.put(
       input,
     );
 
-    res.status(200).json(true);
+    res.status(200).json(result);
   }),
 );
 

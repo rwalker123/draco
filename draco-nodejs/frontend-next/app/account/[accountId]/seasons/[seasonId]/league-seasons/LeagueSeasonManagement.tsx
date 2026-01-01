@@ -72,6 +72,10 @@ import {
   type CreateTeamResult,
   type EditDivisionResult,
 } from '../../../../../../components/league-seasons';
+import EditTeamDialog from '../../../../../../components/EditTeamDialog';
+import TeamAvatar from '../../../../../../components/TeamAvatar';
+import { getLogoSize } from '../../../../../../config/teams';
+import type { UpdateTeamMetadataResult } from '../../../../../../hooks/useTeamManagement';
 
 interface LeagueSeasonManagementProps {
   accountId: string;
@@ -98,6 +102,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   const { token } = useAuth();
   const apiClient = useMemo(() => createApiClient({ token: token || undefined }), [token]);
   const [season, setSeason] = useState<SeasonType | null>(null);
+  const LOGO_SIZE = getLogoSize();
 
   useEffect(() => {
     let isMounted = true;
@@ -165,6 +170,10 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   const [editLeagueDialogOpen, setEditLeagueDialogOpen] = useState(false);
   const [leagueToEdit, setLeagueToEdit] =
     useState<LeagueSeasonWithDivisionTeamsAndUnassignedType | null>(null);
+
+  // Edit team state
+  const [editTeamDialogOpen, setEditTeamDialogOpen] = useState(false);
+  const [teamToEdit, setTeamToEdit] = useState<TeamSeasonType | null>(null);
 
   // State for managing selected teams per division
   const [selectedTeamsPerDivision, setSelectedTeamsPerDivision] = useState<Record<string, string>>(
@@ -383,6 +392,21 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     [],
   );
 
+  const updateTeamInState = useCallback((updatedTeam: TeamSeasonType) => {
+    setLeagueSeasons((prev) =>
+      prev.map((ls) => ({
+        ...ls,
+        divisions: ls.divisions?.map((div) => ({
+          ...div,
+          teams: div.teams.map((team) => (team.id === updatedTeam.id ? updatedTeam : team)),
+        })),
+        unassignedTeams: ls.unassignedTeams?.map((team) =>
+          team.id === updatedTeam.id ? updatedTeam : team,
+        ),
+      })),
+    );
+  }, []);
+
   useEffect(() => {
     if (accountId) {
       fetchLeagueSeasons();
@@ -577,6 +601,21 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setEditLeagueDialogOpen(true);
   };
 
+  // Handler to open edit team dialog
+  const openEditTeamDialog = (teamSeason: TeamSeasonType) => {
+    setTeamToEdit(teamSeason);
+    setEditTeamDialogOpen(true);
+  };
+
+  // Handler for team update success
+  const handleTeamUpdateSuccess = useCallback(
+    (result: UpdateTeamMetadataResult) => {
+      updateTeamInState(result.teamSeason);
+      setFeedback({ severity: 'success', message: result.message });
+    },
+    [updateTeamInState],
+  );
+
   // Export handlers
   const handleLeagueExportMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
@@ -641,6 +680,91 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     }
     handleLeagueExportMenuClose();
   };
+
+  const renderTeamRow = (
+    team: TeamSeasonType,
+    leagueSeason: LeagueSeasonWithDivisionTeamsAndUnassignedType,
+  ) => (
+    <Box
+      key={team.id}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        py: 1,
+        px: 1.5,
+        mb: 0.5,
+        borderRadius: 1,
+        backgroundColor: 'action.hover',
+        '&:hover': {
+          backgroundColor: 'action.selected',
+        },
+      }}
+    >
+      <Box display="flex" alignItems="center" gap={1}>
+        <TeamAvatar
+          name={team.name || 'Unknown Team'}
+          logoUrl={team.team.logoUrl ?? undefined}
+          size={LOGO_SIZE}
+          alt={(team.name || 'Unknown Team') + ' logo'}
+        />
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {team.name}
+        </Typography>
+      </Box>
+      <Box display="flex" gap={0.5} alignItems="center">
+        <Tooltip title="Edit Team">
+          <IconButton
+            size="small"
+            color="primary"
+            onClick={() => openEditTeamDialog(team)}
+            disabled={formLoading}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Manage Roster">
+          <IconButton
+            size="small"
+            color="primary"
+            onClick={() => handleManageRoster(team)}
+            disabled={formLoading}
+          >
+            <PeopleIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Export Team Roster">
+          <IconButton
+            size="small"
+            onClick={() => handleExportTeamRoster(team, leagueSeason)}
+            disabled={formLoading}
+          >
+            <FileDownloadIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Remove from Division">
+          <IconButton
+            size="small"
+            color="error"
+            onClick={() => handleRemoveTeamFromDivision(team, leagueSeason)}
+            disabled={formLoading}
+          >
+            <RemoveIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Remove Team from Season">
+          <IconButton
+            size="small"
+            color="error"
+            onClick={() => openDeleteTeamDialog(team, leagueSeason)}
+            disabled={formLoading}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Box>
+  );
 
   const handleExportTeamRoster = async (
     teamSeason: TeamSeasonType,
@@ -869,7 +993,9 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                           {/* Teams List */}
                           <Box>
                             {(() => {
-                              const teams = division.teams || [];
+                              const teams = [...(division.teams || [])].sort((a, b) =>
+                                (a.name || '').localeCompare(b.name || ''),
+                              );
                               // Calculate columns: teams split evenly, with add-team dropdown as last item in right column
                               const totalItems = teams.length + 1; // +1 for the add team dropdown
                               const midPoint = Math.ceil(totalItems / 2);
@@ -889,148 +1015,12 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                                 >
                                   {/* Left Column */}
                                   <Box>
-                                    {leftTeams.map((team) => (
-                                      <Box
-                                        key={team.id}
-                                        sx={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'space-between',
-                                          py: 1,
-                                          px: 1.5,
-                                          mb: 0.5,
-                                          borderRadius: 1,
-                                          backgroundColor: 'action.hover',
-                                          '&:hover': {
-                                            backgroundColor: 'action.selected',
-                                          },
-                                        }}
-                                      >
-                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                          {team.name}
-                                        </Typography>
-                                        <Box display="flex" gap={0.5} alignItems="center">
-                                          <Tooltip title="Manage Roster">
-                                            <IconButton
-                                              size="small"
-                                              color="primary"
-                                              onClick={() => handleManageRoster(team)}
-                                              disabled={formLoading}
-                                            >
-                                              <PeopleIcon fontSize="small" />
-                                            </IconButton>
-                                          </Tooltip>
-                                          <Tooltip title="Export Team Roster">
-                                            <IconButton
-                                              size="small"
-                                              onClick={() =>
-                                                handleExportTeamRoster(team, leagueSeason)
-                                              }
-                                              disabled={formLoading}
-                                            >
-                                              <FileDownloadIcon fontSize="small" />
-                                            </IconButton>
-                                          </Tooltip>
-                                          <Tooltip title="Remove from Division">
-                                            <IconButton
-                                              size="small"
-                                              color="error"
-                                              onClick={() =>
-                                                handleRemoveTeamFromDivision(team, leagueSeason)
-                                              }
-                                              disabled={formLoading}
-                                            >
-                                              <RemoveIcon fontSize="small" />
-                                            </IconButton>
-                                          </Tooltip>
-                                          <Tooltip title="Remove Team from Season">
-                                            <IconButton
-                                              size="small"
-                                              color="error"
-                                              onClick={() =>
-                                                openDeleteTeamDialog(team, leagueSeason)
-                                              }
-                                              disabled={formLoading}
-                                            >
-                                              <DeleteIcon fontSize="small" />
-                                            </IconButton>
-                                          </Tooltip>
-                                        </Box>
-                                      </Box>
-                                    ))}
+                                    {leftTeams.map((team) => renderTeamRow(team, leagueSeason))}
                                   </Box>
 
                                   {/* Right Column */}
                                   <Box>
-                                    {rightTeams.map((team) => (
-                                      <Box
-                                        key={team.id}
-                                        sx={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'space-between',
-                                          py: 1,
-                                          px: 1.5,
-                                          mb: 0.5,
-                                          borderRadius: 1,
-                                          backgroundColor: 'action.hover',
-                                          '&:hover': {
-                                            backgroundColor: 'action.selected',
-                                          },
-                                        }}
-                                      >
-                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                          {team.name}
-                                        </Typography>
-                                        <Box display="flex" gap={0.5} alignItems="center">
-                                          <Tooltip title="Manage Roster">
-                                            <IconButton
-                                              size="small"
-                                              color="primary"
-                                              onClick={() => handleManageRoster(team)}
-                                              disabled={formLoading}
-                                            >
-                                              <PeopleIcon fontSize="small" />
-                                            </IconButton>
-                                          </Tooltip>
-                                          <Tooltip title="Export Team Roster">
-                                            <IconButton
-                                              size="small"
-                                              onClick={() =>
-                                                handleExportTeamRoster(team, leagueSeason)
-                                              }
-                                              disabled={formLoading}
-                                            >
-                                              <FileDownloadIcon fontSize="small" />
-                                            </IconButton>
-                                          </Tooltip>
-                                          <Tooltip title="Remove from Division">
-                                            <IconButton
-                                              size="small"
-                                              color="error"
-                                              onClick={() =>
-                                                handleRemoveTeamFromDivision(team, leagueSeason)
-                                              }
-                                              disabled={formLoading}
-                                            >
-                                              <RemoveIcon fontSize="small" />
-                                            </IconButton>
-                                          </Tooltip>
-                                          <Tooltip title="Remove Team from Season">
-                                            <IconButton
-                                              size="small"
-                                              color="error"
-                                              onClick={() =>
-                                                openDeleteTeamDialog(team, leagueSeason)
-                                              }
-                                              disabled={formLoading}
-                                            >
-                                              <DeleteIcon fontSize="small" />
-                                            </IconButton>
-                                          </Tooltip>
-                                        </Box>
-                                      </Box>
-                                    ))}
+                                    {rightTeams.map((team) => renderTeamRow(team, leagueSeason))}
                                     {/* Add team dropdown - last item in right column */}
                                     <Box
                                       sx={{
@@ -1266,6 +1256,19 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             updateLeagueNameInState(leagueSeasonId, newName);
             setFeedback({ severity: 'success', message });
           }}
+        />
+
+        {/* Edit Team Dialog */}
+        <EditTeamDialog
+          open={editTeamDialogOpen}
+          accountId={accountId}
+          seasonId={seasonId}
+          teamSeason={teamToEdit}
+          onClose={() => {
+            setEditTeamDialogOpen(false);
+            setTeamToEdit(null);
+          }}
+          onSuccess={handleTeamUpdateSuccess}
         />
       </Box>
 

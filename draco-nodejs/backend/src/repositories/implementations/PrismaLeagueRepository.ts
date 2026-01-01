@@ -560,6 +560,20 @@ export class PrismaLeagueRepository implements ILeagueRepository {
     });
   }
 
+  async updateDivisionSeasonDivisionId(
+    divisionSeasonId: bigint,
+    divisionId: bigint,
+  ): Promise<void> {
+    await this.prisma.divisionseason.update({
+      where: {
+        id: divisionSeasonId,
+      },
+      data: {
+        divisionid: divisionId,
+      },
+    });
+  }
+
   async deleteDivisionSeason(divisionSeasonId: bigint): Promise<void> {
     await this.prisma.divisionseason.delete({
       where: {

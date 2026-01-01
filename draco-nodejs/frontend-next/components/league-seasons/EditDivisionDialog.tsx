@@ -35,6 +35,11 @@ interface EditDivisionDialogProps {
   onError?: (error: string) => void;
 }
 
+interface ConflictInfo {
+  existingDivisionId: string;
+  existingDivisionName: string;
+}
+
 const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
   open,
   onClose,
@@ -50,6 +55,7 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
   const [priority, setPriority] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<ConflictInfo | null>(null);
 
   useEffect(() => {
     if (divisionSeason) {
@@ -62,6 +68,7 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
     setDivisionName('');
     setPriority(0);
     setError(null);
+    setConflict(null);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -69,63 +76,88 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
     onClose();
   }, [resetForm, onClose]);
 
-  const handleSubmit = useCallback(async () => {
-    if (!divisionSeason || !leagueSeason || !divisionName.trim()) return;
+  const performUpdate = useCallback(
+    async (switchToExisting: boolean) => {
+      if (!divisionSeason || !leagueSeason || !divisionName.trim()) return;
 
-    setLoading(true);
-    setError(null);
+      setLoading(true);
+      setError(null);
 
-    try {
-      const result = await apiUpdateLeagueSeasonDivision({
-        client: apiClient,
-        path: {
-          accountId,
-          seasonId,
-          leagueSeasonId: leagueSeason.id,
-          divisionSeasonId: divisionSeason.id,
-        },
-        body: {
-          name: divisionName.trim(),
-          priority,
-        },
-        throwOnError: false,
-      });
-
-      const updated = unwrapApiResult(result, 'Failed to update division');
-
-      if (updated) {
-        onSuccess(
-          {
+      try {
+        const result = await apiUpdateLeagueSeasonDivision({
+          client: apiClient,
+          path: {
+            accountId,
+            seasonId,
             leagueSeasonId: leagueSeason.id,
             divisionSeasonId: divisionSeason.id,
+          },
+          body: {
             name: divisionName.trim(),
             priority,
+            switchToExistingDivision: switchToExisting,
           },
-          'Division updated successfully',
-        );
-        handleClose();
-      } else {
-        setError('Failed to update division');
+          throwOnError: false,
+        });
+
+        const response = unwrapApiResult(result, 'Failed to update division');
+
+        if (response.conflict) {
+          setConflict(response.conflict);
+          setLoading(false);
+          return;
+        }
+
+        if (response.success) {
+          onSuccess(
+            {
+              leagueSeasonId: leagueSeason.id,
+              divisionSeasonId: divisionSeason.id,
+              name: divisionName.trim(),
+              priority,
+            },
+            switchToExisting
+              ? `Switched to existing division "${divisionName.trim()}"`
+              : 'Division updated successfully',
+          );
+          handleClose();
+        } else {
+          setError('Failed to update division');
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to update division';
+        setError(errorMessage);
+        onError?.(errorMessage);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update division';
-      setError(errorMessage);
-      onError?.(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    divisionSeason,
-    leagueSeason,
-    divisionName,
-    priority,
-    accountId,
-    seasonId,
-    apiClient,
-    onSuccess,
-    onError,
-    handleClose,
-  ]);
+    },
+    [
+      divisionSeason,
+      leagueSeason,
+      divisionName,
+      priority,
+      accountId,
+      seasonId,
+      apiClient,
+      onSuccess,
+      onError,
+      handleClose,
+    ],
+  );
+
+  const handleSubmit = useCallback(() => {
+    setConflict(null);
+    performUpdate(false);
+  }, [performUpdate]);
+
+  const handleSwitchToExisting = useCallback(() => {
+    performUpdate(true);
+  }, [performUpdate]);
+
+  const handleCancelConflict = useCallback(() => {
+    setConflict(null);
+  }, []);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -134,6 +166,18 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
             {error}
+          </Alert>
+        )}
+        {conflict && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              A division named <strong>&quot;{conflict.existingDivisionName}&quot;</strong> already
+              exists.
+            </Typography>
+            <Typography variant="body2">
+              Would you like to switch this division to use the existing one, or cancel and choose a
+              different name?
+            </Typography>
           </Alert>
         )}
         <Typography variant="body2" sx={{ mb: 2 }}>
@@ -147,7 +191,7 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
           variant="outlined"
           value={divisionName}
           onChange={(e) => setDivisionName(e.target.value)}
-          disabled={loading}
+          disabled={loading || !!conflict}
           sx={{ mb: 2 }}
           helperText="Enter the new name for the division"
         />
@@ -159,21 +203,39 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
           variant="outlined"
           value={priority}
           onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
-          disabled={loading}
+          disabled={loading || !!conflict}
           helperText="Lower numbers have higher priority"
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={loading || !divisionName.trim()}
-        >
-          {loading ? <CircularProgress size={20} /> : 'Update Division'}
-        </Button>
+        {conflict ? (
+          <>
+            <Button onClick={handleCancelConflict} disabled={loading}>
+              Choose Different Name
+            </Button>
+            <Button
+              onClick={handleSwitchToExisting}
+              variant="contained"
+              disabled={loading}
+              color="warning"
+            >
+              {loading ? <CircularProgress size={20} /> : 'Switch to Existing Division'}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button onClick={handleClose} disabled={loading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              disabled={loading || !divisionName.trim()}
+            >
+              {loading ? <CircularProgress size={20} /> : 'Update Division'}
+            </Button>
+          </>
+        )}
       </DialogActions>
     </Dialog>
   );
