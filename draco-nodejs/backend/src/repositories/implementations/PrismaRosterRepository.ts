@@ -1,11 +1,13 @@
 import { PrismaClient } from '#prisma/client';
 import { IRosterRepository } from '../interfaces/index.js';
 import {
+  dbRosterExportData,
   dbRosterMember,
   dbRosterPlayer,
   dbRosterSeason,
   dbRosterSeasonContactReference,
 } from '../types/dbTypes.js';
+import { NotFoundError } from '../../utils/customErrors.js';
 
 export class PrismaRosterRepository implements IRosterRepository {
   constructor(private prisma: PrismaClient) {}
@@ -213,5 +215,115 @@ export class PrismaRosterRepository implements IRosterRepository {
       rosterSeasonId: row.playerid,
       gamesPlayed: row._count.playerid ?? 0,
     }));
+  }
+
+  private readonly exportSelect = {
+    playerid: true,
+    roster: {
+      select: {
+        contacts: {
+          select: {
+            firstname: true,
+            lastname: true,
+            middlename: true,
+            email: true,
+            streetaddress: true,
+            city: true,
+            state: true,
+            zip: true,
+          },
+        },
+        playerseasonaffiliationdues: {
+          select: {
+            affiliationduespaid: true,
+            seasonid: true,
+          },
+        },
+      },
+    },
+  } as const;
+
+  async findRosterMembersForExport(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+  ): Promise<dbRosterExportData[]> {
+    const teamSeason = await this.prisma.teamsseason.findFirst({
+      where: {
+        id: teamSeasonId,
+        leagueseason: { seasonid: seasonId },
+      },
+      select: { id: true },
+    });
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found or does not belong to the specified season');
+    }
+
+    return this.prisma.rosterseason.findMany({
+      where: {
+        teamseasonid: teamSeasonId,
+        inactive: false,
+      },
+      select: this.exportSelect,
+      orderBy: [
+        { roster: { contacts: { lastname: 'asc' } } },
+        { roster: { contacts: { firstname: 'asc' } } },
+      ],
+    });
+  }
+
+  async findLeagueRosterForExport(
+    leagueSeasonId: bigint,
+    seasonId: bigint,
+  ): Promise<dbRosterExportData[]> {
+    const leagueSeason = await this.prisma.leagueseason.findFirst({
+      where: {
+        id: leagueSeasonId,
+        seasonid: seasonId,
+      },
+      select: { id: true },
+    });
+
+    if (!leagueSeason) {
+      throw new NotFoundError('League season not found or does not belong to the specified season');
+    }
+
+    return this.prisma.rosterseason.findMany({
+      where: {
+        teamsseason: {
+          leagueseasonid: leagueSeasonId,
+        },
+        inactive: false,
+      },
+      select: this.exportSelect,
+      orderBy: [
+        { roster: { contacts: { lastname: 'asc' } } },
+        { roster: { contacts: { firstname: 'asc' } } },
+      ],
+      distinct: ['playerid'],
+    });
+  }
+
+  async findSeasonRosterForExport(
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbRosterExportData[]> {
+    return this.prisma.rosterseason.findMany({
+      where: {
+        teamsseason: {
+          leagueseason: {
+            seasonid: seasonId,
+            league: { accountid: accountId },
+          },
+        },
+        inactive: false,
+      },
+      select: this.exportSelect,
+      orderBy: [
+        { roster: { contacts: { lastname: 'asc' } } },
+        { roster: { contacts: { firstname: 'asc' } } },
+      ],
+      distinct: ['playerid'],
+    });
   }
 }

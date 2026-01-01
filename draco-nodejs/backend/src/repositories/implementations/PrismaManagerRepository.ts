@@ -3,7 +3,11 @@ import {
   IManagerRepository,
   SeasonManagerRepositoryFilters,
 } from '../interfaces/IManagerRepository.js';
-import { dbSeasonManagerWithRelations, dbTeamManagerWithContact } from '../types/dbTypes.js';
+import {
+  dbManagerExportData,
+  dbSeasonManagerWithRelations,
+  dbTeamManagerWithContact,
+} from '../types/dbTypes.js';
 
 export class PrismaManagerRepository implements IManagerRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -144,6 +148,66 @@ export class PrismaManagerRepository implements IManagerRepository {
         teamseasonid: teamSeasonId,
         contactid: contactId,
       },
+    });
+  }
+
+  private readonly managerExportSelect = {
+    contacts: {
+      select: {
+        firstname: true,
+        lastname: true,
+        middlename: true,
+        email: true,
+        phone1: true,
+        phone2: true,
+        phone3: true,
+        streetaddress: true,
+        city: true,
+        state: true,
+        zip: true,
+      },
+    },
+    teamsseason: {
+      select: {
+        name: true,
+        leagueseason: {
+          select: {
+            league: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    },
+  } as const;
+
+  async findLeagueManagersForExport(leagueSeasonId: bigint): Promise<dbManagerExportData[]> {
+    return this.prisma.teamseasonmanager.findMany({
+      where: {
+        teamsseason: { leagueseasonid: leagueSeasonId },
+      },
+      select: this.managerExportSelect,
+      orderBy: [{ contacts: { lastname: 'asc' } }, { contacts: { firstname: 'asc' } }],
+    });
+  }
+
+  async findSeasonManagersForExport(
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbManagerExportData[]> {
+    return this.prisma.teamseasonmanager.findMany({
+      where: {
+        teamsseason: {
+          leagueseason: {
+            seasonid: seasonId,
+            league: { accountid: accountId },
+          },
+        },
+      },
+      select: this.managerExportSelect,
+      orderBy: [{ contacts: { lastname: 'asc' } }, { contacts: { firstname: 'asc' } }],
     });
   }
 }

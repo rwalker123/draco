@@ -2318,3 +2318,65 @@ export type dbHofClassSummary = {
   year: number;
   memberCount: number;
 };
+
+export type dbRosterExportData = Prisma.rosterseasonGetPayload<{
+  select: {
+    playerid: true;
+    roster: {
+      select: {
+        contacts: {
+          select: {
+            firstname: true;
+            lastname: true;
+            middlename: true;
+            email: true;
+            streetaddress: true;
+            city: true;
+            state: true;
+            zip: true;
+          };
+        };
+        playerseasonaffiliationdues: {
+          select: {
+            affiliationduespaid: true;
+            seasonid: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type dbManagerExportData = Prisma.teamseasonmanagerGetPayload<{
+  select: {
+    contacts: {
+      select: {
+        firstname: true;
+        lastname: true;
+        middlename: true;
+        email: true;
+        phone1: true;
+        phone2: true;
+        phone3: true;
+        streetaddress: true;
+        city: true;
+        state: true;
+        zip: true;
+      };
+    };
+    teamsseason: {
+      select: {
+        name: true;
+        leagueseason: {
+          select: {
+            league: {
+              select: {
+                name: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;

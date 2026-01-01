@@ -1,18 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Alert,
-  CircularProgress,
-  IconButton,
-  Link,
-  Menu,
-  MenuItem,
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import { Edit as EditIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import { Box, Typography, Paper, Alert, CircularProgress, IconButton, Link } from '@mui/material';
+import { Edit as EditIcon } from '@mui/icons-material';
 import { useAuth } from '../../../../../../context/AuthContext';
 import { useRole } from '../../../../../../context/RoleContext';
 import { getLogoSize } from '../../../../../../config/teams';
@@ -27,7 +15,6 @@ import { unwrapApiResult } from '@/utils/apiResult';
 import { mapLeagueSetup } from '@/utils/leagueSeasonMapper';
 import {
   DivisionSeasonWithTeamsType,
-  LeagueSeasonType,
   LeagueSeasonWithDivisionTeamsType,
   LeagueSetupType,
   TeamSeasonType,
@@ -56,161 +43,12 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Export menu states
-  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedLeagueForExport, setSelectedLeagueForExport] = useState<LeagueSeasonType | null>(
-    null,
-  );
-  const [seasonExportMenuAnchor, setSeasonExportMenuAnchor] = useState<null | HTMLElement>(null);
-
   // Logo configuration
   const LOGO_SIZE = getLogoSize();
 
   // Edit dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<TeamSeasonType | null>(null);
-
-  // Export roster to CSV function (placeholder)
-  const handleExportRoster = async (leagueSeason: LeagueSeasonType) => {
-    try {
-      // TODO: Implement backend endpoint for CSV export
-
-      // Placeholder implementation
-      alert(`Export roster for ${leagueSeason.league.name} - Backend implementation pending`);
-
-      // Future implementation would be:
-      // const response = await {someAPiCall};
-      // const result = apiUnwrapResult(response, 'Failed to export managers');
-      //   const blob = await response.blob();
-      //   const url = window.URL.createObjectURL(blob);
-      //   const a = document.createElement('a');
-      //   a.href = url;
-      //   a.download = `${leagueSeason.leagueName}-roster.csv`;
-      //   document.body.appendChild(a);
-      //   a.click();
-      //   window.URL.revokeObjectURL(url);
-      //   document.body.removeChild(a);
-    } catch (error) {
-      alert('Failed to export roster: ' + error);
-    }
-  };
-
-  // Export managers to CSV function (placeholder)
-  const handleExportManagers = async (leagueSeason: LeagueSeasonType) => {
-    try {
-      // TODO: Implement backend endpoint for CSV export
-
-      // Placeholder implementation
-      alert(`Export managers for ${leagueSeason.league.name} - Backend implementation pending`);
-
-      // Future implementation would be:
-      // const response = await {someAPiCall};
-      // const result = apiUnwrapResult(response, 'Failed to export managers');
-      //   const blob = await response.blob();
-      //   const url = window.URL.createObjectURL(blob);
-      //   const a = document.createElement('a');
-      //   a.href = url;
-      //   a.download = `${leagueSeason.leagueName}-managers.csv`;
-      //   document.body.appendChild(a);
-      //   a.click();
-      //   window.URL.revokeObjectURL(url);
-      //   document.body.removeChild(a);
-    } catch (error) {
-      alert('Failed to export managers: ' + error);
-    }
-  };
-
-  // Export menu handlers
-  const handleExportMenuOpen = (
-    event: React.MouseEvent<HTMLElement>,
-    leagueSeason: LeagueSeasonType,
-  ) => {
-    setExportMenuAnchor(event.currentTarget);
-    setSelectedLeagueForExport(leagueSeason);
-  };
-
-  const handleExportMenuClose = () => {
-    setExportMenuAnchor(null);
-    setSelectedLeagueForExport(null);
-  };
-
-  const handleExportSelection = (type: 'roster' | 'managers') => {
-    if (selectedLeagueForExport) {
-      if (type === 'roster') {
-        handleExportRoster(selectedLeagueForExport);
-      } else {
-        handleExportManagers(selectedLeagueForExport);
-      }
-    }
-    handleExportMenuClose();
-  };
-
-  // Season-level export functions
-  const handleExportSeasonRoster = async () => {
-    try {
-      // TODO: Implement backend endpoint for season roster export
-
-      // Placeholder implementation
-      alert(`Export season roster - Backend implementation pending`);
-
-      // Future implementation would be:
-      // const response = await {someAPiCall};
-      // const result = apiUnwrapResult(response, 'Failed to export managers');
-      //   const blob = await response.blob();
-      //   const url = window.URL.createObjectURL(blob);
-      //   const a = document.createElement('a');
-      //   a.href = url;
-      //   a.download = `${teamsData?.season.name}-roster.csv`;
-      //   document.body.appendChild(a);
-      //   a.click();
-      //   window.URL.revokeObjectURL(url);
-      //   document.body.removeChild(a);
-    } catch (error) {
-      alert('Failed to export season roster: ' + error);
-    }
-  };
-
-  const handleExportSeasonManagers = async () => {
-    try {
-      // TODO: Implement backend endpoint for season managers export
-
-      // Placeholder implementation
-      alert(`Export season managers - Backend implementation pending`);
-
-      // Future implementation would be:
-      // const response = await {someAPiCall};
-      // const result = apiUnwrapResult(response, 'Failed to export managers');
-      //   const blob = await response.blob();
-      //   const url = window.URL.createObjectURL(blob);
-      //   const a = document.createElement('a');
-      //   a.href = url;
-      //   a.download = `${teamsData?.season.name}-managers.csv`;
-      //   document.body.appendChild(a);
-      //   a.click();
-      //   window.URL.revokeObjectURL(url);
-      //   document.body.removeChild(a);
-    } catch (error) {
-      alert('Failed to export season managers: ' + error);
-    }
-  };
-
-  // Season export menu handlers
-  const handleSeasonExportMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setSeasonExportMenuAnchor(event.currentTarget);
-  };
-
-  const handleSeasonExportMenuClose = () => {
-    setSeasonExportMenuAnchor(null);
-  };
-
-  const handleSeasonExportSelection = (type: 'roster' | 'managers') => {
-    if (type === 'roster') {
-      handleExportSeasonRoster();
-    } else {
-      handleExportSeasonManagers();
-    }
-    handleSeasonExportMenuClose();
-  };
 
   // Load teams data
   const loadTeamsData = useCallback(async () => {
@@ -391,9 +229,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         <Paper sx={{ p: 2, height: '100%' }}>
           <Box
             sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
               mb: 2,
               borderBottom: '2px solid',
               borderColor: 'divider',
@@ -409,48 +244,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             >
               {leagueSeason.league.name}
             </Typography>
-
-            {canEditTeams && (
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<ExpandMoreIcon />}
-                onClick={(event) => handleExportMenuOpen(event, leagueSeason)}
-                sx={{
-                  minWidth: 'auto',
-                  px: 2,
-                  py: 1,
-                  bgcolor: (theme) =>
-                    theme.palette.mode === 'dark'
-                      ? alpha(theme.palette.common.white, 0.08)
-                      : alpha(theme.palette.primary.main, 0.08),
-                  color: (theme) =>
-                    theme.palette.mode === 'dark'
-                      ? theme.palette.common.white
-                      : theme.palette.primary.main,
-                  border: (theme) =>
-                    `1px solid ${
-                      theme.palette.mode === 'dark'
-                        ? alpha(theme.palette.common.white, 0.3)
-                        : alpha(theme.palette.primary.main, 0.3)
-                    }`,
-                  '&:hover': {
-                    bgcolor: (theme) =>
-                      theme.palette.mode === 'dark'
-                        ? alpha(theme.palette.common.white, 0.15)
-                        : alpha(theme.palette.primary.main, 0.15),
-                    border: (theme) =>
-                      `1px solid ${
-                        theme.palette.mode === 'dark'
-                          ? alpha(theme.palette.common.white, 0.4)
-                          : alpha(theme.palette.primary.main, 0.4)
-                      }`,
-                  },
-                }}
-              >
-                Export
-              </Button>
-            )}
           </Box>
 
           {leagueSeason.divisions?.map(renderDivision)}
@@ -487,60 +280,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         seasonName={teamsData?.season?.name}
         showSeasonInfo={true}
       >
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{ position: 'relative' }}
-        >
-          <Box sx={{ flex: 1, textAlign: 'center' }}>
-            <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
-              Teams
-            </Typography>
-          </Box>
-          {canEditTeams && teamsData && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<ExpandMoreIcon />}
-              onClick={handleSeasonExportMenuOpen}
-              sx={{
-                minWidth: 'auto',
-                px: 2,
-                py: 1,
-                bgcolor: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? alpha(theme.palette.common.white, 0.08)
-                    : alpha(theme.palette.primary.main, 0.08),
-                color: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? theme.palette.common.white
-                    : theme.palette.primary.main,
-                border: (theme) =>
-                  `1px solid ${
-                    theme.palette.mode === 'dark'
-                      ? alpha(theme.palette.common.white, 0.3)
-                      : alpha(theme.palette.primary.main, 0.3)
-                  }`,
-                '&:hover': {
-                  bgcolor: (theme) =>
-                    theme.palette.mode === 'dark'
-                      ? alpha(theme.palette.common.white, 0.15)
-                      : alpha(theme.palette.primary.main, 0.15),
-                  border: (theme) =>
-                    `1px solid ${
-                      theme.palette.mode === 'dark'
-                        ? alpha(theme.palette.common.white, 0.4)
-                        : alpha(theme.palette.primary.main, 0.4)
-                    }`,
-                },
-                position: 'absolute',
-                right: 16,
-              }}
-            >
-              Export Season
-            </Button>
-          )}
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
+            Teams
+          </Typography>
         </Box>
       </AccountPageHeader>
 
@@ -571,30 +314,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         onClose={handleCloseEditDialog}
         onSuccess={handleTeamUpdateSuccess}
       />
-
-      {/* Export Menu */}
-      <Menu
-        anchorEl={exportMenuAnchor}
-        open={Boolean(exportMenuAnchor)}
-        onClose={handleExportMenuClose}
-      >
-        <MenuItem onClick={() => handleExportSelection('roster')}>Export Roster</MenuItem>
-        <MenuItem onClick={() => handleExportSelection('managers')}>Export Managers</MenuItem>
-      </Menu>
-
-      {/* Season Export Menu */}
-      <Menu
-        anchorEl={seasonExportMenuAnchor}
-        open={Boolean(seasonExportMenuAnchor)}
-        onClose={handleSeasonExportMenuClose}
-      >
-        <MenuItem onClick={() => handleSeasonExportSelection('roster')}>
-          Export All Rosters
-        </MenuItem>
-        <MenuItem onClick={() => handleSeasonExportSelection('managers')}>
-          Export All Managers
-        </MenuItem>
-      </Menu>
     </main>
   );
 };

@@ -164,6 +164,23 @@ export class InternalServerError extends ApiError {
   }
 }
 
+export class PayloadTooLargeError extends ApiError {
+  public readonly statusCode = 413 as const;
+  public readonly isRetryable = false as const;
+
+  constructor(message = 'Payload too large') {
+    super(message, 413, true, false);
+  }
+
+  toErrorResponse(): ApiErrorType {
+    return {
+      message: this.message,
+      statusCode: this.statusCode,
+      isRetryable: this.isRetryable,
+    };
+  }
+}
+
 export type PhotoSubmissionNotificationEvent =
   | 'submission-received'
   | 'moderation-approved'

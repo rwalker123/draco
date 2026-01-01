@@ -21,6 +21,7 @@ import {
   Link as MuiLink,
   Fab,
   Snackbar,
+  Menu,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -31,6 +32,7 @@ import {
   Sports as SportsIcon,
   People as PeopleIcon,
   NavigateNext as NavigateNextIcon,
+  FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import {
@@ -39,6 +41,9 @@ import {
   deleteLeagueSeasonDivision as apiDeleteLeagueSeasonDivision,
   assignLeagueSeasonTeamDivision as apiAssignLeagueSeasonTeamDivision,
   removeLeagueSeasonTeamDivision as apiRemoveLeagueSeasonTeamDivision,
+  exportLeagueRoster,
+  exportLeagueManagers,
+  exportTeamRoster,
 } from '@draco/shared-api-client';
 import type {
   DivisionSeasonType,
@@ -52,6 +57,7 @@ import type {
 import { createApiClient } from '../../../../../../lib/apiClientFactory';
 import { unwrapApiResult } from '../../../../../../utils/apiResult';
 import { mapLeagueSetup } from '../../../../../../utils/leagueSeasonMapper';
+import { downloadBlob } from '../../../../../../utils/downloadUtils';
 import { useAuth } from '../../../../../../context/AuthContext';
 import AccountPageHeader from '../../../../../../components/AccountPageHeader';
 import {
@@ -164,6 +170,11 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   const [selectedTeamsPerDivision, setSelectedTeamsPerDivision] = useState<Record<string, string>>(
     {},
   );
+
+  // Export menu state
+  const [leagueExportMenuAnchor, setLeagueExportMenuAnchor] = useState<null | HTMLElement>(null);
+  const [selectedLeagueForExport, setSelectedLeagueForExport] =
+    useState<LeagueSeasonWithDivisionTeamsAndUnassignedType | null>(null);
 
   const handleFeedbackClose = useCallback(() => {
     setFeedback(null);
@@ -566,6 +577,96 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setEditLeagueDialogOpen(true);
   };
 
+  // Export handlers
+  const handleLeagueExportMenuOpen = (
+    event: React.MouseEvent<HTMLElement>,
+    leagueSeason: LeagueSeasonWithDivisionTeamsAndUnassignedType,
+  ) => {
+    event.stopPropagation();
+    setLeagueExportMenuAnchor(event.currentTarget);
+    setSelectedLeagueForExport(leagueSeason);
+  };
+
+  const handleLeagueExportMenuClose = () => {
+    setLeagueExportMenuAnchor(null);
+    setSelectedLeagueForExport(null);
+  };
+
+  const handleExportLeagueRoster = async () => {
+    if (!selectedLeagueForExport) return;
+
+    try {
+      const result = await exportLeagueRoster({
+        client: apiClient,
+        path: { accountId, seasonId, leagueSeasonId: selectedLeagueForExport.id },
+        throwOnError: false,
+        parseAs: 'blob',
+      });
+
+      const blob = unwrapApiResult(result, 'Failed to export league roster') as Blob;
+      const sanitizedName = selectedLeagueForExport.league.name
+        .replace(/[^a-zA-Z0-9-_]/g, '-')
+        .toLowerCase();
+      downloadBlob(blob, `${sanitizedName}-roster.csv`);
+    } catch (err) {
+      setFeedback({
+        severity: 'error',
+        message: err instanceof Error ? err.message : 'Failed to export league roster',
+      });
+    }
+    handleLeagueExportMenuClose();
+  };
+
+  const handleExportLeagueManagers = async () => {
+    if (!selectedLeagueForExport) return;
+
+    try {
+      const result = await exportLeagueManagers({
+        client: apiClient,
+        path: { accountId, seasonId, leagueSeasonId: selectedLeagueForExport.id },
+        throwOnError: false,
+        parseAs: 'blob',
+      });
+
+      const blob = unwrapApiResult(result, 'Failed to export league managers') as Blob;
+      const sanitizedName = selectedLeagueForExport.league.name
+        .replace(/[^a-zA-Z0-9-_]/g, '-')
+        .toLowerCase();
+      downloadBlob(blob, `${sanitizedName}-managers.csv`);
+    } catch (err) {
+      setFeedback({
+        severity: 'error',
+        message: err instanceof Error ? err.message : 'Failed to export league managers',
+      });
+    }
+    handleLeagueExportMenuClose();
+  };
+
+  const handleExportTeamRoster = async (
+    teamSeason: TeamSeasonType,
+    _leagueSeason: LeagueSeasonType,
+  ) => {
+    try {
+      const result = await exportTeamRoster({
+        client: apiClient,
+        path: { accountId, seasonId, teamSeasonId: teamSeason.id },
+        throwOnError: false,
+        parseAs: 'blob',
+      });
+
+      const blob = unwrapApiResult(result, 'Failed to export team roster') as Blob;
+      const sanitizedName = (teamSeason.name ?? 'team')
+        .replace(/[^a-zA-Z0-9-_]/g, '-')
+        .toLowerCase();
+      downloadBlob(blob, `${sanitizedName}-roster.csv`);
+    } catch (err) {
+      setFeedback({
+        severity: 'error',
+        message: err instanceof Error ? err.message : 'Failed to export team roster',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -664,6 +765,16 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                     />
                   </Box>
                   <Box display="flex" alignItems="center" gap={0.5} ml="auto">
+                    <Tooltip title="Export league data">
+                      <IconButton
+                        component="span"
+                        size="small"
+                        onClick={(e) => handleLeagueExportMenuOpen(e, leagueSeason)}
+                        disabled={formLoading}
+                      >
+                        <FileDownloadIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title="Edit league name">
                       <IconButton
                         component="span"
@@ -809,6 +920,17 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                                               <PeopleIcon fontSize="small" />
                                             </IconButton>
                                           </Tooltip>
+                                          <Tooltip title="Export Team Roster">
+                                            <IconButton
+                                              size="small"
+                                              onClick={() =>
+                                                handleExportTeamRoster(team, leagueSeason)
+                                              }
+                                              disabled={formLoading}
+                                            >
+                                              <FileDownloadIcon fontSize="small" />
+                                            </IconButton>
+                                          </Tooltip>
                                           <Tooltip title="Remove from Division">
                                             <IconButton
                                               size="small"
@@ -869,6 +991,17 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                                               disabled={formLoading}
                                             >
                                               <PeopleIcon fontSize="small" />
+                                            </IconButton>
+                                          </Tooltip>
+                                          <Tooltip title="Export Team Roster">
+                                            <IconButton
+                                              size="small"
+                                              onClick={() =>
+                                                handleExportTeamRoster(team, leagueSeason)
+                                              }
+                                              disabled={formLoading}
+                                            >
+                                              <FileDownloadIcon fontSize="small" />
                                             </IconButton>
                                           </Tooltip>
                                           <Tooltip title="Remove from Division">
@@ -1150,6 +1283,16 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       >
         <AddIcon />
       </Fab>
+
+      {/* League Export Menu */}
+      <Menu
+        anchorEl={leagueExportMenuAnchor}
+        open={Boolean(leagueExportMenuAnchor)}
+        onClose={handleLeagueExportMenuClose}
+      >
+        <MenuItem onClick={handleExportLeagueRoster}>Export League Rosters</MenuItem>
+        <MenuItem onClick={handleExportLeagueManagers}>Export League Managers</MenuItem>
+      </Menu>
 
       <Snackbar
         open={Boolean(feedback)}

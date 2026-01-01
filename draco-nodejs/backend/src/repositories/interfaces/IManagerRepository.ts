@@ -1,6 +1,10 @@
 import { teamseasonmanager } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
-import { dbSeasonManagerWithRelations, dbTeamManagerWithContact } from '../types/dbTypes.js';
+import {
+  dbManagerExportData,
+  dbSeasonManagerWithRelations,
+  dbTeamManagerWithContact,
+} from '../types/dbTypes.js';
 
 export interface SeasonManagerRepositoryFilters {
   leagueSeasonId?: bigint;
@@ -17,4 +21,6 @@ export interface IManagerRepository extends IBaseRepository<teamseasonmanager> {
   findTeamManagers(teamSeasonId: bigint): Promise<dbTeamManagerWithContact[]>;
   createTeamManager(teamSeasonId: bigint, contactId: bigint): Promise<dbTeamManagerWithContact>;
   findTeamManager(teamSeasonId: bigint, contactId: bigint): Promise<teamseasonmanager | null>;
+  findLeagueManagersForExport(leagueSeasonId: bigint): Promise<dbManagerExportData[]>;
+  findSeasonManagersForExport(seasonId: bigint, accountId: bigint): Promise<dbManagerExportData[]>;
 }

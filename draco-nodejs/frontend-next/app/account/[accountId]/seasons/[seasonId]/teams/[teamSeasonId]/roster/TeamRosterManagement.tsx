@@ -29,6 +29,7 @@ import {
   Block as BlockIcon,
   CheckCircle as CheckCircleIcon,
   SupervisorAccount as ManagerIcon,
+  FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import EditContactDialog from '../../../../../../../../components/users/EditContactDialog';
@@ -56,6 +57,10 @@ import {
   TeamRosterMembersType,
   type AccountSettingKey,
 } from '@draco/shared-schemas';
+import { exportTeamRoster } from '@draco/shared-api-client';
+import { useApiClient } from '@/hooks/useApiClient';
+import { unwrapApiResult } from '@/utils/apiResult';
+import { downloadBlob } from '@/utils/downloadUtils';
 import { getContactDisplayName } from '../../../../../../../../utils/contactUtils';
 
 interface TeamRosterManagementProps {
@@ -69,6 +74,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   teamSeasonId,
 }) => {
   const router = useRouter();
+  const apiClient = useApiClient();
   const [formLoading, setFormLoading] = useState(false);
 
   // Use the new data manager hook
@@ -476,6 +482,27 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     [setSuccessMessage],
   );
 
+  const handleExportRoster = useCallback(async () => {
+    try {
+      setFormLoading(true);
+      const result = await exportTeamRoster({
+        client: apiClient,
+        path: { accountId, seasonId, teamSeasonId },
+        throwOnError: false,
+        parseAs: 'blob',
+      });
+
+      const blob = unwrapApiResult(result, 'Failed to export roster') as Blob;
+      const teamName = rosterData?.teamSeason?.name ?? 'team';
+      const sanitizedName = teamName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+      downloadBlob(blob, `${sanitizedName}-roster.csv`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export roster');
+    } finally {
+      setFormLoading(false);
+    }
+  }, [apiClient, accountId, seasonId, teamSeasonId, rosterData?.teamSeason?.name, setError]);
+
   const handleDeleteSuccess = useCallback(
     (result: { message: string; memberId: string }) => {
       setSuccessMessage(result.message);
@@ -626,6 +653,14 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       <Box
         sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3, gap: 2 }}
       >
+        <Button
+          variant="outlined"
+          startIcon={<FileDownloadIcon />}
+          onClick={handleExportRoster}
+          disabled={formLoading}
+        >
+          Export Roster
+        </Button>
         <Button
           variant="outlined"
           startIcon={<PersonAddIcon />}

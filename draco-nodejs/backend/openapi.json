@@ -70,7 +70,7 @@
               "firstYear": {
                 "type": "number",
                 "minimum": 1900,
-                "maximum": 2025
+                "maximum": 2026
               },
               "contact": {
                 "type": "object",
@@ -192,7 +192,7 @@
           "firstYear": {
             "type": "number",
             "minimum": 1900,
-            "maximum": 2025
+            "maximum": 2026
           },
           "contact": {
             "type": "object",
@@ -317,7 +317,7 @@
               "firstYear": {
                 "type": "number",
                 "minimum": 1900,
-                "maximum": 2025
+                "maximum": 2026
               },
               "contact": {
                 "anyOf": [
@@ -449,7 +449,7 @@
               "firstYear": {
                 "type": "number",
                 "minimum": 1900,
-                "maximum": 2025
+                "maximum": 2026
               }
             }
           }
@@ -2542,7 +2542,7 @@
                     "firstYear": {
                       "type": "number",
                       "minimum": 1900,
-                      "maximum": 2025
+                      "maximum": 2026
                     },
                     "contact": {
                       "type": "object",
@@ -12562,9 +12562,9 @@
           "yearInducted": {
             "type": "integer",
             "minimum": 1900,
-            "maximum": 2026,
+            "maximum": 2027,
             "description": "Calendar year the inductee entered the Hall of Fame.",
-            "example": 2025
+            "example": 2026
           },
           "biographyHtml": {
             "type": "string",
@@ -12622,9 +12622,9 @@
           "year": {
             "type": "integer",
             "minimum": 1900,
-            "maximum": 2026,
+            "maximum": 2027,
             "description": "Calendar year the inductee entered the Hall of Fame.",
-            "example": 2025
+            "example": 2026
           },
           "memberCount": {
             "type": "integer",
@@ -12643,9 +12643,9 @@
           "year": {
             "type": "integer",
             "minimum": 1900,
-            "maximum": 2026,
+            "maximum": 2027,
             "description": "Calendar year the inductee entered the Hall of Fame.",
-            "example": 2025
+            "example": 2026
           },
           "memberCount": {
             "type": "integer",
@@ -12671,9 +12671,9 @@
                 "yearInducted": {
                   "type": "integer",
                   "minimum": 1900,
-                  "maximum": 2026,
+                  "maximum": 2027,
                   "description": "Calendar year the inductee entered the Hall of Fame.",
-                  "example": 2025
+                  "example": 2026
                 },
                 "biographyHtml": {
                   "type": "string",
@@ -12856,9 +12856,9 @@
           "yearInducted": {
             "type": "integer",
             "minimum": 1900,
-            "maximum": 2026,
+            "maximum": 2027,
             "description": "Calendar year the inductee entered the Hall of Fame.",
-            "example": 2025
+            "example": 2026
           },
           "biographyHtml": {
             "type": "string",
@@ -12877,9 +12877,9 @@
           "yearInducted": {
             "type": "integer",
             "minimum": 1900,
-            "maximum": 2026,
+            "maximum": 2027,
             "description": "Calendar year the inductee entered the Hall of Fame.",
-            "example": 2025
+            "example": 2026
           },
           "biographyHtml": {
             "type": "string",
@@ -13173,9 +13173,9 @@
           "yearInducted": {
             "type": "integer",
             "minimum": 1900,
-            "maximum": 2026,
+            "maximum": 2027,
             "description": "Calendar year the inductee entered the Hall of Fame.",
-            "example": 2025
+            "example": 2026
           },
           "biographyHtml": {
             "type": "string",
@@ -40347,6 +40347,473 @@
           },
           "500": {
             "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/export": {
+      "get": {
+        "description": "Export team roster to CSV file",
+        "summary": "Export team roster",
+        "operationId": "exportTeamRoster",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/roster/export": {
+      "get": {
+        "description": "Export league roster to CSV file (deduplicated by contact)",
+        "summary": "Export league roster",
+        "operationId": "exportLeagueRoster",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "leagueSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/managers/export": {
+      "get": {
+        "description": "Export league managers to CSV file",
+        "summary": "Export league managers",
+        "operationId": "exportLeagueManagers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "leagueSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/roster/export": {
+      "get": {
+        "description": "Export season roster to CSV file (all players, deduplicated)",
+        "summary": "Export season roster",
+        "operationId": "exportSeasonRoster",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/managers/export": {
+      "get": {
+        "description": "Export season managers to CSV file",
+        "summary": "Export season managers",
+        "operationId": "exportSeasonManagers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
             "content": {
               "application/json": {
                 "schema": {

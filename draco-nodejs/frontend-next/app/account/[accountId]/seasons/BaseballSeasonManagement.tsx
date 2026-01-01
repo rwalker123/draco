@@ -16,6 +16,8 @@ import {
   CircularProgress,
   Fab,
   Snackbar,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import SeasonCard from './SeasonCard';
@@ -31,10 +33,13 @@ import {
   deleteAccountSeason,
   copyAccountSeason,
   setCurrentAccountSeason,
+  exportSeasonRoster,
+  exportSeasonManagers,
 } from '@draco/shared-api-client';
 import { UpsertSeasonType, SeasonType } from '@draco/shared-schemas';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
+import { downloadBlob } from '../../../../utils/downloadUtils';
 import {
   mapSeasonWithDivisions,
   mapSeasonsWithDivisions,
@@ -74,6 +79,10 @@ const BaseballSeasonManagement: React.FC = () => {
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
+  // Export menu state
+  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
+  const [selectedSeasonForExport, setSelectedSeasonForExport] = useState<Season | null>(null);
+
   // Check permissions - all season management actions require the same permissions
   const hasSeasonManagementPermissions = isAccountAdministrator(hasRole, accountIdStr);
   const canCreate = hasSeasonManagementPermissions;
@@ -81,6 +90,7 @@ const BaseballSeasonManagement: React.FC = () => {
   const canDelete = hasSeasonManagementPermissions;
   const canSetCurrent = hasSeasonManagementPermissions;
   const canManageLeagues = hasSeasonManagementPermissions;
+  const canExport = hasSeasonManagementPermissions;
 
   const handleFeedbackClose = useCallback(() => {
     setFeedback(null);
@@ -320,6 +330,66 @@ const BaseballSeasonManagement: React.FC = () => {
     router.push(`/account/${accountId}/seasons/${season.id}/league-seasons`);
   };
 
+  const handleExportClick = (season: Season, event: React.MouseEvent<HTMLButtonElement>) => {
+    setSelectedSeasonForExport(season);
+    setExportMenuAnchor(event.currentTarget);
+  };
+
+  const handleExportMenuClose = () => {
+    setExportMenuAnchor(null);
+    setSelectedSeasonForExport(null);
+  };
+
+  const handleExportSeasonRoster = async () => {
+    if (!accountIdStr || !selectedSeasonForExport) return;
+
+    try {
+      const result = await exportSeasonRoster({
+        client: apiClient,
+        path: { accountId: accountIdStr, seasonId: selectedSeasonForExport.id },
+        throwOnError: false,
+        parseAs: 'blob',
+      });
+
+      const blob = unwrapApiResult(result, 'Failed to export season roster') as Blob;
+      const sanitizedName = selectedSeasonForExport.name
+        .replace(/[^a-zA-Z0-9-_]/g, '-')
+        .toLowerCase();
+      downloadBlob(blob, `${sanitizedName}-roster.csv`);
+    } catch (err) {
+      setFeedback({
+        severity: 'error',
+        message: err instanceof Error ? err.message : 'Failed to export season roster',
+      });
+    }
+    handleExportMenuClose();
+  };
+
+  const handleExportSeasonManagers = async () => {
+    if (!accountIdStr || !selectedSeasonForExport) return;
+
+    try {
+      const result = await exportSeasonManagers({
+        client: apiClient,
+        path: { accountId: accountIdStr, seasonId: selectedSeasonForExport.id },
+        throwOnError: false,
+        parseAs: 'blob',
+      });
+
+      const blob = unwrapApiResult(result, 'Failed to export season managers') as Blob;
+      const sanitizedName = selectedSeasonForExport.name
+        .replace(/[^a-zA-Z0-9-_]/g, '-')
+        .toLowerCase();
+      downloadBlob(blob, `${sanitizedName}-managers.csv`);
+    } catch (err) {
+      setFeedback({
+        severity: 'error',
+        message: err instanceof Error ? err.message : 'Failed to export season managers',
+      });
+    }
+    handleExportMenuClose();
+  };
+
   const closeDialogs = () => {
     setCreateDialogOpen(false);
     setEditDialogOpen(false);
@@ -390,11 +460,13 @@ const BaseballSeasonManagement: React.FC = () => {
                     canManageLeagues={canManageLeagues}
                     canEdit={canEdit}
                     canDelete={canDelete}
+                    canExport={canExport}
                     onSetCurrent={handleSetCurrentSeason}
                     onLeagueSeasonManagement={navigateToLeagueSeasonManagement}
                     onEdit={openEditDialog}
                     onCopy={openCopyDialog}
                     onDelete={openDeleteDialog}
+                    onExport={handleExportClick}
                   />
                 ))}
               </Box>
@@ -523,6 +595,16 @@ const BaseballSeasonManagement: React.FC = () => {
           <AddIcon />
         </Fab>
       )}
+
+      {/* Export Menu */}
+      <Menu
+        anchorEl={exportMenuAnchor}
+        open={Boolean(exportMenuAnchor)}
+        onClose={handleExportMenuClose}
+      >
+        <MenuItem onClick={handleExportSeasonRoster}>Export All Rosters</MenuItem>
+        <MenuItem onClick={handleExportSeasonManagers}>Export All Managers</MenuItem>
+      </Menu>
 
       <Snackbar
         open={Boolean(feedback)}

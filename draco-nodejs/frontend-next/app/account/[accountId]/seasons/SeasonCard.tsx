@@ -18,6 +18,7 @@ import {
   Star as StarIcon,
   StarBorder as StarBorderIcon,
   Group as GroupIcon,
+  FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { SeasonSummary } from '../../../../utils/seasonMapper';
 
@@ -27,11 +28,13 @@ export interface SeasonCardProps {
   canManageLeagues: boolean;
   canEdit: boolean;
   canDelete: boolean;
+  canExport: boolean;
   onSetCurrent: (season: SeasonSummary) => void;
   onLeagueSeasonManagement: (season: SeasonSummary) => void;
   onEdit: (season: SeasonSummary) => void;
   onCopy: (season: SeasonSummary) => void;
   onDelete: (season: SeasonSummary) => void;
+  onExport: (season: SeasonSummary, event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 const SeasonCard: React.FC<SeasonCardProps> = ({
@@ -40,11 +43,13 @@ const SeasonCard: React.FC<SeasonCardProps> = ({
   canManageLeagues,
   canEdit,
   canDelete,
+  canExport,
   onSetCurrent,
   onLeagueSeasonManagement,
   onEdit,
   onCopy,
   onDelete,
+  onExport,
 }) => {
   return (
     <Card>
@@ -70,6 +75,17 @@ const SeasonCard: React.FC<SeasonCardProps> = ({
                   onClick={() => onCopy(season)}
                 >
                   <CopyIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {canExport && (
+              <Tooltip title="Export season data">
+                <IconButton
+                  size="small"
+                  aria-label={`Export ${season.name}`}
+                  onClick={(event) => onExport(season, event)}
+                >
+                  <FileDownloadIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
