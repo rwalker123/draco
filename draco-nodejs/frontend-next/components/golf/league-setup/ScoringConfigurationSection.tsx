@@ -238,13 +238,9 @@ export function ScoringConfigurationSection<T extends FieldValues>({
                 <Controller
                   name={field.name as Path<T>}
                   control={control}
-                  render={({ field: formField }) => (
+                  render={({ field: formField, fieldState }) => (
                     <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                      <Tooltip
-                        title={isPerNineDisabled ? tooltipText : ''}
-                        placement="top"
-                        arrow
-                      >
+                      <Tooltip title={isPerNineDisabled ? tooltipText : ''} placement="top" arrow>
                         <TextField
                           {...formField}
                           type="number"
@@ -255,14 +251,12 @@ export function ScoringConfigurationSection<T extends FieldValues>({
                           onChange={(e) => formField.onChange(parseInt(e.target.value, 10) || 0)}
                           inputProps={{ min: 0 }}
                           disabled={isPerNineDisabled}
+                          error={!!fieldState.error}
+                          helperText={fieldState.error?.message}
                         />
                       </Tooltip>
                       <Tooltip title={tooltipText} placement="top" arrow>
-                        <InfoOutlinedIcon
-                          fontSize="small"
-                          color="action"
-                          sx={{ ml: 0.5, mt: 1 }}
-                        />
+                        <InfoOutlinedIcon fontSize="small" color="action" sx={{ ml: 0.5, mt: 1 }} />
                       </Tooltip>
                     </Box>
                   )}

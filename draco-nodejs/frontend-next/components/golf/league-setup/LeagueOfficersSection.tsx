@@ -58,7 +58,7 @@ export function LeagueOfficersSection<T extends FieldValues>({
               <Controller
                 name={officer.name as Path<T>}
                 control={control}
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
                       <Typography variant="body2" color="text.secondary">
@@ -77,6 +77,8 @@ export function LeagueOfficersSection<T extends FieldValues>({
                       value={field.value as string | undefined}
                       onChange={field.onChange}
                       accountId={accountId}
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
                     />
                   </Box>
                 )}

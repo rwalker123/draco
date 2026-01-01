@@ -222,6 +222,11 @@ export class GolfRosterService {
     }
 
     if (data.releaseAsSub) {
+      const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
+      if (!seasonExists) {
+        throw new NotFoundError('League season not found');
+      }
+
       const existingSub = await this.rosterRepository.findLeagueSubByGolferAndSeason(
         entry.golferid,
         seasonId,
@@ -249,13 +254,7 @@ export class GolfRosterService {
       throw new NotFoundError('Roster entry not found');
     }
 
-    const hasScores = await this.rosterRepository.hasMatchScores(entry.golferid);
-    if (hasScores) {
-      throw new ValidationError(
-        'Cannot delete player because they have recorded scores. Use release instead.',
-      );
-    }
-
+    await this.validateGolferCanBeDeleted(entry.golferid);
     await this.rosterRepository.deleteRosterEntry(rosterId);
   }
 
@@ -324,11 +323,16 @@ export class GolfRosterService {
       throw new NotFoundError('Substitute not found');
     }
 
-    const hasScores = await this.rosterRepository.hasMatchScores(sub.golferid);
-    if (hasScores) {
-      throw new ValidationError('Cannot delete substitute because they have recorded scores.');
-    }
-
+    await this.validateGolferCanBeDeleted(sub.golferid);
     await this.rosterRepository.deleteLeagueSub(subId);
+  }
+
+  private async validateGolferCanBeDeleted(golferId: bigint): Promise<void> {
+    const hasScores = await this.rosterRepository.hasMatchScores(golferId);
+    if (hasScores) {
+      throw new ValidationError(
+        'Cannot delete because this golfer has recorded scores. Use release instead.',
+      );
+    }
   }
 }
