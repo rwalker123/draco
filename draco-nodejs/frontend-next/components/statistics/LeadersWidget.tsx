@@ -357,8 +357,12 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
           ...previous,
           [selection.statType]: selection.categoryKey,
         }));
-        if (leaders.length > 0 && !hasAnyLeaders) {
-          setHasAnyLeaders(true);
+        if (leaders.length > 0) {
+          if (!hasAnyLeaders) {
+            setHasAnyLeaders(true);
+          }
+        } else if (hasAnyLeaders === null) {
+          setHasAnyLeaders(false);
         }
       } catch (err) {
         if (cancelled) {
