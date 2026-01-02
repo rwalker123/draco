@@ -1031,7 +1031,8 @@ const BattingStatsEditableGrid = forwardRef<
               bgcolor: (theme: Theme) => theme.palette.warning.light,
             },
             '& .MuiDataGrid-row.totals-row': {
-              bgcolor: (theme: Theme) => theme.palette.grey[200],
+              bgcolor: (theme: Theme) =>
+                theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[200],
               '& .MuiDataGrid-cell': {
                 fontWeight: 600,
               },

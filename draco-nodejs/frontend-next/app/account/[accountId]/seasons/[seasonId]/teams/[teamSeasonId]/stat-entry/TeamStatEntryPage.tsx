@@ -19,10 +19,12 @@ import {
   type TeamStatsPlayerSummaryType,
 } from '@draco/shared-schemas';
 
+import { getGameRecap } from '@draco/shared-api-client';
 import { useAuth } from '../../../../../../../../context/AuthContext';
 import { useRole } from '../../../../../../../../context/RoleContext';
 import { useApiClient } from '../../../../../../../../hooks/useApiClient';
 import { useAccountSettings } from '../../../../../../../../hooks/useAccountSettings';
+import { useGameRecap } from '../../../../../../../../hooks/useGameRecap';
 import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
 import AdPlacement from '../../../../../../../../components/ads/AdPlacement';
 import TeamAvatar from '../../../../../../../../components/TeamAvatar';
@@ -57,6 +59,7 @@ type CachedGameStats = {
   pitching: GamePitchingStatsType;
   attendance: GameAttendanceType | null;
   attendanceSelection: string[];
+  recap: string | null;
 };
 
 const calculateBattingTotals = (
@@ -326,6 +329,10 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
 
+  const [recapContent, setRecapContent] = useState<string | null>(null);
+  const [recapLoading, setRecapLoading] = useState(false);
+  const [recapError, setRecapError] = useState<string | null>(null);
+
   const [tabValue, setTabValue] = useState<TabKey>('batting');
   const [snackbar, setSnackbar] = useState<SnackbarState>(null);
 
@@ -353,6 +360,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
 
       setAttendance(canManageStats ? (cached.attendance ?? emptyAttendance) : emptyAttendance);
       setAttendanceSelection(cached.attendanceSelection);
+      setRecapContent(cached.recap);
     },
     [canManageStats],
   );
@@ -524,6 +532,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
         applyCachedGameStats(cached);
         setStatsError(null);
         setAttendanceError(null);
+        setRecapError(null);
         if (!shouldLoadAttendance) {
           setAttendanceLoading(false);
         }
@@ -532,6 +541,8 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
 
       setStatsLoading(true);
       setStatsError(null);
+      setRecapLoading(true);
+      setRecapError(null);
 
       if (shouldLoadAttendance) {
         setAttendanceLoading(true);
@@ -587,11 +598,31 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           setAttendanceLoading(false);
         }
 
+        let recapData: string | null = null;
+        try {
+          const recapResult = await getGameRecap({
+            client: apiClient,
+            path: { accountId, seasonId, gameId, teamSeasonId },
+            throwOnError: false,
+          });
+          if (recapResult.data) {
+            recapData = recapResult.data ?? null;
+          }
+        } catch (recapErr) {
+          console.warn('Failed to fetch game recap:', recapErr);
+          const message =
+            recapErr instanceof Error ? recapErr.message : 'Failed to load game recap.';
+          setRecapError(message);
+        } finally {
+          setRecapLoading(false);
+        }
+
         const nextCache: CachedGameStats = {
           batting,
           pitching,
           attendance: attendanceData,
           attendanceSelection: attendanceSelectionData,
+          recap: recapData,
         };
 
         cachedGameStatsRef.current.set(gameId, nextCache);
@@ -613,6 +644,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     },
     [
       accountId,
+      apiClient,
       applyCachedGameStats,
       canManageStats,
       seasonId,
@@ -764,6 +796,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
             },
             attendance: emptyAttendance,
             attendanceSelection,
+            recap: recapContent,
           };
 
           cachedGameStatsRef.current.set(selectedGameId, {
@@ -802,6 +835,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       attendanceSelection,
       battingStats,
       pitchingStats,
+      recapContent,
       seasonId,
       selectedGameId,
       showSnackbar,
@@ -855,6 +889,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
             },
             attendance: emptyAttendance,
             attendanceSelection,
+            recap: recapContent,
           };
 
           cachedGameStatsRef.current.set(selectedGameId, {
@@ -893,6 +928,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       attendanceSelection,
       battingStats,
       pitchingStats,
+      recapContent,
       seasonId,
       selectedGameId,
       showSnackbar,
@@ -945,6 +981,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           },
           attendance: emptyAttendance,
           attendanceSelection,
+          recap: recapContent,
         };
 
         cachedGameStatsRef.current.set(selectedGameId, {
@@ -1019,6 +1056,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
             pitching: nextPitching,
             attendance: emptyAttendance,
             attendanceSelection,
+            recap: recapContent,
           };
 
           cachedGameStatsRef.current.set(selectedGameId, {
@@ -1054,6 +1092,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       attendanceSelection,
       battingStats,
       pitchingStats,
+      recapContent,
       seasonId,
       selectedGameId,
       showSnackbar,
@@ -1107,6 +1146,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
             pitching: nextPitching,
             attendance: emptyAttendance,
             attendanceSelection,
+            recap: recapContent,
           };
 
           cachedGameStatsRef.current.set(selectedGameId, {
@@ -1142,6 +1182,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       attendanceSelection,
       battingStats,
       pitchingStats,
+      recapContent,
       seasonId,
       selectedGameId,
       showSnackbar,
@@ -1195,6 +1236,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           pitching: nextPitching,
           attendance: emptyAttendance,
           attendanceSelection,
+          recap: recapContent,
         };
 
         cachedGameStatsRef.current.set(selectedGameId, {
@@ -1295,6 +1337,39 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   const battingTotals = battingStats?.totals ?? null;
   const pitchingTotals = pitchingStats?.totals ?? null;
 
+  const { saveRecap } = useGameRecap({
+    accountId,
+    seasonId,
+    gameId: selectedGameId ?? '',
+    teamSeasonId,
+  });
+
+  const handleRecapSave = useCallback(
+    async (content: string) => {
+      const gameId = selectedGameId;
+      if (!gameId) {
+        throw new Error('No game selected');
+      }
+
+      const result = await saveRecap({ recap: content });
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      setRecapContent(content);
+      const cached = cachedGameStatsRef.current.get(gameId);
+      if (cached) {
+        cachedGameStatsRef.current.set(gameId, {
+          ...cached,
+          recap: content,
+        });
+      }
+
+      showSnackbar('Game recap saved.');
+    },
+    [selectedGameId, saveRecap, showSnackbar],
+  );
+
   useEffect(() => {
     if (!trackGamesPlayedEnabled) {
       setAttendance(emptyAttendance);
@@ -1328,6 +1403,14 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       setTabValue('batting');
     }
   }, [canManageStats, selectedGameId, tabValue]);
+
+  useEffect(() => {
+    if (!selectedGameId) {
+      setRecapContent(null);
+      setRecapError(null);
+      setRecapLoading(false);
+    }
+  }, [selectedGameId]);
 
   const handleTeamDataLoaded = useCallback(
     (data: {
@@ -1516,6 +1599,10 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           onClearGameSelection={() => {
             setSelectedGameId(null);
           }}
+          recapContent={recapContent}
+          recapLoading={recapLoading}
+          recapError={recapError}
+          onRecapSave={handleRecapSave}
         />
 
         <AsyncConfirmDialog
