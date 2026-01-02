@@ -211,6 +211,11 @@ describe('StatsTabsCard', () => {
         seasonLoading={false}
         seasonError={null}
         gameOutcome={null}
+        recapContent={null}
+        recapLoading={false}
+        recapError={null}
+        onRecapSave={asyncNoop}
+        onRecapDirtyChange={noop}
       />,
     );
 
@@ -255,6 +260,11 @@ describe('StatsTabsCard', () => {
         seasonError={null}
         gameOutcome={null}
         onClearGameSelection={noop}
+        recapContent={null}
+        recapLoading={false}
+        recapError={null}
+        onRecapSave={asyncNoop}
+        onRecapDirtyChange={noop}
       />,
     );
 
@@ -299,6 +309,11 @@ describe('StatsTabsCard', () => {
         seasonLoading={false}
         seasonError={null}
         gameOutcome={null}
+        recapContent={null}
+        recapLoading={false}
+        recapError={null}
+        onRecapSave={asyncNoop}
+        onRecapDirtyChange={noop}
       />,
     );
 

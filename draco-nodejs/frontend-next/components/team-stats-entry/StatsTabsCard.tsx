@@ -28,6 +28,7 @@ import BattingStatsSection from './BattingStatsSection';
 import PitchingStatsSection from './PitchingStatsSection';
 import SeasonBattingStatsSection from './SeasonBattingStatsSection';
 import SeasonPitchingStatsSection from './SeasonPitchingStatsSection';
+import GameRecapSection, { type GameRecapSectionHandle } from './GameRecapSection';
 import UnsavedChangesDialog from './dialogs/UnsavedChangesDialog';
 import type {
   EditableGridHandle,
@@ -38,7 +39,7 @@ import type {
   UnsavedChangesReason,
 } from './types';
 
-export type TabKey = 'batting' | 'pitching' | 'attendance';
+export type TabKey = 'batting' | 'pitching' | 'recap' | 'attendance';
 
 interface StatsTabsCardProps {
   tab: TabKey;
@@ -74,6 +75,11 @@ interface StatsTabsCardProps {
   seasonError: string | null;
   gameOutcome: GameOutcome;
   onClearGameSelection?: () => void;
+  recapContent: string | null;
+  recapLoading: boolean;
+  recapError: string | null;
+  onRecapSave: (content: string) => Promise<void>;
+  onRecapDirtyChange: (dirty: boolean) => void;
 }
 
 const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
@@ -111,12 +117,18 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       seasonError,
       gameOutcome,
       onClearGameSelection,
+      recapContent,
+      recapLoading,
+      recapError,
+      onRecapSave,
+      onRecapDirtyChange,
     },
     ref,
   ) => {
     const [editModeEnabled, setEditModeEnabled] = useState(false);
     const battingGridRef = useRef<EditableGridHandle | null>(null);
     const pitchingGridRef = useRef<EditableGridHandle | null>(null);
+    const recapSectionRef = useRef<GameRecapSectionHandle | null>(null);
 
     const [battingDirty, setBattingDirty] = useState(false);
     const [pitchingDirty, setPitchingDirty] = useState(false);
@@ -127,11 +139,18 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
     const editMode = Boolean(editModeEnabled && selectedGameId && canManageStats);
 
     const showAttendanceTab = enableAttendanceTracking && canManageStats && Boolean(selectedGameId);
+    const showRecapTab = Boolean(selectedGameId);
 
-    const availableTabs: TabKey[] = useMemo(
-      () => (showAttendanceTab ? ['batting', 'pitching', 'attendance'] : ['batting', 'pitching']),
-      [showAttendanceTab],
-    );
+    const availableTabs: TabKey[] = useMemo(() => {
+      const tabs: TabKey[] = ['batting', 'pitching'];
+      if (showRecapTab) {
+        tabs.push('recap');
+      }
+      if (showAttendanceTab) {
+        tabs.push('attendance');
+      }
+      return tabs;
+    }, [showRecapTab, showAttendanceTab]);
 
     const currentTab = availableTabs.includes(tab) ? tab : 'batting';
 
@@ -195,9 +214,30 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
         if (tabKey === 'pitching') {
           return resolveGridDirtyRows(pitchingGridRef, reason, 'pitching');
         }
+        if (tabKey === 'recap') {
+          const handle = recapSectionRef.current;
+          if (!handle || !handle.hasDirtyContent()) {
+            return true;
+          }
+
+          const decision = await requestUnsavedDecision({
+            reason,
+            playerName: 'Game Recap',
+            tab: 'recap',
+          });
+
+          if (decision === 'save') {
+            return handle.saveContent();
+          }
+          if (decision === 'discard') {
+            handle.discardContent();
+            return true;
+          }
+          return false;
+        }
         return true;
       },
-      [resolveGridDirtyRows],
+      [requestUnsavedDecision, resolveGridDirtyRows],
     );
 
     const attemptTabChange = useCallback(
@@ -206,7 +246,10 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
           return;
         }
 
-        if (editMode && (currentTab === 'batting' || currentTab === 'pitching')) {
+        if (
+          editMode &&
+          (currentTab === 'batting' || currentTab === 'pitching' || currentTab === 'recap')
+        ) {
           const ok = await ensureTabClean(currentTab, 'tab-change');
           if (!ok) {
             return;
@@ -245,13 +288,24 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
         if (!pitchingOk) {
           return;
         }
+        const recapOk = await ensureTabClean('recap', 'exit-edit');
+        if (!recapOk) {
+          return;
+        }
 
         setEditModeEnabled(false);
       } catch (error) {
         console.error('Unable to toggle edit mode', error);
         onProcessError(error instanceof Error ? error : new Error('Unable to toggle edit mode.'));
       }
-    }, [canManageStats, editMode, onProcessError, resolveGridDirtyRows, selectedGameId]);
+    }, [
+      canManageStats,
+      editMode,
+      ensureTabClean,
+      onProcessError,
+      resolveGridDirtyRows,
+      selectedGameId,
+    ]);
 
     const handleViewSeason = useCallback(async () => {
       if (!onClearGameSelection) {
@@ -266,28 +320,38 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       if (!pitchingOk) {
         return;
       }
+      const recapOk = await ensureTabClean('recap', 'game-change');
+      if (!recapOk) {
+        return;
+      }
 
       onClearGameSelection();
-    }, [onClearGameSelection, resolveGridDirtyRows]);
+    }, [ensureTabClean, onClearGameSelection, resolveGridDirtyRows]);
 
     useImperativeHandle(
       ref,
       () => ({
-        hasPendingEdits: () => battingDirty || pitchingDirty,
+        hasPendingEdits: () => {
+          const recapDirty = recapSectionRef.current?.hasDirtyContent() ?? false;
+          return battingDirty || pitchingDirty || recapDirty;
+        },
         resolvePendingEdits: async (reason: UnsavedChangesReason) => {
-          if (!battingDirty && !pitchingDirty) {
-            return true;
-          }
-
           const battingOk = await resolveGridDirtyRows(battingGridRef, reason, 'batting');
           if (!battingOk) {
             return false;
           }
           const pitchingOk = await resolveGridDirtyRows(pitchingGridRef, reason, 'pitching');
-          return pitchingOk;
+          if (!pitchingOk) {
+            return false;
+          }
+          const recapOk = await ensureTabClean('recap', reason);
+          if (!recapOk) {
+            return false;
+          }
+          return true;
         },
       }),
-      [battingDirty, pitchingDirty, resolveGridDirtyRows],
+      [battingDirty, pitchingDirty, ensureTabClean, resolveGridDirtyRows],
     );
 
     return (
@@ -320,6 +384,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
             >
               <Tab label="Batting" />
               <Tab label="Pitching" />
+              {showRecapTab && <Tab label="Recap" />}
               {showAttendanceTab && <Tab label="Attendance" />}
             </Tabs>
             {canManageStats && selectedGameId && (
@@ -393,6 +458,20 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
                       />
                     )}
 
+                    {currentTab === 'recap' && showRecapTab && (
+                      <GameRecapSection
+                        ref={recapSectionRef}
+                        gameId={selectedGameId}
+                        initialContent={recapContent}
+                        loading={recapLoading}
+                        error={recapError}
+                        editMode={editMode}
+                        canEdit={canManageStats}
+                        onSave={onRecapSave}
+                        onDirtyChange={onRecapDirtyChange}
+                      />
+                    )}
+
                     {currentTab === 'attendance' && showAttendanceTab && (
                       <AttendanceSection
                         options={attendanceOptions}
@@ -424,6 +503,12 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
 
                 {currentTab === 'pitching' && (
                   <SeasonPitchingStatsSection stats={seasonPitchingStats} />
+                )}
+
+                {currentTab === 'recap' && (
+                  <Alert severity="info">
+                    Game recaps are available once a completed game is selected.
+                  </Alert>
                 )}
 
                 {currentTab === 'attendance' && (
