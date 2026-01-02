@@ -162,8 +162,8 @@ export class EmailService {
       PROCESS_INTERVAL_MS: 100, // Faster processing for dev
     },
     resend: {
-      MAX_EMAILS_PER_SECOND: 1, // Resend default limit is 2/sec; target 1.5/sec for safety
-      MAX_EMAILS_PER_MINUTE: 90, // 1.5/sec = 90/min
+      MAX_EMAILS_PER_SECOND: 1.5, // Resend default limit is 2/sec; target 1.5/sec for safety
+      MAX_EMAILS_PER_MINUTE: 90, // 1.5/sec * 60 = 90/min
       RATE_LIMIT_ENABLED: true,
       EMAIL_DELAY_MS: 667, // 1000ms / 1.5 = 667ms between emails
       PROCESS_INTERVAL_MS: 500,
