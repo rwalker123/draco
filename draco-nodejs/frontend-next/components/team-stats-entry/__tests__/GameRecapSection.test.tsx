@@ -3,25 +3,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import GameRecapSection, { type GameRecapSectionHandle } from '../GameRecapSection';
 
-const { MockRichTextEditor } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const React = require('react');
-
-  interface MockEditorProps {
-    initialValue?: string;
-    placeholder?: string;
-    disabled?: boolean;
-  }
-
-  interface MockEditorHandle {
-    getSanitizedContent: () => string;
-  }
-
+vi.mock('../../email/RichTextEditor', () => {
   const MockRichTextEditor = React.forwardRef(function MockRichTextEditor(
-    { initialValue = '', placeholder, disabled }: MockEditorProps,
-    ref: React.ForwardedRef<MockEditorHandle>,
+    props: { initialValue?: string; placeholder?: string; disabled?: boolean },
+    ref: React.ForwardedRef<{ getSanitizedContent: () => string }>,
   ) {
-    const [content, setContent] = React.useState(initialValue);
+    const [content, setContent] = React.useState(props.initialValue ?? '');
 
     React.useImperativeHandle(ref, () => ({
       getSanitizedContent: () => content,
@@ -30,30 +17,22 @@ const { MockRichTextEditor } = vi.hoisted(() => {
     return React.createElement('textarea', {
       'data-testid': 'mock-rich-text-editor',
       value: content,
-      placeholder,
-      disabled,
+      placeholder: props.placeholder,
+      disabled: props.disabled,
       onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value),
     });
   });
 
-  return { MockRichTextEditor };
+  return { default: MockRichTextEditor };
 });
 
-vi.mock('../../email/RichTextEditor', () => ({
-  default: MockRichTextEditor,
-}));
-
 vi.mock('../../common/RichTextContent', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  default: (props: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const React = require('react');
-    return React.createElement(
+  default: (props: { html?: string; emptyFallback?: React.ReactNode }) =>
+    React.createElement(
       'div',
       { 'data-testid': 'mock-rich-text-content' },
       props.html || props.emptyFallback,
-    );
-  },
+    ),
 }));
 
 vi.mock('../../../utils/sanitization', () => ({
