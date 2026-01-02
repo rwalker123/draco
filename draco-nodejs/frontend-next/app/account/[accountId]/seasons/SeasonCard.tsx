@@ -61,13 +61,6 @@ const SeasonCard: React.FC<SeasonCardProps> = ({
               {season.name}
             </Typography>
             {canEdit && (
-              <Tooltip title="Edit season">
-                <IconButton size="small" onClick={() => onEdit(season)}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {canEdit && (
               <Tooltip title="Copy season">
                 <IconButton
                   size="small"
@@ -86,6 +79,20 @@ const SeasonCard: React.FC<SeasonCardProps> = ({
                   onClick={(event) => onExport(season, event)}
                 >
                   <FileDownloadIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {canEdit && (
+              <Tooltip title="Edit season">
+                <IconButton size="small" onClick={() => onEdit(season)}>
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {canDelete && !season.isCurrent && (
+              <Tooltip title="Delete season">
+                <IconButton size="small" color="error" onClick={() => onDelete(season)}>
+                  <DeleteIcon />
                 </IconButton>
               </Tooltip>
             )}
@@ -118,14 +125,6 @@ const SeasonCard: React.FC<SeasonCardProps> = ({
             >
               Manage Leagues and Teams
             </Button>
-          )}
-
-          {canDelete && !season.isCurrent && (
-            <Tooltip title="Delete season">
-              <IconButton size="small" color="error" onClick={() => onDelete(season)}>
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
           )}
         </Box>
       </CardContent>

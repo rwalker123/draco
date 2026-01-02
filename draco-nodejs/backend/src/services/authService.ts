@@ -70,8 +70,9 @@ export class AuthService {
    */
   async login(credentials: SignInCredentialsType): Promise<RegisteredUserType> {
     const { userName, password } = credentials;
+    const normalizedUsername = userName.toLowerCase().trim();
 
-    const user = await this.userRepository.findByUsername(userName);
+    const user = await this.userRepository.findByUsername(normalizedUsername);
 
     if (!user) {
       throw new AuthenticationError('Invalid username or password');
@@ -135,9 +136,10 @@ export class AuthService {
     options?: { sendWelcomeEmail?: boolean },
   ): Promise<RegisteredUserType> {
     const { userName, password } = credentials;
+    const normalizedUsername = userName.toLowerCase().trim();
 
     // Check if username already exists
-    const existingUser = await this.userRepository.findByUsername(userName);
+    const existingUser = await this.userRepository.findByUsername(normalizedUsername);
 
     if (existingUser) {
       throw new ValidationError('Username already exists');
@@ -152,7 +154,7 @@ export class AuthService {
     // Create user
     const newUser = await this.userRepository.create({
       id: userId,
-      username: userName,
+      username: normalizedUsername,
       email: '',
       emailconfirmed: false,
       passwordhash: hashedPassword,

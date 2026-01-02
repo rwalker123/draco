@@ -78,6 +78,7 @@ const BaseballSeasonManagement: React.FC = () => {
   const [formData, setFormData] = useState<SeasonFormData>({ name: '' });
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
 
   // Export menu state
   const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
@@ -397,6 +398,7 @@ const BaseballSeasonManagement: React.FC = () => {
     setCopyDialogOpen(false);
     setFormData({ name: '' });
     setSelectedSeason(null);
+    setDeleteConfirmation('');
   };
 
   if (!accountId) {
@@ -546,6 +548,18 @@ const BaseballSeasonManagement: React.FC = () => {
             This action cannot be undone. All data associated with this season will be permanently
             deleted.
           </Alert>
+          <TextField
+            margin="dense"
+            label="Type the season name to confirm"
+            placeholder={selectedSeason?.name}
+            fullWidth
+            variant="outlined"
+            value={deleteConfirmation}
+            onChange={(e) => setDeleteConfirmation(e.target.value)}
+            disabled={formLoading}
+            sx={{ mt: 2 }}
+            helperText={`Enter "${selectedSeason?.name}" to enable deletion`}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDialogs} disabled={formLoading}>
@@ -555,7 +569,7 @@ const BaseballSeasonManagement: React.FC = () => {
             onClick={handleDeleteSeason}
             variant="contained"
             color="error"
-            disabled={formLoading}
+            disabled={formLoading || deleteConfirmation !== selectedSeason?.name}
           >
             {formLoading ? <CircularProgress size={20} /> : 'Delete'}
           </Button>

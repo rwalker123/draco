@@ -13,8 +13,12 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async create(data: Partial<aspnetusers>): Promise<aspnetusers> {
+    const normalizedData = {
+      ...data,
+      username: data.username?.toLowerCase().trim(),
+    };
     return this.prisma.aspnetusers.create({
-      data: data as Parameters<typeof this.prisma.aspnetusers.create>[0]['data'],
+      data: normalizedData as Parameters<typeof this.prisma.aspnetusers.create>[0]['data'],
     });
   }
 
@@ -32,7 +36,9 @@ export class PrismaUserRepository implements IUserRepository {
 
   async findByUsername(username: string): Promise<aspnetusers | null> {
     return this.prisma.aspnetusers.findUnique({
-      where: { username },
+      where: {
+        username: username.toLowerCase().trim(),
+      },
     });
   }
 
@@ -67,9 +73,13 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async updateUser(userId: string, data: Partial<aspnetusers>): Promise<aspnetusers> {
+    const normalizedData = {
+      ...data,
+      ...(data.username && { username: data.username.toLowerCase().trim() }),
+    };
     return this.prisma.aspnetusers.update({
       where: { id: userId },
-      data,
+      data: normalizedData,
     });
   }
 }
