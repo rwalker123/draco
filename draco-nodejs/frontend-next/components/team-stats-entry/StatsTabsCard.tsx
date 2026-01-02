@@ -79,7 +79,6 @@ interface StatsTabsCardProps {
   recapLoading: boolean;
   recapError: string | null;
   onRecapSave: (content: string) => Promise<void>;
-  onRecapDirtyChange: (dirty: boolean) => void;
 }
 
 const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
@@ -121,7 +120,6 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       recapLoading,
       recapError,
       onRecapSave,
-      onRecapDirtyChange,
     },
     ref,
   ) => {
@@ -468,7 +466,6 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
                         editMode={editMode}
                         canEdit={canManageStats}
                         onSave={onRecapSave}
-                        onDirtyChange={onRecapDirtyChange}
                       />
                     )}
 

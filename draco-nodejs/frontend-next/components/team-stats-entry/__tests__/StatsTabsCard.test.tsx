@@ -176,6 +176,146 @@ const samplePitchingStats: GamePitchingStatsType = {
   ],
 };
 describe('StatsTabsCard', () => {
+  it('shows recap tab when a game is selected', () => {
+    render(
+      <StatsTabsCard
+        tab={'batting' satisfies TabKey}
+        onTabChange={noop}
+        canManageStats={false}
+        enableAttendanceTracking={false}
+        loading={false}
+        error={null}
+        selectedGameId="game-1"
+        battingStats={nullBatting}
+        pitchingStats={nullPitching}
+        battingTotals={null}
+        pitchingTotals={null}
+        availableBatters={emptyPlayers}
+        availablePitchers={emptyPlayers}
+        onCreateBattingStat={asyncNoop}
+        onUpdateBattingStat={asyncNoop}
+        onDeleteBattingStat={noop}
+        onCreatePitchingStat={asyncNoop}
+        onUpdatePitchingStat={asyncNoop}
+        onDeletePitchingStat={noop}
+        onProcessError={noop}
+        attendanceOptions={emptyPlayers}
+        attendanceSelection={[]}
+        onAttendanceToggle={noop}
+        lockedAttendanceRosterIds={[]}
+        attendanceLoading={false}
+        attendanceError={null}
+        pendingAttendanceRosterId={null}
+        seasonBattingStats={[]}
+        seasonPitchingStats={[]}
+        seasonLoading={false}
+        seasonError={null}
+        gameOutcome={null}
+        recapContent={null}
+        recapLoading={false}
+        recapError={null}
+        onRecapSave={asyncNoop}
+      />,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Recap' })).toBeInTheDocument();
+  });
+
+  it('hides recap tab when no game is selected', () => {
+    render(
+      <StatsTabsCard
+        tab={'batting' satisfies TabKey}
+        onTabChange={noop}
+        canManageStats={false}
+        enableAttendanceTracking={false}
+        loading={false}
+        error={null}
+        selectedGameId={null}
+        battingStats={nullBatting}
+        pitchingStats={nullPitching}
+        battingTotals={null}
+        pitchingTotals={null}
+        availableBatters={emptyPlayers}
+        availablePitchers={emptyPlayers}
+        onCreateBattingStat={asyncNoop}
+        onUpdateBattingStat={asyncNoop}
+        onDeleteBattingStat={noop}
+        onCreatePitchingStat={asyncNoop}
+        onUpdatePitchingStat={asyncNoop}
+        onDeletePitchingStat={noop}
+        onProcessError={noop}
+        attendanceOptions={emptyPlayers}
+        attendanceSelection={[]}
+        onAttendanceToggle={noop}
+        lockedAttendanceRosterIds={[]}
+        attendanceLoading={false}
+        attendanceError={null}
+        pendingAttendanceRosterId={null}
+        seasonBattingStats={[]}
+        seasonPitchingStats={[]}
+        seasonLoading={false}
+        seasonError={null}
+        gameOutcome={null}
+        recapContent={null}
+        recapLoading={false}
+        recapError={null}
+        onRecapSave={asyncNoop}
+      />,
+    );
+
+    expect(screen.queryByRole('tab', { name: 'Recap' })).not.toBeInTheDocument();
+  });
+
+  it('invokes onTabChange when switching to recap tab', () => {
+    const onTabChange = vi.fn();
+
+    render(
+      <StatsTabsCard
+        tab={'batting' satisfies TabKey}
+        onTabChange={onTabChange}
+        canManageStats={false}
+        enableAttendanceTracking={false}
+        loading={false}
+        error={null}
+        selectedGameId="game-1"
+        battingStats={nullBatting}
+        pitchingStats={nullPitching}
+        battingTotals={null}
+        pitchingTotals={null}
+        availableBatters={emptyPlayers}
+        availablePitchers={emptyPlayers}
+        onCreateBattingStat={asyncNoop}
+        onUpdateBattingStat={asyncNoop}
+        onDeleteBattingStat={noop}
+        onCreatePitchingStat={asyncNoop}
+        onUpdatePitchingStat={asyncNoop}
+        onDeletePitchingStat={noop}
+        onProcessError={noop}
+        attendanceOptions={emptyPlayers}
+        attendanceSelection={[]}
+        onAttendanceToggle={noop}
+        lockedAttendanceRosterIds={[]}
+        attendanceLoading={false}
+        attendanceError={null}
+        pendingAttendanceRosterId={null}
+        seasonBattingStats={[]}
+        seasonPitchingStats={[]}
+        seasonLoading={false}
+        seasonError={null}
+        gameOutcome={null}
+        recapContent={null}
+        recapLoading={false}
+        recapError={null}
+        onRecapSave={asyncNoop}
+      />,
+    );
+
+    const recapTab = screen.getByRole('tab', { name: 'Recap' });
+    fireEvent.click(recapTab);
+
+    expect(onTabChange).toHaveBeenCalledWith('recap');
+  });
+
   it('hides attendance tab for non-admin viewers', () => {
     render(
       <StatsTabsCard
@@ -215,7 +355,6 @@ describe('StatsTabsCard', () => {
         recapLoading={false}
         recapError={null}
         onRecapSave={asyncNoop}
-        onRecapDirtyChange={noop}
       />,
     );
 
@@ -264,7 +403,6 @@ describe('StatsTabsCard', () => {
         recapLoading={false}
         recapError={null}
         onRecapSave={asyncNoop}
-        onRecapDirtyChange={noop}
       />,
     );
 
@@ -313,7 +451,6 @@ describe('StatsTabsCard', () => {
         recapLoading={false}
         recapError={null}
         onRecapSave={asyncNoop}
-        onRecapDirtyChange={noop}
       />,
     );
 

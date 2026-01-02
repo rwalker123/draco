@@ -610,6 +610,9 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           }
         } catch (recapErr) {
           console.warn('Failed to fetch game recap:', recapErr);
+          const message =
+            recapErr instanceof Error ? recapErr.message : 'Failed to load game recap.';
+          setRecapError(message);
         } finally {
           setRecapLoading(false);
         }
@@ -1343,7 +1346,8 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
 
   const handleRecapSave = useCallback(
     async (content: string) => {
-      if (!selectedGameId) {
+      const gameId = selectedGameId;
+      if (!gameId) {
         throw new Error('No game selected');
       }
 
@@ -1353,9 +1357,9 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       }
 
       setRecapContent(content);
-      const cached = cachedGameStatsRef.current.get(selectedGameId);
+      const cached = cachedGameStatsRef.current.get(gameId);
       if (cached) {
-        cachedGameStatsRef.current.set(selectedGameId, {
+        cachedGameStatsRef.current.set(gameId, {
           ...cached,
           recap: content,
         });
@@ -1365,10 +1369,6 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     },
     [selectedGameId, saveRecap, showSnackbar],
   );
-
-  const handleRecapDirtyChange = useCallback((_dirty: boolean) => {
-    // Parent tracking if needed
-  }, []);
 
   useEffect(() => {
     if (!trackGamesPlayedEnabled) {
@@ -1603,7 +1603,6 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           recapLoading={recapLoading}
           recapError={recapError}
           onRecapSave={handleRecapSave}
-          onRecapDirtyChange={handleRecapDirtyChange}
         />
 
         <AsyncConfirmDialog

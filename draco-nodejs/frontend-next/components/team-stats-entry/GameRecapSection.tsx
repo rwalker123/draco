@@ -24,7 +24,6 @@ interface GameRecapSectionProps {
   editMode: boolean;
   canEdit: boolean;
   onSave: (content: string) => Promise<void>;
-  onDirtyChange: (dirty: boolean) => void;
 }
 
 export interface GameRecapSectionHandle {
@@ -39,11 +38,13 @@ const extractPlainText = (html: string): string => {
   }
   const container = document.createElement('div');
   container.innerHTML = html || '';
-  return container.textContent?.replace(/\u00A0/g, ' ').trim() ?? '';
+  const text = container.textContent?.replace(/\u00A0/g, ' ').trim() ?? '';
+  container.remove();
+  return text;
 };
 
 const GameRecapSection = forwardRef<GameRecapSectionHandle, GameRecapSectionProps>(
-  ({ gameId, initialContent, loading, error, editMode, canEdit, onSave, onDirtyChange }, ref) => {
+  ({ gameId, initialContent, loading, error, editMode, canEdit, onSave }, ref) => {
     const theme = useTheme();
     const editorRef = useRef<RichTextEditorHandle | null>(null);
     const [editorKey, setEditorKey] = useState(0);
@@ -66,10 +67,6 @@ const GameRecapSection = forwardRef<GameRecapSectionHandle, GameRecapSectionProp
       const currentPlainText = extractPlainText(currentContent);
       return currentPlainText !== initialPlainTextRef.current;
     }, []);
-
-    useEffect(() => {
-      onDirtyChange(false);
-    }, [gameId, initialContent, onDirtyChange]);
 
     const handleSave = useCallback(async (): Promise<boolean> => {
       setSaveError(null);
