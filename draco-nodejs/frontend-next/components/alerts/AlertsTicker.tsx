@@ -52,16 +52,19 @@ const AlertsTicker: React.FC = () => {
     };
   }, [apiClient]);
 
+  const alertsLengthRef = useRef(alerts.length);
+  alertsLengthRef.current = alerts.length;
+
   const checkOverflow = useMemo(
     () =>
       debounce(() => {
         if (containerRef.current && contentRef.current) {
           const containerWidth = containerRef.current.offsetWidth;
           const contentWidth = contentRef.current.scrollWidth;
-          setShouldScroll(contentWidth > containerWidth || alerts.length > 1);
+          setShouldScroll(contentWidth > containerWidth || alertsLengthRef.current > 1);
         }
       }, 150),
-    [alerts.length],
+    [],
   );
 
   useEffect(() => {
@@ -73,6 +76,10 @@ const AlertsTicker: React.FC = () => {
       checkOverflow.clear();
     };
   }, [checkOverflow]);
+
+  useEffect(() => {
+    checkOverflow();
+  }, [alerts.length, checkOverflow]);
 
   const marqueeItems = shouldScroll ? [...alerts, ...alerts] : alerts;
   const animationDurationSeconds = Math.max(18, marqueeItems.length * 6);
