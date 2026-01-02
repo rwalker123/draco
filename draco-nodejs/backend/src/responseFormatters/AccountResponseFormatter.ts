@@ -80,7 +80,7 @@ export class AccountResponseFormatter {
         blueskyHandle: account.accountblueskycredentials?.blueskyhandle || undefined,
         instagramHandle: account.accountinstagramcredentials?.username || undefined,
         instagramConnected: Boolean(account.accountinstagramcredentials?.accesstoken),
-        facebookFanPage: account.facebookfanpage ?? undefined,
+        facebookFanPage: account.accountfacebookcredentials?.pagehandle ?? undefined,
         youtubeUserId: account.youtubeuserid,
         defaultVideo: account.defaultvideo,
       },

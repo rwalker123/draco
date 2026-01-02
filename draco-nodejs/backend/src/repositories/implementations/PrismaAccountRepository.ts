@@ -88,6 +88,7 @@ export class PrismaAccountRepository implements IAccountRepository {
         accounttwittercredentials: true,
         accountblueskycredentials: true,
         accountinstagramcredentials: true,
+        accountfacebookcredentials: true,
       },
     });
   }
@@ -118,6 +119,7 @@ export class PrismaAccountRepository implements IAccountRepository {
         accounttwittercredentials: true,
         accountblueskycredentials: true,
         accountinstagramcredentials: true,
+        accountfacebookcredentials: true,
       },
       orderBy: {
         name: Prisma.SortOrder.asc,
@@ -158,6 +160,7 @@ export class PrismaAccountRepository implements IAccountRepository {
         accounttwittercredentials: true,
         accountblueskycredentials: true,
         accountinstagramcredentials: true,
+        accountfacebookcredentials: true,
       },
       orderBy: {
         name: Prisma.SortOrder.asc,
@@ -178,6 +181,7 @@ export class PrismaAccountRepository implements IAccountRepository {
         accounttwittercredentials: true,
         accountblueskycredentials: true,
         accountinstagramcredentials: true,
+        accountfacebookcredentials: true,
       },
     });
   }
