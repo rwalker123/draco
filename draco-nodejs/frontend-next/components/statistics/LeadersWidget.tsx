@@ -165,6 +165,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   const leaderLimit = props.leaderLimit ?? 5;
   const accountId = props.accountId;
   const randomize = props.randomize === true;
+  const onHasLeaders = props.onHasLeaders;
   const isTeamVariant = isTeamVariantProps(props);
   const teamProps = isTeamVariant ? (props as TeamLeadersWidgetProps) : null;
   const showTeamInfo = !isTeamVariant;
@@ -358,8 +359,6 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
         }));
         if (hasAnyLeaders === null) {
           setHasAnyLeaders(leaders.length > 0);
-        } else if (!hasAnyLeaders && leaders.length > 0) {
-          setHasAnyLeaders(true);
         }
       } catch (err) {
         if (cancelled) {
@@ -507,12 +506,11 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     resetTabsScrollLeft(categoryTabsRef.current);
   }, [resetTabsScrollLeft, tabCategoryKey, activeCategories.length]);
 
-  const onHasLeadersCallback = props.onHasLeaders;
   useEffect(() => {
-    if (hasAnyLeaders !== null && onHasLeadersCallback) {
-      onHasLeadersCallback(hasAnyLeaders);
+    if (hasAnyLeaders !== null && onHasLeaders) {
+      onHasLeaders(hasAnyLeaders);
     }
-  }, [hasAnyLeaders, onHasLeadersCallback]);
+  }, [hasAnyLeaders, onHasLeaders]);
 
   const hasConfiguredCategories = battingCategories.length > 0 || pitchingCategories.length > 0;
   const shouldHideWidget =

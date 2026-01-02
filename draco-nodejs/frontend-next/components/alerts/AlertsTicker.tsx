@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
+import { debounce } from '@mui/material/utils';
 import { keyframes } from '@mui/system';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import type { AlertType } from '@draco/shared-schemas';
@@ -51,19 +52,27 @@ const AlertsTicker: React.FC = () => {
     };
   }, [apiClient]);
 
-  useEffect(() => {
-    const checkOverflow = () => {
-      if (containerRef.current && contentRef.current) {
-        const containerWidth = containerRef.current.offsetWidth;
-        const contentWidth = contentRef.current.scrollWidth;
-        setShouldScroll(contentWidth > containerWidth || alerts.length > 1);
-      }
-    };
+  const checkOverflow = useMemo(
+    () =>
+      debounce(() => {
+        if (containerRef.current && contentRef.current) {
+          const containerWidth = containerRef.current.offsetWidth;
+          const contentWidth = contentRef.current.scrollWidth;
+          setShouldScroll(contentWidth > containerWidth || alerts.length > 1);
+        }
+      }, 150),
+    [alerts.length],
+  );
 
-    checkOverflow();
+  useEffect(() => {
+    const frameId = requestAnimationFrame(checkOverflow);
     window.addEventListener('resize', checkOverflow);
-    return () => window.removeEventListener('resize', checkOverflow);
-  }, [alerts]);
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', checkOverflow);
+      checkOverflow.clear();
+    };
+  }, [checkOverflow]);
 
   const marqueeItems = shouldScroll ? [...alerts, ...alerts] : alerts;
   const animationDurationSeconds = Math.max(18, marqueeItems.length * 6);
