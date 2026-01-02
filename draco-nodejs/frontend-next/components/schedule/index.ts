@@ -21,6 +21,8 @@ export { default as GameResultsDialog } from './dialogs/GameResultsDialog';
 // Components
 export { default as ViewModeTabs } from './filters/ViewModeTabs';
 export { default as HierarchicalHeader } from './components/HierarchicalHeader';
+export { default as ScheduleLayout } from './ScheduleLayout';
+export type { ScheduleLayoutProps } from './ScheduleLayout';
 
 // Context
 export { GameFormProvider, useGameFormContext } from './contexts/GameFormContext';
