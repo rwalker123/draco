@@ -99,4 +99,24 @@ describe('AuthService.login', () => {
     });
     expect(typeof mockUserRepository.updateUser.mock.calls[0][0]).toBe('string');
   });
+
+  it('normalizes username to lowercase for case-insensitive login', async () => {
+    const authService = new AuthService();
+
+    const user = {
+      id: '263e58de-f34b-411a-97b4-a8656bc46b01',
+      username: 'test@example.com',
+      passwordhash: 'hashed-password', // pragma: allowlist secret
+      accessfailedcount: 0,
+      lockoutenabled: false,
+      lockoutenddateutc: null,
+    };
+
+    mockUserRepository.findByUsername.mockResolvedValue(user);
+    compareMock.mockResolvedValue(true);
+
+    await authService.login({ userName: 'TEST@EXAMPLE.COM', password: 'secret' }); // pragma: allowlist secret
+
+    expect(mockUserRepository.findByUsername).toHaveBeenCalledWith('test@example.com');
+  });
 });

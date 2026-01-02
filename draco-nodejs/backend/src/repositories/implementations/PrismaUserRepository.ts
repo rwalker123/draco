@@ -31,12 +31,9 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async findByUsername(username: string): Promise<aspnetusers | null> {
-    return this.prisma.aspnetusers.findFirst({
+    return this.prisma.aspnetusers.findUnique({
       where: {
-        username: {
-          equals: username,
-          mode: 'insensitive',
-        },
+        username: username.toLowerCase().trim(),
       },
     });
   }
