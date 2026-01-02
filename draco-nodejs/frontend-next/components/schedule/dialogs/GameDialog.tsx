@@ -288,7 +288,8 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
   );
 
   const selectedLeague = leagues.find((league) => league.id === leagueSeasonId);
-  const dialogTitle = mode === 'create' ? 'Add Game' : 'Edit Game';
+  const dialogTitle =
+    mode === 'create' ? 'Add Game' : canEditSchedule ? 'Edit Game' : 'Game Details';
 
   const getTeamName = useCallback(
     (teamId: string) => {
@@ -527,7 +528,7 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
         <Box sx={{ flex: 1 }} />
 
         <Button onClick={handleClose} variant="outlined" disabled={loading}>
-          Cancel
+          {canEditSchedule ? 'Cancel' : 'Close'}
         </Button>
 
         {canEditSchedule && (
