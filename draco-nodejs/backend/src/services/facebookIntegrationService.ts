@@ -96,28 +96,26 @@ export class FacebookIntegrationService {
     }
 
     if (pageHandle !== undefined) {
-      const userAccessToken = this.decryptSecretValue(existing?.useraccesstoken);
-      if (!userAccessToken) {
-        throw new ValidationError('Connect Facebook before saving a Page handle.');
-      }
       if (!pageHandle) {
         throw new ValidationError('Provide a Facebook Page handle before saving.');
       }
 
-      const pageDetails = await this.resolvePageByHandle(pageHandle, userAccessToken);
-      const pageAccessTokenResult = await this.fetchPageAccessToken(
-        pageDetails.id,
-        userAccessToken,
-      );
-
-      if (!pageAccessTokenResult.accessToken) {
-        throw new ValidationError('Facebook did not return a Page access token for the handle.');
-      }
-
       updates.pagehandle = pageHandle;
-      updates.pageid = pageDetails.id;
-      updates.pagename = pageAccessTokenResult.pageName ?? pageDetails.name;
-      updates.pagetoken = encryptSecret(pageAccessTokenResult.accessToken);
+
+      const userAccessToken = this.decryptSecretValue(existing?.useraccesstoken);
+      if (userAccessToken) {
+        const pageDetails = await this.resolvePageByHandle(pageHandle, userAccessToken);
+        const pageAccessTokenResult = await this.fetchPageAccessToken(
+          pageDetails.id,
+          userAccessToken,
+        );
+
+        if (pageAccessTokenResult.accessToken) {
+          updates.pageid = pageDetails.id;
+          updates.pagename = pageAccessTokenResult.pageName ?? pageDetails.name;
+          updates.pagetoken = encryptSecret(pageAccessTokenResult.accessToken);
+        }
+      }
     }
 
     await this.credentialsRepository.upsertForAccount(accountId, updates);

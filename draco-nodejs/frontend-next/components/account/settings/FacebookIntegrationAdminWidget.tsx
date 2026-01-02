@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   FormControlLabel,
+  Snackbar,
   Stack,
   Switch,
   TextField,
@@ -51,10 +52,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
   const [pageName, setPageName] = useState<string | null>(null);
   const [appConfigured, setAppConfigured] = useState(false);
   const [userTokenPresent, setUserTokenPresent] = useState(false);
-  const handleChanged = useMemo(
-    () => pageHandle.trim() !== (savedPageHandle ?? ''),
-    [pageHandle, savedPageHandle],
-  );
+  const pageHandleDirty = pageHandle.trim() !== (savedPageHandle ?? '');
   type FacebookStatusResponse = {
     appConfigured: boolean;
     pageConnected: boolean;
@@ -213,10 +211,6 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       setError('Enter a Facebook Page handle before saving.');
       return;
     }
-    if (!userTokenPresent) {
-      setError('Connect Facebook to retrieve a user token before saving the Page handle.');
-      return;
-    }
     try {
       setError(null);
       setSuccess(null);
@@ -228,7 +222,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
         throwOnError: false,
       });
       assertNoApiError(result, 'Unable to save Facebook Page handle.');
-      setSuccess('Facebook Page handle saved and Page token refreshed.');
+      setSuccess('Facebook Page handle saved.');
       setSavedPageHandle(normalizedHandle);
       await loadStatus();
     } catch (err) {
@@ -237,7 +231,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
     } finally {
       setSavingPageHandle(false);
     }
-  }, [account.id, apiClient, loadStatus, pageHandle, token, userTokenPresent]);
+  }, [account.id, apiClient, loadStatus, pageHandle, token]);
 
   const handleDisconnect = useCallback(async () => {
     if (!token) {
@@ -267,179 +261,202 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
   }, [account.id, apiClient, loadStatus, token]);
 
   return (
-    <WidgetShell
-      title="Facebook Integration"
-      subtitle="Connect the Meta App credentials required for Facebook Page posting."
-      accent="info"
-    >
-      <form onSubmit={handleSubmit} autoComplete="off" data-lpignore="true" data-1p-ignore="true">
-        <Stack spacing={3}>
-          <Alert severity="info">
-            Facebook credentials power Facebook Page posting. Provide your Meta App ID and App
-            Secret from the{' '}
-            <Link
-              href="https://developers.facebook.com/apps"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Open Meta App Dashboard in a new tab"
-              style={{ fontWeight: 600, color: '#1976d2', textDecoration: 'underline' }}
-            >
-              Meta App Dashboard
-            </Link>
-            . After connecting Facebook, save your Page handle to refresh the Page token. Secrets
-            are stored server-side and never displayed.
-            <br />
-            <strong>Where to find values:</strong> Meta App Dashboard → Basic → App ID / App Secret.
-          </Alert>
+    <>
+      <WidgetShell
+        title="Facebook Integration"
+        subtitle="Connect the Meta App credentials required for Facebook Page posting."
+        accent="info"
+      >
+        <form onSubmit={handleSubmit} autoComplete="off" data-lpignore="true" data-1p-ignore="true">
+          <Stack spacing={3}>
+            <Alert severity="info">
+              Facebook credentials power Facebook Page posting. Provide your Meta App ID and App
+              Secret from the{' '}
+              <Link
+                href="https://developers.facebook.com/apps"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Open Meta App Dashboard in a new tab"
+                style={{ fontWeight: 600, color: '#1976d2', textDecoration: 'underline' }}
+              >
+                Meta App Dashboard
+              </Link>
+              . After connecting Facebook, save your Page handle to refresh the Page token. Secrets
+              are stored server-side and never displayed.
+              <br />
+              <strong>Where to find values:</strong> Meta App Dashboard → Basic → App ID / App
+              Secret.
+            </Alert>
 
-          {error && <Alert severity="error">{error}</Alert>}
-          {success && <Alert severity="success">{success}</Alert>}
+            <Stack spacing={1.5}>
+              <TextField
+                label="Facebook Page handle"
+                value={pageHandle}
+                onChange={(event) => setPageHandle(event.target.value)}
+                placeholder="YourPageName"
+                helperText={
+                  savedPageHandle
+                    ? `Current saved handle: ${savedPageHandle}`
+                    : 'Enter the Page handle (username) shown in the Page URL.'
+                }
+                fullWidth
+                autoComplete="off"
+                name="facebook-page-handle"
+                inputProps={{
+                  'data-lpignore': 'true',
+                  'data-1p-ignore': 'true',
+                  autoCapitalize: 'none',
+                  spellCheck: false,
+                }}
+                disabled={savingPageHandle || statusLoading}
+              />
+              <Box display="flex" justifyContent="flex-end">
+                <Button
+                  type="button"
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSavePageHandle}
+                  disabled={
+                    savingPageHandle ||
+                    statusLoading ||
+                    pageHandle.trim().length === 0 ||
+                    !pageHandleDirty
+                  }
+                >
+                  {savingPageHandle ? 'Saving…' : 'Save Page handle'}
+                </Button>
+              </Box>
+            </Stack>
 
-          <Stack spacing={1.5}>
-            <TextField
-              label="Facebook Page handle"
-              value={pageHandle}
-              onChange={(event) => setPageHandle(event.target.value)}
-              placeholder="detroitmsbl"
-              helperText={
-                savedPageHandle
-                  ? `Current saved handle: ${savedPageHandle}`
-                  : 'Enter the Page handle (username) shown in the Page URL.'
-              }
-              fullWidth
-              autoComplete="off"
-              name="facebook-page-handle"
-              inputProps={{
-                'data-lpignore': 'true',
-                'data-1p-ignore': 'true',
-                autoCapitalize: 'none',
-                spellCheck: false,
-              }}
-              disabled={savingPageHandle || statusLoading}
-            />
+            <Stack spacing={2}>
+              <TextField
+                label="Facebook App ID"
+                value={facebookAppId}
+                onChange={(event) => setFacebookAppId(event.target.value)}
+                placeholder="123456789012345"
+                helperText="Meta App Dashboard → Basic → App ID."
+                fullWidth
+                autoComplete="off"
+                name="facebook-app-id"
+                inputProps={{ 'data-lpignore': 'true', 'data-1p-ignore': 'true' }}
+                disabled={saving}
+              />
+
+              <TextField
+                label="Facebook App Secret"
+                type="password"
+                value={facebookAppSecret}
+                onChange={(event) => setFacebookAppSecret(event.target.value)}
+                helperText="Meta App Dashboard → Basic → App Secret."
+                fullWidth
+                autoComplete="off"
+                name="facebook-app-secret"
+                inputProps={{ 'data-lpignore': 'true', 'data-1p-ignore': 'true' }}
+                disabled={saving}
+              />
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={clearCredentials}
+                    onChange={(event) => setClearCredentials(event.target.checked)}
+                    disabled={saving}
+                  />
+                }
+                label="Clear stored Facebook App credentials"
+              />
+            </Stack>
+
             <Box display="flex" justifyContent="flex-end">
               <Button
-                type="button"
+                type="submit"
                 variant="contained"
-                color="secondary"
-                onClick={handleSavePageHandle}
-                disabled={
-                  savingPageHandle ||
-                  statusLoading ||
-                  !appConfigured ||
-                  !userTokenPresent ||
-                  pageHandle.trim().length === 0 ||
-                  !handleChanged
-                }
+                color="primary"
+                disabled={submitDisabled}
+                data-lpignore="true"
+                data-1p-ignore="true"
               >
-                {savingPageHandle ? 'Saving…' : 'Save Page handle'}
-              </Button>
-            </Box>
-          </Stack>
-
-          <Stack spacing={2}>
-            <TextField
-              label="Facebook App ID"
-              value={facebookAppId}
-              onChange={(event) => setFacebookAppId(event.target.value)}
-              placeholder="123456789012345"
-              helperText="Meta App Dashboard → Basic → App ID."
-              fullWidth
-              autoComplete="off"
-              name="facebook-app-id"
-              inputProps={{ 'data-lpignore': 'true', 'data-1p-ignore': 'true' }}
-              disabled={saving}
-            />
-
-            <TextField
-              label="Facebook App Secret"
-              type="password"
-              value={facebookAppSecret}
-              onChange={(event) => setFacebookAppSecret(event.target.value)}
-              helperText="Meta App Dashboard → Basic → App Secret."
-              fullWidth
-              autoComplete="off"
-              name="facebook-app-secret"
-              inputProps={{ 'data-lpignore': 'true', 'data-1p-ignore': 'true' }}
-              disabled={saving}
-            />
-
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={clearCredentials}
-                  onChange={(event) => setClearCredentials(event.target.checked)}
-                  disabled={saving}
-                />
-              }
-              label="Clear stored Facebook App credentials"
-            />
-          </Stack>
-
-          <Box display="flex" justifyContent="flex-end">
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={submitDisabled}
-              data-lpignore="true"
-              data-1p-ignore="true"
-            >
-              {saving ? 'Saving…' : 'Save Facebook settings'}
-            </Button>
-          </Box>
-
-          <Stack spacing={2}>
-            <Typography variant="body2" color="text.secondary">
-              Status:{' '}
-              {statusLoading ? 'Loading…' : appConfigured ? 'App configured' : 'App not configured'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Facebook user token: {userTokenPresent ? 'Connected' : 'Not connected'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Page handle: {savedPageHandle || 'Not saved'}
-            </Typography>
-            <Box display="flex" gap={2} flexWrap="wrap">
-              <Button
-                variant="outlined"
-                onClick={handleConnect}
-                disabled={!appConfigured || statusLoading}
-              >
-                Connect Facebook
-              </Button>
-              <Button variant="text" onClick={loadStatus} disabled={statusLoading}>
-                Refresh status
+                {saving ? 'Saving…' : 'Save Facebook settings'}
               </Button>
             </Box>
 
-            {pageConnected && (
-              <Alert severity="success">
-                Connected Page: {pageName || 'Unknown'}
-                <Box component="span" ml={2}>
-                  <Button color="inherit" size="small" onClick={handleDisconnect}>
-                    Disconnect
-                  </Button>
-                </Box>
-              </Alert>
-            )}
+            <Stack spacing={2}>
+              <Typography variant="body2" color="text.secondary">
+                Status:{' '}
+                {statusLoading
+                  ? 'Loading…'
+                  : appConfigured
+                    ? 'App configured'
+                    : 'App not configured'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Facebook user token: {userTokenPresent ? 'Connected' : 'Not connected'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Page handle: {savedPageHandle || 'Not saved'}
+              </Typography>
+              <Box display="flex" gap={2} flexWrap="wrap">
+                <Button
+                  variant="outlined"
+                  onClick={handleConnect}
+                  disabled={!appConfigured || statusLoading}
+                >
+                  Connect Facebook
+                </Button>
+                <Button variant="text" onClick={loadStatus} disabled={statusLoading}>
+                  Refresh status
+                </Button>
+              </Box>
 
-            {appConfigured && userTokenPresent && !pageConnected && (
-              <Alert severity="info">
-                Facebook is authorized. Save the Page handle above to refresh the Page token and
-                finish connecting.
-              </Alert>
-            )}
+              {pageConnected && (
+                <Alert severity="success">
+                  Connected Page: {pageName || 'Unknown'}
+                  <Box component="span" ml={2}>
+                    <Button color="inherit" size="small" onClick={handleDisconnect}>
+                      Disconnect
+                    </Button>
+                  </Box>
+                </Alert>
+              )}
 
-            {appConfigured && !userTokenPresent && !pageConnected && (
-              <Alert severity="warning">
-                Connect Facebook to obtain a user token, then save your Page handle to finish setup.
-              </Alert>
-            )}
+              {appConfigured && userTokenPresent && !pageConnected && (
+                <Alert severity="info">
+                  Facebook is authorized. Save the Page handle above to refresh the Page token and
+                  finish connecting.
+                </Alert>
+              )}
+
+              {appConfigured && !userTokenPresent && !pageConnected && (
+                <Alert severity="warning">
+                  Connect Facebook to obtain a user token, then save your Page handle to finish
+                  setup.
+                </Alert>
+              )}
+            </Stack>
           </Stack>
-        </Stack>
-      </form>
-    </WidgetShell>
+        </form>
+      </WidgetShell>
+      <Snackbar
+        open={Boolean(error)}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={() => setError(null)}
+      >
+        <Alert severity="error" onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={Boolean(success)}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={() => setSuccess(null)}
+      >
+        <Alert severity="success" onClose={() => setSuccess(null)}>
+          {success}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 
