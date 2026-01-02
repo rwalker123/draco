@@ -73,9 +73,13 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async updateUser(userId: string, data: Partial<aspnetusers>): Promise<aspnetusers> {
+    const normalizedData = {
+      ...data,
+      ...(data.username && { username: data.username.toLowerCase().trim() }),
+    };
     return this.prisma.aspnetusers.update({
       where: { id: userId },
-      data,
+      data: normalizedData,
     });
   }
 }
