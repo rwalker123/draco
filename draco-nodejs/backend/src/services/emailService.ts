@@ -155,18 +155,18 @@ export class EmailService {
       PROCESS_INTERVAL_MS: 200,
     },
     ethereal: {
-      MAX_EMAILS_PER_SECOND: 100, // No real limits for test email
-      MAX_EMAILS_PER_MINUTE: 6000,
+      MAX_EMAILS_PER_SECOND: 10, // No real limits for test email
+      MAX_EMAILS_PER_MINUTE: 600,
       RATE_LIMIT_ENABLED: true, // No rate limiting for development
       EMAIL_DELAY_MS: 12, // Very fast for development
       PROCESS_INTERVAL_MS: 100, // Faster processing for dev
     },
     resend: {
-      MAX_EMAILS_PER_SECOND: 50, // Resend default limits support high throughput
-      MAX_EMAILS_PER_MINUTE: 3000,
+      MAX_EMAILS_PER_SECOND: 1, // Resend default limit is 2/sec; target 1.5/sec for safety
+      MAX_EMAILS_PER_MINUTE: 90, // 1.5/sec = 90/min
       RATE_LIMIT_ENABLED: true,
-      EMAIL_DELAY_MS: 20,
-      PROCESS_INTERVAL_MS: 100,
+      EMAIL_DELAY_MS: 667, // 1000ms / 1.5 = 667ms between emails
+      PROCESS_INTERVAL_MS: 500,
     },
     none: {
       MAX_EMAILS_PER_SECOND: 0,
@@ -1611,19 +1611,35 @@ export class EmailService {
     }
 
     if (seasonId && seasonSelection?.season) {
-      const seasonContacts = await this.seasonRepository.findSeasonParticipants(
-        accountId,
-        seasonId,
-      );
+      if (useManagersOnly) {
+        // Get all managers for all teams in the season
+        const seasonTeams = await this.teamService.getTeamsBySeasonId(seasonId, accountId);
+        for (const team of seasonTeams) {
+          const teamManagers = await this.teamManagerService.listManagers(BigInt(team.id));
+          recipients.push(
+            ...teamManagers.map((manager) => ({
+              contactId: BigInt(manager.contact.id),
+              emailAddress: manager.contact.email ?? '',
+              contactName: `${manager.contact.firstName} ${manager.contact.lastName}`.trim(),
+              recipientType: 'teamManager',
+            })),
+          );
+        }
+      } else {
+        const seasonContacts = await this.seasonRepository.findSeasonParticipants(
+          accountId,
+          seasonId,
+        );
 
-      recipients.push(
-        ...seasonContacts.map((contact) => ({
-          contactId: contact.id,
-          emailAddress: contact.email!,
-          contactName: `${contact.firstname} ${contact.lastname}`.trim(),
-          recipientType: 'season',
-        })),
-      );
+        recipients.push(
+          ...seasonContacts.map((contact) => ({
+            contactId: contact.id,
+            emailAddress: contact.email!,
+            contactName: `${contact.firstname} ${contact.lastname}`.trim(),
+            recipientType: 'season',
+          })),
+        );
+      }
     }
 
     // add league members
