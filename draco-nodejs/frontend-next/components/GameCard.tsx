@@ -386,6 +386,25 @@ const GameCard: React.FC<GameCardProps> = ({
                   {renderFieldLink()}
                 </Box>
               )}
+
+              {/* Game status badge */}
+              {game.gameStatus !== GameStatus.Scheduled && (
+                <Box
+                  aria-label={`Game status: ${game.gameStatusText}`}
+                  sx={{
+                    display: 'inline-block',
+                    background: 'primary.main',
+                    color: 'text.secondary',
+                    borderRadius: 1,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    padding: '4px 12px',
+                    margin: 0,
+                  }}
+                >
+                  {game.gameStatusShortText || getGameStatusShortText(game.gameStatus)}
+                </Box>
+              )}
             </Box>
           </Box>
         ) : (
@@ -511,6 +530,7 @@ const GameCard: React.FC<GameCardProps> = ({
                 {game.gameStatus !== GameStatus.Scheduled &&
                   game.gameStatus !== GameStatus.Completed && (
                     <Box
+                      aria-label={`Game status: ${game.gameStatusText}`}
                       sx={{
                         display: 'inline-block',
                         background: 'primary.main',
