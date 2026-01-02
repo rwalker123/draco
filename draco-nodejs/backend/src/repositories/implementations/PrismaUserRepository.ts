@@ -13,8 +13,12 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async create(data: Partial<aspnetusers>): Promise<aspnetusers> {
+    const normalizedData = {
+      ...data,
+      username: data.username?.toLowerCase().trim(),
+    };
     return this.prisma.aspnetusers.create({
-      data: data as Parameters<typeof this.prisma.aspnetusers.create>[0]['data'],
+      data: normalizedData as Parameters<typeof this.prisma.aspnetusers.create>[0]['data'],
     });
   }
 
