@@ -56,6 +56,7 @@ export interface IRosterRepository {
     inactive?: boolean,
   ): Promise<dbRosterMember>;
   deleteRosterMember(rosterMemberId: bigint): Promise<void>;
+  hasGameStats(rosterMemberId: bigint): Promise<boolean>;
   findRosterMembersForExport(teamSeasonId: bigint, seasonId: bigint): Promise<dbRosterExportData[]>;
   findLeagueRosterForExport(
     leagueSeasonId: bigint,

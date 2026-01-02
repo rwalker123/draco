@@ -396,6 +396,13 @@ export class RosterService {
       accountId,
     );
 
+    const hasStats = await this.rosterRepository.hasGameStats(rosterMemberId);
+    if (hasStats) {
+      throw new ValidationError(
+        'Cannot delete player because they have game statistics. Use release instead.',
+      );
+    }
+
     console.info('[discord] roster delete -> sync team forum members', {
       accountId: accountId.toString(),
       seasonId: seasonId.toString(),

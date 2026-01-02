@@ -198,6 +198,25 @@ export class PrismaRosterRepository implements IRosterRepository {
     });
   }
 
+  async hasGameStats(rosterMemberId: bigint): Promise<boolean> {
+    const stats = await this.prisma.rosterseason.findUnique({
+      where: { id: rosterMemberId },
+      select: {
+        _count: {
+          select: {
+            batstatsum: true,
+            pitchstatsum: true,
+            fieldstatsum: true,
+          },
+        },
+      },
+    });
+    if (!stats) return false;
+    return (
+      stats._count.batstatsum > 0 || stats._count.pitchstatsum > 0 || stats._count.fieldstatsum > 0
+    );
+  }
+
   async countGamesPlayedByTeamSeason(
     teamSeasonId: bigint,
   ): Promise<Array<{ rosterSeasonId: bigint; gamesPlayed: number }>> {
