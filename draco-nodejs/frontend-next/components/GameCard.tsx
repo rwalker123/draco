@@ -390,6 +390,7 @@ const GameCard: React.FC<GameCardProps> = ({
               {/* Game status badge */}
               {game.gameStatus !== GameStatus.Scheduled && (
                 <Box
+                  aria-label={`Game status: ${game.gameStatusText}`}
                   sx={{
                     display: 'inline-block',
                     background: 'primary.main',
@@ -529,6 +530,7 @@ const GameCard: React.FC<GameCardProps> = ({
                 {game.gameStatus !== GameStatus.Scheduled &&
                   game.gameStatus !== GameStatus.Completed && (
                     <Box
+                      aria-label={`Game status: ${game.gameStatusText}`}
                       sx={{
                         display: 'inline-block',
                         background: 'primary.main',
