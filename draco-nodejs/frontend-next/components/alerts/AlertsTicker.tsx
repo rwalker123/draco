@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Box, Typography } from '@mui/material';
 import { keyframes } from '@mui/system';
 import CampaignIcon from '@mui/icons-material/Campaign';
@@ -18,6 +18,9 @@ const AlertsTicker: React.FC = () => {
   const [alerts, setAlerts] = useState<AlertType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shouldScroll, setShouldScroll] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -48,7 +51,21 @@ const AlertsTicker: React.FC = () => {
     };
   }, [apiClient]);
 
-  const marqueeItems = alerts.length > 1 ? [...alerts, ...alerts] : alerts;
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (containerRef.current && contentRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        const contentWidth = contentRef.current.scrollWidth;
+        setShouldScroll(contentWidth > containerWidth || alerts.length > 1);
+      }
+    };
+
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [alerts]);
+
+  const marqueeItems = shouldScroll ? [...alerts, ...alerts] : alerts;
   const animationDurationSeconds = Math.max(18, marqueeItems.length * 6);
 
   if (loading || error || alerts.length === 0) {
@@ -68,17 +85,17 @@ const AlertsTicker: React.FC = () => {
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <CampaignIcon fontSize="small" />
-        <Box sx={{ overflow: 'hidden', flex: 1 }}>
+        <Box ref={containerRef} sx={{ overflow: 'hidden', flex: 1 }}>
           <Box
+            ref={contentRef}
             sx={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 4,
               whiteSpace: 'nowrap',
-              animation:
-                alerts.length > 1
-                  ? `${scrollAnimation} ${animationDurationSeconds}s linear infinite`
-                  : undefined,
+              animation: shouldScroll
+                ? `${scrollAnimation} ${animationDurationSeconds}s linear infinite`
+                : undefined,
             }}
           >
             {marqueeItems.map((alert, index) => (

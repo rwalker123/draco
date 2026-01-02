@@ -44,6 +44,7 @@ interface BaseLeadersWidgetProps {
   divisionId?: string | null;
   isHistorical?: boolean;
   randomize?: boolean;
+  onHasLeaders?: (hasLeaders: boolean) => void;
 }
 
 interface AccountLeadersWidgetProps extends BaseLeadersWidgetProps {
@@ -232,6 +233,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   const [model, setModel] = useState<WidgetModel | null>(null);
   const [pendingSelection, setPendingSelection] = useState<WidgetSelection | null>(null);
   const [leadersErrorMessage, setLeadersErrorMessage] = useState<string | null>(null);
+  const [hasAnyLeaders, setHasAnyLeaders] = useState<boolean | null>(null);
   const leagueTabsRef = useRef<HTMLDivElement | null>(null);
   const statTabsRef = useRef<HTMLDivElement | null>(null);
   const categoryTabsRef = useRef<HTMLDivElement | null>(null);
@@ -354,6 +356,11 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
           ...previous,
           [selection.statType]: selection.categoryKey,
         }));
+        if (hasAnyLeaders === null) {
+          setHasAnyLeaders(leaders.length > 0);
+        } else if (!hasAnyLeaders && leaders.length > 0) {
+          setHasAnyLeaders(true);
+        }
       } catch (err) {
         if (cancelled) {
           return;
@@ -377,6 +384,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     accountId,
     apiClient,
     divisionId,
+    hasAnyLeaders,
     isHistorical,
     isTeamVariant,
     leaderLimit,
@@ -499,8 +507,16 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     resetTabsScrollLeft(categoryTabsRef.current);
   }, [resetTabsScrollLeft, tabCategoryKey, activeCategories.length]);
 
+  const onHasLeadersCallback = props.onHasLeaders;
+  useEffect(() => {
+    if (hasAnyLeaders !== null && onHasLeadersCallback) {
+      onHasLeadersCallback(hasAnyLeaders);
+    }
+  }, [hasAnyLeaders, onHasLeadersCallback]);
+
   const hasConfiguredCategories = battingCategories.length > 0 || pitchingCategories.length > 0;
-  const shouldHideWidget = !error && !hasConfiguredCategories;
+  const shouldHideWidget =
+    (!error && !hasConfiguredCategories) || (hasAnyLeaders === false && !error);
   if (shouldHideWidget) {
     return null;
   }

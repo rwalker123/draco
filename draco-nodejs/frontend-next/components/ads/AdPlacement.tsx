@@ -17,15 +17,11 @@ declare global {
 
 type AdPlacementProps = {
   slot?: string | null;
-  layout?: 'auto' | 'in-article' | 'fluid' | 'horizontal';
-  minHeight?: number;
   wrapperSx?: SxProps<Theme>;
 };
 
 const AdPlacement: React.FC<AdPlacementProps> = ({
   slot = DEFAULT_AD_SLOT ?? undefined,
-  layout = 'horizontal',
-  minHeight = 90,
   wrapperSx,
 }) => {
   const adUnitRef = useRef<HTMLElement>(null);
@@ -67,6 +63,19 @@ const AdPlacement: React.FC<AdPlacementProps> = ({
         justifyContent: 'center',
         pt: 2,
         px: { xs: 1.5, sm: 3 },
+        '& .adsbygoogle-responsive': {
+          display: 'block',
+          width: 320,
+          height: 50,
+          '@media (min-width: 500px)': {
+            width: 468,
+            height: 60,
+          },
+          '@media (min-width: 800px)': {
+            width: 728,
+            height: 90,
+          },
+        },
         ...wrapperSx,
       }}
     >
@@ -74,13 +83,10 @@ const AdPlacement: React.FC<AdPlacementProps> = ({
         ref={(node) => {
           adUnitRef.current = node;
         }}
-        className="adsbygoogle"
-        style={{ display: 'block', width: '100%', minHeight }}
+        className="adsbygoogle adsbygoogle-responsive"
         data-ad-client={ADSENSE_CLIENT_ID}
         data-ad-slot={resolvedSlot}
         data-adtest={IS_DEV ? 'on' : undefined}
-        data-ad-format={layout}
-        data-full-width-responsive="true"
         aria-label="Advertisement"
       />
     </Box>
