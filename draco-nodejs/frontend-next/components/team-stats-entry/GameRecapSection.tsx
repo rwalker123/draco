@@ -55,9 +55,12 @@ const GameRecapSection = forwardRef<GameRecapSectionHandle, GameRecapSectionProp
 
     useEffect(() => {
       setEditorKey((k) => k + 1);
-      initialPlainTextRef.current = extractPlainText(sanitizeRichContent(initialContent ?? ''));
       setSaveError(null);
-    }, [gameId, initialContent]);
+    }, [gameId]);
+
+    useEffect(() => {
+      initialPlainTextRef.current = extractPlainText(sanitizeRichContent(initialContent ?? ''));
+    }, [initialContent]);
 
     const hasRealChanges = useCallback(() => {
       if (!editorRef.current) {

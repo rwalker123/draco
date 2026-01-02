@@ -1481,13 +1481,11 @@ const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEditorProp
             },
           }}
         >
-          {!disabled && (
-            <ToolbarPlugin
-              disabled={disabled}
-              spellCheckEnabled={spellCheckEnabled}
-              onToggleSpellCheck={() => setSpellCheckEnabled((prev) => !prev)}
-            />
-          )}
+          <ToolbarPlugin
+            disabled={disabled}
+            spellCheckEnabled={spellCheckEnabled}
+            onToggleSpellCheck={() => setSpellCheckEnabled((prev) => !prev)}
+          />
 
           <Box
             sx={{
