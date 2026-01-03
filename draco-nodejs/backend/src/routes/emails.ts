@@ -40,6 +40,7 @@ const upload = multer({
 router.get(
   '/accounts/:accountId/seasons/:seasonId/group-contacts',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -79,6 +80,7 @@ router.get(
 router.post(
   '/accounts/:accountId/emails/compose',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -111,6 +113,7 @@ router.post(
 router.get(
   '/accounts/:accountId/emails',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -133,6 +136,7 @@ router.get(
 router.get(
   '/accounts/:accountId/emails/:emailId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -152,6 +156,7 @@ router.get(
 router.delete(
   '/accounts/:accountId/emails/:emailId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -173,6 +178,7 @@ router.delete(
 router.post(
   '/accounts/:accountId/email-templates',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -202,6 +208,7 @@ router.post(
 router.get(
   '/accounts/:accountId/email-templates',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -221,6 +228,7 @@ router.get(
 router.get(
   '/accounts/:accountId/email-templates/:templateId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -244,6 +252,7 @@ router.get(
 router.put(
   '/accounts/:accountId/email-templates/:templateId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -264,6 +273,7 @@ router.put(
 router.delete(
   '/accounts/:accountId/email-templates/:templateId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -283,6 +293,7 @@ router.delete(
 router.post(
   '/accounts/:accountId/email-templates/:templateId/preview',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -305,6 +316,7 @@ router.post(
 router.post(
   '/accounts/:accountId/emails/:emailId/attachments',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   (req: Request, res: Response, next: NextFunction) => {
     upload.array('attachments')(req, res, (err: unknown) => {
@@ -342,6 +354,7 @@ router.post(
 router.get(
   '/accounts/:accountId/emails/:emailId/attachments',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -361,6 +374,7 @@ router.get(
 router.get(
   '/accounts/:accountId/emails/:emailId/attachments/:attachmentId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -388,6 +402,7 @@ router.get(
 router.delete(
   '/accounts/:accountId/emails/:emailId/attachments/:attachmentId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
