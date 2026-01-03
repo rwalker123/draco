@@ -77,6 +77,7 @@ export class UserManagementService {
       sortOrder?: 'asc' | 'desc';
     },
   ): Promise<{ users: ContactType[]; pagination: PaginationInfo }> {
+    // Flat pagination params (API client serializes as flat query params, backend calculates skip)
     const searchParams: ContactSearchParamsType = {
       q: query.trim() || undefined,
       includeRoles: true,
@@ -84,13 +85,10 @@ export class UserManagementService {
       seasonId: seasonId || undefined,
       onlyWithRoles: onlyWithRoles || false,
       includeInactive: false,
-      paging: {
-        page: pagination?.page || 1,
-        limit: pagination?.limit || 10,
-        skip: ((pagination?.page || 1) - 1) * (pagination?.limit || 10),
-        sortBy: pagination?.sortBy || 'name',
-        sortOrder: pagination?.sortOrder || 'asc',
-      },
+      page: pagination?.page || 1,
+      limit: pagination?.limit || 10,
+      sortBy: pagination?.sortBy || 'name',
+      sortOrder: pagination?.sortOrder || 'asc',
     };
 
     const result = await searchContacts({
@@ -104,8 +102,8 @@ export class UserManagementService {
     const usersWithRoles = data.contacts || [];
 
     const paginationInfo: PaginationInfo = {
-      page: data.pagination?.page ?? searchParams.paging?.page ?? 1,
-      limit: data.pagination?.limit ?? searchParams.paging?.limit ?? usersWithRoles.length,
+      page: data.pagination?.page ?? searchParams.page ?? 1,
+      limit: data.pagination?.limit ?? searchParams.limit ?? usersWithRoles.length,
       hasNext: data.pagination?.hasNext ?? false,
       hasPrev: data.pagination?.hasPrev ?? false,
       total: data.total ?? usersWithRoles.length,

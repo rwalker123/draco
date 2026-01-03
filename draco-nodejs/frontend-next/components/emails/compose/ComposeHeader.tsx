@@ -28,6 +28,7 @@ import { useEmailCompose } from './EmailComposeProvider';
 import { useAuth } from '../../../context/AuthContext';
 import { SelectedRecipientsPreview } from '../recipients/SelectedRecipientsPreview';
 import { validateComposeData } from '../../../types/emails/compose';
+import { ContactGroup } from '../../../types/emails/recipients';
 
 interface ComposeHeaderProps {
   showFromField?: boolean;
@@ -36,6 +37,7 @@ interface ComposeHeaderProps {
   compact?: boolean;
   onRecipientSelectionClick?: () => void;
   onCancelClick?: () => void;
+  onEditGroup?: (group: ContactGroup) => void;
   hasAnyRecipientData?: boolean;
   loading?: boolean;
 }
@@ -50,6 +52,7 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
   compact = false,
   onRecipientSelectionClick,
   onCancelClick,
+  onEditGroup,
   hasAnyRecipientData = true,
   loading = false,
 }) => {
@@ -203,6 +206,7 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
                         maxVisibleChips={compact ? 4 : 8}
                         showValidationWarnings={true}
                         compact={compact}
+                        onEditGroup={onEditGroup}
                       />
                     </Box>
                     {recipientError && (

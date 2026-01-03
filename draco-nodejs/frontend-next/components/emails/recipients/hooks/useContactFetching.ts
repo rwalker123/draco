@@ -57,6 +57,12 @@ export interface UseContactFetchingResult {
     handlePrevPage: () => void;
     handleRowsPerPageChange: (newRowsPerPage: number) => void;
   };
+
+  // Selected contacts cache management
+  cacheSelectedContact: (contact: RecipientContact) => void;
+  uncacheSelectedContact: (contactId: string) => void;
+  getSelectedContactsFromCache: () => RecipientContact[];
+  clearSelectedContactsCache: () => void;
 }
 
 export function useContactFetching({
@@ -70,6 +76,7 @@ export function useContactFetching({
   const [paginationLoading, setPaginationLoading] = useState(false);
   const [paginationError, setPaginationError] = useState<EmailRecipientError | null>(null);
   const [selectedContactsCache] = useState<Map<string, SelectedContactCacheEntry>>(new Map());
+  const [cacheVersion, setCacheVersion] = useState(0);
   const [searchContacts, setSearchContacts] = useState<RecipientContact[]>([]);
 
   // Pagination state
@@ -269,12 +276,17 @@ export function useContactFetching({
     [currentPageContacts],
   );
 
-  const isInSearchMode = useCallback(() => {
-    return Boolean(lastSearchQuery?.trim() && hasSearched);
-  }, [lastSearchQuery, hasSearched]);
+  // Derived state for search mode - used by pagination logic
+  const inSearchMode = useMemo(
+    () => Boolean(lastSearchQuery?.trim() && hasSearched),
+    [lastSearchQuery, hasSearched],
+  );
+
+  // Wrapper function for external consumers that expect a function
+  const isInSearchMode = useCallback(() => inSearchMode, [inSearchMode]);
 
   const paginationState = useMemo(() => {
-    if (isInSearchMode()) {
+    if (inSearchMode) {
       return {
         hasNext: searchPaginationState.hasNext,
         hasPrev: searchPaginationState.hasPrev,
@@ -291,59 +303,103 @@ export function useContactFetching({
       currentPage: currentPage,
       totalPages: 0,
     };
+  }, [serverPaginationState, searchPaginationState, searchCurrentPage, currentPage, inSearchMode]);
+
+  const handleNextPage = useCallback(() => {
+    if (inSearchMode) {
+      if (searchPaginationState.hasNext) {
+        void handleSearchWithPagination(lastSearchQuery, searchCurrentPage + 1, rowsPerPage);
+      }
+    } else {
+      if (serverPaginationState.hasNext) {
+        void fetchContactsPage(currentPage + 1, rowsPerPage);
+      }
+    }
   }, [
-    serverPaginationState,
-    searchPaginationState,
+    inSearchMode,
+    searchPaginationState.hasNext,
+    lastSearchQuery,
     searchCurrentPage,
+    rowsPerPage,
+    serverPaginationState.hasNext,
     currentPage,
-    isInSearchMode,
+    handleSearchWithPagination,
+    fetchContactsPage,
   ]);
+
+  const handlePrevPage = useCallback(() => {
+    if (inSearchMode) {
+      if (searchPaginationState.hasPrev && searchCurrentPage > 1) {
+        void handleSearchWithPagination(lastSearchQuery, searchCurrentPage - 1, rowsPerPage);
+      }
+    } else {
+      if (serverPaginationState.hasPrev && currentPage > 1) {
+        void fetchContactsPage(currentPage - 1, rowsPerPage);
+      }
+    }
+  }, [
+    inSearchMode,
+    searchPaginationState.hasPrev,
+    lastSearchQuery,
+    searchCurrentPage,
+    rowsPerPage,
+    serverPaginationState.hasPrev,
+    currentPage,
+    handleSearchWithPagination,
+    fetchContactsPage,
+  ]);
+
+  const handleRowsPerPageChange = useCallback(
+    (newRowsPerPage: number) => {
+      setRowsPerPage(newRowsPerPage);
+      if (inSearchMode) {
+        void handleSearchWithPagination(lastSearchQuery, 1, newRowsPerPage);
+      } else {
+        void fetchContactsPage(1, newRowsPerPage);
+      }
+    },
+    [inSearchMode, lastSearchQuery, handleSearchWithPagination, fetchContactsPage],
+  );
 
   const paginationHandlers = useMemo(
     () => ({
-      handleNextPage: () => {
-        if (isInSearchMode()) {
-          if (searchPaginationState.hasNext) {
-            void handleSearchWithPagination(lastSearchQuery, searchCurrentPage + 1, rowsPerPage);
-          }
-        } else {
-          if (serverPaginationState.hasNext) {
-            void fetchContactsPage(currentPage + 1, rowsPerPage);
-          }
-        }
-      },
-      handlePrevPage: () => {
-        if (isInSearchMode()) {
-          if (searchPaginationState.hasPrev && searchCurrentPage > 1) {
-            void handleSearchWithPagination(lastSearchQuery, searchCurrentPage - 1, rowsPerPage);
-          }
-        } else {
-          if (serverPaginationState.hasPrev && currentPage > 1) {
-            void fetchContactsPage(currentPage - 1, rowsPerPage);
-          }
-        }
-      },
-      handleRowsPerPageChange: (newRowsPerPage: number) => {
-        setRowsPerPage(newRowsPerPage);
-        if (isInSearchMode()) {
-          void handleSearchWithPagination(lastSearchQuery, 1, newRowsPerPage);
-        } else {
-          void fetchContactsPage(1, newRowsPerPage);
-        }
-      },
+      handleNextPage,
+      handlePrevPage,
+      handleRowsPerPageChange,
     }),
-    [
-      currentPage,
-      rowsPerPage,
-      serverPaginationState,
-      searchPaginationState,
-      searchCurrentPage,
-      lastSearchQuery,
-      isInSearchMode,
-      fetchContactsPage,
-      handleSearchWithPagination,
-    ],
+    [handleNextPage, handlePrevPage, handleRowsPerPageChange],
   );
+
+  const cacheSelectedContact = useCallback(
+    (contact: RecipientContact) => {
+      selectedContactsCache.set(contact.id, {
+        contact,
+        selectedTime: Date.now(),
+      });
+      setCacheVersion((v) => v + 1);
+    },
+    [selectedContactsCache],
+  );
+
+  const uncacheSelectedContact = useCallback(
+    (contactId: string) => {
+      selectedContactsCache.delete(contactId);
+      setCacheVersion((v) => v + 1);
+    },
+    [selectedContactsCache],
+  );
+
+  const getSelectedContactsFromCache = useCallback((): RecipientContact[] => {
+    void cacheVersion;
+    return Array.from(selectedContactsCache.values())
+      .sort((a, b) => a.selectedTime - b.selectedTime)
+      .map((entry) => entry.contact);
+  }, [selectedContactsCache, cacheVersion]);
+
+  const clearSelectedContactsCache = useCallback(() => {
+    selectedContactsCache.clear();
+    setCacheVersion((v) => v + 1);
+  }, [selectedContactsCache]);
 
   return {
     currentPageContacts,
@@ -371,5 +427,10 @@ export function useContactFetching({
     isInSearchMode,
     paginationState,
     paginationHandlers,
+
+    cacheSelectedContact,
+    uncacheSelectedContact,
+    getSelectedContactsFromCache,
+    clearSelectedContactsCache,
   };
 }

@@ -96,7 +96,7 @@ export function mergeContactGroups(
   hierarchicalContactGroups: Map<GroupType, ContactGroup[]>,
 ): Map<GroupType, ContactGroup[]> {
   const manualGroupTypes: Set<GroupType> = new Set(['individuals']);
-  const hierarchicalGroupTypes: Set<GroupType> = new Set(['season', 'league', 'division', 'teams']);
+  const hierarchicalGroupTypes: Set<GroupType> = new Set(['season', 'league', 'division', 'team']);
 
   const mergedContactGroups = new Map<GroupType, ContactGroup[]>();
 

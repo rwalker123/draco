@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { ContactRoleSchema } from './role.js';
-import { PaginationSchema, PagingSchema } from './paging.js';
+import { PaginationSchema } from './paging.js';
 import { booleanQueryParam } from './queryParams.js';
 import { bigintToStringSchema, nameSchema } from './standardSchema.js';
 
@@ -272,7 +272,11 @@ export const ContactSearchParamsSchema = z.object({
   teamSeasonId: z.string().trim().optional(),
   onlyWithRoles: booleanQueryParam.optional().default(false),
   includeInactive: booleanQueryParam.optional().default(false),
-  paging: PagingSchema.optional().default({ page: 1, limit: 50, skip: 0, sortOrder: 'asc' }),
+  // Flat pagination params - API client serializes with style: 'form' producing flat query params
+  page: z.coerce.number().default(1),
+  limit: z.coerce.number().min(1).max(100).default(50),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
 export type NamedContactType = z.infer<typeof NamedContactSchema>;

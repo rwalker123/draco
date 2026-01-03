@@ -5,6 +5,11 @@ import { isoDateTimeSchema } from './date.js';
 
 extendZodWithOpenApi(z);
 
+// Recipient group type for hierarchical selection (season → league → division → team)
+export const RecipientGroupTypeSchema = z.enum(['season', 'league', 'division', 'team']);
+export type RecipientGroupType = z.infer<typeof RecipientGroupTypeSchema>;
+export const RECIPIENT_GROUP_TYPES = RecipientGroupTypeSchema.options;
+
 // Request schemas
 export const EmailRecipientGroupsSchema = z.object({
   contacts: z.array(z.string()).optional().openapi({

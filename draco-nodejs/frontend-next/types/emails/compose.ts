@@ -88,6 +88,18 @@ export interface EmailComposeActions {
   removeSpecificGroup: (groupType: GroupType, groupIndex: number) => void;
   setRecipientSearchQuery: (query: string) => void;
   setRecipientActiveTab: (tab: RecipientSelectionTab) => void;
+  convertGroupToIndividuals: (
+    originalGroup: ContactGroup,
+    selectedContactIds: Set<string>,
+    contacts: Array<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string | null;
+      hasValidEmail: boolean;
+      isManager: boolean;
+    }>,
+  ) => void;
 
   // Utility actions
   reset: () => void;

@@ -53,6 +53,7 @@ router.get(
 router.post(
   '/',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -67,6 +68,7 @@ router.post(
 router.put(
   '/:seasonId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
@@ -81,6 +83,7 @@ router.put(
 router.post(
   '/:seasonId/copy',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
@@ -94,6 +97,7 @@ router.post(
 router.post(
   '/:seasonId/set-current',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
@@ -107,6 +111,7 @@ router.post(
 router.delete(
   '/:seasonId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);

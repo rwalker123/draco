@@ -14,6 +14,7 @@ const csvExportService = ServiceFactory.getCsvExportService();
 router.get(
   '/leagues/:leagueSeasonId/roster/export',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('manage-users'),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, leagueSeasonId } = extractBigIntParams(
@@ -54,6 +55,7 @@ router.get(
 router.get(
   '/leagues/:leagueSeasonId/managers/export',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('manage-users'),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, leagueSeasonId } = extractBigIntParams(
@@ -93,6 +95,7 @@ router.get(
 router.get(
   '/roster/export',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('manage-users'),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
@@ -122,6 +125,7 @@ router.get(
 router.get(
   '/managers/export',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('manage-users'),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');

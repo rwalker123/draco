@@ -37,6 +37,7 @@ const ensureRosterCardEnabled = (settings: AccountSettingState[]): void => {
 router.get(
   '/:teamSeasonId/roster',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
@@ -106,6 +107,7 @@ router.get(
 router.get(
   '/:teamSeasonId/available-players',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
@@ -136,6 +138,7 @@ router.get(
 router.post(
   '/:teamSeasonId/roster',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
@@ -159,6 +162,7 @@ router.post(
 router.put(
   '/:teamSeasonId/roster/:rosterMemberId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
@@ -190,6 +194,7 @@ router.put(
 router.put(
   '/:teamSeasonId/roster/:rosterMemberId/release',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
@@ -220,6 +225,7 @@ router.put(
 router.put(
   '/:teamSeasonId/roster/:rosterMemberId/activate',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
@@ -250,6 +256,7 @@ router.put(
 router.delete(
   '/:teamSeasonId/roster/:rosterMemberId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
@@ -273,6 +280,7 @@ router.delete(
 router.get(
   '/:teamSeasonId/roster/export',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('manage-users'),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);

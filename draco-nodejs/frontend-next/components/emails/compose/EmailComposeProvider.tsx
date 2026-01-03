@@ -35,6 +35,7 @@ import {
   WorkoutRecipientSelection,
   TeamsWantedRecipientSelection,
   UmpireRecipientSelection,
+  RecipientContact,
 } from '../../../types/emails/recipients';
 import { createEmailService } from '../../../services/emailService';
 import { useAuth } from '../../../context/AuthContext';
@@ -71,7 +72,22 @@ type ComposeAction =
   | { type: 'CLEAR_ALL_RECIPIENTS' }
   | { type: 'REMOVE_SPECIFIC_GROUP'; payload: { groupType: GroupType; groupIndex: number } }
   | { type: 'SET_RECIPIENT_SEARCH_QUERY'; payload: string }
-  | { type: 'SET_RECIPIENT_ACTIVE_TAB'; payload: RecipientSelectionTab };
+  | { type: 'SET_RECIPIENT_ACTIVE_TAB'; payload: RecipientSelectionTab }
+  | {
+      type: 'CONVERT_GROUP_TO_INDIVIDUALS';
+      payload: {
+        originalGroup: ContactGroup;
+        selectedContactIds: Set<string>;
+        contacts: Array<{
+          id: string;
+          firstName: string;
+          lastName: string;
+          email: string | null;
+          hasValidEmail: boolean;
+          isManager: boolean;
+        }>;
+      };
+    };
 
 // Initial state
 const createInitialState = (
@@ -370,6 +386,96 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
       };
     }
 
+    case 'CONVERT_GROUP_TO_INDIVIDUALS': {
+      const recipientState = getRecipientState(state);
+      const { originalGroup, selectedContactIds, contacts } = action.payload;
+
+      if (!recipientState.selectedGroups) {
+        return state;
+      }
+
+      // Create a new copy of the selectedGroups Map
+      const newSelectedGroups = new Map(recipientState.selectedGroups);
+
+      // Find and remove the original group by matching groupName
+      const groupsForType = newSelectedGroups.get(originalGroup.groupType);
+      if (groupsForType) {
+        const updatedGroupsForType = groupsForType.filter(
+          (g) => g.groupName !== originalGroup.groupName,
+        );
+        if (updatedGroupsForType.length === 0) {
+          newSelectedGroups.delete(originalGroup.groupType);
+        } else {
+          newSelectedGroups.set(originalGroup.groupType, updatedGroupsForType);
+        }
+      }
+
+      // Create or update the individuals group with selected contacts
+      const existingIndividuals = newSelectedGroups.get('individuals') || [];
+
+      // Build a new individuals ContactGroup from selected contacts
+      const selectedContacts = contacts.filter((c) => selectedContactIds.has(c.id));
+      if (selectedContacts.length > 0) {
+        // Merge with existing individuals (avoid duplicates)
+        const existingIds = new Set<string>();
+        existingIndividuals.forEach((group) => {
+          group.ids.forEach((id) => existingIds.add(id));
+        });
+
+        // Add new IDs that aren't already selected
+        const newIds = new Set<string>(existingIds);
+        selectedContacts.forEach((c) => newIds.add(c.id));
+
+        // Create merged individuals group
+        const mergedIndividualsGroup: ContactGroup = {
+          groupType: 'individuals',
+          groupName: 'Individual Selections',
+          ids: newIds,
+          totalCount: newIds.size,
+          managersOnly: originalGroup.managersOnly,
+        };
+
+        newSelectedGroups.set('individuals', [mergedIndividualsGroup]);
+      }
+
+      // Store contact details for cache population when dialog reopens
+      // Transform contacts to RecipientContact format with displayName
+      const newIndividualContactDetails = new Map(
+        recipientState.individualContactDetails || new Map(),
+      );
+      selectedContacts.forEach((contact) => {
+        const displayName = `${contact.firstName} ${contact.lastName}`.trim();
+        const recipientContact: RecipientContact = {
+          ...contact,
+          email: contact.email ?? undefined,
+          displayName,
+        };
+        newIndividualContactDetails.set(contact.id, recipientContact);
+      });
+
+      // Recalculate totals
+      const totalRecipients = calculateTotalRecipients(
+        newSelectedGroups,
+        recipientState.selectedWorkoutRecipients,
+        recipientState.selectedTeamsWantedRecipients,
+        recipientState.selectedUmpireRecipients,
+      );
+      const validEmailCount = totalRecipients;
+
+      return {
+        ...state,
+        recipientState: {
+          ...recipientState,
+          selectedGroups: newSelectedGroups,
+          totalRecipients,
+          validEmailCount,
+          invalidEmailCount: totalRecipients - validEmailCount,
+          individualContactDetails: newIndividualContactDetails,
+        },
+        hasUnsavedChanges: true,
+      };
+    }
+
     case 'RESET':
       return {
         ...createInitialState(state.config),
@@ -588,7 +694,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
               continue;
             }
 
-            if (!['season', 'league', 'division', 'teams'].includes(groupType)) {
+            if (!['season', 'league', 'division', 'team'].includes(groupType)) {
               dispatch({
                 type: 'ADD_ERROR',
                 payload: {
@@ -611,7 +717,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
               if (groupType === 'division') {
                 extractGroupIds(group).forEach((id) => divisions.add(id));
               }
-              if (groupType === 'teams') {
+              if (groupType === 'team') {
                 extractGroupIds(group).forEach((id) => teams.add(id));
               }
             }
@@ -751,6 +857,27 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     dispatch({ type: 'SET_RECIPIENT_ACTIVE_TAB', payload: tab });
   }, []);
 
+  const convertGroupToIndividuals = useCallback(
+    (
+      originalGroup: ContactGroup,
+      selectedContactIds: Set<string>,
+      contacts: Array<{
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string | null;
+        hasValidEmail: boolean;
+        isManager: boolean;
+      }>,
+    ) => {
+      dispatch({
+        type: 'CONVERT_GROUP_TO_INDIVIDUALS',
+        payload: { originalGroup, selectedContactIds, contacts },
+      });
+    },
+    [],
+  );
+
   // Create actions object
   const actions: EmailComposeActions = {
     setSubject,
@@ -774,6 +901,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     removeSpecificGroup,
     setRecipientSearchQuery,
     setRecipientActiveTab,
+    convertGroupToIndividuals,
   };
 
   // Context value

@@ -1,7 +1,18 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { Box, Stack, Typography, Chip, Paper, Alert, useTheme, alpha } from '@mui/material';
+import React, { useMemo, useCallback } from 'react';
+import {
+  Box,
+  Stack,
+  Typography,
+  Chip,
+  Paper,
+  Alert,
+  useTheme,
+  alpha,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
 import {
   Person as PersonIcon,
   Group as GroupIcon,
@@ -11,15 +22,18 @@ import {
   FitnessCenter as WorkoutIcon,
   Warning as WarningIcon,
   Gavel as GavelIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 
 import { useEmailCompose } from '../compose/EmailComposeProvider';
-import { GroupType } from '../../../types/emails/recipients';
+import { GroupType, ContactGroup } from '../../../types/emails/recipients';
+import { isGroupEditable, getEditableTooltip } from '../compose/GroupBadgeEditDialog';
 
 interface SelectedRecipientsPreviewProps {
   maxVisibleChips?: number;
   showValidationWarnings?: boolean;
   compact?: boolean;
+  onEditGroup?: (group: ContactGroup) => void;
 }
 
 /**
@@ -31,6 +45,7 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
   maxVisibleChips = 8,
   showValidationWarnings = true,
   compact = false,
+  onEditGroup,
 }) => {
   const theme = useTheme();
   const { state } = useEmailCompose();
@@ -41,7 +56,7 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
       case 'individuals':
         return { icon: PersonIcon, color: 'primary' as const, label: 'Contacts' };
       // 'managers' is no longer a group type - handled via managersOnly flag
-      case 'teams':
+      case 'team':
         return { icon: GroupIcon, color: 'info' as const, label: 'Teams' };
       case 'season':
         return { icon: SeasonIcon, color: 'success' as const, label: 'Season' };
@@ -62,6 +77,7 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
       count: number;
       icon: typeof PersonIcon;
       color: 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'default';
+      contactGroup: ContactGroup;
     }> = [];
     const workoutSummaries: Array<{ workoutId: string; label: string; count: number }> = [];
     const teamsWantedSummaries: Array<{ count: number }> = [];
@@ -79,6 +95,7 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
             count: contactGroup.totalCount,
             icon: config.icon,
             color: config.color,
+            contactGroup,
           });
 
           // Set managersOnly flag from any group (should be consistent across all groups)
@@ -124,28 +141,67 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
     };
   }, [state.recipientState]);
 
+  // Handle edit click
+  const handleEditClick = useCallback(
+    (group: ContactGroup, event: React.MouseEvent) => {
+      event.stopPropagation();
+      if (onEditGroup && isGroupEditable(group)) {
+        onEditGroup(group);
+      }
+    },
+    [onEditGroup],
+  );
+
   // Create group summary chips
   const groupChips = useMemo(() => {
     return summaryData.groupSummaries.map((group, index) => {
       const IconComponent = group.icon;
+      const editable = isGroupEditable(group.contactGroup);
+      const editTooltip = getEditableTooltip(group.contactGroup);
+      const showEditButton = onEditGroup && group.groupType !== 'individuals';
 
       return (
-        <Chip
+        <Stack
           key={`${group.groupType}-${index}`}
-          icon={<IconComponent />}
-          label={`${group.label} (${group.count})`}
-          size={compact ? 'small' : 'medium'}
-          variant="outlined"
-          color={group.color}
-          sx={{
-            '& .MuiChip-icon': {
-              color: `${group.color}.main`,
-            },
-          }}
-        />
+          direction="row"
+          spacing={0.5}
+          alignItems="center"
+        >
+          <Chip
+            icon={<IconComponent />}
+            label={`${group.label} (${group.count})`}
+            size={compact ? 'small' : 'medium'}
+            variant="outlined"
+            color={group.color}
+            sx={{
+              '& .MuiChip-icon': {
+                color: `${group.color}.main`,
+              },
+            }}
+          />
+          {showEditButton && (
+            <Tooltip title={editTooltip || 'Edit recipients'}>
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={(e) => handleEditClick(group.contactGroup, e)}
+                  disabled={!editable}
+                  sx={{
+                    p: 0.25,
+                    '& .MuiSvgIcon-root': {
+                      fontSize: compact ? '0.875rem' : '1rem',
+                    },
+                  }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
+        </Stack>
       );
     });
-  }, [summaryData.groupSummaries, compact]);
+  }, [summaryData.groupSummaries, compact, onEditGroup, handleEditClick]);
 
   const workoutChips = useMemo(() => {
     return summaryData.workoutSummaries.map((workout) => (

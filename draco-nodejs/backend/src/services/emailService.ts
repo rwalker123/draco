@@ -7,6 +7,7 @@ import {
   ResolvedRecipient,
   EmailSettings,
   ServerEmailAttachment,
+  GroupContactType,
 } from '../interfaces/emailInterfaces.js';
 import { EmailProviderFactory } from './email/EmailProviderFactory.js';
 import { EmailConfigFactory } from '../config/email.js';
@@ -18,6 +19,8 @@ import {
   EmailRecipientGroupsType,
   EmailSendType,
   PagingType,
+  RecipientGroupType,
+  TeamSeasonType,
   WORKOUT_REGISTRATIONS_MAX_EXPORT,
 } from '@draco/shared-schemas';
 import {
@@ -1866,6 +1869,177 @@ export class EmailService {
 
   private hasValidEmail(email: string | null): boolean {
     return !!email && validator.isEmail(email);
+  }
+
+  async getGroupContacts(
+    accountId: bigint,
+    seasonId: bigint,
+    groupType: RecipientGroupType,
+    groupId: string,
+    managersOnly: boolean,
+  ): Promise<GroupContactType[]> {
+    const contacts: GroupContactType[] = [];
+
+    if (groupType === 'season') {
+      if (managersOnly) {
+        const seasonTeams = await this.teamService.getTeamsBySeasonId(seasonId, accountId);
+        const teamIds = seasonTeams.map((team) => BigInt(team.id));
+        const managersByTeam = await this.teamManagerService.listManagersForTeams(teamIds);
+
+        for (const managers of managersByTeam.values()) {
+          contacts.push(
+            ...managers.map((manager) => ({
+              id: manager.contact.id,
+              firstName: manager.contact.firstName,
+              lastName: manager.contact.lastName,
+              email: manager.contact.email ?? null,
+              hasValidEmail: this.hasValidEmail(manager.contact.email ?? null),
+              isManager: true,
+            })),
+          );
+        }
+      } else {
+        const seasonContacts = await this.seasonRepository.findSeasonParticipants(
+          accountId,
+          seasonId,
+        );
+        const teamManagers = await this.getSeasonManagerIds(seasonId, accountId);
+
+        contacts.push(
+          ...seasonContacts.map((contact) => ({
+            id: contact.id.toString(),
+            firstName: contact.firstname,
+            lastName: contact.lastname,
+            email: contact.email,
+            hasValidEmail: this.hasValidEmail(contact.email),
+            isManager: teamManagers.has(contact.id.toString()),
+          })),
+        );
+      }
+    } else if (groupType === 'league') {
+      const leagueTeams = await this.teamService.getTeamsByLeagueSeasonId(
+        BigInt(groupId),
+        seasonId,
+        accountId,
+      );
+      await this.addTeamContactsToList(contacts, leagueTeams, seasonId, accountId, managersOnly);
+    } else if (groupType === 'division') {
+      const divisionTeams = await this.teamService.getTeamsByDivisionSeasonId(
+        BigInt(groupId),
+        seasonId,
+        accountId,
+      );
+      await this.addTeamContactsToList(contacts, divisionTeams, seasonId, accountId, managersOnly);
+    } else if (groupType === 'team') {
+      const teamId = BigInt(groupId);
+      if (managersOnly) {
+        const teamManagers = await this.teamManagerService.listManagers(teamId);
+        contacts.push(
+          ...teamManagers.map((manager) => ({
+            id: manager.contact.id,
+            firstName: manager.contact.firstName,
+            lastName: manager.contact.lastName,
+            email: manager.contact.email ?? null,
+            hasValidEmail: this.hasValidEmail(manager.contact.email ?? null),
+            isManager: true,
+          })),
+        );
+      } else {
+        const teamMembers = await this.rosterService.getTeamRosterMembers(
+          teamId,
+          seasonId,
+          accountId,
+        );
+        const teamManagers = await this.teamManagerService.listManagers(teamId);
+        const managerContactIds = new Set(teamManagers.map((m) => m.contact.id));
+
+        contacts.push(
+          ...teamMembers.rosterMembers.map((rosterMember) => ({
+            id: rosterMember.player.contact.id,
+            firstName: rosterMember.player.contact.firstName,
+            lastName: rosterMember.player.contact.lastName,
+            email: rosterMember.player.contact.email ?? null,
+            hasValidEmail: this.hasValidEmail(rosterMember.player.contact.email ?? null),
+            isManager: managerContactIds.has(rosterMember.player.contact.id),
+          })),
+        );
+      }
+    }
+
+    const uniqueContacts = this.deduplicateContacts(contacts);
+    return uniqueContacts;
+  }
+
+  private async getSeasonManagerIds(seasonId: bigint, accountId: bigint): Promise<Set<string>> {
+    const managerIds = new Set<string>();
+    const seasonTeams = await this.teamService.getTeamsBySeasonId(seasonId, accountId);
+    const teamIds = seasonTeams.map((team) => BigInt(team.id));
+    const managersByTeam = await this.teamManagerService.listManagersForTeams(teamIds);
+
+    for (const managers of managersByTeam.values()) {
+      managers.forEach((manager) => managerIds.add(manager.contact.id));
+    }
+    return managerIds;
+  }
+
+  private async addTeamContactsToList(
+    contacts: GroupContactType[],
+    teams: TeamSeasonType[],
+    seasonId: bigint,
+    accountId: bigint,
+    managersOnly: boolean,
+  ): Promise<void> {
+    const teamIds = teams.map((team) => BigInt(team.id));
+    const managersByTeam = await this.teamManagerService.listManagersForTeams(teamIds);
+
+    if (managersOnly) {
+      for (const managers of managersByTeam.values()) {
+        contacts.push(
+          ...managers.map((manager) => ({
+            id: manager.contact.id,
+            firstName: manager.contact.firstName,
+            lastName: manager.contact.lastName,
+            email: manager.contact.email ?? null,
+            hasValidEmail: this.hasValidEmail(manager.contact.email ?? null),
+            isManager: true,
+          })),
+        );
+      }
+    } else {
+      const allManagerContactIds = new Set<string>();
+      for (const managers of managersByTeam.values()) {
+        managers.forEach((m) => allManagerContactIds.add(m.contact.id));
+      }
+
+      for (const team of teams) {
+        const teamMembers = await this.rosterService.getTeamRosterMembers(
+          BigInt(team.id),
+          seasonId,
+          accountId,
+        );
+
+        contacts.push(
+          ...teamMembers.rosterMembers.map((rosterMember) => ({
+            id: rosterMember.player.contact.id,
+            firstName: rosterMember.player.contact.firstName,
+            lastName: rosterMember.player.contact.lastName,
+            email: rosterMember.player.contact.email ?? null,
+            hasValidEmail: this.hasValidEmail(rosterMember.player.contact.email ?? null),
+            isManager: allManagerContactIds.has(rosterMember.player.contact.id),
+          })),
+        );
+      }
+    }
+  }
+
+  private deduplicateContacts(contacts: GroupContactType[]): GroupContactType[] {
+    const uniqueMap = new Map<string, GroupContactType>();
+    for (const contact of contacts) {
+      if (!uniqueMap.has(contact.id)) {
+        uniqueMap.set(contact.id, contact);
+      }
+    }
+    return Array.from(uniqueMap.values());
   }
 
   private sanitizeDisplayName(name?: string | null): string {
