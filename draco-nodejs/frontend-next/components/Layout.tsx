@@ -29,7 +29,7 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
-import { useAccount } from '../context/AccountContext';
+import { useAccount, useIsIndividualGolfAccount } from '../context/AccountContext';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useLogout } from '../hooks/useLogout';
 import BaseballMenu from './BaseballMenu';
@@ -59,6 +59,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const { user, clearAllContexts } = useAuth();
   const { hasRole, hasManageableAccount } = useRole();
   const { currentAccount: contextAccount, setCurrentAccount: setAccountContext } = useAccount();
+  const isIndividualGolfAccount = useIsIndividualGolfAccount();
   const lastSyncedAccountIdRef = React.useRef<string | null>(null);
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -75,12 +76,13 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const [sportOverflowItems, setSportOverflowItems] = React.useState<BaseballOverflowItem[]>([]);
   const [quickActionItems, setQuickActionItems] = React.useState<React.ReactNode[]>([]);
 
-  // Check if user can access account management features
+  // Check if user can access account management features (not applicable for Individual Golf accounts)
   const hasAccountManagementPrivileges = Boolean(user && hasManageableAccount);
   const currentAccountId = currentAccount?.id ? String(currentAccount.id) : null;
   const shouldShowAdminMenuIcon =
-    hasAccountManagementPrivileges ||
-    (user && currentAccountId && hasRole('AccountAdmin', { accountId: currentAccountId }));
+    !isIndividualGolfAccount &&
+    (hasAccountManagementPrivileges ||
+      (user && currentAccountId && hasRole('AccountAdmin', { accountId: currentAccountId })));
 
   // Extract accountId from prop, URL path, query string, or context (in that order of preference)
   const accountIdFromQuery = searchParams.get('accountId');

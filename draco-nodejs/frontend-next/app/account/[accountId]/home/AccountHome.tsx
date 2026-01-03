@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Box, Button, Alert, Container } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
 import BaseballAccountHome from '../BaseballAccountHome';
+import GolfLeagueAccountHome from '../GolfLeagueAccountHome';
+import IndividualGolfAccountHome from '../IndividualGolfAccountHome';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
@@ -85,12 +87,17 @@ const AccountHome: React.FC = () => {
     );
   }
 
-  // Render baseball-specific home page for baseball accounts
-  if (account.configuration?.accountType?.name?.toLowerCase() === 'baseball') {
-    return <BaseballAccountHome />;
+  const accountType = account.configuration?.accountType?.name?.toLowerCase() ?? '';
+
+  if (accountType.includes('golf individual')) {
+    return <IndividualGolfAccountHome />;
   }
 
-  return <main className="min-h-screen bg-background">{/* Header */}</main>;
+  if (accountType.includes('golf')) {
+    return <GolfLeagueAccountHome />;
+  }
+
+  return <BaseballAccountHome />;
 };
 
 export default AccountHome;

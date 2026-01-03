@@ -260,3 +260,9 @@ export const useAccountTimezone = (): string => {
   const { currentAccount } = useAccount();
   return currentAccount?.timeZone ?? DEFAULT_TIMEZONE;
 };
+
+export const useIsIndividualGolfAccount = (): boolean => {
+  const { currentAccount } = useAccount();
+  const accountType = currentAccount?.accountType?.toLowerCase() ?? '';
+  return accountType.includes('golf individual');
+};

@@ -15,6 +15,10 @@ import {
   CreateContactType,
   AccountDiscordIntegrationType,
   UpdateAccountType,
+  CreateIndividualGolfAccountType,
+  CreateAuthenticatedGolfAccountType,
+  IndividualGolfAccountResponseType,
+  AuthenticatedGolfAccountResponseType,
 } from '@draco/shared-schemas';
 import { accountblueskycredentials, accounts, contacts } from '#prisma/client';
 import {
@@ -342,6 +346,182 @@ export class AccountsService {
       ownerContactRecord,
       ownerUser,
     );
+  }
+
+  async createIndividualGolfAccount(
+    payload: CreateIndividualGolfAccountType,
+  ): Promise<IndividualGolfAccountResponseType> {
+    const GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID = BigInt(5);
+    const NO_AFFILIATION_ID = BigInt(1);
+    const DEFAULT_TIMEZONE = 'America/New_York';
+
+    const authService = ServiceFactory.getAuthService();
+    const registrationResult = await authService.register(
+      { userName: payload.email, password: payload.password },
+      { sendWelcomeEmail: true },
+    );
+
+    if (!registrationResult.token) {
+      throw new ValidationError('Failed to generate authentication token');
+    }
+
+    const currentYear = new Date().getFullYear();
+    const nameParts = payload.name.trim().split(/\s+/);
+    const firstName = nameParts[0] || payload.name;
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+    const accountCreateData: Partial<accounts> = {
+      name: `${payload.name}'s Golf`,
+      accounttypeid: GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID,
+      owneruserid: registrationResult.userId,
+      affiliationid: NO_AFFILIATION_ID,
+      timezoneid: DEFAULT_TIMEZONE,
+      firstyear: currentYear,
+      defaultvideo: '',
+      autoplayvideo: false,
+      youtubeuserid: null,
+      facebookfanpage: null,
+    };
+
+    const accountRecord = await this.accountRepository.create(accountCreateData);
+
+    const contactRecord: Partial<contacts> = {
+      firstname: firstName,
+      lastname: lastName,
+      middlename: '',
+      email: payload.email,
+      phone1: null,
+      phone2: null,
+      phone3: null,
+      creatoraccountid: accountRecord.id,
+      userid: registrationResult.userId,
+      streetaddress: null,
+      city: null,
+      state: null,
+      zip: null,
+      dateofbirth: new Date('1900-01-01'),
+    };
+
+    await this.contactRepository.create(contactRecord);
+
+    const season = await this.seasonRepository.createSeason({
+      accountid: accountRecord.id,
+      name: currentYear.toString(),
+    });
+
+    await this.seasonRepository.upsertCurrentSeason(accountRecord.id, season.id);
+
+    const {
+      account,
+      affiliationMap,
+      ownerContact: ownerContactRecord,
+      ownerUser,
+    } = await this.loadAccountContext(accountRecord.id);
+
+    const formattedAccount = AccountResponseFormatter.formatAccount(
+      account,
+      affiliationMap,
+      ownerContactRecord,
+      ownerUser,
+    );
+
+    return {
+      token: registrationResult.token,
+      account: formattedAccount,
+      userId: registrationResult.userId,
+    };
+  }
+
+  async createAuthenticatedGolfAccount(
+    userId: string,
+    userEmail: string,
+    payload: CreateAuthenticatedGolfAccountType,
+  ): Promise<AuthenticatedGolfAccountResponseType> {
+    const GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID = BigInt(5);
+    const NO_AFFILIATION_ID = BigInt(1);
+    const DEFAULT_TIMEZONE = 'America/New_York';
+
+    let firstName = '';
+    let lastName = '';
+    let middleName = '';
+
+    if (payload.name) {
+      const nameParts = payload.name.trim().split(/\s+/);
+      firstName = nameParts[0] || payload.name;
+      lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+    } else {
+      const existingContacts = await this.contactRepository.findContactsByUserIds([userId]);
+      if (existingContacts.length > 0) {
+        const existingContact = existingContacts[0];
+        firstName = existingContact.firstname;
+        lastName = existingContact.lastname ?? '';
+        middleName = existingContact.middlename ?? '';
+      }
+    }
+
+    const displayName =
+      payload.name?.trim() || [firstName, middleName, lastName].filter(Boolean).join(' ') || 'Golf';
+    const currentYear = new Date().getFullYear();
+
+    const accountCreateData: Partial<accounts> = {
+      name: `${displayName}'s Golf`,
+      accounttypeid: GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID,
+      owneruserid: userId,
+      affiliationid: NO_AFFILIATION_ID,
+      timezoneid: DEFAULT_TIMEZONE,
+      firstyear: currentYear,
+      defaultvideo: '',
+      autoplayvideo: false,
+      youtubeuserid: null,
+      facebookfanpage: null,
+    };
+
+    const accountRecord = await this.accountRepository.create(accountCreateData);
+
+    const contactRecord: Partial<contacts> = {
+      firstname: firstName || 'Golf',
+      lastname: lastName,
+      middlename: middleName,
+      email: userEmail,
+      phone1: null,
+      phone2: null,
+      phone3: null,
+      creatoraccountid: accountRecord.id,
+      userid: userId,
+      streetaddress: null,
+      city: null,
+      state: null,
+      zip: null,
+      dateofbirth: new Date('1900-01-01'),
+    };
+
+    await this.contactRepository.create(contactRecord);
+
+    const season = await this.seasonRepository.createSeason({
+      accountid: accountRecord.id,
+      name: currentYear.toString(),
+    });
+
+    await this.seasonRepository.upsertCurrentSeason(accountRecord.id, season.id);
+
+    const {
+      account,
+      affiliationMap,
+      ownerContact: ownerContactRecord,
+      ownerUser,
+    } = await this.loadAccountContext(accountRecord.id);
+
+    const formattedAccount = AccountResponseFormatter.formatAccount(
+      account,
+      affiliationMap,
+      ownerContactRecord,
+      ownerUser,
+    );
+
+    return {
+      account: formattedAccount,
+      userId,
+    };
   }
 
   async updateAccount(accountId: bigint, payload: UpdateAccountType): Promise<AccountType> {

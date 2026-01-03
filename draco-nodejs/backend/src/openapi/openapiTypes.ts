@@ -349,6 +349,10 @@ import {
   ExternalCourseSearchResultSchema,
   ExternalCourseDetailSchema,
   ExternalCourseTeeSchema,
+  CreateIndividualGolfAccountSchema,
+  CreateAuthenticatedGolfAccountSchema,
+  IndividualGolfAccountResponseSchema,
+  AuthenticatedGolfAccountResponseSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -490,6 +494,22 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const RoleMetadataSchemaRef = registry.register('RoleMetadata', RoleMetadataSchema);
   const CreateAccountSchemaRef = registry.register('CreateAccount', CreateAccountSchema);
+  const CreateIndividualGolfAccountSchemaRef = registry.register(
+    'CreateIndividualGolfAccount',
+    CreateIndividualGolfAccountSchema,
+  );
+  const CreateAuthenticatedGolfAccountSchemaRef = registry.register(
+    'CreateAuthenticatedGolfAccount',
+    CreateAuthenticatedGolfAccountSchema,
+  );
+  const IndividualGolfAccountResponseSchemaRef = registry.register(
+    'IndividualGolfAccountResponse',
+    IndividualGolfAccountResponseSchema,
+  );
+  const AuthenticatedGolfAccountResponseSchemaRef = registry.register(
+    'AuthenticatedGolfAccountResponse',
+    AuthenticatedGolfAccountResponseSchema,
+  );
   const AccountNameSchemaRef = registry.register('AccountName', AccountNameSchema);
   const AccountHeaderSchemaRef = registry.register('AccountHeader', AccountHeaderSchema);
   const AccountAffiliationSchemaRef = registry.register(
@@ -1420,6 +1440,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     AccountWithSeasonsSchemaRef,
     AccountDetailsQuerySchemaRef,
     CreateAccountSchemaRef,
+    CreateIndividualGolfAccountSchemaRef,
+    CreateAuthenticatedGolfAccountSchemaRef,
+    IndividualGolfAccountResponseSchemaRef,
+    AuthenticatedGolfAccountResponseSchemaRef,
     AccountNameSchemaRef,
     AccountHeaderSchemaRef,
     AccountAffiliationSchemaRef,

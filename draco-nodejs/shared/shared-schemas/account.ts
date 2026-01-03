@@ -211,3 +211,40 @@ export type AccountCurrentSeasonType = z.infer<typeof AccountCurrentSeasonSchema
 export type AccountDetailsQueryType = z.infer<typeof AccountDetailsQuerySchema>;
 export type AccountNameType = z.infer<typeof AccountNameSchema>;
 export type AccountHeaderType = z.infer<typeof AccountHeaderSchema>;
+
+// Individual Golf Account Creation (unauthenticated - creates new user)
+export const CreateIndividualGolfAccountSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(100),
+  email: z.string().email('Valid email is required'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  homeCourseId: z.string().optional(),
+});
+
+export type CreateIndividualGolfAccountType = z.infer<typeof CreateIndividualGolfAccountSchema>;
+
+// Individual Golf Account Creation (authenticated - uses existing user)
+export const CreateAuthenticatedGolfAccountSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(100).optional(),
+  homeCourseId: z.string().optional(),
+});
+
+export type CreateAuthenticatedGolfAccountType = z.infer<
+  typeof CreateAuthenticatedGolfAccountSchema
+>;
+
+export const IndividualGolfAccountResponseSchema = z.object({
+  token: z.string(),
+  account: AccountSchema,
+  userId: z.string(),
+});
+
+export type IndividualGolfAccountResponseType = z.infer<typeof IndividualGolfAccountResponseSchema>;
+
+export const AuthenticatedGolfAccountResponseSchema = z.object({
+  account: AccountSchema,
+  userId: z.string(),
+});
+
+export type AuthenticatedGolfAccountResponseType = z.infer<
+  typeof AuthenticatedGolfAccountResponseSchema
+>;
