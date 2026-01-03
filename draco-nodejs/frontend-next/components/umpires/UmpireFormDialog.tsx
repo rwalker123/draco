@@ -189,6 +189,7 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
           name="contactId"
           render={({ field }) => (
             <Autocomplete
+              filterOptions={(x) => x}
               options={contactOptions}
               value={selectedContact}
               inputValue={searchInput}
