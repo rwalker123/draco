@@ -73,11 +73,13 @@ describe('ResendProvider - Webhook Processing', () => {
     const events: ResendWebhookEvent[] = [
       {
         type: 'email.delivered',
+        created_at: '2024-01-01T00:00:00.000Z',
         data: {
+          to: ['recipient@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test Email',
+          email_id: 'test-email-id',
           created_at: '2024-01-01T00:00:00.000Z',
-          email: {
-            to: ['recipient@example.com'],
-          },
         },
       },
     ];
@@ -105,10 +107,13 @@ describe('ResendProvider - Webhook Processing', () => {
     const events: ResendWebhookEvent[] = [
       {
         type: 'email.delivered',
+        created_at: '2024-01-01T00:00:00.000Z',
         data: {
-          email: {
-            to: ['missing@example.com'],
-          },
+          to: ['missing@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test Email',
+          email_id: 'test-email-id',
+          created_at: '2024-01-01T00:00:00.000Z',
         },
       },
     ];
@@ -126,10 +131,13 @@ describe('ResendProvider - Webhook Processing', () => {
     const events: ResendWebhookEvent[] = [
       {
         type: 'email.delivered',
+        created_at: '2024-01-01T00:00:00.000Z',
         data: {
-          email: {
-            to: ['recipient@example.com'],
-          },
+          to: ['recipient@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test Email',
+          email_id: 'test-email-id',
+          created_at: '2024-01-01T00:00:00.000Z',
         },
       },
     ];

@@ -162,23 +162,21 @@ export interface SendGridWebhookEvent {
 
 export interface ResendWebhookEvent {
   type: string;
-  object?: string;
+  created_at?: string;
   data?: {
-    event?: string;
+    to?: string[];
+    from?: string;
+    subject?: string;
+    email_id?: string;
+    broadcast_id?: string;
+    template_id?: string;
+    tags?: Record<string, string>;
     created_at?: string;
-    timestamp?: number;
     reason?: string;
-    smtp_response?: string;
-    tags?: Array<Record<string, unknown>>;
-    email?: {
-      id?: string;
-      to?: string[];
-      from?: string;
-      subject?: string;
-      cc?: string[];
-      bcc?: string[];
-      reply_to?: string[] | string;
-      headers?: Record<string, unknown>;
+    bounce?: {
+      message?: string;
+      subType?: string;
+      type?: string;
     };
   };
 }
