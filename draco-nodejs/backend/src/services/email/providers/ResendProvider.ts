@@ -53,6 +53,7 @@ export class ResendProvider implements IEmailProvider {
         text: options.text,
         replyTo: options.replyTo,
         attachments,
+        tags: options.tags,
       });
 
       if (error) {
@@ -121,8 +122,11 @@ export class ResendProvider implements IEmailProvider {
 
     const recipientRecords = await this.findRecipientsByEvent(event);
     if (recipientRecords.length === 0) {
-      if (!this.isTransactionalEmail(event)) {
-        console.warn('Resend webhook recipient lookup returned no records', event);
+      if (this.isTrackedEmail(event)) {
+        console.warn(
+          'Resend webhook recipient lookup returned no records for tracked email',
+          event,
+        );
       }
       return;
     }
@@ -371,8 +375,7 @@ export class ResendProvider implements IEmailProvider {
     return JSON.parse(JSON.stringify(event ?? {})) as Prisma.InputJsonValue;
   }
 
-  private isTransactionalEmail(event: ResendWebhookEvent): boolean {
-    const subject = event.data?.subject ?? '';
-    return subject.includes('Password Reset') || subject.startsWith('Welcome');
+  private isTrackedEmail(event: ResendWebhookEvent): boolean {
+    return event.data?.tags?.tracked === 'true';
   }
 }

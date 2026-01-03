@@ -7,6 +7,12 @@ export interface IEmailProvider {
   testConnection(): Promise<boolean>;
 }
 
+// Email tag for tracking/categorization
+export interface EmailTag {
+  name: string;
+  value: string;
+}
+
 // Email options for sending
 export interface EmailOptions {
   to: string | string[];
@@ -17,6 +23,7 @@ export interface EmailOptions {
   fromName?: string;
   replyTo?: string;
   attachments?: ServerEmailAttachment[];
+  tags?: EmailTag[];
 }
 
 // Email sending result
