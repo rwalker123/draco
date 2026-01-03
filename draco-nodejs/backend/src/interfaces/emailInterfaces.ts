@@ -7,6 +7,12 @@ export interface IEmailProvider {
   testConnection(): Promise<boolean>;
 }
 
+// Email tag for tracking/categorization
+export interface EmailTag {
+  name: string;
+  value: string;
+}
+
 // Email options for sending
 export interface EmailOptions {
   to: string | string[];
@@ -17,6 +23,7 @@ export interface EmailOptions {
   fromName?: string;
   replyTo?: string;
   attachments?: ServerEmailAttachment[];
+  tags?: EmailTag[];
 }
 
 // Email sending result
@@ -162,23 +169,21 @@ export interface SendGridWebhookEvent {
 
 export interface ResendWebhookEvent {
   type: string;
-  object?: string;
+  created_at?: string;
   data?: {
-    event?: string;
+    to?: string[];
+    from?: string;
+    subject?: string;
+    email_id?: string;
+    broadcast_id?: string;
+    template_id?: string;
+    tags?: Record<string, string>;
     created_at?: string;
-    timestamp?: number;
     reason?: string;
-    smtp_response?: string;
-    tags?: Array<Record<string, unknown>>;
-    email?: {
-      id?: string;
-      to?: string[];
-      from?: string;
-      subject?: string;
-      cc?: string[];
-      bcc?: string[];
-      reply_to?: string[] | string;
-      headers?: Record<string, unknown>;
+    bounce?: {
+      message?: string;
+      subType?: string;
+      type?: string;
     };
   };
 }

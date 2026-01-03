@@ -53,6 +53,7 @@ export class ResendProvider implements IEmailProvider {
         text: options.text,
         replyTo: options.replyTo,
         attachments,
+        tags: options.tags,
       });
 
       if (error) {
@@ -121,7 +122,12 @@ export class ResendProvider implements IEmailProvider {
 
     const recipientRecords = await this.findRecipientsByEvent(event);
     if (recipientRecords.length === 0) {
-      console.warn('Resend webhook recipient lookup returned no records', event);
+      if (this.isTrackedEmail(event)) {
+        console.warn(
+          'Resend webhook recipient lookup returned no records for tracked email',
+          event,
+        );
+      }
       return;
     }
 
@@ -190,7 +196,7 @@ export class ResendProvider implements IEmailProvider {
       case 'email.failed':
       case 'email.complained':
         updateData.bounce_reason =
-          event.data?.reason || event.data?.smtp_response || `Resend ${eventType}`;
+          event.data?.bounce?.message || event.data?.reason || `Resend ${eventType}`;
         updateData.error_message = updateData.bounce_reason;
         break;
     }
@@ -323,46 +329,31 @@ export class ResendProvider implements IEmailProvider {
   }
 
   private resolveEventType(event: ResendWebhookEvent): string | null {
-    return event.type || event.data?.event || null;
+    return event.type || null;
   }
 
   private resolveRecipientEmails(event: ResendWebhookEvent): string[] {
-    const emailData = event.data?.email;
-    if (!emailData) {
-      return [];
+    const toAddresses = event.data?.to;
+
+    if (Array.isArray(toAddresses)) {
+      return toAddresses.filter((value): value is string => typeof value === 'string');
     }
 
-    if (Array.isArray(emailData.to)) {
-      return emailData.to.filter((value): value is string => typeof value === 'string');
-    }
-
-    if (typeof emailData.to === 'string') {
-      return [emailData.to];
+    if (typeof toAddresses === 'string') {
+      return [toAddresses];
     }
 
     return [];
   }
 
   private resolveEventTimestamp(event: ResendWebhookEvent): Date | null {
-    if (event.data?.created_at) {
-      const created = new Date(event.data.created_at);
+    const createdAt = event.data?.created_at;
+    if (createdAt) {
+      const created = new Date(createdAt);
       if (!Number.isNaN(created.getTime())) {
         return created;
       }
     }
-
-    const timestamp = event.data?.timestamp;
-    if (typeof timestamp === 'number') {
-      return new Date(timestamp * 1000);
-    }
-
-    if (typeof timestamp === 'string') {
-      const parsed = Number(timestamp);
-      if (!Number.isNaN(parsed)) {
-        return new Date(parsed * 1000);
-      }
-    }
-
     return null;
   }
 
@@ -382,5 +373,9 @@ export class ResendProvider implements IEmailProvider {
 
   private serializeEvent(event: ResendWebhookEvent): Prisma.InputJsonValue {
     return JSON.parse(JSON.stringify(event ?? {})) as Prisma.InputJsonValue;
+  }
+
+  private isTrackedEmail(event: ResendWebhookEvent): boolean {
+    return event.data?.tags?.tracked === 'true';
   }
 }

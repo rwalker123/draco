@@ -1113,6 +1113,7 @@ export class EmailService {
           fromName: job.settings.fromName,
           replyTo: job.settings.replyTo,
           attachments: job.attachments,
+          tags: [{ name: 'tracked', value: 'true' }],
         };
 
         const result = await provider.sendEmail(emailOptions);
