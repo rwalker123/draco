@@ -126,6 +126,16 @@ export class PrismaManagerRepository implements IManagerRepository {
     });
   }
 
+  async findManagersForTeams(teamSeasonIds: bigint[]): Promise<dbTeamManagerWithContact[]> {
+    if (teamSeasonIds.length === 0) {
+      return [];
+    }
+    return this.prisma.teamseasonmanager.findMany({
+      where: { teamseasonid: { in: teamSeasonIds } },
+      include: { contacts: true },
+    });
+  }
+
   async createTeamManager(
     teamSeasonId: bigint,
     contactId: bigint,

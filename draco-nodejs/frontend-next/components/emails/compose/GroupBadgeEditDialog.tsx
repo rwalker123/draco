@@ -81,6 +81,8 @@ const GroupBadgeEditDialogComponent: React.FC<GroupBadgeEditDialogProps> = ({
   useEffect(() => {
     if (!open) return;
 
+    let cancelled = false;
+
     const fetchContacts = async () => {
       setLoading(true);
       setError(null);
@@ -89,8 +91,10 @@ const GroupBadgeEditDialogComponent: React.FC<GroupBadgeEditDialogProps> = ({
       const groupId = Array.from(group.ids)[0];
 
       if (!groupId) {
-        setError('No group ID found');
-        setLoading(false);
+        if (!cancelled) {
+          setError('No group ID found');
+          setLoading(false);
+        }
         return;
       }
 
@@ -102,6 +106,8 @@ const GroupBadgeEditDialogComponent: React.FC<GroupBadgeEditDialogProps> = ({
         groupId,
         group.managersOnly,
       );
+
+      if (cancelled) return;
 
       if (!result.success) {
         setError(result.error?.message || 'Failed to load contacts');
@@ -115,6 +121,10 @@ const GroupBadgeEditDialogComponent: React.FC<GroupBadgeEditDialogProps> = ({
     };
 
     fetchContacts();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, accountId, token, seasonId, group, mapGroupTypeToApiGroupType]);
 
   const filteredContacts = useMemo(() => {

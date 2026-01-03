@@ -694,7 +694,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
               continue;
             }
 
-            if (!['season', 'league', 'division', 'teams'].includes(groupType)) {
+            if (!['season', 'league', 'division', 'team'].includes(groupType)) {
               dispatch({
                 type: 'ADD_ERROR',
                 payload: {

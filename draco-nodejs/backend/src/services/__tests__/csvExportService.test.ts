@@ -34,6 +34,7 @@ class ManagerRepositoryStub implements IManagerRepository {
   count = vi.fn<IManagerRepository['count']>();
   findSeasonManagers = vi.fn<IManagerRepository['findSeasonManagers']>();
   findTeamManagers = vi.fn<IManagerRepository['findTeamManagers']>();
+  findManagersForTeams = vi.fn<IManagerRepository['findManagersForTeams']>();
   createTeamManager = vi.fn<IManagerRepository['createTeamManager']>();
   findTeamManager = vi.fn<IManagerRepository['findTeamManager']>();
   findLeagueManagersForExport = vi.fn<IManagerRepository['findLeagueManagersForExport']>();

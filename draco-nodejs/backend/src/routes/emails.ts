@@ -54,11 +54,16 @@ router.get(
       throw new ValidationError(`groupType must be one of: ${RECIPIENT_GROUP_TYPES.join(', ')}`);
     }
 
+    const groupIdStr = groupId as string;
+    if (groupType !== 'season' && !/^\d+$/.test(groupIdStr)) {
+      throw new ValidationError('groupId must be a valid numeric identifier');
+    }
+
     const contacts = await emailService.getGroupContacts(
       accountId,
       seasonId,
       groupType as RecipientGroupType,
-      groupId as string,
+      groupIdStr,
       managersOnly === 'true',
     );
 

@@ -1883,10 +1883,12 @@ export class EmailService {
     if (groupType === 'season') {
       if (managersOnly) {
         const seasonTeams = await this.teamService.getTeamsBySeasonId(seasonId, accountId);
-        for (const team of seasonTeams) {
-          const teamManagers = await this.teamManagerService.listManagers(BigInt(team.id));
+        const teamIds = seasonTeams.map((team) => BigInt(team.id));
+        const managersByTeam = await this.teamManagerService.listManagersForTeams(teamIds);
+
+        for (const managers of managersByTeam.values()) {
           contacts.push(
-            ...teamManagers.map((manager) => ({
+            ...managers.map((manager) => ({
               id: manager.contact.id,
               firstName: manager.contact.firstName,
               lastName: manager.contact.lastName,
@@ -1971,9 +1973,11 @@ export class EmailService {
   private async getSeasonManagerIds(seasonId: bigint, accountId: bigint): Promise<Set<string>> {
     const managerIds = new Set<string>();
     const seasonTeams = await this.teamService.getTeamsBySeasonId(seasonId, accountId);
-    for (const team of seasonTeams) {
-      const teamManagers = await this.teamManagerService.listManagers(BigInt(team.id));
-      teamManagers.forEach((manager) => managerIds.add(manager.contact.id));
+    const teamIds = seasonTeams.map((team) => BigInt(team.id));
+    const managersByTeam = await this.teamManagerService.listManagersForTeams(teamIds);
+
+    for (const managers of managersByTeam.values()) {
+      managers.forEach((manager) => managerIds.add(manager.contact.id));
     }
     return managerIds;
   }
@@ -1985,11 +1989,13 @@ export class EmailService {
     accountId: bigint,
     managersOnly: boolean,
   ): Promise<void> {
-    for (const team of teams) {
-      if (managersOnly) {
-        const teamManagers = await this.teamManagerService.listManagers(BigInt(team.id));
+    const teamIds = teams.map((team) => BigInt(team.id));
+    const managersByTeam = await this.teamManagerService.listManagersForTeams(teamIds);
+
+    if (managersOnly) {
+      for (const managers of managersByTeam.values()) {
         contacts.push(
-          ...teamManagers.map((manager) => ({
+          ...managers.map((manager) => ({
             id: manager.contact.id,
             firstName: manager.contact.firstName,
             lastName: manager.contact.lastName,
@@ -1998,14 +2004,19 @@ export class EmailService {
             isManager: true,
           })),
         );
-      } else {
+      }
+    } else {
+      const allManagerContactIds = new Set<string>();
+      for (const managers of managersByTeam.values()) {
+        managers.forEach((m) => allManagerContactIds.add(m.contact.id));
+      }
+
+      for (const team of teams) {
         const teamMembers = await this.rosterService.getTeamRosterMembers(
           BigInt(team.id),
           seasonId,
           accountId,
         );
-        const teamManagers = await this.teamManagerService.listManagers(BigInt(team.id));
-        const managerContactIds = new Set(teamManagers.map((m) => m.contact.id));
 
         contacts.push(
           ...teamMembers.rosterMembers.map((rosterMember) => ({
@@ -2014,7 +2025,7 @@ export class EmailService {
             lastName: rosterMember.player.contact.lastName,
             email: rosterMember.player.contact.email ?? null,
             hasValidEmail: this.hasValidEmail(rosterMember.player.contact.email ?? null),
-            isManager: managerContactIds.has(rosterMember.player.contact.id),
+            isManager: allManagerContactIds.has(rosterMember.player.contact.id),
           })),
         );
       }
