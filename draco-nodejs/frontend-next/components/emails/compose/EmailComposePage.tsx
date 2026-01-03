@@ -32,7 +32,13 @@ import { FileUploadComponent } from '../attachments/FileUploadComponent';
 import RichTextEditor, { type RichTextEditorHandle } from '../../email/RichTextEditor';
 import ConfirmationDialog from '../../common/ConfirmationDialog';
 
-import { RecipientContact, RecipientSelectionState } from '../../../types/emails/recipients';
+import {
+  RecipientContact,
+  RecipientSelectionState,
+  ContactGroup,
+} from '../../../types/emails/recipients';
+import { GroupBadgeEditDialog } from './GroupBadgeEditDialog';
+import { GroupContact } from '../../../services/emailRecipientService';
 import { EmailAttachment } from '../../../types/emails/attachments';
 import { EmailComposeRequest } from '../../../types/emails/email';
 import PageSectionHeader from '../../common/PageSectionHeader';
@@ -59,6 +65,8 @@ interface DialogState {
   scheduleDialogOpen: boolean;
   advancedRecipientDialogOpen: boolean;
   cancelConfirmDialogOpen: boolean;
+  groupEditDialogOpen: boolean;
+  editingGroup: ContactGroup | null;
 }
 
 interface ComponentState {
@@ -97,6 +105,8 @@ const EmailComposePageInternal: React.FC<
       scheduleDialogOpen: false,
       advancedRecipientDialogOpen: false,
       cancelConfirmDialogOpen: false,
+      groupEditDialogOpen: false,
+      editingGroup: null,
     });
 
     const [componentState, setComponentState] = useState<ComponentState>({
@@ -202,6 +212,38 @@ const EmailComposePageInternal: React.FC<
     const handleCancelDialogClose = useCallback(() => {
       setDialogState((prev) => ({ ...prev, cancelConfirmDialogOpen: false }));
     }, []);
+
+    // Handle group edit dialog
+    const handleEditGroup = useCallback((group: ContactGroup) => {
+      setDialogState((prev) => ({
+        ...prev,
+        groupEditDialogOpen: true,
+        editingGroup: group,
+      }));
+    }, []);
+
+    const handleEditGroupClose = useCallback(() => {
+      setDialogState((prev) => ({
+        ...prev,
+        groupEditDialogOpen: false,
+        editingGroup: null,
+      }));
+    }, []);
+
+    const handleEditGroupApply = useCallback(
+      (selectedContactIds: Set<string>, allContacts: GroupContact[]) => {
+        if (!dialogState.editingGroup) return;
+
+        actions.convertGroupToIndividuals(
+          dialogState.editingGroup,
+          selectedContactIds,
+          allContacts,
+        );
+        showNotification('Group converted to individual selections', 'success');
+        handleEditGroupClose();
+      },
+      [dialogState.editingGroup, actions, showNotification, handleEditGroupClose],
+    );
 
     // Error handling and retry functionality
     const handleRetry = useCallback(() => {
@@ -423,6 +465,7 @@ const EmailComposePageInternal: React.FC<
                   compact={isMobile}
                   onRecipientSelectionClick={handleAdvancedRecipientOpen}
                   onCancelClick={handleCancelClick}
+                  onEditGroup={handleEditGroup}
                   loading={loading}
                 />
 
@@ -543,6 +586,7 @@ const EmailComposePageInternal: React.FC<
             initialWorkoutManagersOnly={state.recipientState?.workoutManagersOnly}
             initialTeamsWantedRecipients={state.recipientState?.selectedTeamsWantedRecipients}
             initialUmpireRecipients={state.recipientState?.selectedUmpireRecipients}
+            initialIndividualContactDetails={state.recipientState?.individualContactDetails}
           />
         </ErrorBoundary>
 
@@ -558,12 +602,24 @@ const EmailComposePageInternal: React.FC<
           confirmButtonColor="error"
         />
 
+        {/* Group Badge Edit Dialog */}
+        {dialogState.editingGroup && (
+          <GroupBadgeEditDialog
+            open={dialogState.groupEditDialogOpen}
+            onClose={handleEditGroupClose}
+            onApply={handleEditGroupApply}
+            accountId={accountId}
+            seasonId={seasonId || ''}
+            group={dialogState.editingGroup}
+          />
+        )}
+
         {/* Notifications */}
         <Snackbar
           open={!!notification}
           autoHideDuration={6000}
           onClose={handleNotificationClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
           <Alert
             onClose={handleNotificationClose}

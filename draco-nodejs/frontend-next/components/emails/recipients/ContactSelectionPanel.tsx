@@ -21,6 +21,8 @@ import {
   CircularProgress,
   Alert,
   AlertTitle,
+  ToggleButton,
+  Badge,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -42,7 +44,7 @@ import { ErrorBoundary } from '../../common/ErrorBoundary';
 export interface ContactSelectionPanelProps {
   selectedContactIds: Set<string>;
   searchQuery: string;
-  onSearchChange: (query: string) => void;
+  onSearchChange?: (query: string) => void;
   onContactToggle: (contactId: string) => void;
   onSelectAll: () => void;
   onClearAll: () => void;
@@ -68,6 +70,13 @@ export interface ContactSelectionPanelProps {
   contacts?: RecipientContact[];
   // Search results message to display above pagination
   searchResultsMessage?: React.ReactNode;
+  // Hide pagination controls (for "show selected only" mode)
+  hidePagination?: boolean;
+  // Total selected count for badge display
+  totalSelectedCount?: number;
+  // Show selected only toggle
+  showSelectedOnly?: boolean;
+  onToggleShowSelected?: () => void;
 }
 
 /**
@@ -96,6 +105,10 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
   error = null,
   contacts: propContacts,
   searchResultsMessage,
+  hidePagination = false,
+  totalSelectedCount = 0,
+  showSelectedOnly = false,
+  onToggleShowSelected,
 }) => {
   // const theme = useTheme(); // Available for future styling needs
 
@@ -158,7 +171,9 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
 
   // Handle clear search
   const handleClearSearch = () => {
-    onSearchChange('');
+    if (onSearchChange) {
+      onSearchChange('');
+    }
   };
 
   // Handle contact selection
@@ -291,7 +306,8 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
             fullWidth
             placeholder="Search contacts..."
             value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
+            onChange={(e) => onSearchChange?.(e.target.value)}
+            disabled={!onSearchChange}
             size={compact ? 'small' : 'medium'}
             InputProps={{
               startAdornment: (
@@ -299,7 +315,7 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
                   <SearchIcon color="action" />
                 </InputAdornment>
               ),
-              endAdornment: searchQuery && (
+              endAdornment: searchQuery && onSearchChange && (
                 <InputAdornment position="end">
                   <IconButton size="small" onClick={handleClearSearch}>
                     <ClearIcon />
@@ -310,8 +326,40 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
           />
 
           {/* Controls */}
-          <Stack direction="row" alignItems="center" justifyContent="flex-end">
-            <Stack direction="row" alignItems="center" spacing={2}></Stack>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            {/* Show Selected Toggle */}
+            <Stack direction="row" alignItems="center" spacing={1}>
+              {onToggleShowSelected && (
+                <ToggleButton
+                  value="showSelected"
+                  selected={showSelectedOnly}
+                  onChange={onToggleShowSelected}
+                  size="small"
+                  disabled={totalSelectedCount === 0 && !showSelectedOnly}
+                  sx={{
+                    textTransform: 'none',
+                    px: 1.5,
+                    py: 0.5,
+                  }}
+                >
+                  <Badge
+                    badgeContent={totalSelectedCount}
+                    color="primary"
+                    max={999}
+                    sx={{ '& .MuiBadge-badge': { right: -12, top: 2 } }}
+                  >
+                    <Typography variant="body2" sx={{ pr: 1.5 }}>
+                      Show Selected
+                    </Typography>
+                  </Badge>
+                </ToggleButton>
+              )}
+              {showSelectedOnly && (
+                <Typography variant="body2" color="text.secondary">
+                  Showing {propContacts?.length || 0} selected
+                </Typography>
+              )}
+            </Stack>
 
             {/* Action buttons */}
             <Stack direction="row" spacing={1}>
@@ -426,24 +474,41 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
           borderColor: 'divider',
           backgroundColor: 'background.paper',
           flexShrink: 0,
-          display: (hasNext || hasPrev) && displayContacts.length > 0 ? 'block' : 'none',
+          display:
+            !hidePagination && (hasNext || hasPrev) && displayContacts.length > 0
+              ? 'block'
+              : 'none',
         }}
       >
-        <StreamPaginationControl
-          page={currentPage}
-          rowsPerPage={rowsPerPage}
-          hasNext={hasNext}
-          hasPrev={hasPrev}
-          onNextPage={onNextPage || stableOnNextPage}
-          onPrevPage={onPrevPage || stableOnPrevPage}
-          onRowsPerPageChange={onRowsPerPageChange || stableOnRowsPerPageChange}
-          currentItems={displayContacts.length}
-          itemLabel="contacts"
-          loading={loading}
-          variant="compact"
-          showPageSize={false}
-          showJumpControls={false}
-        />
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ px: 2, py: 0.5 }}
+        >
+          {totalSelectedCount > 0 && (
+            <Typography variant="body2" color="text.secondary">
+              {totalSelectedCount} selected
+            </Typography>
+          )}
+          <Box sx={{ flex: 1 }}>
+            <StreamPaginationControl
+              page={currentPage}
+              rowsPerPage={rowsPerPage}
+              hasNext={hasNext}
+              hasPrev={hasPrev}
+              onNextPage={onNextPage || stableOnNextPage}
+              onPrevPage={onPrevPage || stableOnPrevPage}
+              onRowsPerPageChange={onRowsPerPageChange || stableOnRowsPerPageChange}
+              currentItems={displayContacts.length}
+              itemLabel="contacts"
+              loading={loading}
+              variant="compact"
+              showPageSize={false}
+              showJumpControls={false}
+            />
+          </Box>
+        </Stack>
       </Box>
     </Box>
   );

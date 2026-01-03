@@ -1,3 +1,4 @@
+import { RECIPIENT_GROUP_TYPES } from '@draco/shared-schemas';
 import { RegisterContext } from '../../openapiTypes.js';
 
 export const registerEmailsEndpoints = ({ registry, schemaRefs, z }: RegisterContext) => {
@@ -15,6 +16,129 @@ export const registerEmailsEndpoints = ({ registry, schemaRefs, z }: RegisterCon
     EmailTemplatesListSchemaRef,
     AttachmentUploadResultSchemaRef,
   } = schemaRefs;
+
+  /**
+   * GET /api/accounts/:accountId/seasons/:seasonId/group-contacts
+   * Get contacts for a specific group (season, league, division, or team)
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/group-contacts',
+    summary: 'Get group contacts',
+    description:
+      'Returns contacts for a specific group (season, league, division, or team) for email recipient editing.',
+    operationId: 'getGroupContacts',
+    tags: ['Emails'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'groupType',
+        in: 'query',
+        required: true,
+        schema: {
+          type: 'string',
+          enum: RECIPIENT_GROUP_TYPES,
+        },
+      },
+      {
+        name: 'groupId',
+        in: 'query',
+        required: true,
+        schema: {
+          type: 'string',
+        },
+      },
+      {
+        name: 'managersOnly',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'string',
+          enum: ['true', 'false'],
+          default: 'false',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'List of contacts in the group',
+        content: {
+          'application/json': {
+            schema: z.object({
+              contacts: z.array(
+                z.object({
+                  id: z.string(),
+                  firstName: z.string(),
+                  lastName: z.string(),
+                  email: z.string().nullable(),
+                  hasValidEmail: z.boolean(),
+                  isManager: z.boolean(),
+                }),
+              ),
+            }),
+          },
+        },
+      },
+      400: {
+        description: 'Validation failed',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account or season not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Unexpected server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
 
   /**
    * POST /api/accounts/:accountId/emails/compose

@@ -21,7 +21,8 @@ export function useHierarchicalSelection(
 
       // Update the clicked item
       const playerCount = hierarchyMaps.playerCountMap.get(itemId) || 0;
-      newStateMap.set(itemId, { state: newState, playerCount });
+      const managerCount = hierarchyMaps.managerCountMap.get(itemId) || 0;
+      newStateMap.set(itemId, { state: newState, playerCount, managerCount });
 
       // Recursive function to update children
       const updateChildren = (parentId: string, state: 'selected' | 'unselected') => {
@@ -29,7 +30,12 @@ export function useHierarchicalSelection(
         if (children) {
           children.forEach((childId) => {
             const childPlayerCount = hierarchyMaps.playerCountMap.get(childId) || 0;
-            newStateMap.set(childId, { state, playerCount: childPlayerCount });
+            const childManagerCount = hierarchyMaps.managerCountMap.get(childId) || 0;
+            newStateMap.set(childId, {
+              state,
+              playerCount: childPlayerCount,
+              managerCount: childManagerCount,
+            });
             updateChildren(childId, state);
           });
         }
@@ -48,6 +54,7 @@ export function useHierarchicalSelection(
 
         let selectedCount = 0;
         let totalPlayerCount = 0;
+        let totalManagerCount = 0;
 
         children.forEach((childId) => {
           const childState = newStateMap.get(childId);
@@ -55,21 +62,31 @@ export function useHierarchicalSelection(
             if (childState.state === 'selected') {
               selectedCount++;
               totalPlayerCount += childState.playerCount;
+              totalManagerCount += childState.managerCount;
             } else if (childState.state === 'intermediate') {
               totalPlayerCount += childState.playerCount;
+              totalManagerCount += childState.managerCount;
             }
           }
         });
 
         if (selectedCount === children.size) {
           // All children selected -> parent selected
-          newStateMap.set(parentId, { state: 'selected', playerCount: totalPlayerCount });
+          newStateMap.set(parentId, {
+            state: 'selected',
+            playerCount: totalPlayerCount,
+            managerCount: totalManagerCount,
+          });
         } else if (selectedCount > 0 || totalPlayerCount > 0) {
           // Some children selected or intermediate -> parent intermediate
-          newStateMap.set(parentId, { state: 'intermediate', playerCount: totalPlayerCount });
+          newStateMap.set(parentId, {
+            state: 'intermediate',
+            playerCount: totalPlayerCount,
+            managerCount: totalManagerCount,
+          });
         } else {
           // No children selected -> parent unselected
-          newStateMap.set(parentId, { state: 'unselected', playerCount: 0 });
+          newStateMap.set(parentId, { state: 'unselected', playerCount: 0, managerCount: 0 });
         }
 
         // Recursively update parent's parent

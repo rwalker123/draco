@@ -3,6 +3,7 @@ import {
   ContactType,
   DivisionSeasonWithTeamsType,
   LeagueSeasonWithDivisionTeamsAndUnassignedType,
+  RecipientGroupType,
   TeamSeasonWithPlayerCountType,
 } from '@draco/shared-schemas';
 
@@ -221,7 +222,7 @@ export interface RecipientSelectionActions
 // ===== UNIFIED GROUP ARCHITECTURE =====
 
 // Group types for unified architecture
-export type GroupType = 'individuals' | 'season' | 'league' | 'division' | 'teams';
+export type GroupType = RecipientGroupType | 'individuals';
 
 // ===== HIERARCHICAL SELECTION INTERFACES =====
 
@@ -287,6 +288,7 @@ export interface HierarchicalGroupSelectionActions {
 export interface HierarchicalSelectionItem {
   state: 'selected' | 'intermediate' | 'unselected';
   playerCount: number;
+  managerCount: number;
 }
 
 // Props for hierarchical group selection component
@@ -445,6 +447,9 @@ export interface RecipientSelectionState {
   hasPrevPage?: boolean;
   contactsLoading?: boolean;
   contactsError?: string | null;
+
+  // Contact details for individual selections (used for cache population when dialog reopens)
+  individualContactDetails?: Map<string, RecipientContact>;
 }
 
 // ===== FACTORY FUNCTIONS FOR DRY PRINCIPLE =====
@@ -909,7 +914,7 @@ export const convertHierarchicalToContactGroups = (
 
       if (teamDetails && !isParentLeagueSelected && !isParentDivisionSelected) {
         const teamGroup: ContactGroup = {
-          groupType: 'teams',
+          groupType: 'team',
           groupName: `Team: ${teamDetails.name}`,
           ids: new Set([teamId]), // Team ID
           totalCount: state.managersOnly
@@ -921,7 +926,7 @@ export const convertHierarchicalToContactGroups = (
       }
     });
     if (teamGroups.length > 0) {
-      groupsMap.set('teams', teamGroups);
+      groupsMap.set('team', teamGroups);
     }
   }
 
@@ -947,7 +952,7 @@ export const extractHierarchicalSelectionState = (
       } else if (groupType === 'division') {
         group.ids.forEach((id) => state.selectedDivisionIds.add(id));
         state.managersOnly = group.managersOnly;
-      } else if (groupType === 'teams') {
+      } else if (groupType === 'team') {
         group.ids.forEach((id) => state.selectedTeamIds.add(id));
         state.managersOnly = group.managersOnly;
       }

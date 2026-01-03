@@ -44,6 +44,8 @@ export interface ContactsTabContentProps {
   searchContacts: RecipientContact[];
   setSearchContacts: (contacts: RecipientContact[]) => void;
   onSearch?: (query: string) => Promise<void>;
+  selectedContactsFromCache: RecipientContact[];
+  totalSelectedCount: number;
 }
 
 const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
@@ -63,15 +65,19 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
   searchContacts,
   setSearchContacts,
   onSearch,
+  selectedContactsFromCache,
+  totalSelectedCount,
 }) => {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const triggerSearch = useCallback(
     (query: string) => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
+        searchTimeoutRef.current = null;
       }
 
       const trimmedQuery = query.trim();
@@ -79,6 +85,10 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
       if (!trimmedQuery) {
         setSearchContacts([]);
         setSearchError(null);
+        // Notify parent hook that search was cleared so it resets search state
+        if (onSearch) {
+          void onSearch('');
+        }
         return;
       }
 
@@ -104,7 +114,11 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
     setSearchContacts([]);
     setSearchError(null);
     setSearchQuery('');
-  }, [setSearchContacts]);
+    // Notify parent hook that search was cleared so it resets search state
+    if (onSearch) {
+      void onSearch('');
+    }
+  }, [setSearchContacts, onSearch]);
 
   const handleSearchChange = useCallback(
     (query: string) => {
@@ -123,13 +137,27 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
   }, []);
 
   const displayContacts = useMemo(() => {
+    if (showSelectedOnly) {
+      return selectedContactsFromCache;
+    }
     if (searchQuery?.trim() && searchContacts.length > 0) {
       return searchContacts;
     }
     return contacts;
-  }, [searchQuery, searchContacts, contacts]);
+  }, [showSelectedOnly, selectedContactsFromCache, searchQuery, searchContacts, contacts]);
 
   const hasSearchResults = Boolean(searchQuery?.trim() && searchContacts.length > 0);
+
+  const handleToggleShowSelected = useCallback(() => {
+    setShowSelectedOnly((prev) => !prev);
+    if (!showSelectedOnly) {
+      setSearchQuery('');
+      setSearchContacts([]);
+      if (onSearch) {
+        void onSearch('');
+      }
+    }
+  }, [showSelectedOnly, setSearchContacts, onSearch]);
 
   return (
     <Box sx={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -160,25 +188,31 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
       <ContactSelectionPanel
         contacts={displayContacts}
         selectedContactIds={selectedGroups.get('individuals')?.[0]?.ids || new Set()}
-        searchQuery={searchQuery}
-        onSearchChange={handleSearchChange}
+        searchQuery={showSelectedOnly ? '' : searchQuery}
+        onSearchChange={showSelectedOnly ? undefined : handleSearchChange}
         onContactToggle={unifiedActions.toggleContact}
         onSelectAll={() => {
           /* TODO: Handle select all */
         }}
         onClearAll={unifiedActions.clearAllRecipients}
-        currentPage={currentPage}
-        hasNext={paginationState.hasNext}
-        hasPrev={paginationState.hasPrev}
+        currentPage={showSelectedOnly ? 1 : currentPage}
+        hasNext={showSelectedOnly ? false : paginationState.hasNext}
+        hasPrev={showSelectedOnly ? false : paginationState.hasPrev}
         loading={isLoading}
-        onNextPage={paginationHandlers.handleNextPage}
-        onPrevPage={paginationHandlers.handlePrevPage}
-        onRowsPerPageChange={paginationHandlers.handleRowsPerPageChange}
+        onNextPage={showSelectedOnly ? undefined : paginationHandlers.handleNextPage}
+        onPrevPage={showSelectedOnly ? undefined : paginationHandlers.handlePrevPage}
+        onRowsPerPageChange={
+          showSelectedOnly ? undefined : paginationHandlers.handleRowsPerPageChange
+        }
         rowsPerPage={_rowsPerPage}
         error={searchError}
         compact={isMobile}
+        hidePagination={showSelectedOnly}
+        totalSelectedCount={totalSelectedCount}
+        showSelectedOnly={showSelectedOnly}
+        onToggleShowSelected={handleToggleShowSelected}
         searchResultsMessage={
-          hasSearchResults ? (
+          hasSearchResults && !showSelectedOnly ? (
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Typography variant="body2" color="text.secondary">
                 Showing search results for &ldquo;{searchQuery}&rdquo;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -110,6 +110,7 @@ export interface AdvancedRecipientDialogProps {
   initialWorkoutManagersOnly?: boolean;
   initialTeamsWantedRecipients?: TeamsWantedRecipientSelection[];
   initialUmpireRecipients?: UmpireRecipientSelection[];
+  initialIndividualContactDetails?: Map<string, RecipientContact>;
 }
 
 interface LoadingState {
@@ -160,6 +161,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   initialWorkoutManagersOnly,
   initialTeamsWantedRecipients,
   initialUmpireRecipients,
+  initialIndividualContactDetails,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -283,6 +285,10 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     isInSearchMode,
     paginationState,
     paginationHandlers,
+    cacheSelectedContact,
+    uncacheSelectedContact,
+    getSelectedContactsFromCache,
+    clearSelectedContactsCache,
   } = contactFetching;
 
   // Unified group system utilities
@@ -298,8 +304,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           const groupName =
             {
               individuals: 'Individual Selections',
-              managers: 'Managers',
-              teams: 'Teams',
+              team: 'Teams',
               division: 'Divisions',
               league: 'Leagues',
               season: 'Season Participants',
@@ -376,14 +381,16 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     });
 
     // Add counts from hierarchical selections - ONLY use season-level count
-    // The season level already contains the accurate rolled-up total of all selected players
+    // The season level already contains the accurate rolled-up total of all selected players/managers
     if (seasonId) {
       const seasonSelection = hierarchicalSelectedIds.get(seasonId);
       if (
         seasonSelection &&
         (seasonSelection.state === 'selected' || seasonSelection.state === 'intermediate')
       ) {
-        total += seasonSelection.playerCount;
+        total += hierarchicalManagersOnly
+          ? seasonSelection.managerCount
+          : seasonSelection.playerCount;
       }
     }
 
@@ -395,6 +402,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   }, [
     selectedGroups,
     hierarchicalSelectedIds,
+    hierarchicalManagersOnly,
     seasonId,
     workoutSelectionCount,
     teamsWantedSelectionCount,
@@ -412,6 +420,48 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     },
     [],
   );
+
+  // Sync internal state with props when dialog opens
+  // This is a legitimate one-time sync to reset dialog state from parent props
+  useEffect(() => {
+    if (open) {
+      /* eslint-disable react-hooks/set-state-in-effect -- legitimate prop-to-state sync on dialog open */
+      // Reset selectedGroups to match parent state
+      setSelectedGroups(initialSelectedGroups || new Map());
+
+      // Clear hierarchical selections - they are transient dialog state
+      // The parent only stores the final ContactGroups, not intermediate hierarchical state
+      setHierarchicalSelectedIds(new Map());
+      setHierarchicalManagersOnly(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [open, initialSelectedGroups]);
+
+  // Track whether we've populated the cache for the current dialog session
+  const cachePopulatedRef = useRef(false);
+
+  // Reset the ref when dialog closes
+  useEffect(() => {
+    if (!open) {
+      cachePopulatedRef.current = false;
+    }
+  }, [open]);
+
+  // Populate contact cache from initial individual contact details when dialog opens
+  // This enables "Show Selected" to display contacts that were converted from hierarchical selections
+  useEffect(() => {
+    if (
+      open &&
+      !cachePopulatedRef.current &&
+      initialIndividualContactDetails &&
+      initialIndividualContactDetails.size > 0
+    ) {
+      cachePopulatedRef.current = true;
+      initialIndividualContactDetails.forEach((contact) => {
+        cacheSelectedContact(contact);
+      });
+    }
+  }, [open, initialIndividualContactDetails, cacheSelectedContact]);
 
   // Load initial page when dialog opens
   useEffect(() => {
@@ -486,8 +536,10 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
         if (isContactInGroup('individuals', contactId)) {
           removeFromGroup('individuals', contactId);
+          uncacheSelectedContact(contactId);
         } else {
           addToGroup('individuals', contactId, contact);
+          cacheSelectedContact(contact);
         }
       },
 
@@ -498,6 +550,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         clearWorkoutSelections();
         clearTeamsWantedSelections();
         clearUmpireSelections();
+        clearSelectedContactsCache();
       },
 
       isContactSelected: (contactId: string): boolean => {
@@ -522,11 +575,27 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       clearWorkoutSelections,
       clearTeamsWantedSelections,
       clearUmpireSelections,
+      cacheSelectedContact,
+      uncacheSelectedContact,
+      clearSelectedContactsCache,
     ],
   );
 
   const hasWorkouts = useMemo(() => allWorkouts.length > 0, [allWorkouts]);
   const hasAnyData = hasContacts || hasWorkouts || hasTeamsWanted || hasUmpires;
+
+  // Compute individual selection count for the Contacts tab
+  const individualSelectionCount = useMemo(() => {
+    const individualsGroups = selectedGroups.get('individuals');
+    if (!individualsGroups) return 0;
+    return individualsGroups.reduce((sum, group) => sum + group.totalCount, 0);
+  }, [selectedGroups]);
+
+  // Get cached selected contacts for "Show Selected Only" mode
+  const selectedContactsFromCache = useMemo(
+    () => getSelectedContactsFromCache(),
+    [getSelectedContactsFromCache],
+  );
 
   // Determine overall loading state - include pagination loading
   const isGeneralLoading =
@@ -758,7 +827,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       'season',
       'league',
       'division',
-      'teams',
+      'team',
     ]);
 
     // Start with a copy of selectedGroups, but filter out old hierarchical groups
@@ -1124,6 +1193,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
                   searchContacts={searchContacts}
                   setSearchContacts={setSearchContacts}
                   onSearch={handleSearch}
+                  selectedContactsFromCache={selectedContactsFromCache}
+                  totalSelectedCount={individualSelectionCount}
                 />
               )}
 

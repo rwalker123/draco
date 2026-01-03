@@ -4,7 +4,12 @@ import multer from 'multer';
 
 import { ATTACHMENT_CONFIG } from '../config/attachments.js';
 import { EmailStatus } from '../interfaces/emailInterfaces.js';
-import { EmailSendSchema, UpsertEmailTemplateSchema } from '@draco/shared-schemas';
+import {
+  EmailSendSchema,
+  UpsertEmailTemplateSchema,
+  RECIPIENT_GROUP_TYPES,
+  RecipientGroupType,
+} from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -26,6 +31,40 @@ const upload = multer({
     files: ATTACHMENT_CONFIG.MAX_ATTACHMENTS_PER_EMAIL,
   },
 });
+
+/**
+ * @route GET /api/accounts/:accountId/seasons/:seasonId/group-contacts
+ * @desc Get contacts for a specific group (season, league, division, or team)
+ * @access Private - requires account.communications.manage permission
+ */
+router.get(
+  '/accounts/:accountId/seasons/:seasonId/group-contacts',
+  authenticateToken,
+  routeProtection.requirePermission('account.communications.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const seasonId = BigInt(req.params.seasonId);
+    const { groupType, groupId, managersOnly } = req.query;
+
+    if (!groupType || !groupId) {
+      throw new ValidationError('groupType and groupId are required');
+    }
+
+    if (!RECIPIENT_GROUP_TYPES.includes(groupType as RecipientGroupType)) {
+      throw new ValidationError(`groupType must be one of: ${RECIPIENT_GROUP_TYPES.join(', ')}`);
+    }
+
+    const contacts = await emailService.getGroupContacts(
+      accountId,
+      seasonId,
+      groupType as RecipientGroupType,
+      groupId as string,
+      managersOnly === 'true',
+    );
+
+    res.json({ contacts });
+  }),
+);
 
 /**
  * @route POST /api/accounts/:accountId/emails/compose

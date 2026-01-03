@@ -8969,44 +8969,27 @@
             "type": "boolean",
             "default": false
           },
-          "paging": {
-            "type": "object",
-            "properties": {
-              "page": {
-                "type": "number",
-                "nullable": true,
-                "default": 1
-              },
-              "limit": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 100,
-                "default": 50
-              },
-              "skip": {
-                "type": "number",
-                "nullable": true,
-                "minimum": 0,
-                "default": 0
-              },
-              "sortBy": {
-                "type": "string"
-              },
-              "sortOrder": {
-                "type": "string",
-                "enum": [
-                  "asc",
-                  "desc"
-                ],
-                "default": "asc"
-              }
-            },
-            "default": {
-              "page": 1,
-              "limit": 50,
-              "skip": 0,
-              "sortOrder": "asc"
-            }
+          "page": {
+            "type": "number",
+            "nullable": true,
+            "default": 1
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "asc"
           }
         }
       },
@@ -37862,46 +37845,44 @@
           },
           {
             "schema": {
-              "type": "object",
-              "properties": {
-                "page": {
-                  "type": "number",
-                  "nullable": true,
-                  "default": 1
-                },
-                "limit": {
-                  "type": "number",
-                  "minimum": 1,
-                  "maximum": 100,
-                  "default": 50
-                },
-                "skip": {
-                  "type": "number",
-                  "nullable": true,
-                  "minimum": 0,
-                  "default": 0
-                },
-                "sortBy": {
-                  "type": "string"
-                },
-                "sortOrder": {
-                  "type": "string",
-                  "enum": [
-                    "asc",
-                    "desc"
-                  ],
-                  "default": "asc"
-                }
-              },
-              "default": {
-                "page": 1,
-                "limit": 50,
-                "skip": 0,
-                "sortOrder": "asc"
-              }
+              "type": "number",
+              "nullable": true,
+              "default": 1
             },
             "required": false,
-            "name": "paging",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "sortBy",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "required": false,
+            "name": "sortOrder",
             "in": "query"
           }
         ],
@@ -39011,6 +38992,178 @@
           },
           "500": {
             "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/group-contacts": {
+      "get": {
+        "summary": "Get group contacts",
+        "description": "Returns contacts for a specific group (season, league, division, or team) for email recipient editing.",
+        "operationId": "getGroupContacts",
+        "tags": [
+          "Emails"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "groupType",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "season",
+                "league",
+                "division",
+                "team"
+              ]
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "managersOnly",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "default": "false"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of contacts in the group",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contacts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "firstName": {
+                            "type": "string"
+                          },
+                          "lastName": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "hasValidEmail": {
+                            "type": "boolean"
+                          },
+                          "isManager": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "firstName",
+                          "lastName",
+                          "email",
+                          "hasValidEmail",
+                          "isManager"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "contacts"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account or season not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
             "content": {
               "application/json": {
                 "schema": {

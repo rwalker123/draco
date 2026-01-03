@@ -196,3 +196,12 @@ export interface RecipientUpdateData {
   bounce_reason?: string;
   error_message?: string;
 }
+
+export interface GroupContactType {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  hasValidEmail: boolean;
+  isManager: boolean;
+}

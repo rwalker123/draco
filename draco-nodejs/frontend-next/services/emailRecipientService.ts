@@ -12,6 +12,7 @@ import {
   BaseContactType,
   PaginationType,
   LeagueSeasonWithDivisionTeamsType,
+  RecipientGroupType,
 } from '@draco/shared-schemas';
 import { RecipientContact } from '../types/emails/recipients';
 import { EmailRecipientErrorCode, AsyncResult, Result } from '../types/errors';
@@ -30,6 +31,7 @@ import {
   listSeasonManagers,
   getTeamRosterMembers,
   searchContacts as apiSearchContacts,
+  getGroupContacts as apiGetGroupContacts,
 } from '@draco/shared-api-client';
 import { createApiClient } from '../lib/apiClientFactory';
 import { unwrapApiResult } from '../utils/apiResult';
@@ -277,14 +279,9 @@ export class EmailRecipientService {
       includeInactive: false,
       includeRoles: false,
       onlyWithRoles: false,
-      ...(options.page !== undefined || options.limit !== undefined
-        ? {
-            paging: {
-              ...(options.page !== undefined ? { page: options.page } : {}),
-              ...(options.limit !== undefined ? { limit: options.limit } : {}),
-            },
-          }
-        : {}),
+      // Flat pagination params (API client serializes as flat query params)
+      ...(options.page !== undefined ? { page: options.page } : {}),
+      ...(options.limit !== undefined ? { limit: options.limit } : {}),
     });
 
     const apiClient = createApiClient({ token: token || undefined });
@@ -341,14 +338,9 @@ export class EmailRecipientService {
       seasonId: options.seasonId,
       includeRoles: options.roles,
       contactDetails: options.contactDetails,
-      paging:
-        options.page !== undefined || options.limit !== undefined
-          ? {
-              page: options.page ?? 1,
-              limit: options.limit ?? 50,
-              skip: ((options.page ?? 1) - 1) * (options.limit ?? 50),
-            }
-          : undefined,
+      // Flat pagination params (API client serializes as flat query params, backend calculates skip)
+      ...(options.page !== undefined ? { page: options.page } : {}),
+      ...(options.limit !== undefined ? { limit: options.limit } : {}),
     });
 
     const apiClient = createApiClient({ token: token || undefined });
@@ -855,6 +847,85 @@ export class EmailRecipientService {
       },
     );
   }
+
+  async fetchGroupContacts(
+    accountId: string,
+    token: string | null,
+    seasonId: string,
+    groupType: RecipientGroupType,
+    groupId: string,
+    managersOnly: boolean,
+  ): AsyncResult<GroupContact[]> {
+    if (!accountId || accountId.trim() === '') {
+      return {
+        success: false,
+        error: createEmailRecipientError(
+          EmailRecipientErrorCode.INVALID_DATA,
+          'Account ID is required',
+          { context: { operation: 'fetch_group_contacts' } },
+        ),
+      };
+    }
+
+    if (!seasonId || seasonId.trim() === '') {
+      return {
+        success: false,
+        error: createEmailRecipientError(
+          EmailRecipientErrorCode.INVALID_DATA,
+          'Season ID is required',
+          { context: { operation: 'fetch_group_contacts', accountId } },
+        ),
+      };
+    }
+
+    if (!groupId || groupId.trim() === '') {
+      return {
+        success: false,
+        error: createEmailRecipientError(
+          EmailRecipientErrorCode.INVALID_DATA,
+          'Group ID is required',
+          { context: { operation: 'fetch_group_contacts', accountId, seasonId } },
+        ),
+      };
+    }
+
+    const headersResult = this.getHeaders(token);
+    if (!headersResult.success) {
+      return { success: false, error: headersResult.error };
+    }
+
+    return this.executeRequest(
+      async () => {
+        const apiClient = createApiClient({ token: token || undefined });
+        const result = await apiGetGroupContacts({
+          client: apiClient,
+          path: { accountId, seasonId },
+          query: {
+            groupType: groupType as 'season' | 'league' | 'division' | 'team',
+            groupId,
+            managersOnly: managersOnly ? 'true' : 'false',
+          },
+          throwOnError: false,
+        });
+
+        const data = unwrapApiResult(result, 'Failed to fetch group contacts');
+        return data.contacts as GroupContact[];
+      },
+      {
+        operation: 'fetch_group_contacts',
+        additionalData: { endpoint: 'openapi:getGroupContacts' },
+      },
+    );
+  }
+}
+
+export interface GroupContact {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  hasValidEmail: boolean;
+  isManager: boolean;
 }
 
 /**

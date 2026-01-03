@@ -36,9 +36,10 @@ export const GroupSummaryDisplay: React.FC<GroupSummaryDisplayProps> = ({
         return <GroupsIcon />;
       case 'league':
         return <SportsIcon />;
-      case 'teams':
+      case 'division':
         return <SportsIcon />;
-      // 'managers' is no longer a group type - handled via managersOnly flag
+      case 'team':
+        return <SportsIcon />;
       default:
         return <GroupsIcon />;
     }
@@ -52,9 +53,10 @@ export const GroupSummaryDisplay: React.FC<GroupSummaryDisplayProps> = ({
         return 'secondary';
       case 'league':
         return 'info';
-      case 'teams':
+      case 'division':
+        return 'warning';
+      case 'team':
         return 'success';
-      // 'managers' is no longer a group type - handled via managersOnly flag
       default:
         return 'default';
     }
@@ -74,8 +76,8 @@ export const GroupSummaryDisplay: React.FC<GroupSummaryDisplayProps> = ({
               {groupType === 'individuals' && 'Individual Selections'}
               {groupType === 'season' && 'Season Participants'}
               {groupType === 'league' && 'League Communications'}
-              {groupType === 'teams' && 'Team Selections'}
-              {/* 'managers' is no longer a group type - handled via managersOnly flag */}
+              {groupType === 'division' && 'Division Selections'}
+              {groupType === 'team' && 'Team Selections'}
             </Box>
             <Box component="span" sx={{ ml: 1, color: 'text.secondary' }}>
               ({groups.length} {groups.length === 1 ? 'group' : 'groups'})

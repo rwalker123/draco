@@ -317,13 +317,23 @@ router.get(
     const includeContactDetails = searchParams.contactDetails;
     const filterOnlyWithRoles = searchParams.onlyWithRoles;
 
+    // Construct pagination object from flat params (API client serializes as flat query params)
+    // Backend calculates skip from page/limit anyway, but PagingType requires it
+    const pagination = {
+      page: searchParams.page,
+      limit: searchParams.limit,
+      skip: (searchParams.page - 1) * searchParams.limit,
+      sortBy: searchParams.sortBy,
+      sortOrder: searchParams.sortOrder,
+    };
+
     // Use ContactService to get contacts with roles
     const result = await contactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
       onlyWithRoles: filterOnlyWithRoles,
       includeContactDetails,
       searchQuery: searchParams.q ? searchParams.q.toString() : undefined,
-      pagination: searchParams.paging,
+      pagination,
     });
 
     res.json(result);
