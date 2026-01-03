@@ -65,6 +65,7 @@ router.get(
 router.post(
   '/',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
@@ -94,6 +95,7 @@ router.post(
 router.delete(
   '/:leagueSeasonId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, leagueSeasonId } = extractLeagueSeasonParams(req.params);
@@ -168,6 +170,7 @@ router.get(
 router.post(
   '/:leagueSeasonId/divisions',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, leagueSeasonId } = extractLeagueSeasonParams(req.params);
@@ -192,6 +195,7 @@ router.post(
 router.put(
   '/:leagueSeasonId/divisions/:divisionSeasonId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, leagueSeasonId, divisionSeasonId } = extractBigIntParams(
@@ -223,6 +227,7 @@ router.put(
 router.delete(
   '/:leagueSeasonId/divisions/:divisionSeasonId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, leagueSeasonId, divisionSeasonId } = extractBigIntParams(
@@ -246,6 +251,7 @@ router.delete(
 router.post(
   '/:leagueSeasonId/teams',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, leagueSeasonId } = extractLeagueSeasonParams(req.params);
@@ -269,6 +275,7 @@ router.post(
 router.put(
   '/:leagueSeasonId/teams/:teamSeasonId/assign-division',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, leagueSeasonId, teamSeasonId } = extractBigIntParams(
@@ -311,6 +318,7 @@ router.put(
 router.delete(
   '/:leagueSeasonId/teams/:teamSeasonId/remove-from-division',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, leagueSeasonId, teamSeasonId } = extractBigIntParams(

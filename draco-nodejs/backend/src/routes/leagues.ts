@@ -68,6 +68,7 @@ router.get(
 router.post(
   '/',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -87,6 +88,7 @@ router.post(
 router.put(
   '/:leagueId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');
@@ -107,6 +109,7 @@ router.put(
 router.delete(
   '/:leagueId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');

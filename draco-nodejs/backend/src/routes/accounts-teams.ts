@@ -15,6 +15,7 @@ const teamService = ServiceFactory.getTeamService();
 router.delete(
   '/:teamId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);

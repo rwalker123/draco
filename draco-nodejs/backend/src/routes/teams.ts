@@ -34,6 +34,7 @@ router.get(
 router.get(
   '/:teamSeasonId/league',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
@@ -68,6 +69,7 @@ router.get(
 router.delete(
   '/:teamSeasonId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
@@ -86,6 +88,7 @@ router.delete(
 router.put(
   '/:teamSeasonId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   logoUploadMiddleware(),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
