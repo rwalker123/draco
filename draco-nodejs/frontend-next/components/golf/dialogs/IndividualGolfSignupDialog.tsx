@@ -53,7 +53,7 @@ const getBrowserTimezone = (): string => {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   } catch {
-    return 'America/New_York';
+    return 'UTC';
   }
 };
 
