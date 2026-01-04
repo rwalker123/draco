@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -57,41 +57,35 @@ const getBrowserTimezone = (): string => {
   }
 };
 
-const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
-  open,
-  onClose,
-  onSuccess,
-}) => {
+type ContentProps = Omit<IndividualGolfSignupDialogProps, 'open'>;
+
+const IndividualGolfSignupDialogContent: React.FC<ContentProps> = ({ onClose, onSuccess }) => {
   const { user, setAuthToken, token } = useAuth();
   const { create, createAuthenticated } = useIndividualGolfAccountService();
 
   const isAuthenticated = Boolean(user && token);
 
-  const existingContact = useMemo(() => {
-    if (!user?.contact) return null;
-    return {
-      firstName: user.contact.firstName ?? '',
-      middleName: user.contact.middleName ?? '',
-      lastName: user.contact.lastName ?? '',
-    };
-  }, [user?.contact]);
+  const existingContact = user?.contact
+    ? {
+        firstName: user.contact.firstName ?? '',
+        middleName: user.contact.middleName ?? '',
+        lastName: user.contact.lastName ?? '',
+      }
+    : null;
 
-  const initialEmail = useMemo(() => {
-    return user?.userName ?? '';
-  }, [user?.userName]);
+  const initialEmail = user?.userName ?? '';
 
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors },
   } = useForm<IndividualGolfSignupFormType>({
     resolver: zodResolver(IndividualGolfSignupFormSchema),
     defaultValues: {
-      firstName: '',
-      middleName: '',
-      lastName: '',
-      email: '',
+      firstName: existingContact?.firstName ?? '',
+      middleName: existingContact?.middleName ?? '',
+      lastName: existingContact?.lastName ?? '',
+      email: initialEmail,
       password: '',
       confirmPassword: '',
     },
@@ -100,14 +94,13 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
   const {
     register: registerAuth,
     handleSubmit: handleSubmitAuth,
-    reset: resetAuth,
     formState: { errors: authErrors },
   } = useForm<AuthenticatedFormType>({
     resolver: zodResolver(AuthenticatedFormSchema),
     defaultValues: {
-      firstName: '',
-      middleName: '',
-      lastName: '',
+      firstName: existingContact?.firstName ?? '',
+      middleName: existingContact?.middleName ?? '',
+      lastName: existingContact?.lastName ?? '',
     },
   });
 
@@ -118,50 +111,6 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (open) {
-      reset({
-        firstName: existingContact?.firstName ?? '',
-        middleName: existingContact?.middleName ?? '',
-        lastName: existingContact?.lastName ?? '',
-        email: initialEmail,
-        password: '',
-        confirmPassword: '',
-      });
-      resetAuth({
-        firstName: existingContact?.firstName ?? '',
-        middleName: existingContact?.middleName ?? '',
-        lastName: existingContact?.lastName ?? '',
-      });
-      setError(null);
-      setCaptchaToken(null);
-      setCaptchaResetKey((key) => key + 1);
-      setCaptchaError(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
-  const handleClose = useCallback(() => {
-    reset({
-      firstName: '',
-      middleName: '',
-      lastName: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-    });
-    resetAuth({
-      firstName: '',
-      middleName: '',
-      lastName: '',
-    });
-    setError(null);
-    setCaptchaToken(null);
-    setCaptchaResetKey((key) => key + 1);
-    setCaptchaError(null);
-    onClose();
-  }, [onClose, reset, resetAuth]);
 
   const onSubmitUnauthenticated = async (data: IndividualGolfSignupFormType) => {
     if (requireCaptcha && !captchaToken) {
@@ -202,7 +151,7 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
         });
       }
 
-      handleClose();
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       if (requireCaptcha) {
@@ -237,7 +186,7 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
         });
       }
 
-      handleClose();
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
@@ -254,75 +203,7 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
 
   if (isAuthenticated) {
     return (
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <form onSubmit={handleSubmitAuth(onSubmitAuthenticated)}>
-          <DialogTitle>Create Your Golf Account</DialogTitle>
-          <DialogContent>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Track your golf scores, calculate your handicap, and view your stats.
-            </Typography>
-
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  label="First Name"
-                  {...registerAuth('firstName')}
-                  error={!!authErrors.firstName}
-                  helperText={authErrors.firstName?.message}
-                  fullWidth
-                  autoFocus
-                  disabled={loading}
-                  placeholder="John"
-                />
-                <TextField
-                  label="Middle Name"
-                  {...registerAuth('middleName')}
-                  error={!!authErrors.middleName}
-                  helperText={authErrors.middleName?.message}
-                  fullWidth
-                  disabled={loading}
-                  placeholder="(optional)"
-                  sx={{ maxWidth: 150 }}
-                />
-              </Box>
-              <TextField
-                label="Last Name"
-                {...registerAuth('lastName')}
-                error={!!authErrors.lastName}
-                helperText={authErrors.lastName?.message}
-                fullWidth
-                disabled={loading}
-                placeholder="Smith"
-              />
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleClose} disabled={loading}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} /> : null}
-            >
-              {loading ? 'Creating...' : 'Create Account'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-    );
-  }
-
-  return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <form onSubmit={handleSubmit(onSubmitUnauthenticated)}>
+      <form onSubmit={handleSubmitAuth(onSubmitAuthenticated)}>
         <DialogTitle>Create Your Golf Account</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -339,9 +220,9 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
                 label="First Name"
-                {...register('firstName')}
-                error={!!errors.firstName}
-                helperText={errors.firstName?.message}
+                {...registerAuth('firstName')}
+                error={!!authErrors.firstName}
+                helperText={authErrors.firstName?.message}
                 fullWidth
                 autoFocus
                 disabled={loading}
@@ -349,9 +230,9 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
               />
               <TextField
                 label="Middle Name"
-                {...register('middleName')}
-                error={!!errors.middleName}
-                helperText={errors.middleName?.message}
+                {...registerAuth('middleName')}
+                error={!!authErrors.middleName}
+                helperText={authErrors.middleName?.message}
                 fullWidth
                 disabled={loading}
                 placeholder="(optional)"
@@ -360,72 +241,146 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
             </Box>
             <TextField
               label="Last Name"
-              {...register('lastName')}
-              error={!!errors.lastName}
-              helperText={errors.lastName?.message}
+              {...registerAuth('lastName')}
+              error={!!authErrors.lastName}
+              helperText={authErrors.lastName?.message}
               fullWidth
               disabled={loading}
               placeholder="Smith"
             />
-
-            <TextField
-              label="User Name"
-              type="email"
-              {...register('email')}
-              error={!!errors.email}
-              helperText={errors.email?.message}
-              fullWidth
-              disabled={loading}
-              placeholder="Enter your email address"
-            />
-
-            <TextField
-              label="Password"
-              type="password"
-              {...register('password')}
-              error={!!errors.password}
-              helperText={errors.password?.message || 'At least 6 characters'}
-              fullWidth
-              disabled={loading}
-            />
-
-            <TextField
-              label="Confirm Password"
-              type="password"
-              {...register('confirmPassword')}
-              error={!!errors.confirmPassword}
-              helperText={errors.confirmPassword?.message}
-              fullWidth
-              disabled={loading}
-            />
-
-            {requireCaptcha && (
-              <Box sx={{ mt: 1 }}>
-                <TurnstileChallenge
-                  onTokenChange={handleCaptchaChange}
-                  resetSignal={captchaResetKey}
-                  error={captchaError}
-                />
-              </Box>
-            )}
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>
+          <Button onClick={onClose} disabled={loading}>
             Cancel
           </Button>
           <Button
             type="submit"
             variant="contained"
-            disabled={loading || (requireCaptcha && !captchaToken)}
+            disabled={loading}
             startIcon={loading ? <CircularProgress size={20} /> : null}
           >
             {loading ? 'Creating...' : 'Create Account'}
           </Button>
         </DialogActions>
       </form>
-    </Dialog>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmitUnauthenticated)}>
+      <DialogTitle>Create Your Golf Account</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Track your golf scores, calculate your handicap, and view your stats.
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <TextField
+              label="First Name"
+              {...register('firstName')}
+              error={!!errors.firstName}
+              helperText={errors.firstName?.message}
+              fullWidth
+              autoFocus
+              disabled={loading}
+              placeholder="John"
+            />
+            <TextField
+              label="Middle Name"
+              {...register('middleName')}
+              error={!!errors.middleName}
+              helperText={errors.middleName?.message}
+              fullWidth
+              disabled={loading}
+              placeholder="(optional)"
+              sx={{ maxWidth: 150 }}
+            />
+          </Box>
+          <TextField
+            label="Last Name"
+            {...register('lastName')}
+            error={!!errors.lastName}
+            helperText={errors.lastName?.message}
+            fullWidth
+            disabled={loading}
+            placeholder="Smith"
+          />
+
+          <TextField
+            label="User Name"
+            type="email"
+            {...register('email')}
+            error={!!errors.email}
+            helperText={errors.email?.message}
+            fullWidth
+            disabled={loading}
+            placeholder="Enter your email address"
+          />
+
+          <TextField
+            label="Password"
+            type="password"
+            {...register('password')}
+            error={!!errors.password}
+            helperText={errors.password?.message || 'At least 6 characters'}
+            fullWidth
+            disabled={loading}
+          />
+
+          <TextField
+            label="Confirm Password"
+            type="password"
+            {...register('confirmPassword')}
+            error={!!errors.confirmPassword}
+            helperText={errors.confirmPassword?.message}
+            fullWidth
+            disabled={loading}
+          />
+
+          {requireCaptcha && (
+            <Box sx={{ mt: 1 }}>
+              <TurnstileChallenge
+                onTokenChange={handleCaptchaChange}
+                resetSignal={captchaResetKey}
+                error={captchaError}
+              />
+            </Box>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} disabled={loading}>
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={loading || (requireCaptcha && !captchaToken)}
+          startIcon={loading ? <CircularProgress size={20} /> : null}
+        >
+          {loading ? 'Creating...' : 'Create Account'}
+        </Button>
+      </DialogActions>
+    </form>
   );
 };
+
+const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
+  open,
+  onClose,
+  onSuccess,
+}) => (
+  <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    {open && <IndividualGolfSignupDialogContent onClose={onClose} onSuccess={onSuccess} />}
+  </Dialog>
+);
 
 export default IndividualGolfSignupDialog;
