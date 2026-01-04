@@ -12,6 +12,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import LockIcon from '@mui/icons-material/Lock';
 import DescriptionIcon from '@mui/icons-material/Description';
 import type { BaseContactType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
@@ -23,6 +24,7 @@ interface ContactInfoCardProps {
   error?: string | null;
   accountName?: string;
   onEdit?: () => void;
+  onChangePassword?: () => void;
   surveyHref?: string;
   surveyAccountId?: string | null;
   infoMessage?: string | null;
@@ -84,6 +86,7 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   error,
   accountName,
   onEdit,
+  onChangePassword,
   surveyHref,
   surveyAccountId,
   infoMessage,
@@ -159,9 +162,22 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
     ) : null;
 
   const actionButtons =
-    surveyButton || onEdit ? (
+    surveyButton || onEdit || onChangePassword ? (
       <Stack direction="row" spacing={1}>
         {surveyButton}
+        {onChangePassword && (
+          <Tooltip title="Change password">
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={onChangePassword}
+              data-testid="profile-change-password-button"
+              sx={{ minWidth: 36, px: 1 }}
+            >
+              <LockIcon fontSize="small" />
+            </Button>
+          </Tooltip>
+        )}
         {onEdit && (
           <Tooltip title="Edit contact information">
             <Button
