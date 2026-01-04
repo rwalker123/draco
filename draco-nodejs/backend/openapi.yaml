@@ -21842,6 +21842,63 @@ components:
         - womansSlope
       title: ExternalCourseTee
       description: Tee information from external course data
+    Golfer:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        initialDifferential:
+          type: number
+          nullable: true
+        homeCourse:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            address:
+              type: string
+              nullable: true
+            city:
+              type: string
+              nullable: true
+            state:
+              type: string
+              nullable: true
+          required:
+            - id
+            - name
+          title: GolfCourseSlim
+          description: Minimal golf course info for match listings
+      required:
+        - id
+        - contactId
+      title: Golfer
+      description: A golfer profile with optional home course
+    UpdateGolferHomeCourse:
+      type: object
+      properties:
+        homeCourseId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+      required:
+        - homeCourseId
+      title: UpdateGolferHomeCourse
+      description: Request to update a golfer home course
   securitySchemes:
     bearerAuth:
       type: http
@@ -23126,6 +23183,111 @@ paths:
                 $ref: "#/components/schemas/AuthorizationError"
         "404":
           description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golfer:
+    get:
+      operationId: getAccountGolfer
+      summary: Get golfer for account
+      description: Get the golfer profile for an individual golf account.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Golfer profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Golfer"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account or golfer not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golfer/home-course:
+    patch:
+      operationId: updateGolferHomeCourse
+      summary: Update golfer home course
+      description: Update the home course for an individual golf account.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGolferHomeCourse"
+      responses:
+        "200":
+          description: Updated golfer profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Golfer"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account or golfer not found
           content:
             application/json:
               schema:

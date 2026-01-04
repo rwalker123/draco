@@ -66,6 +66,7 @@ import {
   IGolfRosterRepository,
   IGolfMatchRepository,
   IGolfScoreRepository,
+  IGolferRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -133,6 +134,7 @@ import {
   PrismaGolfRosterRepository,
   PrismaGolfMatchRepository,
   PrismaGolfScoreRepository,
+  PrismaGolferRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -207,6 +209,7 @@ export class RepositoryFactory {
   private static golfRosterRepository: IGolfRosterRepository;
   private static golfMatchRepository: IGolfMatchRepository;
   private static golfScoreRepository: IGolfScoreRepository;
+  private static golferRepository: IGolferRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -691,5 +694,12 @@ export class RepositoryFactory {
       this.golfScoreRepository = new PrismaGolfScoreRepository(prisma);
     }
     return this.golfScoreRepository;
+  }
+
+  static getGolferRepository(): IGolferRepository {
+    if (!this.golferRepository) {
+      this.golferRepository = new PrismaGolferRepository(prisma);
+    }
+    return this.golferRepository;
   }
 }

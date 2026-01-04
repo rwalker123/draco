@@ -63,3 +63,4 @@ export * from './PrismaGolfTeamRepository.js';
 export * from './PrismaGolfRosterRepository.js';
 export * from './PrismaGolfMatchRepository.js';
 export * from './PrismaGolfScoreRepository.js';
+export * from './PrismaGolferRepository.js';

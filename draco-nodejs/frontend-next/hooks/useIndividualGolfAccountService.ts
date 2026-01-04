@@ -5,8 +5,11 @@ import {
   createIndividualGolfAccount,
   createAuthenticatedGolfAccount,
   deleteIndividualGolfAccount,
+  getAccountGolfer,
+  updateGolferHomeCourse,
   IndividualGolfAccountResponse,
   AuthenticatedGolfAccountResponse,
+  Golfer,
 } from '@draco/shared-api-client';
 import { useApiClient } from './useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
@@ -42,6 +45,12 @@ export type AuthenticatedGolfAccountResult =
 
 export type DeleteGolfAccountResult =
   | { success: true; message: string }
+  | { success: false; error: string };
+
+export type GetGolferResult = { success: true; data: Golfer } | { success: false; error: string };
+
+export type UpdateHomeCourseResult =
+  | { success: true; data: Golfer }
   | { success: false; error: string };
 
 export const useIndividualGolfAccountService = () => {
@@ -139,5 +148,52 @@ export const useIndividualGolfAccountService = () => {
     [apiClient],
   );
 
-  return { create, createAuthenticated, deleteAccount } as const;
+  const getGolfer = useCallback(
+    async (accountId: string): Promise<GetGolferResult> => {
+      try {
+        const result = await getAccountGolfer({
+          client: apiClient,
+          throwOnError: false,
+          path: { accountId },
+        });
+
+        const data = unwrapApiResult(result, 'Failed to get golfer profile. Please try again.');
+
+        return { success: true, data } as const;
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Failed to get golfer profile. Please try again.';
+        return { success: false, error: message } as const;
+      }
+    },
+    [apiClient],
+  );
+
+  const updateHomeCourse = useCallback(
+    async (accountId: string, homeCourseId: string | null): Promise<UpdateHomeCourseResult> => {
+      try {
+        const result = await updateGolferHomeCourse({
+          client: apiClient,
+          throwOnError: false,
+          path: { accountId },
+          body: { homeCourseId },
+        });
+
+        const data = unwrapApiResult(result, 'Failed to update home course. Please try again.');
+
+        return { success: true, data } as const;
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Failed to update home course. Please try again.';
+        return { success: false, error: message } as const;
+      }
+    },
+    [apiClient],
+  );
+
+  return { create, createAuthenticated, deleteAccount, getGolfer, updateHomeCourse } as const;
 };

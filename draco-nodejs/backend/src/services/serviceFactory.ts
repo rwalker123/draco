@@ -101,6 +101,7 @@ import { GolfStandingsService } from './golfStandingsService.js';
 import { GolfStatsService } from './golfStatsService.js';
 import { ExternalCourseSearchService } from './externalCourseSearchService.js';
 import { CsvExportService } from './csvExportService.js';
+import { GolferService } from './golferService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -193,6 +194,7 @@ export class ServiceFactory {
   private static golfStatsService: GolfStatsService;
   private static externalCourseSearchService: ExternalCourseSearchService;
   private static csvExportService: CsvExportService;
+  private static golferService: GolferService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -1017,5 +1019,12 @@ export class ServiceFactory {
       this.csvExportService = new CsvExportService(rosterRepository, managerRepository);
     }
     return this.csvExportService;
+  }
+
+  static getGolferService(): GolferService {
+    if (!this.golferService) {
+      this.golferService = new GolferService();
+    }
+    return this.golferService;
   }
 }

@@ -50,3 +50,4 @@ export * from './golfStandings.js';
 export * from './golfStats.js';
 export * from './golfTeam.js';
 export * from './externalCourse.js';
+export * from './golfer.js';
