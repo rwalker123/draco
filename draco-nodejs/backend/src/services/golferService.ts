@@ -257,11 +257,12 @@ export class GolferService {
       const courseWithTees = await this.golfCourseRepository.findByIdWithTees(
         existingScore.courseid,
       );
-      if (courseWithTees) {
-        const tee = courseWithTees.golfteeinformation.find((t) => t.id === teeId);
-        if (!tee) {
-          throw new NotFoundError('Tee not found for this course');
-        }
+      if (!courseWithTees) {
+        throw new NotFoundError('Golf course not found');
+      }
+      const tee = courseWithTees.golfteeinformation.find((t) => t.id === teeId);
+      if (!tee) {
+        throw new NotFoundError('Tee not found for this course');
       }
     }
 

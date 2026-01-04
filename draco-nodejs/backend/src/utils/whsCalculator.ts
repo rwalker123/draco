@@ -13,29 +13,7 @@
  * - https://www.randa.org/en/roh/the-rules-of-handicapping/rule-5
  */
 
-/**
- * WHS table defining how many differentials to use and adjustments based on score count
- */
-const WHS_TABLE: Record<number, { use: number; adjustment: number }> = {
-  3: { use: 1, adjustment: -2.0 },
-  4: { use: 1, adjustment: -1.0 },
-  5: { use: 1, adjustment: 0 },
-  6: { use: 2, adjustment: -1.0 },
-  7: { use: 2, adjustment: 0 },
-  8: { use: 2, adjustment: 0 },
-  9: { use: 3, adjustment: 0 },
-  10: { use: 3, adjustment: 0 },
-  11: { use: 3, adjustment: 0 },
-  12: { use: 4, adjustment: 0 },
-  13: { use: 4, adjustment: 0 },
-  14: { use: 5, adjustment: 0 },
-  15: { use: 5, adjustment: 0 },
-  16: { use: 6, adjustment: 0 },
-  17: { use: 6, adjustment: 0 },
-  18: { use: 7, adjustment: 0 },
-  19: { use: 7, adjustment: 0 },
-  20: { use: 8, adjustment: 0 },
-};
+import { getWhsUseCount, getWhsAdjustment } from '@draco/shared-schemas';
 
 export interface HandicapResult {
   handicapIndex: number;
@@ -168,18 +146,17 @@ export function calculateHandicapIndex(
     return null;
   }
 
-  const sortedDifferentials = [...differentials].sort((a, b) => a - b);
-
-  const tableEntry = WHS_TABLE[Math.min(count, 20)];
-  if (!tableEntry) {
+  const useCount = getWhsUseCount(count);
+  if (useCount === 0) {
     return null;
   }
 
-  const bestDifferentials = sortedDifferentials.slice(0, tableEntry.use);
+  const sortedDifferentials = [...differentials].sort((a, b) => a - b);
+  const bestDifferentials = sortedDifferentials.slice(0, useCount);
   const avgDifferential =
     bestDifferentials.reduce((sum, d) => sum + d, 0) / bestDifferentials.length;
 
-  let rawIndex = avgDifferential + tableEntry.adjustment;
+  let rawIndex = avgDifferential + getWhsAdjustment(count);
   rawIndex = Math.round(rawIndex * 10) / 10;
 
   const newLowHandicapIndex =
@@ -206,26 +183,23 @@ export function getContributingIndices(differentials: number[]): number[] {
     return [];
   }
 
-  const tableEntry = WHS_TABLE[Math.min(count, 20)];
-  if (!tableEntry) {
+  const useCount = getWhsUseCount(count);
+  if (useCount === 0) {
     return [];
   }
 
   const indexed = differentials.map((value, index) => ({ index, value }));
   indexed.sort((a, b) => a.value - b.value);
 
-  return indexed.slice(0, tableEntry.use).map((item) => item.index);
+  return indexed.slice(0, useCount).map((item) => item.index);
 }
 
 /**
  * Get the number of differentials to use based on the WHS table
+ * @deprecated Use getWhsUseCount from @draco/shared-schemas directly
  */
 export function getUseCount(scoreCount: number): number {
-  if (scoreCount < 3) {
-    return 0;
-  }
-  const tableEntry = WHS_TABLE[Math.min(scoreCount, 20)];
-  return tableEntry?.use ?? 0;
+  return getWhsUseCount(scoreCount);
 }
 
 /**

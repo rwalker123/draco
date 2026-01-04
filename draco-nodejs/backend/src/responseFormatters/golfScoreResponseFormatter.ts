@@ -192,27 +192,41 @@ export class GolfScoreResponseFormatter {
 
     let adjustedScore = score.totalscore;
 
-    if (!score.totalsonly && score.holesplayed === 18) {
-      const holeScores = [
-        score.holescrore1,
-        score.holescrore2,
-        score.holescrore3,
-        score.holescrore4,
-        score.holescrore5,
-        score.holescrore6,
-        score.holescrore7,
-        score.holescrore8,
-        score.holescrore9,
-        score.holescrore10,
-        score.holescrore11,
-        score.holescrore12,
-        score.holescrore13,
-        score.holescrore14,
-        score.holescrore15,
-        score.holescrore16,
-        score.holescrore17,
-        score.holescrore18,
-      ];
+    if (!score.totalsonly && (score.holesplayed === 18 || score.holesplayed === 9)) {
+      const is9Hole = score.holesplayed === 9;
+
+      const holeScores = is9Hole
+        ? [
+            score.holescrore1,
+            score.holescrore2,
+            score.holescrore3,
+            score.holescrore4,
+            score.holescrore5,
+            score.holescrore6,
+            score.holescrore7,
+            score.holescrore8,
+            score.holescrore9,
+          ]
+        : [
+            score.holescrore1,
+            score.holescrore2,
+            score.holescrore3,
+            score.holescrore4,
+            score.holescrore5,
+            score.holescrore6,
+            score.holescrore7,
+            score.holescrore8,
+            score.holescrore9,
+            score.holescrore10,
+            score.holescrore11,
+            score.holescrore12,
+            score.holescrore13,
+            score.holescrore14,
+            score.holescrore15,
+            score.holescrore16,
+            score.holescrore17,
+            score.holescrore18,
+          ];
 
       const coursePars: CoursePars = {
         menspar1: score.golfcourse.menspar1,
@@ -292,8 +306,13 @@ export class GolfScoreResponseFormatter {
         womanshandicap18: score.golfcourse.womanshandicap18,
       };
 
-      const holePars = getHolePars(coursePars, gender);
-      const holeHandicapIndexes = getHoleHandicapIndexes(courseHandicaps, gender);
+      const allHolePars = getHolePars(coursePars, gender);
+      const allHoleHandicapIndexes = getHoleHandicapIndexes(courseHandicaps, gender);
+
+      const holePars = is9Hole ? allHolePars.slice(0, 9) : allHolePars;
+      const holeHandicapIndexes = is9Hole
+        ? allHoleHandicapIndexes.slice(0, 9)
+        : allHoleHandicapIndexes;
       const totalPar = calculateTotalPar(holePars);
 
       let courseHandicap: number | null = null;
@@ -304,6 +323,9 @@ export class GolfScoreResponseFormatter {
           courseRating,
           totalPar,
         );
+        if (is9Hole) {
+          courseHandicap = Math.round(courseHandicap / 2);
+        }
       }
 
       const adjustedHoleScores = applyNetDoubleBogey(

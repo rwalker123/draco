@@ -34,7 +34,11 @@ import AccountPageHeader from '../../../components/AccountPageHeader';
 import { getAccountById, Golfer, GolfScoreWithDetails } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
-import { AccountSeasonWithStatusType, AccountType } from '@draco/shared-schemas';
+import {
+  AccountSeasonWithStatusType,
+  AccountType,
+  getContributingDifferentialIndices,
+} from '@draco/shared-schemas';
 import { useIndividualGolfAccountService } from '../../../hooks/useIndividualGolfAccountService';
 import HomeCourseSearchDialog from '../../../components/golf/dialogs/HomeCourseSearchDialog';
 import IndividualRoundEntryDialog from '../../../components/golf/dialogs/IndividualRoundEntryDialog';
@@ -51,6 +55,7 @@ const IndividualGolfAccountHome: React.FC = () => {
   const [editingScore, setEditingScore] = useState<GolfScoreWithDetails | null>(null);
   const [deleteConfirmScore, setDeleteConfirmScore] = useState<GolfScoreWithDetails | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
@@ -175,6 +180,7 @@ const IndividualGolfAccountHome: React.FC = () => {
     if (!accountIdStr || !deleteConfirmScore) return;
 
     setIsDeleting(true);
+    setDeleteError(null);
     const result = await deleteScore(accountIdStr, deleteConfirmScore.id);
     setIsDeleting(false);
 
@@ -186,44 +192,24 @@ const IndividualGolfAccountHome: React.FC = () => {
       if (golferResult.success) {
         setGolfer(golferResult.data);
       }
+    } else {
+      setDeleteError(result.error);
     }
   }, [accountIdStr, deleteConfirmScore, deleteScore, getGolfer]);
 
   const contributingIndices = useMemo(() => {
-    const differentials = recentScores
+    const indexedDifferentials = recentScores
       .map((score, idx) => ({ idx, diff: score.differential }))
       .filter((item): item is { idx: number; diff: number } => item.diff != null);
 
-    if (differentials.length < 3) {
+    if (indexedDifferentials.length < 3) {
       return new Set<number>();
     }
 
-    const WHS_USE_COUNT: Record<number, number> = {
-      3: 1,
-      4: 1,
-      5: 1,
-      6: 2,
-      7: 2,
-      8: 2,
-      9: 3,
-      10: 3,
-      11: 3,
-      12: 4,
-      13: 4,
-      14: 5,
-      15: 5,
-      16: 6,
-      17: 6,
-      18: 7,
-      19: 7,
-      20: 8,
-    };
+    const differentialValues = indexedDifferentials.map((item) => item.diff);
+    const contributingSet = getContributingDifferentialIndices(differentialValues);
 
-    const count = Math.min(differentials.length, 20);
-    const useCount = WHS_USE_COUNT[count] ?? 8;
-
-    const sorted = [...differentials].sort((a, b) => a.diff - b.diff);
-    return new Set(sorted.slice(0, useCount).map((item) => item.idx));
+    return new Set([...contributingSet].map((diffIndex) => indexedDifferentials[diffIndex].idx));
   }, [recentScores]);
 
   if (!accountIdStr) {
@@ -349,7 +335,7 @@ const IndividualGolfAccountHome: React.FC = () => {
                 Average Score
               </Typography>
               <Typography variant="h3" color="info.main">
-                {golfer?.averageScore != null ? golfer.averageScore : '--'}
+                {golfer?.averageScore != null ? Math.round(golfer.averageScore) : '--'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Per 18 holes
@@ -525,12 +511,20 @@ const IndividualGolfAccountHome: React.FC = () => {
           />
           <Dialog
             open={!!deleteConfirmScore}
-            onClose={() => setDeleteConfirmScore(null)}
+            onClose={() => {
+              setDeleteConfirmScore(null);
+              setDeleteError(null);
+            }}
             maxWidth="xs"
             fullWidth
           >
             <DialogTitle>Delete Score?</DialogTitle>
             <DialogContent>
+              {deleteError && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {deleteError}
+                </Alert>
+              )}
               <DialogContentText>
                 Are you sure you want to delete this round from{' '}
                 {deleteConfirmScore?.courseName || 'Unknown Course'} on{' '}
@@ -541,7 +535,13 @@ const IndividualGolfAccountHome: React.FC = () => {
               </DialogContentText>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setDeleteConfirmScore(null)} disabled={isDeleting}>
+              <Button
+                onClick={() => {
+                  setDeleteConfirmScore(null);
+                  setDeleteError(null);
+                }}
+                disabled={isDeleting}
+              >
                 Cancel
               </Button>
               <Button
