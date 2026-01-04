@@ -501,7 +501,7 @@ export class AccountsService {
 
       await tx.contacts.create({
         data: {
-          firstname: firstName || 'Golf',
+          firstname: firstName,
           lastname: lastName,
           middlename: middleName,
           email: userEmail,

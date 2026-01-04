@@ -340,7 +340,6 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
                   {...registerAuth('firstName')}
                   error={!!authErrors.firstName}
                   helperText={authErrors.firstName?.message}
-                  required
                   fullWidth
                   autoFocus
                   disabled={loading}
@@ -362,7 +361,6 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
                 {...registerAuth('lastName')}
                 error={!!authErrors.lastName}
                 helperText={authErrors.lastName?.message}
-                required
                 fullWidth
                 disabled={loading}
                 placeholder="Smith"
@@ -409,7 +407,6 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
                 {...register('firstName')}
                 error={!!errors.firstName}
                 helperText={errors.firstName?.message}
-                required
                 fullWidth
                 autoFocus
                 disabled={loading}
@@ -431,7 +428,6 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
               {...register('lastName')}
               error={!!errors.lastName}
               helperText={errors.lastName?.message}
-              required
               fullWidth
               disabled={loading}
               placeholder="Smith"
@@ -443,7 +439,6 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
               {...register('email')}
               error={!!errors.email}
               helperText={errors.email?.message}
-              required
               fullWidth
               disabled={loading}
               placeholder="Enter your email address"
@@ -455,7 +450,6 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
               {...register('password')}
               error={!!errors.password}
               helperText={errors.password?.message || 'At least 6 characters'}
-              required
               fullWidth
               disabled={loading}
             />
@@ -466,7 +460,6 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
               {...register('confirmPassword')}
               error={!!errors.confirmPassword}
               helperText={errors.confirmPassword?.message}
-              required
               fullWidth
               disabled={loading}
             />
