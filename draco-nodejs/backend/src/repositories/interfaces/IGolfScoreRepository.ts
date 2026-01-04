@@ -41,7 +41,7 @@ export type CreateGolfScoreData = {
   startindex9?: number | null;
 };
 
-export type UpdateGolfScoreData = Partial<Omit<CreateGolfScoreData, 'courseid' | 'golferid'>>;
+export type UpdateGolfScoreData = Partial<Omit<CreateGolfScoreData, 'golferid'>>;
 
 export type CreateMatchScoreData = {
   matchid: bigint;

@@ -869,6 +869,8 @@ model golfer {
   contactid           BigInt            @unique
   initialdifferential Float?
   homecourseid        BigInt?
+  gender              String            @default("M") @db.VarChar(1)
+  lowhandicapindex    Float?
   contact             contacts          @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_golfer_contact")
   homecourse          golfcourse?       @relation("GolferHomeCourse", fields: [homecourseid], references: [id], onDelete: SetNull, map: "fk_golfer_homecourse")
   rosters             golfroster[]

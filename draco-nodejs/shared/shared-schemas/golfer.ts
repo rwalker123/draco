@@ -5,16 +5,26 @@ import { GolfCourseSlimSchema } from './golfCourse.js';
 
 extendZodWithOpenApi(z);
 
+export const GenderSchema = z.enum(['M', 'F']).openapi({
+  title: 'Gender',
+  description: 'Golfer gender (M = Male, F = Female)',
+});
+
 export const GolferSchema = z
   .object({
     id: bigintToStringSchema,
     contactId: bigintToStringSchema,
+    gender: GenderSchema.default('M'),
     initialDifferential: z.number().nullable().optional(),
     homeCourse: GolfCourseSlimSchema.nullable().optional(),
+    handicapIndex: z.number().nullable().optional(),
+    lowHandicapIndex: z.number().nullable().optional(),
+    averageScore: z.number().nullable().optional(),
+    roundsPlayed: z.number().optional(),
   })
   .openapi({
     title: 'Golfer',
-    description: 'A golfer profile with optional home course',
+    description: 'A golfer profile with optional home course and calculated stats',
   });
 
 export const UpdateGolferHomeCourseSchema = z
@@ -26,5 +36,6 @@ export const UpdateGolferHomeCourseSchema = z
     description: 'Request to update a golfer home course',
   });
 
+export type GenderType = z.infer<typeof GenderSchema>;
 export type GolferType = z.infer<typeof GolferSchema>;
 export type UpdateGolferHomeCourseType = z.infer<typeof UpdateGolferHomeCourseSchema>;

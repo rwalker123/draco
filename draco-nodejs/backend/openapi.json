@@ -26993,6 +26993,17 @@
                 },
                 "differential": {
                   "type": "number"
+                },
+                "courseName": {
+                  "type": "string"
+                },
+                "courseCity": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "courseState": {
+                  "type": "string",
+                  "nullable": true
                 }
               },
               "required": [
@@ -27006,7 +27017,7 @@
                 "holeScores"
               ],
               "title": "GolfScoreWithDetails",
-              "description": "Golf score with player and tee details"
+              "description": "Golf score with player, tee, and course details"
             }
           },
           "team2Scores": {
@@ -27219,6 +27230,17 @@
                 },
                 "differential": {
                   "type": "number"
+                },
+                "courseName": {
+                  "type": "string"
+                },
+                "courseCity": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "courseState": {
+                  "type": "string",
+                  "nullable": true
                 }
               },
               "required": [
@@ -27232,7 +27254,7 @@
                 "holeScores"
               ],
               "title": "GolfScoreWithDetails",
-              "description": "Golf score with player and tee details"
+              "description": "Golf score with player, tee, and course details"
             }
           },
           "team1TotalScore": {
@@ -27641,6 +27663,17 @@
           },
           "differential": {
             "type": "number"
+          },
+          "courseName": {
+            "type": "string"
+          },
+          "courseCity": {
+            "type": "string",
+            "nullable": true
+          },
+          "courseState": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -27654,7 +27687,104 @@
           "holeScores"
         ],
         "title": "GolfScoreWithDetails",
-        "description": "Golf score with player and tee details"
+        "description": "Golf score with player, tee, and course details"
+      },
+      "CreateGolfScore": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "teeId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "datePlayed": {
+            "type": "string"
+          },
+          "holesPlayed": {
+            "type": "integer",
+            "minimum": 9,
+            "maximum": 18
+          },
+          "totalsOnly": {
+            "type": "boolean",
+            "default": false
+          },
+          "totalScore": {
+            "type": "integer",
+            "minimum": 18,
+            "maximum": 200
+          },
+          "holeScores": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "minItems": 9,
+            "maxItems": 18
+          },
+          "startIndex": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "courseId",
+          "teeId",
+          "datePlayed",
+          "holesPlayed"
+        ],
+        "title": "CreateGolfScore",
+        "description": "Data required to create a new golf score"
+      },
+      "UpdateGolfScore": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "teeId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "datePlayed": {
+            "type": "string"
+          },
+          "holesPlayed": {
+            "type": "integer",
+            "minimum": 9,
+            "maximum": 18
+          },
+          "totalsOnly": {
+            "type": "boolean"
+          },
+          "totalScore": {
+            "type": "integer",
+            "minimum": 18,
+            "maximum": 200
+          },
+          "holeScores": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "minItems": 9,
+            "maxItems": 18
+          }
+        },
+        "title": "UpdateGolfScore",
+        "description": "Data for updating an existing golf score"
       },
       "SubmitMatchResults": {
         "type": "object",
@@ -28966,6 +29096,16 @@
             "pattern": "^\\d+$",
             "example": "12345"
           },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "M",
+              "F"
+            ],
+            "default": "M",
+            "title": "Gender",
+            "description": "Golfer gender (M = Male, F = Female)"
+          },
           "initialDifferential": {
             "type": "number",
             "nullable": true
@@ -29003,6 +29143,21 @@
             ],
             "title": "GolfCourseSlim",
             "description": "Minimal golf course info for match listings"
+          },
+          "handicapIndex": {
+            "type": "number",
+            "nullable": true
+          },
+          "lowHandicapIndex": {
+            "type": "number",
+            "nullable": true
+          },
+          "averageScore": {
+            "type": "number",
+            "nullable": true
+          },
+          "roundsPlayed": {
+            "type": "number"
           }
         },
         "required": [
@@ -29010,7 +29165,7 @@
           "contactId"
         ],
         "title": "Golfer",
-        "description": "A golfer profile with optional home course"
+        "description": "A golfer profile with optional home course and calculated stats"
       },
       "UpdateGolferHomeCourse": {
         "type": "object",
@@ -31229,6 +31384,366 @@
           },
           "404": {
             "description": "Account or golfer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golfer/scores": {
+      "post": {
+        "operationId": "createGolferScore",
+        "summary": "Create golf score for account",
+        "description": "Create a new golf score for an individual golf account.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGolfScore"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created golf score",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GolfScoreWithDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account, course, or tee not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "getGolferScores",
+        "summary": "Get golf scores for account",
+        "description": "Get golf scores for an individual golf account.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            },
+            "description": "Maximum number of scores to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of golf scores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GolfScoreWithDetails"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golfer/scores/{scoreId}": {
+      "patch": {
+        "operationId": "updateGolferScore",
+        "summary": "Update golf score for account",
+        "description": "Update an existing golf score for an individual golf account.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "scoreId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGolfScore"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated golf score",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GolfScoreWithDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account, score, course, or tee not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteGolferScore",
+        "summary": "Delete golf score for account",
+        "description": "Delete an existing golf score for an individual golf account.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "scoreId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Score deleted successfully"
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account or score not found",
             "content": {
               "application/json": {
                 "schema": {

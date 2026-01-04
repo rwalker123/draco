@@ -63,9 +63,12 @@ export const GolfScoreWithDetailsSchema = GolfScoreSchema.extend({
   player: GolfPlayerSchema.optional(),
   tee: GolfCourseTeeSchema.optional(),
   differential: z.number().optional(),
+  courseName: z.string().optional(),
+  courseCity: z.string().nullable().optional(),
+  courseState: z.string().nullable().optional(),
 }).openapi({
   title: 'GolfScoreWithDetails',
-  description: 'Golf score with player and tee details',
+  description: 'Golf score with player, tee, and course details',
 });
 
 export const CreateGolfScoreSchema = z
@@ -119,9 +122,25 @@ export const SubmitMatchResultsSchema = z
     description: 'All player scores for a match (all teams)',
   });
 
+export const UpdateGolfScoreSchema = z
+  .object({
+    courseId: bigintToStringSchema.optional(),
+    teeId: bigintToStringSchema.optional(),
+    datePlayed: pastOrTodayDateSchema.optional(),
+    holesPlayed: z.number().int().min(9).max(18).optional(),
+    totalsOnly: z.boolean().optional(),
+    totalScore: z.number().int().min(18).max(200).optional(),
+    holeScores: z.array(holeScoreSchema).min(9).max(18).optional(),
+  })
+  .openapi({
+    title: 'UpdateGolfScore',
+    description: 'Data for updating an existing golf score',
+  });
+
 export type GolfHoleScoresType = z.infer<typeof GolfHoleScoresSchema>;
 export type GolfScoreType = z.infer<typeof GolfScoreSchema>;
 export type GolfScoreWithDetailsType = z.infer<typeof GolfScoreWithDetailsSchema>;
 export type CreateGolfScoreType = z.infer<typeof CreateGolfScoreSchema>;
 export type PlayerMatchScoreType = z.infer<typeof PlayerMatchScoreSchema>;
 export type SubmitMatchResultsType = z.infer<typeof SubmitMatchResultsSchema>;
+export type UpdateGolfScoreType = z.infer<typeof UpdateGolfScoreSchema>;

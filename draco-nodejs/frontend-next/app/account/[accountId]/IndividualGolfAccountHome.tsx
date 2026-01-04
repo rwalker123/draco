@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Alert,
   Box,
@@ -11,6 +11,12 @@ import {
   Container,
   Typography,
   Paper,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import {
   GolfCourse as GolfCourseIcon,
@@ -19,16 +25,19 @@ import {
   Add as AddIcon,
   Home as HomeIcon,
   Edit as EditIcon,
+  Delete as DeleteIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
 import AccountPageHeader from '../../../components/AccountPageHeader';
-import { getAccountById, Golfer } from '@draco/shared-api-client';
+import { getAccountById, Golfer, GolfScoreWithDetails } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { AccountSeasonWithStatusType, AccountType } from '@draco/shared-schemas';
 import { useIndividualGolfAccountService } from '../../../hooks/useIndividualGolfAccountService';
 import HomeCourseSearchDialog from '../../../components/golf/dialogs/HomeCourseSearchDialog';
+import IndividualRoundEntryDialog from '../../../components/golf/dialogs/IndividualRoundEntryDialog';
 
 const IndividualGolfAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -37,12 +46,17 @@ const IndividualGolfAccountHome: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [homeCourseDialogOpen, setHomeCourseDialogOpen] = useState(false);
+  const [roundEntryDialogOpen, setRoundEntryDialogOpen] = useState(false);
+  const [recentScores, setRecentScores] = useState<GolfScoreWithDetails[]>([]);
+  const [editingScore, setEditingScore] = useState<GolfScoreWithDetails | null>(null);
+  const [deleteConfirmScore, setDeleteConfirmScore] = useState<GolfScoreWithDetails | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
-  const { getGolfer, updateHomeCourse } = useIndividualGolfAccountService();
+  const { getGolfer, updateHomeCourse, getScores, deleteScore } = useIndividualGolfAccountService();
 
   useEffect(() => {
     if (!accountIdStr) {
@@ -82,6 +96,11 @@ const IndividualGolfAccountHome: React.FC = () => {
         if (isMounted && golferResult.success) {
           setGolfer(golferResult.data);
         }
+
+        const scoresResult = await getScores(accountIdStr, 20);
+        if (isMounted && scoresResult.success) {
+          setRecentScores(scoresResult.data);
+        }
       } catch (err) {
         if (!isMounted) {
           return;
@@ -102,7 +121,22 @@ const IndividualGolfAccountHome: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [accountIdStr, apiClient, getGolfer]);
+  }, [accountIdStr, apiClient, getGolfer, getScores]);
+
+  const handleRoundEntered = useCallback(
+    async (score: GolfScoreWithDetails) => {
+      setRecentScores((prev) => [score, ...prev.slice(0, 19)]);
+      setRoundEntryDialogOpen(false);
+
+      if (accountIdStr) {
+        const golferResult = await getGolfer(accountIdStr);
+        if (golferResult.success) {
+          setGolfer(golferResult.data);
+        }
+      }
+    },
+    [accountIdStr, getGolfer],
+  );
 
   const handleUpdateHomeCourse = useCallback(
     async (courseId: string): Promise<{ success: boolean; error?: string }> => {
@@ -119,6 +153,78 @@ const IndividualGolfAccountHome: React.FC = () => {
     },
     [accountIdStr, updateHomeCourse],
   );
+
+  const handleScoreUpdated = useCallback(
+    async (updatedScore: GolfScoreWithDetails) => {
+      setRecentScores((prev) =>
+        prev.map((score) => (score.id === updatedScore.id ? updatedScore : score)),
+      );
+      setEditingScore(null);
+
+      if (accountIdStr) {
+        const golferResult = await getGolfer(accountIdStr);
+        if (golferResult.success) {
+          setGolfer(golferResult.data);
+        }
+      }
+    },
+    [accountIdStr, getGolfer],
+  );
+
+  const handleDeleteScore = useCallback(async () => {
+    if (!accountIdStr || !deleteConfirmScore) return;
+
+    setIsDeleting(true);
+    const result = await deleteScore(accountIdStr, deleteConfirmScore.id);
+    setIsDeleting(false);
+
+    if (result.success) {
+      setRecentScores((prev) => prev.filter((score) => score.id !== deleteConfirmScore.id));
+      setDeleteConfirmScore(null);
+
+      const golferResult = await getGolfer(accountIdStr);
+      if (golferResult.success) {
+        setGolfer(golferResult.data);
+      }
+    }
+  }, [accountIdStr, deleteConfirmScore, deleteScore, getGolfer]);
+
+  const contributingIndices = useMemo(() => {
+    const differentials = recentScores
+      .map((score, idx) => ({ idx, diff: score.differential }))
+      .filter((item): item is { idx: number; diff: number } => item.diff != null);
+
+    if (differentials.length < 3) {
+      return new Set<number>();
+    }
+
+    const WHS_USE_COUNT: Record<number, number> = {
+      3: 1,
+      4: 1,
+      5: 1,
+      6: 2,
+      7: 2,
+      8: 2,
+      9: 3,
+      10: 3,
+      11: 3,
+      12: 4,
+      13: 4,
+      14: 5,
+      15: 5,
+      16: 6,
+      17: 6,
+      18: 7,
+      19: 7,
+      20: 8,
+    };
+
+    const count = Math.min(differentials.length, 20);
+    const useCount = WHS_USE_COUNT[count] ?? 8;
+
+    const sorted = [...differentials].sort((a, b) => a.diff - b.diff);
+    return new Set(sorted.slice(0, useCount).map((item) => item.idx));
+  }, [recentScores]);
 
   if (!accountIdStr) {
     return (
@@ -211,10 +317,10 @@ const IndividualGolfAccountHome: React.FC = () => {
                 Rounds Played
               </Typography>
               <Typography variant="h3" color="primary.main">
-                --
+                {golfer?.roundsPlayed ?? 0}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                This season
+                {currentSeason ? 'This season' : 'Total rounds'}
               </Typography>
             </CardContent>
           </Card>
@@ -226,10 +332,12 @@ const IndividualGolfAccountHome: React.FC = () => {
                 Handicap Index
               </Typography>
               <Typography variant="h3" color="success.main">
-                --
+                {golfer?.handicapIndex != null ? golfer.handicapIndex.toFixed(1) : '--'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Enter scores to calculate
+                {golfer?.handicapIndex != null
+                  ? 'Based on recent rounds'
+                  : 'Enter 3+ scores to calculate'}
               </Typography>
             </CardContent>
           </Card>
@@ -241,7 +349,7 @@ const IndividualGolfAccountHome: React.FC = () => {
                 Average Score
               </Typography>
               <Typography variant="h3" color="info.main">
-                --
+                {golfer?.averageScore != null ? golfer.averageScore : '--'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Per 18 holes
@@ -301,12 +409,9 @@ const IndividualGolfAccountHome: React.FC = () => {
               variant="contained"
               size="large"
               startIcon={<AddIcon />}
-              onClick={() => {
-                // TODO: Implement score entry
-              }}
-              disabled
+              onClick={() => setRoundEntryDialogOpen(true)}
             >
-              Enter a Round (Coming Soon)
+              Enter a Round
             </Button>
           </Paper>
         )}
@@ -315,21 +420,141 @@ const IndividualGolfAccountHome: React.FC = () => {
           <Typography variant="h5" gutterBottom>
             Recent Rounds
           </Typography>
-          <Box sx={{ py: 4, textAlign: 'center' }}>
-            <Typography variant="body1" color="text.secondary">
-              No rounds recorded yet. Start tracking your golf scores to see your history here.
-            </Typography>
-          </Box>
+          {recentScores.length === 0 ? (
+            <Box sx={{ py: 4, textAlign: 'center' }}>
+              <Typography variant="body1" color="text.secondary">
+                No rounds recorded yet. Start tracking your golf scores to see your history here.
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ mt: 2 }}>
+              {recentScores.map((score, index) => (
+                <Box
+                  key={score.id}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    py: 2,
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    '&:last-child': { borderBottom: 'none' },
+                  }}
+                >
+                  {contributingIndices.has(index) && (
+                    <CheckCircleIcon
+                      sx={{ color: 'success.main', mr: 1.5, fontSize: 20, flexShrink: 0 }}
+                    />
+                  )}
+                  {!contributingIndices.has(index) && <Box sx={{ width: 32, flexShrink: 0 }} />}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="subtitle1" fontWeight={500} noWrap>
+                      {score.courseName || 'Unknown Course'}
+                      {score.tee?.teeName && ` · ${score.tee.teeName}`}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" noWrap>
+                      {[score.courseCity, score.courseState].filter(Boolean).join(', ')}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {new Date(score.datePlayed).toLocaleDateString(undefined, {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                      {' · '}
+                      {score.holesPlayed} holes
+                    </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: 'right', ml: 2 }}>
+                    <Typography variant="h5" color="primary.main" fontWeight={600}>
+                      {score.totalScore}
+                    </Typography>
+                    {score.differential != null && (
+                      <Typography variant="body2" color="text.secondary">
+                        Diff: {score.differential.toFixed(1)}
+                      </Typography>
+                    )}
+                  </Box>
+                  {isOwner && (
+                    <Box sx={{ display: 'flex', ml: 1, gap: 0.5 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => setEditingScore(score)}
+                        sx={{ color: 'text.secondary' }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => setDeleteConfirmScore(score)}
+                        sx={{ color: 'text.secondary' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Box>
+              ))}
+            </Box>
+          )}
         </Paper>
       </Container>
 
       {accountIdStr && (
-        <HomeCourseSearchDialog
-          open={homeCourseDialogOpen}
-          onClose={() => setHomeCourseDialogOpen(false)}
-          onSelectCourse={handleUpdateHomeCourse}
-          accountId={accountIdStr}
-        />
+        <>
+          <HomeCourseSearchDialog
+            open={homeCourseDialogOpen}
+            onClose={() => setHomeCourseDialogOpen(false)}
+            onSelectCourse={handleUpdateHomeCourse}
+            accountId={accountIdStr}
+          />
+          <IndividualRoundEntryDialog
+            open={roundEntryDialogOpen}
+            onClose={() => setRoundEntryDialogOpen(false)}
+            onSuccess={handleRoundEntered}
+            accountId={accountIdStr}
+            homeCourse={golfer?.homeCourse}
+          />
+          <IndividualRoundEntryDialog
+            open={!!editingScore}
+            onClose={() => setEditingScore(null)}
+            onSuccess={handleScoreUpdated}
+            accountId={accountIdStr}
+            homeCourse={golfer?.homeCourse}
+            editScore={editingScore ?? undefined}
+          />
+          <Dialog
+            open={!!deleteConfirmScore}
+            onClose={() => setDeleteConfirmScore(null)}
+            maxWidth="xs"
+            fullWidth
+          >
+            <DialogTitle>Delete Score?</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                Are you sure you want to delete this round from{' '}
+                {deleteConfirmScore?.courseName || 'Unknown Course'} on{' '}
+                {deleteConfirmScore?.datePlayed
+                  ? new Date(deleteConfirmScore.datePlayed).toLocaleDateString()
+                  : ''}
+                ? This action cannot be undone and will affect your handicap calculation.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setDeleteConfirmScore(null)} disabled={isDeleting}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDeleteScore}
+                color="error"
+                variant="contained"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </>
       )}
     </main>
   );
