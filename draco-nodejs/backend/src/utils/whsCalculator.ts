@@ -438,3 +438,53 @@ export function getHoleHandicapIndexes(courseHandicaps: CourseHandicaps, gender:
 export function calculateTotalPar(holePars: number[]): number {
   return holePars.reduce((sum, par) => sum + par, 0);
 }
+
+export interface NineHoleScore {
+  id: bigint;
+  totalScore: number;
+  rating: number;
+  slope: number;
+  datePlayed: Date;
+  courseName: string;
+}
+
+export interface CombinedNineHoleResult {
+  firstScoreId: bigint;
+  secondScoreId: bigint;
+  combinedScore: number;
+  combinedRating: number;
+  combinedSlope: number;
+  differential: number;
+  earlierDate: Date;
+  courseNames: string;
+}
+
+/**
+ * Combines two 9-hole scores into an 18-hole equivalent differential.
+ * Per WHS rules, two 9-hole rounds are combined to create one 18-hole Score Differential.
+ * Combined Rating = (Rating1/2) + (Rating2/2), Combined Slope = average of both slopes.
+ */
+export function combineNineHoleScores(
+  score1: NineHoleScore,
+  score2: NineHoleScore,
+): CombinedNineHoleResult {
+  const combinedScore = score1.totalScore + score2.totalScore;
+  const combinedRating = score1.rating / 2 + score2.rating / 2;
+  const combinedSlope = Math.round((score1.slope + score2.slope) / 2);
+  const differential = calculateScoreDifferential(combinedScore, combinedRating, combinedSlope);
+
+  const firstIsEarlier = score1.datePlayed <= score2.datePlayed;
+
+  return {
+    firstScoreId: firstIsEarlier ? score1.id : score2.id,
+    secondScoreId: firstIsEarlier ? score2.id : score1.id,
+    combinedScore,
+    combinedRating,
+    combinedSlope,
+    differential,
+    earlierDate: firstIsEarlier ? score1.datePlayed : score2.datePlayed,
+    courseNames: firstIsEarlier
+      ? `${score1.courseName} + ${score2.courseName}`
+      : `${score2.courseName} + ${score1.courseName}`,
+  };
+}

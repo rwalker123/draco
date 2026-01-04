@@ -10,6 +10,7 @@ import { IGolfRosterRepository } from '../repositories/interfaces/IGolfRosterRep
 import { IGolfTeamRepository } from '../repositories/interfaces/IGolfTeamRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
+import { combineNineHoleScores } from '../utils/whsCalculator.js';
 
 interface ScoreDifferential {
   scoreId: bigint;
@@ -50,6 +51,9 @@ const BONUS_REDUCTION: Record<number, number> = {
   6: 1.0,
 };
 
+const MAX_SCORES_TO_FETCH = 40;
+const MAX_DIFFERENTIALS_FOR_HANDICAP = 20;
+
 export class GolfHandicapService {
   private readonly scoreRepository: IGolfScoreRepository;
   private readonly flightRepository: IGolfFlightRepository;
@@ -74,7 +78,7 @@ export class GolfHandicapService {
   }
 
   async calculateHandicapIndex(golferId: bigint): Promise<number | null> {
-    const scores = await this.scoreRepository.findByGolferId(golferId, 40);
+    const scores = await this.scoreRepository.findByGolferId(golferId, MAX_SCORES_TO_FETCH);
 
     if (scores.length === 0) {
       return null;
@@ -101,33 +105,60 @@ export class GolfHandicapService {
   ): ScoreDifferential[] {
     const differentials: ScoreDifferential[] = [];
 
-    for (const score of scores) {
+    const eighteenHoleScores = scores.filter((s) => s.holesplayed === 18);
+    const nineHoleScores = scores
+      .filter((s) => s.holesplayed === 9)
+      .sort((a, b) => a.dateplayed.getTime() - b.dateplayed.getTime());
+
+    for (const score of eighteenHoleScores) {
       const rating = Number(score.golfteeinformation.mensrating) || 72;
       const slope = Number(score.golfteeinformation.menslope) || 113;
 
-      if (score.holesplayed === 18) {
-        differentials.push({
-          scoreId: score.id,
-          datePlayed: score.dateplayed,
-          courseName: score.golfcourse.name,
-          score: score.totalscore,
-          rating,
-          slope,
-          differential: this.calculateDifferential(score.totalscore, rating, slope),
-          holesPlayed: 18,
-        });
-      } else if (score.holesplayed === 9) {
-        differentials.push({
-          scoreId: score.id,
-          datePlayed: score.dateplayed,
-          courseName: score.golfcourse.name,
-          score: score.totalscore,
-          rating: rating / 2,
-          slope,
-          differential: this.calculateDifferential(score.totalscore, rating / 2, slope),
-          holesPlayed: 9,
-        });
-      }
+      differentials.push({
+        scoreId: score.id,
+        datePlayed: score.dateplayed,
+        courseName: score.golfcourse.name,
+        score: score.totalscore,
+        rating,
+        slope,
+        differential: this.calculateDifferential(score.totalscore, rating, slope),
+        holesPlayed: 18,
+      });
+    }
+
+    for (let i = 0; i < nineHoleScores.length - 1; i += 2) {
+      const first = nineHoleScores[i];
+      const second = nineHoleScores[i + 1];
+
+      const combined = combineNineHoleScores(
+        {
+          id: first.id,
+          totalScore: first.totalscore,
+          rating: Number(first.golfteeinformation.mensrating) || 72,
+          slope: Number(first.golfteeinformation.menslope) || 113,
+          datePlayed: first.dateplayed,
+          courseName: first.golfcourse.name,
+        },
+        {
+          id: second.id,
+          totalScore: second.totalscore,
+          rating: Number(second.golfteeinformation.mensrating) || 72,
+          slope: Number(second.golfteeinformation.menslope) || 113,
+          datePlayed: second.dateplayed,
+          courseName: second.golfcourse.name,
+        },
+      );
+
+      differentials.push({
+        scoreId: combined.firstScoreId,
+        datePlayed: combined.earlierDate,
+        courseName: combined.courseNames,
+        score: combined.combinedScore,
+        rating: combined.combinedRating,
+        slope: combined.combinedSlope,
+        differential: combined.differential,
+        holesPlayed: 18,
+      });
     }
 
     return differentials;
@@ -135,7 +166,7 @@ export class GolfHandicapService {
 
   private computeHandicapFromDifferentials(differentials: ScoreDifferential[]): number {
     const sorted = [...differentials].sort((a, b) => a.differential - b.differential);
-    const count = Math.min(sorted.length, 20);
+    const count = Math.min(sorted.length, MAX_DIFFERENTIALS_FOR_HANDICAP);
     const usedCount = HANDICAP_LOOKUP[count] ?? Math.floor(count * 0.4);
     const reduction = BONUS_REDUCTION[count] ?? 0;
 
@@ -150,7 +181,7 @@ export class GolfHandicapService {
   }
 
   async getPlayerHandicap(golferId: bigint, includeDetails = false): Promise<PlayerHandicapType> {
-    const scores = await this.scoreRepository.findByGolferId(golferId, 40);
+    const scores = await this.scoreRepository.findByGolferId(golferId, MAX_SCORES_TO_FETCH);
 
     if (scores.length === 0) {
       return {
@@ -165,7 +196,7 @@ export class GolfHandicapService {
 
     const differentials = this.processScorestoDifferentials(scores);
     const sorted = [...differentials].sort((a, b) => a.differential - b.differential);
-    const count = Math.min(sorted.length, 20);
+    const count = Math.min(sorted.length, MAX_DIFFERENTIALS_FOR_HANDICAP);
     const usedCount = HANDICAP_LOOKUP[count] ?? Math.floor(count * 0.4);
 
     let handicapIndex: number | null = null;
@@ -186,7 +217,7 @@ export class GolfHandicapService {
 
     if (includeDetails) {
       result.differentials = sorted
-        .slice(0, 20)
+        .slice(0, MAX_DIFFERENTIALS_FOR_HANDICAP)
         .map((d, index) => this.formatDifferential(d, index < usedCount));
     }
 

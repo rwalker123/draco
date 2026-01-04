@@ -32,6 +32,8 @@ import {
   ScoreForAverage,
 } from '../utils/whsCalculator.js';
 
+const RECENT_SCORES_LIMIT = 20;
+
 export class GolferService {
   private readonly golferRepository: IGolferRepository;
   private readonly accountRepository: IAccountRepository;
@@ -73,7 +75,7 @@ export class GolferService {
       throw new NotFoundError('Golfer profile not found for this account');
     }
 
-    const scores = await this.golfScoreRepository.findByGolferId(golfer.id, 20);
+    const scores = await this.golfScoreRepository.findByGolferId(golfer.id, RECENT_SCORES_LIMIT);
     const stats = await this.calculateGolferStats(golfer, scores);
 
     return GolferResponseFormatter.format(golfer, stats);
