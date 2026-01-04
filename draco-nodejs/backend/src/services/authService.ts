@@ -296,6 +296,30 @@ export class AuthService {
   }
 
   /**
+   * Prepare user credentials for transaction-based user creation.
+   * Returns hashed password, security stamp, and generated user ID.
+   */
+  async prepareUserCredentials(password: string): Promise<{
+    hashedPassword: string;
+    securityStamp: string;
+    userId: string;
+  }> {
+    const hashedPassword = await bcrypt.hash(password, 12);
+    return {
+      hashedPassword,
+      securityStamp: this.generateSecurityStamp(),
+      userId: this.generateUserId(),
+    };
+  }
+
+  /**
+   * Generate a JWT token for a user (for use after transaction-based user creation).
+   */
+  generateTokenForUser(userId: string, username: string): string {
+    return this.generateToken(userId, username);
+  }
+
+  /**
    * Increment failed login count
    */
   private async incrementFailedLoginCount(userId: string): Promise<void> {

@@ -31,6 +31,7 @@ import { HandoutService } from '../services/handoutService';
 import { AnnouncementService, type AnnouncementSummaryItem } from '../services/announcementService';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
+import { useIsIndividualGolfAccount } from '../context/AccountContext';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -116,6 +117,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   const showHandouts = Boolean(canViewHandouts && accountId);
   const showAnnouncements = Boolean(canViewAnnouncements && accountId);
   const { user, token } = useAuth();
+  const isIndividualGolfAccount = useIsIndividualGolfAccount();
   const apiClient = useApiClient();
   const handoutService = React.useMemo(
     () => new HandoutService(token, apiClient),
@@ -176,6 +178,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   const { hasRole, loading: roleLoading, initialized: roleInitialized } = useRole();
   const composeHref = accountId ? `/account/${accountId}/communications/compose` : null;
   const canComposeEmail =
+    !isIndividualGolfAccount &&
     Boolean(composeHref) &&
     roleInitialized &&
     !roleLoading &&

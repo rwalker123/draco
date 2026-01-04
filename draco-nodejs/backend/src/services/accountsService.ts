@@ -15,8 +15,13 @@ import {
   CreateContactType,
   AccountDiscordIntegrationType,
   UpdateAccountType,
+  CreateIndividualGolfAccountType,
+  CreateAuthenticatedGolfAccountType,
+  IndividualGolfAccountResponseType,
+  AuthenticatedGolfAccountResponseType,
 } from '@draco/shared-schemas';
 import { accountblueskycredentials, accounts, contacts } from '#prisma/client';
+import prisma from '../lib/prisma.js';
 import {
   RepositoryFactory,
   IAccountRepository,
@@ -54,6 +59,15 @@ import { DiscordIntegrationService } from './discordIntegrationService.js';
 type OwnerSummary = AccountOwnerSummary;
 
 type OwnerDetailsByAccount = AccountOwnerDetailsByAccount;
+
+// Reference data IDs from database seed data (accounttypes and affiliations tables)
+const GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID = BigInt(5);
+const NO_AFFILIATION_ID = BigInt(1);
+
+const formatPossessiveName = (name: string): string => {
+  const trimmed = name.trim();
+  return trimmed.endsWith('s') || trimmed.endsWith('S') ? `${trimmed}' Golf` : `${trimmed}'s Golf`;
+};
 
 export class AccountsService {
   private readonly accountRepository: IAccountRepository;
@@ -342,6 +356,188 @@ export class AccountsService {
       ownerContactRecord,
       ownerUser,
     );
+  }
+
+  async createIndividualGolfAccount(
+    payload: CreateIndividualGolfAccountType,
+  ): Promise<IndividualGolfAccountResponseType> {
+    const currentYear = new Date().getFullYear();
+    const displayName = [payload.firstName, payload.middleName, payload.lastName]
+      .filter(Boolean)
+      .join(' ');
+
+    const result = await prisma.$transaction(async (tx) => {
+      const normalizedUsername = payload.email.toLowerCase().trim();
+
+      const existingUser = await tx.aspnetusers.findUnique({
+        where: { username: normalizedUsername },
+      });
+
+      if (existingUser) {
+        throw new ConflictError('Username already exists');
+      }
+
+      const authService = ServiceFactory.getAuthService();
+      const { hashedPassword, securityStamp, userId } = await authService.prepareUserCredentials(
+        payload.password,
+      );
+
+      const newUser = await tx.aspnetusers.create({
+        data: {
+          id: userId,
+          username: normalizedUsername,
+          email: '',
+          emailconfirmed: false,
+          passwordhash: hashedPassword,
+          securitystamp: securityStamp,
+          phonenumberconfirmed: false,
+          twofactorenabled: false,
+          lockoutenabled: true,
+          accessfailedcount: 0,
+        },
+      });
+
+      const accountRecord = await tx.accounts.create({
+        data: {
+          name: formatPossessiveName(displayName),
+          accounttypeid: GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID,
+          owneruserid: newUser.id,
+          affiliationid: NO_AFFILIATION_ID,
+          timezoneid: payload.timezone,
+          firstyear: currentYear,
+          defaultvideo: '',
+          autoplayvideo: false,
+          youtubeuserid: null,
+          facebookfanpage: null,
+        },
+      });
+
+      await tx.contacts.create({
+        data: {
+          firstname: payload.firstName,
+          lastname: payload.lastName,
+          middlename: payload.middleName ?? '',
+          email: payload.email,
+          phone1: null,
+          phone2: null,
+          phone3: null,
+          creatoraccountid: accountRecord.id,
+          userid: newUser.id,
+          streetaddress: null,
+          city: null,
+          state: null,
+          zip: null,
+          dateofbirth: new Date('1900-01-01'),
+        },
+      });
+
+      return { userId: newUser.id, accountId: accountRecord.id };
+    });
+
+    const authService = ServiceFactory.getAuthService();
+    const token = authService.generateTokenForUser(result.userId, payload.email);
+
+    void ServiceFactory.getEmailService().sendGeneralWelcomeEmail(payload.email);
+
+    const {
+      account,
+      affiliationMap,
+      ownerContact: ownerContactRecord,
+      ownerUser,
+    } = await this.loadAccountContext(result.accountId);
+
+    const formattedAccount = AccountResponseFormatter.formatAccount(
+      account,
+      affiliationMap,
+      ownerContactRecord,
+      ownerUser,
+    );
+
+    return {
+      token,
+      account: formattedAccount,
+      userId: result.userId,
+    };
+  }
+
+  async createAuthenticatedGolfAccount(
+    userId: string,
+    userEmail: string,
+    payload: CreateAuthenticatedGolfAccountType,
+  ): Promise<AuthenticatedGolfAccountResponseType> {
+    let firstName = payload.firstName ?? '';
+    let lastName = payload.lastName ?? '';
+    let middleName = payload.middleName ?? '';
+
+    if (!firstName && !lastName) {
+      const existingContacts = await this.contactRepository.findContactsByUserIds([userId]);
+      if (existingContacts.length > 0) {
+        const existingContact = existingContacts[0];
+        firstName = existingContact.firstname;
+        lastName = existingContact.lastname ?? '';
+        middleName = existingContact.middlename ?? '';
+      }
+    }
+
+    const displayName = [firstName, middleName, lastName].filter(Boolean).join(' ') || 'Golf';
+    const currentYear = new Date().getFullYear();
+
+    const accountId = await prisma.$transaction(async (tx) => {
+      const accountRecord = await tx.accounts.create({
+        data: {
+          name: formatPossessiveName(displayName),
+          accounttypeid: GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID,
+          owneruserid: userId,
+          affiliationid: NO_AFFILIATION_ID,
+          timezoneid: payload.timezone,
+          firstyear: currentYear,
+          defaultvideo: '',
+          autoplayvideo: false,
+          youtubeuserid: null,
+          facebookfanpage: null,
+        },
+      });
+
+      await tx.contacts.create({
+        data: {
+          firstname: firstName || 'Golf',
+          lastname: lastName,
+          middlename: middleName,
+          email: userEmail,
+          phone1: null,
+          phone2: null,
+          phone3: null,
+          creatoraccountid: accountRecord.id,
+          userid: userId,
+          streetaddress: null,
+          city: null,
+          state: null,
+          zip: null,
+          dateofbirth: new Date('1900-01-01'),
+        },
+      });
+
+      return accountRecord.id;
+    });
+
+    const {
+      account,
+      affiliationMap,
+      ownerContact: ownerContactRecord,
+      ownerUser,
+    } = await this.loadAccountContext(accountId);
+
+    const formattedAccount = AccountResponseFormatter.formatAccount(
+      account,
+      affiliationMap,
+      ownerContactRecord,
+      ownerUser,
+    );
+
+    return {
+      account: formattedAccount,
+      userId,
+    };
   }
 
   async updateAccount(accountId: bigint, payload: UpdateAccountType): Promise<AccountType> {

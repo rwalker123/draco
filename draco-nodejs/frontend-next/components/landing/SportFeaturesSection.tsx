@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Chip, Container, Paper, Typography } from '@mui/material';
+import { Box, Button, Chip, Container, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
 import GolfCourseIcon from '@mui/icons-material/GolfCourse';
@@ -19,10 +19,10 @@ const baseballFeatures: Feature[] = [
 ];
 
 const golfFeatures: Feature[] = [
-  { text: 'Tournament management' },
-  { text: 'Handicap tracking' },
+  { text: 'Personal score tracking' },
+  { text: 'Handicap calculation' },
   { text: 'Course scorecards' },
-  { text: 'Leaderboards' },
+  { text: 'Statistics and insights' },
 ];
 
 interface FeatureListProps {
@@ -54,7 +54,11 @@ function FeatureList({ features, disabled = false }: FeatureListProps) {
   );
 }
 
-export default function SportFeaturesSection() {
+interface SportFeaturesSectionProps {
+  onGolfGetStarted?: () => void;
+}
+
+export default function SportFeaturesSection({ onGolfGetStarted }: SportFeaturesSectionProps) {
   return (
     <Container maxWidth="lg" sx={{ py: 8 }}>
       <Grid container spacing={4}>
@@ -67,6 +71,9 @@ export default function SportFeaturesSection() {
               </Typography>
             </Box>
             <Chip label="Available Now" color="success" sx={{ mb: 3 }} />
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              For leagues and organizations
+            </Typography>
             <FeatureList features={baseballFeatures} />
           </Paper>
         </Grid>
@@ -79,8 +86,18 @@ export default function SportFeaturesSection() {
                 Golf
               </Typography>
             </Box>
-            <Chip label="Coming Soon" color="warning" sx={{ mb: 3 }} />
-            <FeatureList features={golfFeatures} disabled />
+            <Chip label="Available Now" color="success" sx={{ mb: 3 }} />
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              For individual golfers
+            </Typography>
+            <FeatureList features={golfFeatures} />
+            {onGolfGetStarted && (
+              <Box sx={{ mt: 3 }}>
+                <Button variant="contained" color="primary" onClick={onGolfGetStarted}>
+                  Get Started
+                </Button>
+              </Box>
+            )}
           </Paper>
         </Grid>
       </Grid>

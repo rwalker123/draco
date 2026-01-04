@@ -2,10 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Box, Button, Alert, Container } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
 import BaseballAccountHome from '../BaseballAccountHome';
+import GolfLeagueAccountHome from '../GolfLeagueAccountHome';
+import IndividualGolfAccountHome from '../IndividualGolfAccountHome';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
 import { AccountType } from '@draco/shared-schemas';
+import {
+  isGolfIndividualAccountType,
+  isGolfLeagueAccountType,
+} from '../../../../utils/accountTypeUtils';
 
 const AccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -85,12 +91,17 @@ const AccountHome: React.FC = () => {
     );
   }
 
-  // Render baseball-specific home page for baseball accounts
-  if (account.configuration?.accountType?.name?.toLowerCase() === 'baseball') {
-    return <BaseballAccountHome />;
+  const accountType = account.configuration?.accountType?.name;
+
+  if (isGolfIndividualAccountType(accountType)) {
+    return <IndividualGolfAccountHome />;
   }
 
-  return <main className="min-h-screen bg-background">{/* Header */}</main>;
+  if (isGolfLeagueAccountType(accountType)) {
+    return <GolfLeagueAccountHome />;
+  }
+
+  return <BaseballAccountHome />;
 };
 
 export default AccountHome;

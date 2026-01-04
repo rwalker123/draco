@@ -15,6 +15,7 @@ import { useApiClient } from '../hooks/useApiClient';
 import { getAccountById } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../utils/apiResult';
 import { ACCOUNT_STORAGE_KEY } from '../constants/storageKeys';
+import { isGolfIndividualAccountType } from '../utils/accountTypeUtils';
 
 interface Account {
   id: string;
@@ -259,4 +260,9 @@ export const useAccount = () => {
 export const useAccountTimezone = (): string => {
   const { currentAccount } = useAccount();
   return currentAccount?.timeZone ?? DEFAULT_TIMEZONE;
+};
+
+export const useIsIndividualGolfAccount = (): boolean => {
+  const { currentAccount } = useAccount();
+  return isGolfIndividualAccountType(currentAccount?.accountType);
 };

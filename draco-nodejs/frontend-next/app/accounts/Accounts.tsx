@@ -15,6 +15,7 @@ import FeatureShowcaseSection from '../../components/landing/FeatureShowcaseSect
 import CommunityHighlightsSection from '../../components/landing/CommunityHighlightsSection';
 import HowItWorksSection from '../../components/landing/HowItWorksSection';
 import SportFeaturesSection from '../../components/landing/SportFeaturesSection';
+import IndividualGolfSignupDialog from '../../components/golf/dialogs/IndividualGolfSignupDialog';
 // FinalCtaSection import commented out - see TODO below
 // import FinalCtaSection from '../../components/landing/FinalCtaSection';
 
@@ -33,6 +34,7 @@ const Accounts: FC = () => {
     results: [],
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [golfSignupOpen, setGolfSignupOpen] = useState(false);
   const { user } = useAuth();
   const { isAdministrator } = useRole();
   const router = useRouter();
@@ -130,6 +132,18 @@ const Accounts: FC = () => {
     });
   }, []);
 
+  const handleGolfGetStarted = useCallback(() => {
+    setGolfSignupOpen(true);
+  }, []);
+
+  const handleGolfSignupSuccess = useCallback(
+    (result: { token?: string; accountId: string }) => {
+      setGolfSignupOpen(false);
+      router.push(`/account/${result.accountId}/home`);
+    },
+    [router],
+  );
+
   return (
     <Box component="main" className="min-h-screen bg-background">
       <HeroSection
@@ -182,7 +196,7 @@ const Accounts: FC = () => {
       <CommunityHighlightsSection />
 
       <Box sx={{ backgroundColor: 'background.paper' }}>
-        <SportFeaturesSection />
+        <SportFeaturesSection onGolfGetStarted={handleGolfGetStarted} />
       </Box>
 
       <HowItWorksSection />
@@ -221,6 +235,12 @@ const Accounts: FC = () => {
         open={isAdministrator && ctaState === 'createAccount'}
         onClose={handleCloseCreateDialog}
         onSuccess={handleCreateDialogSuccess}
+      />
+
+      <IndividualGolfSignupDialog
+        open={golfSignupOpen}
+        onClose={() => setGolfSignupOpen(false)}
+        onSuccess={handleGolfSignupSuccess}
       />
     </Box>
   );
