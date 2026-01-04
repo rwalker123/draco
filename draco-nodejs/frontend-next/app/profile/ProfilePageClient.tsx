@@ -31,6 +31,7 @@ import DiscordIntegrationCard from '@/components/profile/DiscordIntegrationCard'
 import OrganizationsWidget from '@/components/OrganizationsWidget';
 import MyTeams, { UserTeam } from '@/components/MyTeams';
 import EditContactInfoDialog from '@/components/profile/EditContactInfoDialog';
+import ChangePasswordDialog from '@/components/profile/ChangePasswordDialog';
 import AccountOptional from '@/components/account/AccountOptional';
 import DeleteIndividualGolfAccountDialog from '@/components/golf/dialogs/DeleteIndividualGolfAccountDialog';
 import { isGolfIndividualAccountType } from '@/utils/accountTypeUtils';
@@ -81,6 +82,7 @@ const ProfilePageClient: React.FC = () => {
   const teamsByAccountRef = useRef<Record<string, OrganizationTeamsState>>({});
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isChangePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
 
   useEffect(() => {
     teamsByAccountRef.current = teamsByAccount;
@@ -391,6 +393,10 @@ const ProfilePageClient: React.FC = () => {
     setEditDialogOpen(true);
   }, []);
 
+  const handleChangePassword = useCallback(() => {
+    setChangePasswordDialogOpen(true);
+  }, []);
+
   const handleContactUpdated = useCallback((updated: BaseContactType) => {
     setContact(updated);
   }, []);
@@ -509,6 +515,7 @@ const ProfilePageClient: React.FC = () => {
                   ? handleEditContact
                   : undefined
               }
+              onChangePassword={user ? handleChangePassword : undefined}
               surveyHref={currentAccountId ? `/account/${currentAccountId}/surveys` : undefined}
               surveyAccountId={currentAccountId}
               hideDetails={hideContactDetails}
@@ -583,6 +590,11 @@ const ProfilePageClient: React.FC = () => {
           onSuccess={handleDeleteSuccess}
         />
       )}
+
+      <ChangePasswordDialog
+        open={isChangePasswordDialogOpen}
+        onClose={() => setChangePasswordDialogOpen(false)}
+      />
     </Box>
   );
 };
