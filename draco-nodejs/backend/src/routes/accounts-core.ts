@@ -2,6 +2,7 @@
 // Handles basic account operations: search, retrieval, creation, updates, deletion
 
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { accountCreationRateLimit, signupRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
@@ -12,6 +13,8 @@ import {
   CreateAccountSchema,
   UpdateAccountSchema,
   ContactValidationWithSignInSchema,
+  CreateIndividualGolfAccountSchema,
+  CreateAuthenticatedGolfAccountSchema,
 } from '@draco/shared-schemas';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError } from '../utils/customErrors.js';
@@ -131,6 +134,43 @@ router.post(
 );
 
 /**
+ * POST /api/accounts/individual-golf
+ * Create individual golf account with user registration (unauthenticated)
+ */
+router.post(
+  '/individual-golf',
+  signupRateLimit,
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    await turnstileService.assertValid(req.get(turnstileService.getHeaderName()), req.ip);
+
+    const payload = CreateIndividualGolfAccountSchema.parse(req.body);
+    const result = await accountsService.createIndividualGolfAccount(payload);
+
+    res.status(201).json(result);
+  }),
+);
+
+/**
+ * POST /api/accounts/individual-golf/authenticated
+ * Create individual golf account for an already authenticated user
+ */
+router.post(
+  '/individual-golf/authenticated',
+  authenticateToken,
+  accountCreationRateLimit,
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const payload = CreateAuthenticatedGolfAccountSchema.parse(req.body);
+    const result = await accountsService.createAuthenticatedGolfAccount(
+      req.user!.id,
+      req.user!.username,
+      payload,
+    );
+
+    res.status(201).json(result);
+  }),
+);
+
+/**
  * PUT /api/accounts/:accountId
  * Update account (Account Admin or Administrator)
  */
@@ -168,6 +208,25 @@ router.delete(
     await accountsService.deleteAccount(accountId);
 
     res.status(204).send();
+  }),
+);
+
+/**
+ * DELETE /api/accounts/:accountId/individual-golf
+ * Delete an individual golf account (and optionally the user)
+ */
+router.delete(
+  '/:accountId/individual-golf',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const userId = req.user!.id;
+    const { deleteUser } = z.object({ deleteUser: z.boolean().optional() }).parse(req.body);
+
+    await accountsService.deleteIndividualGolfAccount(accountId, userId, deleteUser ?? false);
+    res.status(200).json({ success: true, message: 'Account deleted successfully' });
   }),
 );
 

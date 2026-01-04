@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CreateContactSchema, NamedContactSchema, RegisteredUserSchema } from './contact.js';
+import { nameSchema } from './standardSchema.js';
 
 const queryValueSchema = z
   .string()
@@ -211,3 +212,49 @@ export type AccountCurrentSeasonType = z.infer<typeof AccountCurrentSeasonSchema
 export type AccountDetailsQueryType = z.infer<typeof AccountDetailsQuerySchema>;
 export type AccountNameType = z.infer<typeof AccountNameSchema>;
 export type AccountHeaderType = z.infer<typeof AccountHeaderSchema>;
+
+// Individual Golf Account Creation (unauthenticated - creates new user)
+export const CreateIndividualGolfAccountSchema = z.object({
+  firstName: nameSchema,
+  middleName: z.string().trim().max(50).optional(),
+  lastName: nameSchema,
+  email: z
+    .string()
+    .email('Valid email is required')
+    .transform((val) => val.toLowerCase().trim()),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  timezone: z.string().trim().min(1).max(100),
+  homeCourseId: z.string().optional(),
+});
+
+export type CreateIndividualGolfAccountType = z.infer<typeof CreateIndividualGolfAccountSchema>;
+
+// Individual Golf Account Creation (authenticated - uses existing user)
+export const CreateAuthenticatedGolfAccountSchema = z.object({
+  firstName: nameSchema.optional(),
+  middleName: z.string().trim().max(50).optional(),
+  lastName: nameSchema.optional(),
+  timezone: z.string().trim().min(1).max(100),
+  homeCourseId: z.string().optional(),
+});
+
+export type CreateAuthenticatedGolfAccountType = z.infer<
+  typeof CreateAuthenticatedGolfAccountSchema
+>;
+
+export const IndividualGolfAccountResponseSchema = z.object({
+  token: z.string(),
+  account: AccountSchema,
+  userId: z.string(),
+});
+
+export type IndividualGolfAccountResponseType = z.infer<typeof IndividualGolfAccountResponseSchema>;
+
+export const AuthenticatedGolfAccountResponseSchema = z.object({
+  account: AccountSchema,
+  userId: z.string(),
+});
+
+export type AuthenticatedGolfAccountResponseType = z.infer<
+  typeof AuthenticatedGolfAccountResponseSchema
+>;

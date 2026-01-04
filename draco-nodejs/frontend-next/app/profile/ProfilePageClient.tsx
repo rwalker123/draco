@@ -1,7 +1,17 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Box, CircularProgress, Paper, Skeleton, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Paper,
+  Skeleton,
+  Stack,
+  Typography,
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import Grid from '@mui/material/Grid';
 import { useRouter } from 'next/navigation';
 import {
@@ -22,6 +32,8 @@ import OrganizationsWidget from '@/components/OrganizationsWidget';
 import MyTeams, { UserTeam } from '@/components/MyTeams';
 import EditContactInfoDialog from '@/components/profile/EditContactInfoDialog';
 import AccountOptional from '@/components/account/AccountOptional';
+import DeleteIndividualGolfAccountDialog from '@/components/golf/dialogs/DeleteIndividualGolfAccountDialog';
+import { isGolfIndividualAccountType } from '@/utils/accountTypeUtils';
 
 interface OrganizationTeamsState {
   teams: UserTeam[];
@@ -46,7 +58,7 @@ const ORGANIZATIONS_ERROR_MESSAGE =
 const ProfilePageClient: React.FC = () => {
   const apiClient = useApiClient();
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
   const { currentAccount } = useAccount();
   const currentAccountId = currentAccount?.id ? String(currentAccount.id) : null;
 
@@ -68,6 +80,7 @@ const ProfilePageClient: React.FC = () => {
   const [teamsByAccount, setTeamsByAccount] = useState<Record<string, OrganizationTeamsState>>({});
   const teamsByAccountRef = useRef<Record<string, OrganizationTeamsState>>({});
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     teamsByAccountRef.current = teamsByAccount;
@@ -307,7 +320,12 @@ const ProfilePageClient: React.FC = () => {
       );
     }
 
-    if (!organizations.length) {
+    // Filter out golf individual accounts since they don't have teams
+    const teamOrganizations = organizations.filter(
+      (org) => !isGolfIndividualAccountType(org.configuration?.accountType?.name),
+    );
+
+    if (!teamOrganizations.length) {
       return (
         <Paper sx={{ p: 4, borderRadius: 2 }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
@@ -322,7 +340,7 @@ const ProfilePageClient: React.FC = () => {
 
     return (
       <Stack spacing={3}>
-        {organizations.map((organization) => {
+        {teamOrganizations.map((organization) => {
           const teamsEntry = teamsByAccount[organization.id];
           const isLoading = teamsEntry?.loading ?? false;
           const error = teamsEntry?.error;
@@ -377,6 +395,30 @@ const ProfilePageClient: React.FC = () => {
     setContact(updated);
   }, []);
 
+  const isGolfIndividualAccount = useMemo(() => {
+    return isGolfIndividualAccountType(currentAccount?.accountType);
+  }, [currentAccount?.accountType]);
+
+  const canDeleteUser = useMemo(() => {
+    return isGolfIndividualAccount && organizations.length === 1;
+  }, [isGolfIndividualAccount, organizations.length]);
+
+  const handleDeleteAccount = useCallback(() => {
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleDeleteSuccess = useCallback(
+    (result: { userDeleted: boolean }) => {
+      if (result.userDeleted) {
+        logout(false);
+        router.push('/');
+      } else {
+        router.push('/accounts');
+      }
+    },
+    [logout, router],
+  );
+
   const showContactInfoSetting = useMemo(() => {
     if (!currentAccountId) {
       return true;
@@ -405,16 +447,20 @@ const ProfilePageClient: React.FC = () => {
 
   const contactSettingsPending = Boolean(currentAccountId) && accountSettingsLoading;
 
-  const allowContactInfoView = currentAccountId ? showContactInfoSetting !== false : true;
+  const allowContactInfoView =
+    isGolfIndividualAccount || (currentAccountId ? showContactInfoSetting !== false : true);
   const allowContactEdit =
-    allowContactInfoView && (currentAccountId ? editContactInfoSetting !== false : true);
-  const hideContactDetails = Boolean(currentAccountId && !allowContactInfoView);
+    isGolfIndividualAccount ||
+    (allowContactInfoView && (currentAccountId ? editContactInfoSetting !== false : true));
+  const hideContactDetails = Boolean(
+    currentAccountId && !allowContactInfoView && !isGolfIndividualAccount,
+  );
 
   useEffect(() => {
-    if (!allowContactEdit && isEditDialogOpen) {
+    if (!allowContactEdit && !isGolfIndividualAccount && isEditDialogOpen) {
       setEditDialogOpen(false);
     }
-  }, [allowContactEdit, isEditDialogOpen]);
+  }, [allowContactEdit, isEditDialogOpen, isGolfIndividualAccount]);
 
   if (!user) {
     return (
@@ -459,7 +505,9 @@ const ProfilePageClient: React.FC = () => {
               infoMessage={hideContactDetails ? null : contactInfoMessage}
               accountName={currentAccount?.name}
               onEdit={
-                contact && currentAccountId && allowContactEdit ? handleEditContact : undefined
+                contact && currentAccountId && (allowContactEdit || isGolfIndividualAccount)
+                  ? handleEditContact
+                  : undefined
               }
               surveyHref={currentAccountId ? `/account/${currentAccountId}/surveys` : undefined}
               surveyAccountId={currentAccountId}
@@ -491,15 +539,48 @@ const ProfilePageClient: React.FC = () => {
           </Stack>
         </Grid>
       </Grid>
-      {currentAccountId && allowContactInfoView && allowContactEdit && (
-        <EditContactInfoDialog
-          open={isEditDialogOpen}
-          contact={contact}
+
+      {isGolfIndividualAccount && currentAccountId && (
+        <Paper sx={{ p: 3, mt: 3, borderRadius: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: 'error.main' }}>
+            Danger Zone
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Permanently delete your golf account and all associated data.
+          </Typography>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={handleDeleteAccount}
+          >
+            Delete Golf Account
+          </Button>
+        </Paper>
+      )}
+
+      {currentAccountId &&
+        allowContactInfoView &&
+        (allowContactEdit || isGolfIndividualAccount) && (
+          <EditContactInfoDialog
+            open={isEditDialogOpen}
+            contact={contact}
+            accountId={currentAccountId}
+            onClose={() => setEditDialogOpen(false)}
+            onSuccess={(updated) => {
+              handleContactUpdated(updated);
+            }}
+          />
+        )}
+
+      {isGolfIndividualAccount && currentAccountId && currentAccount?.name && (
+        <DeleteIndividualGolfAccountDialog
+          open={isDeleteDialogOpen}
           accountId={currentAccountId}
-          onClose={() => setEditDialogOpen(false)}
-          onSuccess={(updated) => {
-            handleContactUpdated(updated);
-          }}
+          accountName={currentAccount.name}
+          canDeleteUser={canDeleteUser}
+          onClose={() => setDeleteDialogOpen(false)}
+          onSuccess={handleDeleteSuccess}
         />
       )}
     </Box>

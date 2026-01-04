@@ -30,6 +30,10 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
     CreateAccountSchemaRef,
+    CreateIndividualGolfAccountSchemaRef,
+    CreateAuthenticatedGolfAccountSchemaRef,
+    IndividualGolfAccountResponseSchemaRef,
+    AuthenticatedGolfAccountResponseSchemaRef,
     CreateAccountUrlSchemaRef,
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
@@ -984,6 +988,115 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     },
   });
 
+  // POST /api/accounts/individual-golf
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/individual-golf',
+    operationId: 'createIndividualGolfAccount',
+    summary: 'Create individual golf account',
+    description:
+      'Create a new individual golf account with user registration. No authentication required.',
+    tags: ['Accounts'],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: CreateIndividualGolfAccountSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Individual golf account created',
+        content: {
+          'application/json': {
+            schema: IndividualGolfAccountResponseSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      409: {
+        description: 'User already exists',
+        content: {
+          'application/json': {
+            schema: ConflictErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // POST /api/accounts/individual-golf/authenticated
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/individual-golf/authenticated',
+    operationId: 'createAuthenticatedGolfAccount',
+    summary: 'Create individual golf account (authenticated)',
+    description:
+      'Create a new individual golf account for an already authenticated user. Uses existing user info.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: CreateAuthenticatedGolfAccountSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Individual golf account created',
+        content: {
+          'application/json': {
+            schema: AuthenticatedGolfAccountResponseSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
   // PUT /api/accounts/{accountId}
   registry.registerPath({
     method: 'put',
@@ -1099,6 +1212,93 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       },
       403: {
         description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // DELETE /api/accounts/{accountId}/individual-golf
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/individual-golf',
+    operationId: 'deleteIndividualGolfAccount',
+    summary: 'Delete individual golf account',
+    description:
+      'Delete an individual golf account and optionally the associated user account. Only the account owner can perform this action.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: z.object({
+              deleteUser: z.boolean().optional(),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Account deleted successfully',
+        content: {
+          'application/json': {
+            schema: z.object({
+              success: z.boolean(),
+              message: z.string(),
+            }),
+          },
+        },
+      },
+      400: {
+        description: 'Validation error (not a golf individual account or user has other accounts)',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden - not the account owner',
         content: {
           'application/json': {
             schema: AuthorizationErrorSchemaRef,

@@ -10,6 +10,7 @@ import {
   dbTeamWithLeague,
   dbUserManagerTeams,
   dbUserTeams,
+  dbGolfUserTeams,
 } from '../repositories/index.js';
 import {
   TeamManagerWithTeamsType,
@@ -32,13 +33,13 @@ export class TeamResponseFormatter {
   /**
    * Combine and format teams the user is a member of and teams the user manages
    * @param accountId The account identifier
-   * @param userTeams Teams the user is a member of
+   * @param userTeams Teams the user is a member of (from rosterseason or golfroster)
    * @param managedTeams Teams the user manages
    * @returns A combined list of unique teams with league information
    */
   static formatAndCombineTeamsWithLeagueResponse(
     accountId: bigint,
-    userTeams: dbUserTeams[],
+    userTeams: dbUserTeams[] | dbGolfUserTeams[],
     managedTeams: dbUserManagerTeams[],
   ): TeamSeasonType[] {
     // Combine and deduplicate teams

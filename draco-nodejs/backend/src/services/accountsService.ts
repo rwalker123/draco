@@ -15,8 +15,13 @@ import {
   CreateContactType,
   AccountDiscordIntegrationType,
   UpdateAccountType,
+  CreateIndividualGolfAccountType,
+  CreateAuthenticatedGolfAccountType,
+  IndividualGolfAccountResponseType,
+  AuthenticatedGolfAccountResponseType,
 } from '@draco/shared-schemas';
-import { accountblueskycredentials, accounts, contacts } from '#prisma/client';
+import { accountblueskycredentials, accounts, contacts, Prisma } from '#prisma/client';
+import prisma from '../lib/prisma.js';
 import {
   RepositoryFactory,
   IAccountRepository,
@@ -38,6 +43,7 @@ import {
   AccountResponseFormatter,
 } from '../responseFormatters/index.js';
 import {
+  AuthorizationError,
   ConflictError,
   NotFoundError,
   NoDomainAccount,
@@ -54,6 +60,15 @@ import { DiscordIntegrationService } from './discordIntegrationService.js';
 type OwnerSummary = AccountOwnerSummary;
 
 type OwnerDetailsByAccount = AccountOwnerDetailsByAccount;
+
+// Reference data IDs from database seed data (accounttypes and affiliations tables)
+const GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID = BigInt(5);
+const NO_AFFILIATION_ID = BigInt(1);
+
+const formatPossessiveName = (name: string): string => {
+  const trimmed = name.trim();
+  return trimmed.endsWith('s') || trimmed.endsWith('S') ? `${trimmed}' Golf` : `${trimmed}'s Golf`;
+};
 
 export class AccountsService {
   private readonly accountRepository: IAccountRepository;
@@ -344,6 +359,181 @@ export class AccountsService {
     );
   }
 
+  async createIndividualGolfAccount(
+    payload: CreateIndividualGolfAccountType,
+  ): Promise<IndividualGolfAccountResponseType> {
+    const currentYear = new Date().getFullYear();
+    const displayName = [payload.firstName, payload.middleName, payload.lastName]
+      .filter(Boolean)
+      .join(' ');
+
+    const result = await prisma.$transaction(async (tx) => {
+      const normalizedUsername = payload.email.toLowerCase().trim();
+
+      const existingUser = await tx.aspnetusers.findUnique({
+        where: { username: normalizedUsername },
+      });
+
+      if (existingUser) {
+        throw new ConflictError('Username already exists');
+      }
+
+      const authService = ServiceFactory.getAuthService();
+      const { hashedPassword, securityStamp, userId } = await authService.prepareUserCredentials(
+        payload.password,
+      );
+
+      const newUser = await tx.aspnetusers.create({
+        data: {
+          id: userId,
+          username: normalizedUsername,
+          email: '',
+          emailconfirmed: false,
+          passwordhash: hashedPassword,
+          securitystamp: securityStamp,
+          phonenumberconfirmed: false,
+          twofactorenabled: false,
+          lockoutenabled: true,
+          accessfailedcount: 0,
+        },
+      });
+
+      const accountRecord = await tx.accounts.create({
+        data: {
+          name: formatPossessiveName(displayName),
+          accounttypeid: GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID,
+          owneruserid: newUser.id,
+          affiliationid: NO_AFFILIATION_ID,
+          timezoneid: payload.timezone,
+          firstyear: currentYear,
+          defaultvideo: '',
+          autoplayvideo: false,
+          youtubeuserid: null,
+          facebookfanpage: null,
+        },
+      });
+
+      await this.createGolfAccountContact(
+        tx,
+        accountRecord.id,
+        newUser.id,
+        payload.firstName,
+        payload.lastName,
+        payload.middleName ?? '',
+        payload.email,
+      );
+
+      return { userId: newUser.id, accountId: accountRecord.id };
+    });
+
+    const authService = ServiceFactory.getAuthService();
+    const token = authService.generateTokenForUser(result.userId, payload.email);
+
+    void ServiceFactory.getEmailService().sendGeneralWelcomeEmail(payload.email);
+
+    const {
+      account,
+      affiliationMap,
+      ownerContact: ownerContactRecord,
+      ownerUser,
+    } = await this.loadAccountContext(result.accountId);
+
+    const formattedAccount = AccountResponseFormatter.formatAccount(
+      account,
+      affiliationMap,
+      ownerContactRecord,
+      ownerUser,
+    );
+
+    return {
+      token,
+      account: formattedAccount,
+      userId: result.userId,
+    };
+  }
+
+  async createAuthenticatedGolfAccount(
+    userId: string,
+    userEmail: string,
+    payload: CreateAuthenticatedGolfAccountType,
+  ): Promise<AuthenticatedGolfAccountResponseType> {
+    const existingGolfAccount = await prisma.accounts.findFirst({
+      where: {
+        owneruserid: userId,
+        accounttypeid: GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID,
+      },
+    });
+
+    if (existingGolfAccount) {
+      throw new ConflictError('You already have an individual golf account');
+    }
+
+    let firstName = payload.firstName ?? '';
+    let lastName = payload.lastName ?? '';
+    let middleName = payload.middleName ?? '';
+
+    if (!firstName && !lastName) {
+      const existingContacts = await this.contactRepository.findContactsByUserIds([userId]);
+      if (existingContacts.length > 0) {
+        const existingContact = existingContacts[0];
+        firstName = existingContact.firstname;
+        lastName = existingContact.lastname ?? '';
+        middleName = existingContact.middlename ?? '';
+      }
+    }
+
+    const displayName = [firstName, middleName, lastName].filter(Boolean).join(' ') || 'Golf';
+    const currentYear = new Date().getFullYear();
+
+    const accountId = await prisma.$transaction(async (tx) => {
+      const accountRecord = await tx.accounts.create({
+        data: {
+          name: formatPossessiveName(displayName),
+          accounttypeid: GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID,
+          owneruserid: userId,
+          affiliationid: NO_AFFILIATION_ID,
+          timezoneid: payload.timezone,
+          firstyear: currentYear,
+          defaultvideo: '',
+          autoplayvideo: false,
+          youtubeuserid: null,
+          facebookfanpage: null,
+        },
+      });
+
+      await this.createGolfAccountContact(
+        tx,
+        accountRecord.id,
+        userId,
+        firstName,
+        lastName,
+        middleName,
+        userEmail,
+      );
+
+      return accountRecord.id;
+    });
+
+    const {
+      account,
+      affiliationMap,
+      ownerContact: ownerContactRecord,
+      ownerUser,
+    } = await this.loadAccountContext(accountId);
+
+    const formattedAccount = AccountResponseFormatter.formatAccount(
+      account,
+      affiliationMap,
+      ownerContactRecord,
+      ownerUser,
+    );
+
+    return {
+      account: formattedAccount,
+      userId,
+    };
+  }
+
   async updateAccount(accountId: bigint, payload: UpdateAccountType): Promise<AccountType> {
     await this.ensureAccountExists(accountId);
 
@@ -412,6 +602,47 @@ export class AccountsService {
     }
 
     await this.accountRepository.delete(accountId);
+  }
+
+  async deleteIndividualGolfAccount(
+    accountId: bigint,
+    userId: string,
+    deleteUser: boolean,
+  ): Promise<void> {
+    const account = await this.ensureAccountExists(accountId);
+
+    if (account.accounttypeid !== GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID) {
+      throw new ValidationError('This operation is only available for individual golf accounts');
+    }
+
+    if (account.owneruserid !== userId) {
+      throw new AuthorizationError('Only the account owner can delete this account');
+    }
+
+    if (deleteUser) {
+      const userAccounts = await this.getAccountsForUser(userId);
+      if (userAccounts.length > 1) {
+        throw new ValidationError(
+          'Cannot delete user account while associated with other organizations',
+        );
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const contacts = await tx.contacts.findMany({
+        where: { creatoraccountid: accountId },
+      });
+
+      for (const contact of contacts) {
+        await tx.contacts.delete({ where: { id: contact.id } });
+      }
+
+      await tx.accounts.delete({ where: { id: accountId } });
+
+      if (deleteUser) {
+        await tx.aspnetusers.delete({ where: { id: userId } });
+      }
+    });
   }
 
   async getAccountName(accountId: bigint): Promise<AccountNameType> {
@@ -905,5 +1136,34 @@ export class AccountsService {
     };
 
     await this.contactRepository.create(contactRecord);
+  }
+
+  private async createGolfAccountContact(
+    tx: Prisma.TransactionClient,
+    accountId: bigint,
+    userId: string,
+    firstName: string,
+    lastName: string,
+    middleName: string,
+    email: string,
+  ): Promise<void> {
+    await tx.contacts.create({
+      data: {
+        firstname: firstName,
+        lastname: lastName,
+        middlename: middleName,
+        email: email,
+        phone1: null,
+        phone2: null,
+        phone3: null,
+        creatoraccountid: accountId,
+        userid: userId,
+        streetaddress: null,
+        city: null,
+        state: null,
+        zip: null,
+        dateofbirth: new Date('1900-01-01'),
+      },
+    });
   }
 }

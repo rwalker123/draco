@@ -5580,6 +5580,674 @@
           "name"
         ]
       },
+      "CreateIndividualGolfAccount": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "middleName": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 6
+          },
+          "timezone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "homeCourseId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "email",
+          "password",
+          "timezone"
+        ]
+      },
+      "CreateAuthenticatedGolfAccount": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "middleName": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "timezone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "homeCourseId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "timezone"
+        ]
+      },
+      "IndividualGolfAccountResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "account": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "accountLogoUrl": {
+                "type": "string"
+              },
+              "configuration": {
+                "type": "object",
+                "properties": {
+                  "accountType": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name"
+                    ]
+                  },
+                  "firstYear": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "affiliation": {
+                    "type": "object",
+                    "nullable": true,
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "url": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name"
+                    ]
+                  }
+                }
+              },
+              "urls": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ]
+                },
+                "default": []
+              },
+              "accountOwner": {
+                "type": "object",
+                "properties": {
+                  "user": {
+                    "type": "object",
+                    "properties": {
+                      "userId": {
+                        "type": "string"
+                      },
+                      "userName": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "format": "email"
+                      },
+                      "token": {
+                        "type": "string"
+                      },
+                      "contact": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^\\d+$",
+                            "example": "12345"
+                          },
+                          "firstName": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "lastName": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "middleName": {
+                            "type": "string",
+                            "maxLength": 50
+                          },
+                          "email": {
+                            "type": "string",
+                            "maxLength": 100,
+                            "format": "email"
+                          },
+                          "userId": {
+                            "type": "string",
+                            "maxLength": 50
+                          },
+                          "photoUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "contactDetails": {
+                            "type": "object",
+                            "properties": {
+                              "phone1": {
+                                "type": "string",
+                                "nullable": true,
+                                "default": ""
+                              },
+                              "phone2": {
+                                "type": "string",
+                                "nullable": true,
+                                "default": ""
+                              },
+                              "phone3": {
+                                "type": "string",
+                                "nullable": true,
+                                "default": ""
+                              },
+                              "streetAddress": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 100,
+                                "default": ""
+                              },
+                              "city": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 50,
+                                "default": ""
+                              },
+                              "state": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 50,
+                                "default": ""
+                              },
+                              "zip": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 10,
+                                "default": ""
+                              },
+                              "dateOfBirth": {
+                                "type": "string",
+                                "nullable": true,
+                                "default": ""
+                              }
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "firstName",
+                          "lastName"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "userId",
+                      "userName"
+                    ]
+                  },
+                  "contact": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^\\d+$",
+                        "example": "12345"
+                      },
+                      "firstName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "lastName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "middleName": {
+                        "type": "string",
+                        "maxLength": 50
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "firstName",
+                      "lastName"
+                    ]
+                  }
+                }
+              },
+              "socials": {
+                "type": "object",
+                "properties": {
+                  "twitterAccountName": {
+                    "type": "string"
+                  },
+                  "blueskyHandle": {
+                    "type": "string"
+                  },
+                  "twitterConnected": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "instagramHandle": {
+                    "type": "string"
+                  },
+                  "instagramConnected": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "facebookFanPage": {
+                    "type": "string"
+                  },
+                  "youtubeUserId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "defaultVideo": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "autoPlayVideo": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              },
+              "discordIntegration": {
+                "type": "object",
+                "properties": {
+                  "guildId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "guildName": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "guildId"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "account",
+          "userId"
+        ]
+      },
+      "AuthenticatedGolfAccountResponse": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "accountLogoUrl": {
+                "type": "string"
+              },
+              "configuration": {
+                "type": "object",
+                "properties": {
+                  "accountType": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name"
+                    ]
+                  },
+                  "firstYear": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "affiliation": {
+                    "type": "object",
+                    "nullable": true,
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "url": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name"
+                    ]
+                  }
+                }
+              },
+              "urls": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ]
+                },
+                "default": []
+              },
+              "accountOwner": {
+                "type": "object",
+                "properties": {
+                  "user": {
+                    "type": "object",
+                    "properties": {
+                      "userId": {
+                        "type": "string"
+                      },
+                      "userName": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "format": "email"
+                      },
+                      "token": {
+                        "type": "string"
+                      },
+                      "contact": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^\\d+$",
+                            "example": "12345"
+                          },
+                          "firstName": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "lastName": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "middleName": {
+                            "type": "string",
+                            "maxLength": 50
+                          },
+                          "email": {
+                            "type": "string",
+                            "maxLength": 100,
+                            "format": "email"
+                          },
+                          "userId": {
+                            "type": "string",
+                            "maxLength": 50
+                          },
+                          "photoUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "contactDetails": {
+                            "type": "object",
+                            "properties": {
+                              "phone1": {
+                                "type": "string",
+                                "nullable": true,
+                                "default": ""
+                              },
+                              "phone2": {
+                                "type": "string",
+                                "nullable": true,
+                                "default": ""
+                              },
+                              "phone3": {
+                                "type": "string",
+                                "nullable": true,
+                                "default": ""
+                              },
+                              "streetAddress": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 100,
+                                "default": ""
+                              },
+                              "city": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 50,
+                                "default": ""
+                              },
+                              "state": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 50,
+                                "default": ""
+                              },
+                              "zip": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 10,
+                                "default": ""
+                              },
+                              "dateOfBirth": {
+                                "type": "string",
+                                "nullable": true,
+                                "default": ""
+                              }
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "firstName",
+                          "lastName"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "userId",
+                      "userName"
+                    ]
+                  },
+                  "contact": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^\\d+$",
+                        "example": "12345"
+                      },
+                      "firstName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "lastName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "middleName": {
+                        "type": "string",
+                        "maxLength": 50
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "firstName",
+                      "lastName"
+                    ]
+                  }
+                }
+              },
+              "socials": {
+                "type": "object",
+                "properties": {
+                  "twitterAccountName": {
+                    "type": "string"
+                  },
+                  "blueskyHandle": {
+                    "type": "string"
+                  },
+                  "twitterConnected": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "instagramHandle": {
+                    "type": "string"
+                  },
+                  "instagramConnected": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "facebookFanPage": {
+                    "type": "string"
+                  },
+                  "youtubeUserId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "defaultVideo": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "autoPlayVideo": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              },
+              "discordIntegration": {
+                "type": "object",
+                "properties": {
+                  "guildId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "guildName": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "guildId"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "userId"
+        ]
+      },
       "AccountName": {
         "type": "object",
         "properties": {
@@ -30074,6 +30742,247 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/individual-golf": {
+      "post": {
+        "operationId": "createIndividualGolfAccount",
+        "summary": "Create individual golf account",
+        "description": "Create a new individual golf account with user registration. No authentication required.",
+        "tags": [
+          "Accounts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIndividualGolfAccount"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Individual golf account created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndividualGolfAccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "User already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/individual-golf/authenticated": {
+      "post": {
+        "operationId": "createAuthenticatedGolfAccount",
+        "summary": "Create individual golf account (authenticated)",
+        "description": "Create a new individual golf account for an already authenticated user. Uses existing user info.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAuthenticatedGolfAccount"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Individual golf account created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedGolfAccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/individual-golf": {
+      "delete": {
+        "operationId": "deleteIndividualGolfAccount",
+        "summary": "Delete individual golf account",
+        "description": "Delete an individual golf account and optionally the associated user account. Only the account owner can perform this action.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deleteUser": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Account deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (not a golf individual account or user has other accounts)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - not the account owner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
                 }
               }
             }

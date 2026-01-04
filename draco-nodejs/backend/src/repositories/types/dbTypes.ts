@@ -1872,6 +1872,30 @@ export type dbUserManagerTeams = Prisma.teamseasonmanagerGetPayload<{
   };
 }>;
 
+export type dbGolfUserTeams = Prisma.golfrosterGetPayload<{
+  include: {
+    teamsseason: {
+      include: {
+        leagueseason: {
+          include: {
+            league: {
+              select: {
+                name: true;
+              };
+            };
+          };
+        };
+        teams: {
+          select: {
+            id: true;
+            accountid: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
 export type dbTeamsWithLeaguesAndDivisions = Prisma.teamsseasonGetPayload<{
   include: {
     teams: {

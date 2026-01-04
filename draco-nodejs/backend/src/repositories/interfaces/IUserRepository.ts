@@ -11,4 +11,5 @@ export interface IUserRepository extends IBaseRepository<aspnetusers> {
   >;
   updatePassword(userId: string, hashedPassword: string): Promise<aspnetusers>;
   updateUser(userId: string, data: Partial<aspnetusers>): Promise<aspnetusers>;
+  deleteByUserId(userId: string): Promise<void>;
 }
