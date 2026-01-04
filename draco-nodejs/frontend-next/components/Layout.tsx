@@ -234,7 +234,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           </MenuItem>,
         );
       }
-      if (accountId && isMember === false) {
+      if (accountId && isMember === false && !isIndividualGolfAccount) {
         items.push(
           <MenuItem
             key="register"
@@ -279,7 +279,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           <ListItemText>Sign In</ListItemText>
         </MenuItem>,
       );
-      if (accountId) {
+      if (accountId && !isIndividualGolfAccount) {
         items.push(
           <MenuItem
             key="register"
@@ -320,6 +320,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     handleMenuClose,
     handleProfileClick,
     handleSignup,
+    isIndividualGolfAccount,
     isMember,
     user,
   ]);
@@ -453,7 +454,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                     {greetingDisplay}
                   </Typography>
                 )}
-                {!isSmallScreen && accountId && isMember === false && (
+                {!isSmallScreen && accountId && isMember === false && !isIndividualGolfAccount && (
                   <Button color="inherit" onClick={() => setRegistrationOpen(true)} sx={{ mr: 1 }}>
                     Register
                   </Button>
@@ -472,7 +473,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   </Button>
                 )}
                 {!isSmallScreen &&
-                  (accountId ? (
+                  (accountId && !isIndividualGolfAccount ? (
                     <Button color="inherit" onClick={() => setRegistrationOpen(true)}>
                       Register
                     </Button>

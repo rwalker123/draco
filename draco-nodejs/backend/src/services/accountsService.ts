@@ -43,6 +43,7 @@ import {
   AccountResponseFormatter,
 } from '../responseFormatters/index.js';
 import {
+  AuthorizationError,
   ConflictError,
   NotFoundError,
   NoDomainAccount,
@@ -608,6 +609,47 @@ export class AccountsService {
     }
 
     await this.accountRepository.delete(accountId);
+  }
+
+  async deleteIndividualGolfAccount(
+    accountId: bigint,
+    userId: string,
+    deleteUser: boolean,
+  ): Promise<void> {
+    const account = await this.ensureAccountExists(accountId);
+
+    if (account.accounttypeid !== GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID) {
+      throw new ValidationError('This operation is only available for individual golf accounts');
+    }
+
+    if (account.owneruserid !== userId) {
+      throw new AuthorizationError('Only the account owner can delete this account');
+    }
+
+    if (deleteUser) {
+      const userAccounts = await this.getAccountsForUser(userId);
+      if (userAccounts.length > 1) {
+        throw new ValidationError(
+          'Cannot delete user account while associated with other organizations',
+        );
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const contacts = await tx.contacts.findMany({
+        where: { creatoraccountid: accountId },
+      });
+
+      for (const contact of contacts) {
+        await tx.contacts.delete({ where: { id: contact.id } });
+      }
+
+      await tx.accounts.delete({ where: { id: accountId } });
+
+      if (deleteUser) {
+        await tx.aspnetusers.delete({ where: { id: userId } });
+      }
+    });
   }
 
   async getAccountName(accountId: bigint): Promise<AccountNameType> {

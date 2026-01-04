@@ -2,6 +2,7 @@
 // Handles basic account operations: search, retrieval, creation, updates, deletion
 
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { accountCreationRateLimit, signupRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
@@ -207,6 +208,25 @@ router.delete(
     await accountsService.deleteAccount(accountId);
 
     res.status(204).send();
+  }),
+);
+
+/**
+ * DELETE /api/accounts/:accountId/individual-golf
+ * Delete an individual golf account (and optionally the user)
+ */
+router.delete(
+  '/:accountId/individual-golf',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const userId = req.user!.id;
+    const { deleteUser } = z.object({ deleteUser: z.boolean().optional() }).parse(req.body);
+
+    await accountsService.deleteIndividualGolfAccount(accountId, userId, deleteUser ?? false);
+    res.status(200).json({ success: true, message: 'Account deleted successfully' });
   }),
 );
 

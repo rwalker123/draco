@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import {
   createIndividualGolfAccount,
   createAuthenticatedGolfAccount,
+  deleteIndividualGolfAccount,
   IndividualGolfAccountResponse,
   AuthenticatedGolfAccountResponse,
 } from '@draco/shared-api-client';
@@ -37,6 +38,10 @@ export type IndividualGolfAccountResult =
 
 export type AuthenticatedGolfAccountResult =
   | { success: true; data: AuthenticatedGolfAccountResponse }
+  | { success: false; error: string };
+
+export type DeleteGolfAccountResult =
+  | { success: true; message: string }
   | { success: false; error: string };
 
 export const useIndividualGolfAccountService = () => {
@@ -112,5 +117,27 @@ export const useIndividualGolfAccountService = () => {
     [apiClient],
   );
 
-  return { create, createAuthenticated } as const;
+  const deleteAccount = useCallback(
+    async (accountId: string, deleteUser: boolean = false): Promise<DeleteGolfAccountResult> => {
+      try {
+        const result = await deleteIndividualGolfAccount({
+          client: apiClient,
+          throwOnError: false,
+          path: { accountId },
+          body: { deleteUser },
+        });
+
+        const data = unwrapApiResult(result, 'Failed to delete account. Please try again.');
+
+        return { success: true, message: data.message ?? 'Account deleted successfully' } as const;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to delete account. Please try again.';
+        return { success: false, error: message } as const;
+      }
+    },
+    [apiClient],
+  );
+
+  return { create, createAuthenticated, deleteAccount } as const;
 };

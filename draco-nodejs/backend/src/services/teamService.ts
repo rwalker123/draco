@@ -9,6 +9,7 @@ import {
   ITeamRepository,
   ISeasonsRepository,
   ILeagueRepository,
+  IAccountRepository,
 } from '../repositories/interfaces/index.js';
 import { ServiceFactory } from './serviceFactory.js';
 import {
@@ -33,6 +34,7 @@ export class TeamService {
   private readonly teamRepository: ITeamRepository;
   private readonly seasonRepository: ISeasonsRepository;
   private readonly leagueRepository: ILeagueRepository;
+  private readonly accountRepository: IAccountRepository;
 
   private contactService = ServiceFactory.getContactService();
 
@@ -40,6 +42,7 @@ export class TeamService {
     this.teamRepository = RepositoryFactory.getTeamRepository();
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
     this.leagueRepository = RepositoryFactory.getLeagueRepository();
+    this.accountRepository = RepositoryFactory.getAccountRepository();
   }
 
   async getTeamSeasonFromTeamId(accountId: bigint, teamId: bigint): Promise<TeamSeasonType> {
@@ -77,16 +80,39 @@ export class TeamService {
       throw new NotFoundError('Current season not found');
     }
 
+    const contactId = BigInt(userContact?.id || 0);
+
+    // Determine if this is a golf account to use the appropriate roster lookup
+    const account = await this.accountRepository.findAccountWithRelationsById(accountId);
+    const accountTypeName = account?.accounttypes?.name?.toLowerCase() ?? '';
+    const isGolfLeagueAccount = accountTypeName === 'golf';
+
+    if (isGolfLeagueAccount) {
+      // Golf leagues use golfroster table instead of rosterseason
+      const golfTeams = await this.teamRepository.findContactGolfTeams(
+        accountId,
+        contactId,
+        currentSeason.id,
+      );
+      // Golf teams use the same teamsseason structure, so we can use the same formatter
+      // The dbGolfUserTeams type has the same teamsseason include shape as dbUserTeams
+      return TeamResponseFormatter.formatAndCombineTeamsWithLeagueResponse(
+        accountId,
+        golfTeams,
+        [],
+      );
+    }
+
     const userTeams = await this.teamRepository.findContactTeams(
       accountId,
-      BigInt(userContact?.id || 0),
+      contactId,
       currentSeason.id,
     );
 
     // Get teams where the user is a manager
     const managedTeams = await this.teamRepository.findContactManager(
       accountId,
-      BigInt(userContact?.id || 0),
+      contactId,
       currentSeason.id,
     );
 

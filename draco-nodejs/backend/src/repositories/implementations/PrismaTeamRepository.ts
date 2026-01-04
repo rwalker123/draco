@@ -12,6 +12,7 @@ import {
   dbTeamsWithLeaguesAndDivisions,
   dbUserManagerTeams,
   dbUserTeams,
+  dbGolfUserTeams,
   dbTeamSeasonValidationResult,
   dbTeam,
   dbTeamSeasonAccount,
@@ -435,6 +436,48 @@ export class PrismaTeamRepository implements ITeamRepository {
           },
         },
         inactive: false,
+      },
+      include: {
+        teamsseason: {
+          include: {
+            leagueseason: {
+              include: {
+                league: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+            teams: {
+              select: {
+                id: true,
+                accountid: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async findContactGolfTeams(
+    accountId: bigint,
+    contactId: bigint,
+    seasonId: bigint,
+  ): Promise<dbGolfUserTeams[]> {
+    return await this.prisma.golfroster.findMany({
+      where: {
+        golfer: {
+          contactid: contactId,
+        },
+        teamsseason: {
+          leagueseason: {
+            seasonid: seasonId,
+            league: { accountid: accountId },
+          },
+        },
+        isactive: true,
       },
       include: {
         teamsseason: {

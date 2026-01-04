@@ -12,6 +12,7 @@ import {
   dbTeamsWithLeaguesAndDivisions,
   dbUserManagerTeams,
   dbUserTeams,
+  dbGolfUserTeams,
   dbTeamSeasonValidationResult,
   dbTeam,
   dbTeamSeasonAccount,
@@ -64,6 +65,11 @@ export interface ITeamRepository extends IBaseRepository<teamsseason> {
     accountId: bigint,
   ): Promise<dbTeamSeasonManagerContact[]>;
   findContactTeams(accountId: bigint, contactId: bigint, seasonId: bigint): Promise<dbUserTeams[]>;
+  findContactGolfTeams(
+    accountId: bigint,
+    contactId: bigint,
+    seasonId: bigint,
+  ): Promise<dbGolfUserTeams[]>;
   findContactManager(
     accountId: bigint,
     contactid: bigint,
