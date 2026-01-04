@@ -83,6 +83,8 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     SocialFeedListSchemaRef,
     SocialFeedQuerySchemaRef,
     AdminDashboardSummarySchemaRef,
+    GolferSchemaRef,
+    UpdateGolferHomeCourseSchemaRef,
   } = schemaRefs;
 
   const TweetCreateSchemaRef = SocialFeedItemSchemaRef.pick({ content: true });
@@ -1307,6 +1309,151 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       },
       404: {
         description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/golfer
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/golfer',
+    operationId: 'getAccountGolfer',
+    summary: 'Get golfer for account',
+    description: 'Get the golfer profile for an individual golf account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Golfer profile',
+        content: {
+          'application/json': {
+            schema: GolferSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account or golfer not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // PATCH /api/accounts/{accountId}/golfer/home-course
+  registry.registerPath({
+    method: 'patch',
+    path: '/api/accounts/{accountId}/golfer/home-course',
+    operationId: 'updateGolferHomeCourse',
+    summary: 'Update golfer home course',
+    description: 'Update the home course for an individual golf account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: UpdateGolferHomeCourseSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated golfer profile',
+        content: {
+          'application/json': {
+            schema: GolferSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account or golfer not found',
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,

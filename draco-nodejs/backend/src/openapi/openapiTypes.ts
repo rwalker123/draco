@@ -353,6 +353,8 @@ import {
   CreateAuthenticatedGolfAccountSchema,
   IndividualGolfAccountResponseSchema,
   AuthenticatedGolfAccountResponseSchema,
+  GolferSchema,
+  UpdateGolferHomeCourseSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1382,6 +1384,11 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'ExternalCourseTee',
     ExternalCourseTeeSchema,
   );
+  const GolferSchemaRef = registry.register('Golfer', GolferSchema);
+  const UpdateGolferHomeCourseSchemaRef = registry.register(
+    'UpdateGolferHomeCourse',
+    UpdateGolferHomeCourseSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1739,6 +1746,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     ExternalCourseSearchResultSchemaRef,
     ExternalCourseDetailSchemaRef,
     ExternalCourseTeeSchemaRef,
+    GolferSchemaRef,
+    UpdateGolferHomeCourseSchemaRef,
   };
 };
 

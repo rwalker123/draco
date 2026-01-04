@@ -421,6 +421,7 @@ export class AccountsService {
         payload.lastName,
         payload.middleName ?? '',
         payload.email,
+        payload.homeCourseId ? BigInt(payload.homeCourseId) : undefined,
       );
 
       return { userId: newUser.id, accountId: accountRecord.id };
@@ -509,6 +510,7 @@ export class AccountsService {
         lastName,
         middleName,
         userEmail,
+        payload.homeCourseId ? BigInt(payload.homeCourseId) : undefined,
       );
 
       return accountRecord.id;
@@ -1146,8 +1148,9 @@ export class AccountsService {
     lastName: string,
     middleName: string,
     email: string,
-  ): Promise<void> {
-    await tx.contacts.create({
+    homeCourseId?: bigint,
+  ): Promise<contacts> {
+    const contact = await tx.contacts.create({
       data: {
         firstname: firstName,
         lastname: lastName,
@@ -1165,5 +1168,14 @@ export class AccountsService {
         dateofbirth: new Date('1900-01-01'),
       },
     });
+
+    await tx.golfer.create({
+      data: {
+        contactid: contact.id,
+        homecourseid: homeCourseId ?? null,
+      },
+    });
+
+    return contact;
   }
 }

@@ -761,11 +761,12 @@ model golfcourse {
   womanshandicap16     Int
   womanshandicap17     Int
   womanshandicap18     Int
-  golfcourseforcontact golfcourseforcontact[]
-  golfleaguecourses    golfleaguecourses[]
-  golfmatch            golfmatch[]
-  golfscore            golfscore[]
-  golfteeinformation   golfteeinformation[]
+  golfcourseforcontact  golfcourseforcontact[]
+  golfleaguecourses     golfleaguecourses[]
+  golfmatch             golfmatch[]
+  golfscore             golfscore[]
+  golfteeinformation    golfteeinformation[]
+  golfersWithHomeCourse golfer[]               @relation("GolferHomeCourse")
 
   @@index([externalid])
 }
@@ -867,7 +868,9 @@ model golfer {
   id                  BigInt            @id @default(autoincrement())
   contactid           BigInt            @unique
   initialdifferential Float?
+  homecourseid        BigInt?
   contact             contacts          @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_golfer_contact")
+  homecourse          golfcourse?       @relation("GolferHomeCourse", fields: [homecourseid], references: [id], onDelete: SetNull, map: "fk_golfer_homecourse")
   rosters             golfroster[]
   leaguesubs          golfleaguesub[]
   matchscores         golfmatchscores[]

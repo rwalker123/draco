@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Alert,
   Box,
@@ -17,25 +17,32 @@ import {
   TrendingUp as TrendingUpIcon,
   SportsGolf as SportsGolfIcon,
   Add as AddIcon,
+  Home as HomeIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
 import AccountPageHeader from '../../../components/AccountPageHeader';
-import { getAccountById } from '@draco/shared-api-client';
+import { getAccountById, Golfer } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { AccountSeasonWithStatusType, AccountType } from '@draco/shared-schemas';
+import { useIndividualGolfAccountService } from '../../../hooks/useIndividualGolfAccountService';
+import HomeCourseSearchDialog from '../../../components/golf/dialogs/HomeCourseSearchDialog';
 
 const IndividualGolfAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
   const [currentSeason, setCurrentSeason] = useState<AccountSeasonWithStatusType | null>(null);
+  const [golfer, setGolfer] = useState<Golfer | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [homeCourseDialogOpen, setHomeCourseDialogOpen] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
+  const { getGolfer, updateHomeCourse } = useIndividualGolfAccountService();
 
   useEffect(() => {
     if (!accountIdStr) {
@@ -70,6 +77,11 @@ const IndividualGolfAccountHome: React.FC = () => {
         );
         setAccount(accountData as AccountType);
         setCurrentSeason(responseCurrentSeason as AccountSeasonWithStatusType | null);
+
+        const golferResult = await getGolfer(accountIdStr);
+        if (isMounted && golferResult.success) {
+          setGolfer(golferResult.data);
+        }
       } catch (err) {
         if (!isMounted) {
           return;
@@ -90,7 +102,23 @@ const IndividualGolfAccountHome: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [accountIdStr, apiClient]);
+  }, [accountIdStr, apiClient, getGolfer]);
+
+  const handleUpdateHomeCourse = useCallback(
+    async (courseId: string): Promise<{ success: boolean; error?: string }> => {
+      if (!accountIdStr) {
+        return { success: false, error: 'Account ID not found' };
+      }
+
+      const result = await updateHomeCourse(accountIdStr, courseId);
+      if (result.success) {
+        setGolfer(result.data);
+        return { success: true };
+      }
+      return { success: false, error: result.error };
+    },
+    [accountIdStr, updateHomeCourse],
+  );
 
   if (!accountIdStr) {
     return (
@@ -223,6 +251,45 @@ const IndividualGolfAccountHome: React.FC = () => {
         </Box>
 
         {isOwner && (
+          <Paper sx={{ p: 4, mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <HomeIcon color="primary" />
+              <Typography variant="h5">Home Course</Typography>
+            </Box>
+            {golfer?.homeCourse ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h6">{golfer.homeCourse.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {[golfer.homeCourse.city, golfer.homeCourse.state].filter(Boolean).join(', ')}
+                  </Typography>
+                </Box>
+                <Button
+                  variant="outlined"
+                  startIcon={<EditIcon />}
+                  onClick={() => setHomeCourseDialogOpen(true)}
+                >
+                  Change
+                </Button>
+              </Box>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 2 }}>
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                  Set your home course to track rounds and get course-specific handicaps.
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<GolfCourseIcon />}
+                  onClick={() => setHomeCourseDialogOpen(true)}
+                >
+                  Set Your Home Course
+                </Button>
+              </Box>
+            )}
+          </Paper>
+        )}
+
+        {isOwner && (
           <Paper sx={{ p: 4, mb: 4, textAlign: 'center' }}>
             <Typography variant="h5" gutterBottom>
               Get Started
@@ -255,6 +322,15 @@ const IndividualGolfAccountHome: React.FC = () => {
           </Box>
         </Paper>
       </Container>
+
+      {accountIdStr && (
+        <HomeCourseSearchDialog
+          open={homeCourseDialogOpen}
+          onClose={() => setHomeCourseDialogOpen(false)}
+          onSelectCourse={handleUpdateHomeCourse}
+          accountId={accountIdStr}
+        />
+      )}
     </main>
   );
 };

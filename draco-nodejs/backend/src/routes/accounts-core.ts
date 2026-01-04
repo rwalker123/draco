@@ -15,6 +15,7 @@ import {
   ContactValidationWithSignInSchema,
   CreateIndividualGolfAccountSchema,
   CreateAuthenticatedGolfAccountSchema,
+  UpdateGolferHomeCourseSchema,
 } from '@draco/shared-schemas';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError } from '../utils/customErrors.js';
@@ -22,6 +23,7 @@ import { extractAccountParams } from '../utils/paramExtraction.js';
 
 const router = Router({ mergeParams: true });
 const accountsService = ServiceFactory.getAccountsService();
+const golferService = ServiceFactory.getGolferService();
 const routeProtection = ServiceFactory.getRouteProtection();
 const registrationService = ServiceFactory.getRegistrationService();
 const turnstileService = ServiceFactory.getTurnstileService();
@@ -227,6 +229,40 @@ router.delete(
 
     await accountsService.deleteIndividualGolfAccount(accountId, userId, deleteUser ?? false);
     res.status(200).json({ success: true, message: 'Account deleted successfully' });
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/golfer
+ * Get the golfer profile for an individual golf account
+ */
+router.get(
+  '/:accountId/golfer',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const golfer = await golferService.getGolferForAccount(accountId);
+    res.json(golfer);
+  }),
+);
+
+/**
+ * PATCH /api/accounts/:accountId/golfer/home-course
+ * Update the home course for an individual golf account
+ */
+router.patch(
+  '/:accountId/golfer/home-course',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const { homeCourseId } = UpdateGolferHomeCourseSchema.parse(req.body);
+    const golfer = await golferService.updateHomeCourseForAccount(
+      accountId,
+      homeCourseId ? BigInt(homeCourseId) : null,
+    );
+    res.json(golfer);
   }),
 );
 
