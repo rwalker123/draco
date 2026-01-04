@@ -20,7 +20,7 @@ import {
   IndividualGolfAccountResponseType,
   AuthenticatedGolfAccountResponseType,
 } from '@draco/shared-schemas';
-import { accountblueskycredentials, accounts, contacts } from '#prisma/client';
+import { accountblueskycredentials, accounts, contacts, Prisma } from '#prisma/client';
 import prisma from '../lib/prisma.js';
 import {
   RepositoryFactory,
@@ -413,24 +413,15 @@ export class AccountsService {
         },
       });
 
-      await tx.contacts.create({
-        data: {
-          firstname: payload.firstName,
-          lastname: payload.lastName,
-          middlename: payload.middleName ?? '',
-          email: payload.email,
-          phone1: null,
-          phone2: null,
-          phone3: null,
-          creatoraccountid: accountRecord.id,
-          userid: newUser.id,
-          streetaddress: null,
-          city: null,
-          state: null,
-          zip: null,
-          dateofbirth: new Date('1900-01-01'),
-        },
-      });
+      await this.createGolfAccountContact(
+        tx,
+        accountRecord.id,
+        newUser.id,
+        payload.firstName,
+        payload.lastName,
+        payload.middleName ?? '',
+        payload.email,
+      );
 
       return { userId: newUser.id, accountId: accountRecord.id };
     });
@@ -510,24 +501,15 @@ export class AccountsService {
         },
       });
 
-      await tx.contacts.create({
-        data: {
-          firstname: firstName,
-          lastname: lastName,
-          middlename: middleName,
-          email: userEmail,
-          phone1: null,
-          phone2: null,
-          phone3: null,
-          creatoraccountid: accountRecord.id,
-          userid: userId,
-          streetaddress: null,
-          city: null,
-          state: null,
-          zip: null,
-          dateofbirth: new Date('1900-01-01'),
-        },
-      });
+      await this.createGolfAccountContact(
+        tx,
+        accountRecord.id,
+        userId,
+        firstName,
+        lastName,
+        middleName,
+        userEmail,
+      );
 
       return accountRecord.id;
     });
@@ -1154,5 +1136,34 @@ export class AccountsService {
     };
 
     await this.contactRepository.create(contactRecord);
+  }
+
+  private async createGolfAccountContact(
+    tx: Prisma.TransactionClient,
+    accountId: bigint,
+    userId: string,
+    firstName: string,
+    lastName: string,
+    middleName: string,
+    email: string,
+  ): Promise<void> {
+    await tx.contacts.create({
+      data: {
+        firstname: firstName,
+        lastname: lastName,
+        middlename: middleName,
+        email: email,
+        phone1: null,
+        phone2: null,
+        phone3: null,
+        creatoraccountid: accountId,
+        userid: userId,
+        streetaddress: null,
+        city: null,
+        state: null,
+        zip: null,
+        dateofbirth: new Date('1900-01-01'),
+      },
+    });
   }
 }
