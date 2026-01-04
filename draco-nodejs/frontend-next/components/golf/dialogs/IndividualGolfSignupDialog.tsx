@@ -76,10 +76,6 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
     };
   }, [user?.contact]);
 
-  const hasExistingContactInfo = Boolean(
-    existingContact && (existingContact.firstName || existingContact.lastName),
-  );
-
   const initialEmail = useMemo(() => {
     return user?.userName ?? '';
   }, [user?.userName]);
@@ -125,27 +121,23 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
 
   useEffect(() => {
     if (open) {
-      if (isAuthenticated && hasExistingContactInfo) {
-        handleAuthenticatedSubmit();
-      } else {
-        reset({
-          firstName: existingContact?.firstName ?? '',
-          middleName: existingContact?.middleName ?? '',
-          lastName: existingContact?.lastName ?? '',
-          email: initialEmail,
-          password: '',
-          confirmPassword: '',
-        });
-        resetAuth({
-          firstName: existingContact?.firstName ?? '',
-          middleName: existingContact?.middleName ?? '',
-          lastName: existingContact?.lastName ?? '',
-        });
-        setError(null);
-        setCaptchaToken(null);
-        setCaptchaResetKey((key) => key + 1);
-        setCaptchaError(null);
-      }
+      reset({
+        firstName: existingContact?.firstName ?? '',
+        middleName: existingContact?.middleName ?? '',
+        lastName: existingContact?.lastName ?? '',
+        email: initialEmail,
+        password: '',
+        confirmPassword: '',
+      });
+      resetAuth({
+        firstName: existingContact?.firstName ?? '',
+        middleName: existingContact?.middleName ?? '',
+        lastName: existingContact?.lastName ?? '',
+      });
+      setError(null);
+      setCaptchaToken(null);
+      setCaptchaResetKey((key) => key + 1);
+      setCaptchaError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -170,38 +162,6 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
     setCaptchaError(null);
     onClose();
   }, [onClose, reset, resetAuth]);
-
-  const handleAuthenticatedSubmit = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await createAuthenticated({
-        firstName: existingContact?.firstName || undefined,
-        middleName: existingContact?.middleName || undefined,
-        lastName: existingContact?.lastName || undefined,
-        timezone: getBrowserTimezone(),
-      });
-
-      if (!result.success) {
-        setError(result.error);
-        setLoading(false);
-        return;
-      }
-
-      if (onSuccess) {
-        onSuccess({
-          accountId: result.data.account.id,
-        });
-      }
-
-      handleClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const onSubmitUnauthenticated = async (data: IndividualGolfSignupFormType) => {
     if (requireCaptcha && !captchaToken) {
@@ -291,31 +251,6 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
       setCaptchaError(null);
     }
   }, []);
-
-  if (isAuthenticated && hasExistingContactInfo) {
-    return (
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogContent>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              py: 4,
-            }}
-          >
-            <CircularProgress size={48} sx={{ mb: 2 }} />
-            <Typography variant="body1">Creating your golf account...</Typography>
-          </Box>
-          {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {error}
-            </Alert>
-          )}
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   if (isAuthenticated) {
     return (

@@ -466,6 +466,17 @@ export class AccountsService {
     userEmail: string,
     payload: CreateAuthenticatedGolfAccountType,
   ): Promise<AuthenticatedGolfAccountResponseType> {
+    const existingGolfAccount = await prisma.accounts.findFirst({
+      where: {
+        owneruserid: userId,
+        accounttypeid: GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID,
+      },
+    });
+
+    if (existingGolfAccount) {
+      throw new ConflictError('You already have an individual golf account');
+    }
+
     let firstName = payload.firstName ?? '';
     let lastName = payload.lastName ?? '';
     let middleName = payload.middleName ?? '';

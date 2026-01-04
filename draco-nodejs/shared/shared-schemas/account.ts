@@ -218,7 +218,10 @@ export const CreateIndividualGolfAccountSchema = z.object({
   firstName: nameSchema,
   middleName: z.string().trim().max(50).optional(),
   lastName: nameSchema,
-  email: z.string().email('Valid email is required'),
+  email: z
+    .string()
+    .email('Valid email is required')
+    .transform((val) => val.toLowerCase().trim()),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   timezone: z.string().trim().min(1).max(100),
   homeCourseId: z.string().optional(),
