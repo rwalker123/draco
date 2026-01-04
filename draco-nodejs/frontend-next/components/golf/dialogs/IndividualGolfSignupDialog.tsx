@@ -13,6 +13,10 @@ import {
   Typography,
   CircularProgress,
 } from '@mui/material';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { CreateIndividualGolfAccountSchema } from '@draco/shared-schemas';
 import { useIndividualGolfAccountService } from '../../../hooks/useIndividualGolfAccountService';
 import { useAuth } from '../../../context/AuthContext';
 import TurnstileChallenge from '../../security/TurnstileChallenge';
@@ -22,6 +26,28 @@ interface IndividualGolfSignupDialogProps {
   onClose: () => void;
   onSuccess?: (result: { token?: string; accountId: string }) => void;
 }
+
+const IndividualGolfSignupFormSchema = CreateIndividualGolfAccountSchema.omit({
+  timezone: true,
+  homeCourseId: true,
+})
+  .extend({
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
+type IndividualGolfSignupFormType = z.infer<typeof IndividualGolfSignupFormSchema>;
+
+const AuthenticatedFormSchema = z.object({
+  firstName: z.string().trim().min(1, 'First name is required').max(50),
+  middleName: z.string().trim().max(50).optional(),
+  lastName: z.string().trim().min(1, 'Last name is required').max(50),
+});
+
+type AuthenticatedFormType = z.infer<typeof AuthenticatedFormSchema>;
 
 const getBrowserTimezone = (): string => {
   try {
@@ -58,12 +84,36 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
     return user?.userName ?? '';
   }, [user?.userName]);
 
-  const [firstName, setFirstName] = useState('');
-  const [middleName, setMiddleName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<IndividualGolfSignupFormType>({
+    resolver: zodResolver(IndividualGolfSignupFormSchema),
+    defaultValues: {
+      firstName: '',
+      middleName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+  });
+
+  const {
+    register: registerAuth,
+    handleSubmit: handleSubmitAuth,
+    reset: resetAuth,
+    formState: { errors: authErrors },
+  } = useForm<AuthenticatedFormType>({
+    resolver: zodResolver(AuthenticatedFormSchema),
+    defaultValues: {
+      firstName: '',
+      middleName: '',
+      lastName: '',
+    },
+  });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,12 +128,19 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
       if (isAuthenticated && hasExistingContactInfo) {
         handleAuthenticatedSubmit();
       } else {
-        setFirstName(existingContact?.firstName ?? '');
-        setMiddleName(existingContact?.middleName ?? '');
-        setLastName(existingContact?.lastName ?? '');
-        setEmail(initialEmail);
-        setPassword('');
-        setConfirmPassword('');
+        reset({
+          firstName: existingContact?.firstName ?? '',
+          middleName: existingContact?.middleName ?? '',
+          lastName: existingContact?.lastName ?? '',
+          email: initialEmail,
+          password: '',
+          confirmPassword: '',
+        });
+        resetAuth({
+          firstName: existingContact?.firstName ?? '',
+          middleName: existingContact?.middleName ?? '',
+          lastName: existingContact?.lastName ?? '',
+        });
         setError(null);
         setCaptchaToken(null);
         setCaptchaResetKey((key) => key + 1);
@@ -94,48 +151,25 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
   }, [open]);
 
   const handleClose = useCallback(() => {
-    setFirstName('');
-    setMiddleName('');
-    setLastName('');
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
+    reset({
+      firstName: '',
+      middleName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    });
+    resetAuth({
+      firstName: '',
+      middleName: '',
+      lastName: '',
+    });
     setError(null);
     setCaptchaToken(null);
     setCaptchaResetKey((key) => key + 1);
     setCaptchaError(null);
     onClose();
-  }, [onClose]);
-
-  const validateForm = useCallback(() => {
-    if (!isAuthenticated) {
-      if (!firstName.trim()) {
-        setError('First name is required');
-        return false;
-      }
-      if (!lastName.trim()) {
-        setError('Last name is required');
-        return false;
-      }
-      if (!email.trim()) {
-        setError('Email is required');
-        return false;
-      }
-      if (!password) {
-        setError('Password is required');
-        return false;
-      }
-      if (password.length < 6) {
-        setError('Password must be at least 6 characters');
-        return false;
-      }
-      if (password !== confirmPassword) {
-        setError('Passwords do not match');
-        return false;
-      }
-    }
-    return true;
-  }, [isAuthenticated, firstName, lastName, email, password, confirmPassword]);
+  }, [onClose, reset, resetAuth]);
 
   const handleAuthenticatedSubmit = async () => {
     setLoading(true);
@@ -169,13 +203,7 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
     }
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+  const onSubmitUnauthenticated = async (data: IndividualGolfSignupFormType) => {
     if (requireCaptcha && !captchaToken) {
       setCaptchaError('Please verify that you are human before continuing.');
       setCaptchaResetKey((key) => key + 1);
@@ -186,52 +214,32 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
     setError(null);
 
     try {
-      if (isAuthenticated) {
-        const result = await createAuthenticated({
-          firstName: firstName.trim() || undefined,
-          middleName: middleName.trim() || undefined,
-          lastName: lastName.trim() || undefined,
-          timezone: getBrowserTimezone(),
+      const result = await create({
+        firstName: data.firstName.trim(),
+        middleName: data.middleName?.trim() || undefined,
+        lastName: data.lastName.trim(),
+        email: data.email.trim(),
+        password: data.password,
+        timezone: getBrowserTimezone(),
+        captchaToken,
+      });
+
+      if (!result.success) {
+        setError(result.error);
+        if (requireCaptcha) {
+          setCaptchaToken(null);
+          setCaptchaResetKey((key) => key + 1);
+        }
+        return;
+      }
+
+      setAuthToken(result.data.token);
+
+      if (onSuccess) {
+        onSuccess({
+          token: result.data.token,
+          accountId: result.data.account.id,
         });
-
-        if (!result.success) {
-          setError(result.error);
-          return;
-        }
-
-        if (onSuccess) {
-          onSuccess({
-            accountId: result.data.account.id,
-          });
-        }
-      } else {
-        const result = await create({
-          firstName: firstName.trim(),
-          middleName: middleName.trim() || undefined,
-          lastName: lastName.trim(),
-          email: email.trim(),
-          password,
-          timezone: getBrowserTimezone(),
-          captchaToken,
-        });
-
-        if (!result.success) {
-          setError(result.error);
-          if (requireCaptcha) {
-            setCaptchaToken(null);
-            setCaptchaResetKey((key) => key + 1);
-          }
-          return;
-        }
-
-        setAuthToken(result.data.token);
-
-        if (onSuccess) {
-          onSuccess({
-            token: result.data.token,
-            accountId: result.data.account.id,
-          });
-        }
       }
 
       handleClose();
@@ -241,6 +249,37 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
         setCaptchaToken(null);
         setCaptchaResetKey((key) => key + 1);
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSubmitAuthenticated = async (data: AuthenticatedFormType) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await createAuthenticated({
+        firstName: data.firstName.trim() || undefined,
+        middleName: data.middleName?.trim() || undefined,
+        lastName: data.lastName.trim() || undefined,
+        timezone: getBrowserTimezone(),
+      });
+
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+
+      if (onSuccess) {
+        onSuccess({
+          accountId: result.data.account.id,
+        });
+      }
+
+      handleClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -278,9 +317,79 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
     );
   }
 
+  if (isAuthenticated) {
+    return (
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <form onSubmit={handleSubmitAuth(onSubmitAuthenticated)}>
+          <DialogTitle>Create Your Golf Account</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Track your golf scores, calculate your handicap, and view your stats.
+            </Typography>
+
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label="First Name"
+                  {...registerAuth('firstName')}
+                  error={!!authErrors.firstName}
+                  helperText={authErrors.firstName?.message}
+                  required
+                  fullWidth
+                  autoFocus
+                  disabled={loading}
+                  placeholder="John"
+                />
+                <TextField
+                  label="Middle Name"
+                  {...registerAuth('middleName')}
+                  error={!!authErrors.middleName}
+                  helperText={authErrors.middleName?.message}
+                  fullWidth
+                  disabled={loading}
+                  placeholder="(optional)"
+                  sx={{ maxWidth: 150 }}
+                />
+              </Box>
+              <TextField
+                label="Last Name"
+                {...registerAuth('lastName')}
+                error={!!authErrors.lastName}
+                helperText={authErrors.lastName?.message}
+                required
+                fullWidth
+                disabled={loading}
+                placeholder="Smith"
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose} disabled={loading}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={20} /> : null}
+            >
+              {loading ? 'Creating...' : 'Create Account'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onSubmitUnauthenticated)}>
         <DialogTitle>Create Your Golf Account</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -297,9 +406,10 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
                 label="First Name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required={!isAuthenticated}
+                {...register('firstName')}
+                error={!!errors.firstName}
+                helperText={errors.firstName?.message}
+                required
                 fullWidth
                 autoFocus
                 disabled={loading}
@@ -307,8 +417,9 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
               />
               <TextField
                 label="Middle Name"
-                value={middleName}
-                onChange={(e) => setMiddleName(e.target.value)}
+                {...register('middleName')}
+                error={!!errors.middleName}
+                helperText={errors.middleName?.message}
                 fullWidth
                 disabled={loading}
                 placeholder="(optional)"
@@ -317,58 +428,57 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
             </Box>
             <TextField
               label="Last Name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required={!isAuthenticated}
+              {...register('lastName')}
+              error={!!errors.lastName}
+              helperText={errors.lastName?.message}
+              required
               fullWidth
               disabled={loading}
               placeholder="Smith"
             />
 
-            {!isAuthenticated && (
-              <>
-                <TextField
-                  label="Email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  fullWidth
-                  disabled={loading}
-                  placeholder="john@example.com"
-                />
+            <TextField
+              label="User Name"
+              type="email"
+              {...register('email')}
+              error={!!errors.email}
+              helperText={errors.email?.message}
+              required
+              fullWidth
+              disabled={loading}
+              placeholder="Enter your email address"
+            />
 
-                <TextField
-                  label="Password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  fullWidth
-                  disabled={loading}
-                  helperText="At least 6 characters"
-                />
+            <TextField
+              label="Password"
+              type="password"
+              {...register('password')}
+              error={!!errors.password}
+              helperText={errors.password?.message || 'At least 6 characters'}
+              required
+              fullWidth
+              disabled={loading}
+            />
 
-                <TextField
-                  label="Confirm Password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  fullWidth
-                  disabled={loading}
-                />
+            <TextField
+              label="Confirm Password"
+              type="password"
+              {...register('confirmPassword')}
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword?.message}
+              required
+              fullWidth
+              disabled={loading}
+            />
 
-                {requireCaptcha && (
-                  <Box sx={{ mt: 1 }}>
-                    <TurnstileChallenge
-                      onTokenChange={handleCaptchaChange}
-                      resetSignal={captchaResetKey}
-                      error={captchaError}
-                    />
-                  </Box>
-                )}
-              </>
+            {requireCaptcha && (
+              <Box sx={{ mt: 1 }}>
+                <TurnstileChallenge
+                  onTokenChange={handleCaptchaChange}
+                  resetSignal={captchaResetKey}
+                  error={captchaError}
+                />
+              </Box>
             )}
           </Box>
         </DialogContent>
