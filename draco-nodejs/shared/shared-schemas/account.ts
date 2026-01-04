@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CreateContactSchema, NamedContactSchema, RegisteredUserSchema } from './contact.js';
+import { nameSchema } from './standardSchema.js';
 
 const queryValueSchema = z
   .string()
@@ -214,9 +215,12 @@ export type AccountHeaderType = z.infer<typeof AccountHeaderSchema>;
 
 // Individual Golf Account Creation (unauthenticated - creates new user)
 export const CreateIndividualGolfAccountSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required').max(100),
+  firstName: nameSchema,
+  middleName: z.string().trim().max(50).optional(),
+  lastName: nameSchema,
   email: z.string().email('Valid email is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  timezone: z.string().trim().min(1).max(100),
   homeCourseId: z.string().optional(),
 });
 
@@ -224,7 +228,10 @@ export type CreateIndividualGolfAccountType = z.infer<typeof CreateIndividualGol
 
 // Individual Golf Account Creation (authenticated - uses existing user)
 export const CreateAuthenticatedGolfAccountSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required').max(100).optional(),
+  firstName: nameSchema.optional(),
+  middleName: z.string().trim().max(50).optional(),
+  lastName: nameSchema.optional(),
+  timezone: z.string().trim().min(1).max(100),
   homeCourseId: z.string().optional(),
 });
 

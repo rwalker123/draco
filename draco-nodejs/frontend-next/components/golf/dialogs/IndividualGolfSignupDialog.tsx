@@ -23,6 +23,14 @@ interface IndividualGolfSignupDialogProps {
   onSuccess?: (result: { token?: string; accountId: string }) => void;
 }
 
+const getBrowserTimezone = (): string => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return 'America/New_York';
+  }
+};
+
 const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
   open,
   onClose,
@@ -33,17 +41,26 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
 
   const isAuthenticated = Boolean(user && token);
 
-  const initialName = useMemo(() => {
-    if (!user?.contact) return '';
-    const { firstName, lastName, middleName } = user.contact;
-    return [firstName, middleName, lastName].filter(Boolean).join(' ');
+  const existingContact = useMemo(() => {
+    if (!user?.contact) return null;
+    return {
+      firstName: user.contact.firstName ?? '',
+      middleName: user.contact.middleName ?? '',
+      lastName: user.contact.lastName ?? '',
+    };
   }, [user?.contact]);
+
+  const hasExistingContactInfo = Boolean(
+    existingContact && (existingContact.firstName || existingContact.lastName),
+  );
 
   const initialEmail = useMemo(() => {
     return user?.userName ?? '';
   }, [user?.userName]);
 
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [middleName, setMiddleName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -58,19 +75,28 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
 
   useEffect(() => {
     if (open) {
-      setName(initialName);
-      setEmail(initialEmail);
-      setPassword('');
-      setConfirmPassword('');
-      setError(null);
-      setCaptchaToken(null);
-      setCaptchaResetKey((key) => key + 1);
-      setCaptchaError(null);
+      if (isAuthenticated && hasExistingContactInfo) {
+        handleAuthenticatedSubmit();
+      } else {
+        setFirstName(existingContact?.firstName ?? '');
+        setMiddleName(existingContact?.middleName ?? '');
+        setLastName(existingContact?.lastName ?? '');
+        setEmail(initialEmail);
+        setPassword('');
+        setConfirmPassword('');
+        setError(null);
+        setCaptchaToken(null);
+        setCaptchaResetKey((key) => key + 1);
+        setCaptchaError(null);
+      }
     }
-  }, [open, initialName, initialEmail]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleClose = useCallback(() => {
-    setName('');
+    setFirstName('');
+    setMiddleName('');
+    setLastName('');
     setEmail('');
     setPassword('');
     setConfirmPassword('');
@@ -83,8 +109,12 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
 
   const validateForm = useCallback(() => {
     if (!isAuthenticated) {
-      if (!name.trim()) {
-        setError('Name is required');
+      if (!firstName.trim()) {
+        setError('First name is required');
+        return false;
+      }
+      if (!lastName.trim()) {
+        setError('Last name is required');
         return false;
       }
       if (!email.trim()) {
@@ -105,7 +135,39 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
       }
     }
     return true;
-  }, [isAuthenticated, name, email, password, confirmPassword]);
+  }, [isAuthenticated, firstName, lastName, email, password, confirmPassword]);
+
+  const handleAuthenticatedSubmit = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await createAuthenticated({
+        firstName: existingContact?.firstName || undefined,
+        middleName: existingContact?.middleName || undefined,
+        lastName: existingContact?.lastName || undefined,
+        timezone: getBrowserTimezone(),
+      });
+
+      if (!result.success) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
+
+      if (onSuccess) {
+        onSuccess({
+          accountId: result.data.account.id,
+        });
+      }
+
+      handleClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -126,7 +188,10 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
     try {
       if (isAuthenticated) {
         const result = await createAuthenticated({
-          name: name.trim() || undefined,
+          firstName: firstName.trim() || undefined,
+          middleName: middleName.trim() || undefined,
+          lastName: lastName.trim() || undefined,
+          timezone: getBrowserTimezone(),
         });
 
         if (!result.success) {
@@ -141,9 +206,12 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
         }
       } else {
         const result = await create({
-          name: name.trim(),
+          firstName: firstName.trim(),
+          middleName: middleName.trim() || undefined,
+          lastName: lastName.trim(),
           email: email.trim(),
           password,
+          timezone: getBrowserTimezone(),
           captchaToken,
         });
 
@@ -185,6 +253,31 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
     }
   }, []);
 
+  if (isAuthenticated && hasExistingContactInfo) {
+    return (
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogContent>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              py: 4,
+            }}
+          >
+            <CircularProgress size={48} sx={{ mb: 2 }} />
+            <Typography variant="body1">Creating your golf account...</Typography>
+          </Box>
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit}>
@@ -201,16 +294,35 @@ const IndividualGolfSignupDialog: React.FC<IndividualGolfSignupDialogProps> = ({
           )}
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="First Name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required={!isAuthenticated}
+                fullWidth
+                autoFocus
+                disabled={loading}
+                placeholder="John"
+              />
+              <TextField
+                label="Middle Name"
+                value={middleName}
+                onChange={(e) => setMiddleName(e.target.value)}
+                fullWidth
+                disabled={loading}
+                placeholder="(optional)"
+                sx={{ maxWidth: 150 }}
+              />
+            </Box>
             <TextField
-              label="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              label="Last Name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
               required={!isAuthenticated}
               fullWidth
-              autoFocus
               disabled={loading}
-              placeholder="John Smith"
-              helperText={isAuthenticated ? 'Leave blank to use your existing name' : undefined}
+              placeholder="Smith"
             />
 
             {!isAuthenticated && (

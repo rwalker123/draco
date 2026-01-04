@@ -5,6 +5,10 @@ import { useAccount } from '../../../context/AccountContext';
 import BaseballAccountHome from './BaseballAccountHome';
 import GolfLeagueAccountHome from './GolfLeagueAccountHome';
 import IndividualGolfAccountHome from './IndividualGolfAccountHome';
+import {
+  isGolfIndividualAccountType,
+  isGolfLeagueAccountType,
+} from '../../../utils/accountTypeUtils';
 
 export default function AccountPageClientWrapper() {
   const { currentAccount, loading, initialized } = useAccount();
@@ -24,13 +28,13 @@ export default function AccountPageClientWrapper() {
     );
   }
 
-  const accountType = currentAccount?.accountType?.toLowerCase() ?? '';
+  const accountType = currentAccount?.accountType;
 
-  if (accountType.includes('golf individual')) {
+  if (isGolfIndividualAccountType(accountType)) {
     return <IndividualGolfAccountHome />;
   }
 
-  if (accountType.includes('golf')) {
+  if (isGolfLeagueAccountType(accountType)) {
     return <GolfLeagueAccountHome />;
   }
 

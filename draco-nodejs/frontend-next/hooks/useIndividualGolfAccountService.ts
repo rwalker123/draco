@@ -13,15 +13,21 @@ import { unwrapApiResult } from '../utils/apiResult';
 const ERROR_MESSAGE = 'Failed to create golf account. Please try again.';
 
 export interface CreateIndividualGolfAccountInput {
-  name: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
   email: string;
   password: string;
+  timezone: string;
   homeCourseId?: string;
   captchaToken?: string | null;
 }
 
 export interface CreateAuthenticatedGolfAccountInput {
-  name?: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  timezone: string;
   homeCourseId?: string;
 }
 
@@ -38,9 +44,12 @@ export const useIndividualGolfAccountService = () => {
 
   const create = useCallback(
     async ({
-      name,
+      firstName,
+      middleName,
+      lastName,
       email,
       password,
+      timezone,
       homeCourseId,
       captchaToken,
     }: CreateIndividualGolfAccountInput): Promise<IndividualGolfAccountResult> => {
@@ -50,9 +59,12 @@ export const useIndividualGolfAccountService = () => {
           throwOnError: false,
           headers: captchaToken ? { 'cf-turnstile-token': captchaToken } : undefined,
           body: {
-            name: name.trim(),
+            firstName: firstName.trim(),
+            middleName: middleName?.trim(),
+            lastName: lastName.trim(),
             email: email.trim(),
             password,
+            timezone,
             homeCourseId,
           },
         });
@@ -70,7 +82,10 @@ export const useIndividualGolfAccountService = () => {
 
   const createAuthenticated = useCallback(
     async ({
-      name,
+      firstName,
+      middleName,
+      lastName,
+      timezone,
       homeCourseId,
     }: CreateAuthenticatedGolfAccountInput): Promise<AuthenticatedGolfAccountResult> => {
       try {
@@ -78,7 +93,10 @@ export const useIndividualGolfAccountService = () => {
           client: apiClient,
           throwOnError: false,
           body: {
-            name: name?.trim(),
+            firstName: firstName?.trim(),
+            middleName: middleName?.trim(),
+            lastName: lastName?.trim(),
+            timezone,
             homeCourseId,
           },
         });

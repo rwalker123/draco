@@ -8,6 +8,10 @@ import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
 import { AccountType } from '@draco/shared-schemas';
+import {
+  isGolfIndividualAccountType,
+  isGolfLeagueAccountType,
+} from '../../../../utils/accountTypeUtils';
 
 const AccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -87,13 +91,13 @@ const AccountHome: React.FC = () => {
     );
   }
 
-  const accountType = account.configuration?.accountType?.name?.toLowerCase() ?? '';
+  const accountType = account.configuration?.accountType?.name;
 
-  if (accountType.includes('golf individual')) {
+  if (isGolfIndividualAccountType(accountType)) {
     return <IndividualGolfAccountHome />;
   }
 
-  if (accountType.includes('golf')) {
+  if (isGolfLeagueAccountType(accountType)) {
     return <GolfLeagueAccountHome />;
   }
 

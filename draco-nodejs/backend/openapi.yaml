@@ -4121,7 +4121,14 @@ components:
     CreateIndividualGolfAccount:
       type: object
       properties:
-        name:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 50
+        lastName:
           type: string
           minLength: 1
           maxLength: 100
@@ -4131,21 +4138,40 @@ components:
         password:
           type: string
           minLength: 6
-        homeCourseId:
-          type: string
-      required:
-        - name
-        - email
-        - password
-    CreateAuthenticatedGolfAccount:
-      type: object
-      properties:
-        name:
+        timezone:
           type: string
           minLength: 1
           maxLength: 100
         homeCourseId:
           type: string
+      required:
+        - firstName
+        - lastName
+        - email
+        - password
+        - timezone
+    CreateAuthenticatedGolfAccount:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 100
+        homeCourseId:
+          type: string
+      required:
+        - timezone
     IndividualGolfAccountResponse:
       type: object
       properties:
