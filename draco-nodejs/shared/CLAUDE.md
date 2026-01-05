@@ -55,6 +55,8 @@ Example: `shared-schemas/contact.ts` centralizes every contact-related structure
 3. Run `npm run build` if you need to confirm workspace packaging or produce production bundles.
 4. Commit both the source changes and generated artifacts so downstream packages stay aligned.
 
+**Important:** After `npm run sync:api` succeeds, trust that the generated types are correct. Do not manually inspect `generated/types.gen.ts` with grep or other tools to verify type presence - the generation is reliable and manual inspection can show stale cached results. Instead, proceed directly to running `npm run frontend:type-check` or `npm run build` to validate types through the actual TypeScript compiler.
+
 ## API Client Guidelines (`shared-api-client`)
 - Treat `generated/**` as read-only output. If an endpoint needs a different shape, modify the Zod schema or OpenAPI metadata, then rerun `npm run sync:api`.
 - Consume the SDK through `@draco/shared-api-client` exports; the frontend hooks (e.g., `useUserManagement`) rely on these signatures remaining in sync with the backend contract.

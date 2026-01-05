@@ -28,6 +28,10 @@ export const GolfMatchSchema = z
     matchStatus: z.number().int(),
     matchType: z.number().int(),
     comment: z.string().max(255).optional(),
+    team1TotalScore: z.number().int().optional(),
+    team2TotalScore: z.number().int().optional(),
+    team1Points: z.number().optional(),
+    team2Points: z.number().optional(),
   })
   .openapi({
     title: 'GolfMatch',
@@ -37,10 +41,6 @@ export const GolfMatchSchema = z
 export const GolfMatchWithScoresSchema = GolfMatchSchema.extend({
   team1Scores: z.array(GolfScoreWithDetailsSchema).optional(),
   team2Scores: z.array(GolfScoreWithDetailsSchema).optional(),
-  team1TotalScore: z.number().int().optional(),
-  team2TotalScore: z.number().int().optional(),
-  team1Points: z.number().optional(),
-  team2Points: z.number().optional(),
 }).openapi({
   title: 'GolfMatchWithScores',
   description: 'Golf match with team scores and points',

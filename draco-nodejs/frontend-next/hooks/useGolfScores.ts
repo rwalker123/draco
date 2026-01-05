@@ -9,7 +9,9 @@ import {
   getGolfScore,
   submitGolfMatchResults,
   deleteGolfMatchScores,
+  calculateBatchCourseHandicaps,
 } from '@draco/shared-api-client';
+import type { BatchCourseHandicapResponse } from '@draco/shared-api-client';
 import type { GolfScoreWithDetailsType, SubmitMatchResultsType } from '@draco/shared-schemas';
 import { useApiClient } from './useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
@@ -38,6 +40,11 @@ export interface GolfScoreService {
     payload: SubmitMatchResultsType,
   ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
   deleteMatchScores: (matchId: string) => Promise<GolfScoreServiceResult<void>>;
+  getBatchCourseHandicaps: (
+    golferIds: string[],
+    teeId: string,
+    holesPlayed?: number,
+  ) => Promise<GolfScoreServiceResult<BatchCourseHandicapResponse>>;
 }
 
 export function useGolfScores(accountId: string): GolfScoreService {
@@ -217,6 +224,32 @@ export function useGolfScores(accountId: string): GolfScoreService {
     [accountId, apiClient],
   );
 
+  const getBatchCourseHandicaps = useCallback<GolfScoreService['getBatchCourseHandicaps']>(
+    async (golferIds, teeId, holesPlayed = 18) => {
+      try {
+        const result = await calculateBatchCourseHandicaps({
+          client: apiClient,
+          path: { accountId },
+          body: { golferIds, teeId, holesPlayed },
+          throwOnError: false,
+        });
+
+        const handicaps = unwrapApiResult(result, 'Failed to calculate course handicaps');
+
+        return {
+          success: true,
+          data: handicaps as BatchCourseHandicapResponse,
+          message: 'Course handicaps calculated successfully',
+        } as const;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to calculate course handicaps';
+        return { success: false, error: message } as const;
+      }
+    },
+    [accountId, apiClient],
+  );
+
   return useMemo(
     () => ({
       getMatchScores,
@@ -226,6 +259,7 @@ export function useGolfScores(accountId: string): GolfScoreService {
       getScore,
       submitMatchResults,
       deleteMatchScores,
+      getBatchCourseHandicaps,
     }),
     [
       getMatchScores,
@@ -235,6 +269,7 @@ export function useGolfScores(accountId: string): GolfScoreService {
       getScore,
       submitMatchResults,
       deleteMatchScores,
+      getBatchCourseHandicaps,
     ],
   );
 }

@@ -7,6 +7,7 @@ import { IGolfMatchRepository } from '../repositories/interfaces/IGolfMatchRepos
 import { IGolfScoreRepository } from '../repositories/interfaces/IGolfScoreRepository.js';
 import { IGolfFlightRepository } from '../repositories/interfaces/IGolfFlightRepository.js';
 import { IGolfTeamRepository } from '../repositories/interfaces/IGolfTeamRepository.js';
+import { IGolfLeagueRepository } from '../repositories/interfaces/IGolfLeagueRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
 
@@ -30,17 +31,20 @@ export class GolfStandingsService {
   private readonly scoreRepository: IGolfScoreRepository;
   private readonly flightRepository: IGolfFlightRepository;
   private readonly teamRepository: IGolfTeamRepository;
+  private readonly leagueRepository: IGolfLeagueRepository;
 
   constructor(
     matchRepository?: IGolfMatchRepository,
     scoreRepository?: IGolfScoreRepository,
     flightRepository?: IGolfFlightRepository,
     teamRepository?: IGolfTeamRepository,
+    leagueRepository?: IGolfLeagueRepository,
   ) {
     this.matchRepository = matchRepository ?? RepositoryFactory.getGolfMatchRepository();
     this.scoreRepository = scoreRepository ?? RepositoryFactory.getGolfScoreRepository();
     this.flightRepository = flightRepository ?? RepositoryFactory.getGolfFlightRepository();
     this.teamRepository = teamRepository ?? RepositoryFactory.getGolfTeamRepository();
+    this.leagueRepository = leagueRepository ?? RepositoryFactory.getGolfLeagueRepository();
   }
 
   async getFlightStandings(flightId: bigint): Promise<GolfFlightStandingsType> {
@@ -48,6 +52,9 @@ export class GolfStandingsService {
     if (!flight) {
       throw new NotFoundError('Flight not found');
     }
+
+    const leagueSetup = await this.leagueRepository.findByLeagueSeasonId(flight.leagueseasonid);
+    const isIndividualScoring = leagueSetup?.scoringtype === 'individual';
 
     const teams = await this.teamRepository.findByFlightId(flightId);
     const matches = await this.matchRepository.findByFlightId(flightId);
@@ -91,28 +98,44 @@ export class GolfStandingsService {
         team1Standing.roundsPlayed += team1Scores.length;
         team2Standing.roundsPlayed += team2Scores.length;
 
-        if (team1Total < team2Total) {
-          team1Standing.matchesWon++;
-          team2Standing.matchesLost++;
-          team1Standing.matchPoints += 2;
-        } else if (team2Total < team1Total) {
-          team2Standing.matchesWon++;
-          team1Standing.matchesLost++;
-          team2Standing.matchPoints += 2;
-        } else {
-          team1Standing.matchesTied++;
-          team2Standing.matchesTied++;
-          team1Standing.matchPoints += 1;
-          team2Standing.matchPoints += 1;
-        }
+        if (isIndividualScoring && match.team1points !== null && match.team2points !== null) {
+          team1Standing.matchPoints += match.team1points;
+          team2Standing.matchPoints += match.team2points;
 
-        const strokeDiff = Math.abs(team1Total - team2Total);
-        if (strokeDiff > 0) {
-          const strokePts = Math.min(strokeDiff, 10);
-          if (team1Total < team2Total) {
-            team1Standing.strokePoints += strokePts;
+          if (match.team1matchwins === 1) {
+            team1Standing.matchesWon++;
+            team2Standing.matchesLost++;
+          } else if (match.team2matchwins === 1) {
+            team2Standing.matchesWon++;
+            team1Standing.matchesLost++;
           } else {
-            team2Standing.strokePoints += strokePts;
+            team1Standing.matchesTied++;
+            team2Standing.matchesTied++;
+          }
+        } else {
+          if (team1Total < team2Total) {
+            team1Standing.matchesWon++;
+            team2Standing.matchesLost++;
+            team1Standing.matchPoints += 2;
+          } else if (team2Total < team1Total) {
+            team2Standing.matchesWon++;
+            team1Standing.matchesLost++;
+            team2Standing.matchPoints += 2;
+          } else {
+            team1Standing.matchesTied++;
+            team2Standing.matchesTied++;
+            team1Standing.matchPoints += 1;
+            team2Standing.matchPoints += 1;
+          }
+
+          const strokeDiff = Math.abs(team1Total - team2Total);
+          if (strokeDiff > 0) {
+            const strokePts = Math.min(strokeDiff, 10);
+            if (team1Total < team2Total) {
+              team1Standing.strokePoints += strokePts;
+            } else {
+              team2Standing.strokePoints += strokePts;
+            }
           }
         }
       }

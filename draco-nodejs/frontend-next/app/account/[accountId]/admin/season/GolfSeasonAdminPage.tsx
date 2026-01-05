@@ -36,7 +36,7 @@ const GolfSeasonAdminPage: React.FC = () => {
       title: 'Schedule Management',
       description: 'Create and manage game schedules for your leagues and divisions.',
       icon: <ScheduleIcon />,
-      href: `/account/${accountId}/schedule`,
+      href: `/account/${accountId}/schedule-management`,
     },
   ];
 

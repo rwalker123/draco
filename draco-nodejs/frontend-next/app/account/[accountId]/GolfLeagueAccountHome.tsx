@@ -13,6 +13,8 @@ import { useApiClient } from '../../../hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { AccountSeasonWithStatusType, AccountType } from '@draco/shared-schemas';
 import InformationWidget from '@/components/information/InformationWidget';
+import GolfStandings from '@/components/GolfStandings';
+import GolfMatchesWidget from '@/components/GolfMatchesWidget';
 
 const GolfLeagueAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -247,6 +249,23 @@ const GolfLeagueAccountHome: React.FC = () => {
                 />
               </Box>
             ) : null}
+          </Box>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+            {currentSeason && accountIdStr && (
+              <>
+                <GolfMatchesWidget
+                  accountId={accountIdStr}
+                  seasonId={currentSeason.id}
+                  title="Matches"
+                />
+                <GolfStandings
+                  accountId={accountIdStr}
+                  seasonId={currentSeason.id}
+                  title="Standings"
+                />
+              </>
+            )}
           </Box>
         </Box>
       </Container>

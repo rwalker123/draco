@@ -18,6 +18,8 @@ interface HoleScoreGridProps {
   onChange: (holeScores: number[]) => void;
   numberOfHoles: 9 | 18;
   disabled?: boolean;
+  par?: number[];
+  handicap?: number[];
 }
 
 export function HoleScoreGrid({
@@ -25,6 +27,8 @@ export function HoleScoreGrid({
   onChange,
   numberOfHoles,
   disabled = false,
+  par,
+  handicap,
 }: HoleScoreGridProps) {
   const theme = useTheme();
 
@@ -65,11 +69,19 @@ export function HoleScoreGrid({
     };
   }, [holeScores]);
 
+  const { front9Par, back9Par, totalPar } = useMemo(() => {
+    if (!par) return { front9Par: 0, back9Par: 0, totalPar: 0 };
+    const front = par.slice(0, 9).reduce((sum, p) => sum + (p || 0), 0);
+    const back = par.slice(9, 18).reduce((sum, p) => sum + (p || 0), 0);
+    return { front9Par: front, back9Par: back, totalPar: front + back };
+  }, [par]);
+
   const frontNineHoles = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   const backNineHoles = [10, 11, 12, 13, 14, 15, 16, 17, 18];
 
-  const renderHoleRow = (holes: number[], label: string, subtotal: number) => (
+  const renderHoleRow = (holes: number[], label: string, subtotal: number, parSubtotal: number) => (
     <>
+      {/* Hole numbers row */}
       <TableRow>
         <TableCell
           sx={{
@@ -99,9 +111,50 @@ export function HoleScoreGrid({
             width: 50,
           }}
         >
-          Out
+          {label === 'Hole' && holes[0] === 1 ? 'Out' : 'In'}
         </TableCell>
       </TableRow>
+
+      {/* Par row */}
+      {par && (
+        <TableRow>
+          <TableCell sx={{ backgroundColor: theme.palette.grey[50] }}>Par</TableCell>
+          {holes.map((holeNum) => (
+            <TableCell
+              key={holeNum}
+              align="center"
+              sx={{ px: 0.5, backgroundColor: theme.palette.grey[50] }}
+            >
+              <Typography variant="caption">{par[holeNum - 1]}</Typography>
+            </TableCell>
+          ))}
+          <TableCell
+            align="center"
+            sx={{ fontWeight: 'bold', backgroundColor: theme.palette.grey[50] }}
+          >
+            {parSubtotal}
+          </TableCell>
+        </TableRow>
+      )}
+
+      {/* Handicap row */}
+      {handicap && (
+        <TableRow>
+          <TableCell sx={{ backgroundColor: theme.palette.grey[50] }}>Hdcp</TableCell>
+          {holes.map((holeNum) => (
+            <TableCell
+              key={holeNum}
+              align="center"
+              sx={{ px: 0.5, backgroundColor: theme.palette.grey[50] }}
+            >
+              <Typography variant="caption">{handicap[holeNum - 1]}</Typography>
+            </TableCell>
+          ))}
+          <TableCell />
+        </TableRow>
+      )}
+
+      {/* Score input row */}
       <TableRow>
         <TableCell sx={{ backgroundColor: theme.palette.background.paper }}>Score</TableCell>
         {holes.map((holeNum) => (
@@ -153,13 +206,13 @@ export function HoleScoreGrid({
           </TableRow>
         </TableHead>
         <TableBody>
-          {renderHoleRow(frontNineHoles, 'Hole', front9Total)}
+          {renderHoleRow(frontNineHoles, 'Hole', front9Total, front9Par)}
           {numberOfHoles === 18 && (
             <>
               <TableRow>
                 <TableCell colSpan={11} sx={{ height: 8, p: 0 }} />
               </TableRow>
-              {renderHoleRow(backNineHoles, 'Hole', back9Total)}
+              {renderHoleRow(backNineHoles, 'Hole', back9Total, back9Par)}
             </>
           )}
         </TableBody>
@@ -184,6 +237,23 @@ export function HoleScoreGrid({
         )}
         <Typography variant="body2" color="text.primary">
           Total: <strong>{totalScore > 0 ? totalScore : '-'}</strong>
+          {totalPar > 0 && totalScore > 0 && (
+            <Typography
+              component="span"
+              variant="body2"
+              sx={{ ml: 1 }}
+              color={
+                totalScore - totalPar > 0
+                  ? 'error.main'
+                  : totalScore - totalPar < 0
+                    ? 'success.main'
+                    : 'text.secondary'
+              }
+            >
+              ({totalScore - totalPar >= 0 ? '+' : ''}
+              {totalScore - totalPar})
+            </Typography>
+          )}
         </Typography>
       </Box>
     </Box>

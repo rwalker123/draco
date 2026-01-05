@@ -209,4 +209,32 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
     });
     return count > 0;
   }
+
+  async updatePoints(
+    matchId: bigint,
+    data: {
+      team1points: number;
+      team2points: number;
+      team1holewins: number;
+      team2holewins: number;
+      team1ninewins: number;
+      team2ninewins: number;
+      team1matchwins: number;
+      team2matchwins: number;
+    },
+  ): Promise<golfmatch> {
+    return this.prisma.golfmatch.update({
+      where: { id: matchId },
+      data: {
+        team1points: data.team1points,
+        team2points: data.team2points,
+        team1holewins: data.team1holewins,
+        team2holewins: data.team2holewins,
+        team1ninewins: data.team1ninewins,
+        team2ninewins: data.team2ninewins,
+        team1matchwins: data.team1matchwins,
+        team2matchwins: data.team2matchwins,
+      },
+    });
+  }
 }

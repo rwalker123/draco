@@ -856,6 +856,14 @@ model golfmatch {
   matchstatus                              Int
   matchtype                                Int
   comment                                  String              @db.VarChar(255)
+  team1points                              Float?
+  team2points                              Float?
+  team1holewins                            Int?
+  team2holewins                            Int?
+  team1ninewins                            Int?
+  team2ninewins                            Int?
+  team1matchwins                           Int?
+  team2matchwins                           Int?
   golfcourse                               golfcourse?         @relation(fields: [courseid], references: [id], map: "fk_golfmatch_golfcourse")
   golfteeinformation                       golfteeinformation? @relation(fields: [teeid], references: [id], map: "fk_golfmatch_golfteeinformation")
   leagueseason                             leagueseason        @relation(fields: [leagueid], references: [id], onDelete: Cascade, map: "fk_golfmatch_leagueseason")

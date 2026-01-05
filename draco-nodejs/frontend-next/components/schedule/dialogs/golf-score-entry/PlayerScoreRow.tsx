@@ -28,6 +28,13 @@ export interface PlayerScoreData {
   holeScores: number[];
 }
 
+interface CourseParData {
+  mensPar: number[];
+  mensHandicap: number[];
+  womansPar: number[];
+  womansHandicap: number[];
+}
+
 interface PlayerScoreRowProps {
   player: GolfRosterEntryType;
   scoreData: PlayerScoreData;
@@ -36,6 +43,10 @@ interface PlayerScoreRowProps {
   numberOfHoles: 9 | 18;
   showHoleByHole: boolean;
   disabled?: boolean;
+  courseHandicap?: number | null;
+  showHandicap?: boolean;
+  courseParData?: CourseParData | null;
+  playerGender?: 'M' | 'F';
 }
 
 export function PlayerScoreRow({
@@ -46,9 +57,17 @@ export function PlayerScoreRow({
   numberOfHoles,
   showHoleByHole,
   disabled = false,
+  courseHandicap,
+  showHandicap = false,
+  courseParData,
+  playerGender = 'M',
 }: PlayerScoreRowProps) {
   const theme = useTheme();
   const [expanded, setExpanded] = React.useState(false);
+
+  const par = playerGender === 'F' ? courseParData?.womansPar : courseParData?.mensPar;
+  const handicap =
+    playerGender === 'F' ? courseParData?.womansHandicap : courseParData?.mensHandicap;
 
   const playerName = `${player.player.firstName} ${player.player.lastName}`;
   const substitutePlayer = scoreData.substituteGolferId
@@ -98,6 +117,13 @@ export function PlayerScoreRow({
 
   const isScoreDisabled = disabled || scoreData.isAbsent;
 
+  const effectiveCourseHandicap = courseHandicap ?? 0;
+
+  const netScore =
+    showHandicap && scoreData.totalScore > 0
+      ? scoreData.totalScore - effectiveCourseHandicap
+      : null;
+
   return (
     <Box
       sx={{
@@ -119,18 +145,37 @@ export function PlayerScoreRow({
         }}
       >
         <Box sx={{ flex: '1 1 200px', minWidth: 150 }}>
-          <Typography
-            variant="body1"
-            sx={{
-              fontWeight: 500,
-              color: scoreData.isAbsent ? theme.palette.text.disabled : theme.palette.text.primary,
-            }}
-          >
-            {displayName}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="body1"
+              sx={{
+                fontWeight: 500,
+                color: scoreData.isAbsent
+                  ? theme.palette.text.disabled
+                  : theme.palette.text.primary,
+              }}
+            >
+              {displayName}
+            </Typography>
+            {showHandicap && (
+              <Typography
+                variant="caption"
+                sx={{
+                  backgroundColor: theme.palette.primary.light,
+                  color: theme.palette.primary.contrastText,
+                  px: 0.75,
+                  py: 0.25,
+                  borderRadius: 0.5,
+                  fontWeight: 500,
+                }}
+              >
+                CH: {effectiveCourseHandicap}
+              </Typography>
+            )}
+          </Box>
           {player.player.handicapIndex !== null && player.player.handicapIndex !== undefined && (
             <Typography variant="caption" color="text.secondary">
-              Handicap: {player.player.handicapIndex.toFixed(1)}
+              Handicap Index: {player.player.handicapIndex.toFixed(1)}
             </Typography>
           )}
         </Box>
@@ -169,26 +214,52 @@ export function PlayerScoreRow({
         )}
 
         {!showHoleByHole && (
-          <TextField
-            type="number"
-            size="small"
-            label="Total Score"
-            value={scoreData.totalScore > 0 ? scoreData.totalScore : ''}
-            onChange={(e) => handleTotalScoreChange(e.target.value)}
-            disabled={isScoreDisabled}
-            inputProps={{
-              min: 18,
-              max: 200,
-            }}
-            sx={{ width: 120 }}
-          />
+          <>
+            <TextField
+              type="number"
+              size="small"
+              label="Total Score"
+              value={scoreData.totalScore > 0 ? scoreData.totalScore : ''}
+              onChange={(e) => handleTotalScoreChange(e.target.value)}
+              disabled={isScoreDisabled}
+              inputProps={{
+                min: 18,
+                max: 200,
+              }}
+              sx={{ width: 120 }}
+            />
+            {netScore !== null && (
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 500,
+                  color: theme.palette.success.main,
+                }}
+              >
+                Net: {netScore}
+              </Typography>
+            )}
+          </>
         )}
 
         {showHoleByHole && (
           <>
-            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 60 }}>
-              Total: {scoreData.totalScore > 0 ? scoreData.totalScore : '-'}
-            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                Total: {scoreData.totalScore > 0 ? scoreData.totalScore : '-'}
+              </Typography>
+              {netScore !== null && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 500,
+                    color: theme.palette.success.main,
+                  }}
+                >
+                  Net: {netScore}
+                </Typography>
+              )}
+            </Box>
             <IconButton
               size="small"
               onClick={() => setExpanded(!expanded)}
@@ -209,6 +280,8 @@ export function PlayerScoreRow({
               onChange={handleHoleScoresChange}
               numberOfHoles={numberOfHoles}
               disabled={isScoreDisabled}
+              par={par}
+              handicap={handicap}
             />
           </Box>
         </Collapse>

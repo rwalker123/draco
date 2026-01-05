@@ -81,6 +81,7 @@ export const CreateGolfScoreSchema = z
     totalScore: z.number().int().min(18).max(200).optional(),
     holeScores: z.array(holeScoreSchema).min(9).max(18).optional(),
     startIndex: z.number().nullable().optional(),
+    startIndex9: z.number().nullable().optional(),
   })
   .refine(
     (data) => {

@@ -15,6 +15,7 @@ import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { GolfScoreResponseFormatter } from '../responseFormatters/golfScoreResponseFormatter.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { GolfMatchStatus } from '../utils/golfConstants.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 export class GolfScoreService {
   private readonly scoreRepository: IGolfScoreRepository;
@@ -156,6 +157,7 @@ export class GolfScoreService {
             holescrore17: holeScores[16] ?? 0,
             holescrore18: holeScores[17] ?? 0,
             startindex: scoreData.startIndex ?? null,
+            startindex9: scoreData.startIndex9 ?? null,
           },
         });
       }
@@ -181,6 +183,9 @@ export class GolfScoreService {
 
     if (team1Scores.length > 0 && team2Scores.length > 0) {
       await this.matchRepository.updateStatus(matchId, GolfMatchStatus.COMPLETED);
+
+      const scoringService = ServiceFactory.getGolfIndividualScoringService();
+      await scoringService.calculateAndStoreMatchPoints(matchId);
     } else if (team1Scores.length > 0 || team2Scores.length > 0) {
       if (match.matchstatus === GolfMatchStatus.NOT_STARTED) {
         await this.matchRepository.updateStatus(matchId, GolfMatchStatus.IN_PROGRESS);

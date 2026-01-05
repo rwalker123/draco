@@ -60,8 +60,10 @@ function mapGolfMatchToGame(match: GolfMatch): Game {
     gameDate: match.matchDateTime,
     homeTeamId: match.team1.id,
     visitorTeamId: match.team2.id,
-    homeScore: 0,
-    visitorScore: 0,
+    homeScore: match.team1TotalScore ?? 0,
+    visitorScore: match.team2TotalScore ?? 0,
+    homePoints: match.team1Points,
+    visitorPoints: match.team2Points,
     comment: match.comment ?? '',
     fieldId: match.course?.id,
     field: match.course

@@ -3,6 +3,8 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import { BatchCourseHandicapRequestSchema } from '@draco/shared-schemas';
+import { ValidationError } from '../utils/customErrors.js';
 
 const router = Router({ mergeParams: true });
 const golfHandicapService = ServiceFactory.getGolfHandicapService();
@@ -70,6 +72,29 @@ router.get(
     const courseHandicap = parseInt(req.params.courseHandicap, 10);
     const maxScore = golfHandicapService.calculateESCMaxScore(courseHandicap);
     res.json({ courseHandicap, maxScore });
+  }),
+);
+
+router.post(
+  '/batch-course-handicaps',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const parseResult = BatchCourseHandicapRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      throw new ValidationError(parseResult.error.issues[0]?.message || 'Invalid request body');
+    }
+
+    const { golferIds, teeId, holesPlayed } = parseResult.data;
+    const golferIdsBigInt = golferIds.map((id) => BigInt(id));
+    const teeIdBigInt = BigInt(teeId);
+
+    const result = await golfHandicapService.calculateBatchCourseHandicaps(
+      golferIdsBigInt,
+      teeIdBigInt,
+      holesPlayed,
+    );
+    res.json(result);
   }),
 );
 

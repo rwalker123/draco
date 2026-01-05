@@ -28,6 +28,7 @@ import type {
   GolfCourseTeeType,
   GolfScoreWithDetailsType,
 } from '@draco/shared-schemas';
+import type { BatchCourseHandicapResponse } from '@draco/shared-api-client';
 import { useGolfScores } from '@/hooks/useGolfScores';
 import { useGolfRosters } from '@/hooks/useGolfRosters';
 import { useGolfCourses } from '@/hooks/useGolfCourses';
@@ -119,6 +120,15 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
 
   const [team1Scores, setTeam1Scores] = useState<Record<string, PlayerScoreData>>({});
   const [team2Scores, setTeam2Scores] = useState<Record<string, PlayerScoreData>>({});
+  const [courseHandicapData, setCourseHandicapData] = useState<BatchCourseHandicapResponse | null>(
+    null,
+  );
+  const [courseParData, setCourseParData] = useState<{
+    mensPar: number[];
+    mensHandicap: number[];
+    womansPar: number[];
+    womansHandicap: number[];
+  } | null>(null);
 
   const initializeScoresFromRoster = useCallback(
     (
@@ -195,13 +205,21 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
 
         if (selectedGame.fieldId) {
           const teesResult = await courseService.getCourse(selectedGame.fieldId);
-          if (!cancelled && teesResult.success && teesResult.data.tees) {
-            setCourseTees(teesResult.data.tees);
-            if (selectedGame.teeId) {
-              setSelectedTeeId(selectedGame.teeId);
-            } else if (teesResult.data.tees.length > 0) {
-              setSelectedTeeId(teesResult.data.tees[0].id);
+          if (!cancelled && teesResult.success) {
+            if (teesResult.data.tees) {
+              setCourseTees(teesResult.data.tees);
+              if (selectedGame.teeId) {
+                setSelectedTeeId(selectedGame.teeId);
+              } else if (teesResult.data.tees.length > 0) {
+                setSelectedTeeId(teesResult.data.tees[0].id);
+              }
             }
+            setCourseParData({
+              mensPar: teesResult.data.mensPar,
+              mensHandicap: teesResult.data.mensHandicap,
+              womansPar: teesResult.data.womansPar,
+              womansHandicap: teesResult.data.womansHandicap,
+            });
           }
         }
 
@@ -214,8 +232,17 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
           roster2Result.data.some((p) => p.golferId === s.golferId),
         );
 
-        setTeam1Scores(initializeScoresFromRoster(roster1Result.data, team1ExistingScores, teamSize));
-        setTeam2Scores(initializeScoresFromRoster(roster2Result.data, team2ExistingScores, teamSize));
+        const hasHoleByHoleScores = existingScoresData.some((s) => s.totalsOnly === false);
+        if (hasHoleByHoleScores) {
+          setShowHoleByHole(true);
+        }
+
+        setTeam1Scores(
+          initializeScoresFromRoster(roster1Result.data, team1ExistingScores, teamSize),
+        );
+        setTeam2Scores(
+          initializeScoresFromRoster(roster2Result.data, team2ExistingScores, teamSize),
+        );
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -232,7 +259,16 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [open, selectedGame, accountId, rosterService, scoreService, courseService, teamSize, initializeScoresFromRoster]);
+  }, [
+    open,
+    selectedGame,
+    accountId,
+    rosterService,
+    scoreService,
+    courseService,
+    teamSize,
+    initializeScoresFromRoster,
+  ]);
 
   useEffect(() => {
     if (!open) {
@@ -246,11 +282,73 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
       setSelectedTeeId('');
       setShowHoleByHole(false);
       setError(null);
+      setCourseHandicapData(null);
+      setCourseParData(null);
     }
   }, [open]);
 
+  const useHandicapScoring = leagueSetup?.useHandicapScoring ?? false;
+
+  useEffect(() => {
+    if (!open || !selectedTeeId || !useHandicapScoring) {
+      setCourseHandicapData(null);
+      return;
+    }
+
+    const allGolferIds = [
+      ...team1Roster.map((p) => p.golferId),
+      ...team2Roster.map((p) => p.golferId),
+    ];
+
+    if (allGolferIds.length === 0) return;
+
+    let cancelled = false;
+
+    const fetchHandicaps = async () => {
+      const result = await scoreService.getBatchCourseHandicaps(
+        allGolferIds,
+        selectedTeeId,
+        numberOfHoles,
+      );
+
+      if (!cancelled && result.success) {
+        setCourseHandicapData(result.data);
+      }
+    };
+
+    fetchHandicaps();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    open,
+    selectedTeeId,
+    numberOfHoles,
+    useHandicapScoring,
+    team1Roster,
+    team2Roster,
+    scoreService,
+  ]);
+
+  const handicapIndexMap = useMemo(() => {
+    const map: Record<string, number | null> = {};
+    if (courseHandicapData?.players) {
+      for (const player of courseHandicapData.players) {
+        map[player.golferId] = player.handicapIndex;
+      }
+    }
+    return map;
+  }, [courseHandicapData]);
+
   const buildPlayerScores = useCallback(
-    (scores: Record<string, PlayerScoreData>, teamSeasonId: string): PlayerMatchScoreType[] => {
+    (
+      scores: Record<string, PlayerScoreData>,
+      teamSeasonId: string,
+      roster: GolfRosterEntryType[],
+    ): PlayerMatchScoreType[] => {
+      const rosterMap = new Map(roster.map((r) => [r.id, r.golferId]));
+
       return Object.values(scores)
         .filter((score) => !score.isAbsent || score.substituteGolferId)
         .map((score) => {
@@ -263,6 +361,9 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
           };
 
           if (score.totalScore > 0) {
+            const golferId = rosterMap.get(score.rosterId);
+            const handicapIndex = golferId ? handicapIndexMap[golferId] : null;
+
             playerScore.score = {
               courseId: selectedGame?.fieldId || '',
               teeId: selectedTeeId,
@@ -271,13 +372,16 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
               totalsOnly: score.totalsOnly || showHoleByHole === false,
               totalScore: score.totalScore,
               holeScores: score.totalsOnly ? undefined : score.holeScores.filter((s) => s > 0),
+              startIndex: numberOfHoles === 18 ? handicapIndex : undefined,
+              startIndex9:
+                numberOfHoles === 9 && handicapIndex !== null ? handicapIndex / 2 : undefined,
             };
           }
 
           return playerScore;
         });
     },
-    [selectedGame, selectedTeeId, numberOfHoles, showHoleByHole],
+    [selectedGame, selectedTeeId, numberOfHoles, showHoleByHole, handicapIndexMap],
   );
 
   const handleSave = async () => {
@@ -287,8 +391,16 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     setError(null);
 
     try {
-      const team1PlayerScores = buildPlayerScores(team1Scores, selectedGame.homeTeamId);
-      const team2PlayerScores = buildPlayerScores(team2Scores, selectedGame.visitorTeamId);
+      const team1PlayerScores = buildPlayerScores(
+        team1Scores,
+        selectedGame.homeTeamId,
+        team1Roster,
+      );
+      const team2PlayerScores = buildPlayerScores(
+        team2Scores,
+        selectedGame.visitorTeamId,
+        team2Roster,
+      );
 
       const allScores = [...team1PlayerScores, ...team2PlayerScores];
 
@@ -347,6 +459,26 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     if (matchStatus === GameStatus.Completed && !hasScoresToSubmit) return false;
     return true;
   }, [selectedGame, selectedTeeId, matchStatus, hasScoresToSubmit]);
+
+  const courseHandicapMap = useMemo(() => {
+    const map: Record<string, number | null> = {};
+    if (courseHandicapData?.players) {
+      for (const player of courseHandicapData.players) {
+        map[player.golferId] = player.courseHandicap;
+      }
+    }
+    return map;
+  }, [courseHandicapData]);
+
+  const genderMap = useMemo(() => {
+    const map: Record<string, 'M' | 'F'> = {};
+    if (courseHandicapData?.players) {
+      for (const player of courseHandicapData.players) {
+        map[player.golferId] = player.gender;
+      }
+    }
+    return map;
+  }, [courseHandicapData]);
 
   if (!selectedGame) return null;
 
@@ -485,6 +617,10 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
               disabled={!selectedGame.fieldId || !selectedTeeId}
               defaultExpanded={true}
               teamSize={teamSize}
+              courseHandicapMap={courseHandicapMap}
+              showHandicaps={useHandicapScoring}
+              courseParData={courseParData}
+              genderMap={genderMap}
             />
 
             <TeamScoresSection
@@ -501,6 +637,10 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
               disabled={!selectedGame.fieldId || !selectedTeeId}
               defaultExpanded={true}
               teamSize={teamSize}
+              courseHandicapMap={courseHandicapMap}
+              showHandicaps={useHandicapScoring}
+              courseParData={courseParData}
+              genderMap={genderMap}
             />
           </>
         )}
