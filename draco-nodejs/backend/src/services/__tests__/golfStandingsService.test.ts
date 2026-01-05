@@ -22,7 +22,7 @@ describe('GolfStandingsService', () => {
       findByIdWithScores: vi.fn(),
     };
     mockScoreRepository = {
-      findByMatchId: vi.fn(),
+      findByMatchIds: vi.fn(),
     };
     mockFlightRepository = {
       findById: vi.fn(),
@@ -65,6 +65,7 @@ describe('GolfStandingsService', () => {
         { id: 2n, name: 'Team 2' },
       ] as never);
       vi.mocked(mockMatchRepository.findByFlightId!).mockResolvedValue([]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(new Map());
 
       const result = await service.getFlightStandings(1n);
 
@@ -98,10 +99,16 @@ describe('GolfStandingsService', () => {
           team2points: null,
         },
       ] as never);
-      vi.mocked(mockScoreRepository.findByMatchId!).mockResolvedValue([
-        { teamid: 1n, golfscore: { totalscore: 40 } },
-        { teamid: 2n, golfscore: { totalscore: 45 } },
-      ] as never);
+      const scoresMap = new Map([
+        [
+          10n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 40 } },
+            { teamid: 2n, golfscore: { totalscore: 45 } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
 
       const result = await service.getFlightStandings(1n);
 
@@ -141,10 +148,16 @@ describe('GolfStandingsService', () => {
           team2matchwins: 0,
         },
       ] as never);
-      vi.mocked(mockScoreRepository.findByMatchId!).mockResolvedValue([
-        { teamid: 1n, golfscore: { totalscore: 38 } },
-        { teamid: 2n, golfscore: { totalscore: 40 } },
-      ] as never);
+      const scoresMap = new Map([
+        [
+          10n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 38 } },
+            { teamid: 2n, golfscore: { totalscore: 40 } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
 
       const result = await service.getFlightStandings(1n);
 
@@ -182,10 +195,16 @@ describe('GolfStandingsService', () => {
           team2points: null,
         },
       ] as never);
-      vi.mocked(mockScoreRepository.findByMatchId!).mockResolvedValue([
-        { teamid: 1n, golfscore: { totalscore: 40 } },
-        { teamid: 2n, golfscore: { totalscore: 40 } },
-      ] as never);
+      const scoresMap = new Map([
+        [
+          10n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 40 } },
+            { teamid: 2n, golfscore: { totalscore: 40 } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
 
       const result = await service.getFlightStandings(1n);
 
@@ -227,15 +246,22 @@ describe('GolfStandingsService', () => {
           team2points: null,
         },
       ] as never);
-      vi.mocked(mockScoreRepository.findByMatchId!).mockResolvedValue([
-        { teamid: 1n, golfscore: { totalscore: 40 } },
-        { teamid: 2n, golfscore: { totalscore: 45 } },
-      ] as never);
+      const scoresMap = new Map([
+        [
+          11n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 40 } },
+            { teamid: 2n, golfscore: { totalscore: 45 } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
 
       const result = await service.getFlightStandings(1n);
 
       expect(result.standings[0].matchesPlayed).toBe(1);
-      expect(mockScoreRepository.findByMatchId).toHaveBeenCalledTimes(1);
+      expect(mockScoreRepository.findByMatchIds).toHaveBeenCalledTimes(1);
+      expect(mockScoreRepository.findByMatchIds).toHaveBeenCalledWith([11n]);
     });
 
     it('ranks teams by total points then by total strokes', async () => {
@@ -279,19 +305,30 @@ describe('GolfStandingsService', () => {
         },
       ] as never);
 
-      vi.mocked(mockScoreRepository.findByMatchId!)
-        .mockResolvedValueOnce([
-          { teamid: 1n, golfscore: { totalscore: 38 } },
-          { teamid: 2n, golfscore: { totalscore: 42 } },
-        ] as never)
-        .mockResolvedValueOnce([
-          { teamid: 1n, golfscore: { totalscore: 40 } },
-          { teamid: 3n, golfscore: { totalscore: 44 } },
-        ] as never)
-        .mockResolvedValueOnce([
-          { teamid: 2n, golfscore: { totalscore: 40 } },
-          { teamid: 3n, golfscore: { totalscore: 46 } },
-        ] as never);
+      const scoresMap = new Map([
+        [
+          10n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 38 } },
+            { teamid: 2n, golfscore: { totalscore: 42 } },
+          ],
+        ],
+        [
+          11n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 40 } },
+            { teamid: 3n, golfscore: { totalscore: 44 } },
+          ],
+        ],
+        [
+          12n,
+          [
+            { teamid: 2n, golfscore: { totalscore: 40 } },
+            { teamid: 3n, golfscore: { totalscore: 46 } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
 
       const result = await service.getFlightStandings(1n);
 
@@ -326,10 +363,16 @@ describe('GolfStandingsService', () => {
           team2points: null,
         },
       ] as never);
-      vi.mocked(mockScoreRepository.findByMatchId!).mockResolvedValue([
-        { teamid: 1n, golfscore: { totalscore: 35 } },
-        { teamid: 2n, golfscore: { totalscore: 42 } },
-      ] as never);
+      const scoresMap = new Map([
+        [
+          10n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 35 } },
+            { teamid: 2n, golfscore: { totalscore: 42 } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
 
       const result = await service.getFlightStandings(1n);
 
@@ -361,10 +404,16 @@ describe('GolfStandingsService', () => {
           team2points: null,
         },
       ] as never);
-      vi.mocked(mockScoreRepository.findByMatchId!).mockResolvedValue([
-        { teamid: 1n, golfscore: { totalscore: 30 } },
-        { teamid: 2n, golfscore: { totalscore: 55 } },
-      ] as never);
+      const scoresMap = new Map([
+        [
+          10n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 30 } },
+            { teamid: 2n, golfscore: { totalscore: 55 } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
 
       const result = await service.getFlightStandings(1n);
 
@@ -404,6 +453,7 @@ describe('GolfStandingsService', () => {
         { id: 1n, name: 'Team 1' },
       ] as never);
       vi.mocked(mockMatchRepository.findByFlightId!).mockResolvedValue([]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(new Map());
 
       const result = await service.getLeagueStandings(100n);
 

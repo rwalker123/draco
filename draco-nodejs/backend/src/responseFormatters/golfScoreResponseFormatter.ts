@@ -3,6 +3,7 @@ import { GolfScoreWithDetails } from '../repositories/interfaces/IGolfScoreRepos
 import { GolfMatchScoreEntry } from '../repositories/interfaces/IGolfMatchRepository.js';
 import {
   Gender,
+  normalizeGender,
   calculateScoreDifferential,
   applyNetDoubleBogey,
   calculateCourseHandicap,
@@ -74,7 +75,7 @@ export class GolfScoreResponseFormatter {
     currentHandicapIndex?: number | null,
   ): GolfScoreWithDetailsType {
     const baseScore = this.format(score);
-    const gender = (score.golfer.gender as Gender) || 'M';
+    const gender = normalizeGender(score.golfer.gender);
 
     const differential = this.calculateDifferential(score, gender, currentHandicapIndex);
 

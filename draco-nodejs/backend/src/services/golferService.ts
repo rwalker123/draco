@@ -23,7 +23,7 @@ import {
 import { GolfScoreResponseFormatter } from '../responseFormatters/golfScoreResponseFormatter.js';
 import { NotFoundError, AuthorizationError } from '../utils/customErrors.js';
 import {
-  Gender,
+  normalizeGender,
   calculateHandicapIndex,
   calculateAverageScore,
   applyExceptionalScoreReduction,
@@ -390,7 +390,7 @@ export class GolferService {
       };
     }
 
-    const gender = (golfer.gender as Gender) || 'M';
+    const gender = normalizeGender(golfer.gender);
 
     const scoresForAverage: ScoreForAverage[] = scores.map((score) => ({
       totalScore: score.totalscore,

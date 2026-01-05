@@ -373,8 +373,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
               totalScore: score.totalScore,
               holeScores: score.totalsOnly ? undefined : score.holeScores.filter((s) => s > 0),
               startIndex: numberOfHoles === 18 ? handicapIndex : undefined,
-              startIndex9:
-                numberOfHoles === 9 && handicapIndex !== null ? handicapIndex / 2 : undefined,
+              startIndex9: numberOfHoles === 9 ? handicapIndex : undefined,
             };
           }
 

@@ -14,7 +14,7 @@ import { IGolfTeeRepository } from '../repositories/interfaces/IGolfTeeRepositor
 import { IGolfCourseRepository } from '../repositories/interfaces/IGolfCourseRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
-import { combineNineHoleScores } from '../utils/whsCalculator.js';
+import { combineNineHoleScores, normalizeGender } from '../utils/whsCalculator.js';
 
 interface ScoreDifferential {
   scoreId: bigint;
@@ -330,12 +330,19 @@ export class GolfHandicapService {
     }
 
     const isNineHoles = holesPlayed === 9;
-    const courseRating = isNineHoles
+
+    const mensCourseRating = isNineHoles
       ? Number(tee.mensratingfront9) || Number(tee.mensrating) / 2
       : Number(tee.mensrating);
-    const slopeRating = isNineHoles
+    const mensSlopeRating = isNineHoles
       ? Number(tee.menslopefront9) || Number(tee.menslope)
       : Number(tee.menslope);
+    const womansCourseRating = isNineHoles
+      ? Number(tee.womansratingfront9) || Number(tee.womansrating) / 2
+      : Number(tee.womansrating);
+    const womansSlopeRating = isNineHoles
+      ? Number(tee.womanslopefront9) || Number(tee.womanslope)
+      : Number(tee.womanslope);
 
     const mensPar =
       course.menspar1 +
@@ -359,6 +366,28 @@ export class GolfHandicapService {
           course.menspar17 +
           course.menspar18);
 
+    const womansPar =
+      course.womanspar1 +
+      course.womanspar2 +
+      course.womanspar3 +
+      course.womanspar4 +
+      course.womanspar5 +
+      course.womanspar6 +
+      course.womanspar7 +
+      course.womanspar8 +
+      course.womanspar9 +
+      (isNineHoles
+        ? 0
+        : course.womanspar10 +
+          course.womanspar11 +
+          course.womanspar12 +
+          course.womanspar13 +
+          course.womanspar14 +
+          course.womanspar15 +
+          course.womanspar16 +
+          course.womanspar17 +
+          course.womanspar18);
+
     const golfers = await this.rosterRepository.findGolfersByIds(golferIds);
 
     const players: PlayerCourseHandicapType[] = await Promise.all(
@@ -379,7 +408,7 @@ export class GolfHandicapService {
           handicapIndex = golfer.initialdifferential;
         }
 
-        const gender = (golfer.gender === 'F' ? 'F' : 'M') as 'M' | 'F';
+        const gender = normalizeGender(golfer.gender);
 
         if (handicapIndex === null) {
           return {
@@ -390,11 +419,15 @@ export class GolfHandicapService {
           };
         }
 
+        const slopeRating = gender === 'F' ? womansSlopeRating : mensSlopeRating;
+        const courseRating = gender === 'F' ? womansCourseRating : mensCourseRating;
+        const par = gender === 'F' ? womansPar : mensPar;
+
         const courseHandicapResult = this.calculateCourseHandicap(
           handicapIndex,
           slopeRating,
           courseRating,
-          mensPar,
+          par,
         );
 
         return {
@@ -408,8 +441,8 @@ export class GolfHandicapService {
 
     return {
       teeId: teeId.toString(),
-      courseRating,
-      slopeRating,
+      courseRating: mensCourseRating,
+      slopeRating: mensSlopeRating,
       par: mensPar,
       holesPlayed,
       players,

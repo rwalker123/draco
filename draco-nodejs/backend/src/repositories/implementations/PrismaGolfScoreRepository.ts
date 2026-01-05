@@ -52,6 +52,30 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     });
   }
 
+  async findByMatchIds(matchIds: bigint[]): Promise<Map<bigint, GolfMatchScoreWithDetails[]>> {
+    if (matchIds.length === 0) {
+      return new Map();
+    }
+
+    const allScores = await this.prisma.golfmatchscores.findMany({
+      where: { matchid: { in: matchIds } },
+      include: matchScoreWithDetailsInclude,
+    });
+
+    const scoresByMatchId = new Map<bigint, GolfMatchScoreWithDetails[]>();
+    for (const matchId of matchIds) {
+      scoresByMatchId.set(matchId, []);
+    }
+    for (const score of allScores) {
+      const matchScores = scoresByMatchId.get(score.matchid);
+      if (matchScores) {
+        matchScores.push(score);
+      }
+    }
+
+    return scoresByMatchId;
+  }
+
   async findByTeamAndMatch(matchId: bigint, teamId: bigint): Promise<GolfMatchScoreWithDetails[]> {
     return this.prisma.golfmatchscores.findMany({
       where: {

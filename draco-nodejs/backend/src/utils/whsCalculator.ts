@@ -232,6 +232,18 @@ export function calculateAverageScore(scores: ScoreForAverage[]): number | null 
 
 export type Gender = 'M' | 'F';
 
+/**
+ * Normalizes a gender value to a valid Gender type.
+ * Returns 'M' for male or any invalid/null/undefined value.
+ * Returns 'F' only for explicitly female values.
+ */
+export function normalizeGender(gender: string | null | undefined): Gender {
+  if (gender === 'F' || gender === 'f') {
+    return 'F';
+  }
+  return 'M';
+}
+
 export interface TeeRatings {
   mensRating: number;
   mensSlope: number;

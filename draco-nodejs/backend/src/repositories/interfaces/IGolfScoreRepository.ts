@@ -65,6 +65,7 @@ export interface IGolfScoreRepository {
   findById(scoreId: bigint): Promise<GolfScoreWithDetails | null>;
   findByGolferId(golferId: bigint, limit?: number): Promise<GolfScoreWithDetails[]>;
   findByMatchId(matchId: bigint): Promise<GolfMatchScoreWithDetails[]>;
+  findByMatchIds(matchIds: bigint[]): Promise<Map<bigint, GolfMatchScoreWithDetails[]>>;
   findByTeamAndMatch(matchId: bigint, teamId: bigint): Promise<GolfMatchScoreWithDetails[]>;
   create(data: CreateGolfScoreData): Promise<golfscore>;
   update(scoreId: bigint, data: UpdateGolfScoreData): Promise<golfscore>;

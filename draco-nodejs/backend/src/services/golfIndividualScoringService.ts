@@ -5,9 +5,12 @@ import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import {
   getHoleHandicapIndexes,
+  getHolePars,
   calculateCourseHandicap,
   getRatingsForGender,
+  normalizeGender,
   type CourseHandicaps,
+  type CoursePars,
   type Gender,
 } from '../utils/whsCalculator.js';
 
@@ -112,6 +115,7 @@ export class GolfIndividualScoringService {
     team1Score: PlayerScoreData,
     team2Score: PlayerScoreData,
     holeHandicapIndexes: number[],
+    holePars: number[],
     scoringConfig: ScoringConfig,
     holesPlayed: 9 | 18,
   ): IndividualMatchResult {
@@ -142,18 +146,17 @@ export class GolfIndividualScoringService {
     for (let hole = 0; hole < holesPlayed; hole++) {
       const t1Gross = team1Score.holeScores[hole] || 0;
       const t2Gross = team2Score.holeScores[hole] || 0;
+      const par = holePars[hole] || 4;
 
-      if (t1Gross === 0 || t2Gross === 0) {
-        team1NetScores.push(t1Gross);
-        team2NetScores.push(t2Gross);
-        continue;
-      }
-
-      const t1Net = t1Gross - team1Strokes[hole];
-      const t2Net = t2Gross - team2Strokes[hole];
+      const t1Net = t1Gross === 0 ? par : t1Gross - team1Strokes[hole];
+      const t2Net = t2Gross === 0 ? par : t2Gross - team2Strokes[hole];
 
       team1NetScores.push(t1Net);
       team2NetScores.push(t2Net);
+
+      if (t1Gross === 0 || t2Gross === 0) {
+        continue;
+      }
 
       if (t1Net < t2Net) {
         team1HoleWins++;
@@ -260,10 +263,11 @@ export class GolfIndividualScoringService {
       throw new NotFoundError('Course not found');
     }
 
-    const holesPlayed = (score1.holesplayed || 9) as 9 | 18;
+    const rawHolesPlayed = score1.holesplayed || 9;
+    const holesPlayed: 9 | 18 = rawHolesPlayed === 18 ? 18 : 9;
 
-    const gender1 = (team1Entry.golfer.gender || 'M') as Gender;
-    const gender2 = (team2Entry.golfer.gender || 'M') as Gender;
+    const gender1 = normalizeGender(team1Entry.golfer.gender);
+    const gender2 = normalizeGender(team2Entry.golfer.gender);
 
     const holeHandicapIndexes = getHoleHandicapIndexes(course as CourseHandicaps, gender1);
 
@@ -273,7 +277,8 @@ export class GolfIndividualScoringService {
     if (leagueSetup.usehandicapscoring && match.golfteeinformation) {
       const tee = match.golfteeinformation;
 
-      if (score1.startindex !== null) {
+      const handicapIndex1 = holesPlayed === 9 ? score1.startindex9 : score1.startindex;
+      if (handicapIndex1 !== null) {
         const ratings1 = getRatingsForGender(
           {
             mensRating: Number(tee.mensrating) || 72,
@@ -285,14 +290,15 @@ export class GolfIndividualScoringService {
         );
         const par1 = this.calculatePar(course, gender1, holesPlayed);
         team1CourseHandicap = calculateCourseHandicap(
-          score1.startindex,
+          handicapIndex1,
           ratings1.slopeRating,
           ratings1.courseRating,
           par1,
         );
       }
 
-      if (score2.startindex !== null) {
+      const handicapIndex2 = holesPlayed === 9 ? score2.startindex9 : score2.startindex;
+      if (handicapIndex2 !== null) {
         const ratings2 = getRatingsForGender(
           {
             mensRating: Number(tee.mensrating) || 72,
@@ -304,7 +310,7 @@ export class GolfIndividualScoringService {
         );
         const par2 = this.calculatePar(course, gender2, holesPlayed);
         team2CourseHandicap = calculateCourseHandicap(
-          score2.startindex,
+          handicapIndex2,
           ratings2.slopeRating,
           ratings2.courseRating,
           par2,
@@ -335,10 +341,16 @@ export class GolfIndividualScoringService {
       useHandicapScoring: leagueSetup.usehandicapscoring,
     };
 
+    const holePars1 = getHolePars(course as CoursePars, gender1);
+    const holePars2 = getHolePars(course as CoursePars, gender2);
+    const holePars =
+      gender1 === gender2 ? holePars1 : holePars1.map((p, i) => Math.round((p + holePars2[i]) / 2));
+
     const result = this.calculateIndividualMatchPoints(
       team1ScoreData,
       team2ScoreData,
       holeHandicapIndexes,
+      holePars.slice(0, holesPlayed),
       scoringConfig,
       holesPlayed,
     );

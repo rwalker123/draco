@@ -117,6 +117,7 @@ describe('GolfIndividualScoringService', () => {
     const defaultHoleHandicapIndexes = [
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
     ];
+    const defaultHolePars = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
 
     it('calculates points for hole-by-hole wins without handicap', () => {
       const team1Score = {
@@ -144,6 +145,7 @@ describe('GolfIndividualScoringService', () => {
         team1Score,
         team2Score,
         defaultHoleHandicapIndexes,
+        defaultHolePars,
         scoringConfig,
         9,
       );
@@ -182,6 +184,7 @@ describe('GolfIndividualScoringService', () => {
         team1Score,
         team2Score,
         defaultHoleHandicapIndexes,
+        defaultHolePars,
         scoringConfig,
         9,
       );
@@ -220,6 +223,7 @@ describe('GolfIndividualScoringService', () => {
         team1Score,
         team2Score,
         defaultHoleHandicapIndexes,
+        defaultHolePars,
         scoringConfig,
         9,
       );
@@ -255,6 +259,7 @@ describe('GolfIndividualScoringService', () => {
         team1Score,
         team2Score,
         defaultHoleHandicapIndexes,
+        defaultHolePars,
         scoringConfig,
         18,
       );
@@ -267,7 +272,7 @@ describe('GolfIndividualScoringService', () => {
       expect(result.team2MatchWins).toBe(0);
     });
 
-    it('skips holes with zero scores', () => {
+    it('uses expected score (par) for holes with zero scores and skips hole comparison', () => {
       const team1Score = {
         golferId: 1n,
         holeScores: [4, 4, 0, 4, 4, 4, 4, 4, 4],
@@ -293,11 +298,14 @@ describe('GolfIndividualScoringService', () => {
         team1Score,
         team2Score,
         defaultHoleHandicapIndexes,
+        defaultHolePars,
         scoringConfig,
         9,
       );
 
       expect(result.team1HoleWins).toBe(8);
+      expect(result.team1NetScore).toBe(36);
+      expect(result.team2NetScore).toBe(44);
     });
 
     it('returns net scores for display', () => {
@@ -326,6 +334,7 @@ describe('GolfIndividualScoringService', () => {
         team1Score,
         team2Score,
         defaultHoleHandicapIndexes,
+        defaultHolePars,
         scoringConfig,
         9,
       );

@@ -76,8 +76,12 @@ export class GolfStandingsService {
       });
     }
 
+    // Batch load all scores for completed matches to avoid N+1 queries
+    const matchIds = completedMatches.map((m) => m.id);
+    const allScoresMap = await this.scoreRepository.findByMatchIds(matchIds);
+
     for (const match of completedMatches) {
-      const matchScores = await this.scoreRepository.findByMatchId(match.id);
+      const matchScores = allScoresMap.get(match.id) || [];
 
       const team1Scores = matchScores.filter((ms) => ms.teamid === match.team1);
       const team2Scores = matchScores.filter((ms) => ms.teamid === match.team2);
