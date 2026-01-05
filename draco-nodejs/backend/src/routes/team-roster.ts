@@ -38,7 +38,7 @@ router.get(
   '/:teamSeasonId/roster',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAccountAdmin(),
+  routeProtection.enforceTeamBoundary(),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
