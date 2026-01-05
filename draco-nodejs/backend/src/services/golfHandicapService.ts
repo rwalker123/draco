@@ -361,19 +361,10 @@ export class GolfHandicapService {
 
     const golfers = await this.rosterRepository.findGolfersByIds(golferIds);
 
-    console.log('[BatchCourseHandicaps] Course info:', {
-      teeId: teeId.toString(),
-      courseRating,
-      slopeRating,
-      par: mensPar,
-      holesPlayed,
-    });
-
     const players: PlayerCourseHandicapType[] = await Promise.all(
       golferIds.map(async (golferId) => {
         const golfer = golfers.find((g) => g.id === golferId);
         if (!golfer) {
-          console.log(`[BatchCourseHandicaps] Golfer ${golferId} not found in database`);
           return {
             golferId: golferId.toString(),
             gender: 'M' as const,
@@ -382,21 +373,11 @@ export class GolfHandicapService {
           };
         }
 
-        const calculatedIndex = await this.calculateHandicapIndex(golferId);
-        let handicapIndex = calculatedIndex;
-        let indexSource = 'calculated';
+        let handicapIndex = await this.calculateHandicapIndex(golferId);
 
         if (handicapIndex === null && golfer.initialdifferential !== null) {
           handicapIndex = golfer.initialdifferential;
-          indexSource = 'initialDifferential';
         }
-
-        console.log(`[BatchCourseHandicaps] Golfer ${golferId}:`, {
-          calculatedIndex,
-          initialDifferential: golfer.initialdifferential,
-          usedIndex: handicapIndex,
-          indexSource: handicapIndex !== null ? indexSource : 'none',
-        });
 
         const gender = (golfer.gender === 'F' ? 'F' : 'M') as 'M' | 'F';
 
@@ -415,11 +396,6 @@ export class GolfHandicapService {
           courseRating,
           mensPar,
         );
-
-        console.log(`[BatchCourseHandicaps] Golfer ${golferId} course handicap:`, {
-          handicapIndex,
-          courseHandicap: courseHandicapResult.courseHandicap,
-        });
 
         return {
           golferId: golferId.toString(),
