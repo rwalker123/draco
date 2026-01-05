@@ -82,6 +82,13 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
     });
   }
 
+  async findGolfersByIds(golferIds: bigint[]): Promise<golfer[]> {
+    if (golferIds.length === 0) return [];
+    return this.prisma.golfer.findMany({
+      where: { id: { in: golferIds } },
+    });
+  }
+
   async findOrCreateGolfer(
     contactId: bigint,
     initialDifferential?: number | null,

@@ -3,14 +3,18 @@ import {
   LeagueHandicapsType,
   GolfDifferentialType,
   CourseHandicapType,
+  BatchCourseHandicapResponseType,
+  PlayerCourseHandicapType,
 } from '@draco/shared-schemas';
 import { IGolfScoreRepository } from '../repositories/interfaces/IGolfScoreRepository.js';
 import { IGolfFlightRepository } from '../repositories/interfaces/IGolfFlightRepository.js';
 import { IGolfRosterRepository } from '../repositories/interfaces/IGolfRosterRepository.js';
 import { IGolfTeamRepository } from '../repositories/interfaces/IGolfTeamRepository.js';
+import { IGolfTeeRepository } from '../repositories/interfaces/IGolfTeeRepository.js';
+import { IGolfCourseRepository } from '../repositories/interfaces/IGolfCourseRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
-import { combineNineHoleScores } from '../utils/whsCalculator.js';
+import { combineNineHoleScores, normalizeGender } from '../utils/whsCalculator.js';
 
 interface ScoreDifferential {
   scoreId: bigint;
@@ -59,17 +63,23 @@ export class GolfHandicapService {
   private readonly flightRepository: IGolfFlightRepository;
   private readonly rosterRepository: IGolfRosterRepository;
   private readonly teamRepository: IGolfTeamRepository;
+  private readonly teeRepository: IGolfTeeRepository;
+  private readonly courseRepository: IGolfCourseRepository;
 
   constructor(
     scoreRepository?: IGolfScoreRepository,
     flightRepository?: IGolfFlightRepository,
     rosterRepository?: IGolfRosterRepository,
     teamRepository?: IGolfTeamRepository,
+    teeRepository?: IGolfTeeRepository,
+    courseRepository?: IGolfCourseRepository,
   ) {
     this.scoreRepository = scoreRepository ?? RepositoryFactory.getGolfScoreRepository();
     this.flightRepository = flightRepository ?? RepositoryFactory.getGolfFlightRepository();
     this.rosterRepository = rosterRepository ?? RepositoryFactory.getGolfRosterRepository();
     this.teamRepository = teamRepository ?? RepositoryFactory.getGolfTeamRepository();
+    this.teeRepository = teeRepository ?? RepositoryFactory.getGolfTeeRepository();
+    this.courseRepository = courseRepository ?? RepositoryFactory.getGolfCourseRepository();
   }
 
   calculateDifferential(score: number, courseRating: number, slopeRating: number): number {
@@ -302,5 +312,140 @@ export class GolfHandicapService {
   async updatePlayerStartIndex(contactId: bigint): Promise<number | null> {
     const handicapIndex = await this.calculateHandicapIndex(contactId);
     return handicapIndex;
+  }
+
+  async calculateBatchCourseHandicaps(
+    golferIds: bigint[],
+    teeId: bigint,
+    holesPlayed: number,
+  ): Promise<BatchCourseHandicapResponseType> {
+    const tee = await this.teeRepository.findById(teeId);
+    if (!tee) {
+      throw new NotFoundError('Tee not found');
+    }
+
+    const course = await this.courseRepository.findById(tee.courseid);
+    if (!course) {
+      throw new NotFoundError('Course not found');
+    }
+
+    const isNineHoles = holesPlayed === 9;
+
+    const mensCourseRating = isNineHoles
+      ? Number(tee.mensratingfront9) || Number(tee.mensrating) / 2
+      : Number(tee.mensrating);
+    const mensSlopeRating = isNineHoles
+      ? Number(tee.menslopefront9) || Number(tee.menslope)
+      : Number(tee.menslope);
+    const womansCourseRating = isNineHoles
+      ? Number(tee.womansratingfront9) || Number(tee.womansrating) / 2
+      : Number(tee.womansrating);
+    const womansSlopeRating = isNineHoles
+      ? Number(tee.womanslopefront9) || Number(tee.womanslope)
+      : Number(tee.womanslope);
+
+    const mensPar =
+      course.menspar1 +
+      course.menspar2 +
+      course.menspar3 +
+      course.menspar4 +
+      course.menspar5 +
+      course.menspar6 +
+      course.menspar7 +
+      course.menspar8 +
+      course.menspar9 +
+      (isNineHoles
+        ? 0
+        : course.menspar10 +
+          course.menspar11 +
+          course.menspar12 +
+          course.menspar13 +
+          course.menspar14 +
+          course.menspar15 +
+          course.menspar16 +
+          course.menspar17 +
+          course.menspar18);
+
+    const womansPar =
+      course.womanspar1 +
+      course.womanspar2 +
+      course.womanspar3 +
+      course.womanspar4 +
+      course.womanspar5 +
+      course.womanspar6 +
+      course.womanspar7 +
+      course.womanspar8 +
+      course.womanspar9 +
+      (isNineHoles
+        ? 0
+        : course.womanspar10 +
+          course.womanspar11 +
+          course.womanspar12 +
+          course.womanspar13 +
+          course.womanspar14 +
+          course.womanspar15 +
+          course.womanspar16 +
+          course.womanspar17 +
+          course.womanspar18);
+
+    const golfers = await this.rosterRepository.findGolfersByIds(golferIds);
+
+    const players: PlayerCourseHandicapType[] = await Promise.all(
+      golferIds.map(async (golferId) => {
+        const golfer = golfers.find((g) => g.id === golferId);
+        if (!golfer) {
+          return {
+            golferId: golferId.toString(),
+            gender: 'M' as const,
+            handicapIndex: null,
+            courseHandicap: null,
+          };
+        }
+
+        let handicapIndex = await this.calculateHandicapIndex(golferId);
+
+        if (handicapIndex === null && golfer.initialdifferential !== null) {
+          handicapIndex = golfer.initialdifferential;
+        }
+
+        const gender = normalizeGender(golfer.gender);
+
+        if (handicapIndex === null) {
+          return {
+            golferId: golferId.toString(),
+            gender,
+            handicapIndex: null,
+            courseHandicap: null,
+          };
+        }
+
+        const slopeRating = gender === 'F' ? womansSlopeRating : mensSlopeRating;
+        const courseRating = gender === 'F' ? womansCourseRating : mensCourseRating;
+        const par = gender === 'F' ? womansPar : mensPar;
+
+        const courseHandicapResult = this.calculateCourseHandicap(
+          handicapIndex,
+          slopeRating,
+          courseRating,
+          par,
+        );
+
+        return {
+          golferId: golferId.toString(),
+          gender,
+          handicapIndex,
+          courseHandicap: courseHandicapResult.courseHandicap,
+        };
+      }),
+    );
+
+    return {
+      teeId: teeId.toString(),
+      courseRating: mensCourseRating,
+      slopeRating: mensSlopeRating,
+      par: mensPar,
+      holesPlayed,
+      players,
+    };
   }
 }

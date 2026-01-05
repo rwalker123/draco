@@ -1,6 +1,7 @@
-import { GolferType, GenderType } from '@draco/shared-schemas';
+import { GolferType } from '@draco/shared-schemas';
 import { GolferWithHomeCourse } from '../repositories/interfaces/IGolferRepository.js';
 import { GolfCourseResponseFormatter } from './golfCourseResponseFormatter.js';
+import { normalizeGender } from '../utils/whsCalculator.js';
 
 export interface GolferStats {
   handicapIndex: number | null;
@@ -14,7 +15,7 @@ export class GolferResponseFormatter {
     return {
       id: golfer.id.toString(),
       contactId: golfer.contactid.toString(),
-      gender: (golfer.gender as GenderType) || 'M',
+      gender: normalizeGender(golfer.gender),
       initialDifferential: golfer.initialdifferential ?? null,
       homeCourse: golfer.homecourse
         ? GolfCourseResponseFormatter.formatSlim(golfer.homecourse)

@@ -98,6 +98,7 @@ import { GolfMatchService } from './golfMatchService.js';
 import { GolfScoreService } from './golfScoreService.js';
 import { GolfHandicapService } from './golfHandicapService.js';
 import { GolfStandingsService } from './golfStandingsService.js';
+import { GolfIndividualScoringService } from './golfIndividualScoringService.js';
 import { GolfStatsService } from './golfStatsService.js';
 import { ExternalCourseSearchService } from './externalCourseSearchService.js';
 import { CsvExportService } from './csvExportService.js';
@@ -191,6 +192,7 @@ export class ServiceFactory {
   private static golfScoreService: GolfScoreService;
   private static golfHandicapService: GolfHandicapService;
   private static golfStandingsService: GolfStandingsService;
+  private static golfIndividualScoringService: GolfIndividualScoringService;
   private static golfStatsService: GolfStatsService;
   private static externalCourseSearchService: ExternalCourseSearchService;
   private static csvExportService: CsvExportService;
@@ -996,6 +998,13 @@ export class ServiceFactory {
       this.golfStandingsService = new GolfStandingsService();
     }
     return this.golfStandingsService;
+  }
+
+  static getGolfIndividualScoringService(): GolfIndividualScoringService {
+    if (!this.golfIndividualScoringService) {
+      this.golfIndividualScoringService = new GolfIndividualScoringService();
+    }
+    return this.golfIndividualScoringService;
   }
 
   static getGolfStatsService(): GolfStatsService {

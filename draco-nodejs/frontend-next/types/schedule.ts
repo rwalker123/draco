@@ -8,6 +8,8 @@ export interface Game {
   visitorTeamId: string;
   homeScore: number;
   visitorScore: number;
+  homePoints?: number;
+  visitorPoints?: number;
   comment: string;
   fieldId?: string;
   field?: {

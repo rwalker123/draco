@@ -33,6 +33,10 @@ export interface GameCardData {
   visitorTeamName: string;
   homeScore: number;
   visitorScore: number;
+  homeNetScore?: number;
+  visitorNetScore?: number;
+  homePoints?: number;
+  visitorPoints?: number;
   gameStatus: number;
   gameStatusText: string;
   gameStatusShortText?: string;
@@ -237,6 +241,45 @@ const GameCard: React.FC<GameCardProps> = ({
     );
   };
 
+  const hasGolfPoints = game.homePoints !== undefined && game.visitorPoints !== undefined;
+
+  const renderScoreValue = (
+    score: number,
+    netScore: number | undefined,
+    points: number | undefined,
+    isWinner: boolean,
+    position: 'visitor' | 'home',
+  ) => {
+    if (hasGolfPoints && points !== undefined) {
+      const displayNetScore = netScore ?? score;
+      return (
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography
+            variant="body1"
+            fontWeight={700}
+            color={isWinner ? 'success.main' : 'text.primary'}
+            sx={{ mb: position === 'visitor' ? 0.5 : 0 }}
+          >
+            {points}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+            {score} ({displayNetScore})
+          </Typography>
+        </Box>
+      );
+    }
+    return (
+      <Typography
+        variant="body1"
+        fontWeight={700}
+        color={isWinner ? 'success.main' : 'text.primary'}
+        sx={{ mb: position === 'visitor' ? 0.5 : 0 }}
+      >
+        {score}
+      </Typography>
+    );
+  };
+
   return (
     <Card
       variant="outlined"
@@ -356,21 +399,24 @@ const GameCard: React.FC<GameCardProps> = ({
               game.gameStatus !== GameStatus.Rainout &&
               game.gameStatus !== GameStatus.DidNotReport ? (
                 <Box textAlign="center" sx={{ minWidth: 'auto' }}>
-                  <Typography
-                    variant="body1"
-                    fontWeight={700}
-                    color={game.visitorScore > game.homeScore ? 'success.main' : 'text.primary'}
-                    sx={{ mb: 0.5 }}
-                  >
-                    {game.visitorScore}
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    fontWeight={700}
-                    color={game.homeScore > game.visitorScore ? 'success.main' : 'text.primary'}
-                  >
-                    {game.homeScore}
-                  </Typography>
+                  {renderScoreValue(
+                    game.visitorScore,
+                    game.visitorNetScore,
+                    game.visitorPoints,
+                    hasGolfPoints
+                      ? (game.visitorPoints ?? 0) > (game.homePoints ?? 0)
+                      : game.visitorScore > game.homeScore,
+                    'visitor',
+                  )}
+                  {renderScoreValue(
+                    game.homeScore,
+                    game.homeNetScore,
+                    game.homePoints,
+                    hasGolfPoints
+                      ? (game.homePoints ?? 0) > (game.visitorPoints ?? 0)
+                      : game.homeScore > game.visitorScore,
+                    'home',
+                  )}
                 </Box>
               ) : game.gameStatus !== GameStatus.Scheduled ? (
                 <Box textAlign="center" sx={{ minWidth: 'auto' }}>
@@ -472,21 +518,24 @@ const GameCard: React.FC<GameCardProps> = ({
               game.gameStatus !== GameStatus.Rainout &&
               game.gameStatus !== GameStatus.DidNotReport ? (
                 <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
-                  <Typography
-                    variant="body1"
-                    fontWeight={700}
-                    color={game.visitorScore > game.homeScore ? 'success.main' : 'text.primary'}
-                    sx={{ mb: 0.5 }}
-                  >
-                    {game.visitorScore}
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    fontWeight={700}
-                    color={game.homeScore > game.visitorScore ? 'success.main' : 'text.primary'}
-                  >
-                    {game.homeScore}
-                  </Typography>
+                  {renderScoreValue(
+                    game.visitorScore,
+                    game.visitorNetScore,
+                    game.visitorPoints,
+                    hasGolfPoints
+                      ? (game.visitorPoints ?? 0) > (game.homePoints ?? 0)
+                      : game.visitorScore > game.homeScore,
+                    'visitor',
+                  )}
+                  {renderScoreValue(
+                    game.homeScore,
+                    game.homeNetScore,
+                    game.homePoints,
+                    hasGolfPoints
+                      ? (game.homePoints ?? 0) > (game.visitorPoints ?? 0)
+                      : game.homeScore > game.visitorScore,
+                    'home',
+                  )}
                 </Box>
               ) : (
                 <Box />

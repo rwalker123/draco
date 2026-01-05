@@ -19,6 +19,13 @@ import WarningIcon from '@mui/icons-material/Warning';
 import type { GolfRosterEntryType, GolfSubstituteType } from '@draco/shared-schemas';
 import { PlayerScoreRow, type PlayerScoreData } from './PlayerScoreRow';
 
+interface CourseParData {
+  mensPar: number[];
+  mensHandicap: number[];
+  womansPar: number[];
+  womansHandicap: number[];
+}
+
 interface TeamScoresSectionProps {
   teamName: string;
   teamId: string;
@@ -31,6 +38,10 @@ interface TeamScoresSectionProps {
   disabled?: boolean;
   defaultExpanded?: boolean;
   teamSize?: number;
+  courseHandicapMap?: Record<string, number | null>;
+  showHandicaps?: boolean;
+  courseParData?: CourseParData | null;
+  genderMap?: Record<string, 'M' | 'F'>;
 }
 
 export function TeamScoresSection({
@@ -44,6 +55,10 @@ export function TeamScoresSection({
   disabled = false,
   defaultExpanded = true,
   teamSize = 2,
+  courseHandicapMap = {},
+  showHandicaps = false,
+  courseParData,
+  genderMap = {},
 }: TeamScoresSectionProps) {
   const theme = useTheme();
 
@@ -238,6 +253,12 @@ export function TeamScoresSection({
                       numberOfHoles={numberOfHoles}
                       showHoleByHole={showHoleByHole}
                       disabled={disabled}
+                      courseHandicap={
+                        showHandicaps ? courseHandicapMap[player.golferId] : undefined
+                      }
+                      showHandicap={showHandicaps}
+                      courseParData={courseParData}
+                      playerGender={genderMap[player.golferId] ?? 'M'}
                     />
                   </Box>
                 )}
@@ -265,6 +286,10 @@ export function TeamScoresSection({
                 numberOfHoles={numberOfHoles}
                 showHoleByHole={showHoleByHole}
                 disabled={disabled}
+                courseHandicap={showHandicaps ? courseHandicapMap[player.golferId] : undefined}
+                showHandicap={showHandicaps}
+                courseParData={courseParData}
+                playerGender={genderMap[player.golferId] ?? 'M'}
               />
             );
           })

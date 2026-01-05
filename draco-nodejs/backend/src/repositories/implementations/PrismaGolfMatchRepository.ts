@@ -6,6 +6,7 @@ import {
   CreateGolfMatchData,
   UpdateGolfMatchData,
 } from '../interfaces/IGolfMatchRepository.js';
+import { GolfMatchStatus } from '../../utils/golfConstants.js';
 
 const matchTeamInclude = {
   teamsseason_golfmatch_team1Toteamsseason: {
@@ -111,7 +112,7 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
       where: {
         leagueseason: { seasonid: seasonId },
         matchdate: { gte: now },
-        matchstatus: { in: [0, 1] },
+        matchstatus: GolfMatchStatus.SCHEDULED,
       },
       include: matchTeamInclude,
       orderBy: { matchdate: 'asc' },
@@ -123,7 +124,7 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
     return this.prisma.golfmatch.findMany({
       where: {
         leagueseason: { seasonid: seasonId },
-        matchstatus: 2,
+        matchstatus: GolfMatchStatus.COMPLETED,
       },
       include: matchTeamInclude,
       orderBy: { matchdate: 'desc' },
@@ -208,5 +209,41 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
       where: { seasonid: seasonId },
     });
     return count > 0;
+  }
+
+  async updatePoints(
+    matchId: bigint,
+    data: {
+      team1points: number;
+      team2points: number;
+      team1totalscore: number;
+      team2totalscore: number;
+      team1netscore: number;
+      team2netscore: number;
+      team1holewins: number;
+      team2holewins: number;
+      team1ninewins: number;
+      team2ninewins: number;
+      team1matchwins: number;
+      team2matchwins: number;
+    },
+  ): Promise<golfmatch> {
+    return this.prisma.golfmatch.update({
+      where: { id: matchId },
+      data: {
+        team1points: data.team1points,
+        team2points: data.team2points,
+        team1totalscore: data.team1totalscore,
+        team2totalscore: data.team2totalscore,
+        team1netscore: data.team1netscore,
+        team2netscore: data.team2netscore,
+        team1holewins: data.team1holewins,
+        team2holewins: data.team2holewins,
+        team1ninewins: data.team1ninewins,
+        team2ninewins: data.team2ninewins,
+        team1matchwins: data.team1matchwins,
+        team2matchwins: data.team2matchwins,
+      },
+    });
   }
 }

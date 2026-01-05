@@ -70,4 +70,21 @@ export interface IGolfMatchRepository {
   updateStatus(matchId: bigint, status: number): Promise<golfmatch>;
   hasScores(matchId: bigint): Promise<boolean>;
   seasonHasLeagueSeasons(seasonId: bigint): Promise<boolean>;
+  updatePoints(
+    matchId: bigint,
+    data: {
+      team1points: number;
+      team2points: number;
+      team1totalscore: number;
+      team2totalscore: number;
+      team1netscore: number;
+      team2netscore: number;
+      team1holewins: number;
+      team2holewins: number;
+      team1ninewins: number;
+      team2ninewins: number;
+      team1matchwins: number;
+      team2matchwins: number;
+    },
+  ): Promise<golfmatch>;
 }

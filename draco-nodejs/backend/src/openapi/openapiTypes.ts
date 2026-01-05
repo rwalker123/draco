@@ -341,6 +341,9 @@ import {
   LeagueHandicapsSchema,
   CourseHandicapSchema,
   ESCMaxScoreSchema,
+  BatchCourseHandicapRequestSchema,
+  PlayerCourseHandicapSchema,
+  BatchCourseHandicapResponseSchema,
   GolfTeamStandingSchema,
   GolfFlightStandingsSchema,
   GolfLeagueStandingsSchema,
@@ -1357,6 +1360,18 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const LeagueHandicapsSchemaRef = registry.register('LeagueHandicaps', LeagueHandicapsSchema);
   const CourseHandicapSchemaRef = registry.register('CourseHandicap', CourseHandicapSchema);
   const ESCMaxScoreSchemaRef = registry.register('ESCMaxScore', ESCMaxScoreSchema);
+  const BatchCourseHandicapRequestSchemaRef = registry.register(
+    'BatchCourseHandicapRequest',
+    BatchCourseHandicapRequestSchema,
+  );
+  const PlayerCourseHandicapSchemaRef = registry.register(
+    'PlayerCourseHandicap',
+    PlayerCourseHandicapSchema,
+  );
+  const BatchCourseHandicapResponseSchemaRef = registry.register(
+    'BatchCourseHandicapResponse',
+    BatchCourseHandicapResponseSchema,
+  );
   const GolfTeamStandingSchemaRef = registry.register('GolfTeamStanding', GolfTeamStandingSchema);
   const GolfFlightStandingsSchemaRef = registry.register(
     'GolfFlightStandings',
@@ -1742,6 +1757,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     LeagueHandicapsSchemaRef,
     CourseHandicapSchemaRef,
     ESCMaxScoreSchemaRef,
+    BatchCourseHandicapRequestSchemaRef,
+    PlayerCourseHandicapSchemaRef,
+    BatchCourseHandicapResponseSchemaRef,
     GolfTeamStandingSchemaRef,
     GolfFlightStandingsSchemaRef,
     GolfLeagueStandingsSchemaRef,

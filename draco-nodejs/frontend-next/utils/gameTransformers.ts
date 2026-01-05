@@ -364,6 +364,8 @@ export function convertGameToGameCardData(
     umpire2: game.umpire2,
     umpire3: game.umpire3,
     umpire4: game.umpire4,
+    homePoints: game.homePoints,
+    visitorPoints: game.visitorPoints,
   };
 }
 

@@ -30,6 +30,12 @@ export class GolfMatchResponseFormatter {
       matchStatus: match.matchstatus,
       matchType: match.matchtype,
       comment: match.comment || undefined,
+      team1Points: match.team1points ?? undefined,
+      team2Points: match.team2points ?? undefined,
+      team1TotalScore: match.team1totalscore ?? undefined,
+      team2TotalScore: match.team2totalscore ?? undefined,
+      team1NetScore: match.team1netscore ?? undefined,
+      team2NetScore: match.team2netscore ?? undefined,
     };
   }
 
@@ -57,6 +63,8 @@ export class GolfMatchResponseFormatter {
       team2Scores: team2Scores.length > 0 ? team2Scores : undefined,
       team1TotalScore: team1Scores.length > 0 ? team1TotalScore : undefined,
       team2TotalScore: team2Scores.length > 0 ? team2TotalScore : undefined,
+      team1Points: match.team1points ?? undefined,
+      team2Points: match.team2points ?? undefined,
     };
   }
 }

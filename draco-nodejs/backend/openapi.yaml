@@ -20071,6 +20071,18 @@ components:
         comment:
           type: string
           maxLength: 255
+        team1TotalScore:
+          type: integer
+        team2TotalScore:
+          type: integer
+        team1NetScore:
+          type: integer
+        team2NetScore:
+          type: integer
+        team1Points:
+          type: number
+        team2Points:
+          type: number
       required:
         - id
         - team1
@@ -20174,6 +20186,18 @@ components:
         comment:
           type: string
           maxLength: 255
+        team1TotalScore:
+          type: integer
+        team2TotalScore:
+          type: integer
+        team1NetScore:
+          type: integer
+        team2NetScore:
+          type: integer
+        team1Points:
+          type: number
+        team2Points:
+          type: number
         team1Scores:
           type: array
           items:
@@ -20548,14 +20572,6 @@ components:
               - holeScores
             title: GolfScoreWithDetails
             description: Golf score with player, tee, and course details
-        team1TotalScore:
-          type: integer
-        team2TotalScore:
-          type: integer
-        team1Points:
-          type: number
-        team2Points:
-          type: number
       required:
         - id
         - team1
@@ -20922,6 +20938,9 @@ components:
         startIndex:
           type: number
           nullable: true
+        startIndex9:
+          type: number
+          nullable: true
       required:
         - courseId
         - teeId
@@ -21027,6 +21046,9 @@ components:
                   startIndex:
                     type: number
                     nullable: true
+                  startIndex9:
+                    type: number
+                    nullable: true
                 required:
                   - courseId
                   - teeId
@@ -21098,6 +21120,9 @@ components:
               minItems: 9
               maxItems: 18
             startIndex:
+              type: number
+              nullable: true
+            startIndex9:
               type: number
               nullable: true
           required:
@@ -21336,6 +21361,111 @@ components:
         - maxScore
       title: ESCMaxScore
       description: Equitable Stroke Control maximum score per hole
+    BatchCourseHandicapRequest:
+      type: object
+      properties:
+        golferIds:
+          type: array
+          items:
+            type: string
+            pattern: ^\d+$
+            example: "12345"
+          minItems: 1
+          maxItems: 50
+        teeId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        holesPlayed:
+          type: integer
+          minimum: 9
+          maximum: 18
+          default: 18
+      required:
+        - golferIds
+        - teeId
+      title: BatchCourseHandicapRequest
+      description: Request to calculate course handicaps for multiple golfers
+    PlayerCourseHandicap:
+      type: object
+      properties:
+        golferId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        gender:
+          type: string
+          enum:
+            - M
+            - F
+          title: Gender
+          description: Golfer gender (M = Male, F = Female)
+        handicapIndex:
+          type: number
+          nullable: true
+        courseHandicap:
+          type: integer
+          nullable: true
+      required:
+        - golferId
+        - gender
+        - handicapIndex
+        - courseHandicap
+      title: PlayerCourseHandicap
+      description: Course handicap for a single player
+    BatchCourseHandicapResponse:
+      type: object
+      properties:
+        teeId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        courseRating:
+          type: number
+        slopeRating:
+          type: integer
+        par:
+          type: integer
+        holesPlayed:
+          type: integer
+        players:
+          type: array
+          items:
+            type: object
+            properties:
+              golferId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              gender:
+                type: string
+                enum:
+                  - M
+                  - F
+                title: Gender
+                description: Golfer gender (M = Male, F = Female)
+              handicapIndex:
+                type: number
+                nullable: true
+              courseHandicap:
+                type: integer
+                nullable: true
+            required:
+              - golferId
+              - gender
+              - handicapIndex
+              - courseHandicap
+            title: PlayerCourseHandicap
+            description: Course handicap for a single player
+      required:
+        - teeId
+        - courseRating
+        - slopeRating
+        - par
+        - holesPlayed
+        - players
+      title: BatchCourseHandicapResponse
+      description: Course handicaps for multiple players
     GolfTeamStanding:
       type: object
       properties:
@@ -32071,6 +32201,64 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/handicaps/batch-course-handicaps:
+    post:
+      description: Calculate course handicaps for multiple golfers given a tee
+      operationId: calculateBatchCourseHandicaps
+      summary: Calculate batch course handicaps
+      tags:
+        - Golf Handicaps
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchCourseHandicapRequest"
+      responses:
+        "200":
+          description: Course handicaps for all requested golfers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchCourseHandicapResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized to access this account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Tee or course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/golf/leagues:
     get:
       description: List all golf league accounts
@@ -33219,6 +33407,112 @@ paths:
                 $ref: "#/components/schemas/AuthenticationError"
         "404":
           description: Score not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/standings/season/{seasonId}:
+    get:
+      description: Get golf league standings for a season
+      operationId: getGolfSeasonStandings
+      summary: Get league standings for season
+      tags:
+        - Golf Standings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Golf league standings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfLeagueStandings"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Season not found or no flights for season
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/standings/flight/{flightId}:
+    get:
+      description: Get golf standings for a specific flight
+      operationId: getGolfFlightStandings
+      summary: Get standings for flight
+      tags:
+        - Golf Standings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: flightId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Golf flight standings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfFlightStandings"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Flight not found
           content:
             application/json:
               schema:

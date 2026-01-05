@@ -7,8 +7,10 @@ import { IGolfMatchRepository } from '../repositories/interfaces/IGolfMatchRepos
 import { IGolfScoreRepository } from '../repositories/interfaces/IGolfScoreRepository.js';
 import { IGolfFlightRepository } from '../repositories/interfaces/IGolfFlightRepository.js';
 import { IGolfTeamRepository } from '../repositories/interfaces/IGolfTeamRepository.js';
+import { IGolfLeagueRepository } from '../repositories/interfaces/IGolfLeagueRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
+import { GolfMatchStatus } from '../utils/golfConstants.js';
 
 interface TeamStandingData {
   teamSeasonId: bigint;
@@ -23,24 +25,25 @@ interface TeamStandingData {
   roundsPlayed: number;
 }
 
-const MATCH_STATUS_COMPLETED = 2;
-
 export class GolfStandingsService {
   private readonly matchRepository: IGolfMatchRepository;
   private readonly scoreRepository: IGolfScoreRepository;
   private readonly flightRepository: IGolfFlightRepository;
   private readonly teamRepository: IGolfTeamRepository;
+  private readonly leagueRepository: IGolfLeagueRepository;
 
   constructor(
     matchRepository?: IGolfMatchRepository,
     scoreRepository?: IGolfScoreRepository,
     flightRepository?: IGolfFlightRepository,
     teamRepository?: IGolfTeamRepository,
+    leagueRepository?: IGolfLeagueRepository,
   ) {
     this.matchRepository = matchRepository ?? RepositoryFactory.getGolfMatchRepository();
     this.scoreRepository = scoreRepository ?? RepositoryFactory.getGolfScoreRepository();
     this.flightRepository = flightRepository ?? RepositoryFactory.getGolfFlightRepository();
     this.teamRepository = teamRepository ?? RepositoryFactory.getGolfTeamRepository();
+    this.leagueRepository = leagueRepository ?? RepositoryFactory.getGolfLeagueRepository();
   }
 
   async getFlightStandings(flightId: bigint): Promise<GolfFlightStandingsType> {
@@ -49,9 +52,12 @@ export class GolfStandingsService {
       throw new NotFoundError('Flight not found');
     }
 
+    const leagueSetup = await this.leagueRepository.findByLeagueSeasonId(flight.leagueseasonid);
+    const isIndividualScoring = leagueSetup?.scoringtype === 'individual';
+
     const teams = await this.teamRepository.findByFlightId(flightId);
     const matches = await this.matchRepository.findByFlightId(flightId);
-    const completedMatches = matches.filter((m) => m.matchstatus === MATCH_STATUS_COMPLETED);
+    const completedMatches = matches.filter((m) => m.matchstatus === GolfMatchStatus.COMPLETED);
 
     const standingsMap = new Map<bigint, TeamStandingData>();
 
@@ -70,8 +76,12 @@ export class GolfStandingsService {
       });
     }
 
+    // Batch load all scores for completed matches to avoid N+1 queries
+    const matchIds = completedMatches.map((m) => m.id);
+    const allScoresMap = await this.scoreRepository.findByMatchIds(matchIds);
+
     for (const match of completedMatches) {
-      const matchScores = await this.scoreRepository.findByMatchId(match.id);
+      const matchScores = allScoresMap.get(match.id) || [];
 
       const team1Scores = matchScores.filter((ms) => ms.teamid === match.team1);
       const team2Scores = matchScores.filter((ms) => ms.teamid === match.team2);
@@ -91,28 +101,44 @@ export class GolfStandingsService {
         team1Standing.roundsPlayed += team1Scores.length;
         team2Standing.roundsPlayed += team2Scores.length;
 
-        if (team1Total < team2Total) {
-          team1Standing.matchesWon++;
-          team2Standing.matchesLost++;
-          team1Standing.matchPoints += 2;
-        } else if (team2Total < team1Total) {
-          team2Standing.matchesWon++;
-          team1Standing.matchesLost++;
-          team2Standing.matchPoints += 2;
-        } else {
-          team1Standing.matchesTied++;
-          team2Standing.matchesTied++;
-          team1Standing.matchPoints += 1;
-          team2Standing.matchPoints += 1;
-        }
+        if (isIndividualScoring && match.team1points !== null && match.team2points !== null) {
+          team1Standing.matchPoints += match.team1points;
+          team2Standing.matchPoints += match.team2points;
 
-        const strokeDiff = Math.abs(team1Total - team2Total);
-        if (strokeDiff > 0) {
-          const strokePts = Math.min(strokeDiff, 10);
-          if (team1Total < team2Total) {
-            team1Standing.strokePoints += strokePts;
+          if (match.team1matchwins === 1) {
+            team1Standing.matchesWon++;
+            team2Standing.matchesLost++;
+          } else if (match.team2matchwins === 1) {
+            team2Standing.matchesWon++;
+            team1Standing.matchesLost++;
           } else {
-            team2Standing.strokePoints += strokePts;
+            team1Standing.matchesTied++;
+            team2Standing.matchesTied++;
+          }
+        } else {
+          if (team1Total < team2Total) {
+            team1Standing.matchesWon++;
+            team2Standing.matchesLost++;
+            team1Standing.matchPoints += 2;
+          } else if (team2Total < team1Total) {
+            team2Standing.matchesWon++;
+            team1Standing.matchesLost++;
+            team2Standing.matchPoints += 2;
+          } else {
+            team1Standing.matchesTied++;
+            team2Standing.matchesTied++;
+            team1Standing.matchPoints += 1;
+            team2Standing.matchPoints += 1;
+          }
+
+          const strokeDiff = Math.abs(team1Total - team2Total);
+          if (strokeDiff > 0) {
+            const strokePts = Math.min(strokeDiff, 10);
+            if (team1Total < team2Total) {
+              team1Standing.strokePoints += strokePts;
+            } else {
+              team2Standing.strokePoints += strokePts;
+            }
           }
         }
       }
@@ -181,7 +207,7 @@ export class GolfStandingsService {
       throw new NotFoundError('Match not found');
     }
 
-    if (match.matchstatus !== MATCH_STATUS_COMPLETED) {
+    if (match.matchstatus !== GolfMatchStatus.COMPLETED) {
       return { team1Points: 0, team2Points: 0 };
     }
 

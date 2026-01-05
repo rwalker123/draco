@@ -52,6 +52,30 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     });
   }
 
+  async findByMatchIds(matchIds: bigint[]): Promise<Map<bigint, GolfMatchScoreWithDetails[]>> {
+    if (matchIds.length === 0) {
+      return new Map();
+    }
+
+    const allScores = await this.prisma.golfmatchscores.findMany({
+      where: { matchid: { in: matchIds } },
+      include: matchScoreWithDetailsInclude,
+    });
+
+    const scoresByMatchId = new Map<bigint, GolfMatchScoreWithDetails[]>();
+    for (const matchId of matchIds) {
+      scoresByMatchId.set(matchId, []);
+    }
+    for (const score of allScores) {
+      const matchScores = scoresByMatchId.get(score.matchid);
+      if (matchScores) {
+        matchScores.push(score);
+      }
+    }
+
+    return scoresByMatchId;
+  }
+
   async findByTeamAndMatch(matchId: bigint, teamId: bigint): Promise<GolfMatchScoreWithDetails[]> {
     return this.prisma.golfmatchscores.findMany({
       where: {
@@ -173,60 +197,127 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     submissions: MatchScoreSubmission[],
   ): Promise<SubmitMatchScoresResult> {
     return this.prisma.$transaction(async (tx) => {
+      const existingByGolfer = new Map<string, { scoreid: bigint; teamid: bigint }>();
+
       for (const teamId of teamIds) {
-        await tx.golfmatchscores.deleteMany({
+        const existingMatchScores = await tx.golfmatchscores.findMany({
           where: {
             matchid: matchId,
             teamid: teamId,
           },
+          select: { golferid: true, scoreid: true, teamid: true },
         });
+
+        for (const ms of existingMatchScores) {
+          existingByGolfer.set(ms.golferid.toString(), {
+            scoreid: ms.scoreid,
+            teamid: ms.teamid,
+          });
+        }
       }
 
+      const submittedGolferIds = new Set<string>();
       const createdScoreIds: bigint[] = [];
 
       for (const submission of submissions) {
-        const score = await tx.golfscore.create({
-          data: {
-            courseid: submission.scoreData.courseid,
-            golferid: submission.scoreData.golferid,
-            teeid: submission.scoreData.teeid,
-            dateplayed: submission.scoreData.dateplayed,
-            holesplayed: submission.scoreData.holesplayed,
-            totalscore: submission.scoreData.totalscore,
-            totalsonly: submission.scoreData.totalsonly,
-            holescrore1: submission.scoreData.holescrore1,
-            holescrore2: submission.scoreData.holescrore2,
-            holescrore3: submission.scoreData.holescrore3,
-            holescrore4: submission.scoreData.holescrore4,
-            holescrore5: submission.scoreData.holescrore5,
-            holescrore6: submission.scoreData.holescrore6,
-            holescrore7: submission.scoreData.holescrore7,
-            holescrore8: submission.scoreData.holescrore8,
-            holescrore9: submission.scoreData.holescrore9,
-            holescrore10: submission.scoreData.holescrore10,
-            holescrore11: submission.scoreData.holescrore11,
-            holescrore12: submission.scoreData.holescrore12,
-            holescrore13: submission.scoreData.holescrore13,
-            holescrore14: submission.scoreData.holescrore14,
-            holescrore15: submission.scoreData.holescrore15,
-            holescrore16: submission.scoreData.holescrore16,
-            holescrore17: submission.scoreData.holescrore17,
-            holescrore18: submission.scoreData.holescrore18,
-            startindex: submission.scoreData.startindex ?? null,
-            startindex9: submission.scoreData.startindex9 ?? null,
-          },
-        });
+        const golferKey = submission.golferId.toString();
+        submittedGolferIds.add(golferKey);
 
-        await tx.golfmatchscores.create({
-          data: {
-            matchid: matchId,
-            teamid: submission.teamId,
-            golferid: submission.golferId,
-            scoreid: score.id,
-          },
-        });
+        const existing = existingByGolfer.get(golferKey);
 
-        createdScoreIds.push(score.id);
+        if (existing) {
+          // Update score data but preserve startindex/startindex9 (set only on creation)
+          await tx.golfscore.update({
+            where: { id: existing.scoreid },
+            data: {
+              courseid: submission.scoreData.courseid,
+              teeid: submission.scoreData.teeid,
+              dateplayed: submission.scoreData.dateplayed,
+              holesplayed: submission.scoreData.holesplayed,
+              totalscore: submission.scoreData.totalscore,
+              totalsonly: submission.scoreData.totalsonly,
+              holescrore1: submission.scoreData.holescrore1,
+              holescrore2: submission.scoreData.holescrore2,
+              holescrore3: submission.scoreData.holescrore3,
+              holescrore4: submission.scoreData.holescrore4,
+              holescrore5: submission.scoreData.holescrore5,
+              holescrore6: submission.scoreData.holescrore6,
+              holescrore7: submission.scoreData.holescrore7,
+              holescrore8: submission.scoreData.holescrore8,
+              holescrore9: submission.scoreData.holescrore9,
+              holescrore10: submission.scoreData.holescrore10,
+              holescrore11: submission.scoreData.holescrore11,
+              holescrore12: submission.scoreData.holescrore12,
+              holescrore13: submission.scoreData.holescrore13,
+              holescrore14: submission.scoreData.holescrore14,
+              holescrore15: submission.scoreData.holescrore15,
+              holescrore16: submission.scoreData.holescrore16,
+              holescrore17: submission.scoreData.holescrore17,
+              holescrore18: submission.scoreData.holescrore18,
+            },
+          });
+
+          if (existing.teamid !== submission.teamId) {
+            await tx.golfmatchscores.updateMany({
+              where: { matchid: matchId, golferid: submission.golferId },
+              data: { teamid: submission.teamId },
+            });
+          }
+        } else {
+          const score = await tx.golfscore.create({
+            data: {
+              courseid: submission.scoreData.courseid,
+              golferid: submission.scoreData.golferid,
+              teeid: submission.scoreData.teeid,
+              dateplayed: submission.scoreData.dateplayed,
+              holesplayed: submission.scoreData.holesplayed,
+              totalscore: submission.scoreData.totalscore,
+              totalsonly: submission.scoreData.totalsonly,
+              holescrore1: submission.scoreData.holescrore1,
+              holescrore2: submission.scoreData.holescrore2,
+              holescrore3: submission.scoreData.holescrore3,
+              holescrore4: submission.scoreData.holescrore4,
+              holescrore5: submission.scoreData.holescrore5,
+              holescrore6: submission.scoreData.holescrore6,
+              holescrore7: submission.scoreData.holescrore7,
+              holescrore8: submission.scoreData.holescrore8,
+              holescrore9: submission.scoreData.holescrore9,
+              holescrore10: submission.scoreData.holescrore10,
+              holescrore11: submission.scoreData.holescrore11,
+              holescrore12: submission.scoreData.holescrore12,
+              holescrore13: submission.scoreData.holescrore13,
+              holescrore14: submission.scoreData.holescrore14,
+              holescrore15: submission.scoreData.holescrore15,
+              holescrore16: submission.scoreData.holescrore16,
+              holescrore17: submission.scoreData.holescrore17,
+              holescrore18: submission.scoreData.holescrore18,
+              startindex: submission.scoreData.startindex ?? null,
+              startindex9: submission.scoreData.startindex9 ?? null,
+            },
+          });
+
+          await tx.golfmatchscores.create({
+            data: {
+              matchid: matchId,
+              teamid: submission.teamId,
+              golferid: submission.golferId,
+              scoreid: score.id,
+            },
+          });
+
+          createdScoreIds.push(score.id);
+        }
+      }
+
+      for (const [golferKey, existing] of existingByGolfer) {
+        if (!submittedGolferIds.has(golferKey)) {
+          await tx.golfmatchscores.deleteMany({
+            where: { matchid: matchId, scoreid: existing.scoreid },
+          });
+          await tx.golfscore.delete({
+            where: { id: existing.scoreid },
+          });
+        }
       }
 
       return { createdScoreIds };

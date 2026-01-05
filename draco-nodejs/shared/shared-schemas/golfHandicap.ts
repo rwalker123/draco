@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { bigintToStringSchema, nameSchema } from './standardSchema.js';
+import { GenderSchema } from './golfer.js';
 
 extendZodWithOpenApi(z);
 
@@ -71,11 +72,51 @@ export const ESCMaxScoreSchema = z
     description: 'Equitable Stroke Control maximum score per hole',
   });
 
+export const BatchCourseHandicapRequestSchema = z
+  .object({
+    golferIds: z.array(bigintToStringSchema).min(1).max(50),
+    teeId: bigintToStringSchema,
+    holesPlayed: z.number().int().min(9).max(18).default(18),
+  })
+  .openapi({
+    title: 'BatchCourseHandicapRequest',
+    description: 'Request to calculate course handicaps for multiple golfers',
+  });
+
+export const PlayerCourseHandicapSchema = z
+  .object({
+    golferId: bigintToStringSchema,
+    gender: GenderSchema,
+    handicapIndex: z.number().nullable(),
+    courseHandicap: z.number().int().nullable(),
+  })
+  .openapi({
+    title: 'PlayerCourseHandicap',
+    description: 'Course handicap for a single player',
+  });
+
+export const BatchCourseHandicapResponseSchema = z
+  .object({
+    teeId: bigintToStringSchema,
+    courseRating: z.number(),
+    slopeRating: z.number().int(),
+    par: z.number().int(),
+    holesPlayed: z.number().int(),
+    players: z.array(PlayerCourseHandicapSchema),
+  })
+  .openapi({
+    title: 'BatchCourseHandicapResponse',
+    description: 'Course handicaps for multiple players',
+  });
+
 export type GolfDifferentialType = z.infer<typeof GolfDifferentialSchema>;
 export type PlayerHandicapType = z.infer<typeof PlayerHandicapSchema>;
 export type LeagueHandicapsType = z.infer<typeof LeagueHandicapsSchema>;
 export type CourseHandicapType = z.infer<typeof CourseHandicapSchema>;
 export type ESCMaxScoreType = z.infer<typeof ESCMaxScoreSchema>;
+export type BatchCourseHandicapRequestType = z.infer<typeof BatchCourseHandicapRequestSchema>;
+export type PlayerCourseHandicapType = z.infer<typeof PlayerCourseHandicapSchema>;
+export type BatchCourseHandicapResponseType = z.infer<typeof BatchCourseHandicapResponseSchema>;
 
 /**
  * WHS (World Handicap System) table for determining how many differentials to use
