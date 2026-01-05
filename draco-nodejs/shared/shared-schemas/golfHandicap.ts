@@ -76,3 +76,74 @@ export type PlayerHandicapType = z.infer<typeof PlayerHandicapSchema>;
 export type LeagueHandicapsType = z.infer<typeof LeagueHandicapsSchema>;
 export type CourseHandicapType = z.infer<typeof CourseHandicapSchema>;
 export type ESCMaxScoreType = z.infer<typeof ESCMaxScoreSchema>;
+
+/**
+ * WHS (World Handicap System) table for determining how many differentials to use
+ * and what adjustment to apply based on the number of scores available.
+ * Valid for 3-20 scores. Fewer than 3 scores = no handicap can be calculated.
+ * More than 20 scores = use 8 best differentials with 0 adjustment.
+ */
+export const WHS_TABLE: Record<number, { use: number; adjustment: number }> = {
+  3: { use: 1, adjustment: -2.0 },
+  4: { use: 1, adjustment: -1.0 },
+  5: { use: 1, adjustment: 0 },
+  6: { use: 2, adjustment: -1.0 },
+  7: { use: 2, adjustment: 0 },
+  8: { use: 2, adjustment: 0 },
+  9: { use: 3, adjustment: 0 },
+  10: { use: 3, adjustment: 0 },
+  11: { use: 3, adjustment: 0 },
+  12: { use: 4, adjustment: 0 },
+  13: { use: 4, adjustment: 0 },
+  14: { use: 5, adjustment: 0 },
+  15: { use: 5, adjustment: 0 },
+  16: { use: 6, adjustment: 0 },
+  17: { use: 6, adjustment: 0 },
+  18: { use: 7, adjustment: 0 },
+  19: { use: 7, adjustment: 0 },
+  20: { use: 8, adjustment: 0 },
+};
+
+/**
+ * Get the number of differentials to use for handicap calculation.
+ * @param scoreCount - Total number of available scores
+ * @returns Number of best differentials to use (0 if < 3 scores)
+ */
+export function getWhsUseCount(scoreCount: number): number {
+  if (scoreCount < 3) {
+    return 0;
+  }
+  const tableEntry = WHS_TABLE[Math.min(scoreCount, 20)];
+  return tableEntry?.use ?? 8;
+}
+
+/**
+ * Get the adjustment value to apply to the handicap calculation.
+ * @param scoreCount - Total number of available scores
+ * @returns Adjustment value (0 if < 3 scores)
+ */
+export function getWhsAdjustment(scoreCount: number): number {
+  if (scoreCount < 3) {
+    return 0;
+  }
+  const tableEntry = WHS_TABLE[Math.min(scoreCount, 20)];
+  return tableEntry?.adjustment ?? 0;
+}
+
+/**
+ * Get the indices of differentials that contribute to handicap calculation.
+ * @param differentials - Array of differential values
+ * @returns Set of indices for the contributing differentials
+ */
+export function getContributingDifferentialIndices(differentials: number[]): Set<number> {
+  const count = differentials.length;
+  if (count < 3) {
+    return new Set<number>();
+  }
+
+  const useCount = getWhsUseCount(count);
+  const indexed = differentials.map((value, index) => ({ index, value }));
+  indexed.sort((a, b) => a.value - b.value);
+
+  return new Set(indexed.slice(0, useCount).map((item) => item.index));
+}

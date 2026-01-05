@@ -48,4 +48,19 @@ export class PrismaGolferRepository implements IGolferRepository {
       },
     });
   }
+
+  async updateLowHandicapIndex(
+    golferId: bigint,
+    lowHandicapIndex: number,
+  ): Promise<GolferWithHomeCourse> {
+    return this.prisma.golfer.update({
+      where: { id: golferId },
+      data: {
+        lowhandicapindex: lowHandicapIndex,
+      },
+      include: {
+        homecourse: true,
+      },
+    });
+  }
 }

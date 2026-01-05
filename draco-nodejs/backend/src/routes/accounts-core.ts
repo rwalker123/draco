@@ -16,10 +16,12 @@ import {
   CreateIndividualGolfAccountSchema,
   CreateAuthenticatedGolfAccountSchema,
   UpdateGolferHomeCourseSchema,
+  CreateGolfScoreSchema,
+  UpdateGolfScoreSchema,
 } from '@draco/shared-schemas';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError } from '../utils/customErrors.js';
-import { extractAccountParams } from '../utils/paramExtraction.js';
+import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 
 const router = Router({ mergeParams: true });
 const accountsService = ServiceFactory.getAccountsService();
@@ -263,6 +265,69 @@ router.patch(
       homeCourseId ? BigInt(homeCourseId) : null,
     );
     res.json(golfer);
+  }),
+);
+
+/**
+ * POST /api/accounts/:accountId/golfer/scores
+ * Create a new golf score for an individual golf account
+ */
+router.post(
+  '/:accountId/golfer/scores',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const scoreData = CreateGolfScoreSchema.parse(req.body);
+    const score = await golferService.createScoreForAccount(accountId, scoreData);
+    res.status(201).json(score);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/golfer/scores
+ * Get golf scores for an individual golf account
+ */
+router.get(
+  '/:accountId/golfer/scores',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+    const scores = await golferService.getScoresForAccount(accountId, limit);
+    res.json(scores);
+  }),
+);
+
+/**
+ * PATCH /api/accounts/:accountId/golfer/scores/:scoreId
+ * Update a golf score for an individual golf account
+ */
+router.patch(
+  '/:accountId/golfer/scores/:scoreId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, scoreId } = extractBigIntParams(req.params, 'accountId', 'scoreId');
+    const updateData = UpdateGolfScoreSchema.parse(req.body);
+    const score = await golferService.updateScoreForAccount(accountId, scoreId, updateData);
+    res.json(score);
+  }),
+);
+
+/**
+ * DELETE /api/accounts/:accountId/golfer/scores/:scoreId
+ * Delete a golf score for an individual golf account
+ */
+router.delete(
+  '/:accountId/golfer/scores/:scoreId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, scoreId } = extractBigIntParams(req.params, 'accountId', 'scoreId');
+    await golferService.deleteScoreForAccount(accountId, scoreId);
+    res.status(204).send();
   }),
 );
 

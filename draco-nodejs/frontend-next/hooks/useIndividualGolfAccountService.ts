@@ -7,9 +7,16 @@ import {
   deleteIndividualGolfAccount,
   getAccountGolfer,
   updateGolferHomeCourse,
+  createGolferScore,
+  getGolferScores,
+  updateGolferScore,
+  deleteGolferScore,
   IndividualGolfAccountResponse,
   AuthenticatedGolfAccountResponse,
   Golfer,
+  GolfScoreWithDetails,
+  CreateGolfScore,
+  UpdateGolfScore,
 } from '@draco/shared-api-client';
 import { useApiClient } from './useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
@@ -52,6 +59,20 @@ export type GetGolferResult = { success: true; data: Golfer } | { success: false
 export type UpdateHomeCourseResult =
   | { success: true; data: Golfer }
   | { success: false; error: string };
+
+export type CreateScoreResult =
+  | { success: true; data: GolfScoreWithDetails }
+  | { success: false; error: string };
+
+export type GetScoresResult =
+  | { success: true; data: GolfScoreWithDetails[] }
+  | { success: false; error: string };
+
+export type UpdateScoreResult =
+  | { success: true; data: GolfScoreWithDetails }
+  | { success: false; error: string };
+
+export type DeleteScoreResult = { success: true } | { success: false; error: string };
 
 export const useIndividualGolfAccountService = () => {
   const apiClient = useApiClient();
@@ -195,5 +216,104 @@ export const useIndividualGolfAccountService = () => {
     [apiClient],
   );
 
-  return { create, createAuthenticated, deleteAccount, getGolfer, updateHomeCourse } as const;
+  const createScore = useCallback(
+    async (accountId: string, scoreData: CreateGolfScore): Promise<CreateScoreResult> => {
+      try {
+        const result = await createGolferScore({
+          client: apiClient,
+          throwOnError: false,
+          path: { accountId },
+          body: scoreData,
+        });
+
+        const data = unwrapApiResult(result, 'Failed to create score. Please try again.');
+
+        return { success: true, data } as const;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to create score. Please try again.';
+        return { success: false, error: message } as const;
+      }
+    },
+    [apiClient],
+  );
+
+  const getScores = useCallback(
+    async (accountId: string, limit?: number): Promise<GetScoresResult> => {
+      try {
+        const result = await getGolferScores({
+          client: apiClient,
+          throwOnError: false,
+          path: { accountId },
+          query: { limit },
+        });
+
+        const data = unwrapApiResult(result, 'Failed to get scores. Please try again.');
+
+        return { success: true, data } as const;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to get scores. Please try again.';
+        return { success: false, error: message } as const;
+      }
+    },
+    [apiClient],
+  );
+
+  const updateScore = useCallback(
+    async (
+      accountId: string,
+      scoreId: string,
+      scoreData: UpdateGolfScore,
+    ): Promise<UpdateScoreResult> => {
+      try {
+        const result = await updateGolferScore({
+          client: apiClient,
+          throwOnError: false,
+          path: { accountId, scoreId },
+          body: scoreData,
+        });
+
+        const data = unwrapApiResult(result, 'Failed to update score. Please try again.');
+
+        return { success: true, data } as const;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to update score. Please try again.';
+        return { success: false, error: message } as const;
+      }
+    },
+    [apiClient],
+  );
+
+  const deleteScore = useCallback(
+    async (accountId: string, scoreId: string): Promise<DeleteScoreResult> => {
+      try {
+        await deleteGolferScore({
+          client: apiClient,
+          throwOnError: false,
+          path: { accountId, scoreId },
+        });
+
+        return { success: true } as const;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to delete score. Please try again.';
+        return { success: false, error: message } as const;
+      }
+    },
+    [apiClient],
+  );
+
+  return {
+    create,
+    createAuthenticated,
+    deleteAccount,
+    getGolfer,
+    updateHomeCourse,
+    createScore,
+    getScores,
+    updateScore,
+    deleteScore,
+  } as const;
 };

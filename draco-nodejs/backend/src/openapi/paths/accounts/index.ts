@@ -85,6 +85,9 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     AdminDashboardSummarySchemaRef,
     GolferSchemaRef,
     UpdateGolferHomeCourseSchemaRef,
+    CreateGolfScoreSchemaRef,
+    UpdateGolfScoreSchemaRef,
+    GolfScoreWithDetailsSchemaRef,
   } = schemaRefs;
 
   const TweetCreateSchemaRef = SocialFeedItemSchemaRef.pick({ content: true });
@@ -1454,6 +1457,311 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       },
       404: {
         description: 'Account or golfer not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // POST /api/accounts/{accountId}/golfer/scores
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/golfer/scores',
+    operationId: 'createGolferScore',
+    summary: 'Create golf score for account',
+    description: 'Create a new golf score for an individual golf account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: CreateGolfScoreSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Created golf score',
+        content: {
+          'application/json': {
+            schema: GolfScoreWithDetailsSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account, course, or tee not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/golfer/scores
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/golfer/scores',
+    operationId: 'getGolferScores',
+    summary: 'Get golf scores for account',
+    description: 'Get golf scores for an individual golf account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'limit',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'integer',
+          default: 20,
+        },
+        description: 'Maximum number of scores to return',
+      },
+    ],
+    responses: {
+      200: {
+        description: 'List of golf scores',
+        content: {
+          'application/json': {
+            schema: z.array(GolfScoreWithDetailsSchemaRef),
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // PATCH /api/accounts/{accountId}/golfer/scores/{scoreId}
+  registry.registerPath({
+    method: 'patch',
+    path: '/api/accounts/{accountId}/golfer/scores/{scoreId}',
+    operationId: 'updateGolferScore',
+    summary: 'Update golf score for account',
+    description: 'Update an existing golf score for an individual golf account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'scoreId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: UpdateGolfScoreSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated golf score',
+        content: {
+          'application/json': {
+            schema: GolfScoreWithDetailsSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account, score, course, or tee not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // DELETE /api/accounts/{accountId}/golfer/scores/{scoreId}
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/golfer/scores/{scoreId}',
+    operationId: 'deleteGolferScore',
+    summary: 'Delete golf score for account',
+    description: 'Delete an existing golf score for an individual golf account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'scoreId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      204: {
+        description: 'Score deleted successfully',
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account or score not found',
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,
