@@ -33,6 +33,7 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
   isAccountMember = false,
 }) => {
   const [playersWanted, setPlayersWanted] = useState<PlayersWantedClassifiedType[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedClassified, setSelectedClassified] = useState<PlayersWantedClassifiedType | null>(
@@ -52,7 +53,15 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
       setError(null);
       const response = await listPlayersWanted();
       if (response.success && response.data) {
-        setPlayersWanted(response.data.data.slice(0, maxDisplay));
+        const allTeams = response.data.data;
+        setTotalCount(response.data.total);
+
+        const shuffled = [...allTeams];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        setPlayersWanted(shuffled.slice(0, maxDisplay));
       } else {
         const message = response.error || 'Failed to load player opportunities';
         setError(message);
@@ -153,7 +162,7 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
         title="Teams Looking for Players"
         description="Connect with teams looking for players"
         actionButton={{
-          label: 'View All',
+          label: totalCount > 0 ? `View All ${totalCount} Teams` : 'View All',
           onClick: handleViewAll,
         }}
       />
