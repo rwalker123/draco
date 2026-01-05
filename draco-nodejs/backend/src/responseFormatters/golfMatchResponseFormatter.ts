@@ -32,6 +32,10 @@ export class GolfMatchResponseFormatter {
       comment: match.comment || undefined,
       team1Points: match.team1points ?? undefined,
       team2Points: match.team2points ?? undefined,
+      team1TotalScore: match.team1totalscore ?? undefined,
+      team2TotalScore: match.team2totalscore ?? undefined,
+      team1NetScore: match.team1netscore ?? undefined,
+      team2NetScore: match.team2netscore ?? undefined,
     };
   }
 

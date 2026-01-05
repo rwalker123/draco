@@ -33,6 +33,8 @@ export interface GameCardData {
   visitorTeamName: string;
   homeScore: number;
   visitorScore: number;
+  homeNetScore?: number;
+  visitorNetScore?: number;
   homePoints?: number;
   visitorPoints?: number;
   gameStatus: number;
@@ -243,11 +245,13 @@ const GameCard: React.FC<GameCardProps> = ({
 
   const renderScoreValue = (
     score: number,
+    netScore: number | undefined,
     points: number | undefined,
     isWinner: boolean,
     position: 'visitor' | 'home',
   ) => {
     if (hasGolfPoints && points !== undefined) {
+      const displayNetScore = netScore ?? score;
       return (
         <Box sx={{ textAlign: 'center' }}>
           <Typography
@@ -259,7 +263,7 @@ const GameCard: React.FC<GameCardProps> = ({
             {points}
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            ({score})
+            {score} ({displayNetScore})
           </Typography>
         </Box>
       );
@@ -397,6 +401,7 @@ const GameCard: React.FC<GameCardProps> = ({
                 <Box textAlign="center" sx={{ minWidth: 'auto' }}>
                   {renderScoreValue(
                     game.visitorScore,
+                    game.visitorNetScore,
                     game.visitorPoints,
                     hasGolfPoints
                       ? (game.visitorPoints ?? 0) > (game.homePoints ?? 0)
@@ -405,6 +410,7 @@ const GameCard: React.FC<GameCardProps> = ({
                   )}
                   {renderScoreValue(
                     game.homeScore,
+                    game.homeNetScore,
                     game.homePoints,
                     hasGolfPoints
                       ? (game.homePoints ?? 0) > (game.visitorPoints ?? 0)
@@ -514,6 +520,7 @@ const GameCard: React.FC<GameCardProps> = ({
                 <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
                   {renderScoreValue(
                     game.visitorScore,
+                    game.visitorNetScore,
                     game.visitorPoints,
                     hasGolfPoints
                       ? (game.visitorPoints ?? 0) > (game.homePoints ?? 0)
@@ -522,6 +529,7 @@ const GameCard: React.FC<GameCardProps> = ({
                   )}
                   {renderScoreValue(
                     game.homeScore,
+                    game.homeNetScore,
                     game.homePoints,
                     hasGolfPoints
                       ? (game.homePoints ?? 0) > (game.visitorPoints ?? 0)

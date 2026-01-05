@@ -186,10 +186,6 @@ export class GolfScoreService {
 
       const scoringService = ServiceFactory.getGolfIndividualScoringService();
       await scoringService.calculateAndStoreMatchPoints(matchId);
-    } else if (team1Scores.length > 0 || team2Scores.length > 0) {
-      if (match.matchstatus === GolfMatchStatus.NOT_STARTED) {
-        await this.matchRepository.updateStatus(matchId, GolfMatchStatus.IN_PROGRESS);
-      }
     }
 
     return createdScores;
@@ -202,7 +198,7 @@ export class GolfScoreService {
     }
 
     await this.scoreRepository.deleteMatchScores(matchId);
-    await this.matchRepository.updateStatus(matchId, GolfMatchStatus.NOT_STARTED);
+    await this.matchRepository.updateStatus(matchId, GolfMatchStatus.SCHEDULED);
   }
 
   async getPlayerSeasonScores(

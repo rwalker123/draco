@@ -111,6 +111,8 @@ export default function GolfMatchesWidget({
       visitorTeamName: match.team2.name ?? getTeamName(match.team2.id),
       homeScore: match.team1TotalScore ?? 0,
       visitorScore: match.team2TotalScore ?? 0,
+      homeNetScore: match.team1NetScore,
+      visitorNetScore: match.team2NetScore,
       homePoints: match.team1Points,
       visitorPoints: match.team2Points,
       gameStatus: match.matchStatus,

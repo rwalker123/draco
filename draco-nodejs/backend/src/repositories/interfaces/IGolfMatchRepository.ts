@@ -75,6 +75,10 @@ export interface IGolfMatchRepository {
     data: {
       team1points: number;
       team2points: number;
+      team1totalscore: number;
+      team2totalscore: number;
+      team1netscore: number;
+      team2netscore: number;
       team1holewins: number;
       team2holewins: number;
       team1ninewins: number;

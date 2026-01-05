@@ -10,6 +10,7 @@ import { IGolfTeamRepository } from '../repositories/interfaces/IGolfTeamReposit
 import { IGolfLeagueRepository } from '../repositories/interfaces/IGolfLeagueRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
+import { GolfMatchStatus } from '../utils/golfConstants.js';
 
 interface TeamStandingData {
   teamSeasonId: bigint;
@@ -23,8 +24,6 @@ interface TeamStandingData {
   totalStrokes: number;
   roundsPlayed: number;
 }
-
-const MATCH_STATUS_COMPLETED = 2;
 
 export class GolfStandingsService {
   private readonly matchRepository: IGolfMatchRepository;
@@ -58,7 +57,7 @@ export class GolfStandingsService {
 
     const teams = await this.teamRepository.findByFlightId(flightId);
     const matches = await this.matchRepository.findByFlightId(flightId);
-    const completedMatches = matches.filter((m) => m.matchstatus === MATCH_STATUS_COMPLETED);
+    const completedMatches = matches.filter((m) => m.matchstatus === GolfMatchStatus.COMPLETED);
 
     const standingsMap = new Map<bigint, TeamStandingData>();
 
@@ -204,7 +203,7 @@ export class GolfStandingsService {
       throw new NotFoundError('Match not found');
     }
 
-    if (match.matchstatus !== MATCH_STATUS_COMPLETED) {
+    if (match.matchstatus !== GolfMatchStatus.COMPLETED) {
       return { team1Points: 0, team2Points: 0 };
     }
 

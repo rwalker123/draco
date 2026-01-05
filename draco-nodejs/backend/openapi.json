@@ -26653,6 +26653,12 @@
           "team2TotalScore": {
             "type": "integer"
           },
+          "team1NetScore": {
+            "type": "integer"
+          },
+          "team2NetScore": {
+            "type": "integer"
+          },
           "team1Points": {
             "type": "number"
           },
@@ -26799,6 +26805,12 @@
             "type": "integer"
           },
           "team2TotalScore": {
+            "type": "integer"
+          },
+          "team1NetScore": {
+            "type": "integer"
+          },
+          "team2NetScore": {
             "type": "integer"
           },
           "team1Points": {

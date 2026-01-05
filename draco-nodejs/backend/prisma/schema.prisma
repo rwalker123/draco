@@ -858,6 +858,10 @@ model golfmatch {
   comment                                  String              @db.VarChar(255)
   team1points                              Float?
   team2points                              Float?
+  team1totalscore                          Int?
+  team2totalscore                          Int?
+  team1netscore                            Int?
+  team2netscore                            Int?
   team1holewins                            Int?
   team2holewins                            Int?
   team1ninewins                            Int?

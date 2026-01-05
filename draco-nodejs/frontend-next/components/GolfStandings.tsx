@@ -88,15 +88,13 @@ export default function GolfStandings({
       component={Paper}
       sx={{
         mb: 3,
-        maxWidth: 700,
-        mx: 'auto',
         borderRadius: 2,
         backgroundColor: (theme) => theme.palette.widget.surface,
         border: (theme) => `1px solid ${theme.palette.widget.border}`,
         boxShadow: (theme) => theme.shadows[theme.palette.mode === 'dark' ? 8 : 1],
       }}
     >
-      <Table size="small" sx={{ minWidth: 500 }}>
+      <Table size="small">
         {isFirstTable && (
           <TableHead>
             <TableRow
@@ -106,20 +104,22 @@ export default function GolfStandings({
                 '& .MuiTableCell-root': {
                   borderBottom: (theme) => `1px solid ${theme.palette.widget.border}`,
                   color: (theme) => theme.palette.widget.headerText,
+                  py: 1,
+                  px: 1.5,
                 },
               }}
             >
-              <TableCell sx={{ fontWeight: 600, minWidth: 180 }}>Team</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 40 }}>
+              <TableCell sx={{ fontWeight: 600 }}>Team</TableCell>
+              <TableCell align="center" sx={{ fontWeight: 600, width: 36 }}>
                 W
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 40 }}>
+              <TableCell align="center" sx={{ fontWeight: 600, width: 36 }}>
                 L
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 40 }}>
+              <TableCell align="center" sx={{ fontWeight: 600, width: 36 }}>
                 T
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 60 }}>
+              <TableCell align="right" sx={{ fontWeight: 600, width: 50 }}>
                 Pts
               </TableCell>
             </TableRow>
@@ -136,9 +136,13 @@ export default function GolfStandings({
                     ? alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.3 : 0.12)
                     : 'transparent',
                 borderBottom: (theme) => `1px solid ${theme.palette.widget.border}`,
+                '& .MuiTableCell-root': {
+                  py: 0.75,
+                  px: 1.5,
+                },
               }}
             >
-              <TableCell sx={{ minWidth: 180, color: 'text.primary' }}>
+              <TableCell sx={{ color: 'text.primary' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {team.teamName ?? 'Unnamed Team'}
                   {index === 0 && (
@@ -146,24 +150,24 @@ export default function GolfStandings({
                       label="1st"
                       size="small"
                       color="success"
-                      sx={{ fontSize: '0.7rem', height: 20 }}
+                      sx={{ fontSize: '0.65rem', height: 18 }}
                     />
                   )}
                 </Box>
               </TableCell>
-              <TableCell align="right" sx={{ minWidth: 40, fontWeight: 'medium' }}>
+              <TableCell align="center" sx={{ fontWeight: 'medium', width: 36 }}>
                 {team.matchesWon}
               </TableCell>
-              <TableCell align="right" sx={{ minWidth: 40 }}>
+              <TableCell align="center" sx={{ width: 36 }}>
                 {team.matchesLost}
               </TableCell>
-              <TableCell align="right" sx={{ minWidth: 40 }}>
+              <TableCell align="center" sx={{ width: 36 }}>
                 {team.matchesTied}
               </TableCell>
               <TableCell
                 align="right"
                 sx={{
-                  minWidth: 60,
+                  width: 50,
                   fontWeight: 700,
                   color: (theme) => theme.palette.primary.main,
                 }}
@@ -183,7 +187,7 @@ export default function GolfStandings({
     let isFirstTable = true;
 
     return (
-      <Box sx={{ maxWidth: 800, mx: 'auto' }}>
+      <Box>
         {standings.flights.map((flight: GolfFlightStandings) => {
           const currentIsFirst = isFirstTable;
           isFirstTable = false;

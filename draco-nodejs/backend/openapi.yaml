@@ -20075,6 +20075,10 @@ components:
           type: integer
         team2TotalScore:
           type: integer
+        team1NetScore:
+          type: integer
+        team2NetScore:
+          type: integer
         team1Points:
           type: number
         team2Points:
@@ -20185,6 +20189,10 @@ components:
         team1TotalScore:
           type: integer
         team2TotalScore:
+          type: integer
+        team1NetScore:
+          type: integer
+        team2NetScore:
           type: integer
         team1Points:
           type: number

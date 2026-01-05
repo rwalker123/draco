@@ -20,6 +20,8 @@ export interface IndividualMatchResult {
   team2NineWins: number;
   team1MatchWins: number;
   team2MatchWins: number;
+  team1NetScore: number;
+  team2NetScore: number;
 }
 
 interface StrokeDistribution {
@@ -217,6 +219,8 @@ export class GolfIndividualScoringService {
       team2NineWins,
       team1MatchWins,
       team2MatchWins,
+      team1NetScore: team1Total,
+      team2NetScore: team2Total,
     };
   }
 
@@ -342,6 +346,10 @@ export class GolfIndividualScoringService {
     await this.matchRepository.updatePoints(matchId, {
       team1points: result.team1Points,
       team2points: result.team2Points,
+      team1totalscore: score1.totalscore,
+      team2totalscore: score2.totalscore,
+      team1netscore: result.team1NetScore,
+      team2netscore: result.team2NetScore,
       team1holewins: result.team1HoleWins,
       team2holewins: result.team2HoleWins,
       team1ninewins: result.team1NineWins,

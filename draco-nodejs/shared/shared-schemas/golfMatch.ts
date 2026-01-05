@@ -30,6 +30,8 @@ export const GolfMatchSchema = z
     comment: z.string().max(255).optional(),
     team1TotalScore: z.number().int().optional(),
     team2TotalScore: z.number().int().optional(),
+    team1NetScore: z.number().int().optional(),
+    team2NetScore: z.number().int().optional(),
     team1Points: z.number().optional(),
     team2Points: z.number().optional(),
   })

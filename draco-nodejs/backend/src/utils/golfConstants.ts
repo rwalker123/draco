@@ -1,5 +1,7 @@
 export enum GolfMatchStatus {
-  NOT_STARTED = 0,
-  IN_PROGRESS = 1,
-  COMPLETED = 2,
+  SCHEDULED = 0,
+  COMPLETED = 1,
+  RAINOUT = 2,
+  POSTPONED = 3,
+  FORFEIT = 4,
 }

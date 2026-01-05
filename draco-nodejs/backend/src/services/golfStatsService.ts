@@ -12,6 +12,7 @@ import { IGolfRosterRepository } from '../repositories/interfaces/IGolfRosterRep
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { GolfHandicapService } from './golfHandicapService.js';
+import { GolfMatchStatus } from '../utils/golfConstants.js';
 
 interface PlayerScoreData {
   contactId: bigint;
@@ -31,8 +32,6 @@ interface HoleScoreData {
   hole: number;
   score: number;
 }
-
-const MATCH_STATUS_COMPLETED = 2;
 
 export class GolfStatsService {
   private readonly matchRepository: IGolfMatchRepository;
@@ -117,7 +116,7 @@ export class GolfStatsService {
   private async collectPlayerScores(flightId: bigint): Promise<Map<string, PlayerScoreData>> {
     const teams = await this.teamRepository.findByFlightId(flightId);
     const matches = await this.matchRepository.findByFlightId(flightId);
-    const completedMatches = matches.filter((m) => m.matchstatus === MATCH_STATUS_COMPLETED);
+    const completedMatches = matches.filter((m) => m.matchstatus === GolfMatchStatus.COMPLETED);
 
     const playerDataMap = new Map<string, PlayerScoreData>();
 
@@ -268,7 +267,7 @@ export class GolfStatsService {
 
   private async calculateSkinsLeaders(flightId: bigint): Promise<GolfSkinsEntryType[]> {
     const matches = await this.matchRepository.findByFlightId(flightId);
-    const completedMatches = matches.filter((m) => m.matchstatus === MATCH_STATUS_COMPLETED);
+    const completedMatches = matches.filter((m) => m.matchstatus === GolfMatchStatus.COMPLETED);
 
     const skinsMap = new Map<
       string,
