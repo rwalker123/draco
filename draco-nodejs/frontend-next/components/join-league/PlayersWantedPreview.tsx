@@ -57,8 +57,9 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
         setTotalCount(response.data.total);
 
         const shuffled = [...allTeams];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
+        const itemsToSelect = Math.min(maxDisplay, shuffled.length);
+        for (let i = 0; i < itemsToSelect; i++) {
+          const j = i + Math.floor(Math.random() * (shuffled.length - i));
           [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
         setPlayersWanted(shuffled.slice(0, maxDisplay));
