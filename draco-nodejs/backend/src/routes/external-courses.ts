@@ -22,23 +22,15 @@ router.get(
     const { accountId } = extractAccountParams(req.params);
     const searchParams = ExternalCourseSearchQuerySchema.parse(req.query);
 
-    const [customCourses, externalResults, importedExternalIds] = await Promise.all([
+    const [customCourses, externalResults] = await Promise.all([
       golfCourseService.searchCustomCourses(
         searchParams.query,
         searchParams.excludeLeague ? accountId : undefined,
       ),
       externalCourseSearchService.searchCourses(searchParams),
-      golfCourseService.getImportedExternalIds(),
     ]);
 
-    const filteredExternalResults = externalResults.filter(
-      (course) => !importedExternalIds.has(course.externalId),
-    );
-
-    const results: ExternalCourseSearchResultType[] = [
-      ...customCourses,
-      ...filteredExternalResults,
-    ];
+    const results: ExternalCourseSearchResultType[] = [...customCourses, ...externalResults];
 
     res.json(results);
   }),

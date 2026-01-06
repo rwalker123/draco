@@ -85,6 +85,8 @@ const GolfTeamDetailPage: React.FC = () => {
 
   const { setup: leagueSetup } = useGolfLeagueSetup(accountId, seasonId, leagueSeasonId);
 
+  const activePlayerCount = roster.filter((r) => r.isActive).length;
+
   const getTeamSizeLabel = (size: number) => {
     switch (size) {
       case 1:
@@ -426,22 +428,22 @@ const GolfTeamDetailPage: React.FC = () => {
           </Box>
         )}
 
-        {leagueSetup && team.playerCount !== (leagueSetup.teamSize ?? 2) && (
+        {leagueSetup && activePlayerCount !== (leagueSetup.teamSize ?? 2) && (
           <Alert
-            severity={team.playerCount < (leagueSetup.teamSize ?? 2) ? 'warning' : 'info'}
+            severity={activePlayerCount < (leagueSetup.teamSize ?? 2) ? 'warning' : 'info'}
             sx={{ mb: 3 }}
           >
-            {team.playerCount < (leagueSetup.teamSize ?? 2) ? (
+            {activePlayerCount < (leagueSetup.teamSize ?? 2) ? (
               <>
-                This team has {team.playerCount} player{team.playerCount !== 1 ? 's' : ''} but
+                This team has {activePlayerCount} player{activePlayerCount !== 1 ? 's' : ''} but
                 requires {leagueSetup.teamSize ?? 2}. Add{' '}
-                {(leagueSetup.teamSize ?? 2) - team.playerCount} more player
-                {(leagueSetup.teamSize ?? 2) - team.playerCount !== 1 ? 's' : ''} to complete the
+                {(leagueSetup.teamSize ?? 2) - activePlayerCount} more player
+                {(leagueSetup.teamSize ?? 2) - activePlayerCount !== 1 ? 's' : ''} to complete the
                 roster.
               </>
             ) : (
               <>
-                This team has {team.playerCount} players but only {leagueSetup.teamSize ?? 2} can
+                This team has {activePlayerCount} players but only {leagueSetup.teamSize ?? 2} can
                 play per match. You&apos;ll need to select which players participate in each match.
               </>
             )}
