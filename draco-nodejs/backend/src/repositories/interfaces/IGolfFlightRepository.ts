@@ -1,30 +1,22 @@
-import { divisionseason, divisiondefs, leagueseason, season } from '#prisma/client';
+import { league, leagueseason, season } from '#prisma/client';
 
-export type LeagueSeasonWithSeason = leagueseason & {
+export type GolfFlightWithDetails = leagueseason & {
+  league: league;
   season: season;
 };
 
-export type GolfFlightWithDetails = divisionseason & {
-  divisiondefs: divisiondefs;
-  leagueseason: LeagueSeasonWithSeason;
-};
-
 export type GolfFlightWithCounts = GolfFlightWithDetails & {
-  _count: {
-    teamsseason: number;
-  };
-  playerCount?: number;
+  teamCount: number;
+  playerCount: number;
 };
 
 export interface IGolfFlightRepository {
   findBySeasonId(seasonId: bigint): Promise<GolfFlightWithCounts[]>;
-  findByLeagueSeasonId(leagueSeasonId: bigint): Promise<GolfFlightWithCounts[]>;
   findById(flightId: bigint): Promise<GolfFlightWithDetails | null>;
-  create(leagueSeasonId: bigint, divisionId: bigint, priority?: number): Promise<divisionseason>;
-  update(flightId: bigint, data: Partial<divisionseason>): Promise<divisionseason>;
-  delete(flightId: bigint): Promise<divisionseason>;
-  findOrCreateDivision(accountId: bigint, name: string): Promise<divisiondefs>;
+  create(accountId: bigint, seasonId: bigint, name: string): Promise<GolfFlightWithDetails>;
+  update(flightId: bigint, name: string): Promise<GolfFlightWithDetails>;
+  delete(flightId: bigint): Promise<void>;
   getPlayerCountForFlight(flightId: bigint): Promise<number>;
-  getLeagueSeasonWithHierarchy(leagueSeasonId: bigint): Promise<LeagueSeasonWithSeason | null>;
-  leagueSeasonExists(leagueSeasonId: bigint): Promise<boolean>;
+  flightNameExistsInSeason(accountId: bigint, seasonId: bigint, name: string): Promise<boolean>;
+  seasonHasFlights(seasonId: bigint): Promise<boolean>;
 }

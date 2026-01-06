@@ -47,18 +47,18 @@ export class GolfRosterService {
   }
 
   async getSubstitutesForSeason(seasonId: bigint): Promise<GolfSubstituteType[]> {
-    const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
-    if (!seasonExists) {
-      throw new NotFoundError('League season not found');
+    const hasFlights = await this.flightRepository.seasonHasFlights(seasonId);
+    if (!hasFlights) {
+      throw new NotFoundError('Season has no golf flights');
     }
     const subs = await this.rosterRepository.findSubstitutesForSeason(seasonId);
     return GolfRosterResponseFormatter.formatSubstitutes(subs);
   }
 
   async getAvailablePlayers(accountId: bigint, seasonId: bigint): Promise<AvailablePlayerType[]> {
-    const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
-    if (!seasonExists) {
-      throw new NotFoundError('League season not found');
+    const hasFlights = await this.flightRepository.seasonHasFlights(seasonId);
+    if (!hasFlights) {
+      throw new NotFoundError('Season has no golf flights');
     }
     const contacts = await this.rosterRepository.findAvailableContacts(accountId, seasonId);
     return GolfRosterResponseFormatter.formatAvailablePlayers(contacts);
@@ -222,9 +222,9 @@ export class GolfRosterService {
     }
 
     if (data.releaseAsSub) {
-      const seasonExists = await this.flightRepository.leagueSeasonExists(seasonId);
-      if (!seasonExists) {
-        throw new NotFoundError('League season not found');
+      const hasFlights = await this.flightRepository.seasonHasFlights(seasonId);
+      if (!hasFlights) {
+        throw new NotFoundError('Season has no golf flights');
       }
 
       const existingSub = await this.rosterRepository.findLeagueSubByGolferAndSeason(

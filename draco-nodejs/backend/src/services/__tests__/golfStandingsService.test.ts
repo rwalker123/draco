@@ -55,7 +55,7 @@ describe('GolfStandingsService', () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
         leagueseasonid: 100n,
-        divisiondefs: { name: 'Flight A' },
+        league: { name: 'Flight A' },
       } as never);
       vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
         scoringtype: 'team',
@@ -80,7 +80,7 @@ describe('GolfStandingsService', () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
         leagueseasonid: 100n,
-        divisiondefs: { name: 'Flight A' },
+        league: { name: 'Flight A' },
       } as never);
       vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
         scoringtype: 'team',
@@ -127,7 +127,7 @@ describe('GolfStandingsService', () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
         leagueseasonid: 100n,
-        divisiondefs: { name: 'Flight A' },
+        league: { name: 'Flight A' },
       } as never);
       vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
         scoringtype: 'individual',
@@ -176,7 +176,7 @@ describe('GolfStandingsService', () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
         leagueseasonid: 100n,
-        divisiondefs: { name: 'Flight A' },
+        league: { name: 'Flight A' },
       } as never);
       vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
         scoringtype: 'team',
@@ -221,7 +221,7 @@ describe('GolfStandingsService', () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
         leagueseasonid: 100n,
-        divisiondefs: { name: 'Flight A' },
+        league: { name: 'Flight A' },
       } as never);
       vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
         scoringtype: 'team',
@@ -268,7 +268,7 @@ describe('GolfStandingsService', () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
         leagueseasonid: 100n,
-        divisiondefs: { name: 'Flight A' },
+        league: { name: 'Flight A' },
       } as never);
       vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
         scoringtype: 'team',
@@ -344,7 +344,7 @@ describe('GolfStandingsService', () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
         leagueseasonid: 100n,
-        divisiondefs: { name: 'Flight A' },
+        league: { name: 'Flight A' },
       } as never);
       vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
         scoringtype: 'team',
@@ -385,7 +385,7 @@ describe('GolfStandingsService', () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
         leagueseasonid: 100n,
-        divisiondefs: { name: 'Flight A' },
+        league: { name: 'Flight A' },
       } as never);
       vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
         scoringtype: 'team',
@@ -432,19 +432,19 @@ describe('GolfStandingsService', () => {
 
     it('returns standings for all flights', async () => {
       vi.mocked(mockFlightRepository.findBySeasonId!).mockResolvedValue([
-        { id: 1n, leagueseasonid: 100n, divisiondefs: { name: 'Flight A' } },
-        { id: 2n, leagueseasonid: 100n, divisiondefs: { name: 'Flight B' } },
+        { id: 1n, leagueseasonid: 100n, league: { name: 'Flight A' } },
+        { id: 2n, leagueseasonid: 100n, league: { name: 'Flight B' } },
       ] as never);
       vi.mocked(mockFlightRepository.findById!)
         .mockResolvedValueOnce({
           id: 1n,
           leagueseasonid: 100n,
-          divisiondefs: { name: 'Flight A' },
+          league: { name: 'Flight A' },
         } as never)
         .mockResolvedValueOnce({
           id: 2n,
           leagueseasonid: 100n,
-          divisiondefs: { name: 'Flight B' },
+          league: { name: 'Flight B' },
         } as never);
       vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
         scoringtype: 'team',

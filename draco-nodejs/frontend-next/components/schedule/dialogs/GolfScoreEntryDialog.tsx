@@ -169,7 +169,10 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
       setError(null);
 
       try {
-        const seasonId = selectedGame.season.id;
+        if (!seasonId) {
+          setError('Season ID is required');
+          return;
+        }
         const [roster1Result, roster2Result, subsResult, scoresResult] = await Promise.all([
           rosterService.getTeamRoster(seasonId, selectedGame.homeTeamId),
           rosterService.getTeamRoster(seasonId, selectedGame.visitorTeamId),
@@ -263,6 +266,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     open,
     selectedGame,
     accountId,
+    seasonId,
     rosterService,
     scoreService,
     courseService,
@@ -403,6 +407,8 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
 
       const allScores = [...team1PlayerScores, ...team2PlayerScores];
 
+      let updatedMatch = null;
+
       if (allScores.length > 0 && selectedGame.fieldId) {
         const payload: SubmitMatchResultsType = {
           courseId: selectedGame.fieldId,
@@ -412,6 +418,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
         if (!result.success) {
           throw new Error(result.error);
         }
+        updatedMatch = result.data;
       }
 
       if (matchStatus !== selectedGame.gameStatus) {
@@ -424,11 +431,15 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
           body: updateData,
           throwOnError: false,
         });
-        unwrapApiResult(matchResult, 'Failed to update match status');
+        updatedMatch = unwrapApiResult(matchResult, 'Failed to update match status');
       }
 
       const updatedGame = {
         ...selectedGame,
+        homeScore: updatedMatch?.team1TotalScore ?? selectedGame.homeScore,
+        visitorScore: updatedMatch?.team2TotalScore ?? selectedGame.visitorScore,
+        homePoints: updatedMatch?.team1Points ?? selectedGame.homePoints,
+        visitorPoints: updatedMatch?.team2Points ?? selectedGame.visitorPoints,
         gameStatus: matchStatus,
         gameStatusText: getGameStatusText(matchStatus),
         gameStatusShortText: getGameStatusShortText(matchStatus),

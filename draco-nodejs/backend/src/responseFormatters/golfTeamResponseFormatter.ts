@@ -12,14 +12,14 @@ import { GolfRosterResponseFormatter } from './golfRosterResponseFormatter.js';
 
 export class GolfTeamResponseFormatter {
   private static formatFlight(
-    divisionseason: GolfTeamWithFlight['divisionseason'],
+    leagueseason: GolfTeamWithFlight['leagueseason'],
   ): GolfFlightType | undefined {
-    if (!divisionseason) {
+    if (!leagueseason) {
       return undefined;
     }
     return {
-      id: divisionseason.id.toString(),
-      name: divisionseason.divisiondefs.name,
+      id: leagueseason.id.toString(),
+      name: leagueseason.league.name,
     };
   }
 
@@ -27,7 +27,7 @@ export class GolfTeamResponseFormatter {
     return {
       id: team.id.toString(),
       name: team.name,
-      flight: this.formatFlight(team.divisionseason),
+      flight: this.formatFlight(team.leagueseason),
     };
   }
 
@@ -39,7 +39,7 @@ export class GolfTeamResponseFormatter {
     return {
       id: team.id.toString(),
       name: team.name,
-      flight: this.formatFlight(team.divisionseason),
+      flight: this.formatFlight(team.leagueseason),
       playerCount: team._count.golfroster,
     };
   }
@@ -52,7 +52,7 @@ export class GolfTeamResponseFormatter {
     return {
       id: team.id.toString(),
       name: team.name,
-      flight: this.formatFlight(team.divisionseason),
+      flight: this.formatFlight(team.leagueseason),
       roster: GolfRosterResponseFormatter.formatMany(team.golfroster),
       playerCount: team.golfroster.filter((r) => r.isactive).length,
     };

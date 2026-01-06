@@ -8,10 +8,10 @@ export class GolfFlightResponseFormatter {
   static format(flight: GolfFlightWithDetails): GolfFlightType {
     return {
       id: flight.id.toString(),
-      name: flight.divisiondefs.name,
+      name: flight.league.name,
       season: {
-        id: flight.leagueseason.id.toString(),
-        name: flight.leagueseason.season.name,
+        id: flight.seasonid.toString(),
+        name: flight.season.name,
       },
     };
   }
@@ -23,7 +23,7 @@ export class GolfFlightResponseFormatter {
   static formatWithCounts(flight: GolfFlightWithCounts): GolfFlightWithTeamCountType {
     return {
       ...this.format(flight),
-      teamCount: flight._count.teamsseason,
+      teamCount: flight.teamCount,
       playerCount: flight.playerCount,
     };
   }

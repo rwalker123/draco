@@ -3,7 +3,6 @@
 import { useCallback, useMemo } from 'react';
 import {
   listGolfFlights,
-  listGolfFlightsForLeagueSeason,
   createGolfFlight,
   updateGolfFlight,
   deleteGolfFlight,
@@ -25,13 +24,8 @@ export interface GolfFlightService {
   listFlights: (
     seasonId: string,
   ) => Promise<GolfFlightServiceResult<GolfFlightWithTeamCountType[]>>;
-  listFlightsForLeagueSeason: (
-    seasonId: string,
-    leagueSeasonId: string,
-  ) => Promise<GolfFlightServiceResult<GolfFlightWithTeamCountType[]>>;
   createFlight: (
     seasonId: string,
-    leagueSeasonId: string,
     payload: CreateGolfFlightType,
   ) => Promise<GolfFlightServiceResult<GolfFlightType>>;
   updateFlight: (
@@ -68,36 +62,12 @@ export function useGolfFlights(accountId: string): GolfFlightService {
     [accountId, apiClient],
   );
 
-  const listFlightsForLeagueSeason = useCallback<GolfFlightService['listFlightsForLeagueSeason']>(
-    async (seasonId, leagueSeasonId) => {
-      try {
-        const result = await listGolfFlightsForLeagueSeason({
-          client: apiClient,
-          path: { accountId, seasonId, leagueSeasonId },
-          throwOnError: false,
-        });
-
-        const flights = unwrapApiResult(result, 'Failed to load flights');
-
-        return {
-          success: true,
-          data: flights as GolfFlightWithTeamCountType[],
-          message: 'Flights loaded successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to load flights';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
-
   const createFlight = useCallback<GolfFlightService['createFlight']>(
-    async (seasonId, leagueSeasonId, payload) => {
+    async (seasonId, payload) => {
       try {
         const result = await createGolfFlight({
           client: apiClient,
-          path: { accountId, seasonId, leagueSeasonId },
+          path: { accountId, seasonId },
           body: payload,
           throwOnError: false,
         });
@@ -169,11 +139,10 @@ export function useGolfFlights(accountId: string): GolfFlightService {
   return useMemo(
     () => ({
       listFlights,
-      listFlightsForLeagueSeason,
       createFlight,
       updateFlight,
       deleteFlight,
     }),
-    [listFlights, listFlightsForLeagueSeason, createFlight, updateFlight, deleteFlight],
+    [listFlights, createFlight, updateFlight, deleteFlight],
   );
 }

@@ -21,44 +21,26 @@ router.get(
 );
 
 router.get(
-  '/season/:seasonId/league-season/:leagueSeasonId',
+  '/:flightId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId } = extractAccountParams(req.params);
-    const { seasonId, leagueSeasonId } = extractBigIntParams(
-      req.params,
-      'seasonId',
-      'leagueSeasonId',
-    );
-    const flights = await golfFlightService.getFlightsForLeagueSeason(
-      accountId,
-      seasonId,
-      leagueSeasonId,
-    );
-    res.json(flights);
+    const { flightId } = extractBigIntParams(req.params, 'flightId');
+    const flight = await golfFlightService.getFlightById(flightId);
+    res.json(flight);
   }),
 );
 
 router.post(
-  '/season/:seasonId/league-season/:leagueSeasonId',
+  '/season/:seasonId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { seasonId, leagueSeasonId } = extractBigIntParams(
-      req.params,
-      'seasonId',
-      'leagueSeasonId',
-    );
+    const { seasonId } = extractBigIntParams(req.params, 'seasonId');
     const flightData = CreateGolfFlightSchema.parse(req.body);
-    const flight = await golfFlightService.createFlight(
-      accountId,
-      seasonId,
-      leagueSeasonId,
-      flightData,
-    );
+    const flight = await golfFlightService.createFlight(accountId, seasonId, flightData);
     res.status(201).json(flight);
   }),
 );

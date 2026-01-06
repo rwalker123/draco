@@ -89,71 +89,6 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     },
   });
 
-  // GET /api/accounts/{accountId}/golf/teams/season/{seasonId}/unassigned
-  registry.registerPath({
-    method: 'get',
-    path: '/api/accounts/{accountId}/golf/teams/season/{seasonId}/unassigned',
-    description: 'List teams not assigned to any flight',
-    operationId: 'listUnassignedGolfTeams',
-    summary: 'List unassigned teams',
-    tags: ['Golf Teams'],
-    security: [{ bearerAuth: [] }],
-    parameters: [
-      {
-        name: 'accountId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'seasonId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-    ],
-    responses: {
-      200: {
-        description: 'List of unassigned teams with player counts',
-        content: {
-          'application/json': {
-            schema: GolfTeamWithPlayerCountListSchemaRef,
-          },
-        },
-      },
-      401: {
-        description: 'Authentication required',
-        content: {
-          'application/json': {
-            schema: AuthenticationErrorSchemaRef,
-          },
-        },
-      },
-      403: {
-        description: 'Access denied',
-        content: {
-          'application/json': {
-            schema: AuthorizationErrorSchemaRef,
-          },
-        },
-      },
-      500: {
-        description: 'Internal server error',
-        content: {
-          'application/json': {
-            schema: InternalServerErrorSchemaRef,
-          },
-        },
-      },
-    },
-  });
-
   // GET /api/accounts/{accountId}/golf/teams/flight/{flightId}
   registry.registerPath({
     method: 'get',
@@ -219,10 +154,10 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     },
   });
 
-  // GET /api/accounts/{accountId}/golf/teams/{teamSeasonId}
+  // GET /api/accounts/{accountId}/golf/teams/season/{seasonId}/team/{teamSeasonId}
   registry.registerPath({
     method: 'get',
-    path: '/api/accounts/{accountId}/golf/teams/{teamSeasonId}',
+    path: '/api/accounts/{accountId}/golf/teams/season/{seasonId}/team/{teamSeasonId}',
     description: 'Get a specific golf team by ID',
     operationId: 'getGolfTeam',
     summary: 'Get team',
@@ -231,6 +166,15 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     parameters: [
       {
         name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
         in: 'path',
         required: true,
         schema: {
@@ -292,10 +236,10 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     },
   });
 
-  // GET /api/accounts/{accountId}/golf/teams/{teamSeasonId}/roster
+  // GET /api/accounts/{accountId}/golf/teams/season/{seasonId}/team/{teamSeasonId}/roster
   registry.registerPath({
     method: 'get',
-    path: '/api/accounts/{accountId}/golf/teams/{teamSeasonId}/roster',
+    path: '/api/accounts/{accountId}/golf/teams/season/{seasonId}/team/{teamSeasonId}/roster',
     description: 'Get a golf team with its full roster',
     operationId: 'getGolfTeamWithRoster',
     summary: 'Get team with roster',
@@ -304,6 +248,15 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     parameters: [
       {
         name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
         in: 'path',
         required: true,
         schema: {
@@ -365,11 +318,11 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     },
   });
 
-  // POST /api/accounts/{accountId}/golf/teams/season/{seasonId}/league-season/{leagueSeasonId}
+  // POST /api/accounts/{accountId}/golf/teams/flight/{flightId}
   registry.registerPath({
     method: 'post',
-    path: '/api/accounts/{accountId}/golf/teams/season/{seasonId}/league-season/{leagueSeasonId}',
-    description: 'Create a new golf team in a league season',
+    path: '/api/accounts/{accountId}/golf/teams/flight/{flightId}',
+    description: 'Create a new golf team in a flight',
     operationId: 'createGolfTeam',
     summary: 'Create team',
     tags: ['Golf Teams'],
@@ -385,16 +338,7 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
         },
       },
       {
-        name: 'seasonId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'leagueSeasonId',
+        name: 'flightId',
         in: 'path',
         required: true,
         schema: {
@@ -438,7 +382,7 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
         },
       },
       403: {
-        description: 'Access denied - account management permission required or hierarchy mismatch',
+        description: 'Access denied - account management permission required',
         content: {
           'application/json': {
             schema: AuthorizationErrorSchemaRef,
@@ -446,7 +390,7 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
         },
       },
       404: {
-        description: 'League season not found',
+        description: 'Flight not found',
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,
@@ -464,10 +408,10 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     },
   });
 
-  // PUT /api/accounts/{accountId}/golf/teams/{teamSeasonId}
+  // PUT /api/accounts/{accountId}/golf/teams/season/{seasonId}/team/{teamSeasonId}
   registry.registerPath({
     method: 'put',
-    path: '/api/accounts/{accountId}/golf/teams/{teamSeasonId}',
+    path: '/api/accounts/{accountId}/golf/teams/season/{seasonId}/team/{teamSeasonId}',
     description: 'Update an existing golf team',
     operationId: 'updateGolfTeam',
     summary: 'Update team',
@@ -476,6 +420,15 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     parameters: [
       {
         name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
         in: 'path',
         required: true,
         schema: {
@@ -554,165 +507,10 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     },
   });
 
-  // PUT /api/accounts/{accountId}/golf/teams/{teamSeasonId}/flight/{flightId}
-  registry.registerPath({
-    method: 'put',
-    path: '/api/accounts/{accountId}/golf/teams/{teamSeasonId}/flight/{flightId}',
-    description: 'Assign a team to a flight',
-    operationId: 'assignGolfTeamToFlight',
-    summary: 'Assign team to flight',
-    tags: ['Golf Teams'],
-    security: [{ bearerAuth: [] }],
-    parameters: [
-      {
-        name: 'accountId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'teamSeasonId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'flightId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-    ],
-    responses: {
-      200: {
-        description: 'Team assigned to flight',
-        content: {
-          'application/json': {
-            schema: GolfTeamSchemaRef,
-          },
-        },
-      },
-      401: {
-        description: 'Authentication required',
-        content: {
-          'application/json': {
-            schema: AuthenticationErrorSchemaRef,
-          },
-        },
-      },
-      403: {
-        description: 'Access denied - account management permission required',
-        content: {
-          'application/json': {
-            schema: AuthorizationErrorSchemaRef,
-          },
-        },
-      },
-      404: {
-        description: 'Team or flight not found',
-        content: {
-          'application/json': {
-            schema: NotFoundErrorSchemaRef,
-          },
-        },
-      },
-      500: {
-        description: 'Internal server error',
-        content: {
-          'application/json': {
-            schema: InternalServerErrorSchemaRef,
-          },
-        },
-      },
-    },
-  });
-
-  // DELETE /api/accounts/{accountId}/golf/teams/{teamSeasonId}/flight
+  // DELETE /api/accounts/{accountId}/golf/teams/season/{seasonId}/team/{teamSeasonId}
   registry.registerPath({
     method: 'delete',
-    path: '/api/accounts/{accountId}/golf/teams/{teamSeasonId}/flight',
-    description: 'Remove a team from its flight',
-    operationId: 'removeGolfTeamFromFlight',
-    summary: 'Remove team from flight',
-    tags: ['Golf Teams'],
-    security: [{ bearerAuth: [] }],
-    parameters: [
-      {
-        name: 'accountId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'teamSeasonId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-    ],
-    responses: {
-      200: {
-        description: 'Team removed from flight',
-        content: {
-          'application/json': {
-            schema: GolfTeamSchemaRef,
-          },
-        },
-      },
-      401: {
-        description: 'Authentication required',
-        content: {
-          'application/json': {
-            schema: AuthenticationErrorSchemaRef,
-          },
-        },
-      },
-      403: {
-        description: 'Access denied - account management permission required',
-        content: {
-          'application/json': {
-            schema: AuthorizationErrorSchemaRef,
-          },
-        },
-      },
-      404: {
-        description: 'Team not found',
-        content: {
-          'application/json': {
-            schema: NotFoundErrorSchemaRef,
-          },
-        },
-      },
-      500: {
-        description: 'Internal server error',
-        content: {
-          'application/json': {
-            schema: InternalServerErrorSchemaRef,
-          },
-        },
-      },
-    },
-  });
-
-  // DELETE /api/accounts/{accountId}/golf/teams/{teamSeasonId}
-  registry.registerPath({
-    method: 'delete',
-    path: '/api/accounts/{accountId}/golf/teams/{teamSeasonId}',
+    path: '/api/accounts/{accountId}/golf/teams/season/{seasonId}/team/{teamSeasonId}',
     description: 'Delete a golf team',
     operationId: 'deleteGolfTeam',
     summary: 'Delete team',
@@ -721,6 +519,15 @@ export const registerGolfTeamsEndpoints = ({ registry, schemaRefs, z }: Register
     parameters: [
       {
         name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
         in: 'path',
         required: true,
         schema: {

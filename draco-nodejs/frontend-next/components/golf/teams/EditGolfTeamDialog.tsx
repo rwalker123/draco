@@ -18,6 +18,7 @@ interface EditGolfTeamDialogProps {
   open: boolean;
   onClose: () => void;
   accountId: string;
+  seasonId: string;
   team: GolfTeamType | null;
   onSuccess: (team: GolfTeamWithPlayerCountType, message: string) => void;
   onError?: (error: string) => void;
@@ -27,6 +28,7 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
   open,
   onClose,
   accountId,
+  seasonId,
   team,
   onSuccess,
   onError,
@@ -54,13 +56,13 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
   }, [resetForm, onClose]);
 
   const handleSubmit = useCallback(async () => {
-    if (!teamName.trim() || !team) return;
+    if (!teamName.trim() || !team || !seasonId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const result = await teamService.updateTeam(team.id, {
+      const result = await teamService.updateTeam(seasonId, team.id, {
         name: teamName.trim(),
       });
 
@@ -79,7 +81,7 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [teamName, team, teamService, onSuccess, onError, handleClose]);
+  }, [teamName, team, seasonId, teamService, onSuccess, onError, handleClose]);
 
   const hasChanges = team && teamName.trim() !== team.name;
 

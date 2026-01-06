@@ -54,22 +54,23 @@ const GolfTeamsPage: React.FC = () => {
 
   const canManage = accountId ? hasPermission('account.manage', { accountId }) : false;
 
-  const {
-    listTeams,
-    listTeamsForFlight,
-    createTeam,
-    updateTeam,
-    deleteTeam,
-    assignToFlight,
-    removeFromFlight,
-  } = useGolfTeams(accountId || '');
+  const { listTeams, listTeamsForFlight, createTeam, updateTeam, deleteTeam } = useGolfTeams(
+    accountId || '',
+  );
 
   const { listFlights } = useGolfFlights(accountId || '');
 
   const [season, setSeason] = useState<SeasonType | null>(null);
-  const [leagueSeasonId, setLeagueSeasonId] = useState<string>('');
+  const [flights, setFlights] = useState<GolfFlightWithTeamCountType[]>([]);
+  const [selectedFlightId, setSelectedFlightId] = useState<string>('all');
+  const [teams, setTeams] = useState<GolfTeamType[]>([]);
 
-  const { setup: leagueSetup } = useGolfLeagueSetup(accountId, seasonId, leagueSeasonId);
+  // In the new model, a flight IS a league season, so we use selectedFlightId for setup
+  const { setup: leagueSetup } = useGolfLeagueSetup(
+    accountId,
+    seasonId,
+    selectedFlightId !== 'all' ? selectedFlightId : undefined,
+  );
 
   const getTeamSizeLabel = (size: number) => {
     switch (size) {
@@ -85,9 +86,6 @@ const GolfTeamsPage: React.FC = () => {
         return `${size} players`;
     }
   };
-  const [flights, setFlights] = useState<GolfFlightWithTeamCountType[]>([]);
-  const [selectedFlightId, setSelectedFlightId] = useState<string>('all');
-  const [teams, setTeams] = useState<GolfTeamType[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -115,10 +113,6 @@ const GolfTeamsPage: React.FC = () => {
 
       const seasonData = unwrapApiResult(result, 'Failed to load season');
       setSeason(seasonData);
-
-      if (seasonData.leagues && seasonData.leagues.length > 0) {
-        setLeagueSeasonId(seasonData.leagues[0].id);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load season');
     }
@@ -207,7 +201,9 @@ const GolfTeamsPage: React.FC = () => {
 
   const handleDelete = useCallback(
     async (team: GolfTeamType) => {
-      const result = await deleteTeam(team.id);
+      if (!seasonId) return;
+
+      const result = await deleteTeam(seasonId, team.id);
 
       if (result.success) {
         setSuccessMessage('Team deleted successfully');
@@ -216,47 +212,22 @@ const GolfTeamsPage: React.FC = () => {
         setError(result.error);
       }
     },
-    [deleteTeam, loadTeams],
-  );
-
-  const handleAssignToFlight = useCallback(
-    async (team: GolfTeamType, flightId: string) => {
-      const result = await assignToFlight(team.id, flightId);
-
-      if (result.success) {
-        setSuccessMessage('Team assigned to flight');
-        await loadTeams();
-      } else {
-        setError(result.error);
-      }
-    },
-    [assignToFlight, loadTeams],
-  );
-
-  const handleRemoveFromFlight = useCallback(
-    async (team: GolfTeamType) => {
-      const result = await removeFromFlight(team.id);
-
-      if (result.success) {
-        setSuccessMessage('Team removed from flight');
-        await loadTeams();
-      } else {
-        setError(result.error);
-      }
-    },
-    [removeFromFlight, loadTeams],
+    [seasonId, deleteTeam, loadTeams],
   );
 
   const handleFormSubmit = useCallback(
     async (data: CreateGolfTeamType) => {
-      if (!seasonId || !leagueSeasonId) {
-        throw new Error('No season selected');
+      if (!selectedFlightId || selectedFlightId === 'all') {
+        throw new Error('Please select a flight to create the team in');
+      }
+      if (!seasonId) {
+        throw new Error('Season ID is required');
       }
 
       setFormLoading(true);
       try {
         if (formMode === 'create') {
-          const result = await createTeam(seasonId, leagueSeasonId, data);
+          const result = await createTeam(selectedFlightId, data);
 
           if (result.success) {
             setSuccessMessage('Team created successfully');
@@ -266,7 +237,7 @@ const GolfTeamsPage: React.FC = () => {
             throw new Error(result.error);
           }
         } else if (editingTeam) {
-          const result = await updateTeam(editingTeam.id, data);
+          const result = await updateTeam(seasonId, editingTeam.id, data);
 
           if (result.success) {
             setSuccessMessage('Team updated successfully');
@@ -280,7 +251,7 @@ const GolfTeamsPage: React.FC = () => {
         setFormLoading(false);
       }
     },
-    [formMode, editingTeam, seasonId, leagueSeasonId, createTeam, updateTeam, loadTeams],
+    [formMode, editingTeam, selectedFlightId, seasonId, createTeam, updateTeam, loadTeams],
   );
 
   const handleFormCancel = useCallback(() => {
@@ -341,7 +312,7 @@ const GolfTeamsPage: React.FC = () => {
           </FormControl>
         </Stack>
 
-        {leagueSetup && (
+        {leagueSetup && selectedFlightId !== 'all' && (
           <Box
             sx={{
               display: 'flex',
@@ -364,7 +335,7 @@ const GolfTeamsPage: React.FC = () => {
             />
             <MuiLink
               component={Link}
-              href={`/account/${accountId}/seasons/${seasonId}/golf/leagues/${leagueSeasonId}/setup`}
+              href={`/account/${accountId}/seasons/${seasonId}/golf/leagues/${selectedFlightId}/setup`}
               underline="hover"
               sx={{ ml: 1, fontSize: '0.875rem' }}
             >
@@ -387,8 +358,6 @@ const GolfTeamsPage: React.FC = () => {
             onView={handleView}
             onEdit={canManage ? handleEdit : undefined}
             onDelete={canManage ? handleDelete : undefined}
-            onAssignToFlight={canManage ? handleAssignToFlight : undefined}
-            onRemoveFromFlight={canManage ? handleRemoveFromFlight : undefined}
             emptyMessage="No teams have been created for this season yet."
             actionsDisabled={formLoading}
             showFlightInfo
@@ -397,12 +366,12 @@ const GolfTeamsPage: React.FC = () => {
         )}
       </Container>
 
-      {canManage && leagueSeasonId && (
+      {canManage && selectedFlightId && selectedFlightId !== 'all' && (
         <Fab
           color="primary"
           aria-label="Add team"
           onClick={handleOpenCreate}
-          disabled={formLoading || !seasonId}
+          disabled={formLoading}
           sx={{
             position: 'fixed',
             bottom: { xs: 24, md: 32 },

@@ -83,13 +83,13 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
     },
   });
 
-  // GET /api/accounts/{accountId}/golf/flights/season/{seasonId}/league-season/{leagueSeasonId}
+  // GET /api/accounts/{accountId}/golf/flights/{flightId}
   registry.registerPath({
     method: 'get',
-    path: '/api/accounts/{accountId}/golf/flights/season/{seasonId}/league-season/{leagueSeasonId}',
-    description: 'List all flights for a league season',
-    operationId: 'listGolfFlightsForLeagueSeason',
-    summary: 'List flights for league season',
+    path: '/api/accounts/{accountId}/golf/flights/{flightId}',
+    description: 'Get a specific golf flight by ID',
+    operationId: 'getGolfFlight',
+    summary: 'Get flight',
     tags: ['Golf Flights'],
     security: [{ bearerAuth: [] }],
     parameters: [
@@ -103,16 +103,7 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
         },
       },
       {
-        name: 'seasonId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'leagueSeasonId',
+        name: 'flightId',
         in: 'path',
         required: true,
         schema: {
@@ -123,10 +114,10 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
     ],
     responses: {
       200: {
-        description: 'List of flights with team counts',
+        description: 'Flight details',
         content: {
           'application/json': {
-            schema: GolfFlightWithTeamCountListSchemaRef,
+            schema: GolfFlightSchemaRef,
           },
         },
       },
@@ -147,7 +138,7 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
         },
       },
       404: {
-        description: 'League season not found or hierarchy mismatch',
+        description: 'Flight not found',
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,
@@ -165,11 +156,11 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
     },
   });
 
-  // POST /api/accounts/{accountId}/golf/flights/season/{seasonId}/league-season/{leagueSeasonId}
+  // POST /api/accounts/{accountId}/golf/flights/season/{seasonId}
   registry.registerPath({
     method: 'post',
-    path: '/api/accounts/{accountId}/golf/flights/season/{seasonId}/league-season/{leagueSeasonId}',
-    description: 'Create a new flight in a league season',
+    path: '/api/accounts/{accountId}/golf/flights/season/{seasonId}',
+    description: 'Create a new flight in a season',
     operationId: 'createGolfFlight',
     summary: 'Create flight',
     tags: ['Golf Flights'],
@@ -186,15 +177,6 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
       },
       {
         name: 'seasonId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'leagueSeasonId',
         in: 'path',
         required: true,
         schema: {
@@ -238,18 +220,10 @@ export const registerGolfFlightsEndpoints = ({ registry, schemaRefs, z }: Regist
         },
       },
       403: {
-        description: 'Access denied - account management permission required or hierarchy mismatch',
+        description: 'Access denied - account management permission required',
         content: {
           'application/json': {
             schema: AuthorizationErrorSchemaRef,
-          },
-        },
-      },
-      404: {
-        description: 'League season not found',
-        content: {
-          'application/json': {
-            schema: NotFoundErrorSchemaRef,
           },
         },
       },

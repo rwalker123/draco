@@ -176,6 +176,9 @@ export interface UserActionsProps {
   onDeleteContact?: (contact: ContactType) => void;
 }
 
+// Feedback state for snackbar notifications
+export type FeedbackState = { severity: 'success' | 'error'; message: string } | null;
+
 // Hook return types
 export interface UseUserManagementReturn {
   // State
@@ -183,8 +186,7 @@ export interface UseUserManagementReturn {
   roles: Role[];
   loading: boolean;
   isInitialLoad: boolean;
-  error: string | null;
-  success: string | null;
+  feedback: FeedbackState;
   page: number;
   rowsPerPage: number;
   hasNext: boolean;
@@ -222,8 +224,7 @@ export interface UseUserManagementReturn {
   closeDeleteContactDialog: () => void;
   setSelectedUser: (user: ContactType | null) => void;
   setSearchTerm: (term: string) => void;
-  setError: (error: string | null) => void;
-  setSuccess: (success: string | null) => void;
+  setFeedback: (feedback: FeedbackState) => void;
   loadContextData: () => Promise<void>;
   getRoleDisplayName: (
     roleOrRoleId:

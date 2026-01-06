@@ -2,18 +2,23 @@ import {
   listAccountFields,
   listAccountUmpires,
   listSeasonGames,
+  listSeasonLeagueSeasons,
   createGame,
   updateGame,
   deleteGame,
 } from '@draco/shared-api-client';
+import type { TeamSeasonType } from '@draco/shared-schemas';
 import { unwrapApiResult, ApiClientError } from '../../../utils/apiResult';
 import { mapGameResponseToScheduleGame } from '../../../utils/gameTransformers';
+import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 import type {
   SportScheduleAdapter,
   ScheduleLocation,
   ScheduleOfficial,
   LoadLocationsParams,
   LoadOfficialsParams,
+  LoadTeamsParams,
+  LoadTeamsResult,
   LoadGamesParams,
   CreateGameParams,
   UpdateGameParams,
@@ -180,6 +185,39 @@ async function deleteGameOperation({
   unwrapApiResult(result, 'Failed to delete game');
 }
 
+async function loadTeams({
+  accountId,
+  seasonId,
+  apiClient,
+}: LoadTeamsParams): Promise<LoadTeamsResult> {
+  const result = await listSeasonLeagueSeasons({
+    client: apiClient,
+    path: { accountId, seasonId },
+    query: {
+      includeTeams: true,
+      includeUnassignedTeams: false,
+    },
+    throwOnError: false,
+  });
+
+  const data = unwrapApiResult(result, 'Failed to load leagues');
+  const mapped = mapLeagueSetup(data);
+
+  const leagueTeamsCache = new Map<string, TeamSeasonType[]>();
+  const leagues = mapped.leagueSeasons.map((leagueSeason) => {
+    const teams: TeamSeasonType[] = [];
+    leagueSeason.divisions?.forEach((division) => {
+      division.teams.forEach((team) => {
+        teams.push(team);
+      });
+    });
+    leagueTeamsCache.set(leagueSeason.id, teams);
+    return { id: leagueSeason.id, name: leagueSeason.league.name };
+  });
+
+  return { leagues, leagueTeamsCache };
+}
+
 export const baseballAdapter: SportScheduleAdapter = {
   sportType: 'baseball',
   locationLabel: 'Field',
@@ -188,6 +226,7 @@ export const baseballAdapter: SportScheduleAdapter = {
 
   loadLocations,
   loadOfficials,
+  loadTeams,
   loadGames,
 
   createGame: createGameOperation,

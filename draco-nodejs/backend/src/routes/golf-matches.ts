@@ -116,8 +116,8 @@ router.post(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { matchId } = extractBigIntParams(req.params, 'matchId');
     const resultsData = SubmitMatchResultsSchema.parse(req.body);
-    const scores = await golfScoreService.submitMatchResults(matchId, resultsData);
-    res.status(201).json(scores);
+    const match = await golfScoreService.submitMatchResults(matchId, resultsData);
+    res.status(201).json(match);
   }),
 );
 

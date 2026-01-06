@@ -19,7 +19,6 @@ interface CreateFlightDialogProps {
   onClose: () => void;
   accountId: string;
   seasonId: string;
-  leagueSeasonId: string;
   onSuccess: (flight: GolfFlightType, message: string) => void;
   onError?: (error: string) => void;
 }
@@ -29,7 +28,6 @@ const CreateFlightDialog: React.FC<CreateFlightDialogProps> = ({
   onClose,
   accountId,
   seasonId,
-  leagueSeasonId,
   onSuccess,
   onError,
 }) => {
@@ -50,13 +48,13 @@ const CreateFlightDialog: React.FC<CreateFlightDialogProps> = ({
   }, [resetForm, onClose]);
 
   const handleSubmit = useCallback(async () => {
-    if (!flightName.trim() || !leagueSeasonId) return;
+    if (!flightName.trim()) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const result = await flightService.createFlight(seasonId, leagueSeasonId, {
+      const result = await flightService.createFlight(seasonId, {
         name: flightName.trim(),
       });
 
@@ -74,7 +72,7 @@ const CreateFlightDialog: React.FC<CreateFlightDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [flightName, leagueSeasonId, seasonId, flightService, onSuccess, onError, handleClose]);
+  }, [flightName, seasonId, flightService, onSuccess, onError, handleClose]);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

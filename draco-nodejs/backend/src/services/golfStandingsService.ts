@@ -52,7 +52,7 @@ export class GolfStandingsService {
       throw new NotFoundError('Flight not found');
     }
 
-    const leagueSetup = await this.leagueRepository.findByLeagueSeasonId(flight.leagueseasonid);
+    const leagueSetup = await this.leagueRepository.findByLeagueSeasonId(flightId);
     const isIndividualScoring = leagueSetup?.scoringtype === 'individual';
 
     const teams = await this.teamRepository.findByFlightId(flightId);
@@ -154,7 +154,7 @@ export class GolfStandingsService {
 
     return {
       flightId: flightId.toString(),
-      flightName: flight.divisiondefs.name,
+      flightName: flight.league.name,
       standings,
     };
   }

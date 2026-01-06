@@ -18,6 +18,7 @@ interface DeleteGolfTeamDialogProps {
   open: boolean;
   onClose: () => void;
   accountId: string;
+  seasonId: string;
   team: GolfTeamType | null;
   onSuccess: (teamId: string, message: string) => void;
   onError?: (error: string) => void;
@@ -27,6 +28,7 @@ const DeleteGolfTeamDialog: React.FC<DeleteGolfTeamDialogProps> = ({
   open,
   onClose,
   accountId,
+  seasonId,
   team,
   onSuccess,
   onError,
@@ -42,13 +44,13 @@ const DeleteGolfTeamDialog: React.FC<DeleteGolfTeamDialogProps> = ({
   }, [onClose]);
 
   const handleDelete = useCallback(async () => {
-    if (!team) return;
+    if (!team || !seasonId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const result = await teamService.deleteTeam(team.id);
+      const result = await teamService.deleteTeam(seasonId, team.id);
 
       if (result.success) {
         onSuccess(team.id, `Team "${team.name}" deleted successfully`);
@@ -64,7 +66,7 @@ const DeleteGolfTeamDialog: React.FC<DeleteGolfTeamDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [team, teamService, onSuccess, onError, handleClose]);
+  }, [team, seasonId, teamService, onSuccess, onError, handleClose]);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

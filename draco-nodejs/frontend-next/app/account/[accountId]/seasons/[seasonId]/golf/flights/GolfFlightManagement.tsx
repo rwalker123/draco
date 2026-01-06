@@ -15,9 +15,6 @@ import {
   AccordionSummary,
   AccordionDetails,
   AccordionActions,
-  Select,
-  MenuItem,
-  FormControl,
   Link as MuiLink,
   Fab,
   Snackbar,
@@ -29,7 +26,6 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   ExpandMore as ExpandMoreIcon,
-  RemoveCircleOutline as RemoveIcon,
   People as PeopleIcon,
   NavigateNext as NavigateNextIcon,
   GolfCourse as GolfCourseIcon,
@@ -78,10 +74,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   onClose: _onClose,
 }) => {
   const [flights, setFlights] = useState<GolfFlightWithTeams[]>([]);
-  const [unassignedTeams, setUnassignedTeams] = useState<GolfTeamWithPlayerCountType[]>([]);
-  const [leagueSeasonId, setLeagueSeasonId] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [formLoading, setFormLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<{
     severity: 'success' | 'error';
     message: string;
@@ -92,7 +85,8 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
 
   const flightService = useGolfFlights(accountId);
   const teamService = useGolfTeams(accountId);
-  const { setup: leagueSetup } = useGolfLeagueSetup(accountId, seasonId, leagueSeasonId);
+  const firstFlightId = flights.length > 0 ? flights[0].id : '';
+  const { setup: leagueSetup } = useGolfLeagueSetup(accountId, seasonId, firstFlightId);
 
   const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(new Set());
 
@@ -106,8 +100,6 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   const [deleteTeamDialogOpen, setDeleteTeamDialogOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<GolfTeamType | null>(null);
   const [teamTargetFlight, setTeamTargetFlight] = useState<GolfFlightWithTeams | null>(null);
-
-  const [selectedTeamPerFlight, setSelectedTeamPerFlight] = useState<Record<string, string>>({});
 
   const seasonName = season?.name ?? 'Season';
 
@@ -132,6 +124,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
 
   useEffect(() => {
     let isMounted = true;
+    setLoading(true);
 
     const fetchSeason = async () => {
       try {
@@ -144,13 +137,13 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
         const seasonResult = unwrapApiResult(result, 'Failed to fetch season');
         if (!isMounted) return;
         setSeason(seasonResult);
-
-        if (seasonResult.leagues && seasonResult.leagues.length > 0) {
-          setLeagueSeasonId(seasonResult.leagues[0].id);
-        }
       } catch {
         if (!isMounted) return;
         setFeedback({ severity: 'error', message: 'Failed to load season details.' });
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -162,22 +155,14 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   }, [accountId, seasonId, apiClient]);
 
   const fetchFlightsWithTeams = useCallback(async () => {
-    if (!seasonId || !leagueSeasonId) return;
+    if (!seasonId) return;
 
     setLoading(true);
     try {
-      const [flightsResult, unassignedResult] = await Promise.all([
-        flightService.listFlightsForLeagueSeason(seasonId, leagueSeasonId),
-        teamService.listUnassignedTeams(seasonId),
-      ]);
+      const flightsResult = await flightService.listFlights(seasonId);
 
       if (!flightsResult.success) {
         setFeedback({ severity: 'error', message: flightsResult.error });
-        return;
-      }
-
-      if (!unassignedResult.success) {
-        setFeedback({ severity: 'error', message: unassignedResult.error });
         return;
       }
 
@@ -192,7 +177,6 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
       );
 
       setFlights(flightsWithTeams);
-      setUnassignedTeams(unassignedResult.data);
 
       if (flightsWithTeams.length > 0) {
         setExpandedAccordions(new Set([flightsWithTeams[0].id]));
@@ -206,13 +190,13 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [seasonId, leagueSeasonId, flightService, teamService]);
+  }, [seasonId, flightService, teamService]);
 
   useEffect(() => {
-    if (leagueSeasonId) {
+    if (season) {
       void fetchFlightsWithTeams();
     }
-  }, [leagueSeasonId, fetchFlightsWithTeams]);
+  }, [season, fetchFlightsWithTeams]);
 
   const addFlightToState = useCallback((flight: GolfFlightType) => {
     const flightWithTeams: GolfFlightWithTeams = {
@@ -229,17 +213,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   }, []);
 
   const removeFlightFromState = useCallback((flightId: string) => {
-    setFlights((prev) => {
-      const flightToRemove = prev.find((f) => f.id === flightId);
-      const teamsToMove = flightToRemove?.teams || [];
-      const updatedFlights = prev.filter((f) => f.id !== flightId);
-
-      if (teamsToMove.length > 0) {
-        setUnassignedTeams((prevUnassigned) => [...prevUnassigned, ...teamsToMove]);
-      }
-
-      return updatedFlights;
-    });
+    setFlights((prev) => prev.filter((f) => f.id !== flightId));
   }, []);
 
   const addTeamToFlightInState = useCallback(
@@ -258,43 +232,6 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           };
         }),
       );
-      setUnassignedTeams((prev) => prev.filter((t) => t.id !== team.id));
-    },
-    [],
-  );
-
-  const removeTeamFromFlightInState = useCallback((flightId: string, teamId: string) => {
-    let removedTeam: GolfTeamWithPlayerCountType | undefined;
-
-    setFlights((prev) => {
-      const flight = prev.find((f) => f.id === flightId);
-      removedTeam = flight?.teams.find((t) => t.id === teamId);
-
-      return prev.map((f) => {
-        if (f.id !== flightId) return f;
-        return {
-          ...f,
-          teams: f.teams.filter((t) => t.id !== teamId),
-          teamCount: Math.max((f.teamCount || 0) - 1, 0),
-        };
-      });
-    });
-
-    setUnassignedTeams((prevUnassigned) => {
-      if (!removedTeam || prevUnassigned.some((t) => t.id === teamId)) {
-        return prevUnassigned;
-      }
-      return [...prevUnassigned, removedTeam];
-    });
-  }, []);
-
-  const addTeamToUnassignedInState = useCallback(
-    (team: GolfTeamType | GolfTeamWithPlayerCountType) => {
-      const teamWithCount: GolfTeamWithPlayerCountType = {
-        ...team,
-        playerCount: 'playerCount' in team ? team.playerCount : 0,
-      };
-      setUnassignedTeams((prev) => [...prev, teamWithCount]);
     },
     [],
   );
@@ -309,7 +246,6 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           : f.teamCount,
       })),
     );
-    setUnassignedTeams((prev) => prev.filter((t) => t.id !== teamId));
   }, []);
 
   const handleAccordionChange =
@@ -339,18 +275,18 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
     setDeleteFlightDialogOpen(true);
   };
 
-  const handleCreateTeam = (flight: GolfFlightWithTeams | null) => {
+  const handleCreateTeam = (flight: GolfFlightWithTeams) => {
     setTeamTargetFlight(flight);
     setCreateTeamDialogOpen(true);
   };
 
-  const handleEditTeam = (team: GolfTeamType, flight: GolfFlightWithTeams | null) => {
+  const handleEditTeam = (team: GolfTeamType, flight: GolfFlightWithTeams) => {
     setSelectedTeam(team);
     setTeamTargetFlight(flight);
     setEditTeamDialogOpen(true);
   };
 
-  const handleDeleteTeam = (team: GolfTeamType, flight: GolfFlightWithTeams | null) => {
+  const handleDeleteTeam = (team: GolfTeamType, flight: GolfFlightWithTeams) => {
     setSelectedTeam(team);
     setTeamTargetFlight(flight);
     setDeleteTeamDialogOpen(true);
@@ -358,53 +294,6 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
 
   const handleManageRoster = (team: GolfTeamType) => {
     router.push(`/account/${accountId}/seasons/${seasonId}/golf/teams/${team.id}`);
-  };
-
-  const handleAssignTeamToFlight = async (flightId: string, teamId: string) => {
-    setFormLoading(true);
-    try {
-      const result = await teamService.assignToFlight(teamId, flightId);
-      if (result.success) {
-        const team = unassignedTeams.find((t) => t.id === teamId);
-        if (team) {
-          addTeamToFlightInState(flightId, {
-            ...team,
-            flight: flights.find((f) => f.id === flightId),
-          });
-        }
-        setFeedback({ severity: 'success', message: result.message });
-        setSelectedTeamPerFlight((prev) => ({ ...prev, [flightId]: '' }));
-      } else {
-        setFeedback({ severity: 'error', message: result.error });
-      }
-    } catch (error) {
-      setFeedback({
-        severity: 'error',
-        message: error instanceof Error ? error.message : 'Failed to assign team',
-      });
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleRemoveTeamFromFlight = async (flightId: string, team: GolfTeamType) => {
-    setFormLoading(true);
-    try {
-      const result = await teamService.removeFromFlight(team.id);
-      if (result.success) {
-        removeTeamFromFlightInState(flightId, team.id);
-        setFeedback({ severity: 'success', message: `Team "${team.name}" removed from flight` });
-      } else {
-        setFeedback({ severity: 'error', message: result.error });
-      }
-    } catch (error) {
-      setFeedback({
-        severity: 'error',
-        message: error instanceof Error ? error.message : 'Failed to remove team from flight',
-      });
-    } finally {
-      setFormLoading(false);
-    }
   };
 
   const handleFlightCreated = (flight: GolfFlightType, message: string) => {
@@ -430,8 +319,6 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   const handleTeamCreated = (team: GolfTeamType, message: string) => {
     if (teamTargetFlight) {
       addTeamToFlightInState(teamTargetFlight.id, team);
-    } else {
-      addTeamToUnassignedInState(team);
     }
     setFeedback({ severity: 'success', message });
     setCreateTeamDialogOpen(false);
@@ -449,8 +336,6 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           };
         }),
       );
-    } else {
-      setUnassignedTeams((prev) => prev.map((t) => (t.id === team.id ? team : t)));
     }
     setFeedback({ severity: 'success', message });
     setEditTeamDialogOpen(false);
@@ -466,7 +351,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
     setTeamTargetFlight(null);
   };
 
-  const renderTeamRow = (team: GolfTeamWithPlayerCountType, flight: GolfFlightWithTeams | null) => {
+  const renderTeamRow = (team: GolfTeamWithPlayerCountType, flight: GolfFlightWithTeams) => {
     const expectedTeamSize = leagueSetup?.teamSize ?? 2;
     const hasPlayerCountMismatch = team.playerCount !== expectedTeamSize;
     const playerCountLabel = team.playerCount === 1 ? '1 player' : `${team.playerCount} players`;
@@ -518,17 +403,6 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          {flight && (
-            <Tooltip title="Remove from Flight">
-              <IconButton
-                size="small"
-                onClick={() => handleRemoveTeamFromFlight(flight.id, team)}
-                disabled={formLoading}
-              >
-                <RemoveIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
           <Tooltip title="Delete Team">
             <IconButton size="small" onClick={() => handleDeleteTeam(team, flight)} color="error">
               <DeleteIcon fontSize="small" />
@@ -588,56 +462,14 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
       <AccordionDetails sx={{ p: 0 }}>
         {flight.teams.length === 0 ? (
           <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-            No teams in this flight yet. Add teams using the dropdown below.
+            No teams in this flight yet. Create teams using the button below.
           </Typography>
         ) : (
           flight.teams.map((team) => renderTeamRow(team, flight))
         )}
       </AccordionDetails>
-      <AccordionActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
-          {unassignedTeams.length > 0 && (
-            <>
-              <FormControl size="small" sx={{ minWidth: 200 }}>
-                <Select
-                  value={selectedTeamPerFlight[flight.id] || ''}
-                  onChange={(e) =>
-                    setSelectedTeamPerFlight((prev) => ({
-                      ...prev,
-                      [flight.id]: e.target.value,
-                    }))
-                  }
-                  displayEmpty
-                  disabled={formLoading}
-                >
-                  <MenuItem value="" disabled>
-                    Select unassigned team...
-                  </MenuItem>
-                  {unassignedTeams.map((team) => (
-                    <MenuItem key={team.id} value={team.id}>
-                      {team.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() =>
-                  handleAssignTeamToFlight(flight.id, selectedTeamPerFlight[flight.id])
-                }
-                disabled={!selectedTeamPerFlight[flight.id] || formLoading}
-              >
-                Add
-              </Button>
-            </>
-          )}
-        </Box>
-        <Button
-          startIcon={<AddIcon />}
-          onClick={() => handleCreateTeam(flight)}
-          disabled={formLoading}
-        >
+      <AccordionActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
+        <Button startIcon={<AddIcon />} onClick={() => handleCreateTeam(flight)}>
           Create Team
         </Button>
       </AccordionActions>
@@ -711,14 +543,16 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
               color="primary"
               variant="outlined"
             />
-            <MuiLink
-              component={Link}
-              href={`/account/${accountId}/seasons/${seasonId}/golf/leagues/${leagueSeasonId}/setup`}
-              underline="hover"
-              sx={{ ml: 1, fontSize: '0.875rem' }}
-            >
-              Change
-            </MuiLink>
+            {firstFlightId && (
+              <MuiLink
+                component={Link}
+                href={`/account/${accountId}/seasons/${seasonId}/golf/leagues/${firstFlightId}/setup`}
+                underline="hover"
+                sx={{ ml: 1, fontSize: '0.875rem' }}
+              >
+                Change
+              </MuiLink>
+            )}
           </Box>
         )}
 
@@ -755,21 +589,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
             </CardContent>
           </Card>
         ) : (
-          <>
-            {flights.map(renderFlightAccordion)}
-
-            {unassignedTeams.length > 0 && (
-              <Alert severity="warning" sx={{ mb: 3 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  {unassignedTeams.length} Unassigned Team{unassignedTeams.length > 1 ? 's' : ''}
-                </Typography>
-                <Typography variant="body2">
-                  The following teams are not assigned to any flight:{' '}
-                  {unassignedTeams.map((t) => t.name).join(', ')}
-                </Typography>
-              </Alert>
-            )}
-          </>
+          flights.map(renderFlightAccordion)
         )}
 
         <Fab
@@ -786,7 +606,6 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           onClose={() => setCreateFlightDialogOpen(false)}
           accountId={accountId}
           seasonId={seasonId}
-          leagueSeasonId={leagueSeasonId}
           onSuccess={handleFlightCreated}
         />
 
@@ -812,19 +631,19 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           onSuccess={handleFlightDeleted}
         />
 
-        <CreateGolfTeamDialog
-          open={createTeamDialogOpen}
-          onClose={() => {
-            setCreateTeamDialogOpen(false);
-            setTeamTargetFlight(null);
-          }}
-          accountId={accountId}
-          seasonId={seasonId}
-          leagueSeasonId={leagueSeasonId}
-          flightId={teamTargetFlight?.id}
-          flightName={teamTargetFlight?.name}
-          onSuccess={handleTeamCreated}
-        />
+        {teamTargetFlight && (
+          <CreateGolfTeamDialog
+            open={createTeamDialogOpen}
+            onClose={() => {
+              setCreateTeamDialogOpen(false);
+              setTeamTargetFlight(null);
+            }}
+            accountId={accountId}
+            flightId={teamTargetFlight.id}
+            flightName={teamTargetFlight.name}
+            onSuccess={handleTeamCreated}
+          />
+        )}
 
         <EditGolfTeamDialog
           open={editTeamDialogOpen}
@@ -834,6 +653,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
             setTeamTargetFlight(null);
           }}
           accountId={accountId}
+          seasonId={seasonId}
           team={selectedTeam}
           onSuccess={handleTeamUpdated}
         />
@@ -846,6 +666,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
             setTeamTargetFlight(null);
           }}
           accountId={accountId}
+          seasonId={seasonId}
           team={selectedTeam}
           onSuccess={handleTeamDeleted}
         />

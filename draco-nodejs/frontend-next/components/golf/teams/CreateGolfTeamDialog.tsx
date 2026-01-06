@@ -19,9 +19,7 @@ interface CreateGolfTeamDialogProps {
   open: boolean;
   onClose: () => void;
   accountId: string;
-  seasonId: string;
-  leagueSeasonId: string;
-  flightId?: string;
+  flightId: string;
   flightName?: string;
   onSuccess: (team: GolfTeamType, message: string) => void;
   onError?: (error: string) => void;
@@ -31,8 +29,6 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
   open,
   onClose,
   accountId,
-  seasonId,
-  leagueSeasonId,
   flightId,
   flightName,
   onSuccess,
@@ -55,13 +51,13 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
   }, [resetForm, onClose]);
 
   const handleSubmit = useCallback(async () => {
-    if (!teamName.trim() || !leagueSeasonId) return;
+    if (!teamName.trim() || !flightId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const createResult = await teamService.createTeam(seasonId, leagueSeasonId, {
+      const createResult = await teamService.createTeam(flightId, {
         name: teamName.trim(),
       });
 
@@ -71,20 +67,8 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
         return;
       }
 
-      let finalTeam = createResult.data;
-      let successMessage = `Team "${finalTeam.name}" created successfully`;
-
-      if (flightId) {
-        const assignResult = await teamService.assignToFlight(finalTeam.id, flightId);
-        if (assignResult.success) {
-          finalTeam = assignResult.data;
-          successMessage = `Team "${finalTeam.name}" created and added to ${flightName || 'flight'}`;
-        } else {
-          successMessage = `Team "${finalTeam.name}" created but could not be assigned to flight`;
-        }
-      }
-
-      onSuccess(finalTeam, successMessage);
+      const successMessage = `Team "${createResult.data.name}" created successfully${flightName ? ` in ${flightName}` : ''}`;
+      onSuccess(createResult.data, successMessage);
       handleClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create team';
@@ -93,17 +77,7 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [
-    teamName,
-    leagueSeasonId,
-    seasonId,
-    flightId,
-    flightName,
-    teamService,
-    onSuccess,
-    onError,
-    handleClose,
-  ]);
+  }, [teamName, flightId, flightName, teamService, onSuccess, onError, handleClose]);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -129,11 +103,7 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
           onChange={(e) => setTeamName(e.target.value)}
           disabled={loading}
           sx={{ mt: 1 }}
-          helperText={
-            flightName
-              ? 'The team will be automatically added to the flight'
-              : 'Enter a unique name for the new team'
-          }
+          helperText="Enter a unique name for the new team"
         />
       </DialogContent>
       <DialogActions>
