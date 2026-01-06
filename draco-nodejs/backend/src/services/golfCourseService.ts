@@ -376,13 +376,7 @@ export class GolfCourseService {
   }
 
   async getImportedExternalIds(): Promise<Set<string>> {
-    const allCourses = await this.courseRepository.findMany({});
-    const externalIds = new Set<string>();
-    for (const course of allCourses) {
-      if (course.externalid) {
-        externalIds.add(course.externalid);
-      }
-    }
-    return externalIds;
+    const externalIds = await this.courseRepository.findDistinctExternalIds();
+    return new Set(externalIds);
   }
 }

@@ -84,9 +84,10 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
 
   const handleNumberChange = (field: string, value: string, min: number, max: number) => {
     const num = parseInt(value, 10);
-    if (!isNaN(num) && num >= min && num <= max) {
-      onFieldChange?.(field, num);
-    }
+    if (isNaN(num)) return;
+    // Clamp value to valid range
+    const clampedValue = Math.min(Math.max(num, min), max);
+    onFieldChange?.(field, clampedValue);
   };
 
   const renderEditableCell = (value: number, field: string, min: number, max: number) => {

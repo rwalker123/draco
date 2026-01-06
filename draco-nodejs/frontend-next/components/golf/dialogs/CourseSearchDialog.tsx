@@ -99,7 +99,7 @@ export const CourseSearchDialog: React.FC<CourseSearchDialogProps> = ({
 
     try {
       // Custom course: already exists in database, use courseId directly
-      if (selectedCourse.courseId && !selectedCourse.externalId) {
+      if (selectedCourse.courseId && selectedCourse.externalId === '') {
         const result = await onSelectCourse(selectedCourse.courseId);
         if (result.success) {
           handleClose();
