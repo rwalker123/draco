@@ -116,7 +116,6 @@ router.get(
 router.post(
   '/',
   authenticateToken,
-  routeProtection.requireAdministrator(),
   accountCreationRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     await turnstileService.assertValid(req.get(turnstileService.getHeaderName()), req.ip);

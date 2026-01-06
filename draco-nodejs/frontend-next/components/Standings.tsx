@@ -101,7 +101,7 @@ export default function Standings({
     });
   };
 
-  const renderStandingsTable = (teams: StandingsTeamType[], isFirstTable: boolean = false) => (
+  const renderStandingsTable = (teams: StandingsTeamType[]) => (
     <TableContainer
       component={Paper}
       sx={{
@@ -114,41 +114,48 @@ export default function Standings({
         boxShadow: (theme) => theme.shadows[theme.palette.mode === 'dark' ? 8 : 1],
       }}
     >
-      <Table size="small" sx={{ minWidth: 650 }}>
-        {isFirstTable && (
-          <TableHead>
-            <TableRow
-              sx={{
-                backgroundColor: (theme) =>
-                  alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.08),
-                '& .MuiTableCell-root': {
-                  borderBottom: (theme) => `1px solid ${theme.palette.widget.border}`,
-                  color: (theme) => theme.palette.widget.headerText,
-                },
-              }}
-            >
-              <TableCell sx={{ fontWeight: 600, minWidth: 200 }}>Team</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 50 }}>
-                W
-              </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 50 }}>
-                L
-              </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 50 }}>
-                T
-              </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 60 }}>
-                PCT
-              </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 60 }}>
-                GB
-              </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 100 }}>
-                Div Record
-              </TableCell>
-            </TableRow>
-          </TableHead>
-        )}
+      <Table
+        size="small"
+        sx={{
+          tableLayout: 'auto',
+          '& .MuiTableCell-root': {
+            px: { xs: 1, sm: 2 },
+            py: { xs: 0.75, sm: 1 },
+          },
+        }}
+      >
+        <TableHead>
+          <TableRow
+            sx={{
+              backgroundColor: (theme) =>
+                alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.08),
+              '& .MuiTableCell-root': {
+                borderBottom: (theme) => `1px solid ${theme.palette.widget.border}`,
+                color: (theme) => theme.palette.widget.headerText,
+              },
+            }}
+          >
+            <TableCell sx={{ fontWeight: 600 }}>Team</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap', width: '1%' }}>
+              W
+            </TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap', width: '1%' }}>
+              L
+            </TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap', width: '1%' }}>
+              T
+            </TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap', width: '1%' }}>
+              PCT
+            </TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap', width: '1%' }}>
+              GB
+            </TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap', width: '1%' }}>
+              Div
+            </TableCell>
+          </TableRow>
+        </TableHead>
         <TableBody>
           {sortTeams(teams).map((team, index) => (
             <TableRow
@@ -162,44 +169,53 @@ export default function Standings({
                 borderBottom: (theme) => `1px solid ${theme.palette.widget.border}`,
               }}
             >
-              <TableCell sx={{ minWidth: 200, color: 'text.primary' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TableCell sx={{ color: 'text.primary' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   {team.team.name ?? 'Unnamed Team'}
                   {index === 0 && (
                     <Chip
                       label="1st"
                       size="small"
                       color="success"
-                      sx={{ fontSize: '0.7rem', height: 20 }}
+                      sx={{ fontSize: '0.65rem', height: 18, ml: 0.5 }}
                     />
                   )}
                 </Box>
               </TableCell>
-              <TableCell align="right" sx={{ minWidth: 50, fontWeight: 'medium' }}>
+              <TableCell
+                align="right"
+                sx={{ fontWeight: 'medium', whiteSpace: 'nowrap', width: '1%' }}
+              >
                 {team.w}
               </TableCell>
-              <TableCell align="right" sx={{ minWidth: 50 }}>
+              <TableCell align="right" sx={{ whiteSpace: 'nowrap', width: '1%' }}>
                 {team.l}
               </TableCell>
-              <TableCell align="right" sx={{ minWidth: 50 }}>
+              <TableCell align="right" sx={{ whiteSpace: 'nowrap', width: '1%' }}>
                 {formatTies(team.t)}
               </TableCell>
               <TableCell
                 align="right"
                 sx={{
-                  minWidth: 60,
                   fontWeight: 700,
+                  whiteSpace: 'nowrap',
+                  width: '1%',
                   color: (theme) => theme.palette.primary.main,
                 }}
               >
                 {formatPercentage(team.pct)}
               </TableCell>
-              <TableCell align="right" sx={{ minWidth: 60 }}>
+              <TableCell align="right" sx={{ whiteSpace: 'nowrap', width: '1%' }}>
                 {formatGamesBehind(team.gb)}
               </TableCell>
               <TableCell
                 align="right"
-                sx={{ minWidth: 100, fontSize: '0.875rem', color: 'text.secondary' }}
+                sx={{
+                  fontSize: '0.875rem',
+                  whiteSpace: 'nowrap',
+                  width: '1%',
+                  color: 'text.secondary',
+                }}
               >
                 {formatDivisionRecord(team.divisionRecord)}
               </TableCell>
@@ -212,8 +228,6 @@ export default function Standings({
 
   const renderStandingsContent = () => {
     if (!groupedStandings) return null;
-
-    let isFirstTable = true;
 
     return (
       <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
@@ -235,8 +249,6 @@ export default function Standings({
             </Typography>
 
             {league.divisions.map((division) => {
-              const currentIsFirst = isFirstTable;
-              isFirstTable = false;
               const divisionKey = division.division.id ?? 'no-division';
               const divisionName = division.division.division?.name ?? 'Unassigned Division';
 
@@ -263,7 +275,7 @@ export default function Standings({
                   </Typography>
 
                   {division.teams.length > 0 ? (
-                    renderStandingsTable(division.teams, currentIsFirst)
+                    renderStandingsTable(division.teams)
                   ) : (
                     <Box sx={{ textAlign: 'center', py: 3 }}>
                       <Typography variant="body2" color="text.secondary">
