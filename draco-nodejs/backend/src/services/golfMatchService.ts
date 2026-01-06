@@ -109,16 +109,15 @@ export class GolfMatchService {
   }
 
   async createMatch(seasonId: bigint, data: CreateGolfMatchType): Promise<GolfMatchType> {
-    const leagueSeasonId = BigInt(data.leagueSeasonId);
+    const flightId = BigInt(data.leagueSeasonId);
 
-    const leagueSeasonExists = await this.flightRepository.leagueSeasonExists(leagueSeasonId);
-    if (!leagueSeasonExists) {
-      throw new NotFoundError('League season not found');
+    const flight = await this.flightRepository.findById(flightId);
+    if (!flight) {
+      throw new NotFoundError('Flight not found');
     }
 
-    const hasLeagueSeasons = await this.matchRepository.seasonHasLeagueSeasons(seasonId);
-    if (!hasLeagueSeasons) {
-      throw new NotFoundError('Season not found or has no league seasons');
+    if (flight.seasonid !== seasonId) {
+      throw new ValidationError('Flight does not belong to the specified season');
     }
 
     const team1Id = BigInt(data.team1Id);
@@ -145,7 +144,7 @@ export class GolfMatchService {
     const match = await this.matchRepository.create({
       team1: team1Id,
       team2: team2Id,
-      leagueid: leagueSeasonId,
+      leagueid: flightId,
       matchdate: matchDateTime,
       courseid: data.courseId ? BigInt(data.courseId) : null,
       teeid: data.teeId ? BigInt(data.teeId) : null,

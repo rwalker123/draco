@@ -1,16 +1,21 @@
 import {
   listGolfLeagueCourses,
   listGolfMatchesForSeason,
+  listSeasonLeagueSeasons,
   createGolfMatch,
   updateGolfMatch,
   deleteGolfMatch,
 } from '@draco/shared-api-client';
 import type { GolfMatch, CreateGolfMatch, UpdateGolfMatch } from '@draco/shared-api-client';
+import type { TeamSeasonType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../../utils/apiResult';
+import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 import type {
   SportScheduleAdapter,
   ScheduleLocation,
   LoadLocationsParams,
+  LoadTeamsParams,
+  LoadTeamsResult,
   LoadGamesParams,
   CreateGameParams,
   UpdateGameParams,
@@ -202,12 +207,40 @@ async function deleteGameOperation({
   }
 }
 
+async function loadTeams({
+  accountId,
+  seasonId,
+  apiClient,
+}: LoadTeamsParams): Promise<LoadTeamsResult> {
+  const result = await listSeasonLeagueSeasons({
+    client: apiClient,
+    path: { accountId, seasonId },
+    query: {
+      includeTeams: true,
+      includeUnassignedTeams: true,
+    },
+    throwOnError: false,
+  });
+
+  const data = unwrapApiResult(result, 'Failed to load flights');
+  const mapped = mapLeagueSetup(data);
+
+  const leagueTeamsCache = new Map<string, TeamSeasonType[]>();
+  const leagues = mapped.leagueSeasons.map((leagueSeason) => {
+    leagueTeamsCache.set(leagueSeason.id, leagueSeason.unassignedTeams ?? []);
+    return { id: leagueSeason.id, name: leagueSeason.league.name };
+  });
+
+  return { leagues, leagueTeamsCache };
+}
+
 export const golfAdapter: SportScheduleAdapter = {
   sportType: 'golf',
   locationLabel: 'Course',
   hasOfficials: false,
 
   loadLocations,
+  loadTeams,
   loadGames,
 
   createGame: createGameOperation,

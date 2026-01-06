@@ -4,7 +4,7 @@ import { useCurrentSeason } from './useCurrentSeason';
 import { createUserManagementService } from '../services/userManagementService';
 import { createContextDataService } from '../services/contextDataService';
 import { getRoleDisplayName } from '../utils/roleUtils';
-import { Role, UseUserManagementReturn } from '../types/users';
+import { FeedbackState, Role, UseUserManagementReturn } from '../types/users';
 import { useUserDataManager } from './useUserDataManager';
 import { useUserApiOperations } from './useUserApiOperations';
 import {
@@ -99,8 +99,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
   // Other state
   const [roles, setRoles] = useState<Role[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackState>(null);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Search state
@@ -144,6 +143,18 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const dataManager = useUserDataManager(dispatch);
   const apiOperations = useUserApiOperations(userService!, accountId);
 
+  // Helper to set error feedback
+  const setFeedbackError = useCallback(
+    (message: string | null) => {
+      if (message === null) {
+        setFeedback(null);
+      } else {
+        setFeedback({ severity: 'error', message });
+      }
+    },
+    [setFeedback],
+  );
+
   // Atomic pagination data update using reducer
   const updatePaginationData = useCallback(
     (newUsers: ContactType[], newHasNext: boolean, newHasPrev: boolean, newPage?: number) => {
@@ -175,7 +186,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         } else {
           dispatch({ type: 'START_LOADING' });
         }
-        setError(null);
 
         const response = await userService.searchUsers(
           accountId,
@@ -199,11 +209,18 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           isPaginating ? undefined : currentPage,
         );
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load users');
+        setFeedbackError(err instanceof Error ? err.message : 'Failed to load users');
         dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
       }
     },
-    [userService, accountId, currentSeasonId, onlyWithRoles, updatePaginationData],
+    [
+      userService,
+      accountId,
+      currentSeasonId,
+      onlyWithRoles,
+      updatePaginationData,
+      setFeedbackError,
+    ],
   );
 
   // Load users with explicit season ID (for initialization)
@@ -213,7 +230,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
       try {
         dispatch({ type: 'START_LOADING' });
-        setError(null);
+        setFeedbackError(null);
 
         const response = await userService.searchUsers(
           accountId,
@@ -235,11 +252,11 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           hasPrev: response.pagination.hasPrev ?? false,
         });
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load users');
+        setFeedbackError(err instanceof Error ? err.message : 'Failed to load users');
         dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
       }
     },
-    [userService, accountId, onlyWithRoles],
+    [userService, accountId, onlyWithRoles, setFeedbackError],
   );
 
   // Load roles
@@ -259,18 +276,20 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
     try {
       setAutomaticRolesLoading(true);
-      setError(null);
+      setFeedbackError(null);
 
       const automaticRoleHolders = await userService.fetchAutomaticRoleHolders(accountId);
       setAccountOwner(automaticRoleHolders.accountOwner);
       setTeamManagers(automaticRoleHolders.teamManagers);
     } catch (err) {
       console.error('Failed to load automatic role holders:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load automatic role holders');
+      setFeedbackError(
+        err instanceof Error ? err.message : 'Failed to load automatic role holders',
+      );
     } finally {
       setAutomaticRolesLoading(false);
     }
-  }, [userService, accountId]);
+  }, [userService, accountId, setFeedbackError]);
 
   // Update ref when rowsPerPage changes
   useEffect(() => {
@@ -314,7 +333,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
     try {
       setSearchLoading(true);
-      setError(null);
+      setFeedbackError(null);
 
       if (!searchTerm.trim()) {
         // If search is empty, clear search results and load all users
@@ -345,11 +364,19 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to search users');
+      setFeedbackError(err instanceof Error ? err.message : 'Failed to search users');
     } finally {
       setSearchLoading(false);
     }
-  }, [searchTerm, userService, accountId, currentSeasonId, onlyWithRoles, loadUsers]);
+  }, [
+    searchTerm,
+    userService,
+    accountId,
+    currentSeasonId,
+    onlyWithRoles,
+    loadUsers,
+    setFeedbackError,
+  ]);
 
   // Clear search handler
   const handleClearSearch = useCallback(async () => {
@@ -357,7 +384,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
     try {
       setSearchLoading(true);
-      setError(null);
+      setFeedbackError(null);
 
       // Clear search term and search results state
       setSearchTerm('');
@@ -366,11 +393,11 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       // Reset to first page and load default data
       await loadUsers(0, undefined, true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to clear search');
+      setFeedbackError(err instanceof Error ? err.message : 'Failed to clear search');
     } finally {
       setSearchLoading(false);
     }
-  }, [userService, accountId, loadUsers]);
+  }, [userService, accountId, loadUsers, setFeedbackError]);
 
   // Filter toggle handler
   const handleFilterToggle = useCallback(
@@ -379,7 +406,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
       try {
         dataManager.setLoading();
-        setError(null);
+        setFeedbackError(null);
 
         // Update filter state
         setOnlyWithRoles(filterValue);
@@ -416,7 +443,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           );
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to apply filter');
+        setFeedbackError(err instanceof Error ? err.message : 'Failed to apply filter');
         dataManager.clearData();
       }
     },
@@ -428,6 +455,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setOnlyWithRoles,
       accountId,
       userService,
+      setFeedbackError,
     ],
   );
 
@@ -440,7 +468,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       if (isShowingSearchResults && searchTerm.trim() && userService) {
         try {
           dispatch({ type: 'START_PAGINATION', page: nextPage });
-          setError(null);
+          setFeedbackError(null);
 
           const searchResponse = await userService.searchUsers(
             accountId,
@@ -463,7 +491,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             page: nextPage,
           });
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to load next page');
+          setFeedbackError(err instanceof Error ? err.message : 'Failed to load next page');
           dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
         }
       } else {
@@ -482,6 +510,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     accountId,
     currentSeasonId,
     onlyWithRoles,
+    setFeedbackError,
   ]);
 
   const handlePrevPage = useCallback(async () => {
@@ -492,7 +521,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       if (isShowingSearchResults && searchTerm.trim() && userService) {
         try {
           dispatch({ type: 'START_PAGINATION', page: prevPage });
-          setError(null);
+          setFeedbackError(null);
 
           const searchResponse = await userService.searchUsers(
             accountId,
@@ -515,7 +544,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             page: prevPage,
           });
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to load previous page');
+          setFeedbackError(err instanceof Error ? err.message : 'Failed to load previous page');
           dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
         }
       } else {
@@ -534,6 +563,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     accountId,
     currentSeasonId,
     onlyWithRoles,
+    setFeedbackError,
   ]);
 
   const handleRowsPerPageChange = useCallback(
@@ -545,7 +575,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       if (isShowingSearchResults && searchTerm.trim() && userService) {
         try {
           dispatch({ type: 'START_PAGINATION', page: 1 });
-          setError(null);
+          setFeedbackError(null);
 
           const searchResponse = await userService.searchUsers(
             accountId,
@@ -568,7 +598,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             page: 1,
           });
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to update rows per page');
+          setFeedbackError(err instanceof Error ? err.message : 'Failed to update rows per page');
           dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
         }
       } else {
@@ -584,6 +614,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       accountId,
       currentSeasonId,
       onlyWithRoles,
+      setFeedbackError,
     ],
   );
 
@@ -593,7 +624,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
     try {
       setContextDataLoading(true);
-      setError(null);
+      setFeedbackError(null);
 
       const contextData = await contextDataService.fetchLeaguesAndTeams(accountId, currentSeasonId);
 
@@ -603,11 +634,11 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       const teamsData = await contextDataService.fetchTeams(accountId, currentSeasonId);
       setTeams(teamsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load context data');
+      setFeedbackError(err instanceof Error ? err.message : 'Failed to load context data');
     } finally {
       setContextDataLoading(false);
     }
-  }, [contextDataService, accountId, currentSeasonId]);
+  }, [contextDataService, accountId, currentSeasonId, setFeedbackError]);
 
   // Dialog open handlers
 
@@ -836,8 +867,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     roles,
     loading: isCurrentlyLoading, // Use loading state
     isInitialLoad, // Expose initial load state
-    error,
-    success,
+    feedback,
     page,
     rowsPerPage,
     hasNext,
@@ -875,8 +905,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     closeDeleteContactDialog,
     setSelectedUser,
     setSearchTerm,
-    setError,
-    setSuccess,
+    setFeedback,
     loadContextData,
     getRoleDisplayName: getRoleDisplayNameHelper,
     handleRoleAssigned,

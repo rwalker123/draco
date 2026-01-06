@@ -13,14 +13,15 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
       where: {
         leagueseason: {
           seasonid: seasonId,
+          golfseasonconfig: {
+            isNot: null,
+          },
         },
       },
       include: {
-        divisionseason: {
+        leagueseason: {
           include: {
-            divisiondefs: {
-              select: { id: true, name: true },
-            },
+            league: true,
           },
         },
         teams: true,
@@ -28,39 +29,17 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
           select: { golfroster: true },
         },
       },
-      orderBy: [{ divisionseason: { priority: 'asc' } }, { name: 'asc' }],
-    });
-  }
-
-  async findByLeagueSeasonId(leagueSeasonId: bigint): Promise<GolfTeamWithFlight[]> {
-    return this.prisma.teamsseason.findMany({
-      where: { leagueseasonid: leagueSeasonId },
-      include: {
-        divisionseason: {
-          include: {
-            divisiondefs: {
-              select: { id: true, name: true },
-            },
-          },
-        },
-        teams: true,
-        _count: {
-          select: { golfroster: true },
-        },
-      },
-      orderBy: [{ divisionseason: { priority: 'asc' } }, { name: 'asc' }],
+      orderBy: [{ leagueseason: { league: { name: 'asc' } } }, { name: 'asc' }],
     });
   }
 
   async findByFlightId(flightId: bigint): Promise<GolfTeamWithFlight[]> {
     return this.prisma.teamsseason.findMany({
-      where: { divisionseasonid: flightId },
+      where: { leagueseasonid: flightId },
       include: {
-        divisionseason: {
+        leagueseason: {
           include: {
-            divisiondefs: {
-              select: { id: true, name: true },
-            },
+            league: true,
           },
         },
         teams: true,
@@ -76,11 +55,9 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
     return this.prisma.teamsseason.findUnique({
       where: { id: teamSeasonId },
       include: {
-        divisionseason: {
+        leagueseason: {
           include: {
-            divisiondefs: {
-              select: { id: true, name: true },
-            },
+            league: true,
           },
         },
         teams: true,
@@ -95,11 +72,9 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
     return this.prisma.teamsseason.findUnique({
       where: { id: teamSeasonId },
       include: {
-        divisionseason: {
+        leagueseason: {
           include: {
-            divisiondefs: {
-              select: { id: true, name: true },
-            },
+            league: true,
           },
         },
         teams: true,
@@ -118,26 +93,25 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
     });
   }
 
-  async create(leagueSeasonId: bigint, name: string, flightId?: bigint): Promise<teamsseason> {
+  async create(flightId: bigint, name: string): Promise<teamsseason> {
     const leagueseason = await this.prisma.leagueseason.findUnique({
-      where: { id: leagueSeasonId },
+      where: { id: flightId },
       include: {
         season: true,
       },
     });
 
     if (!leagueseason) {
-      throw new Error('League season not found');
+      throw new Error('Flight not found');
     }
 
     const teamDef = await this.findOrCreateTeamDef(leagueseason.season.accountid);
 
     return this.prisma.teamsseason.create({
       data: {
-        leagueseasonid: leagueSeasonId,
+        leagueseasonid: flightId,
         teamid: teamDef.id,
         name,
-        divisionseasonid: flightId ?? null,
       },
     });
   }
@@ -159,10 +133,7 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
     });
   }
 
-  async update(
-    teamSeasonId: bigint,
-    data: { name?: string; divisionseasonid?: bigint | null },
-  ): Promise<teamsseason> {
+  async update(teamSeasonId: bigint, data: { name?: string }): Promise<teamsseason> {
     return this.prisma.teamsseason.update({
       where: { id: teamSeasonId },
       data,
@@ -172,13 +143,6 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
   async delete(teamSeasonId: bigint): Promise<teamsseason> {
     return this.prisma.teamsseason.delete({
       where: { id: teamSeasonId },
-    });
-  }
-
-  async assignToFlight(teamSeasonId: bigint, flightId: bigint | null): Promise<teamsseason> {
-    return this.prisma.teamsseason.update({
-      where: { id: teamSeasonId },
-      data: { divisionseasonid: flightId },
     });
   }
 

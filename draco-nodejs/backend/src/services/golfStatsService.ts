@@ -72,7 +72,7 @@ export class GolfStatsService {
 
     return {
       flightId: flightId.toString(),
-      flightName: flight.divisiondefs.name,
+      flightName: flight.league.name,
       lowActualScore,
       lowNetScore,
       scoringAverages,

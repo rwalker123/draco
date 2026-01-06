@@ -42,6 +42,17 @@ export interface LoadOfficialsParams {
   apiClient: Client;
 }
 
+export interface LoadTeamsParams {
+  accountId: string;
+  seasonId: string;
+  apiClient: Client;
+}
+
+export interface LoadTeamsResult {
+  leagues: Array<{ id: string; name: string }>;
+  leagueTeamsCache: Map<string, TeamSeasonType[]>;
+}
+
 export interface GameDialogProps {
   // Dialog state
   open: boolean;
@@ -115,6 +126,7 @@ export interface SportScheduleAdapter {
 
   loadLocations: (params: LoadLocationsParams) => Promise<ScheduleLocation[]>;
   loadOfficials?: (params: LoadOfficialsParams) => Promise<ScheduleOfficial[]>;
+  loadTeams?: (params: LoadTeamsParams) => Promise<LoadTeamsResult>;
   loadGames: (params: LoadGamesParams) => Promise<Game[]>;
 
   createGame: (params: CreateGameParams) => Promise<Game>;

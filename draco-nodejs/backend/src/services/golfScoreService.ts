@@ -1,6 +1,7 @@
 import {
   GolfScoreType,
   GolfScoreWithDetailsType,
+  GolfMatchType,
   SubmitMatchResultsType,
   PlayerMatchScoreType,
 } from '@draco/shared-schemas';
@@ -13,6 +14,7 @@ import { IGolfRosterRepository } from '../repositories/interfaces/IGolfRosterRep
 import { IGolfCourseRepository } from '../repositories/interfaces/IGolfCourseRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { GolfScoreResponseFormatter } from '../responseFormatters/golfScoreResponseFormatter.js';
+import { GolfMatchResponseFormatter } from '../responseFormatters/golfMatchResponseFormatter.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { GolfMatchStatus } from '../utils/golfConstants.js';
 import { ServiceFactory } from './serviceFactory.js';
@@ -69,10 +71,7 @@ export class GolfScoreService {
     return matchScores.map((ms) => GolfScoreResponseFormatter.formatWithDetails(ms.golfscore));
   }
 
-  async submitMatchResults(
-    matchId: bigint,
-    data: SubmitMatchResultsType,
-  ): Promise<GolfScoreWithDetailsType[]> {
+  async submitMatchResults(matchId: bigint, data: SubmitMatchResultsType): Promise<GolfMatchType> {
     const match = await this.matchRepository.findByIdWithScores(matchId);
     if (!match) {
       throw new NotFoundError('Golf match not found');
@@ -164,19 +163,7 @@ export class GolfScoreService {
     }
 
     const teamIds = Array.from(scoresByTeam.keys());
-    const result = await this.scoreRepository.submitMatchScoresTransactional(
-      matchId,
-      teamIds,
-      submissions,
-    );
-
-    const createdScores: GolfScoreWithDetailsType[] = [];
-    for (const scoreId of result.createdScoreIds) {
-      const createdScore = await this.scoreRepository.findById(scoreId);
-      if (createdScore) {
-        createdScores.push(GolfScoreResponseFormatter.formatWithDetails(createdScore));
-      }
-    }
+    await this.scoreRepository.submitMatchScoresTransactional(matchId, teamIds, submissions);
 
     const team1Scores = await this.scoreRepository.findByTeamAndMatch(matchId, match.team1);
     const team2Scores = await this.scoreRepository.findByTeamAndMatch(matchId, match.team2);
@@ -188,7 +175,11 @@ export class GolfScoreService {
       await scoringService.calculateAndStoreMatchPoints(matchId);
     }
 
-    return createdScores;
+    const updatedMatch = await this.matchRepository.findById(matchId);
+    if (!updatedMatch) {
+      throw new NotFoundError('Golf match not found after update');
+    }
+    return GolfMatchResponseFormatter.format(updatedMatch);
   }
 
   async deleteMatchScores(matchId: bigint): Promise<void> {

@@ -31970,71 +31970,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/golf/flights/season/{seasonId}/league-season/{leagueSeasonId}:
-    get:
-      description: List all flights for a league season
-      operationId: listGolfFlightsForLeagueSeason
-      summary: List flights for league season
-      tags:
-        - Golf Flights
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: seasonId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: leagueSeasonId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-      responses:
-        "200":
-          description: List of flights with team counts
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/GolfFlightWithTeamCount"
-                title: GolfFlightWithTeamCountList
-                description: List of golf flights with team counts
-        "401":
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthenticationError"
-        "403":
-          description: Access denied
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthorizationError"
-        "404":
-          description: League season not found or hierarchy mismatch
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NotFoundError"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InternalServerError"
     post:
-      description: Create a new flight in a league season
+      description: Create a new flight in a season
       operationId: createGolfFlight
       summary: Create flight
       tags:
@@ -32049,12 +31986,6 @@ paths:
             type: string
             format: number
         - name: seasonId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: leagueSeasonId
           in: path
           required: true
           schema:
@@ -32085,14 +32016,60 @@ paths:
               schema:
                 $ref: "#/components/schemas/AuthenticationError"
         "403":
-          description: Access denied - account management permission required or hierarchy
-            mismatch
+          description: Access denied - account management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/flights/{flightId}:
+    get:
+      description: Get a specific golf flight by ID
+      operationId: getGolfFlight
+      summary: Get flight
+      tags:
+        - Golf Flights
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: flightId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Flight details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfFlight"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthorizationError"
         "404":
-          description: League season not found
+          description: Flight not found
           content:
             application/json:
               schema:
@@ -32103,7 +32080,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/golf/flights/{flightId}:
     put:
       description: Update an existing golf flight
       operationId: updateGolfFlight
@@ -33033,15 +33009,11 @@ paths:
               $ref: "#/components/schemas/SubmitMatchResults"
       responses:
         "201":
-          description: Scores submitted successfully
+          description: Match results submitted successfully
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/GolfScoreWithDetails"
-                title: GolfScoreWithDetailsList
-                description: List of golf scores with player and tee details
+                $ref: "#/components/schemas/GolfMatch"
         "400":
           description: Validation error
           content:
@@ -33594,57 +33566,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/golf/teams/season/{seasonId}/unassigned:
-    get:
-      description: List teams not assigned to any flight
-      operationId: listUnassignedGolfTeams
-      summary: List unassigned teams
-      tags:
-        - Golf Teams
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: seasonId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-      responses:
-        "200":
-          description: List of unassigned teams with player counts
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/GolfTeamWithPlayerCount"
-                title: GolfTeamWithPlayerCountList
-                description: List of golf teams with player counts
-        "401":
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthenticationError"
-        "403":
-          description: Access denied
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthorizationError"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/golf/teams/flight/{flightId}:
     get:
       description: List teams in a specific flight
@@ -33696,7 +33617,70 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/golf/teams/{teamSeasonId}:
+    post:
+      description: Create a new golf team in a flight
+      operationId: createGolfTeam
+      summary: Create team
+      tags:
+        - Golf Teams
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: flightId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGolfTeam"
+      responses:
+        "201":
+          description: Team created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfTeam"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - account management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Flight not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/teams/season/{seasonId}/team/{teamSeasonId}:
     get:
       description: Get a specific golf team by ID
       operationId: getGolfTeam
@@ -33707,6 +33691,12 @@ paths:
         - bearerAuth: []
       parameters:
         - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
           in: path
           required: true
           schema:
@@ -33759,6 +33749,12 @@ paths:
         - bearerAuth: []
       parameters:
         - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
           in: path
           required: true
           schema:
@@ -33827,6 +33823,12 @@ paths:
           schema:
             type: string
             format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
         - name: teamSeasonId
           in: path
           required: true
@@ -33866,7 +33868,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/golf/teams/{teamSeasonId}/roster:
+  /api/accounts/{accountId}/golf/teams/season/{seasonId}/team/{teamSeasonId}/roster:
     get:
       description: Get a golf team with its full roster
       operationId: getGolfTeamWithRoster
@@ -33877,6 +33879,12 @@ paths:
         - bearerAuth: []
       parameters:
         - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
           in: path
           required: true
           schema:
@@ -33903,189 +33911,6 @@ paths:
                 $ref: "#/components/schemas/AuthenticationError"
         "403":
           description: Access denied
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthorizationError"
-        "404":
-          description: Team not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NotFoundError"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/golf/teams/season/{seasonId}/league-season/{leagueSeasonId}:
-    post:
-      description: Create a new golf team in a league season
-      operationId: createGolfTeam
-      summary: Create team
-      tags:
-        - Golf Teams
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: seasonId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: leagueSeasonId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateGolfTeam"
-      responses:
-        "201":
-          description: Team created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/GolfTeam"
-        "400":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ValidationError"
-        "401":
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthenticationError"
-        "403":
-          description: Access denied - account management permission required or hierarchy
-            mismatch
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthorizationError"
-        "404":
-          description: League season not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NotFoundError"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/golf/teams/{teamSeasonId}/flight/{flightId}:
-    put:
-      description: Assign a team to a flight
-      operationId: assignGolfTeamToFlight
-      summary: Assign team to flight
-      tags:
-        - Golf Teams
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: teamSeasonId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: flightId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-      responses:
-        "200":
-          description: Team assigned to flight
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/GolfTeam"
-        "401":
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthenticationError"
-        "403":
-          description: Access denied - account management permission required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthorizationError"
-        "404":
-          description: Team or flight not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NotFoundError"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/golf/teams/{teamSeasonId}/flight:
-    delete:
-      description: Remove a team from its flight
-      operationId: removeGolfTeamFromFlight
-      summary: Remove team from flight
-      tags:
-        - Golf Teams
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: teamSeasonId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-      responses:
-        "200":
-          description: Team removed from flight
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/GolfTeam"
-        "401":
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthenticationError"
-        "403":
-          description: Access denied - account management permission required
           content:
             application/json:
               schema:

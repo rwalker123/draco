@@ -82,10 +82,7 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
   async findByFlightId(flightId: bigint): Promise<GolfMatchWithTeams[]> {
     return this.prisma.golfmatch.findMany({
       where: {
-        OR: [
-          { teamsseason_golfmatch_team1Toteamsseason: { divisionseasonid: flightId } },
-          { teamsseason_golfmatch_team2Toteamsseason: { divisionseasonid: flightId } },
-        ],
+        leagueid: flightId,
       },
       include: matchTeamInclude,
       orderBy: { matchdate: 'asc' },

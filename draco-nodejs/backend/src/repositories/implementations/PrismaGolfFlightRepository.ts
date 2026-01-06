@@ -1,33 +1,29 @@
-import { PrismaClient, divisionseason, divisiondefs } from '#prisma/client';
+import { PrismaClient } from '#prisma/client';
 import {
   IGolfFlightRepository,
   GolfFlightWithDetails,
   GolfFlightWithCounts,
-  LeagueSeasonWithSeason,
 } from '../interfaces/IGolfFlightRepository.js';
 
 export class PrismaGolfFlightRepository implements IGolfFlightRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async findBySeasonId(seasonId: bigint): Promise<GolfFlightWithCounts[]> {
-    const flights = await this.prisma.divisionseason.findMany({
+    const flights = await this.prisma.leagueseason.findMany({
       where: {
-        leagueseason: {
-          seasonid: seasonId,
+        seasonid: seasonId,
+        golfseasonconfig: {
+          isNot: null,
         },
       },
       include: {
-        divisiondefs: true,
-        leagueseason: {
-          include: {
-            season: true,
-          },
-        },
+        league: true,
+        season: true,
         _count: {
           select: { teamsseason: true },
         },
       },
-      orderBy: { priority: 'asc' },
+      orderBy: { league: { name: 'asc' } },
     });
 
     const flightIds = flights.map((f) => f.id);
@@ -35,98 +31,104 @@ export class PrismaGolfFlightRepository implements IGolfFlightRepository {
 
     return flights.map((flight) => ({
       ...flight,
-      playerCount: playerCountMap.get(flight.id) ?? 0,
-    }));
-  }
-
-  async findByLeagueSeasonId(leagueSeasonId: bigint): Promise<GolfFlightWithCounts[]> {
-    const flights = await this.prisma.divisionseason.findMany({
-      where: { leagueseasonid: leagueSeasonId },
-      include: {
-        divisiondefs: true,
-        leagueseason: {
-          include: {
-            season: true,
-          },
-        },
-        _count: {
-          select: { teamsseason: true },
-        },
-      },
-      orderBy: { priority: 'asc' },
-    });
-
-    const flightIds = flights.map((f) => f.id);
-    const playerCountMap = await this.getPlayerCountsForFlights(flightIds);
-
-    return flights.map((flight) => ({
-      ...flight,
+      teamCount: flight._count.teamsseason,
       playerCount: playerCountMap.get(flight.id) ?? 0,
     }));
   }
 
   async findById(flightId: bigint): Promise<GolfFlightWithDetails | null> {
-    return this.prisma.divisionseason.findUnique({
+    return this.prisma.leagueseason.findUnique({
       where: { id: flightId },
       include: {
-        divisiondefs: true,
-        leagueseason: {
-          include: {
-            season: true,
-          },
-        },
+        league: true,
+        season: true,
       },
     });
   }
 
-  async create(leagueSeasonId: bigint, divisionId: bigint, priority = 0): Promise<divisionseason> {
-    return this.prisma.divisionseason.create({
+  async create(accountId: bigint, seasonId: bigint, name: string): Promise<GolfFlightWithDetails> {
+    const league = await this.prisma.league.create({
       data: {
-        leagueseasonid: leagueSeasonId,
-        divisionid: divisionId,
-        priority,
-      },
-    });
-  }
-
-  async update(flightId: bigint, data: Partial<divisionseason>): Promise<divisionseason> {
-    return this.prisma.divisionseason.update({
-      where: { id: flightId },
-      data,
-    });
-  }
-
-  async delete(flightId: bigint): Promise<divisionseason> {
-    return this.prisma.divisionseason.delete({
-      where: { id: flightId },
-    });
-  }
-
-  async findOrCreateDivision(accountId: bigint, name: string): Promise<divisiondefs> {
-    const existing = await this.prisma.divisiondefs.findFirst({
-      where: {
         accountid: accountId,
         name,
       },
     });
 
-    if (existing) {
-      return existing;
+    const leagueSeason = await this.prisma.leagueseason.create({
+      data: {
+        leagueid: league.id,
+        seasonid: seasonId,
+      },
+      include: {
+        league: true,
+        season: true,
+      },
+    });
+
+    await this.prisma.golfseasonconfig.create({
+      data: {
+        leagueseasonid: leagueSeason.id,
+        teamsize: 2,
+      },
+    });
+
+    return leagueSeason;
+  }
+
+  async update(flightId: bigint, name: string): Promise<GolfFlightWithDetails> {
+    const flight = await this.prisma.leagueseason.findUnique({
+      where: { id: flightId },
+      include: { league: true },
+    });
+
+    if (!flight) {
+      throw new Error('Flight not found');
     }
 
-    return this.prisma.divisiondefs.create({
-      data: {
-        accountid: accountId,
-        name,
+    await this.prisma.league.update({
+      where: { id: flight.leagueid },
+      data: { name },
+    });
+
+    return this.prisma.leagueseason.findUniqueOrThrow({
+      where: { id: flightId },
+      include: {
+        league: true,
+        season: true,
       },
     });
+  }
+
+  async delete(flightId: bigint): Promise<void> {
+    const flight = await this.prisma.leagueseason.findUnique({
+      where: { id: flightId },
+      select: { leagueid: true },
+    });
+
+    if (!flight) {
+      return;
+    }
+
+    await this.prisma.leagueseason.delete({
+      where: { id: flightId },
+    });
+
+    const otherSeasons = await this.prisma.leagueseason.count({
+      where: { leagueid: flight.leagueid },
+    });
+
+    if (otherSeasons === 0) {
+      await this.prisma.league.delete({
+        where: { id: flight.leagueid },
+      });
+    }
   }
 
   async getPlayerCountForFlight(flightId: bigint): Promise<number> {
-    const count = await this.prisma.rosterseason.count({
+    const count = await this.prisma.golfroster.count({
       where: {
         teamsseason: {
-          divisionseasonid: flightId,
+          leagueseasonid: flightId,
         },
       },
     });
@@ -141,41 +143,54 @@ export class PrismaGolfFlightRepository implements IGolfFlightRepository {
 
     const counts = await this.prisma.teamsseason.findMany({
       where: {
-        divisionseasonid: { in: flightIds },
+        leagueseasonid: { in: flightIds },
       },
       select: {
-        divisionseasonid: true,
+        leagueseasonid: true,
         _count: {
-          select: { rosterseason: true },
+          select: { golfroster: true },
         },
       },
     });
 
     const countMap = new Map<bigint, number>();
     for (const item of counts) {
-      const flightId = item.divisionseasonid;
-      if (flightId === null) continue;
+      const flightId = item.leagueseasonid;
       const currentCount = countMap.get(flightId) ?? 0;
-      countMap.set(flightId, currentCount + item._count.rosterseason);
+      countMap.set(flightId, currentCount + item._count.golfroster);
     }
 
     return countMap;
   }
 
-  async getLeagueSeasonWithHierarchy(
-    leagueSeasonId: bigint,
-  ): Promise<LeagueSeasonWithSeason | null> {
-    return this.prisma.leagueseason.findUnique({
-      where: { id: leagueSeasonId },
-      include: {
-        season: true,
+  async flightNameExistsInSeason(
+    accountId: bigint,
+    seasonId: bigint,
+    name: string,
+  ): Promise<boolean> {
+    const count = await this.prisma.leagueseason.count({
+      where: {
+        seasonid: seasonId,
+        league: {
+          accountid: accountId,
+          name: {
+            equals: name,
+            mode: 'insensitive',
+          },
+        },
       },
     });
+    return count > 0;
   }
 
-  async leagueSeasonExists(leagueSeasonId: bigint): Promise<boolean> {
+  async seasonHasFlights(seasonId: bigint): Promise<boolean> {
     const count = await this.prisma.leagueseason.count({
-      where: { id: leagueSeasonId },
+      where: {
+        seasonid: seasonId,
+        golfseasonconfig: {
+          isNot: null,
+        },
+      },
     });
     return count > 0;
   }

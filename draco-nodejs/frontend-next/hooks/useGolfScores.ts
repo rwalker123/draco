@@ -12,7 +12,11 @@ import {
   calculateBatchCourseHandicaps,
 } from '@draco/shared-api-client';
 import type { BatchCourseHandicapResponse } from '@draco/shared-api-client';
-import type { GolfScoreWithDetailsType, SubmitMatchResultsType } from '@draco/shared-schemas';
+import type {
+  GolfScoreWithDetailsType,
+  GolfMatchType,
+  SubmitMatchResultsType,
+} from '@draco/shared-schemas';
 import { useApiClient } from './useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 
@@ -38,7 +42,7 @@ export interface GolfScoreService {
   submitMatchResults: (
     matchId: string,
     payload: SubmitMatchResultsType,
-  ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
+  ) => Promise<GolfScoreServiceResult<GolfMatchType>>;
   deleteMatchScores: (matchId: string) => Promise<GolfScoreServiceResult<void>>;
   getBatchCourseHandicaps: (
     golferIds: string[],
@@ -182,14 +186,11 @@ export function useGolfScores(accountId: string): GolfScoreService {
           throwOnError: false,
         });
 
-        const scores = unwrapApiResult(
-          result,
-          'Failed to submit match results',
-        ) as GolfScoreWithDetailsType[];
+        const match = unwrapApiResult(result, 'Failed to submit match results') as GolfMatchType;
 
         return {
           success: true,
-          data: scores,
+          data: match,
           message: 'Match results submitted successfully',
         } as const;
       } catch (error) {

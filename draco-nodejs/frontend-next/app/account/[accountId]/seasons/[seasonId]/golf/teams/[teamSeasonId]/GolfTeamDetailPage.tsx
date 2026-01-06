@@ -40,9 +40,12 @@ import type {
 } from '@draco/shared-schemas';
 import { getAccountSeason } from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
-import GolfRoster from '../../../../../../../../components/golf/teams/GolfRoster';
-import GolfPlayerForm from '../../../../../../../../components/golf/teams/GolfPlayerForm';
-import SignPlayerDialog from '../../../../../../../../components/golf/teams/SignPlayerDialog';
+import {
+  GolfRoster,
+  GolfPlayerForm,
+  SignPlayerDialog,
+  CreateGolfPlayerDialog,
+} from '../../../../../../../../components/golf/teams';
 import { useGolfTeams } from '../../../../../../../../hooks/useGolfTeams';
 import { useGolfRosters } from '../../../../../../../../hooks/useGolfRosters';
 import { useGolfLeagueSetup } from '../../../../../../../../hooks/useGolfLeagueSetup';
@@ -111,13 +114,13 @@ const GolfTeamDetailPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const loadTeam = useCallback(async () => {
-    if (!teamSeasonId) return;
+    if (!teamSeasonId || !seasonId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const result = await getTeamWithRoster(teamSeasonId);
+      const result = await getTeamWithRoster(seasonId, teamSeasonId);
       if (result.success) {
         setTeam(result.data);
       } else {
@@ -126,7 +129,7 @@ const GolfTeamDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [teamSeasonId, getTeamWithRoster]);
+  }, [teamSeasonId, seasonId, getTeamWithRoster]);
 
   const loadRoster = useCallback(async () => {
     if (!teamSeasonId || !seasonId) return;
@@ -179,11 +182,11 @@ const GolfTeamDetailPage: React.FC = () => {
   }, [accountId, seasonId, apiClient]);
 
   useEffect(() => {
-    if (teamSeasonId) {
+    if (teamSeasonId && seasonId) {
       loadTeam();
       loadRoster();
     }
-  }, [teamSeasonId, loadTeam, loadRoster]);
+  }, [teamSeasonId, seasonId, loadTeam, loadRoster]);
 
   useEffect(() => {
     if (accountId && seasonId) {
@@ -501,37 +504,13 @@ const GolfTeamDetailPage: React.FC = () => {
         </>
       )}
 
-      <Dialog
+      <CreateGolfPlayerDialog
         open={createPlayerOpen}
         onClose={() => setCreatePlayerOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        aria-labelledby="create-player-dialog-title"
-      >
-        <DialogTitle id="create-player-dialog-title" sx={{ pr: 6 }}>
-          Add New Player
-          <IconButton
-            aria-label="close"
-            onClick={() => setCreatePlayerOpen(false)}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              color: (theme) => theme.palette.grey[500],
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          <GolfPlayerForm
-            onSubmit={handleCreatePlayer}
-            onCancel={() => setCreatePlayerOpen(false)}
-            disabled={formLoading}
-            showSubOption
-          />
-        </DialogContent>
-      </Dialog>
+        onSubmit={handleCreatePlayer}
+        teamName={team.name}
+        showSubOption
+      />
 
       <SignPlayerDialog
         open={signPlayerOpen}

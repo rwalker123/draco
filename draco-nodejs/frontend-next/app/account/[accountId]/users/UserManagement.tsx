@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { Alert, Box, Typography, Fab } from '@mui/material';
+import { Alert, Box, Typography, Fab, Snackbar } from '@mui/material';
 import { useUserManagement } from '../../../../hooks/useUserManagement';
 import { useUserDialogs } from '../../../../hooks/useUserDialogs';
 import {
@@ -38,8 +38,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     roles,
     loading,
     isInitialLoad,
-    error,
-    success,
+    feedback,
     page,
     rowsPerPage,
     hasNext,
@@ -48,8 +47,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     searchLoading,
     isShowingSearchResults,
     onlyWithRoles,
-
-    // Form loading state
 
     // Context data states
     leagues,
@@ -69,8 +66,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     handlePrevPage,
     handleRowsPerPageChange,
     setSearchTerm,
-    setError,
-    setSuccess,
+    setFeedback,
     getRoleDisplayName,
     handleRoleAssigned,
     handleRoleRemoved,
@@ -126,11 +122,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
   // Handle success events from the self-contained dialogs
   const handleAssignRoleSuccess = useCallback(
     (result: { message: string; assignedRole: RoleWithContactType }) => {
-      setSuccess(result.message);
+      setFeedback({ severity: 'success', message: result.message });
       handleRoleAssigned(result.assignedRole);
       dialogs.assignRoleDialog.close();
     },
-    [setSuccess, handleRoleAssigned, dialogs.assignRoleDialog],
+    [setFeedback, handleRoleAssigned, dialogs.assignRoleDialog],
   );
 
   const handleRemoveRoleSuccess = useCallback(
@@ -138,11 +134,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
       message: string;
       removedRole: { contactId: string; roleId: string; id: string };
     }) => {
-      setSuccess(result.message);
+      setFeedback({ severity: 'success', message: result.message });
       handleRoleRemoved(result.removedRole.contactId, result.removedRole.id);
       dialogs.removeRoleDialog.close();
     },
-    [setSuccess, handleRoleRemoved, dialogs.removeRoleDialog],
+    [setFeedback, handleRoleRemoved, dialogs.removeRoleDialog],
   );
 
   const handleEditContactSuccess = useCallback(
@@ -152,12 +148,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
       isCreate: boolean;
       status?: 'success' | 'warning';
     }) => {
-      if (result.status === 'warning') {
-        setError(null);
-        setSuccess(`⚠️ ${result.message}`);
-      } else {
-        setSuccess(result.message);
-      }
+      const message = result.status === 'warning' ? `⚠️ ${result.message}` : result.message;
+      setFeedback({ severity: 'success', message });
       handleContactUpdated(result.contact, result.isCreate);
       if (result.isCreate) {
         dialogs.createContactDialog.close();
@@ -165,42 +157,36 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         dialogs.editContactDialog.close();
       }
     },
-    [
-      setSuccess,
-      setError,
-      handleContactUpdated,
-      dialogs.createContactDialog,
-      dialogs.editContactDialog,
-    ],
+    [setFeedback, handleContactUpdated, dialogs.createContactDialog, dialogs.editContactDialog],
   );
 
   const handlePhotoDeleteSuccess = useCallback(
     (result: { message: string; contactId: string }) => {
-      setSuccess(result.message);
+      setFeedback({ severity: 'success', message: result.message });
       handlePhotoDeleted(result.contactId);
       dialogs.photoDeleteConfirmDialog.close();
     },
-    [setSuccess, handlePhotoDeleted, dialogs.photoDeleteConfirmDialog],
+    [setFeedback, handlePhotoDeleted, dialogs.photoDeleteConfirmDialog],
   );
 
   const handleRevokeRegistrationSuccess = useCallback(
     (result: { message: string; contactId: string }) => {
-      setSuccess(result.message);
+      setFeedback({ severity: 'success', message: result.message });
       handleRegistrationRevoked(result.contactId);
       dialogs.revokeConfirmDialog.close();
     },
-    [setSuccess, handleRegistrationRevoked, dialogs.revokeConfirmDialog],
+    [setFeedback, handleRegistrationRevoked, dialogs.revokeConfirmDialog],
   );
 
   const handleAutoRegisterSuccess = useCallback(
     (result: { message?: string; contactId: string; userId: string }) => {
       if (result.message) {
-        setSuccess(result.message);
+        setFeedback({ severity: 'success', message: result.message });
       }
       handleRegistrationLinked(result.contactId, result.userId);
       dialogs.autoRegisterDialog.close();
     },
-    [setSuccess, handleRegistrationLinked, dialogs.autoRegisterDialog],
+    [setFeedback, handleRegistrationLinked, dialogs.autoRegisterDialog],
   );
 
   const handleContactDeleteSuccess = useCallback(
@@ -215,11 +201,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
           ? `${result.message} (${result.dependenciesDeleted} related records deleted)`
           : result.message;
 
-      setSuccess(finalMessage);
+      setFeedback({ severity: 'success', message: finalMessage });
       handleContactDeleted(result.contactId);
       dialogs.deleteContactDialog.close();
     },
-    [setSuccess, handleContactDeleted, dialogs.deleteContactDialog],
+    [setFeedback, handleContactDeleted, dialogs.deleteContactDialog],
   );
 
   const handleRemoveRoleWrapper = useCallback(
@@ -254,7 +240,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     dialogs.createContactDialog.open();
   }, [dialogs.createContactDialog]);
 
-  // No global event bridge; using explicit prop wiring instead
+  const handleFeedbackClose = useCallback(() => {
+    setFeedback(null);
+  }, [setFeedback]);
 
   return (
     <main className="min-h-screen bg-background">
@@ -279,19 +267,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
           )}
         </Box>
       </AccountPageHeader>
-
-      {/* Error and Success Alerts */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
-          {success}
-        </Alert>
-      )}
 
       {/* Automatic Role Holders Section */}
       <AutomaticRolesSection accountOwner={accountOwner} teamManagers={teamManagers} />
@@ -432,13 +407,31 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
             position: 'fixed',
             bottom: { xs: 16, sm: 24 },
             right: { xs: 16, sm: 24 },
-            zIndex: (theme) => theme.zIndex.tooltip,
+            zIndex: (theme) => theme.zIndex.snackbar + 1,
           }}
           onClick={handleAddUserWrapper}
         >
           <AddIcon />
         </Fab>
       )}
+
+      <Snackbar
+        open={Boolean(feedback)}
+        autoHideDuration={6000}
+        onClose={handleFeedbackClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {feedback ? (
+          <Alert
+            onClose={handleFeedbackClose}
+            severity={feedback.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {feedback.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </main>
   );
 };

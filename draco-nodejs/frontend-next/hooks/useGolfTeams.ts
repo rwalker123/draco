@@ -3,14 +3,11 @@
 import { useCallback, useMemo } from 'react';
 import {
   listGolfTeams,
-  listUnassignedGolfTeams,
   listGolfTeamsForFlight,
   getGolfTeam,
   getGolfTeamWithRoster,
   createGolfTeam,
   updateGolfTeam,
-  assignGolfTeamToFlight,
-  removeGolfTeamFromFlight,
   deleteGolfTeam,
 } from '@draco/shared-api-client';
 import type {
@@ -29,31 +26,24 @@ export type GolfTeamServiceResult<T> =
 
 export interface GolfTeamService {
   listTeams: (seasonId: string) => Promise<GolfTeamServiceResult<GolfTeamType[]>>;
-  listUnassignedTeams: (
-    seasonId: string,
-  ) => Promise<GolfTeamServiceResult<GolfTeamWithPlayerCountType[]>>;
   listTeamsForFlight: (
     flightId: string,
   ) => Promise<GolfTeamServiceResult<GolfTeamWithPlayerCountType[]>>;
-  getTeam: (teamSeasonId: string) => Promise<GolfTeamServiceResult<GolfTeamType>>;
+  getTeam: (seasonId: string, teamSeasonId: string) => Promise<GolfTeamServiceResult<GolfTeamType>>;
   getTeamWithRoster: (
+    seasonId: string,
     teamSeasonId: string,
   ) => Promise<GolfTeamServiceResult<GolfTeamWithRosterType>>;
   createTeam: (
-    seasonId: string,
-    leagueSeasonId: string,
+    flightId: string,
     payload: CreateGolfTeamType,
   ) => Promise<GolfTeamServiceResult<GolfTeamType>>;
   updateTeam: (
+    seasonId: string,
     teamSeasonId: string,
     payload: UpdateGolfTeamType,
   ) => Promise<GolfTeamServiceResult<GolfTeamWithPlayerCountType>>;
-  assignToFlight: (
-    teamSeasonId: string,
-    flightId: string,
-  ) => Promise<GolfTeamServiceResult<GolfTeamType>>;
-  removeFromFlight: (teamSeasonId: string) => Promise<GolfTeamServiceResult<GolfTeamType>>;
-  deleteTeam: (teamSeasonId: string) => Promise<GolfTeamServiceResult<void>>;
+  deleteTeam: (seasonId: string, teamSeasonId: string) => Promise<GolfTeamServiceResult<void>>;
 }
 
 export function useGolfTeams(accountId: string): GolfTeamService {
@@ -77,30 +67,6 @@ export function useGolfTeams(accountId: string): GolfTeamService {
         } as const;
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to load teams';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
-
-  const listUnassignedTeams = useCallback<GolfTeamService['listUnassignedTeams']>(
-    async (seasonId) => {
-      try {
-        const result = await listUnassignedGolfTeams({
-          client: apiClient,
-          path: { accountId, seasonId },
-          throwOnError: false,
-        });
-
-        const teams = unwrapApiResult(result, 'Failed to load unassigned teams');
-
-        return {
-          success: true,
-          data: teams,
-          message: 'Unassigned teams loaded successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to load unassigned teams';
         return { success: false, error: message } as const;
       }
     },
@@ -132,11 +98,11 @@ export function useGolfTeams(accountId: string): GolfTeamService {
   );
 
   const getTeam = useCallback<GolfTeamService['getTeam']>(
-    async (teamSeasonId) => {
+    async (seasonId, teamSeasonId) => {
       try {
         const result = await getGolfTeam({
           client: apiClient,
-          path: { accountId, teamSeasonId },
+          path: { accountId, seasonId, teamSeasonId },
           throwOnError: false,
         });
 
@@ -156,11 +122,11 @@ export function useGolfTeams(accountId: string): GolfTeamService {
   );
 
   const getTeamWithRoster = useCallback<GolfTeamService['getTeamWithRoster']>(
-    async (teamSeasonId) => {
+    async (seasonId, teamSeasonId) => {
       try {
         const result = await getGolfTeamWithRoster({
           client: apiClient,
-          path: { accountId, teamSeasonId },
+          path: { accountId, seasonId, teamSeasonId },
           throwOnError: false,
         });
 
@@ -180,11 +146,11 @@ export function useGolfTeams(accountId: string): GolfTeamService {
   );
 
   const createTeam = useCallback<GolfTeamService['createTeam']>(
-    async (seasonId, leagueSeasonId, payload) => {
+    async (flightId, payload) => {
       try {
         const result = await createGolfTeam({
           client: apiClient,
-          path: { accountId, seasonId, leagueSeasonId },
+          path: { accountId, flightId },
           body: payload,
           throwOnError: false,
         });
@@ -205,11 +171,11 @@ export function useGolfTeams(accountId: string): GolfTeamService {
   );
 
   const updateTeam = useCallback<GolfTeamService['updateTeam']>(
-    async (teamSeasonId, payload) => {
+    async (seasonId, teamSeasonId, payload) => {
       try {
         const result = await updateGolfTeam({
           client: apiClient,
-          path: { accountId, teamSeasonId },
+          path: { accountId, seasonId, teamSeasonId },
           body: payload,
           throwOnError: false,
         });
@@ -229,61 +195,12 @@ export function useGolfTeams(accountId: string): GolfTeamService {
     [accountId, apiClient],
   );
 
-  const assignToFlight = useCallback<GolfTeamService['assignToFlight']>(
-    async (teamSeasonId, flightId) => {
-      try {
-        const result = await assignGolfTeamToFlight({
-          client: apiClient,
-          path: { accountId, teamSeasonId, flightId },
-          throwOnError: false,
-        });
-
-        const team = unwrapApiResult(result, 'Failed to assign team to flight') as GolfTeamType;
-
-        return {
-          success: true,
-          data: team,
-          message: 'Team assigned to flight successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to assign team to flight';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
-
-  const removeFromFlight = useCallback<GolfTeamService['removeFromFlight']>(
-    async (teamSeasonId) => {
-      try {
-        const result = await removeGolfTeamFromFlight({
-          client: apiClient,
-          path: { accountId, teamSeasonId },
-          throwOnError: false,
-        });
-
-        const team = unwrapApiResult(result, 'Failed to remove team from flight') as GolfTeamType;
-
-        return {
-          success: true,
-          data: team,
-          message: 'Team removed from flight successfully',
-        } as const;
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to remove team from flight';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
-
   const deleteTeam = useCallback<GolfTeamService['deleteTeam']>(
-    async (teamSeasonId) => {
+    async (seasonId, teamSeasonId) => {
       try {
         const result = await deleteGolfTeam({
           client: apiClient,
-          path: { accountId, teamSeasonId },
+          path: { accountId, seasonId, teamSeasonId },
           throwOnError: false,
         });
 
@@ -305,27 +222,13 @@ export function useGolfTeams(accountId: string): GolfTeamService {
   return useMemo(
     () => ({
       listTeams,
-      listUnassignedTeams,
       listTeamsForFlight,
       getTeam,
       getTeamWithRoster,
       createTeam,
       updateTeam,
-      assignToFlight,
-      removeFromFlight,
       deleteTeam,
     }),
-    [
-      listTeams,
-      listUnassignedTeams,
-      listTeamsForFlight,
-      getTeam,
-      getTeamWithRoster,
-      createTeam,
-      updateTeam,
-      assignToFlight,
-      removeFromFlight,
-      deleteTeam,
-    ],
+    [listTeams, listTeamsForFlight, getTeam, getTeamWithRoster, createTeam, updateTeam, deleteTeam],
   );
 }

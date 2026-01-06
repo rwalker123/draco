@@ -7,7 +7,6 @@ export const registerGolfMatchesEndpoints = ({ registry, schemaRefs, z }: Regist
     CreateGolfMatchSchemaRef,
     GolfMatchSchemaRef,
     GolfMatchWithScoresSchemaRef,
-    GolfScoreWithDetailsSchemaRef,
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
     SubmitMatchResultsSchemaRef,
@@ -18,11 +17,6 @@ export const registerGolfMatchesEndpoints = ({ registry, schemaRefs, z }: Regist
   const GolfMatchListSchemaRef = z.array(GolfMatchSchemaRef).openapi({
     title: 'GolfMatchList',
     description: 'List of golf matches',
-  });
-
-  const GolfScoreWithDetailsListSchemaRef = z.array(GolfScoreWithDetailsSchemaRef).openapi({
-    title: 'GolfScoreWithDetailsList',
-    description: 'List of golf scores with player and tee details',
   });
 
   // GET /api/accounts/{accountId}/golf/matches/season/{seasonId}
@@ -585,10 +579,10 @@ export const registerGolfMatchesEndpoints = ({ registry, schemaRefs, z }: Regist
     },
     responses: {
       201: {
-        description: 'Scores submitted successfully',
+        description: 'Match results submitted successfully',
         content: {
           'application/json': {
-            schema: GolfScoreWithDetailsListSchemaRef,
+            schema: GolfMatchSchemaRef,
           },
         },
       },
