@@ -148,4 +148,70 @@ export class PrismaGolfCourseRepository implements IGolfCourseRepository {
 
     return matchCount > 0 || scoreCount > 0;
   }
+
+  async findAllPaginated(options: {
+    page: number;
+    limit: number;
+    search?: string;
+  }): Promise<{ courses: golfcourse[]; total: number }> {
+    const { page, limit, search } = options;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.golfcourseWhereInput = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { city: { contains: search, mode: 'insensitive' } },
+            { state: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {};
+
+    const [courses, total] = await Promise.all([
+      this.prisma.golfcourse.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.golfcourse.count({ where }),
+    ]);
+
+    return { courses, total };
+  }
+
+  async searchCustomCourses(
+    query: string,
+    excludeCourseIds?: bigint[],
+    limit: number = 20,
+  ): Promise<golfcourse[]> {
+    const where: Prisma.golfcourseWhereInput = {
+      externalid: null,
+      OR: [
+        { name: { contains: query, mode: 'insensitive' } },
+        { city: { contains: query, mode: 'insensitive' } },
+        { state: { contains: query, mode: 'insensitive' } },
+      ],
+      ...(excludeCourseIds && excludeCourseIds.length > 0
+        ? { id: { notIn: excludeCourseIds } }
+        : {}),
+    };
+
+    return this.prisma.golfcourse.findMany({
+      where,
+      take: limit,
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async findDistinctExternalIds(): Promise<string[]> {
+    const results = await this.prisma.golfcourse.findMany({
+      where: {
+        externalid: { not: null },
+      },
+      select: { externalid: true },
+      distinct: ['externalid'],
+    });
+    return results.map((r) => r.externalid).filter((id): id is string => id !== null);
+  }
 }

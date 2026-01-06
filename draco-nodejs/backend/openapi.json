@@ -26605,6 +26605,9 @@
               "state": {
                 "type": "string",
                 "nullable": true
+              },
+              "isExternal": {
+                "type": "boolean"
               }
             },
             "required": [
@@ -26759,6 +26762,9 @@
               "state": {
                 "type": "string",
                 "nullable": true
+              },
+              "isExternal": {
+                "type": "boolean"
               }
             },
             "required": [
@@ -29043,6 +29049,9 @@
           },
           "numberOfHoles": {
             "type": "integer"
+          },
+          "courseId": {
+            "type": "string"
           }
         },
         "required": [
@@ -29054,7 +29063,7 @@
           "numberOfHoles"
         ],
         "title": "ExternalCourseSearchResult",
-        "description": "Golf course search result from external API"
+        "description": "Golf course search result from external API or custom course database"
       },
       "ExternalCourseDetail": {
         "type": "object",
@@ -29308,6 +29317,9 @@
               "state": {
                 "type": "string",
                 "nullable": true
+              },
+              "isExternal": {
+                "type": "boolean"
               }
             },
             "required": [
@@ -42858,9 +42870,9 @@
     },
     "/api/accounts/{accountId}/golf/external-courses/search": {
       "get": {
-        "description": "Search for golf courses in the external GolfCourseAPI.com database",
+        "description": "Search for golf courses. Returns custom courses (no externalId) first, then external courses from GolfCourseAPI.com database. Custom courses have courseId set and empty externalId.",
         "operationId": "searchExternalCourses",
-        "summary": "Search external courses",
+        "summary": "Search courses (custom and external)",
         "tags": [
           "External Golf Courses"
         ],
@@ -42889,6 +42901,19 @@
               "maxLength": 100,
               "description": "Course or club name to search for"
             }
+          },
+          {
+            "name": "excludeLeague",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "description": "When true, excludes courses already added to the league. Use for league admin workflow."
+            }
           }
         ],
         "responses": {
@@ -42902,7 +42927,7 @@
                     "$ref": "#/components/schemas/ExternalCourseSearchResult"
                   },
                   "title": "ExternalCourseSearchResultList",
-                  "description": "List of course search results from external API"
+                  "description": "List of course search results from external API and custom courses"
                 }
               }
             }

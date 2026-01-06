@@ -14,16 +14,17 @@ export const registerExternalCoursesEndpoints = ({ registry, schemaRefs, z }: Re
     .array(ExternalCourseSearchResultSchemaRef)
     .openapi({
       title: 'ExternalCourseSearchResultList',
-      description: 'List of course search results from external API',
+      description: 'List of course search results from external API and custom courses',
     });
 
   // GET /api/accounts/{accountId}/golf/external-courses/search
   registry.registerPath({
     method: 'get',
     path: '/api/accounts/{accountId}/golf/external-courses/search',
-    description: 'Search for golf courses in the external GolfCourseAPI.com database',
+    description:
+      'Search for golf courses. Returns custom courses (no externalId) first, then external courses from GolfCourseAPI.com database. Custom courses have courseId set and empty externalId.',
     operationId: 'searchExternalCourses',
-    summary: 'Search external courses',
+    summary: 'Search courses (custom and external)',
     tags: ['External Golf Courses'],
     security: [{ bearerAuth: [] }],
     parameters: [
@@ -45,6 +46,17 @@ export const registerExternalCoursesEndpoints = ({ registry, schemaRefs, z }: Re
           minLength: 2,
           maxLength: 100,
           description: 'Course or club name to search for',
+        },
+      },
+      {
+        name: 'excludeLeague',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'string',
+          enum: ['true', 'false'],
+          description:
+            'When true, excludes courses already added to the league. Use for league admin workflow.',
         },
       },
     ],

@@ -3,6 +3,8 @@
 import React, { useMemo } from 'react';
 import {
   Box,
+  Grid,
+  IconButton,
   Paper,
   Table,
   TableBody,
@@ -10,14 +12,20 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from '@mui/material';
-import type { GolfCourseWithTeesType } from '@draco/shared-schemas';
+import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import type { GolfCourseWithTeesType, GolfCourseTeeType } from '@draco/shared-schemas';
 
 interface CourseScorecardProps {
   course: GolfCourseWithTeesType;
   showTees?: boolean;
   selectedTeeId?: string | null;
+  editMode?: boolean;
+  onFieldChange?: (field: string, value: string | number | null) => void;
+  onEditTee?: (tee: GolfCourseTeeType) => void;
+  onDeleteTee?: (tee: GolfCourseTeeType) => void;
 }
 
 interface HoleData {
@@ -33,6 +41,10 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
   course,
   showTees = true,
   selectedTeeId = null,
+  editMode = false,
+  onFieldChange,
+  onEditTee,
+  onDeleteTee,
 }) => {
   const tees = useMemo(() => {
     if (!showTees || !course.tees) return [];
@@ -68,6 +80,41 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
 
   const calculateDistanceTotals = (holeRange: HoleData[], teeId: string) => {
     return holeRange.reduce((sum, hole) => sum + (hole.distances[teeId] || 0), 0);
+  };
+
+  const handleNumberChange = (field: string, value: string, min: number, max: number) => {
+    const num = parseInt(value, 10);
+    if (isNaN(num)) return;
+    // Clamp value to valid range
+    const clampedValue = Math.min(Math.max(num, min), max);
+    onFieldChange?.(field, clampedValue);
+  };
+
+  const renderEditableCell = (value: number, field: string, min: number, max: number) => {
+    if (!editMode) {
+      return value;
+    }
+    return (
+      <TextField
+        type="number"
+        size="small"
+        value={value}
+        onChange={(e) => handleNumberChange(field, e.target.value, min, max)}
+        slotProps={{
+          input: {
+            sx: {
+              '& input': {
+                textAlign: 'center',
+                padding: '4px',
+                width: 36,
+              },
+            },
+          },
+          htmlInput: { min, max },
+        }}
+        sx={{ width: 50 }}
+      />
+    );
   };
 
   const renderNineHoles = (holeRange: HoleData[], label: string) => (
@@ -115,8 +162,8 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
           <TableRow sx={{ bgcolor: 'grey.50' }}>
             <TableCell sx={{ fontWeight: 600 }}>Par (Men)</TableCell>
             {holeRange.map((hole) => (
-              <TableCell key={hole.hole} align="center">
-                {hole.mensPar}
+              <TableCell key={hole.hole} align="center" sx={{ p: editMode ? 0.5 : undefined }}>
+                {renderEditableCell(hole.mensPar, `mensPar.${hole.hole - 1}`, 3, 6)}
               </TableCell>
             ))}
             <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>
@@ -126,8 +173,8 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
           <TableRow sx={{ bgcolor: 'grey.50' }}>
             <TableCell sx={{ fontWeight: 600 }}>Par (Women)</TableCell>
             {holeRange.map((hole) => (
-              <TableCell key={hole.hole} align="center">
-                {hole.womansPar}
+              <TableCell key={hole.hole} align="center" sx={{ p: editMode ? 0.5 : undefined }}>
+                {renderEditableCell(hole.womansPar, `womansPar.${hole.hole - 1}`, 3, 6)}
               </TableCell>
             ))}
             <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>
@@ -137,8 +184,12 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
           <TableRow>
             <TableCell sx={{ fontWeight: 500 }}>Hdcp (Men)</TableCell>
             {holeRange.map((hole) => (
-              <TableCell key={hole.hole} align="center" sx={{ color: 'text.secondary' }}>
-                {hole.mensHandicap}
+              <TableCell
+                key={hole.hole}
+                align="center"
+                sx={{ color: 'text.secondary', p: editMode ? 0.5 : undefined }}
+              >
+                {renderEditableCell(hole.mensHandicap, `mensHandicap.${hole.hole - 1}`, 1, 18)}
               </TableCell>
             ))}
             <TableCell />
@@ -146,8 +197,12 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
           <TableRow>
             <TableCell sx={{ fontWeight: 500 }}>Hdcp (Women)</TableCell>
             {holeRange.map((hole) => (
-              <TableCell key={hole.hole} align="center" sx={{ color: 'text.secondary' }}>
-                {hole.womansHandicap}
+              <TableCell
+                key={hole.hole}
+                align="center"
+                sx={{ color: 'text.secondary', p: editMode ? 0.5 : undefined }}
+              >
+                {renderEditableCell(hole.womansHandicap, `womansHandicap.${hole.hole - 1}`, 1, 18)}
               </TableCell>
             ))}
             <TableCell />
@@ -157,18 +212,104 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
     </TableContainer>
   );
 
+  const renderHeader = () => {
+    if (!editMode) {
+      return (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="h6" fontWeight={600}>
+            {course.name}
+          </Typography>
+          {(course.city || course.state) && (
+            <Typography variant="body2" color="text.secondary">
+              {[course.city, course.state].filter(Boolean).join(', ')}
+            </Typography>
+          )}
+        </Box>
+      );
+    }
+
+    return (
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+          Course Information
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Course Name"
+              fullWidth
+              required
+              size="small"
+              value={course.name}
+              onChange={(e) => onFieldChange?.('name', e.target.value)}
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 3 }}>
+            <TextField
+              label="Designer"
+              fullWidth
+              size="small"
+              value={course.designer || ''}
+              onChange={(e) => onFieldChange?.('designer', e.target.value || null)}
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 3 }}>
+            <TextField
+              label="Year Built"
+              fullWidth
+              size="small"
+              type="number"
+              value={course.yearBuilt || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                onFieldChange?.('yearBuilt', val ? parseInt(val, 10) : null);
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Address"
+              fullWidth
+              size="small"
+              value={course.address || ''}
+              onChange={(e) => onFieldChange?.('address', e.target.value || null)}
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 2 }}>
+            <TextField
+              label="City"
+              fullWidth
+              size="small"
+              value={course.city || ''}
+              onChange={(e) => onFieldChange?.('city', e.target.value || null)}
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 2 }}>
+            <TextField
+              label="State"
+              fullWidth
+              size="small"
+              value={course.state || ''}
+              onChange={(e) => onFieldChange?.('state', e.target.value || null)}
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 2 }}>
+            <TextField
+              label="ZIP"
+              fullWidth
+              size="small"
+              value={course.zip || ''}
+              onChange={(e) => onFieldChange?.('zip', e.target.value || null)}
+            />
+          </Grid>
+        </Grid>
+      </Box>
+    );
+  };
+
   return (
     <Box>
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h6" fontWeight={600}>
-          {course.name}
-        </Typography>
-        {(course.city || course.state) && (
-          <Typography variant="body2" color="text.secondary">
-            {[course.city, course.state].filter(Boolean).join(', ')}
-          </Typography>
-        )}
-      </Box>
+      {renderHeader()}
 
       {showTees && tees.length > 0 && (
         <Box sx={{ mb: 3 }}>
@@ -183,6 +324,7 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: 'grey.100' }}>
+                  {(onEditTee || onDeleteTee) && <TableCell sx={{ fontWeight: 600, width: 80 }} />}
                   <TableCell sx={{ fontWeight: 600 }}>Tee</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 600 }}>
                     Rating (M)
@@ -201,6 +343,29 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
               <TableBody>
                 {tees.map((tee) => (
                   <TableRow key={tee.id}>
+                    {(onEditTee || onDeleteTee) && (
+                      <TableCell sx={{ py: 0.5 }}>
+                        {onEditTee && (
+                          <IconButton
+                            size="small"
+                            onClick={() => onEditTee(tee)}
+                            aria-label={`Edit ${tee.teeName}`}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                        {onDeleteTee && (
+                          <IconButton
+                            size="small"
+                            onClick={() => onDeleteTee(tee)}
+                            aria-label={`Delete ${tee.teeName}`}
+                            color="error"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell
                       sx={{
                         fontWeight: 500,

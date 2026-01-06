@@ -124,6 +124,7 @@ export class GolfCourseResponseFormatter {
       address: this.normalize(course.address),
       city: this.normalize(course.city),
       state: this.normalize(course.state),
+      isExternal: Boolean(course.externalid),
     };
   }
 }

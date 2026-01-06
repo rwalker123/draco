@@ -158,6 +158,7 @@ export const GolfCourseSlimSchema = z
     address: z.string().nullable().optional(),
     city: z.string().nullable().optional(),
     state: z.string().nullable().optional(),
+    isExternal: z.boolean().optional(),
   })
   .openapi({
     title: 'GolfCourseSlim',

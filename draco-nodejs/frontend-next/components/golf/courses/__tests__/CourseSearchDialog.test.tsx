@@ -18,26 +18,6 @@ vi.mock('@/hooks/useExternalCourseSearch', () => ({
 
 import CourseSearchDialog from '../CourseSearchDialog';
 
-const createMockLeagueCourse = (
-  overrides: Partial<GolfLeagueCourseType> = {},
-): GolfLeagueCourseType => ({
-  accountId: 'account-1',
-  course: {
-    id: 'course-1',
-    name: 'Test Golf Course',
-    city: 'Test City',
-    state: 'CA',
-    country: 'USA',
-    numberOfHoles: 18,
-    mensPar: [4, 4, 3, 5, 4, 4, 3, 5, 4, 4, 4, 3, 5, 4, 4, 3, 5, 4],
-    womansPar: [4, 4, 3, 5, 4, 4, 3, 5, 4, 4, 4, 3, 5, 4, 4, 3, 5, 4],
-    mensHandicap: [1, 3, 5, 7, 9, 11, 13, 15, 17, 2, 4, 6, 8, 10, 12, 14, 16, 18],
-    womansHandicap: [2, 4, 6, 8, 10, 12, 14, 16, 18, 1, 3, 5, 7, 9, 11, 13, 15, 17],
-    externalId: 'ext-local-1',
-  },
-  ...overrides,
-});
-
 describe('CourseSearchDialog', () => {
   const defaultProps = {
     open: true,
@@ -228,32 +208,31 @@ describe('CourseSearchDialog', () => {
     });
   });
 
-  describe('local course matching', () => {
-    it('shows local courses first when they match search', async () => {
-      const user = userEvent.setup();
-      const leagueCourses = [createMockLeagueCourse()];
-      render(<CourseSearchDialog {...defaultProps} leagueCourses={leagueCourses} />);
-
-      const input = screen.getByLabelText(/search courses/i);
-      await user.type(input, 'Test');
-      await user.click(screen.getByRole('button', { name: /search/i }));
-
-      await waitFor(() => {
-        expect(screen.getByText('Test Golf Course')).toBeInTheDocument();
+  describe('custom course display', () => {
+    it('shows Custom chip for courses without external ID', async () => {
+      mockSearch.mockResolvedValue({
+        success: true,
+        data: [
+          {
+            externalId: '',
+            courseId: 'custom-1',
+            name: 'My Custom Course',
+            city: 'Test City',
+            state: 'CA',
+            country: 'USA',
+            numberOfHoles: 18,
+          },
+        ],
       });
-    });
-
-    it('shows In League chip for local courses', async () => {
       const user = userEvent.setup();
-      const leagueCourses = [createMockLeagueCourse()];
-      render(<CourseSearchDialog {...defaultProps} leagueCourses={leagueCourses} />);
+      render(<CourseSearchDialog {...defaultProps} />);
 
       const input = screen.getByLabelText(/search courses/i);
-      await user.type(input, 'Test');
+      await user.type(input, 'Custom');
       await user.click(screen.getByRole('button', { name: /search/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('In League')).toBeInTheDocument();
+        expect(screen.getByText('Custom')).toBeInTheDocument();
       });
     });
   });
@@ -294,22 +273,35 @@ describe('CourseSearchDialog', () => {
       expect(screen.getByRole('button', { name: /import & add to league/i })).not.toBeDisabled();
     });
 
-    it('changes button text when local course is selected', async () => {
+    it('changes button text when custom course is selected', async () => {
+      mockSearch.mockResolvedValue({
+        success: true,
+        data: [
+          {
+            externalId: '',
+            courseId: 'custom-1',
+            name: 'My Custom Course',
+            city: 'Test City',
+            state: 'CA',
+            country: 'USA',
+            numberOfHoles: 18,
+          },
+        ],
+      });
       const user = userEvent.setup();
-      const leagueCourses = [createMockLeagueCourse()];
-      render(<CourseSearchDialog {...defaultProps} leagueCourses={leagueCourses} />);
+      render(<CourseSearchDialog {...defaultProps} />);
 
       const input = screen.getByLabelText(/search courses/i);
-      await user.type(input, 'Test');
+      await user.type(input, 'Custom');
       await user.click(screen.getByRole('button', { name: /search/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('Test Golf Course')).toBeInTheDocument();
+        expect(screen.getByText('My Custom Course')).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText('Test Golf Course'));
+      await user.click(screen.getByText('My Custom Course'));
 
-      expect(screen.getByRole('button', { name: /course already in league/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /add to league/i })).toBeInTheDocument();
     });
   });
 
@@ -335,7 +327,7 @@ describe('CourseSearchDialog', () => {
           expect.objectContaining({
             externalId: 'ext-1',
             name: 'Pebble Beach Golf Links',
-            isLocal: false,
+            isCustom: false,
           }),
         );
       });
@@ -492,21 +484,6 @@ describe('CourseSearchDialog', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Network error')).toBeInTheDocument();
-      });
-    });
-
-    it('still shows local matches when external search fails', async () => {
-      mockSearch.mockResolvedValue({ success: false, error: 'Network error' });
-      const user = userEvent.setup();
-      const leagueCourses = [createMockLeagueCourse()];
-      render(<CourseSearchDialog {...defaultProps} leagueCourses={leagueCourses} />);
-
-      const input = screen.getByLabelText(/search courses/i);
-      await user.type(input, 'Test');
-      await user.click(screen.getByRole('button', { name: /search/i }));
-
-      await waitFor(() => {
-        expect(screen.getByText('Test Golf Course')).toBeInTheDocument();
       });
     });
   });

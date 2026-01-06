@@ -1,11 +1,16 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { ExternalCourseSearchQuerySchema } from '@draco/shared-schemas';
+import {
+  ExternalCourseSearchQuerySchema,
+  ExternalCourseSearchResultType,
+} from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import { extractAccountParams } from '../utils/paramExtraction.js';
 
 const router = Router({ mergeParams: true });
 const externalCourseSearchService = ServiceFactory.getExternalCourseSearchService();
+const golfCourseService = ServiceFactory.getGolfCourseService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
 router.get(
@@ -14,8 +19,27 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
     const searchParams = ExternalCourseSearchQuerySchema.parse(req.query);
-    const results = await externalCourseSearchService.searchCourses(searchParams);
+
+    const [customCourses, externalResults, importedExternalIds] = await Promise.all([
+      golfCourseService.searchCustomCourses(
+        searchParams.query,
+        searchParams.excludeLeague ? accountId : undefined,
+      ),
+      externalCourseSearchService.searchCourses(searchParams),
+      golfCourseService.getImportedExternalIds(),
+    ]);
+
+    const filteredExternalResults = externalResults.filter(
+      (course) => !importedExternalIds.has(course.externalId),
+    );
+
+    const results: ExternalCourseSearchResultType[] = [
+      ...customCourses,
+      ...filteredExternalResults,
+    ];
+
     res.json(results);
   }),
 );

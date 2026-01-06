@@ -1,29 +1,12 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  CircularProgress,
-  Container,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  Fab,
-  IconButton,
-  Snackbar,
-  Typography,
-} from '@mui/material';
-import { Search as SearchIcon, Close as CloseIcon } from '@mui/icons-material';
+import { Alert, Box, CircularProgress, Container, Fab, Snackbar, Typography } from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
-import type {
-  GolfLeagueCourseType,
-  GolfCourseWithTeesType,
-  CreateGolfCourseType,
-  UpdateGolfCourseType,
-} from '@draco/shared-schemas';
+import type { GolfLeagueCourseType } from '@draco/shared-schemas';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
-import { CourseList, CourseForm, CourseSearchDialog } from '../../../../../components/golf/courses';
+import { CourseList, CourseSearchDialog } from '../../../../../components/golf/courses';
 import { useGolfCourses } from '../../../../../hooks/useGolfCourses';
 import { useRole } from '../../../../../context/RoleContext';
 
@@ -36,26 +19,14 @@ const GolfCoursesPage: React.FC = () => {
 
   const canManage = accountId ? hasPermission('account.manage', { accountId }) : false;
 
-  const {
-    listCourses,
-    getCourse,
-    createCourse,
-    updateCourse,
-    removeCourseFromLeague,
-    addCourseToLeague,
-    importExternalCourse,
-  } = useGolfCourses(accountId || '');
+  const { listCourses, removeCourseFromLeague, addCourseToLeague, importExternalCourse } =
+    useGolfCourses(accountId || '');
 
   const [courses, setCourses] = useState<GolfLeagueCourseType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [searchOpen, setSearchOpen] = useState(false);
-  const [formOpen, setFormOpen] = useState(false);
-  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
-  const [editingCourse, setEditingCourse] = useState<GolfCourseWithTeesType | null>(null);
-  const [formLoading, setFormLoading] = useState(false);
-
+  const [actionLoading, setActionLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const loadCourses = useCallback(async () => {
@@ -91,9 +62,17 @@ const GolfCoursesPage: React.FC = () => {
   }, []);
 
   const handleSelectCourse = useCallback(
-    async (course: { externalId: string; isLocal: boolean; localCourseId?: string }) => {
-      if (course.isLocal) {
-        return { success: true, error: 'Course is already in your league' };
+    async (course: { externalId: string; isCustom: boolean; courseId?: string }) => {
+      if (course.isCustom && course.courseId) {
+        const addResult = await addCourseToLeague(course.courseId);
+
+        if (addResult.success) {
+          setSuccessMessage('Course added to league');
+          await loadCourses();
+          return { success: true };
+        } else {
+          return { success: false, error: addResult.error };
+        }
       }
 
       const result = await importExternalCourse(course.externalId);
@@ -115,30 +94,6 @@ const GolfCoursesPage: React.FC = () => {
     [importExternalCourse, addCourseToLeague, loadCourses],
   );
 
-  const handleCreateManually = useCallback(() => {
-    setFormMode('create');
-    setEditingCourse(null);
-    setFormOpen(true);
-  }, []);
-
-  const handleEdit = useCallback(
-    async (leagueCourse: GolfLeagueCourseType) => {
-      setFormLoading(true);
-      const result = await getCourse(leagueCourse.course.id);
-
-      if (result.success) {
-        setEditingCourse(result.data);
-        setFormMode('edit');
-        setFormOpen(true);
-      } else {
-        setError(result.error);
-      }
-
-      setFormLoading(false);
-    },
-    [getCourse],
-  );
-
   const handleView = useCallback(
     (leagueCourse: GolfLeagueCourseType) => {
       router.push(`/account/${accountId}/golf/courses/${leagueCourse.course.id}`);
@@ -148,6 +103,7 @@ const GolfCoursesPage: React.FC = () => {
 
   const handleDelete = useCallback(
     async (leagueCourse: GolfLeagueCourseType) => {
+      setActionLoading(true);
       const result = await removeCourseFromLeague(leagueCourse.course.id);
 
       if (result.success) {
@@ -156,41 +112,10 @@ const GolfCoursesPage: React.FC = () => {
       } else {
         setError(result.error);
       }
+      setActionLoading(false);
     },
     [removeCourseFromLeague, loadCourses],
   );
-
-  const handleFormSubmit = useCallback(
-    async (data: CreateGolfCourseType | UpdateGolfCourseType) => {
-      if (formMode === 'create') {
-        const result = await createCourse(data as CreateGolfCourseType);
-
-        if (result.success) {
-          setSuccessMessage('Course created successfully');
-          setFormOpen(false);
-          await loadCourses();
-        } else {
-          throw new Error(result.error);
-        }
-      } else if (editingCourse) {
-        const result = await updateCourse(editingCourse.id, data as UpdateGolfCourseType);
-
-        if (result.success) {
-          setSuccessMessage('Course updated successfully');
-          setFormOpen(false);
-          await loadCourses();
-        } else {
-          throw new Error(result.error);
-        }
-      }
-    },
-    [formMode, editingCourse, createCourse, updateCourse, loadCourses],
-  );
-
-  const handleFormCancel = useCallback(() => {
-    setFormOpen(false);
-    setEditingCourse(null);
-  }, []);
 
   if (!accountId) {
     return (
@@ -226,14 +151,13 @@ const GolfCoursesPage: React.FC = () => {
         ) : (
           <CourseList
             courses={courses}
-            loading={formLoading}
+            loading={actionLoading}
             error={error}
             onRetry={loadCourses}
             onView={handleView}
-            onEdit={canManage ? handleEdit : undefined}
             onDelete={canManage ? handleDelete : undefined}
             emptyMessage="No courses have been added to this league yet."
-            actionsDisabled={formLoading}
+            actionsDisabled={actionLoading}
           />
         )}
       </Container>
@@ -243,7 +167,7 @@ const GolfCoursesPage: React.FC = () => {
           color="primary"
           aria-label="Find a course"
           onClick={handleOpenSearch}
-          disabled={formLoading}
+          disabled={actionLoading}
           sx={{
             position: 'fixed',
             bottom: { xs: 24, md: 32 },
@@ -259,43 +183,9 @@ const GolfCoursesPage: React.FC = () => {
         open={searchOpen}
         onClose={handleCloseSearch}
         onSelectCourse={handleSelectCourse}
-        onCreateManually={handleCreateManually}
         accountId={accountId}
         leagueCourses={courses}
       />
-
-      <Dialog
-        open={formOpen}
-        onClose={handleFormCancel}
-        maxWidth="lg"
-        fullWidth
-        aria-labelledby="course-form-dialog-title"
-      >
-        <DialogTitle id="course-form-dialog-title" sx={{ pr: 6 }}>
-          {formMode === 'create' ? 'Add New Course' : 'Edit Course'}
-          <IconButton
-            aria-label="close"
-            onClick={handleFormCancel}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              color: (theme) => theme.palette.grey[500],
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          <CourseForm
-            course={editingCourse}
-            onSubmit={handleFormSubmit}
-            onCancel={handleFormCancel}
-            accountId={accountId}
-            showImportButton={formMode === 'create'}
-          />
-        </DialogContent>
-      </Dialog>
 
       <Snackbar
         open={Boolean(successMessage)}

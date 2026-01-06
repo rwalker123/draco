@@ -9,6 +9,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import GolfCourseIcon from '@mui/icons-material/GolfCourse';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import CampaignIcon from '@mui/icons-material/Campaign';
+import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { AdminCategoryCard } from '../../../../components/admin';
 import { useRole } from '../../../../context/RoleContext';
@@ -109,6 +110,15 @@ const GolfAdminHubPage: React.FC = () => {
                   description="Create and manage system-wide alerts and notifications."
                   icon={<CampaignIcon />}
                   href="/admin/alerts"
+                  metrics={[]}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
+                <AdminCategoryCard
+                  title="Golf Course Management"
+                  description="Create and manage golf courses. Only global admins can create courses from scratch."
+                  icon={<SportsGolfIcon />}
+                  href="/admin/golf/courses"
                   metrics={[]}
                 />
               </Grid>
