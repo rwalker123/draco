@@ -203,15 +203,4 @@ export class PrismaGolfCourseRepository implements IGolfCourseRepository {
       orderBy: { name: 'asc' },
     });
   }
-
-  async findDistinctExternalIds(): Promise<string[]> {
-    const results = await this.prisma.golfcourse.findMany({
-      where: {
-        externalid: { not: null },
-      },
-      select: { externalid: true },
-      distinct: ['externalid'],
-    });
-    return results.map((r) => r.externalid).filter((id): id is string => id !== null);
-  }
 }

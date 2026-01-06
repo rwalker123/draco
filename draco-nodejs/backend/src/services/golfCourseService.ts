@@ -374,9 +374,4 @@ export class GolfCourseService {
     const leagueCourses = await this.courseRepository.findLeagueCourses(accountId);
     return leagueCourses.map((lc) => lc.courseid);
   }
-
-  async getImportedExternalIds(): Promise<Set<string>> {
-    const externalIds = await this.courseRepository.findDistinctExternalIds();
-    return new Set(externalIds);
-  }
 }
