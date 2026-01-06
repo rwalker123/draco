@@ -111,7 +111,8 @@ export class GolfTeamService {
       throw new ValidationError('Cannot delete team because it has scheduled matches');
     }
 
-    if (team._count.golfroster > 0) {
+    const hasRoster = await this.teamRepository.hasRosterEntries(teamSeasonId);
+    if (hasRoster) {
       throw new ValidationError('Cannot delete team because it has players on the roster');
     }
 
