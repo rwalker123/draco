@@ -11,10 +11,11 @@ export const ExternalCourseSearchResultSchema = z
     state: z.string().nullable(),
     country: z.string().nullable(),
     numberOfHoles: z.number().int(),
+    courseId: z.string().optional(),
   })
   .openapi({
     title: 'ExternalCourseSearchResult',
-    description: 'Golf course search result from external API',
+    description: 'Golf course search result from external API or custom course database',
   });
 
 export const ExternalCourseTeeSchema = z
@@ -62,6 +63,10 @@ export const ExternalCourseDetailSchema = z
 export const ExternalCourseSearchQuerySchema = z
   .object({
     query: z.string().min(2).max(100),
+    excludeLeague: z
+      .string()
+      .optional()
+      .transform((val) => val === 'true'),
   })
   .openapi({
     title: 'ExternalCourseSearchQuery',

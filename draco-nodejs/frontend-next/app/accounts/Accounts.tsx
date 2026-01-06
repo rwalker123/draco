@@ -5,7 +5,6 @@ import type { FC } from 'react';
 import { Box, Container, Paper, Button, Typography } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import { useRole } from '../../context/RoleContext';
 import OrganizationsWidget from '../../components/OrganizationsWidget';
 import { AccountType as SharedAccountType } from '@draco/shared-schemas';
 import CreateAccountDialog from '../../components/account-management/dialogs/CreateAccountDialog';
@@ -36,7 +35,6 @@ const Accounts: FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [golfSignupOpen, setGolfSignupOpen] = useState(false);
   const { user } = useAuth();
-  const { isAdministrator } = useRole();
   const router = useRouter();
   const params = useParams();
   const accountId = params?.accountId as string | undefined;
@@ -97,12 +95,8 @@ const Accounts: FC = () => {
       return;
     }
 
-    if (!isAdministrator) {
-      return;
-    }
-
     setCtaState('createAccount');
-  }, [isAdministrator, user]);
+  }, [user]);
 
   const handleCloseCreateDialog = useCallback(() => {
     setCtaState('idle');
@@ -183,7 +177,7 @@ const Accounts: FC = () => {
             onSearchTermChange={handleSearchTermChange}
           />
 
-          {isAdministrator && (
+          {user && (
             <Box sx={{ mt: 4, textAlign: 'center' }}>
               <Button variant="contained" size="large" onClick={handleCreateAccount}>
                 Create New Organization
@@ -232,7 +226,7 @@ const Accounts: FC = () => {
       )}
 
       <CreateAccountDialog
-        open={isAdministrator && ctaState === 'createAccount'}
+        open={ctaState === 'createAccount'}
         onClose={handleCloseCreateDialog}
         onSuccess={handleCreateDialogSuccess}
       />

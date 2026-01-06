@@ -25,13 +25,9 @@ import {
   Search as SearchIcon,
   Close as CloseIcon,
   CloudDownload as ImportIcon,
-  CheckCircle as LocalIcon,
+  Star as CustomIcon,
 } from '@mui/icons-material';
-import type {
-  ExternalCourseSearchResultType,
-  GolfLeagueCourseType,
-  GolfCourseWithTeesType,
-} from '@draco/shared-schemas';
+import type { GolfLeagueCourseType, GolfCourseWithTeesType } from '@draco/shared-schemas';
 import { useExternalCourseSearch } from '../../../hooks/useExternalCourseSearch';
 
 interface CourseSearchResult {
@@ -41,8 +37,8 @@ interface CourseSearchResult {
   state: string | null;
   country: string | null;
   numberOfHoles: number;
-  isLocal: boolean;
-  localCourseId?: string;
+  isCustom: boolean;
+  courseId?: string;
 }
 
 interface CourseSearchDialogProps {
@@ -51,7 +47,7 @@ interface CourseSearchDialogProps {
   onSelectCourse: (
     course: CourseSearchResult,
   ) => Promise<{ success: boolean; data?: GolfCourseWithTeesType; error?: string }>;
-  onCreateManually: () => void;
+  onCreateManually?: () => void;
   accountId: string;
   leagueCourses: GolfLeagueCourseType[];
 }
@@ -72,6 +68,8 @@ export const CourseSearchDialog: React.FC<CourseSearchDialogProps> = ({
 
   const { search, loading } = useExternalCourseSearch(accountId);
 
+  const isLeagueContext = leagueCourses.length > 0;
+
   const handleSearch = useCallback(async () => {
     if (searchQuery.length < 2) {
       setError('Please enter at least 2 characters to search');
@@ -82,56 +80,32 @@ export const CourseSearchDialog: React.FC<CourseSearchDialogProps> = ({
     setResults([]);
     setSelectedCourse(null);
 
-    const queryLower = searchQuery.toLowerCase();
-    const localMatches: CourseSearchResult[] = leagueCourses
-      .filter(
-        (lc) =>
-          lc.course.name.toLowerCase().includes(queryLower) ||
-          lc.course.city?.toLowerCase().includes(queryLower) ||
-          lc.course.state?.toLowerCase().includes(queryLower),
-      )
-      .map((lc) => ({
-        externalId: lc.course.externalId ?? '',
-        name: lc.course.name,
-        city: lc.course.city ?? null,
-        state: lc.course.state ?? null,
-        country: lc.course.country ?? null,
-        numberOfHoles: lc.course.numberOfHoles,
-        isLocal: true,
-        localCourseId: lc.course.id,
-      }));
-
-    const searchResult = await search({ query: searchQuery });
+    const searchResult = await search({
+      query: searchQuery,
+      excludeLeague: isLeagueContext,
+    });
 
     if (searchResult.success) {
-      const externalResults: CourseSearchResult[] = searchResult.data
-        .filter(
-          (ext: ExternalCourseSearchResultType) =>
-            !localMatches.some((local) => local.externalId === ext.externalId),
-        )
-        .map((ext: ExternalCourseSearchResultType) => ({
-          externalId: ext.externalId,
-          name: ext.name,
-          city: ext.city,
-          state: ext.state,
-          country: ext.country,
-          numberOfHoles: ext.numberOfHoles,
-          isLocal: false,
-        }));
+      const mappedResults: CourseSearchResult[] = searchResult.data.map((course) => ({
+        externalId: course.externalId,
+        name: course.name,
+        city: course.city,
+        state: course.state,
+        country: course.country,
+        numberOfHoles: course.numberOfHoles,
+        isCustom: course.externalId === '',
+        courseId: course.courseId,
+      }));
 
-      const combined = [...localMatches, ...externalResults];
-      setResults(combined);
+      setResults(mappedResults);
 
-      if (combined.length === 0) {
+      if (mappedResults.length === 0) {
         setError('No courses found matching your search');
       }
     } else {
-      setResults(localMatches);
-      if (localMatches.length === 0) {
-        setError(searchResult.error);
-      }
+      setError(searchResult.error);
     }
-  }, [search, searchQuery, leagueCourses]);
+  }, [search, searchQuery, isLeagueContext]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -172,7 +146,7 @@ export const CourseSearchDialog: React.FC<CourseSearchDialogProps> = ({
 
   const handleCreateManually = useCallback(() => {
     handleClose();
-    onCreateManually();
+    onCreateManually?.();
   }, [handleClose, onCreateManually]);
 
   return (
@@ -240,21 +214,24 @@ export const CourseSearchDialog: React.FC<CourseSearchDialogProps> = ({
               <List disablePadding>
                 {results.map((course) => (
                   <ListItemButton
-                    key={course.isLocal ? `local-${course.localCourseId}` : course.externalId}
+                    key={course.isCustom ? `custom-${course.courseId}` : course.externalId}
                     selected={
-                      selectedCourse?.externalId === course.externalId &&
-                      selectedCourse?.isLocal === course.isLocal
+                      course.isCustom
+                        ? selectedCourse?.courseId === course.courseId
+                        : selectedCourse?.externalId === course.externalId
                     }
                     onClick={() => setSelectedCourse(course)}
                     sx={{
                       borderRadius: 1,
                       mb: 0.5,
                       border: '1px solid',
-                      borderColor:
-                        selectedCourse?.externalId === course.externalId &&
-                        selectedCourse?.isLocal === course.isLocal
-                          ? 'primary.main'
-                          : 'transparent',
+                      borderColor: (
+                        course.isCustom
+                          ? selectedCourse?.courseId === course.courseId
+                          : selectedCourse?.externalId === course.externalId
+                      )
+                        ? 'primary.main'
+                        : 'transparent',
                     }}
                   >
                     <ListItemText
@@ -263,10 +240,10 @@ export const CourseSearchDialog: React.FC<CourseSearchDialogProps> = ({
                           <Typography variant="subtitle2" fontWeight={500}>
                             {course.name}
                           </Typography>
-                          {course.isLocal ? (
+                          {course.isCustom ? (
                             <Chip
-                              icon={<LocalIcon sx={{ fontSize: 14 }} />}
-                              label="In League"
+                              icon={<CustomIcon sx={{ fontSize: 14 }} />}
+                              label="Custom"
                               size="small"
                               color="success"
                               variant="outlined"
@@ -304,13 +281,16 @@ export const CourseSearchDialog: React.FC<CourseSearchDialogProps> = ({
             )}
           </Box>
 
-          <Divider />
-
-          <Box sx={{ textAlign: 'center' }}>
-            <Button variant="text" size="small" onClick={handleCreateManually}>
-              Can&apos;t find your course? Create it manually
-            </Button>
-          </Box>
+          {onCreateManually && (
+            <>
+              <Divider />
+              <Box sx={{ textAlign: 'center' }}>
+                <Button variant="text" size="small" onClick={handleCreateManually}>
+                  Can&apos;t find your course? Create it manually
+                </Button>
+              </Box>
+            </>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -325,8 +305,8 @@ export const CourseSearchDialog: React.FC<CourseSearchDialogProps> = ({
         >
           {importing
             ? 'Adding...'
-            : selectedCourse?.isLocal
-              ? 'Course Already in League'
+            : selectedCourse?.isCustom
+              ? 'Add to League'
               : 'Import & Add to League'}
         </Button>
       </DialogActions>

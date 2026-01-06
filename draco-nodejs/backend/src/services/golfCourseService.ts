@@ -13,6 +13,9 @@ import {
   UpdateGolfCourseType,
   AddLeagueCourseType,
   ExternalCourseDetailType,
+  ExternalCourseSearchResultType,
+  GolfCourseSlimType,
+  PaginationWithTotalType,
 } from '@draco/shared-schemas';
 
 export class GolfCourseService {
@@ -82,6 +85,34 @@ export class GolfCourseService {
   async getLeagueCourses(accountId: bigint): Promise<GolfLeagueCourseType[]> {
     const leagueCourses = await this.courseRepository.findLeagueCourses(accountId);
     return GolfCourseResponseFormatter.formatLeagueCourses(leagueCourses);
+  }
+
+  async getAllCoursesPaginated(options: {
+    page: number;
+    limit: number;
+    search?: string;
+  }): Promise<{ courses: GolfCourseSlimType[]; pagination: PaginationWithTotalType }> {
+    const { page, limit, search } = options;
+    const { courses, total } = await this.courseRepository.findAllPaginated({
+      page,
+      limit,
+      search,
+    });
+
+    return {
+      courses: courses.map((course) => GolfCourseResponseFormatter.formatSlim(course)),
+      pagination: {
+        page,
+        limit,
+        total,
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
+      },
+    };
+  }
+
+  async getTotalCourseCount(): Promise<number> {
+    return this.courseRepository.count();
   }
 
   async createCourse(courseData: CreateGolfCourseType): Promise<GolfCourseType> {
@@ -308,5 +339,50 @@ export class GolfCourseService {
       data[`distancehole${i + 1}`] = distances[i] ?? 0;
     }
     return data;
+  }
+
+  async searchCustomCourses(
+    query: string,
+    accountId?: bigint,
+    limit: number = 20,
+  ): Promise<ExternalCourseSearchResultType[]> {
+    let excludeCourseIds: bigint[] | undefined;
+
+    if (accountId) {
+      const leagueCourses = await this.courseRepository.findLeagueCourses(accountId);
+      excludeCourseIds = leagueCourses.map((lc) => lc.courseid);
+    }
+
+    const customCourses = await this.courseRepository.searchCustomCourses(
+      query,
+      excludeCourseIds,
+      limit,
+    );
+
+    return customCourses.map((course) => ({
+      externalId: '',
+      name: course.name,
+      city: course.city ?? null,
+      state: course.state ?? null,
+      country: course.country ?? null,
+      numberOfHoles: course.numberofholes,
+      courseId: course.id.toString(),
+    }));
+  }
+
+  async getLeagueCourseIds(accountId: bigint): Promise<bigint[]> {
+    const leagueCourses = await this.courseRepository.findLeagueCourses(accountId);
+    return leagueCourses.map((lc) => lc.courseid);
+  }
+
+  async getImportedExternalIds(): Promise<Set<string>> {
+    const allCourses = await this.courseRepository.findMany({});
+    const externalIds = new Set<string>();
+    for (const course of allCourses) {
+      if (course.externalid) {
+        externalIds.add(course.externalid);
+      }
+    }
+    return externalIds;
   }
 }

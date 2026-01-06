@@ -15,6 +15,7 @@ export type ExternalCourseSearchResult<T> =
 
 export interface ExternalCourseSearchParams {
   query: string;
+  excludeLeague?: boolean;
 }
 
 export interface ExternalCourseSearchService {
@@ -36,7 +37,10 @@ export function useExternalCourseSearch(accountId: string): ExternalCourseSearch
         const result = await searchExternalCourses({
           client: apiClient,
           path: { accountId },
-          query: params,
+          query: {
+            query: params.query,
+            excludeLeague: params.excludeLeague ? 'true' : undefined,
+          },
           throwOnError: false,
         });
 

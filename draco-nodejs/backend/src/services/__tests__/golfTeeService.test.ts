@@ -189,6 +189,12 @@ describe('GolfTeeService', () => {
       async isCourseInUse() {
         return false;
       },
+      async findAllPaginated() {
+        return { courses: [], total: 0 };
+      },
+      async searchCustomCourses() {
+        return [];
+      },
     };
 
     service = new GolfTeeService(teeRepository, courseRepository);

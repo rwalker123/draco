@@ -98,6 +98,18 @@ export const CourseSearchDialog: React.FC<CourseSearchDialogProps> = ({
     setSaving(true);
 
     try {
+      // Custom course: already exists in database, use courseId directly
+      if (selectedCourse.courseId && !selectedCourse.externalId) {
+        const result = await onSelectCourse(selectedCourse.courseId);
+        if (result.success) {
+          handleClose();
+        } else {
+          setError(result.error ?? 'Failed to select course');
+        }
+        return;
+      }
+
+      // External course: need to import first
       const importResult = await importExternalCourse(selectedCourse.externalId);
 
       if (!importResult.success) {

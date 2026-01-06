@@ -42,4 +42,14 @@ export interface IGolfCourseRepository extends IBaseRepository<
 
   findByExternalId(externalId: string): Promise<golfcourse | null>;
   isCourseInUse(courseId: bigint): Promise<boolean>;
+  findAllPaginated(options: {
+    page: number;
+    limit: number;
+    search?: string;
+  }): Promise<{ courses: golfcourse[]; total: number }>;
+  searchCustomCourses(
+    query: string,
+    excludeCourseIds?: bigint[],
+    limit?: number,
+  ): Promise<golfcourse[]>;
 }

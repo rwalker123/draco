@@ -20042,6 +20042,8 @@ components:
             state:
               type: string
               nullable: true
+            isExternal:
+              type: boolean
           required:
             - id
             - name
@@ -20157,6 +20159,8 @@ components:
             state:
               type: string
               nullable: true
+            isExternal:
+              type: boolean
           required:
             - id
             - name
@@ -21914,6 +21918,8 @@ components:
           nullable: true
         numberOfHoles:
           type: integer
+        courseId:
+          type: string
       required:
         - externalId
         - name
@@ -21922,7 +21928,7 @@ components:
         - country
         - numberOfHoles
       title: ExternalCourseSearchResult
-      description: Golf course search result from external API
+      description: Golf course search result from external API or custom course database
     ExternalCourseDetail:
       type: object
       properties:
@@ -22114,6 +22120,8 @@ components:
             state:
               type: string
               nullable: true
+            isExternal:
+              type: boolean
           required:
             - id
             - name
@@ -30494,9 +30502,11 @@ paths:
                 $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/golf/external-courses/search:
     get:
-      description: Search for golf courses in the external GolfCourseAPI.com database
+      description: Search for golf courses. Returns custom courses (no externalId)
+        first, then external courses from GolfCourseAPI.com database. Custom
+        courses have courseId set and empty externalId.
       operationId: searchExternalCourses
-      summary: Search external courses
+      summary: Search courses (custom and external)
       tags:
         - External Golf Courses
       security:
@@ -30516,6 +30526,16 @@ paths:
             minLength: 2
             maxLength: 100
             description: Course or club name to search for
+        - name: excludeLeague
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+            description: When true, excludes courses already added to the league. Use for
+              league admin workflow.
       responses:
         "200":
           description: List of matching courses
@@ -30526,7 +30546,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/ExternalCourseSearchResult"
                 title: ExternalCourseSearchResultList
-                description: List of course search results from external API
+                description: List of course search results from external API and custom courses
         "400":
           description: Validation error
           content:

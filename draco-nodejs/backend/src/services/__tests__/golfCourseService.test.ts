@@ -141,6 +141,31 @@ describe('GolfCourseService', () => {
       async isCourseInUse(): Promise<boolean> {
         return false;
       },
+      async findAllPaginated(options: {
+        page: number;
+        limit: number;
+        search?: string;
+      }): Promise<{ courses: golfcourse[]; total: number }> {
+        let filtered = [...courses];
+        if (options.search) {
+          const search = options.search.toLowerCase();
+          filtered = filtered.filter(
+            (c) =>
+              c.name.toLowerCase().includes(search) ||
+              c.city?.toLowerCase().includes(search) ||
+              c.state?.toLowerCase().includes(search),
+          );
+        }
+        const start = (options.page - 1) * options.limit;
+        const end = start + options.limit;
+        return {
+          courses: filtered.slice(start, end),
+          total: filtered.length,
+        };
+      },
+      async searchCustomCourses(): Promise<golfcourse[]> {
+        return [];
+      },
     };
 
     service = new GolfCourseService(repository);
