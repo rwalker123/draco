@@ -28092,6 +28092,9 @@
             "type": "number",
             "nullable": true
           },
+          "isInitialIndex": {
+            "type": "boolean"
+          },
           "roundsUsed": {
             "type": "integer"
           },
@@ -28199,6 +28202,9 @@
                 "handicapIndex9": {
                   "type": "number",
                   "nullable": true
+                },
+                "isInitialIndex": {
+                  "type": "boolean"
                 },
                 "roundsUsed": {
                   "type": "integer"
@@ -29367,6 +29373,267 @@
         ],
         "title": "UpdateGolferHomeCourse",
         "description": "Request to update a golfer home course"
+      },
+      "PlayerSeasonScoresResponse": {
+        "type": "object",
+        "properties": {
+          "scores": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "courseId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "golferId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "teeId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "datePlayed": {
+                  "type": "string"
+                },
+                "holesPlayed": {
+                  "type": "integer",
+                  "minimum": 9,
+                  "maximum": 18
+                },
+                "totalScore": {
+                  "type": "integer",
+                  "minimum": 18,
+                  "maximum": 200
+                },
+                "totalsOnly": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "startIndex": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "startIndex9": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "holeScores": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20
+                  },
+                  "minItems": 9,
+                  "maxItems": 18
+                },
+                "player": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^\\d+$",
+                      "example": "12345"
+                    },
+                    "firstName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "lastName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "middleName": {
+                      "type": "string",
+                      "maxLength": 50
+                    },
+                    "handicapIndex": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "photoUrl": {
+                      "type": "string",
+                      "nullable": true,
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "firstName",
+                    "lastName"
+                  ],
+                  "title": "GolfPlayer",
+                  "description": "Golf player with handicap information"
+                },
+                "tee": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^\\d+$",
+                      "example": "12345"
+                    },
+                    "courseId": {
+                      "type": "string",
+                      "pattern": "^\\d+$",
+                      "example": "12345"
+                    },
+                    "teeColor": {
+                      "type": "string",
+                      "maxLength": 20
+                    },
+                    "teeName": {
+                      "type": "string",
+                      "maxLength": 20
+                    },
+                    "priority": {
+                      "type": "integer",
+                      "default": 0
+                    },
+                    "distances": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 700
+                      }
+                    },
+                    "mensRating": {
+                      "type": "number",
+                      "minimum": 55,
+                      "maximum": 80
+                    },
+                    "mensSlope": {
+                      "type": "integer",
+                      "minimum": 55,
+                      "maximum": 155
+                    },
+                    "womansRating": {
+                      "type": "number",
+                      "minimum": 55,
+                      "maximum": 80
+                    },
+                    "womansSlope": {
+                      "type": "integer",
+                      "minimum": 55,
+                      "maximum": 155
+                    },
+                    "mensRatingFront9": {
+                      "type": "number",
+                      "minimum": 55,
+                      "maximum": 80
+                    },
+                    "mensSlopeFront9": {
+                      "type": "integer",
+                      "minimum": 55,
+                      "maximum": 155
+                    },
+                    "womansRatingFront9": {
+                      "type": "number",
+                      "minimum": 55,
+                      "maximum": 80
+                    },
+                    "womansSlopeFront9": {
+                      "type": "integer",
+                      "minimum": 55,
+                      "maximum": 155
+                    },
+                    "mensRatingBack9": {
+                      "type": "number",
+                      "minimum": 55,
+                      "maximum": 80
+                    },
+                    "mensSlopeBack9": {
+                      "type": "integer",
+                      "minimum": 55,
+                      "maximum": 155
+                    },
+                    "womansRatingBack9": {
+                      "type": "number",
+                      "minimum": 55,
+                      "maximum": 80
+                    },
+                    "womansSlopeBack9": {
+                      "type": "integer",
+                      "minimum": 55,
+                      "maximum": 155
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "courseId",
+                    "teeColor",
+                    "teeName",
+                    "distances",
+                    "mensRating",
+                    "mensSlope",
+                    "womansRating",
+                    "womansSlope"
+                  ],
+                  "title": "GolfCourseTee",
+                  "description": "Tee information for a golf course including ratings, slopes, and hole distances"
+                },
+                "differential": {
+                  "type": "number"
+                },
+                "courseName": {
+                  "type": "string"
+                },
+                "courseCity": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "courseState": {
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "courseId",
+                "golferId",
+                "teeId",
+                "datePlayed",
+                "holesPlayed",
+                "totalScore",
+                "holeScores"
+              ],
+              "title": "GolfScoreWithDetails",
+              "description": "Golf score with player, tee, and course details"
+            }
+          },
+          "initialDifferential": {
+            "type": "number",
+            "nullable": true
+          },
+          "handicapIndex": {
+            "type": "number",
+            "nullable": true
+          },
+          "isInitialIndex": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "scores",
+          "initialDifferential",
+          "handicapIndex",
+          "isInitialIndex"
+        ],
+        "title": "PlayerSeasonScoresResponse",
+        "description": "Player season scores with handicap information"
       }
     },
     "securitySchemes": {
@@ -45722,6 +45989,93 @@
         }
       }
     },
+    "/api/accounts/{accountId}/golf/flights/{flightId}/handicaps": {
+      "get": {
+        "description": "Get handicap listing for all players in a flight",
+        "operationId": "getFlightHandicaps",
+        "summary": "Get flight handicaps",
+        "tags": [
+          "Golf Handicaps"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "flightId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Handicap listing for all players in the flight",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeagueHandicaps"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to access this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Flight not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/golf/handicaps/batch-course-handicaps": {
       "post": {
         "description": "Calculate course handicaps for multiple golfers given a tee",
@@ -47445,7 +47799,7 @@
     },
     "/api/accounts/{accountId}/golf/scores/player/{contactId}": {
       "get": {
-        "description": "Get scores for a specific player",
+        "description": "Get scores for a specific player by contact ID",
         "operationId": "getGolfPlayerScores",
         "summary": "Get player scores",
         "tags": [
@@ -47525,7 +47879,7 @@
         }
       }
     },
-    "/api/accounts/{accountId}/golf/scores/player/{contactId}/season/{seasonId}": {
+    "/api/accounts/{accountId}/golf/season/{seasonId}/player/{contactId}/scores": {
       "get": {
         "description": "Get scores for a player in a specific season",
         "operationId": "getGolfPlayerSeasonScores",
@@ -47549,7 +47903,7 @@
             }
           },
           {
-            "name": "contactId",
+            "name": "seasonId",
             "in": "path",
             "required": true,
             "schema": {
@@ -47558,7 +47912,7 @@
             }
           },
           {
-            "name": "seasonId",
+            "name": "contactId",
             "in": "path",
             "required": true,
             "schema": {
@@ -47569,16 +47923,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Player scores for the season",
+            "description": "Player scores for the season with initial handicap info",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GolfScoreWithDetails"
-                  },
-                  "title": "GolfScoreWithDetailsList",
-                  "description": "List of golf scores with player and tee details"
+                  "$ref": "#/components/schemas/PlayerSeasonScoresResponse"
                 }
               }
             }

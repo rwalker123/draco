@@ -125,6 +125,6 @@ describe('GameListDisplay', () => {
 
     renderWithTheme(<GameListDisplay sections={pacificSections} timeZone="America/Los_Angeles" />);
 
-    expect(screen.getByText('10:00 AM')).toBeInTheDocument();
+    expect(screen.getByText(/10:00\s*AM/)).toBeInTheDocument();
   });
 });

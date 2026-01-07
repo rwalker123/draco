@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
-import { authenticateToken } from '../middleware/authMiddleware.js';
+import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
 
 const router = Router({ mergeParams: true });
 const golfStandingsService = ServiceFactory.getGolfStandingsService();
@@ -21,8 +21,7 @@ router.get(
 
 router.get(
   '/season/:seasonId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
+  optionalAuth,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { seasonId } = extractBigIntParams(req.params, 'seasonId');
     const standings = await golfStandingsService.getLeagueStandings(seasonId);

@@ -31,17 +31,6 @@ router.get(
 );
 
 router.get(
-  '/season/:seasonId/player/:golferId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { seasonId, golferId } = extractBigIntParams(req.params, 'seasonId', 'golferId');
-    const scores = await golfScoreService.getPlayerSeasonScores(golferId, seasonId);
-    res.json(scores);
-  }),
-);
-
-router.get(
   '/player/:golferId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),

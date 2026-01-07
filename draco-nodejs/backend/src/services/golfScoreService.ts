@@ -4,6 +4,7 @@ import {
   GolfMatchType,
   SubmitMatchResultsType,
   PlayerMatchScoreType,
+  PlayerSeasonScoresResponseType,
 } from '@draco/shared-schemas';
 import {
   IGolfScoreRepository,
@@ -116,7 +117,8 @@ export class GolfScoreService {
         }
 
         if (!playerScore.score) {
-          throw new ValidationError(`Score data required for player ${playerScore.rosterId}`);
+          const playerName = `${rosterEntry.golfer.contact.firstname} ${rosterEntry.golfer.contact.lastname}`;
+          throw new ValidationError(`Score data required for player ${playerName}`);
         }
 
         const scoreData = playerScore.score;
@@ -193,10 +195,44 @@ export class GolfScoreService {
   }
 
   async getPlayerSeasonScores(
-    golferId: bigint,
+    contactId: bigint,
     seasonId: bigint,
-  ): Promise<GolfScoreWithDetailsType[]> {
-    const scores = await this.scoreRepository.getPlayerScoresForSeason(golferId, seasonId);
-    return scores.map((s) => GolfScoreResponseFormatter.formatWithDetails(s));
+  ): Promise<PlayerSeasonScoresResponseType> {
+    const scores = await this.scoreRepository.getPlayerScoresForSeason(contactId, seasonId);
+    const formattedScores = scores.map((s) => GolfScoreResponseFormatter.formatWithDetails(s));
+
+    let initialDifferential: number | null = null;
+    let handicapIndex: number | null = null;
+    let isInitialIndex = false;
+    let golferId: bigint | null = null;
+
+    if (scores.length > 0) {
+      initialDifferential = scores[0].golfer.initialdifferential ?? null;
+      golferId = scores[0].golfer.id;
+    } else {
+      const golferRepository = RepositoryFactory.getGolferRepository();
+      const golfer = await golferRepository.findByContactId(contactId);
+      initialDifferential = golfer?.initialdifferential ?? null;
+      golferId = golfer?.id ?? null;
+    }
+
+    if (golferId) {
+      const handicapService = ServiceFactory.getGolfHandicapService();
+      const playerHandicap = await handicapService.getPlayerHandicap(golferId);
+      handicapIndex = playerHandicap.handicapIndex;
+      isInitialIndex = playerHandicap.isInitialIndex ?? false;
+
+      if (handicapIndex === null && initialDifferential !== null) {
+        handicapIndex = initialDifferential;
+        isInitialIndex = true;
+      }
+    }
+
+    return {
+      scores: formattedScores,
+      initialDifferential,
+      handicapIndex,
+      isInitialIndex,
+    };
   }
 }

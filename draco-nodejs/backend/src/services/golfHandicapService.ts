@@ -5,6 +5,8 @@ import {
   CourseHandicapType,
   BatchCourseHandicapResponseType,
   PlayerCourseHandicapType,
+  getWhsUseCount,
+  getWhsAdjustment,
 } from '@draco/shared-schemas';
 import { IGolfScoreRepository } from '../repositories/interfaces/IGolfScoreRepository.js';
 import { IGolfFlightRepository } from '../repositories/interfaces/IGolfFlightRepository.js';
@@ -26,34 +28,6 @@ interface ScoreDifferential {
   differential: number;
   holesPlayed: number;
 }
-
-const HANDICAP_LOOKUP: Record<number, number> = {
-  3: 1,
-  4: 1,
-  5: 1,
-  6: 2,
-  7: 2,
-  8: 2,
-  9: 3,
-  10: 3,
-  11: 4,
-  12: 4,
-  13: 5,
-  14: 5,
-  15: 6,
-  16: 6,
-  17: 7,
-  18: 8,
-  19: 8,
-  20: 10,
-};
-
-const BONUS_REDUCTION: Record<number, number> = {
-  3: 2.0,
-  4: 1.0,
-  5: 0.0,
-  6: 1.0,
-};
 
 const MAX_SCORES_TO_FETCH = 40;
 const MAX_DIFFERENTIALS_FOR_HANDICAP = 20;
@@ -177,14 +151,18 @@ export class GolfHandicapService {
   private computeHandicapFromDifferentials(differentials: ScoreDifferential[]): number {
     const sorted = [...differentials].sort((a, b) => a.differential - b.differential);
     const count = Math.min(sorted.length, MAX_DIFFERENTIALS_FOR_HANDICAP);
-    const usedCount = HANDICAP_LOOKUP[count] ?? Math.floor(count * 0.4);
-    const reduction = BONUS_REDUCTION[count] ?? 0;
+    const usedCount = getWhsUseCount(count);
+    const adjustment = getWhsAdjustment(count);
+
+    if (usedCount === 0) {
+      return 0;
+    }
 
     const lowestDifferentials = sorted.slice(0, usedCount);
     const sum = lowestDifferentials.reduce((acc, d) => acc + d.differential, 0);
     const average = sum / usedCount;
 
-    let handicapIndex = average * 0.96 - reduction;
+    let handicapIndex = average * 0.96 + adjustment;
     handicapIndex = Math.round(handicapIndex * 10) / 10;
 
     return Math.max(0, handicapIndex);
@@ -207,7 +185,7 @@ export class GolfHandicapService {
     const differentials = this.processScorestoDifferentials(scores);
     const sorted = [...differentials].sort((a, b) => a.differential - b.differential);
     const count = Math.min(sorted.length, MAX_DIFFERENTIALS_FOR_HANDICAP);
-    const usedCount = HANDICAP_LOOKUP[count] ?? Math.floor(count * 0.4);
+    const usedCount = getWhsUseCount(count);
 
     let handicapIndex: number | null = null;
     if (differentials.length >= 3) {
@@ -266,6 +244,18 @@ export class GolfHandicapService {
         if (!entry.isactive) continue;
 
         const handicap = await this.getPlayerHandicap(entry.golferid);
+
+        if (!handicap.contactId || handicap.contactId === '') {
+          handicap.contactId = entry.golfer.contact.id.toString();
+          handicap.firstName = entry.golfer.contact.firstname;
+          handicap.lastName = entry.golfer.contact.lastname;
+        }
+
+        if (handicap.handicapIndex === null && entry.golfer.initialdifferential !== null) {
+          handicap.handicapIndex = entry.golfer.initialdifferential;
+          handicap.isInitialIndex = true;
+        }
+
         playerHandicaps.push(handicap);
       }
     }

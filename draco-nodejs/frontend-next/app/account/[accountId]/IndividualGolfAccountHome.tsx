@@ -5,13 +5,10 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
   CircularProgress,
   Container,
   Typography,
   Paper,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -20,13 +17,9 @@ import {
 } from '@mui/material';
 import {
   GolfCourse as GolfCourseIcon,
-  TrendingUp as TrendingUpIcon,
-  SportsGolf as SportsGolfIcon,
   Add as AddIcon,
   Home as HomeIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
-  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
@@ -42,6 +35,9 @@ import {
 import { useIndividualGolfAccountService } from '../../../hooks/useIndividualGolfAccountService';
 import HomeCourseSearchDialog from '../../../components/golf/dialogs/HomeCourseSearchDialog';
 import IndividualRoundEntryDialog from '../../../components/golf/dialogs/IndividualRoundEntryDialog';
+import OrganizationsWidget from '../../../components/OrganizationsWidget';
+import GolferStatsCards from '../../../components/golf/stats/GolferStatsCards';
+import GolfScoresList from '../../../components/golf/scores/GolfScoresList';
 
 const IndividualGolfAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -288,61 +284,12 @@ const IndividualGolfAccountHome: React.FC = () => {
       </Box>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
-            gap: 3,
-            mb: 4,
-          }}
-        >
-          <Card>
-            <CardContent sx={{ textAlign: 'center', py: 4 }}>
-              <SportsGolfIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                Rounds Played
-              </Typography>
-              <Typography variant="h3" color="primary.main">
-                {golfer?.roundsPlayed ?? 0}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {currentSeason ? 'This season' : 'Total rounds'}
-              </Typography>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent sx={{ textAlign: 'center', py: 4 }}>
-              <TrendingUpIcon sx={{ fontSize: 48, color: 'success.main', mb: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                Handicap Index
-              </Typography>
-              <Typography variant="h3" color="success.main">
-                {golfer?.handicapIndex != null ? golfer.handicapIndex.toFixed(1) : '--'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {golfer?.handicapIndex != null
-                  ? 'Based on recent rounds'
-                  : 'Enter 3+ scores to calculate'}
-              </Typography>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent sx={{ textAlign: 'center', py: 4 }}>
-              <GolfCourseIcon sx={{ fontSize: 48, color: 'info.main', mb: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                Average Score
-              </Typography>
-              <Typography variant="h3" color="info.main">
-                {golfer?.averageScore != null ? Math.round(golfer.averageScore) : '--'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Per 18 holes
-              </Typography>
-            </CardContent>
-          </Card>
-        </Box>
+        <GolferStatsCards
+          roundsPlayed={golfer?.roundsPlayed ?? 0}
+          handicapIndex={golfer?.handicapIndex ?? null}
+          averageScore={golfer?.averageScore ?? null}
+          seasonLabel={currentSeason ? 'This season' : 'Total rounds'}
+        />
 
         {isOwner && (
           <Paper sx={{ p: 4, mb: 4 }}>
@@ -402,88 +349,20 @@ const IndividualGolfAccountHome: React.FC = () => {
           </Paper>
         )}
 
-        <Paper sx={{ p: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Recent Rounds
-          </Typography>
-          {recentScores.length === 0 ? (
-            <Box sx={{ py: 4, textAlign: 'center' }}>
-              <Typography variant="body1" color="text.secondary">
-                No rounds recorded yet. Start tracking your golf scores to see your history here.
-              </Typography>
-            </Box>
-          ) : (
-            <Box sx={{ mt: 2 }}>
-              {recentScores.map((score, index) => (
-                <Box
-                  key={score.id}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    py: 2,
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                    '&:last-child': { borderBottom: 'none' },
-                  }}
-                >
-                  {contributingIndices.has(index) && (
-                    <CheckCircleIcon
-                      sx={{ color: 'success.main', mr: 1.5, fontSize: 20, flexShrink: 0 }}
-                    />
-                  )}
-                  {!contributingIndices.has(index) && <Box sx={{ width: 32, flexShrink: 0 }} />}
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="subtitle1" fontWeight={500} noWrap>
-                      {score.courseName || 'Unknown Course'}
-                      {score.tee?.teeName && ` · ${score.tee.teeName}`}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" noWrap>
-                      {[score.courseCity, score.courseState].filter(Boolean).join(', ')}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {new Date(score.datePlayed).toLocaleDateString(undefined, {
-                        weekday: 'short',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                      {' · '}
-                      {score.holesPlayed} holes
-                    </Typography>
-                  </Box>
-                  <Box sx={{ textAlign: 'right', ml: 2 }}>
-                    <Typography variant="h5" color="primary.main" fontWeight={600}>
-                      {score.totalScore}
-                    </Typography>
-                    {score.differential != null && (
-                      <Typography variant="body2" color="text.secondary">
-                        Diff: {score.differential.toFixed(1)}
-                      </Typography>
-                    )}
-                  </Box>
-                  {isOwner && (
-                    <Box sx={{ display: 'flex', ml: 1, gap: 0.5 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => setEditingScore(score)}
-                        sx={{ color: 'text.secondary' }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => setDeleteConfirmScore(score)}
-                        sx={{ color: 'text.secondary' }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  )}
-                </Box>
-              ))}
-            </Box>
-          )}
-        </Paper>
+        <GolfScoresList
+          scores={recentScores}
+          contributingIndices={contributingIndices}
+          showOwnerActions={isOwner}
+          onEdit={setEditingScore}
+          onDelete={setDeleteConfirmScore}
+          emptyMessage="No rounds recorded yet. Start tracking your golf scores to see your history here."
+        />
+
+        <OrganizationsWidget
+          title="My Organizations"
+          excludeAccountId={accountIdStr}
+          sx={{ mt: 4 }}
+        />
       </Container>
 
       {accountIdStr && (

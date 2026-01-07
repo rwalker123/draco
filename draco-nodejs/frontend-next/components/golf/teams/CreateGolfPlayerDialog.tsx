@@ -200,7 +200,7 @@ const CreateGolfPlayerDialog: React.FC<CreateGolfPlayerDialogProps> = ({
           </FormControl>
 
           <FormControl fullWidth>
-            <FormLabel htmlFor="player-differential">Initial Differential</FormLabel>
+            <FormLabel htmlFor="player-differential">Initial Handicap Index</FormLabel>
             <TextField
               id="player-differential"
               type="number"

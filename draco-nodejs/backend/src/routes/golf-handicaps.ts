@@ -11,17 +11,6 @@ const golfHandicapService = ServiceFactory.getGolfHandicapService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
 router.get(
-  '/flight/:flightId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { flightId } = extractBigIntParams(req.params, 'flightId');
-    const handicaps = await golfHandicapService.getLeagueHandicaps(flightId);
-    res.json(handicaps);
-  }),
-);
-
-router.get(
   '/player/:contactId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),

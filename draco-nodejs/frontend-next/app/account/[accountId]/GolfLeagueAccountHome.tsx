@@ -15,6 +15,7 @@ import { AccountSeasonWithStatusType, AccountType } from '@draco/shared-schemas'
 import InformationWidget from '@/components/information/InformationWidget';
 import GolfStandings from '@/components/GolfStandings';
 import GolfMatchesWidget from '@/components/GolfMatchesWidget';
+import GolfHandicapLeaderboard from '@/components/GolfHandicapLeaderboard';
 
 const GolfLeagueAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -226,6 +227,14 @@ const GolfLeagueAccountHome: React.FC = () => {
           }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+            {currentSeason && accountIdStr && (
+              <GolfHandicapLeaderboard
+                accountId={accountIdStr}
+                seasonId={currentSeason.id}
+                title="Handicap Leaderboard"
+              />
+            )}
+
             {accountIdStr ? (
               <InformationWidget
                 accountId={accountIdStr}

@@ -28,6 +28,7 @@ export const PlayerHandicapSchema = z
     lastName: nameSchema,
     handicapIndex: z.number().nullable(),
     handicapIndex9: z.number().nullable().optional(),
+    isInitialIndex: z.boolean().optional(),
     roundsUsed: z.number().int(),
     totalRounds: z.number().int(),
     lastUpdated: z.string().optional(),
