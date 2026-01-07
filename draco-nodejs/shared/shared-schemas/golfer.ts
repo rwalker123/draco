@@ -36,6 +36,22 @@ export const UpdateGolferHomeCourseSchema = z
     description: 'Request to update a golfer home course',
   });
 
+export const ContactIndividualGolfAccountSchema = z
+  .object({
+    accountId: bigintToStringSchema,
+    accountName: z.string(),
+    handicapIndex: z.number().nullable(),
+    isInitialHandicap: z.boolean().default(false),
+    averageScore: z.number().nullable(),
+    roundsPlayed: z.number(),
+  })
+  .nullable()
+  .openapi({
+    title: 'ContactIndividualGolfAccount',
+    description: 'Individual golf account summary for a contact, or null if no account exists',
+  });
+
 export type GenderType = z.infer<typeof GenderSchema>;
 export type GolferType = z.infer<typeof GolferSchema>;
 export type UpdateGolferHomeCourseType = z.infer<typeof UpdateGolferHomeCourseSchema>;
+export type ContactIndividualGolfAccountType = z.infer<typeof ContactIndividualGolfAccountSchema>;

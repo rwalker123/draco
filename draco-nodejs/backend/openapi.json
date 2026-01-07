@@ -29634,6 +29634,44 @@
         ],
         "title": "PlayerSeasonScoresResponse",
         "description": "Player season scores with handicap information"
+      },
+      "ContactIndividualGolfAccount": {
+        "type": "object",
+        "nullable": true,
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "handicapIndex": {
+            "type": "number",
+            "nullable": true
+          },
+          "isInitialHandicap": {
+            "type": "boolean",
+            "default": false
+          },
+          "averageScore": {
+            "type": "number",
+            "nullable": true
+          },
+          "roundsPlayed": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "accountId",
+          "accountName",
+          "handicapIndex",
+          "averageScore",
+          "roundsPlayed"
+        ],
+        "title": "ContactIndividualGolfAccount",
+        "description": "Individual golf account summary for a contact, or null if no account exists"
       }
     },
     "securitySchemes": {
@@ -41112,6 +41150,50 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/contacts/{contactId}/golf/individual/player-scores": {
+      "get": {
+        "summary": "Get individual golf account for a contact",
+        "description": "Returns the individual golf account summary (handicap, rounds, average) for a contact if they have one. Returns null if no individual golf account exists.",
+        "operationId": "getContactIndividualGolfPlayerScores",
+        "tags": [
+          "Contacts",
+          "Golf"
+        ],
+        "parameters": [
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Individual golf account summary or null if none exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactIndividualGolfAccount"
                 }
               }
             }

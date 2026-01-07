@@ -58,6 +58,7 @@ import golfHandicapsRouter from './routes/golf-handicaps.js';
 import golfStandingsRouter from './routes/golf-standings.js';
 import golfStatsRouter from './routes/golf-stats.js';
 import golfPlayerScoresRouter from './routes/golf-player-scores.js';
+import contactsGolfRouter from './routes/contacts-golf.js';
 import externalCoursesRouter from './routes/external-courses.js';
 import exportsRouter from './routes/exports.js';
 import { ServiceFactory } from './services/serviceFactory.js';
@@ -303,6 +304,7 @@ app.use(
   '/api/accounts/:accountId/golf/season/:seasonId/player/:contactId/scores',
   golfPlayerScoresRouter,
 );
+app.use('/api/contacts/:contactId/golf', contactsGolfRouter);
 // Global error handler
 app.use(globalErrorHandler as express.ErrorRequestHandler);
 

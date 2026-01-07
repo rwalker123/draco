@@ -24,6 +24,7 @@ import {
   Key as KeyIcon,
   Person as PersonIcon,
   Handshake as HandshakeIcon,
+  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -44,6 +45,7 @@ import { unwrapApiResult } from '../utils/apiResult';
 import type { AccountType } from '@draco/shared-schemas';
 import type { BaseballOverflowItem } from './BaseballMenu';
 import AlertsTicker from './alerts/AlertsTicker';
+import { isGolfLeagueAccountType } from '../utils/accountTypeUtils';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -381,6 +383,18 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                 useUnifiedMenu
                 onOverflowItemsChange={setSportOverflowItems}
               />
+            )}
+
+            {/* Golf League Schedule button */}
+            {isGolfLeagueAccountType(accountType) && accountId && (
+              <Button
+                color="inherit"
+                startIcon={<ScheduleIcon />}
+                onClick={() => router.push(`/account/${accountId}/schedule`)}
+                sx={{ textTransform: 'none' }}
+              >
+                Schedule
+              </Button>
             )}
 
             {/* Admin Hub button - shown on large screens only, collapses to hamburger first */}
