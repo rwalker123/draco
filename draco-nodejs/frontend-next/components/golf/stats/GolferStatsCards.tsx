@@ -1,16 +1,18 @@
 'use client';
 
 import React from 'react';
-import { Box, Card, CardContent, Typography } from '@mui/material';
+import { Box, Card, CardContent, Tooltip, Typography } from '@mui/material';
 import {
   GolfCourse as GolfCourseIcon,
   TrendingUp as TrendingUpIcon,
   SportsGolf as SportsGolfIcon,
+  InfoOutlined as InfoOutlinedIcon,
 } from '@mui/icons-material';
 
 export interface GolferStatsCardsProps {
   roundsPlayed: number;
   handicapIndex: number | null;
+  isInitialHandicap?: boolean;
   averageScore: number | null;
   seasonLabel?: string;
 }
@@ -18,9 +20,19 @@ export interface GolferStatsCardsProps {
 export default function GolferStatsCards({
   roundsPlayed,
   handicapIndex,
+  isInitialHandicap = false,
   averageScore,
   seasonLabel = 'Total rounds',
 }: GolferStatsCardsProps) {
+  const getHandicapSubtitle = () => {
+    if (handicapIndex === null) {
+      return 'Enter 3+ scores to calculate';
+    }
+    if (isInitialHandicap) {
+      return 'Initial handicap (manual entry)';
+    }
+    return 'Based on recent rounds';
+  };
   return (
     <Box
       sx={{
@@ -51,11 +63,21 @@ export default function GolferStatsCards({
           <Typography variant="h6" gutterBottom>
             Handicap Index
           </Typography>
-          <Typography variant="h3" color="success.main">
-            {handicapIndex != null ? handicapIndex.toFixed(1) : '--'}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <Typography variant="h3" color="success.main">
+              {handicapIndex != null ? handicapIndex.toFixed(1) : '--'}
+            </Typography>
+            {isInitialHandicap && handicapIndex != null && (
+              <Tooltip
+                title="This handicap was manually entered and is not calculated from recent rounds"
+                arrow
+              >
+                <InfoOutlinedIcon sx={{ fontSize: 24, color: 'text.secondary', cursor: 'help' }} />
+              </Tooltip>
+            )}
+          </Box>
           <Typography variant="body2" color="text.secondary">
-            {handicapIndex != null ? 'Based on recent rounds' : 'Enter 3+ scores to calculate'}
+            {getHandicapSubtitle()}
           </Typography>
         </CardContent>
       </Card>

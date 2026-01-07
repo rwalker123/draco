@@ -24,7 +24,7 @@ import type {
   PlayerHandicap,
 } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
-import { unwrapApiResult } from '../utils/apiResult';
+import { ApiClientError, unwrapApiResult } from '../utils/apiResult';
 import WidgetShell from './ui/WidgetShell';
 
 interface GolfHandicapLeaderboardProps {
@@ -93,7 +93,11 @@ export default function GolfHandicapLeaderboard({
       setFlightHandicaps(allHandicaps);
     } catch (err) {
       console.error('Error loading golf handicaps:', err);
-      setError('Failed to load handicap data');
+      if (err instanceof ApiClientError && err.status === 401) {
+        setError('Please log in to view handicap data.');
+      } else {
+        setError('Failed to load handicap data');
+      }
       setFlightHandicaps([]);
     } finally {
       setLoading(false);

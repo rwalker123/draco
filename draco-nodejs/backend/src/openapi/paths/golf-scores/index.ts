@@ -7,6 +7,7 @@ export const registerGolfScoresEndpoints = ({ registry, schemaRefs, z }: Registe
     GolfScoreWithDetailsSchemaRef,
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
+    PlayerSeasonScoresResponseSchemaRef,
   } = schemaRefs;
 
   const GolfScoreWithDetailsListSchemaRef = z.array(GolfScoreWithDetailsSchemaRef).openapi({
@@ -244,10 +245,10 @@ export const registerGolfScoresEndpoints = ({ registry, schemaRefs, z }: Registe
     ],
     responses: {
       200: {
-        description: 'Player scores for the season',
+        description: 'Player scores for the season with initial handicap info',
         content: {
           'application/json': {
-            schema: GolfScoreWithDetailsListSchemaRef,
+            schema: PlayerSeasonScoresResponseSchemaRef,
           },
         },
       },

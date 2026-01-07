@@ -16,6 +16,7 @@ import type {
   GolfScoreWithDetailsType,
   GolfMatchType,
   SubmitMatchResultsType,
+  PlayerSeasonScoresResponseType,
 } from '@draco/shared-schemas';
 import { useApiClient } from './useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
@@ -37,7 +38,7 @@ export interface GolfScoreService {
   getPlayerSeasonScores: (
     contactId: string,
     seasonId: string,
-  ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
+  ) => Promise<GolfScoreServiceResult<PlayerSeasonScoresResponseType>>;
   getScore: (scoreId: string) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType>>;
   submitMatchResults: (
     matchId: string,
@@ -136,11 +137,11 @@ export function useGolfScores(accountId: string): GolfScoreService {
           throwOnError: false,
         });
 
-        const scores = unwrapApiResult(result, 'Failed to load player season scores');
+        const response = unwrapApiResult(result, 'Failed to load player season scores');
 
         return {
           success: true,
-          data: scores as GolfScoreWithDetailsType[],
+          data: response as PlayerSeasonScoresResponseType,
           message: 'Player season scores loaded successfully',
         } as const;
       } catch (error) {

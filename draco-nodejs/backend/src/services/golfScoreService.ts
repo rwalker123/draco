@@ -4,6 +4,7 @@ import {
   GolfMatchType,
   SubmitMatchResultsType,
   PlayerMatchScoreType,
+  PlayerSeasonScoresResponseType,
 } from '@draco/shared-schemas';
 import {
   IGolfScoreRepository,
@@ -195,8 +196,23 @@ export class GolfScoreService {
   async getPlayerSeasonScores(
     contactId: bigint,
     seasonId: bigint,
-  ): Promise<GolfScoreWithDetailsType[]> {
+  ): Promise<PlayerSeasonScoresResponseType> {
     const scores = await this.scoreRepository.getPlayerScoresForSeason(contactId, seasonId);
-    return scores.map((s) => GolfScoreResponseFormatter.formatWithDetails(s));
+    const formattedScores = scores.map((s) => GolfScoreResponseFormatter.formatWithDetails(s));
+
+    let initialDifferential: number | null = null;
+
+    if (scores.length > 0) {
+      initialDifferential = scores[0].golfer.initialdifferential ?? null;
+    } else {
+      const golferRepository = RepositoryFactory.getGolferRepository();
+      const golfer = await golferRepository.findByContactId(contactId);
+      initialDifferential = golfer?.initialdifferential ?? null;
+    }
+
+    return {
+      scores: formattedScores,
+      initialDifferential,
+    };
   }
 }

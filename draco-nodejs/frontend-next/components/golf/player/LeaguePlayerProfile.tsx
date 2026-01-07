@@ -75,6 +75,7 @@ export default function LeaguePlayerProfile({
       <GolferStatsCards
         roundsPlayed={data?.roundsPlayed ?? 0}
         handicapIndex={data?.handicapIndex ?? null}
+        isInitialHandicap={data?.isInitialHandicap ?? false}
         averageScore={data?.averageScore ?? null}
         seasonLabel="League rounds"
       />
