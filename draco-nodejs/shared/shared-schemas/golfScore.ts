@@ -142,10 +142,12 @@ export const PlayerSeasonScoresResponseSchema = z
   .object({
     scores: z.array(GolfScoreWithDetailsSchema),
     initialDifferential: z.number().nullable(),
+    handicapIndex: z.number().nullable(),
+    isInitialIndex: z.boolean(),
   })
   .openapi({
     title: 'PlayerSeasonScoresResponse',
-    description: 'Player season scores with initial handicap differential',
+    description: 'Player season scores with handicap information',
   });
 
 export type GolfHoleScoresType = z.infer<typeof GolfHoleScoresSchema>;

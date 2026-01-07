@@ -29,7 +29,8 @@ export function useLeaguePlayerProfile(
   contactId: string,
 ): UseLeaguePlayerProfileResult {
   const [scores, setScores] = useState<GolfScoreWithDetails[]>([]);
-  const [initialDifferential, setInitialDifferential] = useState<number | null>(null);
+  const [handicapIndex, setHandicapIndex] = useState<number | null>(null);
+  const [isInitialIndex, setIsInitialIndex] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,7 +51,8 @@ export function useLeaguePlayerProfile(
 
       if (scoresResult.success) {
         setScores(scoresResult.data.scores);
-        setInitialDifferential(scoresResult.data.initialDifferential);
+        setHandicapIndex(scoresResult.data.handicapIndex);
+        setIsInitialIndex(scoresResult.data.isInitialIndex);
       } else {
         setError(scoresResult.error);
       }
@@ -83,14 +85,13 @@ export function useLeaguePlayerProfile(
 
   const data = useMemo<LeaguePlayerProfileData | null>(() => {
     if (scores.length === 0 && !loading && !error) {
-      const useInitial = initialDifferential !== null;
       return {
         firstName: '',
         lastName: '',
         scores: [],
         roundsPlayed: 0,
-        handicapIndex: useInitial ? initialDifferential : null,
-        isInitialHandicap: useInitial,
+        handicapIndex,
+        isInitialHandicap: isInitialIndex,
         averageScore: null,
         contributingIndices: new Set(),
       };
@@ -108,35 +109,17 @@ export function useLeaguePlayerProfile(
         ? eighteenHoleScores.reduce((sum, s) => sum + s.totalScore, 0) / eighteenHoleScores.length
         : null;
 
-    const differentials = scores
-      .map((s) => s.differential)
-      .filter((d): d is number => d != null)
-      .sort((a, b) => a - b);
-
-    let handicapIndex: number | null = null;
-    let isInitialHandicap = false;
-
-    if (differentials.length >= 3) {
-      const useCount = getWhsUseCount(differentials.length);
-      const usedDifferentials = differentials.slice(0, useCount);
-      const average = usedDifferentials.reduce((sum, d) => sum + d, 0) / useCount;
-      handicapIndex = Math.round(average * 0.96 * 10) / 10;
-    } else if (initialDifferential !== null) {
-      handicapIndex = initialDifferential;
-      isInitialHandicap = true;
-    }
-
     return {
       firstName: '',
       lastName: '',
       scores,
       roundsPlayed,
       handicapIndex,
-      isInitialHandicap,
+      isInitialHandicap: isInitialIndex,
       averageScore,
       contributingIndices,
     };
-  }, [scores, loading, error, contributingIndices, initialDifferential]);
+  }, [scores, loading, error, contributingIndices, handicapIndex, isInitialIndex]);
 
   return {
     data,
@@ -144,15 +127,4 @@ export function useLeaguePlayerProfile(
     error,
     refetch: fetchData,
   };
-}
-
-function getWhsUseCount(count: number): number {
-  if (count <= 5) return 1;
-  if (count <= 8) return 2;
-  if (count <= 11) return 3;
-  if (count <= 14) return 4;
-  if (count <= 16) return 5;
-  if (count <= 18) return 6;
-  if (count <= 19) return 7;
-  return 8;
 }

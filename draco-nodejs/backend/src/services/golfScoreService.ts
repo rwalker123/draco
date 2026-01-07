@@ -202,18 +202,37 @@ export class GolfScoreService {
     const formattedScores = scores.map((s) => GolfScoreResponseFormatter.formatWithDetails(s));
 
     let initialDifferential: number | null = null;
+    let handicapIndex: number | null = null;
+    let isInitialIndex = false;
+    let golferId: bigint | null = null;
 
     if (scores.length > 0) {
       initialDifferential = scores[0].golfer.initialdifferential ?? null;
+      golferId = scores[0].golfer.id;
     } else {
       const golferRepository = RepositoryFactory.getGolferRepository();
       const golfer = await golferRepository.findByContactId(contactId);
       initialDifferential = golfer?.initialdifferential ?? null;
+      golferId = golfer?.id ?? null;
+    }
+
+    if (golferId) {
+      const handicapService = ServiceFactory.getGolfHandicapService();
+      const playerHandicap = await handicapService.getPlayerHandicap(golferId);
+      handicapIndex = playerHandicap.handicapIndex;
+      isInitialIndex = playerHandicap.isInitialIndex ?? false;
+
+      if (handicapIndex === null && initialDifferential !== null) {
+        handicapIndex = initialDifferential;
+        isInitialIndex = true;
+      }
     }
 
     return {
       scores: formattedScores,
       initialDifferential,
+      handicapIndex,
+      isInitialIndex,
     };
   }
 }

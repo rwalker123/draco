@@ -22352,11 +22352,18 @@ components:
         initialDifferential:
           type: number
           nullable: true
+        handicapIndex:
+          type: number
+          nullable: true
+        isInitialIndex:
+          type: boolean
       required:
         - scores
         - initialDifferential
+        - handicapIndex
+        - isInitialIndex
       title: PlayerSeasonScoresResponse
-      description: Player season scores with initial handicap differential
+      description: Player season scores with handicap information
   securitySchemes:
     bearerAuth:
       type: http
