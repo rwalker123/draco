@@ -9,7 +9,6 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors.js';
 import { extractAccountParams, extractContactParams } from '../utils/paramExtraction.js';
 import { handleContactPhotoUpload } from './utils/fileUpload.js';
-import prisma from '../lib/prisma.js';
 import {
   BaseContactType,
   ContactType,
@@ -37,6 +36,7 @@ const contactService = ServiceFactory.getContactService();
 const registrationService = ServiceFactory.getRegistrationService();
 const contactDependencyService = ServiceFactory.getContactDependencyService();
 const csvExportService = ServiceFactory.getCsvExportService();
+const accountsService = ServiceFactory.getAccountsService();
 
 const buildSelfUpdatePayload = (
   existingContact: BaseContactType,
@@ -360,15 +360,7 @@ router.get(
     const { accountId } = extractAccountParams(req.params);
     const { searchTerm, onlyWithRoles, seasonId } = req.query;
 
-    const account = await prisma.accounts.findUnique({
-      where: { id: accountId },
-      select: { name: true },
-    });
-
-    if (!account) {
-      throw new NotFoundError('Account not found');
-    }
-
+    const account = await accountsService.getAccountName(accountId);
     const parsedSeasonId = typeof seasonId === 'string' && seasonId ? BigInt(seasonId) : undefined;
 
     const result = await csvExportService.exportContacts(accountId, account.name, {
