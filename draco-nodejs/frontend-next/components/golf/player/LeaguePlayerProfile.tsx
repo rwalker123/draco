@@ -14,6 +14,7 @@ import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import GolferStatsCards from '../stats/GolferStatsCards';
 import GolfScoresList from '../scores/GolfScoresList';
+import OrganizationsWidget from '../../OrganizationsWidget';
 import { useLeaguePlayerProfile } from '../../../hooks/useLeaguePlayerProfile';
 
 export interface LeaguePlayerProfileProps {
@@ -87,6 +88,8 @@ export default function LeaguePlayerProfile({
         title="League Match Scores"
         emptyMessage="No league match scores recorded yet."
       />
+
+      <OrganizationsWidget title="My Organizations" excludeAccountId={accountId} sx={{ mt: 4 }} />
 
       <Snackbar
         open={Boolean(error) && !errorDismissed}
