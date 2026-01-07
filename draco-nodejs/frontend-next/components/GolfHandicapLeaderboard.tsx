@@ -13,7 +13,9 @@ import {
   TableRow,
   Paper,
   Chip,
+  Tooltip,
 } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { alpha } from '@mui/material/styles';
 import Link from 'next/link';
 import { getGolfSeasonStandings, getFlightHandicaps } from '@draco/shared-api-client';
@@ -204,11 +206,29 @@ export default function GolfHandicapLeaderboard({
                   fontWeight: 700,
                   color: (theme) =>
                     player.handicapIndex !== null
-                      ? theme.palette.primary.main
+                      ? player.isInitialIndex
+                        ? theme.palette.info.main
+                        : theme.palette.primary.main
                       : theme.palette.text.disabled,
                 }}
               >
-                {formatHandicap(player.handicapIndex)}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    gap: 0.5,
+                  }}
+                >
+                  {formatHandicap(player.handicapIndex)}
+                  {player.isInitialIndex && (
+                    <Tooltip title="Initial Index - Not enough scores to calculate handicap" arrow>
+                      <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+                        <InfoOutlinedIcon sx={{ fontSize: 14, color: 'info.main' }} />
+                      </Box>
+                    </Tooltip>
+                  )}
+                </Box>
               </TableCell>
               <TableCell align="center" sx={{ width: 60, color: 'text.secondary' }}>
                 {player.totalRounds}

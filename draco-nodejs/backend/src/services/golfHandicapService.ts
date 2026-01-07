@@ -275,6 +275,7 @@ export class GolfHandicapService {
 
         if (handicap.handicapIndex === null && entry.golfer.initialdifferential !== null) {
           handicap.handicapIndex = entry.golfer.initialdifferential;
+          handicap.isInitialIndex = true;
         }
 
         playerHandicaps.push(handicap);

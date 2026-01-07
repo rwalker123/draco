@@ -21194,6 +21194,8 @@ components:
         handicapIndex9:
           type: number
           nullable: true
+        isInitialIndex:
+          type: boolean
         roundsUsed:
           type: integer
         totalRounds:
@@ -21277,6 +21279,8 @@ components:
               handicapIndex9:
                 type: number
                 nullable: true
+              isInitialIndex:
+                type: boolean
               roundsUsed:
                 type: integer
               totalRounds:
