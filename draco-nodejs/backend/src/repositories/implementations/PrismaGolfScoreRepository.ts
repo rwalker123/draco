@@ -163,16 +163,20 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
   }
 
   async getPlayerScoresForSeason(
-    golferId: bigint,
+    contactId: bigint,
     seasonId: bigint,
   ): Promise<GolfScoreWithDetails[]> {
     return this.prisma.golfscore.findMany({
       where: {
-        golferid: golferId,
+        golfer: {
+          contactid: contactId,
+        },
         golfmatchscores: {
           some: {
             golfmatch: {
-              leagueid: seasonId,
+              leagueseason: {
+                seasonid: seasonId,
+              },
             },
           },
         },

@@ -193,10 +193,10 @@ export class GolfScoreService {
   }
 
   async getPlayerSeasonScores(
-    golferId: bigint,
+    contactId: bigint,
     seasonId: bigint,
   ): Promise<GolfScoreWithDetailsType[]> {
-    const scores = await this.scoreRepository.getPlayerScoresForSeason(golferId, seasonId);
+    const scores = await this.scoreRepository.getPlayerScoresForSeason(contactId, seasonId);
     return scores.map((s) => GolfScoreResponseFormatter.formatWithDetails(s));
   }
 }
