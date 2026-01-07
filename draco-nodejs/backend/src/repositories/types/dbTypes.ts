@@ -2406,24 +2406,31 @@ export type dbManagerExportData = Prisma.teamseasonmanagerGetPayload<{
   };
 }>;
 
-export type dbContactExportData = Prisma.contactsGetPayload<{
-  select: {
-    firstname: true;
-    lastname: true;
-    middlename: true;
-    email: true;
-    phone1: true;
-    phone2: true;
-    phone3: true;
-    streetaddress: true;
-    city: true;
-    state: true;
-    zip: true;
-    dateofbirth: true;
-    contactroles: {
-      select: {
-        roleid: true;
+// Export data type - dateofbirth is nullable because raw SQL queries can return null
+// even though Prisma schema says it's non-nullable
+export type dbContactExportData = Omit<
+  Prisma.contactsGetPayload<{
+    select: {
+      firstname: true;
+      lastname: true;
+      middlename: true;
+      email: true;
+      phone1: true;
+      phone2: true;
+      phone3: true;
+      streetaddress: true;
+      city: true;
+      state: true;
+      zip: true;
+      dateofbirth: true;
+      contactroles: {
+        select: {
+          roleid: true;
+        };
       };
     };
-  };
-}>;
+  }>,
+  'dateofbirth'
+> & {
+  dateofbirth: Date | null;
+};

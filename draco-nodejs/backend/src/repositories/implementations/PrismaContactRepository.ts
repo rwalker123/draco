@@ -697,8 +697,6 @@ export class PrismaContactRepository implements IContactRepository {
     }
 
     // Transform to expected format
-    // Note: dateofbirth can be null in raw SQL even though schema says non-nullable.
-    // The consumer (csvExportService) handles null via formatDate function.
     return rawContacts.map((c) => ({
       firstname: c.firstname,
       lastname: c.lastname,
@@ -711,7 +709,7 @@ export class PrismaContactRepository implements IContactRepository {
       city: c.city,
       state: c.state,
       zip: c.zip,
-      dateofbirth: c.dateofbirth as Date,
+      dateofbirth: c.dateofbirth,
       contactroles: rolesByContact.get(c.contact_id) || [],
     }));
   }

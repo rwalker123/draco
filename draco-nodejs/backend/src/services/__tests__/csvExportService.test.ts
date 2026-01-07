@@ -792,8 +792,9 @@ describe('CsvExportService', () => {
       expect(csvContent).toContain('unknown-role');
     });
 
-    it('should format date of birth correctly', async () => {
-      const testDate = new Date(1995, 11, 25);
+    it('should format date of birth correctly using UTC', async () => {
+      // Use a UTC date to ensure consistent testing across timezones
+      const testDate = new Date(Date.UTC(1995, 11, 25));
       contactRepository.findContactsForExport.mockResolvedValue([
         createMockContactExportData({ dateofbirth: testDate }),
       ]);
@@ -802,12 +803,8 @@ describe('CsvExportService', () => {
       const result = await contactService.exportContacts(1n, 'Test Account');
       const csvContent = result.buffer.toString();
 
-      const expectedDateStr = testDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      });
-      expect(csvContent).toContain(expectedDateStr);
+      // Expect UTC-based formatting: YYYY-MM-DD
+      expect(csvContent).toContain('1995-12-25');
     });
 
     it('should handle null values gracefully', async () => {
