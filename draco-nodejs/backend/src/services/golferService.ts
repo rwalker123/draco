@@ -3,6 +3,7 @@ import {
   CreateGolfScoreType,
   GolfScoreWithDetailsType,
   UpdateGolfScoreType,
+  ContactIndividualGolfAccountType,
 } from '@draco/shared-schemas';
 import {
   IGolferRepository,
@@ -33,6 +34,7 @@ import {
 } from '../utils/whsCalculator.js';
 
 const RECENT_SCORES_LIMIT = 20;
+const GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID = BigInt(5);
 
 export class GolferService {
   private readonly golferRepository: IGolferRepository;
@@ -326,6 +328,42 @@ export class GolferService {
   async deleteScoreForAccount(accountId: bigint, scoreId: bigint): Promise<void> {
     await this.verifyScoreOwnership(accountId, scoreId);
     await this.golfScoreRepository.delete(scoreId);
+  }
+
+  async getIndividualGolfAccountForContact(
+    contactId: bigint,
+  ): Promise<ContactIndividualGolfAccountType> {
+    const contact = await this.contactRepository.findById(contactId);
+    if (!contact || !contact.userid) {
+      return null;
+    }
+
+    const individualAccount = await this.accountRepository.findByOwnerUserIdAndType(
+      contact.userid,
+      GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID,
+    );
+
+    if (!individualAccount) {
+      return null;
+    }
+
+    try {
+      const golfer = await this.getGolferForAccount(individualAccount.id);
+      return {
+        accountId: individualAccount.id.toString(),
+        accountName: individualAccount.name,
+        handicapIndex: golfer.handicapIndex ?? null,
+        isInitialHandicap:
+          golfer.initialDifferential !== null &&
+          golfer.handicapIndex !== null &&
+          golfer.handicapIndex === golfer.initialDifferential,
+        averageScore: golfer.averageScore ?? null,
+        roundsPlayed: golfer.roundsPlayed ?? 0,
+      };
+    } catch (error) {
+      console.error('Failed to fetch golfer for individual account:', error);
+      return null;
+    }
   }
 
   private async verifyScoreOwnership(

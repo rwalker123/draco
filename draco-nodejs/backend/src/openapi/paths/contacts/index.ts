@@ -21,6 +21,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     PublicContactSearchResponseSchemaRef,
     PublicContactSearchQuerySchemaRef,
     AutoRegisterContactResponseSchemaRef,
+    ContactIndividualGolfAccountSchemaRef,
   } = schemaRefs;
 
   registry.registerPath({
@@ -1158,6 +1159,50 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * GET /api/contacts/:contactId/golf/individual/player-scores
+   * Get individual golf account summary for a contact
+   * Returns null if the contact has no individual golf account
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/contacts/{contactId}/golf/individual/player-scores',
+    summary: 'Get individual golf account for a contact',
+    description:
+      'Returns the individual golf account summary (handicap, rounds, average) for a contact if they have one. Returns null if no individual golf account exists.',
+    operationId: 'getContactIndividualGolfPlayerScores',
+    tags: ['Contacts', 'Golf'],
+    parameters: [
+      {
+        name: 'contactId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Individual golf account summary or null if none exists',
+        content: {
+          'application/json': {
+            schema: ContactIndividualGolfAccountSchemaRef,
           },
         },
       },

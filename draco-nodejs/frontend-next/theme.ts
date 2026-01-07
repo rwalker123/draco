@@ -6,6 +6,14 @@ interface WidgetPalette {
   border: string;
   headerText: string;
   supportingText: string;
+  todayBg: string;
+  todayBorder: string;
+  todayAccent: string;
+  todayText: string;
+  todayTextSecondary: string;
+  todayHeaderBg: string;
+  todayHeaderText: string;
+  todayCardBg: string;
 }
 
 declare module '@mui/material/styles' {
@@ -43,6 +51,14 @@ export const dracoThemeOptions: ThemeOptions = {
       border: '#e2e8f0',
       headerText: '#0f172a',
       supportingText: '#475569',
+      todayBg: '#0284c7',
+      todayBorder: '#0284c7',
+      todayAccent: '#0369a1',
+      todayText: '#0c4a6e',
+      todayTextSecondary: '#0369a1',
+      todayHeaderBg: '#0284c7',
+      todayHeaderText: '#ffffff',
+      todayCardBg: '#ffffff',
     },
   },
   typography: {
@@ -133,6 +149,14 @@ const darkThemeOverrides: ThemeOptions = {
       border: '#1f2937',
       headerText: '#f8fafc',
       supportingText: '#94a3b8',
+      todayBg: '#0c4a6e',
+      todayBorder: '#0ea5e9',
+      todayAccent: '#38bdf8',
+      todayText: '#e0f2fe',
+      todayTextSecondary: '#7dd3fc',
+      todayHeaderBg: '#075985',
+      todayHeaderText: '#e0f2fe',
+      todayCardBg: '#0f172a',
     },
   },
   components: {

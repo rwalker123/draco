@@ -16,6 +16,8 @@ import {
   FilterType,
   ViewMode,
 } from '../../../../components/schedule';
+import { isGolfLeagueAccountType } from '../../../../utils/accountTypeUtils';
+import GolfScorecardDialog from '../../../../components/golf/GolfScorecardDialog';
 
 interface ScheduleProps {
   accountId: string;
@@ -45,6 +47,8 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
 
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const isGolfLeague = isGolfLeagueAccountType(accountType);
 
   const [feedback, setFeedback] = useState<{
     severity: 'success' | 'error';
@@ -157,14 +161,25 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
     [defaultViewMode],
   );
 
-  const handleGameClick = useCallback((game: Game) => {
-    setSelectedGame(game);
-    setViewDialogOpen(true);
-  }, []);
+  const handleGameClick = useCallback(
+    (game: Game) => {
+      if (isGolfLeague) {
+        setSelectedMatchId(game.id);
+      } else {
+        setSelectedGame(game);
+        setViewDialogOpen(true);
+      }
+    },
+    [isGolfLeague],
+  );
 
   const handleViewDialogClose = useCallback(() => {
     setViewDialogOpen(false);
     setSelectedGame(null);
+  }, []);
+
+  const handleScorecardClose = useCallback(() => {
+    setSelectedMatchId(null);
   }, []);
 
   return (
@@ -205,20 +220,31 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
       recapError={recapError}
       onRecapErrorClose={clearRecapError}
     >
-      <GameDialog
-        open={viewDialogOpen}
-        mode="edit"
-        accountId={accountId}
-        timeZone={timeZone}
-        selectedGame={selectedGame}
-        leagues={leagues}
-        locations={locations}
-        leagueTeamsCache={leagueTeamsCache}
-        canEditSchedule={false}
-        onClose={handleViewDialogClose}
-        onSuccess={() => {}}
-        onError={() => {}}
-      />
+      {!isGolfLeague && (
+        <GameDialog
+          open={viewDialogOpen}
+          mode="edit"
+          accountId={accountId}
+          timeZone={timeZone}
+          selectedGame={selectedGame}
+          leagues={leagues}
+          locations={locations}
+          leagueTeamsCache={leagueTeamsCache}
+          canEditSchedule={false}
+          onClose={handleViewDialogClose}
+          onSuccess={() => {}}
+          onError={() => {}}
+        />
+      )}
+
+      {isGolfLeague && selectedMatchId && (
+        <GolfScorecardDialog
+          open={!!selectedMatchId}
+          onClose={handleScorecardClose}
+          matchId={selectedMatchId}
+          accountId={accountId}
+        />
+      )}
 
       {recapDialogs}
     </ScheduleLayout>

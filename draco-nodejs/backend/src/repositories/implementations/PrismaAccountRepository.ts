@@ -43,6 +43,18 @@ export class PrismaAccountRepository implements IAccountRepository {
     return this.prisma.accounts.count({ where });
   }
 
+  async findByOwnerUserIdAndType(
+    ownerUserId: string,
+    accountTypeId: bigint,
+  ): Promise<accounts | null> {
+    return this.prisma.accounts.findFirst({
+      where: {
+        owneruserid: ownerUserId,
+        accounttypeid: accountTypeId,
+      },
+    });
+  }
+
   async findByDomain(domain: string): Promise<accounts | null> {
     const accountUrl = await this.prisma.accountsurl.findFirst({
       where: {

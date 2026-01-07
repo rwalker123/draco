@@ -76,8 +76,8 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     theme.palette.primary.main,
     theme.palette.mode === 'dark' ? 0.25 : 0.08,
   );
-  const todayBg = alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.32 : 0.12);
-  const todayBorder = alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.8 : 0.45);
+  const todayBg = theme.palette.widget.todayBg;
+  const todayBorder = theme.palette.widget.todayBorder;
   const zoomColumnBg = alpha(
     theme.palette.primary.main,
     theme.palette.mode === 'dark' ? 0.35 : 0.08,
@@ -272,7 +272,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                     const isToday = isSameDayInTimezone(day, new Date(), timeZone);
                     const inCurrentMonth = isInCurrentMonth(day);
                     const dayNumberColor = isToday
-                      ? theme.palette.primary.main
+                      ? theme.palette.widget.todayHeaderText
                       : inCurrentMonth
                         ? theme.palette.primary.main
                         : theme.palette.text.disabled;
@@ -304,11 +304,13 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                           sx={{
                             py: 1,
                             px: 1,
-                            backgroundColor: alpha(
-                              theme.palette.primary.main,
-                              theme.palette.mode === 'dark' ? 0.15 : 0.08,
-                            ),
-                            borderBottom: `1px solid ${borderColor}`,
+                            backgroundColor: isToday
+                              ? theme.palette.widget.todayHeaderBg
+                              : alpha(
+                                  theme.palette.primary.main,
+                                  theme.palette.mode === 'dark' ? 0.15 : 0.08,
+                                ),
+                            borderBottom: `1px solid ${isToday ? theme.palette.widget.todayBorder : borderColor}`,
                             textAlign: 'center',
                           }}
                         >
@@ -324,7 +326,16 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                         </Box>
 
                         {/* Games for this day */}
-                        <Box sx={{ p: 1, height: 'calc(100% - 60px)', overflow: 'auto' }}>
+                        <Box
+                          sx={{
+                            p: 1,
+                            height: 'calc(100% - 60px)',
+                            overflow: 'auto',
+                            backgroundColor: isToday
+                              ? theme.palette.widget.todayCardBg
+                              : 'transparent',
+                          }}
+                        >
                           {getGamesForDay(day).length > 0 ? (
                             getGamesForDay(day).map((game) => {
                               const gameCardData = convertGameToGameCardData(game);
@@ -381,7 +392,11 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                           ) : (
                             <Typography
                               variant="body2"
-                              color={theme.palette.widget.supportingText}
+                              color={
+                                isToday
+                                  ? theme.palette.widget.todayTextSecondary
+                                  : theme.palette.widget.supportingText
+                              }
                               sx={{ textAlign: 'center', mt: 2 }}
                             >
                               No games
@@ -399,7 +414,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
               const isToday = isSameDayInTimezone(day, new Date(), timeZone);
               const inCurrentMonth = isInCurrentMonth(day);
               const dayNumberColor = isToday
-                ? theme.palette.primary.main
+                ? theme.palette.widget.todayHeaderText
                 : inCurrentMonth
                   ? theme.palette.primary.main
                   : theme.palette.text.disabled;
@@ -431,11 +446,13 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                     sx={{
                       py: 1,
                       px: 1,
-                      backgroundColor: alpha(
-                        theme.palette.primary.main,
-                        theme.palette.mode === 'dark' ? 0.15 : 0.08,
-                      ),
-                      borderBottom: `1px solid ${borderColor}`,
+                      backgroundColor: isToday
+                        ? theme.palette.widget.todayHeaderBg
+                        : alpha(
+                            theme.palette.primary.main,
+                            theme.palette.mode === 'dark' ? 0.15 : 0.08,
+                          ),
+                      borderBottom: `1px solid ${isToday ? theme.palette.widget.todayBorder : borderColor}`,
                       textAlign: 'center',
                     }}
                   >
@@ -451,7 +468,14 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                   </Box>
 
                   {/* Games for this day */}
-                  <Box sx={{ p: 1, height: 'calc(100% - 60px)', overflow: 'auto' }}>
+                  <Box
+                    sx={{
+                      p: 1,
+                      height: 'calc(100% - 60px)',
+                      overflow: 'auto',
+                      backgroundColor: isToday ? theme.palette.widget.todayCardBg : 'transparent',
+                    }}
+                  >
                     {getGamesForDay(day).length > 0 ? (
                       getGamesForDay(day).map((game) => {
                         const gameCardData = convertGameToGameCardData(game);
@@ -505,7 +529,11 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                     ) : (
                       <Typography
                         variant="body2"
-                        color={theme.palette.widget.supportingText}
+                        color={
+                          isToday
+                            ? theme.palette.widget.todayTextSecondary
+                            : theme.palette.widget.supportingText
+                        }
                         sx={{ textAlign: 'center', mt: 2 }}
                       >
                         No games

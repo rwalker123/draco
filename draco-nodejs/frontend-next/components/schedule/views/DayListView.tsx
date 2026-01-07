@@ -10,7 +10,7 @@ import {
   isSameDayInTimezone,
 } from '../../../utils/dateUtils';
 import WidgetShell from '../../ui/WidgetShell';
-import { alpha, useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 
 interface DayListViewProps extends ViewComponentProps {
   viewMode: 'calendar' | 'list';
@@ -191,14 +191,8 @@ const DayListView: React.FC<DayListViewProps> = ({
             day: 'numeric',
             year: 'numeric',
           });
-          const highlightBg = alpha(
-            theme.palette.primary.main,
-            theme.palette.mode === 'dark' ? 0.32 : 0.12,
-          );
-          const highlightBorder = alpha(
-            theme.palette.primary.main,
-            theme.palette.mode === 'dark' ? 0.8 : 0.45,
-          );
+          const highlightBg = theme.palette.widget.todayBg;
+          const highlightBorder = theme.palette.widget.todayBorder;
 
           return (
             <Paper
@@ -209,6 +203,9 @@ const DayListView: React.FC<DayListViewProps> = ({
                 borderWidth: 1,
                 borderStyle: 'solid',
                 borderColor: isTodayDate ? highlightBorder : theme.palette.widget.border,
+                borderLeft: isTodayDate
+                  ? `4px solid ${theme.palette.widget.todayAccent}`
+                  : undefined,
                 boxShadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 2],
               }}
             >
@@ -218,7 +215,7 @@ const DayListView: React.FC<DayListViewProps> = ({
                   fontWeight: isTodayDate ? 'bold' : 'normal',
                   mb: 2,
                   color: isTodayDate
-                    ? theme.palette.primary.contrastText
+                    ? theme.palette.widget.todayHeaderText
                     : theme.palette.text.primary,
                 }}
               >
@@ -229,10 +226,8 @@ const DayListView: React.FC<DayListViewProps> = ({
                     variant="body2"
                     sx={{
                       ml: 1,
-                      color: alpha(
-                        theme.palette.primary.contrastText,
-                        theme.palette.mode === 'dark' ? 0.75 : 0.6,
-                      ),
+                      color: theme.palette.widget.todayHeaderText,
+                      opacity: 0.8,
                     }}
                   >
                     (Today)
@@ -324,13 +319,12 @@ const DayListView: React.FC<DayListViewProps> = ({
             sx={{
               p: 2,
               backgroundColor: isToday
-                ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.32 : 0.12)
+                ? theme.palette.widget.todayBg
                 : theme.palette.widget.surface,
               borderWidth: 1,
               borderStyle: 'solid',
-              borderColor: isToday
-                ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.8 : 0.45)
-                : theme.palette.widget.border,
+              borderColor: isToday ? theme.palette.widget.todayBorder : theme.palette.widget.border,
+              borderLeft: isToday ? `4px solid ${theme.palette.widget.todayAccent}` : undefined,
               boxShadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 2],
             }}
           >
