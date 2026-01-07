@@ -133,6 +133,39 @@ export const registerExportsEndpoints = ({ registry, schemaRefs }: RegisterConte
     parameters: pathParams,
     responses: csvResponse,
   });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/contacts/export',
+    description: 'Export account contacts to CSV file with optional filtering',
+    summary: 'Export contacts',
+    operationId: 'exportContacts',
+    security: [{ bearerAuth: [] }],
+    tags: ['Exports'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path' as const,
+        required: true,
+        schema: { type: 'string' as const, format: 'number' },
+      },
+      {
+        name: 'searchTerm',
+        in: 'query' as const,
+        required: false,
+        schema: { type: 'string' as const },
+        description: 'Optional search term to filter contacts by name or email',
+      },
+      {
+        name: 'onlyWithRoles',
+        in: 'query' as const,
+        required: false,
+        schema: { type: 'string' as const, enum: ['true', 'false'] },
+        description: 'If true, only export contacts that have roles assigned',
+      },
+    ],
+    responses: csvResponse,
+  });
 };
 
 export default registerExportsEndpoints;

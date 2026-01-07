@@ -1,11 +1,16 @@
 import { Prisma, PrismaClient, contacts } from '#prisma/client';
-import { ActiveRosterContactFilters, IContactRepository } from '../interfaces/index.js';
+import {
+  ActiveRosterContactFilters,
+  IContactRepository,
+  ContactExportOptions,
+} from '../interfaces/index.js';
 import {
   dbRosterPlayer,
   dbBaseContact,
   dbContactWithAccountRoles,
   dbContactWithRoleAndDetails,
   dbBirthdayContact,
+  dbContactExportData,
 } from '../types/dbTypes.js';
 import { RoleNamesType } from '../../types/roles.js';
 import { ROLE_IDS } from '../../config/roles.js';
@@ -511,6 +516,62 @@ export class PrismaContactRepository implements IContactRepository {
         zip: true,
         dateofbirth: true,
         creatoraccountid: true,
+      },
+    });
+  }
+
+  async findContactsForExport(
+    accountId: bigint,
+    options: ContactExportOptions,
+  ): Promise<dbContactExportData[]> {
+    const { searchTerm, onlyWithRoles } = options;
+
+    const whereClause: Prisma.contactsWhereInput = {
+      creatoraccountid: accountId,
+      ...(searchTerm
+        ? {
+            OR: [
+              { firstname: { contains: searchTerm, mode: 'insensitive' } },
+              { lastname: { contains: searchTerm, mode: 'insensitive' } },
+              { email: { contains: searchTerm, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+      ...(onlyWithRoles
+        ? {
+            contactroles: {
+              some: {
+                accountid: accountId,
+              },
+            },
+          }
+        : {}),
+    };
+
+    return this.prisma.contacts.findMany({
+      where: whereClause,
+      orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }, { middlename: 'asc' }],
+      select: {
+        firstname: true,
+        lastname: true,
+        middlename: true,
+        email: true,
+        phone1: true,
+        phone2: true,
+        phone3: true,
+        streetaddress: true,
+        city: true,
+        state: true,
+        zip: true,
+        dateofbirth: true,
+        contactroles: {
+          where: {
+            accountid: accountId,
+          },
+          select: {
+            roleid: true,
+          },
+        },
       },
     });
   }

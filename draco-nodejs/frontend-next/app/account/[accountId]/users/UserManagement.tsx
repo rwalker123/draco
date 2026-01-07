@@ -19,7 +19,11 @@ import {
 } from '../../../../components/users/automatic-roles';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { ContactType, ContactRoleType, RoleWithContactType } from '@draco/shared-schemas';
+import { exportContacts } from '@draco/shared-api-client';
 import AddIcon from '@mui/icons-material/Add';
+import { useApiClient } from '../../../../hooks/useApiClient';
+import { unwrapApiResult } from '../../../../utils/apiResult';
+import { downloadBlob } from '../../../../utils/downloadUtils';
 import AutoRegisterDialog from '../../../../components/users/AutoRegisterDialog';
 import AutoRegisterConflictDialog from '../../../../components/users/AutoRegisterConflictDialog';
 
@@ -28,6 +32,9 @@ interface UserManagementProps {
 }
 
 const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
+  // Use API client for export functionality
+  const apiClient = useApiClient();
+
   // Use the new dialog hooks
   const dialogs = useUserDialogs();
 
@@ -244,6 +251,29 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     setFeedback(null);
   }, [setFeedback]);
 
+  const handleExportUsers = useCallback(async () => {
+    try {
+      const result = await exportContacts({
+        client: apiClient,
+        path: { accountId },
+        query: {
+          searchTerm: isShowingSearchResults ? searchTerm : undefined,
+          onlyWithRoles: onlyWithRoles ? 'true' : undefined,
+        },
+        throwOnError: false,
+        parseAs: 'blob',
+      });
+
+      const blob = unwrapApiResult(result, 'Failed to export users') as Blob;
+      downloadBlob(blob, 'users.csv');
+    } catch (err) {
+      setFeedback({
+        severity: 'error',
+        message: err instanceof Error ? err.message : 'Failed to export users',
+      });
+    }
+  }, [apiClient, accountId, searchTerm, isShowingSearchResults, onlyWithRoles, setFeedback]);
+
   return (
     <main className="min-h-screen bg-background">
       {/* Account Header */}
@@ -311,6 +341,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         // Filter props
         onlyWithRoles={onlyWithRoles}
         onOnlyWithRolesChange={handleFilterToggle}
+        // Export functionality
+        onExport={handleExportUsers}
         // Disable the title header above the search bar
         title={null}
       />

@@ -2,12 +2,14 @@
 // Handles all contact and user management within accounts
 
 import { Router, Request, Response } from 'express';
+import contentDisposition from 'content-disposition';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors.js';
 import { extractAccountParams, extractContactParams } from '../utils/paramExtraction.js';
 import { handleContactPhotoUpload } from './utils/fileUpload.js';
+import prisma from '../lib/prisma.js';
 import {
   BaseContactType,
   ContactType,
@@ -34,6 +36,7 @@ const routeProtection = ServiceFactory.getRouteProtection();
 const contactService = ServiceFactory.getContactService();
 const registrationService = ServiceFactory.getRegistrationService();
 const contactDependencyService = ServiceFactory.getContactDependencyService();
+const csvExportService = ServiceFactory.getCsvExportService();
 
 const buildSelfUpdatePayload = (
   existingContact: BaseContactType,
@@ -337,6 +340,45 @@ router.get(
     });
 
     res.json(result);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/contacts/export
+ * Export contacts to CSV
+ * Query parameters:
+ *   - searchTerm: Optional search term to filter contacts
+ *   - onlyWithRoles: If true, only export contacts that have roles
+ */
+router.get(
+  '/:accountId/contacts/export',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.contacts.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const { searchTerm, onlyWithRoles } = req.query;
+
+    const account = await prisma.accounts.findUnique({
+      where: { id: accountId },
+      select: { name: true },
+    });
+
+    if (!account) {
+      throw new NotFoundError('Account not found');
+    }
+
+    const result = await csvExportService.exportContacts(accountId, account.name, {
+      searchTerm: typeof searchTerm === 'string' ? searchTerm : undefined,
+      onlyWithRoles: onlyWithRoles === 'true',
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      contentDisposition(result.fileName, { type: 'attachment' }),
+    );
+    res.send(result.buffer);
   }),
 );
 

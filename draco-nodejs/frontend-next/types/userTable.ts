@@ -196,6 +196,7 @@ export interface UserTableToolbarProps {
   loading?: boolean;
   showFilters?: boolean;
   onToggleFilters?: () => void;
+  onExport?: () => void;
 }
 
 export interface UserTableRowProps {
@@ -365,6 +366,9 @@ export interface UserTableContainerProps extends ModernUserTableProps {
   // Registration management
   onRevokeRegistration?: (contactId: string) => void;
   onAutoRegister?: (contact: ContactType) => void;
+
+  // Export functionality
+  onExport?: () => void;
 }
 
 // Backward compatibility props mapping
@@ -399,4 +403,7 @@ export interface UserTableEnhancedProps extends UserTableProps {
 
   // Registration management
   onRevokeRegistration?: (contactId: string) => void;
+
+  // Export functionality
+  onExport?: () => void;
 }

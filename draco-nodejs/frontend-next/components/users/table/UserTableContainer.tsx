@@ -72,6 +72,9 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   onlyWithRoles,
   onOnlyWithRolesChange,
 
+  // Export prop
+  onExport,
+
   ..._restProps
 }) => {
   // Component initialization
@@ -240,6 +243,7 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
           loading={loading || externalSearchLoading}
           onlyWithRoles={onlyWithRoles}
           onOnlyWithRolesChange={onOnlyWithRolesChange}
+          onExport={onExport}
         />
 
         {/* Table Header */}
