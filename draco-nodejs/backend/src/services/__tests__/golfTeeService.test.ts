@@ -195,9 +195,6 @@ describe('GolfTeeService', () => {
       async searchCustomCourses() {
         return [];
       },
-      async findDistinctExternalIds() {
-        return [];
-      },
     };
 
     service = new GolfTeeService(teeRepository, courseRepository);

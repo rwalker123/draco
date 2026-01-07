@@ -37,4 +37,5 @@ export interface IGolfTeamRepository {
   update(teamSeasonId: bigint, data: { name?: string }): Promise<teamsseason>;
   delete(teamSeasonId: bigint): Promise<teamsseason>;
   hasMatches(teamSeasonId: bigint): Promise<boolean>;
+  hasRosterEntries(teamSeasonId: bigint): Promise<boolean>;
 }

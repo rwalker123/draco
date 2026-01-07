@@ -148,7 +148,7 @@ export class PrismaGolfFlightRepository implements IGolfFlightRepository {
       select: {
         leagueseasonid: true,
         _count: {
-          select: { golfroster: true },
+          select: { golfroster: { where: { isactive: true } } },
         },
       },
     });

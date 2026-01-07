@@ -166,9 +166,6 @@ describe('GolfCourseService', () => {
       async searchCustomCourses(): Promise<golfcourse[]> {
         return [];
       },
-      async findDistinctExternalIds(): Promise<string[]> {
-        return [];
-      },
     };
 
     service = new GolfCourseService(repository);

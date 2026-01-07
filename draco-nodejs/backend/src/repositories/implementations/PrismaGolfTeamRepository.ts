@@ -26,7 +26,7 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
         },
         teams: true,
         _count: {
-          select: { golfroster: true },
+          select: { golfroster: { where: { isactive: true } } },
         },
       },
       orderBy: [{ leagueseason: { league: { name: 'asc' } } }, { name: 'asc' }],
@@ -44,7 +44,7 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
         },
         teams: true,
         _count: {
-          select: { golfroster: true },
+          select: { golfroster: { where: { isactive: true } } },
         },
       },
       orderBy: { name: 'asc' },
@@ -62,7 +62,7 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
         },
         teams: true,
         _count: {
-          select: { golfroster: true },
+          select: { golfroster: { where: { isactive: true } } },
         },
       },
     });
@@ -151,6 +151,13 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
       where: {
         OR: [{ team1: teamSeasonId }, { team2: teamSeasonId }],
       },
+    });
+    return count > 0;
+  }
+
+  async hasRosterEntries(teamSeasonId: bigint): Promise<boolean> {
+    const count = await this.prisma.golfroster.count({
+      where: { teamseasonid: teamSeasonId },
     });
     return count > 0;
   }

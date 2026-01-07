@@ -52,5 +52,4 @@ export interface IGolfCourseRepository extends IBaseRepository<
     excludeCourseIds?: bigint[],
     limit?: number,
   ): Promise<golfcourse[]>;
-  findDistinctExternalIds(): Promise<string[]>;
 }
