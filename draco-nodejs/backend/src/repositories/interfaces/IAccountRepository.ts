@@ -8,6 +8,8 @@ import {
 } from '../types/index.js';
 
 export interface IAccountRepository extends IBaseRepository<accounts> {
+  findByOwnerUserIdAndType(ownerUserId: string, accountTypeId: bigint): Promise<accounts | null>;
+
   findByDomain(domain: string): Promise<accounts | null>;
   findBySubdomain(subdomain: string): Promise<accounts | null>;
   searchByTerm(searchTerm: string, limit?: number): Promise<dbAccount[]>;

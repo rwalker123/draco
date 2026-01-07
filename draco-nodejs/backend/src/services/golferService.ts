@@ -5,7 +5,6 @@ import {
   UpdateGolfScoreType,
   ContactIndividualGolfAccountType,
 } from '@draco/shared-schemas';
-import prisma from '../lib/prisma.js';
 import {
   IGolferRepository,
   GolferWithHomeCourse,
@@ -339,12 +338,10 @@ export class GolferService {
       return null;
     }
 
-    const individualAccount = await prisma.accounts.findFirst({
-      where: {
-        owneruserid: contact.userid,
-        accounttypeid: GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID,
-      },
-    });
+    const individualAccount = await this.accountRepository.findByOwnerUserIdAndType(
+      contact.userid,
+      GOLF_INDIVIDUAL_ACCOUNT_TYPE_ID,
+    );
 
     if (!individualAccount) {
       return null;
@@ -363,7 +360,8 @@ export class GolferService {
         averageScore: golfer.averageScore ?? null,
         roundsPlayed: golfer.roundsPlayed ?? 0,
       };
-    } catch {
+    } catch (error) {
+      console.error('Failed to fetch golfer for individual account:', error);
       return null;
     }
   }
