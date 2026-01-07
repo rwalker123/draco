@@ -93,7 +93,9 @@ export const MANAGER_EXPORT_HEADERS: CsvHeader<ManagerExportRow>[] = [
 ];
 
 export interface ContactExportRow {
-  fullName: string;
+  lastName: string;
+  firstName: string;
+  middleName: string;
   email: string;
   streetAddress: string;
   city: string;
@@ -107,7 +109,9 @@ export interface ContactExportRow {
 }
 
 export const CONTACT_EXPORT_HEADERS: CsvHeader<ContactExportRow>[] = [
-  { key: 'fullName', header: 'Full Name' },
+  { key: 'lastName', header: 'Last Name' },
+  { key: 'firstName', header: 'First Name' },
+  { key: 'middleName', header: 'Middle Name' },
   { key: 'email', header: 'Email' },
   { key: 'streetAddress', header: 'Street Address' },
   { key: 'city', header: 'City' },

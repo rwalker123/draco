@@ -13,6 +13,7 @@ import { ContactQueryOptions } from '../../interfaces/contactInterfaces.js';
 export interface ContactExportOptions {
   searchTerm?: string;
   onlyWithRoles?: boolean;
+  seasonId?: bigint;
 }
 
 export interface ActiveRosterContactFilters {

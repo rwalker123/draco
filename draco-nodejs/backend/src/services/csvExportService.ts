@@ -208,7 +208,9 @@ export class CsvExportService {
         .filter(Boolean)
         .join(', ');
       return {
-        fullName: this.formatFullName(contact.firstname, contact.middlename, contact.lastname),
+        lastName: contact.lastname ?? '',
+        firstName: contact.firstname ?? '',
+        middleName: contact.middlename ?? '',
         email: contact.email ?? '',
         streetAddress: contact.streetaddress ?? '',
         city: contact.city ?? '',
