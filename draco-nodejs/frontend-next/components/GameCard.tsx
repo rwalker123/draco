@@ -23,6 +23,23 @@ import RecapButton from './RecapButton';
 import { GameStatus, GameType } from '../types/schedule';
 import FieldDetailsCard, { FieldDetails } from './fields/FieldDetailsCard';
 
+// Sport-specific extension types
+export interface GolfGameExtras {
+  homeNetScore?: number;
+  visitorNetScore?: number;
+  homePoints?: number;
+  visitorPoints?: number;
+  homeCourseHandicap?: number;
+  visitorCourseHandicap?: number;
+}
+
+export interface BaseballGameExtras {
+  umpire1?: string;
+  umpire2?: string;
+  umpire3?: string;
+  umpire4?: string;
+}
+
 // Unified Game interface that works for both ScheduleManagement and GameListDisplay
 export interface GameCardData {
   id: string;
@@ -33,10 +50,6 @@ export interface GameCardData {
   visitorTeamName: string;
   homeScore: number;
   visitorScore: number;
-  homeNetScore?: number;
-  visitorNetScore?: number;
-  homePoints?: number;
-  visitorPoints?: number;
   gameStatus: number;
   gameStatusText: string;
   gameStatusShortText?: string;
@@ -49,10 +62,9 @@ export interface GameCardData {
   gameRecaps: Array<{ teamId: string; recap: string }>;
   comment?: string;
   gameType?: number;
-  umpire1?: string;
-  umpire2?: string;
-  umpire3?: string;
-  umpire4?: string;
+  // Sport-specific extensions
+  golfExtras?: GolfGameExtras;
+  baseballExtras?: BaseballGameExtras;
 }
 
 export interface GameCardProps {
@@ -241,7 +253,33 @@ const GameCard: React.FC<GameCardProps> = ({
     );
   };
 
-  const hasGolfPoints = game.homePoints !== undefined && game.visitorPoints !== undefined;
+  const hasGolfExtras = game.golfExtras !== undefined;
+
+  const renderHandicapBadge = (handicap: number | undefined) => {
+    if (handicap === undefined) return null;
+    return (
+      <Box
+        component="span"
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          ml: 1,
+          px: 0.75,
+          py: 0.125,
+          borderRadius: 1,
+          backgroundColor: 'action.selected',
+          color: 'text.secondary',
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          minWidth: 24,
+          lineHeight: 1.4,
+        }}
+      >
+        {handicap}
+      </Box>
+    );
+  };
 
   const renderScoreValue = (
     score: number,
@@ -250,7 +288,7 @@ const GameCard: React.FC<GameCardProps> = ({
     isWinner: boolean,
     position: 'visitor' | 'home',
   ) => {
-    if (hasGolfPoints && points !== undefined) {
+    if (hasGolfExtras && points !== undefined) {
       const displayNetScore = netScore ?? score;
       return (
         <Box sx={{ textAlign: 'center' }}>
@@ -381,17 +419,28 @@ const GameCard: React.FC<GameCardProps> = ({
             {/* Teams and scores row */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography
-                  variant="body1"
-                  fontWeight={700}
-                  sx={{ color: 'text.primary', mb: 0.5 }}
-                  noWrap
-                >
-                  {game.visitorTeamName}
-                </Typography>
-                <Typography variant="body1" fontWeight={700} sx={{ color: 'text.primary' }} noWrap>
-                  {game.homeTeamName}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                  <Typography
+                    variant="body1"
+                    fontWeight={700}
+                    sx={{ color: 'text.primary' }}
+                    noWrap
+                  >
+                    {game.visitorTeamName}
+                  </Typography>
+                  {renderHandicapBadge(game.golfExtras?.visitorCourseHandicap)}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography
+                    variant="body1"
+                    fontWeight={700}
+                    sx={{ color: 'text.primary' }}
+                    noWrap
+                  >
+                    {game.homeTeamName}
+                  </Typography>
+                  {renderHandicapBadge(game.golfExtras?.homeCourseHandicap)}
+                </Box>
               </Box>
 
               {/* Scores column */}
@@ -401,19 +450,19 @@ const GameCard: React.FC<GameCardProps> = ({
                 <Box textAlign="center" sx={{ minWidth: 'auto' }}>
                   {renderScoreValue(
                     game.visitorScore,
-                    game.visitorNetScore,
-                    game.visitorPoints,
-                    hasGolfPoints
-                      ? (game.visitorPoints ?? 0) > (game.homePoints ?? 0)
+                    game.golfExtras?.visitorNetScore,
+                    game.golfExtras?.visitorPoints,
+                    hasGolfExtras
+                      ? (game.golfExtras?.visitorPoints ?? 0) > (game.golfExtras?.homePoints ?? 0)
                       : game.visitorScore > game.homeScore,
                     'visitor',
                   )}
                   {renderScoreValue(
                     game.homeScore,
-                    game.homeNetScore,
-                    game.homePoints,
-                    hasGolfPoints
-                      ? (game.homePoints ?? 0) > (game.visitorPoints ?? 0)
+                    game.golfExtras?.homeNetScore,
+                    game.golfExtras?.homePoints,
+                    hasGolfExtras
+                      ? (game.golfExtras?.homePoints ?? 0) > (game.golfExtras?.visitorPoints ?? 0)
                       : game.homeScore > game.visitorScore,
                     'home',
                   )}
@@ -427,7 +476,7 @@ const GameCard: React.FC<GameCardProps> = ({
               ) : (
                 <Box textAlign="center" sx={{ minWidth: 'auto' }}>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                    {localTime}
+                    {formattedDateLabel} {localTime}
                   </Typography>
                   {renderFieldLink()}
                 </Box>
@@ -501,17 +550,28 @@ const GameCard: React.FC<GameCardProps> = ({
                 )}
               </Box>
               <Box sx={{ minWidth: 0 }}>
-                <Typography
-                  variant="body1"
-                  fontWeight={700}
-                  sx={{ color: 'text.primary', mb: 0.5 }}
-                  noWrap
-                >
-                  {game.visitorTeamName}
-                </Typography>
-                <Typography variant="body1" fontWeight={700} sx={{ color: 'text.primary' }} noWrap>
-                  {game.homeTeamName}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                  <Typography
+                    variant="body1"
+                    fontWeight={700}
+                    sx={{ color: 'text.primary' }}
+                    noWrap
+                  >
+                    {game.visitorTeamName}
+                  </Typography>
+                  {renderHandicapBadge(game.golfExtras?.visitorCourseHandicap)}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography
+                    variant="body1"
+                    fontWeight={700}
+                    sx={{ color: 'text.primary' }}
+                    noWrap
+                  >
+                    {game.homeTeamName}
+                  </Typography>
+                  {renderHandicapBadge(game.golfExtras?.homeCourseHandicap)}
+                </Box>
               </Box>
               {/* Scores column */}
               {game.gameStatus !== GameStatus.Scheduled &&
@@ -520,19 +580,19 @@ const GameCard: React.FC<GameCardProps> = ({
                 <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
                   {renderScoreValue(
                     game.visitorScore,
-                    game.visitorNetScore,
-                    game.visitorPoints,
-                    hasGolfPoints
-                      ? (game.visitorPoints ?? 0) > (game.homePoints ?? 0)
+                    game.golfExtras?.visitorNetScore,
+                    game.golfExtras?.visitorPoints,
+                    hasGolfExtras
+                      ? (game.golfExtras?.visitorPoints ?? 0) > (game.golfExtras?.homePoints ?? 0)
                       : game.visitorScore > game.homeScore,
                     'visitor',
                   )}
                   {renderScoreValue(
                     game.homeScore,
-                    game.homeNetScore,
-                    game.homePoints,
-                    hasGolfPoints
-                      ? (game.homePoints ?? 0) > (game.visitorPoints ?? 0)
+                    game.golfExtras?.homeNetScore,
+                    game.golfExtras?.homePoints,
+                    hasGolfExtras
+                      ? (game.golfExtras?.homePoints ?? 0) > (game.golfExtras?.visitorPoints ?? 0)
                       : game.homeScore > game.visitorScore,
                     'home',
                   )}
@@ -568,7 +628,7 @@ const GameCard: React.FC<GameCardProps> = ({
                 {game.gameStatus === GameStatus.Scheduled && (
                   <>
                     <Typography variant="body2" color="text.secondary">
-                      {localTime}
+                      {formattedDateLabel} {localTime}
                     </Typography>
                     {renderFieldLink()}
                   </>

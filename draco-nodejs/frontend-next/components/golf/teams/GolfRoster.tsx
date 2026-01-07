@@ -216,7 +216,7 @@ const GolfRoster: React.FC<GolfRosterProps> = ({
                   primaryTypographyProps={{ component: 'div' }}
                   secondary={
                     showDifferential
-                      ? `Initial Differential: ${formatDifferential(entry.initialDifferential)}`
+                      ? `Initial Handicap Index: ${formatDifferential(entry.initialDifferential)}`
                       : undefined
                   }
                   secondaryTypographyProps={{ variant: 'body2', color: 'text.secondary' }}

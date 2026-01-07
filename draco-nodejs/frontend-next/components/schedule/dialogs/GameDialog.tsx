@@ -136,10 +136,10 @@ const buildInitialFormValues = (
       fieldId: selectedGame.fieldId || '',
       comment: selectedGame.comment || '',
       gameType: selectedGame.gameType ?? GameType.RegularSeason,
-      umpire1: selectedGame.umpire1 || '',
-      umpire2: selectedGame.umpire2 || '',
-      umpire3: selectedGame.umpire3 || '',
-      umpire4: selectedGame.umpire4 || '',
+      umpire1: selectedGame.baseballExtras?.umpire1 || '',
+      umpire2: selectedGame.baseballExtras?.umpire2 || '',
+      umpire3: selectedGame.baseballExtras?.umpire3 || '',
+      umpire4: selectedGame.baseballExtras?.umpire4 || '',
     };
   }
 

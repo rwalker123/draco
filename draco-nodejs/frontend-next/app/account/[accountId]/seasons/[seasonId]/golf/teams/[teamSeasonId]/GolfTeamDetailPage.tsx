@@ -6,13 +6,8 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Container,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   Fab,
-  IconButton,
   Link as MuiLink,
   Menu,
   MenuItem,
@@ -22,7 +17,6 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Close as CloseIcon,
   ArrowBack as BackIcon,
   PersonAdd as SignIcon,
   PersonAddAlt as CreateIcon,
@@ -42,9 +36,9 @@ import { getAccountSeason } from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
 import {
   GolfRoster,
-  GolfPlayerForm,
   SignPlayerDialog,
   CreateGolfPlayerDialog,
+  EditGolfPlayerDialog,
 } from '../../../../../../../../components/golf/teams';
 import { useGolfTeams } from '../../../../../../../../hooks/useGolfTeams';
 import { useGolfRosters } from '../../../../../../../../hooks/useGolfRosters';
@@ -102,10 +96,12 @@ const GolfTeamDetailPage: React.FC = () => {
     }
   };
 
-  const [loading, setLoading] = useState(true);
-  const [rosterLoading, setRosterLoading] = useState(false);
+  const [teamLoading, setTeamLoading] = useState(true);
+  const [rosterLoading, setRosterLoading] = useState(true);
   const [availableLoading, setAvailableLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isInitialLoading = teamLoading || rosterLoading;
 
   const [addMenuAnchor, setAddMenuAnchor] = useState<null | HTMLElement>(null);
   const [createPlayerOpen, setCreatePlayerOpen] = useState(false);
@@ -118,7 +114,7 @@ const GolfTeamDetailPage: React.FC = () => {
   const loadTeam = useCallback(async () => {
     if (!teamSeasonId || !seasonId) return;
 
-    setLoading(true);
+    setTeamLoading(true);
     setError(null);
 
     try {
@@ -129,7 +125,7 @@ const GolfTeamDetailPage: React.FC = () => {
         setError(result.error);
       }
     } finally {
-      setLoading(false);
+      setTeamLoading(false);
     }
   }, [teamSeasonId, seasonId, getTeamWithRoster]);
 
@@ -268,17 +264,12 @@ const GolfTeamDetailPage: React.FC = () => {
   );
 
   const handleUpdatePlayer = useCallback(
-    async (data: CreateGolfPlayerType) => {
+    async (data: UpdateGolfPlayerType) => {
       if (!editingPlayer || !seasonId) return;
 
       setFormLoading(true);
       try {
-        const updateData: UpdateGolfPlayerType = {
-          initialDifferential: data.initialDifferential,
-          isSub: data.isSub,
-          isActive: editingPlayer.isActive,
-        };
-        const result = await updatePlayer(seasonId, editingPlayer.id, updateData);
+        const result = await updatePlayer(seasonId, editingPlayer.id, data);
         if (result.success) {
           setSuccessMessage('Player updated');
           setEditPlayerOpen(false);
@@ -345,16 +336,8 @@ const GolfTeamDetailPage: React.FC = () => {
     );
   }
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-background">
-        <Container maxWidth="md" sx={{ py: 6 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <CircularProgress />
-          </Box>
-        </Container>
-      </main>
-    );
+  if (isInitialLoading) {
+    return null;
   }
 
   if (!team) {
@@ -452,7 +435,6 @@ const GolfTeamDetailPage: React.FC = () => {
 
         <GolfRoster
           roster={roster}
-          loading={rosterLoading}
           error={error}
           onRetry={loadRoster}
           onEdit={canManage ? handleEditPlayer : undefined}
@@ -523,47 +505,16 @@ const GolfTeamDetailPage: React.FC = () => {
         teamName={team.name}
       />
 
-      <Dialog
+      <EditGolfPlayerDialog
         open={editPlayerOpen}
         onClose={() => {
           setEditPlayerOpen(false);
           setEditingPlayer(null);
         }}
-        maxWidth="sm"
-        fullWidth
-        aria-labelledby="edit-player-dialog-title"
-      >
-        <DialogTitle id="edit-player-dialog-title" sx={{ pr: 6 }}>
-          Edit Player
-          <IconButton
-            aria-label="close"
-            onClick={() => {
-              setEditPlayerOpen(false);
-              setEditingPlayer(null);
-            }}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              color: (theme) => theme.palette.grey[500],
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          <GolfPlayerForm
-            player={editingPlayer || undefined}
-            onSubmit={handleUpdatePlayer}
-            onCancel={() => {
-              setEditPlayerOpen(false);
-              setEditingPlayer(null);
-            }}
-            disabled={formLoading}
-            showSubOption
-          />
-        </DialogContent>
-      </Dialog>
+        onSubmit={handleUpdatePlayer}
+        player={editingPlayer}
+        teamName={team.name}
+      />
 
       <Snackbar
         open={Boolean(successMessage)}

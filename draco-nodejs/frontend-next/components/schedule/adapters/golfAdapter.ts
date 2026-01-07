@@ -67,8 +67,6 @@ function mapGolfMatchToGame(match: GolfMatch): Game {
     visitorTeamId: match.team2.id,
     homeScore: match.team1TotalScore ?? 0,
     visitorScore: match.team2TotalScore ?? 0,
-    homePoints: match.team1Points,
-    visitorPoints: match.team2Points,
     comment: match.comment ?? '',
     fieldId: match.course?.id,
     field: match.course
@@ -100,6 +98,10 @@ function mapGolfMatchToGame(match: GolfMatch): Game {
     season: {
       id: match.leagueSeasonId,
       name: '',
+    },
+    golfExtras: {
+      homePoints: match.team1Points,
+      visitorPoints: match.team2Points,
     },
   };
 }

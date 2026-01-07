@@ -266,6 +266,17 @@ export class GolfHandicapService {
         if (!entry.isactive) continue;
 
         const handicap = await this.getPlayerHandicap(entry.golferid);
+
+        if (!handicap.contactId || handicap.contactId === '') {
+          handicap.contactId = entry.golfer.contact.id.toString();
+          handicap.firstName = entry.golfer.contact.firstname;
+          handicap.lastName = entry.golfer.contact.lastname;
+        }
+
+        if (handicap.handicapIndex === null && entry.golfer.initialdifferential !== null) {
+          handicap.handicapIndex = entry.golfer.initialdifferential;
+        }
+
         playerHandicaps.push(handicap);
       }
     }
