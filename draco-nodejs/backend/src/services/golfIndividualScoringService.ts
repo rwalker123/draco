@@ -355,13 +355,16 @@ export class GolfIndividualScoringService {
       holesPlayed,
     );
 
+    const team1AbsoluteNet = team1ScoreData.totalScore - team1CourseHandicap;
+    const team2AbsoluteNet = team2ScoreData.totalScore - team2CourseHandicap;
+
     await this.matchRepository.updatePoints(matchId, {
       team1points: result.team1Points,
       team2points: result.team2Points,
       team1totalscore: score1.totalscore,
       team2totalscore: score2.totalscore,
-      team1netscore: result.team1NetScore,
-      team2netscore: result.team2NetScore,
+      team1netscore: team1AbsoluteNet,
+      team2netscore: team2AbsoluteNet,
       team1holewins: result.team1HoleWins,
       team2holewins: result.team2HoleWins,
       team1ninewins: result.team1NineWins,

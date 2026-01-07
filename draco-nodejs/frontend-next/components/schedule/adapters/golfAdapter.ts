@@ -102,6 +102,8 @@ function mapGolfMatchToGame(match: GolfMatch): Game {
     golfExtras: {
       homePoints: match.team1Points,
       visitorPoints: match.team2Points,
+      homeNetScore: match.team1NetScore,
+      visitorNetScore: match.team2NetScore,
     },
   };
 }

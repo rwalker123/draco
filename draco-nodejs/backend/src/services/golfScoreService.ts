@@ -117,7 +117,8 @@ export class GolfScoreService {
         }
 
         if (!playerScore.score) {
-          throw new ValidationError(`Score data required for player ${playerScore.rosterId}`);
+          const playerName = `${rosterEntry.golfer.contact.firstname} ${rosterEntry.golfer.contact.lastname}`;
+          throw new ValidationError(`Score data required for player ${playerName}`);
         }
 
         const scoreData = playerScore.score;
