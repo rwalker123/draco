@@ -17,6 +17,7 @@ import { unwrapApiResult } from '../utils/apiResult';
 import WidgetShell from './ui/WidgetShell';
 import GameCard, { GameCardData } from './GameCard';
 import { useAccountTimezone } from '../context/AccountContext';
+import GolfScorecardDialog from './golf/GolfScorecardDialog';
 
 interface GolfMatchesWidgetProps {
   accountId: string;
@@ -37,6 +38,7 @@ export default function GolfMatchesWidget({
   const [courseHandicaps, setCourseHandicaps] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   const loadMatches = useCallback(async () => {
     if (!seasonId || seasonId === '0') return;
@@ -170,6 +172,14 @@ export default function GolfMatchesWidget({
     return undefined;
   };
 
+  const handleMatchClick = (game: GameCardData) => {
+    setSelectedMatchId(game.id);
+  };
+
+  const handleScorecardClose = () => {
+    setSelectedMatchId(null);
+  };
+
   const mapMatchToGameCardData = (match: GolfMatch): GameCardData => {
     return {
       id: match.id,
@@ -229,6 +239,7 @@ export default function GolfMatchesWidget({
               layout="horizontal"
               canEditGames={false}
               timeZone={timeZone}
+              onClick={handleMatchClick}
             />
           ))}
         </Box>
@@ -277,16 +288,26 @@ export default function GolfMatchesWidget({
   };
 
   return (
-    <WidgetShell
-      title={
-        <Typography variant="h6" fontWeight={700} color="text.primary">
-          {title}
-        </Typography>
-      }
-      accent="primary"
-    >
-      {renderBody()}
-    </WidgetShell>
+    <>
+      <WidgetShell
+        title={
+          <Typography variant="h6" fontWeight={700} color="text.primary">
+            {title}
+          </Typography>
+        }
+        accent="primary"
+      >
+        {renderBody()}
+      </WidgetShell>
+      {selectedMatchId && (
+        <GolfScorecardDialog
+          open={!!selectedMatchId}
+          onClose={handleScorecardClose}
+          matchId={selectedMatchId}
+          accountId={accountId}
+        />
+      )}
+    </>
   );
 }
 
