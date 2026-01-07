@@ -30740,6 +30740,14 @@ paths:
               - "true"
               - "false"
           description: If true, only export contacts that have roles assigned
+        - name: seasonId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: number
+          description: Season ID to scope role filtering. When onlyWithRoles is true, this
+            ensures only roles valid for this season are considered.
       responses:
         "200":
           description: CSV file export

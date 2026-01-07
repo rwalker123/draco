@@ -54,6 +54,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     searchLoading,
     isShowingSearchResults,
     onlyWithRoles,
+    currentSeasonId,
 
     // Context data states
     leagues,
@@ -259,6 +260,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         query: {
           searchTerm: isShowingSearchResults ? searchTerm : undefined,
           onlyWithRoles: onlyWithRoles ? 'true' : undefined,
+          seasonId: currentSeasonId || undefined,
         },
         throwOnError: false,
         parseAs: 'blob',
@@ -272,7 +274,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         message: err instanceof Error ? err.message : 'Failed to export users',
       });
     }
-  }, [apiClient, accountId, searchTerm, isShowingSearchResults, onlyWithRoles, setFeedback]);
+  }, [
+    apiClient,
+    accountId,
+    searchTerm,
+    isShowingSearchResults,
+    onlyWithRoles,
+    currentSeasonId,
+    setFeedback,
+  ]);
 
   return (
     <main className="min-h-screen bg-background">

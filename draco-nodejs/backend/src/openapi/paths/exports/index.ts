@@ -163,6 +163,14 @@ export const registerExportsEndpoints = ({ registry, schemaRefs }: RegisterConte
         schema: { type: 'string' as const, enum: ['true', 'false'] },
         description: 'If true, only export contacts that have roles assigned',
       },
+      {
+        name: 'seasonId',
+        in: 'query' as const,
+        required: false,
+        schema: { type: 'string' as const, format: 'number' },
+        description:
+          'Season ID to scope role filtering. When onlyWithRoles is true, this ensures only roles valid for this season are considered.',
+      },
     ],
     responses: csvResponse,
   });

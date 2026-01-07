@@ -196,6 +196,7 @@ export interface UseUserManagementReturn {
   isShowingSearchResults: boolean;
   onlyWithRoles: boolean;
   isPaginating: boolean;
+  currentSeasonId: string | null;
 
   // Dialog states
   deleteContactDialogOpen: boolean;

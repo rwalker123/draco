@@ -349,6 +349,7 @@ router.get(
  * Query parameters:
  *   - searchTerm: Optional search term to filter contacts
  *   - onlyWithRoles: If true, only export contacts that have roles
+ *   - seasonId: Optional season ID to scope role filtering (required when onlyWithRoles is true)
  */
 router.get(
   '/:accountId/contacts/export',
@@ -357,7 +358,7 @@ router.get(
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { searchTerm, onlyWithRoles } = req.query;
+    const { searchTerm, onlyWithRoles, seasonId } = req.query;
 
     const account = await prisma.accounts.findUnique({
       where: { id: accountId },
@@ -368,9 +369,12 @@ router.get(
       throw new NotFoundError('Account not found');
     }
 
+    const parsedSeasonId = typeof seasonId === 'string' && seasonId ? BigInt(seasonId) : undefined;
+
     const result = await csvExportService.exportContacts(accountId, account.name, {
       searchTerm: typeof searchTerm === 'string' ? searchTerm : undefined,
       onlyWithRoles: onlyWithRoles === 'true',
+      seasonId: parsedSeasonId,
     });
 
     res.setHeader('Content-Type', 'text/csv');

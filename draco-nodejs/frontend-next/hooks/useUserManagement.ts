@@ -877,6 +877,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     isShowingSearchResults,
     onlyWithRoles,
     isPaginating, // Use the state from reducer
+    currentSeasonId, // Expose current season ID for export filtering
 
     // Dialog states
     deleteContactDialogOpen,
