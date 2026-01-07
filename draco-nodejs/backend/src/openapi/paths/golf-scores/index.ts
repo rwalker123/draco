@@ -141,7 +141,7 @@ export const registerGolfScoresEndpoints = ({ registry, schemaRefs, z }: Registe
   registry.registerPath({
     method: 'get',
     path: '/api/accounts/{accountId}/golf/scores/player/{contactId}',
-    description: 'Get scores for a specific player',
+    description: 'Get scores for a specific player by contact ID',
     operationId: 'getGolfPlayerScores',
     summary: 'Get player scores',
     tags: ['Golf Scores'],
@@ -204,10 +204,10 @@ export const registerGolfScoresEndpoints = ({ registry, schemaRefs, z }: Registe
     },
   });
 
-  // GET /api/accounts/{accountId}/golf/scores/player/{contactId}/season/{seasonId}
+  // GET /api/accounts/{accountId}/golf/season/{seasonId}/player/{contactId}/scores
   registry.registerPath({
     method: 'get',
-    path: '/api/accounts/{accountId}/golf/scores/player/{contactId}/season/{seasonId}',
+    path: '/api/accounts/{accountId}/golf/season/{seasonId}/player/{contactId}/scores',
     description: 'Get scores for a player in a specific season',
     operationId: 'getGolfPlayerSeasonScores',
     summary: 'Get player season scores',
@@ -224,7 +224,7 @@ export const registerGolfScoresEndpoints = ({ registry, schemaRefs, z }: Registe
         },
       },
       {
-        name: 'contactId',
+        name: 'seasonId',
         in: 'path',
         required: true,
         schema: {
@@ -233,7 +233,7 @@ export const registerGolfScoresEndpoints = ({ registry, schemaRefs, z }: Registe
         },
       },
       {
-        name: 'seasonId',
+        name: 'contactId',
         in: 'path',
         required: true,
         schema: {

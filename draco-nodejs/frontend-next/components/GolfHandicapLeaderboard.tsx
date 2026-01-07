@@ -15,9 +15,14 @@ import {
   Chip,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { getGolfSeasonStandings } from '@draco/shared-api-client';
-import type { GolfLeagueStandings, GolfFlightStandings } from '@draco/shared-api-client';
-import type { LeagueHandicapsType, PlayerHandicapType } from '@draco/shared-schemas';
+import Link from 'next/link';
+import { getGolfSeasonStandings, getFlightHandicaps } from '@draco/shared-api-client';
+import type {
+  GolfLeagueStandings,
+  GolfFlightStandings,
+  LeagueHandicaps,
+  PlayerHandicap,
+} from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 import WidgetShell from './ui/WidgetShell';
@@ -37,7 +42,7 @@ export default function GolfHandicapLeaderboard({
 }: GolfHandicapLeaderboardProps) {
   const apiClient = useApiClient();
   const [flightHandicaps, setFlightHandicaps] = useState<
-    Array<{ flightId: string; flightName: string; players: PlayerHandicapType[] }>
+    Array<{ flightId: string; flightName: string; players: PlayerHandicap[] }>
   >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,15 +71,16 @@ export default function GolfHandicapLeaderboard({
       }
 
       const handicapPromises = standings.flights.map(async (flight: GolfFlightStandings) => {
-        const result = await apiClient.get({
-          url: `/api/accounts/${accountId}/golf/handicaps/flight/${flight.flightId}`,
-          security: [{ scheme: 'bearer', type: 'http' }],
+        const result = await getFlightHandicaps({
+          client: apiClient,
+          throwOnError: false,
+          path: { accountId, flightId: flight.flightId },
         });
 
-        const handicapData = unwrapApiResult(
+        const handicapData = unwrapApiResult<LeagueHandicaps>(
           result,
           `Failed to load handicaps for ${flight.flightName}`,
-        ) as LeagueHandicapsType;
+        );
 
         return {
           flightId: flight.flightId,
@@ -103,7 +109,7 @@ export default function GolfHandicapLeaderboard({
     return handicapIndex.toFixed(1);
   };
 
-  const renderPlayersTable = (players: PlayerHandicapType[], isFirstTable: boolean = false) => (
+  const renderPlayersTable = (players: PlayerHandicap[], isFirstTable: boolean = false) => (
     <TableContainer
       component={Paper}
       sx={{
@@ -160,7 +166,23 @@ export default function GolfHandicapLeaderboard({
               <TableCell sx={{ color: 'text.secondary', width: 40 }}>{index + 1}</TableCell>
               <TableCell sx={{ color: 'text.primary' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {player.firstName} {player.lastName}
+                  <Link
+                    href={`/account/${accountId}/seasons/${seasonId}/golf/players/${player.contactId}?name=${encodeURIComponent(`${player.firstName} ${player.lastName}`)}`}
+                    style={{ textDecoration: 'none', color: 'inherit' }}
+                  >
+                    <Typography
+                      component="span"
+                      sx={{
+                        '&:hover': {
+                          textDecoration: 'underline',
+                          color: 'primary.main',
+                        },
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {player.firstName} {player.lastName}
+                    </Typography>
+                  </Link>
                   {index === 0 && player.handicapIndex !== null && (
                     <Chip
                       label="Low"

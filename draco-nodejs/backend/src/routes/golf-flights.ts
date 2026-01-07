@@ -7,6 +7,7 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = Router({ mergeParams: true });
 const golfFlightService = ServiceFactory.getGolfFlightService();
+const golfHandicapService = ServiceFactory.getGolfHandicapService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
 router.get(
@@ -28,6 +29,17 @@ router.get(
     const { flightId } = extractBigIntParams(req.params, 'flightId');
     const flight = await golfFlightService.getFlightById(flightId);
     res.json(flight);
+  }),
+);
+
+router.get(
+  '/:flightId/handicaps',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { flightId } = extractBigIntParams(req.params, 'flightId');
+    const handicaps = await golfHandicapService.getLeagueHandicaps(flightId);
+    res.json(handicaps);
   }),
 );
 

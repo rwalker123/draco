@@ -32197,6 +32197,59 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/flights/{flightId}/handicaps:
+    get:
+      description: Get handicap listing for all players in a flight
+      operationId: getFlightHandicaps
+      summary: Get flight handicaps
+      tags:
+        - Golf Handicaps
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: flightId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Handicap listing for all players in the flight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeagueHandicaps"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized to access this account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Flight not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/golf/handicaps/batch-course-handicaps:
     post:
       description: Calculate course handicaps for multiple golfers given a tee
@@ -33261,7 +33314,7 @@ paths:
                 $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/golf/scores/player/{contactId}:
     get:
-      description: Get scores for a specific player
+      description: Get scores for a specific player by contact ID
       operationId: getGolfPlayerScores
       summary: Get player scores
       tags:
@@ -33311,7 +33364,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/golf/scores/player/{contactId}/season/{seasonId}:
+  /api/accounts/{accountId}/golf/season/{seasonId}/player/{contactId}/scores:
     get:
       description: Get scores for a player in a specific season
       operationId: getGolfPlayerSeasonScores
@@ -33327,13 +33380,13 @@ paths:
           schema:
             type: string
             format: number
-        - name: contactId
+        - name: seasonId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - name: seasonId
+        - name: contactId
           in: path
           required: true
           schema:

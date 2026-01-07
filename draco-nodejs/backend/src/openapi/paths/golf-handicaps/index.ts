@@ -9,7 +9,80 @@ export default function registerGolfHandicapsEndpoints({ registry, schemaRefs }:
     ValidationErrorSchemaRef,
     BatchCourseHandicapRequestSchemaRef,
     BatchCourseHandicapResponseSchemaRef,
+    LeagueHandicapsSchemaRef,
   } = schemaRefs;
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/golf/flights/{flightId}/handicaps',
+    description: 'Get handicap listing for all players in a flight',
+    operationId: 'getFlightHandicaps',
+    summary: 'Get flight handicaps',
+    tags: ['Golf Handicaps'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'flightId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Handicap listing for all players in the flight',
+        content: {
+          'application/json': {
+            schema: LeagueHandicapsSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Not authorized to access this account',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Flight not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
 
   registry.registerPath({
     method: 'post',
