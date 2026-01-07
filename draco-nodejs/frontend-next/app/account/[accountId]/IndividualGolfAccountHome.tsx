@@ -42,6 +42,7 @@ import {
 import { useIndividualGolfAccountService } from '../../../hooks/useIndividualGolfAccountService';
 import HomeCourseSearchDialog from '../../../components/golf/dialogs/HomeCourseSearchDialog';
 import IndividualRoundEntryDialog from '../../../components/golf/dialogs/IndividualRoundEntryDialog';
+import OrganizationsWidget from '../../../components/OrganizationsWidget';
 
 const IndividualGolfAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -484,6 +485,12 @@ const IndividualGolfAccountHome: React.FC = () => {
             </Box>
           )}
         </Paper>
+
+        <OrganizationsWidget
+          title="My Organizations"
+          excludeAccountId={accountIdStr}
+          sx={{ mt: 4 }}
+        />
       </Container>
 
       {accountIdStr && (
