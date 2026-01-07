@@ -1,12 +1,24 @@
 import { IRosterRepository } from '../repositories/interfaces/IRosterRepository.js';
 import { IManagerRepository } from '../repositories/interfaces/IManagerRepository.js';
-import { dbRosterExportData, dbManagerExportData } from '../repositories/types/dbTypes.js';
+import {
+  IContactRepository,
+  ContactExportOptions,
+} from '../repositories/interfaces/IContactRepository.js';
+import { IRoleRepository } from '../repositories/interfaces/IRoleRepository.js';
+import {
+  dbRosterExportData,
+  dbManagerExportData,
+  dbContactExportData,
+} from '../repositories/types/dbTypes.js';
+import { DateUtils } from '../utils/dateUtils.js';
 import {
   generateCsv,
   RosterExportRow,
   ManagerExportRow,
+  ContactExportRow,
   ROSTER_EXPORT_HEADERS,
   MANAGER_EXPORT_HEADERS,
+  CONTACT_EXPORT_HEADERS,
 } from '../utils/csvGenerator.js';
 import { PayloadTooLargeError } from '../utils/customErrors.js';
 
@@ -21,6 +33,8 @@ export class CsvExportService {
   constructor(
     private readonly rosterRepository: IRosterRepository,
     private readonly managerRepository: IManagerRepository,
+    private readonly contactRepository?: IContactRepository,
+    private readonly roleRepository?: IRoleRepository,
   ) {}
 
   async exportTeamRoster(
@@ -118,6 +132,37 @@ export class CsvExportService {
     };
   }
 
+  async exportContacts(
+    accountId: bigint,
+    accountName: string,
+    options: ContactExportOptions = {},
+  ): Promise<CsvExportResult> {
+    if (!this.contactRepository) {
+      throw new Error('Contact repository is required for contact exports');
+    }
+    if (!this.roleRepository) {
+      throw new Error('Role repository is required for contact exports');
+    }
+    const startTime = Date.now();
+
+    const [contactData, allRoles] = await Promise.all([
+      this.contactRepository.findContactsForExport(accountId, options),
+      this.roleRepository.findAllRoles(),
+    ]);
+
+    const roleNameMap = new Map(allRoles.map((role) => [role.id, role.name]));
+
+    this.checkExportLimit(contactData.length, 'contacts', accountName);
+    const rows = this.mapContactsToExportRows(contactData, roleNameMap);
+    const buffer = await generateCsv(rows, CONTACT_EXPORT_HEADERS);
+    const sanitizedName = this.sanitizeFileName(accountName);
+    this.logExportMetrics('contacts', accountName, rows.length, buffer.length, startTime);
+    return {
+      buffer,
+      fileName: `${sanitizedName}-users.csv`,
+    };
+  }
+
   private mapRosterToExportRows(data: dbRosterExportData[], seasonId: bigint): RosterExportRow[] {
     return data.map((item) => {
       const contact = item.roster.contacts;
@@ -154,6 +199,33 @@ export class CsvExportService {
     });
   }
 
+  private mapContactsToExportRows(
+    data: dbContactExportData[],
+    roleNameMap: Map<string, string | null>,
+  ): ContactExportRow[] {
+    return data.map((contact) => {
+      const roleNames = contact.contactroles
+        .map((cr) => roleNameMap.get(cr.roleid) ?? cr.roleid)
+        .filter(Boolean)
+        .join(', ');
+      return {
+        lastName: contact.lastname ?? '',
+        firstName: contact.firstname ?? '',
+        middleName: contact.middlename ?? '',
+        email: contact.email ?? '',
+        streetAddress: contact.streetaddress ?? '',
+        city: contact.city ?? '',
+        state: contact.state ?? '',
+        zip: contact.zip ?? '',
+        dateOfBirth: this.formatDate(contact.dateofbirth),
+        phone1: contact.phone1 ?? '',
+        phone2: contact.phone2 ?? '',
+        phone3: contact.phone3 ?? '',
+        roles: roleNames,
+      };
+    });
+  }
+
   private formatFullName(
     firstName: string | null,
     middleName: string | null,
@@ -161,6 +233,10 @@ export class CsvExportService {
   ): string {
     const parts = [firstName, middleName, lastName].filter(Boolean);
     return parts.join(' ');
+  }
+
+  private formatDate(date: Date | null): string {
+    return DateUtils.formatDateOfBirthForResponse(date) ?? '';
   }
 
   private sanitizeFileName(name: string): string {

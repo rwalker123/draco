@@ -91,3 +91,35 @@ export const MANAGER_EXPORT_HEADERS: CsvHeader<ManagerExportRow>[] = [
   { key: 'zip', header: 'Zip' },
   { key: 'leagueTeamName', header: 'League / Team' },
 ];
+
+export interface ContactExportRow {
+  lastName: string;
+  firstName: string;
+  middleName: string;
+  email: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  zip: string;
+  dateOfBirth: string;
+  phone1: string;
+  phone2: string;
+  phone3: string;
+  roles: string;
+}
+
+export const CONTACT_EXPORT_HEADERS: CsvHeader<ContactExportRow>[] = [
+  { key: 'lastName', header: 'Last Name' },
+  { key: 'firstName', header: 'First Name' },
+  { key: 'middleName', header: 'Middle Name' },
+  { key: 'email', header: 'Email' },
+  { key: 'streetAddress', header: 'Street Address' },
+  { key: 'city', header: 'City' },
+  { key: 'state', header: 'State' },
+  { key: 'zip', header: 'Zip' },
+  { key: 'dateOfBirth', header: 'Date of Birth' },
+  { key: 'phone1', header: 'Phone 1 (Cell)' },
+  { key: 'phone2', header: 'Phone 2 (Home)' },
+  { key: 'phone3', header: 'Phone 3 (Work)' },
+  { key: 'roles', header: 'Roles' },
+];

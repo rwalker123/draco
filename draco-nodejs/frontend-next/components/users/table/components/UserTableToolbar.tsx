@@ -36,6 +36,7 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
   loading = false,
   onlyWithRoles = false,
   onOnlyWithRolesChange,
+  onExport,
 }) => {
   const [bulkMenuAnchor, setBulkMenuAnchor] = useState<null | HTMLElement>(null);
 
@@ -195,6 +196,7 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
                   size="small"
                   startIcon={<ExportIcon />}
                   disabled={loading || userCount === 0}
+                  onClick={onExport}
                 >
                   Export
                 </Button>

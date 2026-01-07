@@ -6,8 +6,15 @@ import {
   dbContactWithRoleAndDetails,
   dbRosterPlayer,
   dbBirthdayContact,
+  dbContactExportData,
 } from '../types/dbTypes.js';
 import { ContactQueryOptions } from '../../interfaces/contactInterfaces.js';
+
+export interface ContactExportOptions {
+  searchTerm?: string;
+  onlyWithRoles?: boolean;
+  seasonId?: bigint;
+}
 
 export interface ActiveRosterContactFilters {
   birthdayOn?: {
@@ -46,4 +53,8 @@ export interface IContactRepository extends IBaseRepository<contacts> {
     skip: number,
     take: number,
   ): Promise<dbBaseContact[]>;
+  findContactsForExport(
+    accountId: bigint,
+    options: ContactExportOptions,
+  ): Promise<dbContactExportData[]>;
 }

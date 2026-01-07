@@ -2,6 +2,7 @@
 // Handles all contact and user management within accounts
 
 import { Router, Request, Response } from 'express';
+import contentDisposition from 'content-disposition';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -34,6 +35,8 @@ const routeProtection = ServiceFactory.getRouteProtection();
 const contactService = ServiceFactory.getContactService();
 const registrationService = ServiceFactory.getRegistrationService();
 const contactDependencyService = ServiceFactory.getContactDependencyService();
+const csvExportService = ServiceFactory.getCsvExportService();
+const accountsService = ServiceFactory.getAccountsService();
 
 const buildSelfUpdatePayload = (
   existingContact: BaseContactType,
@@ -337,6 +340,41 @@ router.get(
     });
 
     res.json(result);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/contacts/export
+ * Export contacts to CSV
+ * Query parameters:
+ *   - searchTerm: Optional search term to filter contacts
+ *   - onlyWithRoles: If true, only export contacts that have roles
+ *   - seasonId: Optional season ID to scope role filtering (required when onlyWithRoles is true)
+ */
+router.get(
+  '/:accountId/contacts/export',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.contacts.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const { searchTerm, onlyWithRoles, seasonId } = req.query;
+
+    const account = await accountsService.getAccountName(accountId);
+    const parsedSeasonId = typeof seasonId === 'string' && seasonId ? BigInt(seasonId) : undefined;
+
+    const result = await csvExportService.exportContacts(accountId, account.name, {
+      searchTerm: typeof searchTerm === 'string' ? searchTerm : undefined,
+      onlyWithRoles: onlyWithRoles === 'true',
+      seasonId: parsedSeasonId,
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      contentDisposition(result.fileName, { type: 'attachment' }),
+    );
+    res.send(result.buffer);
   }),
 );
 

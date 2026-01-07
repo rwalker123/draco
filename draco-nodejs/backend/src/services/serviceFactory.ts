@@ -1025,7 +1025,14 @@ export class ServiceFactory {
     if (!this.csvExportService) {
       const rosterRepository = RepositoryFactory.getRosterRepository();
       const managerRepository = RepositoryFactory.getManagerRepository();
-      this.csvExportService = new CsvExportService(rosterRepository, managerRepository);
+      const contactRepository = RepositoryFactory.getContactRepository();
+      const roleRepository = RepositoryFactory.getRoleRepository();
+      this.csvExportService = new CsvExportService(
+        rosterRepository,
+        managerRepository,
+        contactRepository,
+        roleRepository,
+      );
     }
     return this.csvExportService;
   }

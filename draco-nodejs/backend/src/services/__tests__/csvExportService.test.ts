@@ -2,7 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CsvExportService } from '../csvExportService.js';
 import { IRosterRepository } from '../../repositories/interfaces/IRosterRepository.js';
 import { IManagerRepository } from '../../repositories/interfaces/IManagerRepository.js';
-import { dbRosterExportData, dbManagerExportData } from '../../repositories/types/dbTypes.js';
+import {
+  IContactRepository,
+  ContactExportOptions,
+} from '../../repositories/interfaces/IContactRepository.js';
+import { IRoleRepository } from '../../repositories/interfaces/IRoleRepository.js';
+import {
+  dbRosterExportData,
+  dbManagerExportData,
+  dbContactExportData,
+  dbAspnetRole,
+} from '../../repositories/types/dbTypes.js';
 import { PayloadTooLargeError } from '../../utils/customErrors.js';
 
 class RosterRepositoryStub implements IRosterRepository {
@@ -39,6 +49,45 @@ class ManagerRepositoryStub implements IManagerRepository {
   findTeamManager = vi.fn<IManagerRepository['findTeamManager']>();
   findLeagueManagersForExport = vi.fn<IManagerRepository['findLeagueManagersForExport']>();
   findSeasonManagersForExport = vi.fn<IManagerRepository['findSeasonManagersForExport']>();
+}
+
+class ContactRepositoryStub implements IContactRepository {
+  findById = vi.fn<IContactRepository['findById']>();
+  findMany = vi.fn<IContactRepository['findMany']>();
+  create = vi.fn<IContactRepository['create']>();
+  update = vi.fn<IContactRepository['update']>();
+  delete = vi.fn<IContactRepository['delete']>();
+  count = vi.fn<IContactRepository['count']>();
+  findRosterByContactId = vi.fn<IContactRepository['findRosterByContactId']>();
+  findContactInAccount = vi.fn<IContactRepository['findContactInAccount']>();
+  findAccountOwner = vi.fn<IContactRepository['findAccountOwner']>();
+  isAccountOwner = vi.fn<IContactRepository['isAccountOwner']>();
+  findByUserId = vi.fn<IContactRepository['findByUserId']>();
+  findContactsByUserIds = vi.fn<IContactRepository['findContactsByUserIds']>();
+  findContactsWithRolesByAccountId =
+    vi.fn<IContactRepository['findContactsWithRolesByAccountId']>();
+  findActiveSeasonRosterContacts = vi.fn<IContactRepository['findActiveSeasonRosterContacts']>();
+  searchContactsWithRoles = vi.fn<IContactRepository['searchContactsWithRoles']>();
+  searchContactsByName = vi.fn<IContactRepository['searchContactsByName']>();
+  findAvailableContacts = vi.fn<IContactRepository['findAvailableContacts']>();
+  findContactsForExport = vi.fn<IContactRepository['findContactsForExport']>();
+}
+
+class RoleRepositoryStub implements IRoleRepository {
+  findById = vi.fn<IRoleRepository['findById']>();
+  findMany = vi.fn<IRoleRepository['findMany']>();
+  create = vi.fn<IRoleRepository['create']>();
+  update = vi.fn<IRoleRepository['update']>();
+  delete = vi.fn<IRoleRepository['delete']>();
+  count = vi.fn<IRoleRepository['count']>();
+  findAllRoles = vi.fn<IRoleRepository['findAllRoles']>();
+  findGlobalRoles = vi.fn<IRoleRepository['findGlobalRoles']>();
+  findRoleId = vi.fn<IRoleRepository['findRoleId']>();
+  findRoleName = vi.fn<IRoleRepository['findRoleName']>();
+  removeContactRole = vi.fn<IRoleRepository['removeContactRole']>();
+  findRole = vi.fn<IRoleRepository['findRole']>();
+  getUsersWithRole = vi.fn<IRoleRepository['getUsersWithRole']>();
+  findAccountIdsForUserRoles = vi.fn<IRoleRepository['findAccountIdsForUserRoles']>();
 }
 
 let mockPlayerIdCounter = 1n;
@@ -129,6 +178,46 @@ const createMockManagerExportData = (
     },
   };
 };
+
+const createMockContactExportData = (
+  overrides: Partial<{
+    firstname: string;
+    lastname: string;
+    middlename: string;
+    email: string | null;
+    phone1: string | null;
+    phone2: string | null;
+    phone3: string | null;
+    streetaddress: string | null;
+    city: string | null;
+    state: string | null;
+    zip: string | null;
+    dateofbirth: Date;
+    roleIds: string[];
+  }> = {},
+): dbContactExportData => {
+  return {
+    firstname: overrides.firstname ?? 'Alice',
+    lastname: overrides.lastname ?? 'Johnson',
+    middlename: overrides.middlename ?? '',
+    email: overrides.email ?? 'alice@example.com',
+    phone1: overrides.phone1 ?? '555-1111',
+    phone2: overrides.phone2 ?? null,
+    phone3: overrides.phone3 ?? null,
+    streetaddress: overrides.streetaddress ?? '789 Elm St',
+    city: overrides.city ?? 'Denver',
+    state: overrides.state ?? 'CO',
+    zip: overrides.zip ?? '80202',
+    dateofbirth: overrides.dateofbirth ?? new Date('1990-05-15'),
+    contactroles: (overrides.roleIds ?? []).map((roleid) => ({ roleid })),
+  } as dbContactExportData;
+};
+
+const createMockRoles = (): dbAspnetRole[] => [
+  { id: 'role-1', name: 'Account Admin' },
+  { id: 'role-2', name: 'Team Admin' },
+  { id: 'role-3', name: 'League Admin' },
+];
 
 describe('CsvExportService', () => {
   let service: CsvExportService;
@@ -563,6 +652,252 @@ describe('CsvExportService', () => {
           'Export limit exceeded: 15000 rows requested, maximum is 10000',
         );
       }
+    });
+  });
+
+  describe('exportContacts', () => {
+    let contactRepository: ContactRepositoryStub;
+    let roleRepository: RoleRepositoryStub;
+    let contactService: CsvExportService;
+
+    beforeEach(() => {
+      contactRepository = new ContactRepositoryStub();
+      roleRepository = new RoleRepositoryStub();
+      contactService = new CsvExportService(
+        rosterRepository,
+        managerRepository,
+        contactRepository,
+        roleRepository,
+      );
+    });
+
+    it('should export contacts with correct filename', async () => {
+      contactRepository.findContactsForExport.mockResolvedValue([createMockContactExportData()]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const result = await contactService.exportContacts(1n, 'Test Account');
+
+      expect(result.fileName).toBe('test-account-users.csv');
+      expect(Buffer.isBuffer(result.buffer)).toBe(true);
+      expect(contactRepository.findContactsForExport).toHaveBeenCalledWith(1n, {});
+    });
+
+    it('should export contacts with search term filter', async () => {
+      contactRepository.findContactsForExport.mockResolvedValue([createMockContactExportData()]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const options: ContactExportOptions = { searchTerm: 'alice' };
+      await contactService.exportContacts(1n, 'Test Account', options);
+
+      expect(contactRepository.findContactsForExport).toHaveBeenCalledWith(1n, {
+        searchTerm: 'alice',
+      });
+    });
+
+    it('should export contacts with onlyWithRoles filter', async () => {
+      contactRepository.findContactsForExport.mockResolvedValue([createMockContactExportData()]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const options: ContactExportOptions = { onlyWithRoles: true };
+      await contactService.exportContacts(1n, 'Test Account', options);
+
+      expect(contactRepository.findContactsForExport).toHaveBeenCalledWith(1n, {
+        onlyWithRoles: true,
+      });
+    });
+
+    it('should export contacts with seasonId filter', async () => {
+      contactRepository.findContactsForExport.mockResolvedValue([createMockContactExportData()]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const options: ContactExportOptions = { onlyWithRoles: true, seasonId: 5n };
+      await contactService.exportContacts(1n, 'Test Account', options);
+
+      expect(contactRepository.findContactsForExport).toHaveBeenCalledWith(1n, {
+        onlyWithRoles: true,
+        seasonId: 5n,
+      });
+    });
+
+    it('should include contact data in CSV with separate name columns', async () => {
+      contactRepository.findContactsForExport.mockResolvedValue([
+        createMockContactExportData({
+          firstname: 'Alice',
+          middlename: 'Marie',
+          lastname: 'Johnson',
+          email: 'alice@example.com',
+          phone1: '555-1111',
+          phone2: '555-2222',
+          phone3: '555-3333',
+          streetaddress: '789 Elm St',
+          city: 'Denver',
+          state: 'CO',
+          zip: '80202',
+          dateofbirth: new Date('1990-05-15'),
+          roleIds: ['role-1'],
+        }),
+      ]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const result = await contactService.exportContacts(1n, 'Test Account');
+      const csvContent = result.buffer.toString();
+
+      expect(csvContent).toContain('Johnson');
+      expect(csvContent).toContain('Alice');
+      expect(csvContent).toContain('Marie');
+      expect(csvContent).toContain('alice@example.com');
+      expect(csvContent).toContain('555-1111');
+      expect(csvContent).toContain('555-2222');
+      expect(csvContent).toContain('555-3333');
+      expect(csvContent).toContain('789 Elm St');
+      expect(csvContent).toContain('Denver');
+      expect(csvContent).toContain('CO');
+      expect(csvContent).toContain('80202');
+      expect(csvContent).toContain('Account Admin');
+    });
+
+    it('should map role IDs to role names', async () => {
+      contactRepository.findContactsForExport.mockResolvedValue([
+        createMockContactExportData({ roleIds: ['role-1', 'role-2'] }),
+      ]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const result = await contactService.exportContacts(1n, 'Test Account');
+      const csvContent = result.buffer.toString();
+
+      expect(csvContent).toContain('Account Admin');
+      expect(csvContent).toContain('Team Admin');
+    });
+
+    it('should handle contacts with no roles', async () => {
+      contactRepository.findContactsForExport.mockResolvedValue([
+        createMockContactExportData({ roleIds: [] }),
+      ]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const result = await contactService.exportContacts(1n, 'Test Account');
+
+      expect(Buffer.isBuffer(result.buffer)).toBe(true);
+    });
+
+    it('should handle contacts with unknown role IDs', async () => {
+      contactRepository.findContactsForExport.mockResolvedValue([
+        createMockContactExportData({ roleIds: ['unknown-role'] }),
+      ]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const result = await contactService.exportContacts(1n, 'Test Account');
+      const csvContent = result.buffer.toString();
+
+      expect(csvContent).toContain('unknown-role');
+    });
+
+    it('should format date of birth correctly using UTC', async () => {
+      // Use a UTC date to ensure consistent testing across timezones
+      const testDate = new Date(Date.UTC(1995, 11, 25));
+      contactRepository.findContactsForExport.mockResolvedValue([
+        createMockContactExportData({ dateofbirth: testDate }),
+      ]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const result = await contactService.exportContacts(1n, 'Test Account');
+      const csvContent = result.buffer.toString();
+
+      // Expect UTC-based formatting: YYYY-MM-DD
+      expect(csvContent).toContain('1995-12-25');
+    });
+
+    it('should handle null values gracefully', async () => {
+      contactRepository.findContactsForExport.mockResolvedValue([
+        createMockContactExportData({
+          email: null,
+          phone1: null,
+          phone2: null,
+          phone3: null,
+          streetaddress: null,
+          city: null,
+          state: null,
+          zip: null,
+        }),
+      ]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const result = await contactService.exportContacts(1n, 'Test Account');
+
+      expect(Buffer.isBuffer(result.buffer)).toBe(true);
+    });
+
+    it('should handle empty contact list', async () => {
+      contactRepository.findContactsForExport.mockResolvedValue([]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const result = await contactService.exportContacts(1n, 'Empty Account');
+
+      expect(result.fileName).toBe('empty-account-users.csv');
+      expect(result.buffer.toString()).toBe('');
+    });
+
+    it('should sanitize special characters in filename', async () => {
+      contactRepository.findContactsForExport.mockResolvedValue([]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const result = await contactService.exportContacts(1n, "Test's Account & Co.");
+
+      expect(result.fileName).toBe('test-s-account---co--users.csv');
+    });
+
+    it('should throw error when contact repository is not configured', async () => {
+      const serviceWithoutContactRepo = new CsvExportService(rosterRepository, managerRepository);
+
+      await expect(serviceWithoutContactRepo.exportContacts(1n, 'Test Account')).rejects.toThrow(
+        'Contact repository is required for contact exports',
+      );
+    });
+
+    it('should throw error when role repository is not configured', async () => {
+      const serviceWithoutRoleRepo = new CsvExportService(
+        rosterRepository,
+        managerRepository,
+        contactRepository,
+      );
+
+      await expect(serviceWithoutRoleRepo.exportContacts(1n, 'Test Account')).rejects.toThrow(
+        'Role repository is required for contact exports',
+      );
+    });
+
+    it('should throw PayloadTooLargeError when contacts exceed 10,000 rows', async () => {
+      const largeContactDataset = Array.from({ length: 10001 }, (_, i) =>
+        createMockContactExportData({ firstname: `User${i}` }),
+      );
+      contactRepository.findContactsForExport.mockResolvedValue(largeContactDataset);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      await expect(contactService.exportContacts(1n, 'Large Account')).rejects.toThrow(
+        PayloadTooLargeError,
+      );
+    });
+
+    it('should include CSV headers for all contact fields', async () => {
+      contactRepository.findContactsForExport.mockResolvedValue([createMockContactExportData()]);
+      roleRepository.findAllRoles.mockResolvedValue(createMockRoles());
+
+      const result = await contactService.exportContacts(1n, 'Test Account');
+      const csvContent = result.buffer.toString();
+
+      expect(csvContent).toContain('Last Name');
+      expect(csvContent).toContain('First Name');
+      expect(csvContent).toContain('Middle Name');
+      expect(csvContent).toContain('Email');
+      expect(csvContent).toContain('Street Address');
+      expect(csvContent).toContain('City');
+      expect(csvContent).toContain('State');
+      expect(csvContent).toContain('Zip');
+      expect(csvContent).toContain('Date of Birth');
+      expect(csvContent).toContain('Phone 1');
+      expect(csvContent).toContain('Phone 2');
+      expect(csvContent).toContain('Phone 3');
+      expect(csvContent).toContain('Roles');
     });
   });
 });

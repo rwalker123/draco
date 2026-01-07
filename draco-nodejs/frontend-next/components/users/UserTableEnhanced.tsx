@@ -33,6 +33,9 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
   onRevokeRegistration,
   onAutoRegister,
 
+  // Export action
+  onExport,
+
   // All original UserTable props
   ...originalProps
 }) => {
@@ -81,6 +84,8 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
       // Registration management
       onRevokeRegistration={onRevokeRegistration}
       onAutoRegister={onAutoRegister}
+      // Export
+      onExport={onExport}
       // Title props for enhanced container
       title={
         customTitle !== undefined

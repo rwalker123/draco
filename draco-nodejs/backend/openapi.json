@@ -43135,6 +43135,117 @@
         }
       }
     },
+    "/api/accounts/{accountId}/contacts/export": {
+      "get": {
+        "description": "Export account contacts to CSV file with optional filtering",
+        "summary": "Export contacts",
+        "operationId": "exportContacts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "searchTerm",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional search term to filter contacts by name or email"
+          },
+          {
+            "name": "onlyWithRoles",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "description": "If true, only export contacts that have roles assigned"
+          },
+          {
+            "name": "seasonId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            },
+            "description": "Season ID to scope role filtering. When onlyWithRoles is true, this ensures only roles valid for this season are considered."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/golf/external-courses/search": {
       "get": {
         "description": "Search for golf courses. Returns custom courses (no externalId) first, then external courses from GolfCourseAPI.com database. Custom courses have courseId set and empty externalId.",
