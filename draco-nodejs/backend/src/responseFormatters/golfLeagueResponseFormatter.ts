@@ -1,9 +1,15 @@
 import { contacts } from '#prisma/client';
-import { GolfLeagueSetupType, NamedContactType } from '@draco/shared-schemas';
+import {
+  GolfLeagueSetupType,
+  NamedContactType,
+  AbsentPlayerModeType,
+  FullTeamAbsentModeType,
+} from '@draco/shared-schemas';
 import {
   GolfLeagueSetupWithOfficers,
   GolfAccountInfo,
 } from '../repositories/interfaces/IGolfLeagueRepository.js';
+import { AbsentPlayerMode, FullTeamAbsentMode } from '../utils/golfConstants.js';
 
 export type GolfAccountInfoResponse = {
   id: string;
@@ -32,6 +38,23 @@ export class GolfLeagueResponseFormatter {
     return `${hours}:${minutes}`;
   }
 
+  private static mapAbsentPlayerMode(mode: number): AbsentPlayerModeType {
+    const modes: Record<number, AbsentPlayerModeType> = {
+      [AbsentPlayerMode.OPPONENT_WINS]: 'opponentWins',
+      [AbsentPlayerMode.HANDICAP_PENALTY]: 'handicapPenalty',
+      [AbsentPlayerMode.SKIP_PAIRING]: 'skipPairing',
+    };
+    return modes[mode] ?? 'opponentWins';
+  }
+
+  private static mapFullTeamAbsentMode(mode: number): FullTeamAbsentModeType {
+    const modes: Record<number, FullTeamAbsentModeType> = {
+      [FullTeamAbsentMode.FORFEIT]: 'forfeit',
+      [FullTeamAbsentMode.HANDICAP_PENALTY]: 'handicapPenalty',
+    };
+    return modes[mode] ?? 'forfeit';
+  }
+
   static format(setup: GolfLeagueSetupWithOfficers, accountId?: bigint): GolfLeagueSetupType {
     return {
       id: setup.id.toString(),
@@ -57,6 +80,9 @@ export class GolfLeagueResponseFormatter {
       totalHolesPoints: setup.totalholespoints,
       againstFieldPoints: setup.againstfieldpoints,
       againstFieldDescPoints: setup.againstfielddescpoints,
+      absentPlayerMode: this.mapAbsentPlayerMode(setup.absentplayermode),
+      absentPlayerPenalty: setup.absentplayerpenalty,
+      fullTeamAbsentMode: this.mapFullTeamAbsentMode(setup.fullteamabsentmode),
     };
   }
 

@@ -19302,6 +19302,24 @@ components:
         againstFieldDescPoints:
           type: integer
           default: 0
+        absentPlayerMode:
+          type: string
+          enum:
+            - opponentWins
+            - handicapPenalty
+            - skipPairing
+          default: opponentWins
+        absentPlayerPenalty:
+          type: integer
+          minimum: 0
+          maximum: 36
+          default: 0
+        fullTeamAbsentMode:
+          type: string
+          enum:
+            - forfeit
+            - handicapPenalty
+          default: forfeit
       required:
         - id
         - accountId
@@ -19369,6 +19387,24 @@ components:
         againstFieldDescPoints:
           type: integer
           default: 0
+        absentPlayerMode:
+          type: string
+          enum:
+            - opponentWins
+            - handicapPenalty
+            - skipPairing
+          default: opponentWins
+        absentPlayerPenalty:
+          type: integer
+          minimum: 0
+          maximum: 36
+          default: 0
+        fullTeamAbsentMode:
+          type: string
+          enum:
+            - forfeit
+            - handicapPenalty
+          default: forfeit
         presidentId:
           type: string
           pattern: ^\d+$
