@@ -1,4 +1,4 @@
-import { GameCardData } from '@/components/GameCard';
+import { GameCardData, GolfGameExtras, BaseballGameExtras } from '@/components/GameCard';
 
 // Core data types
 export interface Game {
@@ -8,8 +8,6 @@ export interface Game {
   visitorTeamId: string;
   homeScore: number;
   visitorScore: number;
-  homePoints?: number;
-  visitorPoints?: number;
   comment: string;
   fieldId?: string;
   field?: {
@@ -31,10 +29,6 @@ export interface Game {
   gameStatusShortText: string;
   gameType: number;
   hasGameRecap?: boolean;
-  umpire1?: string;
-  umpire2?: string;
-  umpire3?: string;
-  umpire4?: string;
   league: {
     id: string;
     name: string;
@@ -43,6 +37,9 @@ export interface Game {
     id: string;
     name: string;
   };
+  // Sport-specific extensions
+  golfExtras?: GolfGameExtras;
+  baseballExtras?: BaseballGameExtras;
 }
 
 export interface Team {

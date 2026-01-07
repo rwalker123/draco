@@ -160,7 +160,7 @@ describe('GolfHandicapService', () => {
       expect(result.players[0].courseHandicap).toBeNull();
     });
 
-    it('uses initial differential when no scores available', async () => {
+    it('uses initial handicap index when no scores available', async () => {
       vi.mocked(mockTeeRepository.findById!).mockResolvedValue(createMockTee() as never);
       vi.mocked(mockCourseRepository.findById!).mockResolvedValue(createMockCourse() as never);
       vi.mocked(mockRosterRepository.findGolfersByIds!).mockResolvedValue([

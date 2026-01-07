@@ -138,6 +138,18 @@ export const UpdateGolfScoreSchema = z
     description: 'Data for updating an existing golf score',
   });
 
+export const PlayerSeasonScoresResponseSchema = z
+  .object({
+    scores: z.array(GolfScoreWithDetailsSchema),
+    initialDifferential: z.number().nullable(),
+    handicapIndex: z.number().nullable(),
+    isInitialIndex: z.boolean(),
+  })
+  .openapi({
+    title: 'PlayerSeasonScoresResponse',
+    description: 'Player season scores with handicap information',
+  });
+
 export type GolfHoleScoresType = z.infer<typeof GolfHoleScoresSchema>;
 export type GolfScoreType = z.infer<typeof GolfScoreSchema>;
 export type GolfScoreWithDetailsType = z.infer<typeof GolfScoreWithDetailsSchema>;
@@ -145,3 +157,4 @@ export type CreateGolfScoreType = z.infer<typeof CreateGolfScoreSchema>;
 export type PlayerMatchScoreType = z.infer<typeof PlayerMatchScoreSchema>;
 export type SubmitMatchResultsType = z.infer<typeof SubmitMatchResultsSchema>;
 export type UpdateGolfScoreType = z.infer<typeof UpdateGolfScoreSchema>;
+export type PlayerSeasonScoresResponseType = z.infer<typeof PlayerSeasonScoresResponseSchema>;

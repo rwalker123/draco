@@ -170,10 +170,12 @@ const mapApiGameToGameCard = (game: ApiGame): Game => {
     gameRecaps: recaps,
     comment: game.comment ?? '',
     gameType: parsedGameType ?? undefined,
-    umpire1: mapUmpireId(game.umpire1 as { id: string } | undefined),
-    umpire2: mapUmpireId(game.umpire2 as { id: string } | undefined),
-    umpire3: mapUmpireId(game.umpire3 as { id: string } | undefined),
-    umpire4: mapUmpireId(game.umpire4 as { id: string } | undefined),
+    baseballExtras: {
+      umpire1: mapUmpireId(game.umpire1 as { id: string } | undefined),
+      umpire2: mapUmpireId(game.umpire2 as { id: string } | undefined),
+      umpire3: mapUmpireId(game.umpire3 as { id: string } | undefined),
+      umpire4: mapUmpireId(game.umpire4 as { id: string } | undefined),
+    },
   };
 };
 
@@ -200,10 +202,6 @@ export const mapGameResponseToScheduleGame = (game: ApiGame): ScheduleGame => {
     gameStatusText: parseGameStatusText(gameStatus, game.gameStatusText),
     gameStatusShortText: parseGameStatusShortText(gameStatus, game.gameStatusShortText),
     gameType: parsedGameType,
-    umpire1: mapUmpireId(game.umpire1 as { id: string } | undefined),
-    umpire2: mapUmpireId(game.umpire2 as { id: string } | undefined),
-    umpire3: mapUmpireId(game.umpire3 as { id: string } | undefined),
-    umpire4: mapUmpireId(game.umpire4 as { id: string } | undefined),
     league: {
       id: String(game.league?.id ?? ''),
       name: game.league?.name ?? '',
@@ -211,6 +209,12 @@ export const mapGameResponseToScheduleGame = (game: ApiGame): ScheduleGame => {
     season: {
       id: String(game.season?.id ?? ''),
       name: game.season?.name ?? '',
+    },
+    baseballExtras: {
+      umpire1: mapUmpireId(game.umpire1 as { id: string } | undefined),
+      umpire2: mapUmpireId(game.umpire2 as { id: string } | undefined),
+      umpire3: mapUmpireId(game.umpire3 as { id: string } | undefined),
+      umpire4: mapUmpireId(game.umpire4 as { id: string } | undefined),
     },
   };
 };
@@ -339,6 +343,9 @@ export function convertGameToGameCardData(
         }
       : null;
 
+  const hasGolfData = game.golfExtras !== undefined;
+  const hasBaseballData = game.baseballExtras !== undefined;
+
   return {
     id: game.id,
     date: game.gameDate,
@@ -360,12 +367,8 @@ export function convertGameToGameCardData(
     gameRecaps: [],
     comment: game.comment,
     gameType: game.gameType,
-    umpire1: game.umpire1,
-    umpire2: game.umpire2,
-    umpire3: game.umpire3,
-    umpire4: game.umpire4,
-    homePoints: game.homePoints,
-    visitorPoints: game.visitorPoints,
+    ...(hasGolfData && { golfExtras: game.golfExtras }),
+    ...(hasBaseballData && { baseballExtras: game.baseballExtras }),
   };
 }
 

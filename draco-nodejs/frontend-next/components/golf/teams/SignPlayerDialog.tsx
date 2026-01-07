@@ -149,7 +149,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
           </FormControl>
 
           <FormControl fullWidth>
-            <FormLabel htmlFor="initial-differential">Initial Differential</FormLabel>
+            <FormLabel htmlFor="initial-differential">Initial Handicap Index</FormLabel>
             <TextField
               id="initial-differential"
               type="number"

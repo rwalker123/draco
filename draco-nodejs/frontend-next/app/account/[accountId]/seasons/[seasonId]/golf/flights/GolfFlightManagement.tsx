@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Breadcrumbs,
@@ -9,7 +9,6 @@ import {
   IconButton,
   Chip,
   Alert,
-  CircularProgress,
   Tooltip,
   Accordion,
   AccordionSummary,
@@ -74,7 +73,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   onClose: _onClose,
 }) => {
   const [flights, setFlights] = useState<GolfFlightWithTeams[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<{
     severity: 'success' | 'error';
     message: string;
@@ -85,7 +84,9 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
 
   const flightService = useGolfFlights(accountId);
   const teamService = useGolfTeams(accountId);
-  const firstFlightId = flights.length > 0 ? flights[0].id : '';
+  const firstFlightId = useMemo(() => {
+    return flights.length > 0 ? flights[0].id : null;
+  }, [flights]);
   const { setup: leagueSetup } = useGolfLeagueSetup(accountId, seasonId, firstFlightId);
 
   const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(new Set());
@@ -124,10 +125,10 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
 
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
 
-    const fetchSeason = async () => {
+    const loadAllData = async () => {
       try {
+        // Fetch season
         const result = await getAccountSeason({
           client: apiClient,
           path: { accountId, seasonId },
@@ -137,9 +138,41 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
         const seasonResult = unwrapApiResult(result, 'Failed to fetch season');
         if (!isMounted) return;
         setSeason(seasonResult);
-      } catch {
+
+        // Fetch flights with teams
+        if (!seasonId) return;
+
+        const flightsResult = await flightService.listFlights(seasonId);
         if (!isMounted) return;
-        setFeedback({ severity: 'error', message: 'Failed to load season details.' });
+
+        if (!flightsResult.success) {
+          setFeedback({ severity: 'error', message: flightsResult.error });
+          return;
+        }
+
+        const flightsWithTeams: GolfFlightWithTeams[] = await Promise.all(
+          flightsResult.data.map(async (flight) => {
+            const teamsResult = await teamService.listTeamsForFlight(flight.id);
+            return {
+              ...flight,
+              teams: teamsResult.success ? teamsResult.data : [],
+            };
+          }),
+        );
+
+        if (!isMounted) return;
+        setFlights(flightsWithTeams);
+
+        if (flightsWithTeams.length > 0) {
+          setExpandedAccordions(new Set([flightsWithTeams[0].id]));
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        console.error('Error loading data:', error);
+        setFeedback({
+          severity: 'error',
+          message: error instanceof Error ? error.message : 'Failed to load data',
+        });
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -147,56 +180,12 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
       }
     };
 
-    void fetchSeason();
+    void loadAllData();
 
     return () => {
       isMounted = false;
     };
-  }, [accountId, seasonId, apiClient]);
-
-  const fetchFlightsWithTeams = useCallback(async () => {
-    if (!seasonId) return;
-
-    setLoading(true);
-    try {
-      const flightsResult = await flightService.listFlights(seasonId);
-
-      if (!flightsResult.success) {
-        setFeedback({ severity: 'error', message: flightsResult.error });
-        return;
-      }
-
-      const flightsWithTeams: GolfFlightWithTeams[] = await Promise.all(
-        flightsResult.data.map(async (flight) => {
-          const teamsResult = await teamService.listTeamsForFlight(flight.id);
-          return {
-            ...flight,
-            teams: teamsResult.success ? teamsResult.data : [],
-          };
-        }),
-      );
-
-      setFlights(flightsWithTeams);
-
-      if (flightsWithTeams.length > 0) {
-        setExpandedAccordions(new Set([flightsWithTeams[0].id]));
-      }
-    } catch (error) {
-      console.error('Error fetching flights:', error);
-      setFeedback({
-        severity: 'error',
-        message: error instanceof Error ? error.message : 'Failed to fetch flights',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [seasonId, flightService, teamService]);
-
-  useEffect(() => {
-    if (season) {
-      void fetchFlightsWithTeams();
-    }
-  }, [season, fetchFlightsWithTeams]);
+  }, [accountId, seasonId, apiClient, flightService, teamService]);
 
   const addFlightToState = useCallback((flight: GolfFlightType) => {
     const flightWithTeams: GolfFlightWithTeams = {
@@ -476,14 +465,8 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
     </Accordion>
   );
 
-  if (loading && flights.length === 0) {
-    return (
-      <Box
-        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}
-      >
-        <CircularProgress />
-      </Box>
-    );
+  if (loading) {
+    return null;
   }
 
   return (

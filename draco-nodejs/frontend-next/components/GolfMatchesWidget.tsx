@@ -2,13 +2,22 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Typography, CircularProgress, Alert, Divider } from '@mui/material';
-import { listGolfMatchesForSeason, listGolfTeams } from '@draco/shared-api-client';
-import type { GolfMatch, GolfTeam } from '@draco/shared-api-client';
+import {
+  listGolfMatchesForSeason,
+  getGolfTeamWithRoster,
+  calculateBatchCourseHandicaps,
+} from '@draco/shared-api-client';
+import type {
+  GolfMatch,
+  GolfTeamWithRoster,
+  BatchCourseHandicapResponse,
+} from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 import WidgetShell from './ui/WidgetShell';
 import GameCard, { GameCardData } from './GameCard';
 import { useAccountTimezone } from '../context/AccountContext';
+import GolfScorecardDialog from './golf/GolfScorecardDialog';
 
 interface GolfMatchesWidgetProps {
   accountId: string;
@@ -25,9 +34,11 @@ export default function GolfMatchesWidget({
   const timeZone = useAccountTimezone();
   const [recentMatches, setRecentMatches] = useState<GolfMatch[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<GolfMatch[]>([]);
-  const [teams, setTeams] = useState<Map<string, GolfTeam>>(new Map());
+  const [teams, setTeams] = useState<Map<string, GolfTeamWithRoster>>(new Map());
+  const [courseHandicaps, setCourseHandicaps] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   const loadMatches = useCallback(async () => {
     if (!seasonId || seasonId === '0') return;
@@ -45,31 +56,82 @@ export default function GolfMatchesWidget({
       endDate.setDate(endDate.getDate() + 7);
       endDate.setHours(23, 59, 59, 999);
 
-      const [matchesResult, teamsResult] = await Promise.all([
-        listGolfMatchesForSeason({
-          client: apiClient,
-          path: { accountId, seasonId },
-          query: {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-          },
-          throwOnError: false,
-        }),
-        listGolfTeams({
-          client: apiClient,
-          path: { accountId, seasonId },
-          throwOnError: false,
-        }),
-      ]);
+      const matchesResult = await listGolfMatchesForSeason({
+        client: apiClient,
+        path: { accountId, seasonId },
+        query: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        },
+        throwOnError: false,
+      });
 
       const matches = unwrapApiResult<GolfMatch[]>(matchesResult, 'Failed to load matches');
-      const teamsData = unwrapApiResult<GolfTeam[]>(teamsResult, 'Failed to load teams');
 
-      const teamsMap = new Map<string, GolfTeam>();
-      teamsData.forEach((team) => {
-        teamsMap.set(team.id, team);
+      const uniqueTeamIds = new Set<string>();
+      matches.forEach((match) => {
+        uniqueTeamIds.add(match.team1.id);
+        uniqueTeamIds.add(match.team2.id);
+      });
+
+      const teamPromises = Array.from(uniqueTeamIds).map((teamSeasonId) =>
+        getGolfTeamWithRoster({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          throwOnError: false,
+        }),
+      );
+
+      const teamResults = await Promise.all(teamPromises);
+      const teamsMap = new Map<string, GolfTeamWithRoster>();
+      teamResults.forEach((result) => {
+        if (result.data) {
+          teamsMap.set(result.data.id, result.data);
+        }
       });
       setTeams(teamsMap);
+
+      const handicapsMap = new Map<string, number>();
+      const matchesWithTees = matches.filter((m) => m.tee?.id);
+
+      for (const match of matchesWithTees) {
+        if (!match.tee?.id) continue;
+
+        const team1 = teamsMap.get(match.team1.id);
+        const team2 = teamsMap.get(match.team2.id);
+
+        const golferIds: string[] = [];
+        if (team1?.playerCount === 1 && team1.roster[0]) {
+          golferIds.push(team1.roster[0].golferId);
+        }
+        if (team2?.playerCount === 1 && team2.roster[0]) {
+          golferIds.push(team2.roster[0].golferId);
+        }
+
+        if (golferIds.length > 0) {
+          const handicapResult = await calculateBatchCourseHandicaps({
+            client: apiClient,
+            path: { accountId },
+            body: {
+              golferIds,
+              teeId: match.tee.id,
+              holesPlayed: 18,
+            },
+            throwOnError: false,
+          });
+
+          if (handicapResult.data) {
+            const response = handicapResult.data as BatchCourseHandicapResponse;
+            response.players.forEach((player) => {
+              if (player.courseHandicap !== null) {
+                const key = `${match.id}-${player.golferId}`;
+                handicapsMap.set(key, player.courseHandicap);
+              }
+            });
+          }
+        }
+      }
+      setCourseHandicaps(handicapsMap);
 
       const now = new Date();
       const MATCH_STATUS_COMPLETED = 1;
@@ -96,9 +158,26 @@ export default function GolfMatchesWidget({
     loadMatches();
   }, [loadMatches]);
 
-  const getTeamName = (teamId: string): string => {
+  const getTeamName = (teamId: string, teamName: string | undefined): string => {
     const team = teams.get(teamId);
-    return team?.name ?? 'Unknown Team';
+    return teamName ?? team?.name ?? 'Unknown Team';
+  };
+
+  const getTeamCourseHandicap = (teamId: string, matchId: string): number | undefined => {
+    const team = teams.get(teamId);
+    if (team?.playerCount === 1 && team.roster[0]) {
+      const key = `${matchId}-${team.roster[0].golferId}`;
+      return courseHandicaps.get(key);
+    }
+    return undefined;
+  };
+
+  const handleMatchClick = (game: GameCardData) => {
+    setSelectedMatchId(game.id);
+  };
+
+  const handleScorecardClose = () => {
+    setSelectedMatchId(null);
   };
 
   const mapMatchToGameCardData = (match: GolfMatch): GameCardData => {
@@ -107,14 +186,10 @@ export default function GolfMatchesWidget({
       date: match.matchDateTime,
       homeTeamId: match.team1.id,
       visitorTeamId: match.team2.id,
-      homeTeamName: match.team1.name ?? getTeamName(match.team1.id),
-      visitorTeamName: match.team2.name ?? getTeamName(match.team2.id),
+      homeTeamName: getTeamName(match.team1.id, match.team1.name),
+      visitorTeamName: getTeamName(match.team2.id, match.team2.name),
       homeScore: match.team1TotalScore ?? 0,
       visitorScore: match.team2TotalScore ?? 0,
-      homeNetScore: match.team1NetScore,
-      visitorNetScore: match.team2NetScore,
-      homePoints: match.team1Points,
-      visitorPoints: match.team2Points,
       gameStatus: match.matchStatus,
       gameStatusText: getMatchStatusText(match.matchStatus),
       gameStatusShortText: getMatchStatusShortText(match.matchStatus),
@@ -126,6 +201,14 @@ export default function GolfMatchesWidget({
       gameRecaps: [],
       comment: match.comment ?? '',
       gameType: match.matchType,
+      golfExtras: {
+        homeNetScore: match.team1NetScore,
+        visitorNetScore: match.team2NetScore,
+        homePoints: match.team1Points,
+        visitorPoints: match.team2Points,
+        homeCourseHandicap: getTeamCourseHandicap(match.team1.id, match.id),
+        visitorCourseHandicap: getTeamCourseHandicap(match.team2.id, match.id),
+      },
     };
   };
 
@@ -156,6 +239,7 @@ export default function GolfMatchesWidget({
               layout="horizontal"
               canEditGames={false}
               timeZone={timeZone}
+              onClick={handleMatchClick}
             />
           ))}
         </Box>
@@ -204,16 +288,26 @@ export default function GolfMatchesWidget({
   };
 
   return (
-    <WidgetShell
-      title={
-        <Typography variant="h6" fontWeight={700} color="text.primary">
-          {title}
-        </Typography>
-      }
-      accent="primary"
-    >
-      {renderBody()}
-    </WidgetShell>
+    <>
+      <WidgetShell
+        title={
+          <Typography variant="h6" fontWeight={700} color="text.primary">
+            {title}
+          </Typography>
+        }
+        accent="primary"
+      >
+        {renderBody()}
+      </WidgetShell>
+      {selectedMatchId && (
+        <GolfScorecardDialog
+          open={!!selectedMatchId}
+          onClose={handleScorecardClose}
+          matchId={selectedMatchId}
+          accountId={accountId}
+        />
+      )}
+    </>
   );
 }
 

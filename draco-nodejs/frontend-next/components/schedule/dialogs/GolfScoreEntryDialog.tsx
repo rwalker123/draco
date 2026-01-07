@@ -438,12 +438,15 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
         ...selectedGame,
         homeScore: updatedMatch?.team1TotalScore ?? selectedGame.homeScore,
         visitorScore: updatedMatch?.team2TotalScore ?? selectedGame.visitorScore,
-        homePoints: updatedMatch?.team1Points ?? selectedGame.homePoints,
-        visitorPoints: updatedMatch?.team2Points ?? selectedGame.visitorPoints,
         gameStatus: matchStatus,
         gameStatusText: getGameStatusText(matchStatus),
         gameStatusShortText: getGameStatusShortText(matchStatus),
         teeId: selectedTeeId || selectedGame.teeId,
+        golfExtras: {
+          ...selectedGame.golfExtras,
+          homePoints: updatedMatch?.team1Points ?? selectedGame.golfExtras?.homePoints,
+          visitorPoints: updatedMatch?.team2Points ?? selectedGame.golfExtras?.visitorPoints,
+        },
       };
 
       onSuccess?.({ game: updatedGame, message: 'Scores saved successfully' });
