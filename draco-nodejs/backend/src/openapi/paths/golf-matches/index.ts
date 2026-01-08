@@ -921,10 +921,28 @@ export const registerGolfMatchesEndpoints = ({ registry, schemaRefs, z }: Regist
           format: 'number',
         },
       },
+      {
+        name: 'force',
+        in: 'query',
+        required: false,
+        description: 'When true, deletes the match even if it has recorded scores (cascade delete)',
+        schema: {
+          type: 'boolean',
+          default: false,
+        },
+      },
     ],
     responses: {
       204: {
         description: 'Match deleted',
+      },
+      400: {
+        description: 'Cannot delete match because it has recorded scores',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
       },
       401: {
         description: 'Authentication required',

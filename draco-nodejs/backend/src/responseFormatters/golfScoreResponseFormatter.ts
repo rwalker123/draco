@@ -62,21 +62,11 @@ export class GolfScoreResponseFormatter {
     return scores.map((score) => this.format(score));
   }
 
-  static formatManyWithDetails(
-    scores: GolfScoreWithDetails[],
-    currentHandicapIndex?: number | null,
-  ): GolfScoreWithDetailsType[] {
-    return scores.map((score) => this.formatWithDetails(score, currentHandicapIndex));
-  }
-
-  static formatWithDetails(
-    score: GolfScoreWithDetails,
-    currentHandicapIndex?: number | null,
-  ): GolfScoreWithDetailsType {
+  static formatWithDetails(score: GolfScoreWithDetails): GolfScoreWithDetailsType {
     const baseScore = this.format(score);
     const gender = normalizeGender(score.golfer.gender);
 
-    const differential = this.calculateDifferential(score, gender, currentHandicapIndex);
+    const differential = this.calculateDifferential(score, gender);
 
     const teeInfo = score.golfteeinformation;
     const distances = [
@@ -236,11 +226,7 @@ export class GolfScoreResponseFormatter {
     };
   }
 
-  private static calculateDifferential(
-    score: GolfScoreWithDetails,
-    gender: Gender = 'M',
-    currentHandicapIndex?: number | null,
-  ): number {
+  private static calculateDifferential(score: GolfScoreWithDetails, gender: Gender = 'M'): number {
     const teeRatings: TeeRatings = {
       mensRating: Number(score.golfteeinformation.mensrating) || 72,
       mensSlope: Number(score.golfteeinformation.menslope) || 113,
@@ -298,9 +284,10 @@ export class GolfScoreResponseFormatter {
       const totalPar = calculateTotalPar(holePars);
 
       let courseHandicap: number | null = null;
-      if (currentHandicapIndex !== undefined && currentHandicapIndex !== null) {
+      const handicapIndex = is9Hole ? score.startindex9 : score.startindex;
+      if (handicapIndex !== undefined && handicapIndex !== null) {
         courseHandicap = calculateCourseHandicap(
-          currentHandicapIndex,
+          handicapIndex,
           slopeRating,
           courseRating,
           totalPar,

@@ -363,6 +363,15 @@ import {
   UpdateGolferHomeCourseSchema,
   PlayerSeasonScoresResponseSchema,
   ContactIndividualGolfAccountSchema,
+  LiveScoringStateSchema,
+  LiveSessionStatusSchema,
+  LiveHoleScoreSchema,
+  StartLiveScoringSchema,
+  SubmitLiveHoleScoreSchema,
+  AdvanceHoleSchema,
+  FinalizeLiveScoringSchema,
+  StopLiveScoringSchema,
+  SseTicketResponseSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1420,6 +1429,27 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'ContactIndividualGolfAccount',
     ContactIndividualGolfAccountSchema,
   );
+  const LiveScoringStateSchemaRef = registry.register('LiveScoringState', LiveScoringStateSchema);
+  const LiveSessionStatusSchemaRef = registry.register(
+    'LiveSessionStatus',
+    LiveSessionStatusSchema,
+  );
+  const LiveHoleScoreSchemaRef = registry.register('LiveHoleScore', LiveHoleScoreSchema);
+  const StartLiveScoringSchemaRef = registry.register('StartLiveScoring', StartLiveScoringSchema);
+  const SubmitLiveHoleScoreSchemaRef = registry.register(
+    'SubmitLiveHoleScore',
+    SubmitLiveHoleScoreSchema,
+  );
+  const AdvanceHoleSchemaRef = registry.register('AdvanceHole', AdvanceHoleSchema);
+  const FinalizeLiveScoringSchemaRef = registry.register(
+    'FinalizeLiveScoring',
+    FinalizeLiveScoringSchema,
+  );
+  const StopLiveScoringSchemaRef = registry.register('StopLiveScoring', StopLiveScoringSchema);
+  const SseTicketResponseSchemaRef = registry.register(
+    'SseTicketResponse',
+    SseTicketResponseSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1787,6 +1817,15 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpdateGolferHomeCourseSchemaRef,
     PlayerSeasonScoresResponseSchemaRef,
     ContactIndividualGolfAccountSchemaRef,
+    LiveScoringStateSchemaRef,
+    LiveSessionStatusSchemaRef,
+    LiveHoleScoreSchemaRef,
+    StartLiveScoringSchemaRef,
+    SubmitLiveHoleScoreSchemaRef,
+    AdvanceHoleSchemaRef,
+    FinalizeLiveScoringSchemaRef,
+    StopLiveScoringSchemaRef,
+    SseTicketResponseSchemaRef,
   };
 };
 

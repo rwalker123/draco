@@ -86,7 +86,7 @@ export function HoleScoreGrid({
         <TableCell
           sx={{
             fontWeight: 'bold',
-            backgroundColor: theme.palette.grey[100],
+            backgroundColor: theme.palette.action.selected,
             width: 60,
           }}
         >
@@ -96,7 +96,7 @@ export function HoleScoreGrid({
           <TableCell
             key={holeNum}
             align="center"
-            sx={{ backgroundColor: theme.palette.grey[100], px: 0.5 }}
+            sx={{ backgroundColor: theme.palette.action.selected, px: 0.5 }}
           >
             <Typography variant="caption" fontWeight="bold">
               {holeNum}
@@ -107,7 +107,7 @@ export function HoleScoreGrid({
           align="center"
           sx={{
             fontWeight: 'bold',
-            backgroundColor: theme.palette.grey[200],
+            backgroundColor: theme.palette.action.focus,
             width: 50,
           }}
         >
@@ -118,19 +118,19 @@ export function HoleScoreGrid({
       {/* Par row */}
       {par && (
         <TableRow>
-          <TableCell sx={{ backgroundColor: theme.palette.grey[50] }}>Par</TableCell>
+          <TableCell sx={{ backgroundColor: theme.palette.action.hover }}>Par</TableCell>
           {holes.map((holeNum) => (
             <TableCell
               key={holeNum}
               align="center"
-              sx={{ px: 0.5, backgroundColor: theme.palette.grey[50] }}
+              sx={{ px: 0.5, backgroundColor: theme.palette.action.hover }}
             >
               <Typography variant="caption">{par[holeNum - 1]}</Typography>
             </TableCell>
           ))}
           <TableCell
             align="center"
-            sx={{ fontWeight: 'bold', backgroundColor: theme.palette.grey[50] }}
+            sx={{ fontWeight: 'bold', backgroundColor: theme.palette.action.hover }}
           >
             {parSubtotal}
           </TableCell>
@@ -140,12 +140,12 @@ export function HoleScoreGrid({
       {/* Handicap row */}
       {handicap && (
         <TableRow>
-          <TableCell sx={{ backgroundColor: theme.palette.grey[50] }}>Hdcp</TableCell>
+          <TableCell sx={{ backgroundColor: theme.palette.action.hover }}>Hdcp</TableCell>
           {holes.map((holeNum) => (
             <TableCell
               key={holeNum}
               align="center"
-              sx={{ px: 0.5, backgroundColor: theme.palette.grey[50] }}
+              sx={{ px: 0.5, backgroundColor: theme.palette.action.hover }}
             >
               <Typography variant="caption">{handicap[holeNum - 1]}</Typography>
             </TableCell>
@@ -188,7 +188,7 @@ export function HoleScoreGrid({
           align="center"
           sx={{
             fontWeight: 'bold',
-            backgroundColor: theme.palette.grey[50],
+            backgroundColor: theme.palette.action.hover,
           }}
         >
           {subtotal > 0 ? subtotal : '-'}

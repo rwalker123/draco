@@ -8,7 +8,7 @@ import {
 } from '@draco/shared-api-client';
 import type { GolfMatch, CreateGolfMatch, UpdateGolfMatch } from '@draco/shared-api-client';
 import type { TeamSeasonType } from '@draco/shared-schemas';
-import { unwrapApiResult } from '../../../utils/apiResult';
+import { assertNoApiError, unwrapApiResult } from '../../../utils/apiResult';
 import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 import type {
   SportScheduleAdapter,
@@ -198,17 +198,17 @@ async function updateGameOperation({
 async function deleteGameOperation({
   accountId,
   gameId,
+  force,
   apiClient,
 }: DeleteGameParams): Promise<void> {
   const result = await deleteGolfMatch({
     client: apiClient,
     path: { accountId, matchId: gameId },
+    query: { force },
     throwOnError: false,
   });
 
-  if (result.error) {
-    throw new Error('Failed to delete match');
-  }
+  assertNoApiError(result, 'Failed to delete match');
 }
 
 async function loadTeams({

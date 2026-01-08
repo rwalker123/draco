@@ -124,9 +124,12 @@ const InformationWidget: React.FC<InformationWidgetProps> = ({
   }, [fetchMessages]);
 
   const hasMessages = messages.length > 0;
-  const shouldRender = hasMessages || loading || Boolean(error);
 
-  const isVisible = shouldRender && !(hideWhenEmpty && !loading && !error && !hasMessages);
+  // When hideWhenEmpty is true, don't show anything during loading either
+  // This prevents the flash of loading spinner before hiding
+  const isVisible = hideWhenEmpty
+    ? hasMessages || Boolean(error)
+    : hasMessages || loading || Boolean(error);
 
   React.useEffect(() => {
     onVisibilityChange?.(isVisible);

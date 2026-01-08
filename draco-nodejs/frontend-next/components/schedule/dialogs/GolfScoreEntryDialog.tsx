@@ -542,7 +542,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
                 flexWrap: 'wrap',
                 mb: 3,
                 p: 2,
-                backgroundColor: theme.palette.grey[50],
+                backgroundColor: theme.palette.action.hover,
                 borderRadius: 1,
               }}
             >

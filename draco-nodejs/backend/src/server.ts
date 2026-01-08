@@ -4,11 +4,18 @@ import prisma from './lib/prisma.js';
 import fs from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
+import { ServiceFactory } from './services/serviceFactory.js';
 
 async function bootstrap() {
   // Initialize role IDs synchronously - this ensures they're loaded when we need them
   await initializeRoleIds(prisma).catch((error) => {
     console.error('❌ Failed to initialize role IDs in RouteProtection:', error);
+  });
+
+  // Clean up any stale live scoring sessions from previous server runs
+  const liveScoringService = ServiceFactory.getLiveScoringService();
+  await liveScoringService.cleanupStaleSessions().catch((error) => {
+    console.error('⚠️ Failed to clean up stale live scoring sessions:', error);
   });
 
   // Now import and start the app

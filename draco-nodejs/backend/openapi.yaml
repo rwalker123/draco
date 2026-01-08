@@ -4825,6 +4825,7 @@ components:
                   - SyncInstagramToGallery
                   - NotifyTeamsWantedOnPlayersWanted
                   - NotifyPlayersWantedOnTeamsWanted
+                  - EnableLiveScoring
               label:
                 type: string
               description:
@@ -4893,6 +4894,7 @@ components:
                         - SyncInstagramToGallery
                         - NotifyTeamsWantedOnPlayersWanted
                         - NotifyPlayersWantedOnTeamsWanted
+                        - EnableLiveScoring
                     value:
                       anyOf:
                         - type: boolean
@@ -4997,6 +4999,7 @@ components:
                 - SyncInstagramToGallery
                 - NotifyTeamsWantedOnPlayersWanted
                 - NotifyPlayersWantedOnTeamsWanted
+                - EnableLiveScoring
             label:
               type: string
             description:
@@ -5065,6 +5068,7 @@ components:
                       - SyncInstagramToGallery
                       - NotifyTeamsWantedOnPlayersWanted
                       - NotifyPlayersWantedOnTeamsWanted
+                      - EnableLiveScoring
                   value:
                     anyOf:
                       - type: boolean
@@ -5172,6 +5176,7 @@ components:
         - SyncInstagramToGallery
         - NotifyTeamsWantedOnPlayersWanted
         - NotifyPlayersWantedOnTeamsWanted
+        - EnableLiveScoring
     Sponsor:
       type: object
       properties:
@@ -22458,6 +22463,222 @@ components:
       title: ContactIndividualGolfAccount
       description: Individual golf account summary for a contact, or null if no
         account exists
+    LiveScoringState:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        matchId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        status:
+          type: string
+          enum:
+            - active
+            - paused
+            - finalized
+            - stopped
+          title: LiveScoringStatus
+          description: Status of a live scoring session
+        currentHole:
+          type: integer
+        holesPlayed:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        startedBy:
+          type: string
+        viewerCount:
+          type: integer
+        scores:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              golferId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              golferName:
+                type: string
+              teamId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              holeNumber:
+                type: integer
+              score:
+                type: integer
+              enteredBy:
+                type: string
+              enteredAt:
+                type: string
+                format: date-time
+            required:
+              - id
+              - golferId
+              - golferName
+              - holeNumber
+              - score
+              - enteredBy
+              - enteredAt
+            title: LiveHoleScore
+            description: A single hole score in a live scoring session
+      required:
+        - sessionId
+        - matchId
+        - status
+        - currentHole
+        - holesPlayed
+        - startedAt
+        - startedBy
+        - scores
+      title: LiveScoringState
+      description: Current state of a live scoring session
+    LiveSessionStatus:
+      type: object
+      properties:
+        hasActiveSession:
+          type: boolean
+        sessionId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        viewerCount:
+          type: integer
+      required:
+        - hasActiveSession
+      title: LiveSessionStatus
+      description: Lightweight status check for whether a match has an active live session
+    LiveHoleScore:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        golferId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        golferName:
+          type: string
+        teamId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        holeNumber:
+          type: integer
+        score:
+          type: integer
+        enteredBy:
+          type: string
+        enteredAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - golferId
+        - golferName
+        - holeNumber
+        - score
+        - enteredBy
+        - enteredAt
+      title: LiveHoleScore
+      description: A single hole score in a live scoring session
+    StartLiveScoring:
+      type: object
+      properties:
+        startingHole:
+          type: integer
+          minimum: 1
+          maximum: 18
+          default: 1
+        holesPlayed:
+          anyOf:
+            - type: number
+              enum:
+                - 9
+            - type: number
+              enum:
+                - 18
+          default: 18
+      title: StartLiveScoring
+      description: Request to start a live scoring session
+    SubmitLiveHoleScore:
+      type: object
+      properties:
+        golferId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        holeNumber:
+          type: integer
+          minimum: 1
+          maximum: 18
+        score:
+          type: integer
+          minimum: 1
+          maximum: 20
+      required:
+        - golferId
+        - holeNumber
+        - score
+      title: SubmitLiveHoleScore
+      description: Request to submit a single hole score during live scoring
+    AdvanceHole:
+      type: object
+      properties:
+        holeNumber:
+          type: integer
+          minimum: 1
+          maximum: 18
+      required:
+        - holeNumber
+      title: AdvanceHole
+      description: Request to advance to a specific hole
+    FinalizeLiveScoring:
+      type: object
+      properties:
+        confirm:
+          type: boolean
+          enum:
+            - true
+      required:
+        - confirm
+      title: FinalizeLiveScoring
+      description: Request to finalize a live scoring session and save scores permanently
+    StopLiveScoring:
+      type: object
+      properties:
+        confirm:
+          type: boolean
+          enum:
+            - true
+      required:
+        - confirm
+      title: StopLiveScoring
+      description: Request to stop a live scoring session without saving scores
+    SseTicketResponse:
+      type: object
+      properties:
+        ticket:
+          type: string
+        expiresIn:
+          type: integer
+      required:
+        - ticket
+        - expiresIn
+      title: SseTicketResponse
+      description: Response containing a short-lived ticket for SSE subscription
   securitySchemes:
     bearerAuth:
       type: http
@@ -26051,6 +26272,7 @@ paths:
               - SyncInstagramToGallery
               - NotifyTeamsWantedOnPlayersWanted
               - NotifyPlayersWantedOnTeamsWanted
+              - EnableLiveScoring
       requestBody:
         content:
           application/json:
@@ -33391,9 +33613,23 @@ paths:
           schema:
             type: string
             format: number
+        - name: force
+          in: query
+          required: false
+          description: When true, deletes the match even if it has recorded scores
+            (cascade delete)
+          schema:
+            type: boolean
+            default: false
       responses:
         "204":
           description: Match deleted
+        "400":
+          description: Cannot delete match because it has recorded scores
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
         "401":
           description: Authentication required
           content:
@@ -37184,6 +37420,438 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/matches/{matchId}/live/status:
+    get:
+      description: Check if a match has an active live scoring session
+      operationId: getLiveSessionStatus
+      summary: Get live session status
+      tags:
+        - Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - &a15
+          name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - &a16
+          name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Live session status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveSessionStatus"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/matches/{matchId}/live:
+    get:
+      description: Get the current state of a live scoring session. This is a public
+        endpoint for read-only access.
+      operationId: getLiveScoringState
+      summary: Get live scoring state
+      tags:
+        - Live Scoring
+      security: []
+      parameters:
+        - *a15
+        - *a16
+      responses:
+        "200":
+          description: Current live scoring state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveScoringState"
+        "404":
+          description: No active session found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/matches/{matchId}/live/ticket:
+    post:
+      description: Get a short-lived ticket for SSE subscription authentication
+      operationId: getLiveScoringTicket
+      summary: Get SSE connection ticket
+      tags:
+        - Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a15
+        - *a16
+      responses:
+        "201":
+          description: SSE connection ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SseTicketResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/matches/{matchId}/live/start:
+    post:
+      description: Start a new live scoring session for a match
+      operationId: startLiveScoringSession
+      summary: Start live scoring
+      tags:
+        - Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a15
+        - *a16
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartLiveScoring"
+      responses:
+        "201":
+          description: Live scoring session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveScoringState"
+        "400":
+          description: Validation error or session already active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized (not a match participant)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Match not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/matches/{matchId}/live/scores:
+    post:
+      description: Submit a score for a specific hole during live scoring
+      operationId: submitLiveHoleScore
+      summary: Submit hole score
+      tags:
+        - Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a15
+        - *a16
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitLiveHoleScore"
+      responses:
+        "201":
+          description: Score submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveHoleScore"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: No active session found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/matches/{matchId}/live/advance:
+    post:
+      description: Advance to a specific hole number
+      operationId: advanceLiveHole
+      summary: Advance hole
+      tags:
+        - Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a15
+        - *a16
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdvanceHole"
+      responses:
+        "200":
+          description: Hole advanced successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                required:
+                  - success
+                title: SuccessResponse
+                description: Simple success response
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: No active session found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/matches/{matchId}/live/finalize:
+    post:
+      description: Finalize the live scoring session and save scores permanently
+      operationId: finalizeLiveScoringSession
+      summary: Finalize live scoring
+      tags:
+        - Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a15
+        - *a16
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinalizeLiveScoring"
+      responses:
+        "200":
+          description: Session finalized successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                required:
+                  - success
+                title: SuccessResponse
+                description: Simple success response
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: No active session found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/matches/{matchId}/live/stop:
+    post:
+      description: Stop the live scoring session without saving scores
+      operationId: stopLiveScoringSession
+      summary: Stop live scoring
+      tags:
+        - Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a15
+        - *a16
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StopLiveScoring"
+      responses:
+        "200":
+          description: Session stopped successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                required:
+                  - success
+                title: SuccessResponse
+                description: Simple success response
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: No active session found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/matches/live/active:
+    get:
+      description: Get all matches with active live scoring sessions for the account.
+        This is a public endpoint.
+      operationId: getActiveLiveScoringSessions
+      summary: List active live sessions
+      tags:
+        - Live Scoring
+      security: []
+      parameters:
+        - *a15
+      responses:
+        "200":
+          description: List of active sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    matchId:
+                      type: string
+                    sessionId:
+                      type: string
+                  required:
+                    - matchId
+                    - sessionId
+                title: ActiveSessionsList
+                description: List of matches with active live scoring sessions
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers:
     get:
       description: List managers for the given team and season
@@ -37455,7 +38123,7 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - &a15
+        - &a17
           name: accountId
           in: path
           required: true
@@ -37506,7 +38174,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
+        - *a17
       requestBody:
         content:
           application/json:
@@ -37563,8 +38231,8 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - *a15
-        - &a16
+        - *a17
+        - &a18
           name: memberBusinessId
           in: path
           required: true
@@ -37599,8 +38267,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
-        - *a16
+        - *a17
+        - *a18
       requestBody:
         content:
           application/json:
@@ -37658,8 +38326,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
-        - *a16
+        - *a17
+        - *a18
       responses:
         "204":
           description: Member business entry deleted
@@ -38654,7 +39322,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a17
+        - &a19
           name: accountId
           in: path
           required: true
@@ -38698,7 +39366,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a17
+        - *a19
       requestBody:
         content:
           application/json:
@@ -38745,8 +39413,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a17
-        - &a18
+        - *a19
+        - &a20
           name: categoryId
           in: path
           required: true
@@ -38805,8 +39473,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a17
-        - *a18
+        - *a19
+        - *a20
       responses:
         "204":
           description: Survey category deleted successfully.
@@ -38845,8 +39513,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a17
-        - *a18
+        - *a19
+        - *a20
       requestBody:
         content:
           application/json:
@@ -38899,8 +39567,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a17
-        - &a19
+        - *a19
+        - &a21
           name: questionId
           in: path
           required: true
@@ -38958,8 +39626,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a17
         - *a19
+        - *a21
       responses:
         "204":
           description: Survey question deleted successfully.
@@ -38996,7 +39664,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a17
+        - *a19
         - schema:
             type: integer
             minimum: 1
@@ -39047,8 +39715,8 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a17
-        - &a20
+        - *a19
+        - &a22
           name: playerId
           in: path
           required: true
@@ -39086,9 +39754,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a17
-        - *a20
         - *a19
+        - *a22
+        - *a21
       requestBody:
         content:
           application/json:
@@ -39141,9 +39809,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a17
-        - *a20
         - *a19
+        - *a22
+        - *a21
       responses:
         "204":
           description: Survey answer deleted successfully.
@@ -39180,7 +39848,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a17
+        - *a19
       responses:
         "200":
           description: Player survey spotlight result.
@@ -39209,7 +39877,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a17
+        - *a19
         - name: teamSeasonId
           in: path
           required: true
@@ -42829,14 +43497,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a21
+        - &a23
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a22
+        - &a24
           name: seasonId
           in: path
           required: true
@@ -42942,8 +43610,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
-        - *a22
+        - *a23
+        - *a24
         - name: feedItemId
           in: path
           required: true
@@ -42986,8 +43654,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
-        - *a22
+        - *a23
+        - *a24
         - name: feedItemId
           in: path
           required: true
@@ -43030,8 +43698,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
-        - *a22
+        - *a23
+        - *a24
         - schema:
             type: string
             pattern: ^\d+$
@@ -43098,8 +43766,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
-        - *a22
+        - *a23
+        - *a24
         - schema:
             type: string
             pattern: ^\d+$
@@ -43165,8 +43833,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
-        - *a22
+        - *a23
+        - *a24
         - schema:
             type: string
             nullable: true
@@ -43210,8 +43878,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
-        - *a22
+        - *a23
+        - *a24
         - schema:
             type: string
             pattern: ^\d+$
@@ -43278,8 +43946,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
-        - *a22
+        - *a23
+        - *a24
       requestBody:
         content:
           application/json:
@@ -43332,9 +44000,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
-        - *a22
-        - &a23
+        - *a23
+        - *a24
+        - &a25
           name: liveEventId
           in: path
           required: true
@@ -43381,9 +44049,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
-        - *a22
         - *a23
+        - *a24
+        - *a25
       requestBody:
         content:
           application/json:
@@ -43435,9 +44103,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
-        - *a22
         - *a23
+        - *a24
+        - *a25
       responses:
         "204":
           description: Live event deleted.
@@ -44675,23 +45343,23 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a25
+        - &a27
           name: accountId
           in: path
           required: true
-          schema: &a24
+          schema: &a26
             type: string
             format: number
-        - &a26
+        - &a28
           name: seasonId
           in: path
           required: true
-          schema: *a24
-        - &a27
+          schema: *a26
+        - &a29
           name: teamSeasonId
           in: path
           required: true
-          schema: *a24
+          schema: *a26
       responses:
         "200":
           description: Completed games retrieved.
@@ -44737,14 +45405,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - *a26
         - *a27
-        - &a28
+        - *a28
+        - *a29
+        - &a30
           name: gameId
           in: path
           required: true
-          schema: *a24
+          schema: *a26
       responses:
         "200":
           description: Batting stats retrieved.
@@ -44789,10 +45457,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - *a26
         - *a27
         - *a28
+        - *a29
+        - *a30
       requestBody:
         required: true
         content:
@@ -44850,15 +45518,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - *a26
         - *a27
         - *a28
-        - &a29
+        - *a29
+        - *a30
+        - &a31
           name: statId
           in: path
           required: true
-          schema: *a24
+          schema: *a26
       requestBody:
         required: true
         content:
@@ -44909,11 +45577,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - *a26
         - *a27
         - *a28
         - *a29
+        - *a30
+        - *a31
       responses:
         "204":
           description: Batting stat deleted.
@@ -44955,10 +45623,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - *a26
         - *a27
         - *a28
+        - *a29
+        - *a30
       responses:
         "200":
           description: Pitching stats retrieved.
@@ -45003,10 +45671,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - *a26
         - *a27
         - *a28
+        - *a29
+        - *a30
       requestBody:
         required: true
         content:
@@ -45064,11 +45732,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - *a26
         - *a27
         - *a28
         - *a29
+        - *a30
+        - *a31
       requestBody:
         required: true
         content:
@@ -45119,11 +45787,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - *a26
         - *a27
         - *a28
         - *a29
+        - *a30
+        - *a31
       responses:
         "204":
           description: Pitching stat deleted.
@@ -45165,10 +45833,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - *a26
         - *a27
         - *a28
+        - *a29
+        - *a30
       responses:
         "200":
           description: Attendance retrieved.
@@ -45213,10 +45881,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - *a26
         - *a27
         - *a28
+        - *a29
+        - *a30
       requestBody:
         required: true
         content:
@@ -46566,7 +47234,7 @@ paths:
       tags:
         - Accounts
       parameters:
-        - &a30
+        - &a32
           name: accountId
           in: path
           required: true
@@ -46591,7 +47259,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
+        - *a32
       requestBody:
         content:
           application/json:
@@ -46630,8 +47298,8 @@ paths:
       tags:
         - Accounts
       parameters:
-        - *a30
-        - &a31
+        - *a32
+        - &a33
           name: messageId
           in: path
           required: true
@@ -46660,8 +47328,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
-        - *a31
+        - *a32
+        - *a33
       requestBody:
         content:
           application/json:
@@ -46707,8 +47375,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
-        - *a31
+        - *a32
+        - *a33
       responses:
         "204":
           description: Welcome message deleted successfully.
@@ -46739,8 +47407,8 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a30
-        - &a32
+        - *a32
+        - &a34
           name: teamSeasonId
           in: path
           required: true
@@ -46769,8 +47437,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
         - *a32
+        - *a34
       requestBody:
         content:
           application/json:
@@ -46815,9 +47483,9 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a30
         - *a32
-        - *a31
+        - *a34
+        - *a33
       responses:
         "200":
           description: Team welcome message retrieved successfully.
@@ -46840,9 +47508,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
         - *a32
-        - *a31
+        - *a34
+        - *a33
       requestBody:
         content:
           application/json:
@@ -46888,9 +47556,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
         - *a32
-        - *a31
+        - *a34
+        - *a33
       responses:
         "204":
           description: Team welcome message deleted successfully.

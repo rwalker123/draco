@@ -1,9 +1,11 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Box, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import { Game } from '@/types/schedule';
 import { useGameDeletion, type DeleteGameResult } from '../hooks/useGameDeletion';
 import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
+
+const SCORES_ERROR_MESSAGE = 'Cannot delete match because it has recorded scores';
 
 interface DeleteGameDialogProps {
   open: boolean;
@@ -13,6 +15,7 @@ interface DeleteGameDialogProps {
   onError?: (message: string) => void;
   getTeamName: (teamId: string) => string;
   accountId: string;
+  onDelete?: (game: Game, force?: boolean) => Promise<void>;
 }
 
 const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
@@ -23,8 +26,18 @@ const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
   onError,
   getTeamName,
   accountId,
+  onDelete,
 }) => {
-  const { deleteGame, loading, error, resetError } = useGameDeletion({ accountId });
+  const {
+    deleteGame: defaultDeleteGame,
+    loading,
+    error,
+    resetError,
+  } = useGameDeletion({ accountId });
+
+  const [forceDeleteOffered, setForceDeleteOffered] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const prevGameIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -38,24 +51,59 @@ const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
     }
 
     resetError();
+    setForceDeleteOffered(false);
+    setDeleteError(null);
     onClose();
   }, [loading, onClose, resetError]);
+
+  const currentGameId = selectedGame?.id ?? null;
+  if (currentGameId !== prevGameIdRef.current) {
+    prevGameIdRef.current = currentGameId;
+    if (forceDeleteOffered || deleteError) {
+      setForceDeleteOffered(false);
+      setDeleteError(null);
+    }
+  }
 
   const handleConfirm = useCallback(async () => {
     if (!selectedGame) {
       return;
     }
 
+    setDeleteError(null);
+
     try {
-      const result = await deleteGame(selectedGame);
-      onSuccess?.(result);
+      if (onDelete) {
+        await onDelete(selectedGame, forceDeleteOffered);
+        onSuccess?.({ message: 'Game deleted successfully', gameId: selectedGame.id });
+      } else {
+        const result = await defaultDeleteGame(selectedGame);
+        onSuccess?.(result);
+      }
       resetError();
+      setForceDeleteOffered(false);
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete game';
-      onError?.(message);
+
+      if (message.includes(SCORES_ERROR_MESSAGE) && !forceDeleteOffered) {
+        setForceDeleteOffered(true);
+        setDeleteError(message);
+      } else {
+        setDeleteError(message);
+        onError?.(message);
+      }
     }
-  }, [deleteGame, onClose, onError, onSuccess, resetError, selectedGame]);
+  }, [
+    defaultDeleteGame,
+    forceDeleteOffered,
+    onClose,
+    onDelete,
+    onError,
+    onSuccess,
+    resetError,
+    selectedGame,
+  ]);
 
   if (!selectedGame) return null;
 
@@ -63,14 +111,20 @@ const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
   const homeTeamName = getTeamName(selectedGame.homeTeamId);
   const visitorTeamName = getTeamName(selectedGame.visitorTeamId);
 
+  const displayError = deleteError || error;
+
   return (
     <ConfirmDeleteDialog
       open={open}
       title="Delete Game"
-      message="Are you sure you want to delete this game?"
+      message={
+        forceDeleteOffered
+          ? 'This game has recorded scores. Are you sure you want to delete it along with all scores?'
+          : 'Are you sure you want to delete this game?'
+      }
       content={
         <>
-          <Box sx={{ p: 2, backgroundColor: 'grey.100', borderRadius: 1 }}>
+          <Box sx={{ p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
               Game Details:
             </Typography>
@@ -100,20 +154,22 @@ const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
             )}
           </Box>
 
-          {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {error}
+          {displayError && (
+            <Alert severity={forceDeleteOffered ? 'warning' : 'error'} sx={{ mt: 2 }}>
+              {displayError}
             </Alert>
           )}
 
           <Typography variant="body2" sx={{ mt: 2, color: 'error.main' }}>
-            This action cannot be undone.
+            {forceDeleteOffered
+              ? 'This will permanently delete the game and all recorded scores.'
+              : 'This action cannot be undone.'}
           </Typography>
         </>
       }
       onClose={handleClose}
       onConfirm={handleConfirm}
-      confirmLabel="Delete Game"
+      confirmLabel={forceDeleteOffered ? 'Delete Game and Scores' : 'Delete Game'}
       confirmButtonProps={{ variant: 'contained', color: 'error', disabled: loading }}
       cancelButtonProps={{ variant: 'outlined', disabled: loading }}
       dialogProps={{ maxWidth: 'sm', fullWidth: true }}

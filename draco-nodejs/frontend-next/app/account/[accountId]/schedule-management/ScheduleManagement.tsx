@@ -93,6 +93,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     clearLeagueTeams,
     upsertGameInCache,
     removeGameFromCache,
+    deleteGame,
     startDate,
     endDate,
     GameDialog,
@@ -414,6 +415,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         onError={setError}
         getTeamName={getTeamName}
         accountId={accountId}
+        onDelete={deleteGame}
       />
 
       <ScoreEntryDialog

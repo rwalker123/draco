@@ -167,7 +167,8 @@ router.delete(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { matchId } = extractBigIntParams(req.params, 'matchId');
-    await golfMatchService.deleteMatch(matchId);
+    const force = req.query.force === 'true';
+    await golfMatchService.deleteMatch(matchId, force);
     res.status(204).send();
   }),
 );

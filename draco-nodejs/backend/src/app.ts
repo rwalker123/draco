@@ -61,6 +61,7 @@ import golfPlayerScoresRouter from './routes/golf-player-scores.js';
 import contactsGolfRouter from './routes/contacts-golf.js';
 import externalCoursesRouter from './routes/external-courses.js';
 import exportsRouter from './routes/exports.js';
+import liveScoringRouter from './routes/live-scoring.js';
 import { ServiceFactory } from './services/serviceFactory.js';
 import { socialIngestionConfig } from './config/socialIngestion.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
@@ -113,6 +114,12 @@ app.use(
     level: 6, // Compression level (0-9)
     threshold: 1024, // Minimum size to compress (1KB)
     filter: (req, res) => {
+      // Skip compression for SSE - must send events immediately without buffering
+      const responseContentType = res.getHeader('Content-Type');
+      if (responseContentType && String(responseContentType).includes('text/event-stream')) {
+        return false;
+      }
+
       // Skip compression for binary files
       const contentType = req.headers['content-type'];
       if (
@@ -296,6 +303,7 @@ app.use(
   seasonsGolfTeamRosterRouter,
 );
 app.use('/api/accounts/:accountId/golf/matches', golfMatchesRouter);
+app.use('/api/accounts/:accountId/golf/matches', liveScoringRouter);
 app.use('/api/accounts/:accountId/golf/scores', golfScoresRouter);
 app.use('/api/accounts/:accountId/golf/handicaps', golfHandicapsRouter);
 app.use('/api/accounts/:accountId/golf/standings', golfStandingsRouter);
