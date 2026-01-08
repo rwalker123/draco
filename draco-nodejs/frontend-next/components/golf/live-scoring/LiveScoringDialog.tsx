@@ -82,6 +82,14 @@ function LiveScoringDialogContent({
   const [scoreInputs, setScoreInputs] = useState<Record<string, string>>({});
   const [submittingGolferId, setSubmittingGolferId] = useState<string | null>(null);
   const [startingSession, setStartingSession] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmText: string;
+    confirmColor: 'error' | 'primary' | 'success';
+  } | null>(null);
 
   useEffect(() => {
     const loadTeamRosters = async () => {
@@ -201,24 +209,39 @@ function LiveScoringDialogContent({
     }
   };
 
-  const handleFinalize = async () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to finalize this live scoring session? This will save all scores to the match.',
-    );
-    if (confirmed) {
-      await finalizeSession(matchId);
-      onClose();
-    }
+  const handleFinalize = () => {
+    setConfirmDialog({
+      open: true,
+      title: 'Finalize Session',
+      message:
+        'Are you sure you want to finalize this live scoring session? This will save all scores to the match.',
+      confirmText: 'Finalize Scores',
+      confirmColor: 'success',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        await finalizeSession(matchId);
+        onClose();
+      },
+    });
   };
 
-  const handleStop = async () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to stop this live scoring session? Scores will NOT be saved.',
-    );
-    if (confirmed) {
-      await stopSession(matchId);
-      onClose();
-    }
+  const handleStop = () => {
+    setConfirmDialog({
+      open: true,
+      title: 'Stop Session',
+      message: 'Are you sure you want to stop this live scoring session? Scores will NOT be saved.',
+      confirmText: 'Stop Session',
+      confirmColor: 'error',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        await stopSession(matchId);
+        onClose();
+      },
+    });
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setConfirmDialog(null);
   };
 
   const getScoreForGolferHole = (golferId: string, hole: number): number | undefined => {
@@ -449,6 +472,29 @@ function LiveScoringDialogContent({
           </>
         )}
       </DialogActions>
+
+      <Dialog
+        open={confirmDialog?.open ?? false}
+        onClose={handleCloseConfirmDialog}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>{confirmDialog?.title}</DialogTitle>
+        <DialogContent>
+          <Typography>{confirmDialog?.message}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirmDialog}>Cancel</Button>
+          <Button
+            variant="contained"
+            color={confirmDialog?.confirmColor ?? 'primary'}
+            onClick={confirmDialog?.onConfirm}
+            autoFocus
+          >
+            {confirmDialog?.confirmText}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

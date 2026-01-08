@@ -49,7 +49,10 @@ export default function GolfMatchesWidget({
   const [error, setError] = useState<string | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [liveScoringMatchId, setLiveScoringMatchId] = useState<string | null>(null);
+  const [watchingMatchId, setWatchingMatchId] = useState<string | null>(null);
   const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set());
+
+  const currentContactId = user?.contact?.id;
 
   const { getActiveSessions } = useLiveScoringOperations();
 
@@ -228,6 +231,31 @@ export default function GolfMatchesWidget({
     loadActiveSessions();
   };
 
+  const handleWatchClick = (matchId: string) => {
+    setWatchingMatchId(matchId);
+  };
+
+  const handleWatchClose = () => {
+    setWatchingMatchId(null);
+    loadActiveSessions();
+  };
+
+  const isUserParticipant = useCallback(
+    (match: GolfMatch): boolean => {
+      if (!currentContactId) return false;
+      const team1 = teams.get(match.team1.id);
+      const team2 = teams.get(match.team2.id);
+      const allRoster = [...(team1?.roster || []), ...(team2?.roster || [])];
+      return allRoster.some((entry) => entry.player.id === currentContactId);
+    },
+    [currentContactId, teams],
+  );
+
+  const getWatchingMatch = (): GolfMatch | undefined => {
+    if (!watchingMatchId) return undefined;
+    return [...recentMatches, ...upcomingMatches].find((m) => m.id === watchingMatchId);
+  };
+
   const getLiveScoringMatch = (): GolfMatch | undefined => {
     if (!liveScoringMatchId) return undefined;
     return [...recentMatches, ...upcomingMatches].find((m) => m.id === liveScoringMatchId);
@@ -288,6 +316,7 @@ export default function GolfMatchesWidget({
           {matches.map((match) => {
             const hasActiveSession = activeSessions.has(match.id);
             const showLiveButton = isMatchToday(match.matchDateTime) && match.matchStatus === 0;
+            const isParticipant = isUserParticipant(match);
 
             return (
               <Box key={match.id}>
@@ -298,7 +327,7 @@ export default function GolfMatchesWidget({
                   timeZone={timeZone}
                   onClick={handleMatchClick}
                 />
-                {isAuthenticated && hasActiveSession && (
+                {isAuthenticated && hasActiveSession && isParticipant && (
                   <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'flex-end' }}>
                     <Button
                       size="small"
@@ -316,6 +345,27 @@ export default function GolfMatchesWidget({
                       }}
                     >
                       LIVE - Join Session
+                    </Button>
+                  </Box>
+                )}
+                {isAuthenticated && hasActiveSession && !isParticipant && (
+                  <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="error"
+                      startIcon={<FiberManualRecordIcon sx={{ fontSize: 12 }} />}
+                      onClick={() => handleWatchClick(match.id)}
+                      sx={{
+                        animation: 'pulse 2s infinite',
+                        '@keyframes pulse': {
+                          '0%': { opacity: 1 },
+                          '50%': { opacity: 0.7 },
+                          '100%': { opacity: 1 },
+                        },
+                      }}
+                    >
+                      LIVE - Watch
                     </Button>
                   </Box>
                 )}
@@ -411,6 +461,18 @@ export default function GolfMatchesWidget({
           team1Id={getLiveScoringMatch()!.team1.id}
           team2Id={getLiveScoringMatch()!.team2.id}
           hasActiveSession={activeSessions.has(liveScoringMatchId)}
+        />
+      )}
+      {watchingMatchId && getWatchingMatch() && (
+        <GolfScorecardDialog
+          open={!!watchingMatchId}
+          onClose={handleWatchClose}
+          matchId={watchingMatchId}
+          accountId={accountId}
+          isLiveSession={true}
+          seasonId={seasonId}
+          team1Id={getWatchingMatch()!.team1.id}
+          team2Id={getWatchingMatch()!.team2.id}
         />
       )}
     </>

@@ -29,6 +29,7 @@ interface ScorecardTableProps {
   playerScores: PlayerScore[];
   holesPlayed: 9 | 18;
   startIndex?: number;
+  emptyMessage?: string;
 }
 
 const sumArray = (arr: number[], start: number, count: number): number => {
@@ -51,6 +52,7 @@ export default function ScorecardTable({
   playerScores,
   holesPlayed,
   startIndex = 0,
+  emptyMessage,
 }: ScorecardTableProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -230,6 +232,15 @@ export default function ScorecardTable({
             {hasBackNine && renderHandicapRow(backNine)}
             {holesPlayed === 18 && <TableCell sx={hdcpCellSx} />}
           </TableRow>
+          {playerScores.length === 0 && emptyMessage && (
+            <TableRow>
+              <TableCell colSpan={holesPlayed === 18 ? 22 : 11} sx={{ textAlign: 'center', py: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {emptyMessage}
+                </Typography>
+              </TableCell>
+            </TableRow>
+          )}
           {playerScores.map((player, idx) => (
             <TableRow key={idx}>
               <TableCell sx={labelCellSx}>

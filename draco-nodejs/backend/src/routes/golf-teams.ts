@@ -44,7 +44,7 @@ router.get(
 router.get(
   '/season/:seasonId/team/:teamSeasonId/roster',
   authenticateToken,
-  routeProtection.enforceTeamBoundary(),
+  routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
     const team = await golfTeamService.getTeamWithRoster(teamSeasonId);

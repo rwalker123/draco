@@ -15,13 +15,27 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
-import { getGolfMatchWithScores, getGolfCourse } from '@draco/shared-api-client';
-import type { GolfMatchWithScores, GolfCourseWithTees } from '@draco/shared-api-client';
+import {
+  Close as CloseIcon,
+  FiberManualRecord as FiberManualRecordIcon,
+} from '@mui/icons-material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import {
+  getGolfMatchWithScores,
+  getGolfCourse,
+  getGolfTeamWithRoster,
+} from '@draco/shared-api-client';
+import type {
+  GolfMatchWithScores,
+  GolfCourseWithTees,
+  LiveHoleScore,
+  GolfTeamWithRoster,
+} from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { formatDateTimeInTimezone } from '../../utils/dateUtils';
 import { useAccountTimezone } from '../../context/AccountContext';
+import { LiveScoringProvider, useLiveScoring } from '../../context/LiveScoringContext';
 import ScorecardTable from './ScorecardTable';
 
 interface GolfScorecardDialogProps {
@@ -29,13 +43,41 @@ interface GolfScorecardDialogProps {
   onClose: () => void;
   matchId: string;
   accountId: string;
+  isLiveSession?: boolean;
+  seasonId?: string;
+  team1Id?: string;
+  team2Id?: string;
+}
+
+interface LiveScoringData {
+  isConnected: boolean;
+  isConnecting: boolean;
+  connectionError: string | null;
+  sessionState: { status: string; scores: LiveHoleScore[]; holesPlayed: number } | null;
+  viewerCount: number;
+  onSessionFinalized: (callback: () => void) => () => void;
+  onSessionStopped: (callback: () => void) => () => void;
+}
+
+interface GolfScorecardDialogContentProps {
+  onClose: () => void;
+  matchId: string;
+  accountId: string;
+  liveData?: LiveScoringData;
+  seasonId?: string;
+  team1Id?: string;
+  team2Id?: string;
 }
 
 function GolfScorecardDialogContent({
   onClose,
   matchId,
   accountId,
-}: Omit<GolfScorecardDialogProps, 'open'>) {
+  liveData,
+  seasonId,
+  team1Id,
+  team2Id,
+}: GolfScorecardDialogContentProps) {
   const apiClient = useApiClient();
   const timeZone = useAccountTimezone();
 
@@ -43,8 +85,21 @@ function GolfScorecardDialogContent({
   const [error, setError] = useState<string | null>(null);
   const [matchData, setMatchData] = useState<GolfMatchWithScores | null>(null);
   const [courseData, setCourseData] = useState<GolfCourseWithTees | null>(null);
+  const [team1Roster, setTeam1Roster] = useState<GolfTeamWithRoster | null>(null);
+  const [team2Roster, setTeam2Roster] = useState<GolfTeamWithRoster | null>(null);
+  const [rosterError, setRosterError] = useState<string | null>(null);
+
+  const isSessionActive = liveData?.sessionState?.status === 'active';
+  const isLiveMode = !!liveData;
 
   const loadData = useCallback(async () => {
+    console.log('[GolfScorecardDialog] loadData called', {
+      matchId,
+      isLiveMode,
+      seasonId,
+      team1Id,
+      team2Id,
+    });
     if (!matchId) return;
 
     setLoading(true);
@@ -58,6 +113,11 @@ function GolfScorecardDialogContent({
       });
 
       const match = unwrapApiResult<GolfMatchWithScores>(matchResult, 'Failed to load match');
+      console.log('[GolfScorecardDialog] Match loaded', {
+        matchId: match.id,
+        team1Scores: match.team1Scores?.length || 0,
+        team2Scores: match.team2Scores?.length || 0,
+      });
       setMatchData(match);
 
       if (match.course?.id) {
@@ -67,45 +127,204 @@ function GolfScorecardDialogContent({
           throwOnError: false,
         });
         const course = unwrapApiResult<GolfCourseWithTees>(courseResult, 'Failed to load course');
+        console.log('[GolfScorecardDialog] Course loaded', { courseId: course.id });
         setCourseData(course);
       }
+
+      console.log('[GolfScorecardDialog] Checking roster fetch condition', {
+        isLiveMode,
+        seasonId,
+        team1Id,
+        team2Id,
+      });
+      if (isLiveMode && seasonId && team1Id && team2Id) {
+        console.log('[GolfScorecardDialog] Fetching rosters...');
+        setRosterError(null);
+        const [team1Result, team2Result] = await Promise.all([
+          getGolfTeamWithRoster({
+            client: apiClient,
+            path: { accountId, seasonId, teamSeasonId: team1Id },
+            throwOnError: false,
+          }),
+          getGolfTeamWithRoster({
+            client: apiClient,
+            path: { accountId, seasonId, teamSeasonId: team2Id },
+            throwOnError: false,
+          }),
+        ]);
+
+        console.log('[GolfScorecardDialog] Roster results', {
+          team1Data: team1Result.data,
+          team1Error: team1Result.error,
+          team2Data: team2Result.data,
+          team2Error: team2Result.error,
+        });
+
+        if (team1Result.data) {
+          setTeam1Roster(team1Result.data);
+        }
+        if (team2Result.data) {
+          setTeam2Roster(team2Result.data);
+        }
+
+        if (team1Result.error || team2Result.error) {
+          const errorStatus =
+            (team1Result.error as { status?: number })?.status ||
+            (team2Result.error as { status?: number })?.status;
+          if (errorStatus === 403) {
+            setRosterError('Unable to load player roster (access denied)');
+          } else {
+            setRosterError('Unable to load player roster');
+          }
+        }
+      } else {
+        console.log('[GolfScorecardDialog] Skipping roster fetch - condition not met');
+      }
     } catch (err) {
+      console.error('[GolfScorecardDialog] loadData error', err);
       const message = err instanceof Error ? err.message : 'Failed to load scorecard';
       setError(message);
     } finally {
       setLoading(false);
     }
-  }, [accountId, apiClient, matchId]);
+  }, [accountId, apiClient, matchId, isLiveMode, seasonId, team1Id, team2Id]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    if (!liveData) return;
+
+    const unsubFinalized = liveData.onSessionFinalized(() => {
+      loadData();
+    });
+
+    const unsubStopped = liveData.onSessionStopped(() => {
+      loadData();
+    });
+
+    return () => {
+      unsubFinalized();
+      unsubStopped();
+    };
+  }, [liveData, loadData]);
+
+  const holesPlayedCount = useMemo(() => {
+    if (liveData?.sessionState?.holesPlayed) {
+      return liveData.sessionState.holesPlayed;
+    }
+    const allScores = [...(matchData?.team1Scores || []), ...(matchData?.team2Scores || [])];
+    if (allScores.length > 0) {
+      return allScores[0].holesPlayed || 18;
+    }
+    return 18;
+  }, [matchData, liveData?.sessionState?.holesPlayed]);
+
   const playerScores = useMemo(() => {
+    console.log('[GolfScorecardDialog] playerScores memo', {
+      hasMatchData: !!matchData,
+      isLiveMode,
+      team1Roster: team1Roster?.roster?.length || 0,
+      team2Roster: team2Roster?.roster?.length || 0,
+      liveScores: liveData?.sessionState?.scores?.length || 0,
+    });
     if (!matchData) return [];
 
     const allScores = [...(matchData.team1Scores || []), ...(matchData.team2Scores || [])];
-    if (allScores.length === 0) return [];
+    console.log('[GolfScorecardDialog] allScores from match', allScores.length);
 
-    const firstScore = allScores[0];
-    const holesPlayed = firstScore.holesPlayed || 18;
+    if (allScores.length > 0) {
+      return allScores.map((score) => {
+        const baseHoleScores = [...(score.holeScores || Array(holesPlayedCount).fill(0))];
 
-    return allScores.map((score) => {
-      const baseHoleScores = [...(score.holeScores || Array(holesPlayed).fill(0))];
-      const totalScore = baseHoleScores.reduce((sum, s) => sum + (s || 0), 0);
+        if (liveData?.sessionState?.scores) {
+          liveData.sessionState.scores
+            .filter((liveScore: LiveHoleScore) => liveScore.golferId === score.golferId)
+            .forEach((liveScore: LiveHoleScore) => {
+              baseHoleScores[liveScore.holeNumber - 1] = liveScore.score;
+            });
+        }
 
-      return {
-        playerName: score.player
-          ? `${score.player.firstName} ${score.player.lastName}`
-          : 'Unknown Player',
-        holeScores: baseHoleScores,
-        totalScore,
-        handicapIndex: score.player?.handicapIndex,
-        courseHandicap: score.courseHandicap,
-        differential: score.differential,
-      };
+        const totalScore = baseHoleScores.reduce((sum, s) => sum + (s || 0), 0);
+
+        return {
+          playerName: score.player
+            ? `${score.player.firstName} ${score.player.lastName}`
+            : 'Unknown Player',
+          holeScores: baseHoleScores,
+          totalScore,
+          handicapIndex: score.player?.handicapIndex,
+          courseHandicap: score.courseHandicap,
+          differential: score.differential,
+          golferId: score.golferId,
+          teamId: matchData.team1Scores?.some((s) => s.golferId === score.golferId)
+            ? matchData.team1.id
+            : matchData.team2.id,
+        };
+      });
+    }
+
+    console.log('[GolfScorecardDialog] Checking roster fallback', {
+      isLiveMode,
+      hasTeam1Roster: !!team1Roster,
+      hasTeam2Roster: !!team2Roster,
     });
-  }, [matchData]);
+    if (isLiveMode && (team1Roster || team2Roster)) {
+      console.log('[GolfScorecardDialog] Using roster data for players');
+      const players: Array<{
+        playerName: string;
+        holeScores: number[];
+        totalScore: number;
+        handicapIndex?: number | null;
+        courseHandicap?: number;
+        differential?: number;
+        golferId: string;
+        teamId: string;
+      }> = [];
+
+      const team1Players = team1Roster?.roster || [];
+      const team2Players = team2Roster?.roster || [];
+
+      [...team1Players, ...team2Players].forEach((rosterEntry) => {
+        const baseHoleScores = Array(holesPlayedCount).fill(0);
+
+        if (liveData?.sessionState?.scores) {
+          liveData.sessionState.scores
+            .filter((liveScore: LiveHoleScore) => liveScore.golferId === rosterEntry.golferId)
+            .forEach((liveScore: LiveHoleScore) => {
+              baseHoleScores[liveScore.holeNumber - 1] = liveScore.score;
+            });
+        }
+
+        const totalScore = baseHoleScores.reduce((sum, s) => sum + (s || 0), 0);
+
+        players.push({
+          playerName: `${rosterEntry.player.firstName} ${rosterEntry.player.lastName}`,
+          holeScores: baseHoleScores,
+          totalScore,
+          handicapIndex: rosterEntry.player.handicapIndex,
+          courseHandicap: undefined,
+          differential: undefined,
+          golferId: rosterEntry.golferId,
+          teamId: team1Players.includes(rosterEntry)
+            ? team1Roster?.id || ''
+            : team2Roster?.id || '',
+        });
+      });
+
+      return players;
+    }
+
+    return [];
+  }, [
+    matchData,
+    liveData?.sessionState?.scores,
+    holesPlayedCount,
+    isLiveMode,
+    team1Roster,
+    team2Roster,
+  ]);
 
   const getTeeColorHex = (teeColor: string): string => {
     const colorMap: Record<string, string> = {
@@ -165,11 +384,36 @@ function GolfScorecardDialogContent({
               </Typography>
             )}
           </Box>
-          <Chip
-            label={getMatchStatusText(matchData.matchStatus)}
-            size="small"
-            color={matchData.matchStatus === 1 ? 'success' : 'default'}
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {isSessionActive && liveData?.viewerCount !== undefined && liveData.viewerCount > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <VisibilityIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                <Typography variant="body2" color="text.secondary">
+                  {liveData.viewerCount}
+                </Typography>
+              </Box>
+            )}
+            <Chip
+              label={isSessionActive ? 'LIVE' : getMatchStatusText(matchData.matchStatus)}
+              size="small"
+              color={
+                isSessionActive ? 'error' : matchData.matchStatus === 1 ? 'success' : 'default'
+              }
+              icon={isSessionActive ? <FiberManualRecordIcon sx={{ fontSize: 12 }} /> : undefined}
+              sx={
+                isSessionActive
+                  ? {
+                      animation: 'pulse 2s infinite',
+                      '@keyframes pulse': {
+                        '0%': { opacity: 1 },
+                        '50%': { opacity: 0.7 },
+                        '100%': { opacity: 1 },
+                      },
+                    }
+                  : undefined
+              }
+            />
+          </Box>
         </Box>
         {tee && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
@@ -198,9 +442,56 @@ function GolfScorecardDialogContent({
   };
 
   const renderScorecard = () => {
+    console.log('[GolfScorecardDialog] renderScorecard', {
+      hasMatchData: !!matchData,
+      hasCourseData: !!courseData,
+      playerScoresLength: playerScores.length,
+      isLiveMode,
+      rosterError,
+    });
     if (!matchData || !courseData) return null;
 
+    const allScores = [...(matchData.team1Scores || []), ...(matchData.team2Scores || [])];
+    const firstScore = allScores[0];
+    const holesPlayed = (holesPlayedCount || 18) as 9 | 18;
+
+    const matchTeeId = matchData.tee?.id;
+    const scoreTee = firstScore?.tee;
+    const teeWithDistances = scoreTee || courseData.tees?.find((t) => t.id === matchTeeId);
+    const distances = teeWithDistances?.distances;
+
     if (playerScores.length === 0) {
+      console.log(
+        '[GolfScorecardDialog] No players - showing scorecard with error/waiting message',
+      );
+
+      if (rosterError) {
+        return (
+          <ScorecardTable
+            pars={courseData.mensPar}
+            handicaps={courseData.mensHandicap}
+            distances={distances}
+            playerScores={[]}
+            holesPlayed={holesPlayed}
+            startIndex={firstScore?.startIndex || 0}
+            emptyMessage={rosterError}
+          />
+        );
+      }
+
+      if (isLiveMode) {
+        return (
+          <ScorecardTable
+            pars={courseData.mensPar}
+            handicaps={courseData.mensHandicap}
+            distances={distances}
+            playerScores={[]}
+            holesPlayed={holesPlayed}
+            startIndex={firstScore?.startIndex || 0}
+            emptyMessage="Waiting for players..."
+          />
+        );
+      }
       return (
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
           No scores recorded for this match.
@@ -208,16 +499,11 @@ function GolfScorecardDialogContent({
       );
     }
 
-    const allScores = [...(matchData.team1Scores || []), ...(matchData.team2Scores || [])];
-    const firstScore = allScores[0];
-    const holesPlayed = (firstScore?.holesPlayed || 18) as 9 | 18;
-    const tee = firstScore?.tee;
-
     return (
       <ScorecardTable
         pars={courseData.mensPar}
         handicaps={courseData.mensHandicap}
-        distances={tee?.distances}
+        distances={distances}
         playerScores={playerScores}
         holesPlayed={holesPlayed}
         startIndex={firstScore?.startIndex || 0}
@@ -225,20 +511,46 @@ function GolfScorecardDialogContent({
     );
   };
 
+  const liveTeamTotals = useMemo(() => {
+    if (!isSessionActive || !matchData) return null;
+
+    let team1Total = 0;
+    let team2Total = 0;
+
+    const team1Id = team1Roster?.id || matchData.team1.id;
+    const team2Id = team2Roster?.id || matchData.team2.id;
+
+    playerScores.forEach((ps) => {
+      if ('teamId' in ps) {
+        if (ps.teamId === team1Id) {
+          team1Total += ps.totalScore;
+        } else if (ps.teamId === team2Id) {
+          team2Total += ps.totalScore;
+        }
+      }
+    });
+
+    return { team1Total, team2Total };
+  }, [isSessionActive, matchData, playerScores, team1Roster, team2Roster]);
+
   const renderTeamSummary = () => {
     if (!matchData) return null;
 
-    const team1Score = matchData.team1TotalScore;
-    const team2Score = matchData.team2TotalScore;
+    const team1Score =
+      isSessionActive && liveTeamTotals ? liveTeamTotals.team1Total : matchData.team1TotalScore;
+    const team2Score =
+      isSessionActive && liveTeamTotals ? liveTeamTotals.team2Total : matchData.team2TotalScore;
 
-    const hasScores = team1Score !== undefined || team2Score !== undefined;
+    const hasScores = team1Score !== undefined || team2Score !== undefined || isSessionActive;
     if (!hasScores) return null;
 
     const team1Won =
+      !isSessionActive &&
       matchData.team1Points !== undefined &&
       matchData.team2Points !== undefined &&
       matchData.team1Points > matchData.team2Points;
     const team2Won =
+      !isSessionActive &&
       matchData.team1Points !== undefined &&
       matchData.team2Points !== undefined &&
       matchData.team2Points > matchData.team1Points;
@@ -343,14 +655,89 @@ function GolfScorecardDialogContent({
   );
 }
 
+interface LiveScorecardWrapperProps {
+  onClose: () => void;
+  matchId: string;
+  accountId: string;
+  seasonId?: string;
+  team1Id?: string;
+  team2Id?: string;
+}
+
+function LiveScorecardWrapper({
+  onClose,
+  matchId,
+  accountId,
+  seasonId,
+  team1Id,
+  team2Id,
+}: LiveScorecardWrapperProps) {
+  console.log('[LiveScorecardWrapper] Rendering', { matchId, seasonId, team1Id, team2Id });
+  const {
+    connect,
+    disconnect,
+    isConnected,
+    isConnecting,
+    connectionError,
+    sessionState,
+    viewerCount,
+    onSessionFinalized,
+    onSessionStopped,
+  } = useLiveScoring();
+
+  useEffect(() => {
+    console.log('[LiveScorecardWrapper] Connecting to SSE', matchId);
+    connect(matchId);
+    return () => {
+      console.log('[LiveScorecardWrapper] Disconnecting from SSE');
+      disconnect();
+    };
+  }, [matchId, connect, disconnect]);
+
+  console.log('[LiveScorecardWrapper] liveScoring state', {
+    isConnected,
+    isConnecting,
+    connectionError,
+    sessionState,
+  });
+
+  const liveData: LiveScoringData = {
+    isConnected,
+    isConnecting,
+    connectionError,
+    sessionState,
+    viewerCount,
+    onSessionFinalized,
+    onSessionStopped,
+  };
+
+  return (
+    <GolfScorecardDialogContent
+      onClose={onClose}
+      matchId={matchId}
+      accountId={accountId}
+      liveData={liveData}
+      seasonId={seasonId}
+      team1Id={team1Id}
+      team2Id={team2Id}
+    />
+  );
+}
+
 export default function GolfScorecardDialog({
   open,
   onClose,
   matchId,
   accountId,
+  isLiveSession = false,
+  seasonId,
+  team1Id,
+  team2Id,
 }: GolfScorecardDialogProps) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+
+  if (!open) return null;
 
   return (
     <Dialog
@@ -363,7 +750,20 @@ export default function GolfScorecardDialog({
         sx: { maxHeight: '90vh' },
       }}
     >
-      <GolfScorecardDialogContent onClose={onClose} matchId={matchId} accountId={accountId} />
+      {isLiveSession ? (
+        <LiveScoringProvider>
+          <LiveScorecardWrapper
+            onClose={onClose}
+            matchId={matchId}
+            accountId={accountId}
+            seasonId={seasonId}
+            team1Id={team1Id}
+            team2Id={team2Id}
+          />
+        </LiveScoringProvider>
+      ) : (
+        <GolfScorecardDialogContent onClose={onClose} matchId={matchId} accountId={accountId} />
+      )}
     </Dialog>
   );
 }

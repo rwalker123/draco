@@ -246,12 +246,22 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
         const data = JSON.parse(event.data) as SessionFinalizedEvent;
         setSessionState((prev) => (prev ? { ...prev, status: 'finalized' } : prev));
         sessionFinalizedCallbacks.current.forEach((cb) => cb(data));
+        eventSource.close();
+        eventSourceRef.current = null;
+        currentMatchIdRef.current = null;
+        isConnectedRef.current = false;
+        setIsConnected(false);
       });
 
       eventSource.addEventListener('session_stopped', (event) => {
         const data = JSON.parse(event.data) as SessionStoppedEvent;
         setSessionState((prev) => (prev ? { ...prev, status: 'stopped' } : prev));
         sessionStoppedCallbacks.current.forEach((cb) => cb(data));
+        eventSource.close();
+        eventSourceRef.current = null;
+        currentMatchIdRef.current = null;
+        isConnectedRef.current = false;
+        setIsConnected(false);
       });
 
       eventSource.addEventListener('ping', () => {
