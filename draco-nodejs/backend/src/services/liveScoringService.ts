@@ -164,7 +164,7 @@ export class LiveScoringService {
     });
 
     const golferName = `${holeScore.golfer.contact.firstname} ${holeScore.golfer.contact.lastname}`;
-    const teamId = await this.getGolferTeamId(golferId, match.team1, match.team2);
+    const teamId = await this.findGolferTeamId(golferId, match.team1, match.team2);
 
     const scoreUpdateEvent: ScoreUpdateEventType = {
       golferId: holeScore.golferid.toString(),
@@ -237,10 +237,21 @@ export class LiveScoringService {
       scoresByGolfer.set(score.golferid, existing);
     }
 
+    // Batch load rosters for both teams (2 queries instead of N*2)
+    const [team1Roster, team2Roster] = await Promise.all([
+      this.rosterRepository.findByTeamSeasonId(match.team1),
+      this.rosterRepository.findByTeamSeasonId(match.team2),
+    ]);
+
+    // Build golfer → teamId lookup map
+    const golferTeamMap = new Map<string, bigint>();
+    team1Roster.forEach((entry) => golferTeamMap.set(entry.golferid.toString(), match.team1));
+    team2Roster.forEach((entry) => golferTeamMap.set(entry.golferid.toString(), match.team2));
+
     // Build match score submissions for each golfer
     const submissions: MatchScoreSubmission[] = [];
     for (const [golferId, holeScores] of scoresByGolfer) {
-      const teamId = await this.getGolferTeamId(golferId, match.team1, match.team2);
+      const teamId = golferTeamMap.get(golferId.toString());
       if (!teamId) {
         console.warn(`Golfer ${golferId} not found in either team roster, skipping`);
         continue;
@@ -365,10 +376,8 @@ export class LiveScoringService {
       throw new AuthorizationError('User does not have a golfer profile');
     }
 
-    const team1Roster = await this.rosterRepository.findByGolferAndTeam(golfer.id, team1Id);
-    const team2Roster = await this.rosterRepository.findByGolferAndTeam(golfer.id, team2Id);
-
-    if (!team1Roster && !team2Roster) {
+    const teamId = await this.findGolferTeamId(golfer.id, team1Id, team2Id);
+    if (!teamId) {
       throw new AuthorizationError('User is not a participant in this match');
     }
   }
@@ -378,15 +387,13 @@ export class LiveScoringService {
     team1Id: bigint,
     team2Id: bigint,
   ): Promise<void> {
-    const team1Roster = await this.rosterRepository.findByGolferAndTeam(golferId, team1Id);
-    const team2Roster = await this.rosterRepository.findByGolferAndTeam(golferId, team2Id);
-
-    if (!team1Roster && !team2Roster) {
+    const teamId = await this.findGolferTeamId(golferId, team1Id, team2Id);
+    if (!teamId) {
       throw new ValidationError('Golfer is not a participant in this match');
     }
   }
 
-  private async getGolferTeamId(
+  private async findGolferTeamId(
     golferId: bigint,
     team1Id: bigint,
     team2Id: bigint,
