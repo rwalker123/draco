@@ -33,6 +33,7 @@ export const ACCOUNT_SETTING_KEYS = [
   'SyncInstagramToGallery',
   'NotifyTeamsWantedOnPlayersWanted',
   'NotifyPlayersWantedOnTeamsWanted',
+  'EnableLiveScoring',
 ] as const;
 
 export const AccountSettingKeySchema = z.enum(ACCOUNT_SETTING_KEYS);
@@ -574,6 +575,41 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
         id: 'account.manage.contactInfo.editing',
         type: 'widget',
         displayName: 'Contact Info Editing Controls',
+        expectedValue: true,
+      },
+    ],
+  }),
+  booleanSetting({
+    key: 'EnableLiveScoring',
+    label: 'Enable Live Scoring',
+    description:
+      'Allows players to enter scores in real-time during matches scheduled for the current day. Viewers can watch scores update live.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 75,
+    componentGates: [
+      {
+        id: 'liveScoring.startButton',
+        type: 'widget',
+        displayName: 'Live Scoring Start Button on GameCard',
+        expectedValue: true,
+      },
+      {
+        id: 'liveScoring.badge',
+        type: 'widget',
+        displayName: 'LIVE Badge on GameCard',
+        expectedValue: true,
+      },
+      {
+        id: 'liveScoring.panel',
+        type: 'widget',
+        displayName: 'Live Scoring Panel',
+        expectedValue: true,
+      },
+      {
+        id: 'liveScoring.individual',
+        type: 'widget',
+        displayName: 'Individual Account Live Scoring',
         expectedValue: true,
       },
     ],

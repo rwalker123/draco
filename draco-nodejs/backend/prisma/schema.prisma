@@ -223,11 +223,13 @@ model aspnetusers {
   lockoutenabled       Boolean
   accessfailedcount    Int
   username             String?               @unique(map: "uq_aspnetusers_username") @db.VarChar(256)
-  accounts             accounts[]
-  aspnetuserroles      aspnetuserroles[]
-  created_templates    email_templates[]     @relation("EmailTemplateCreatedBy")
-  created_emails       emails[]              @relation("EmailCreatedBy")
-  userdiscordaccounts  userdiscordaccounts[]
+  accounts                    accounts[]
+  aspnetuserroles             aspnetuserroles[]
+  created_templates           email_templates[]        @relation("EmailTemplateCreatedBy")
+  created_emails              emails[]                 @relation("EmailCreatedBy")
+  userdiscordaccounts         userdiscordaccounts[]
+  livescoringsessions_started livescoringsession[]
+  liveholescores_entered      liveholescore[]
 }
 
 model accountdiscordsettings {
@@ -877,6 +879,7 @@ model golfmatch {
   teamsseason_golfmatch_team2Toteamsseason teamsseason         @relation("golfmatch_team2Toteamsseason", fields: [team2], references: [id], onDelete: Cascade, map: "fk_golfmatch_teams")
   teamsseason_golfmatch_team1Toteamsseason teamsseason         @relation("golfmatch_team1Toteamsseason", fields: [team1], references: [id], onDelete: Cascade, map: "fk_golfmatch_teamsseason")
   golfmatchscores                          golfmatchscores[]
+  livescoringsession                       livescoringsession?
 }
 
 model golfer {
@@ -892,6 +895,7 @@ model golfer {
   leaguesubs          golfleaguesub[]
   matchscores         golfmatchscores[]
   scores              golfscore[]
+  liveholescores      liveholescore[]
 }
 
 model golfleaguesub {
@@ -1863,4 +1867,40 @@ model email_events {
 
   @@index([email_recipient_id, event_type])
   @@index([occurred_at])
+}
+
+// ============================================================================
+// Live Scoring Models
+// ============================================================================
+
+model livescoringsession {
+  id           BigInt          @id @default(autoincrement())
+  matchid      BigInt          @unique
+  startedby    String          @db.VarChar(128)
+  startedat    DateTime        @default(now()) @db.Timestamptz(6)
+  lastactivity DateTime        @default(now()) @db.Timestamptz(6)
+  status       Int             @default(1)
+  currenthole  Int             @default(1)
+  golfmatch    golfmatch       @relation(fields: [matchid], references: [id], onDelete: Cascade, map: "fk_livescoringsession_golfmatch")
+  startedbyuser aspnetusers    @relation(fields: [startedby], references: [id], onDelete: Cascade, map: "fk_livescoringsession_aspnetusers")
+  scores       liveholescore[]
+
+  @@index([matchid], map: "idx_livescoringsession_match")
+  @@index([status], map: "idx_livescoringsession_status")
+}
+
+model liveholescore {
+  id         BigInt             @id @default(autoincrement())
+  sessionid  BigInt
+  golferid   BigInt
+  holenumber Int
+  score      Int
+  enteredby  String             @db.VarChar(128)
+  enteredat  DateTime           @default(now()) @db.Timestamptz(6)
+  session    livescoringsession @relation(fields: [sessionid], references: [id], onDelete: Cascade, map: "fk_liveholescore_session")
+  golfer     golfer             @relation(fields: [golferid], references: [id], onDelete: Cascade, map: "fk_liveholescore_golfer")
+  enteredbyuser aspnetusers     @relation(fields: [enteredby], references: [id], onDelete: Cascade, map: "fk_liveholescore_aspnetusers")
+
+  @@unique([sessionid, golferid, holenumber], map: "uq_liveholescore_session_golfer_hole")
+  @@index([sessionid], map: "idx_liveholescore_session")
 }

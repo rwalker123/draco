@@ -1,0 +1,220 @@
+import { Response } from 'express';
+
+interface SSEClient {
+  id: string;
+  res: Response;
+  userId: string;
+  matchId: bigint;
+  lastPing: number;
+}
+
+/**
+ * Manages Server-Sent Events (SSE) connections for live scoring.
+ * Handles client subscriptions, broadcasting, and connection lifecycle.
+ */
+export class SSEManager {
+  private clients: Map<string, SSEClient> = new Map();
+  private matchSubscriptions: Map<string, Set<string>> = new Map(); // matchId -> clientIds
+  private pingInterval: NodeJS.Timeout | null = null;
+  private readonly PING_INTERVAL_MS = 30000; // 30 seconds (Railway has 60s timeout)
+  private readonly STALE_THRESHOLD_MS = 120000; // 2 minutes
+
+  constructor() {
+    this.startPingInterval();
+  }
+
+  private startPingInterval(): void {
+    this.pingInterval = setInterval(() => {
+      this.pingAllClients();
+      this.cleanupStaleClients();
+    }, this.PING_INTERVAL_MS);
+  }
+
+  /**
+   * Adds a new SSE client connection for a specific match.
+   */
+  addClient(clientId: string, res: Response, userId: string, matchId: bigint): void {
+    const client: SSEClient = {
+      id: clientId,
+      res,
+      userId,
+      matchId,
+      lastPing: Date.now(),
+    };
+
+    this.clients.set(clientId, client);
+
+    const matchKey = matchId.toString();
+    if (!this.matchSubscriptions.has(matchKey)) {
+      this.matchSubscriptions.set(matchKey, new Set());
+    }
+    this.matchSubscriptions.get(matchKey)!.add(clientId);
+
+    console.log(
+      `📡 SSE client ${clientId} connected to match ${matchKey}. Total clients: ${this.clients.size}`,
+    );
+
+    // Send initial connection event
+    this.sendEvent(clientId, 'connected', { clientId, matchId: matchKey });
+  }
+
+  /**
+   * Removes a client connection and cleans up subscriptions.
+   */
+  removeClient(clientId: string): void {
+    const client = this.clients.get(clientId);
+    if (client) {
+      const matchKey = client.matchId.toString();
+      this.matchSubscriptions.get(matchKey)?.delete(clientId);
+      if (this.matchSubscriptions.get(matchKey)?.size === 0) {
+        this.matchSubscriptions.delete(matchKey);
+      }
+      this.clients.delete(clientId);
+      console.log(`📡 SSE client ${clientId} disconnected. Total clients: ${this.clients.size}`);
+    }
+  }
+
+  /**
+   * Broadcasts an event to all clients subscribed to a specific match.
+   */
+  broadcastToMatch(matchId: bigint, event: string, data: unknown): void {
+    const matchKey = matchId.toString();
+    const clientIds = this.matchSubscriptions.get(matchKey);
+
+    if (clientIds) {
+      for (const clientId of clientIds) {
+        this.sendEvent(clientId, event, data);
+      }
+    }
+  }
+
+  /**
+   * Sends an event to a specific client.
+   * Returns true if successful, false if the client was removed due to error.
+   */
+  private sendEvent(clientId: string, event: string, data: unknown): boolean {
+    const client = this.clients.get(clientId);
+    if (!client) {
+      return false;
+    }
+
+    try {
+      client.res.write(`event: ${event}\n`);
+      client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+      client.lastPing = Date.now();
+      return true;
+    } catch {
+      console.warn(`📡 Failed to send SSE event to client ${clientId}, removing client`);
+      this.removeClient(clientId);
+      return false;
+    }
+  }
+
+  /**
+   * Sends a ping event to all connected clients to keep connections alive.
+   */
+  private pingAllClients(): void {
+    const timestamp = Date.now();
+    for (const [clientId] of this.clients) {
+      this.sendEvent(clientId, 'ping', { timestamp });
+    }
+  }
+
+  /**
+   * Removes clients that haven't received a successful ping recently.
+   */
+  private cleanupStaleClients(): void {
+    const staleThreshold = Date.now() - this.STALE_THRESHOLD_MS;
+    const staleClients: string[] = [];
+
+    for (const [clientId, client] of this.clients) {
+      if (client.lastPing < staleThreshold) {
+        staleClients.push(clientId);
+      }
+    }
+
+    for (const clientId of staleClients) {
+      console.log(`📡 Removing stale SSE client ${clientId}`);
+      this.removeClient(clientId);
+    }
+  }
+
+  /**
+   * Gets the number of viewers for a specific match.
+   */
+  getMatchViewerCount(matchId: bigint): number {
+    return this.matchSubscriptions.get(matchId.toString())?.size ?? 0;
+  }
+
+  /**
+   * Gets total number of connected clients across all matches.
+   */
+  getTotalClientCount(): number {
+    return this.clients.size;
+  }
+
+  /**
+   * Gets list of match IDs that have active viewers.
+   */
+  getActiveMatchIds(): bigint[] {
+    return Array.from(this.matchSubscriptions.keys()).map((id) => BigInt(id));
+  }
+
+  /**
+   * Checks if a specific user is connected to a match.
+   */
+  isUserConnectedToMatch(matchId: bigint, userId: string): boolean {
+    const matchKey = matchId.toString();
+    const clientIds = this.matchSubscriptions.get(matchKey);
+    if (!clientIds) return false;
+
+    for (const clientId of clientIds) {
+      const client = this.clients.get(clientId);
+      if (client && client.userId === userId) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Gracefully shuts down the SSE manager.
+   */
+  shutdown(): void {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+
+    // Close all client connections
+    for (const [clientId, client] of this.clients) {
+      try {
+        this.sendEvent(clientId, 'shutdown', { message: 'Server shutting down' });
+        client.res.end();
+      } catch {
+        // Ignore errors during shutdown
+      }
+    }
+
+    this.clients.clear();
+    this.matchSubscriptions.clear();
+    console.log('📡 SSE Manager shutdown complete');
+  }
+}
+
+// Singleton instance
+let sseManagerInstance: SSEManager | null = null;
+
+export function getSSEManager(): SSEManager {
+  if (!sseManagerInstance) {
+    sseManagerInstance = new SSEManager();
+  }
+  return sseManagerInstance;
+}
+
+export function shutdownSSEManager(): void {
+  if (sseManagerInstance) {
+    sseManagerInstance.shutdown();
+    sseManagerInstance = null;
+  }
+}

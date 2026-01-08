@@ -109,9 +109,9 @@ export function TeamScoresSection({
       <AccordionSummary
         expandIcon={<ExpandMoreIcon />}
         sx={{
-          backgroundColor: theme.palette.grey[100],
+          backgroundColor: theme.palette.action.selected,
           '&:hover': {
-            backgroundColor: theme.palette.grey[200],
+            backgroundColor: theme.palette.action.hover,
           },
         }}
       >

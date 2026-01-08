@@ -65,3 +65,4 @@ export * from './IGolfRosterRepository.js';
 export * from './IGolfMatchRepository.js';
 export * from './IGolfScoreRepository.js';
 export * from './IGolferRepository.js';
+export * from './ILiveScoringRepository.js';
