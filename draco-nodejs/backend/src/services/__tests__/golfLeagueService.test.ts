@@ -5,7 +5,7 @@ import {
   type GolfLeagueSetupWithOfficers,
   type GolfAccountInfo,
 } from '../../repositories/index.js';
-import { NotFoundError } from '../../utils/customErrors.js';
+import { NotFoundError, ValidationError } from '../../utils/customErrors.js';
 import type { golfleaguesetup, contacts, leagueseason } from '#prisma/client';
 
 function createMockContact(overrides: Partial<contacts> = {}): contacts {
@@ -131,7 +131,11 @@ describe('GolfLeagueService', () => {
       async getGolfAccounts(): Promise<GolfAccountInfo[]> {
         return [...accounts];
       },
-      async upsertSeasonConfig(): Promise<{ id: bigint; leagueseasonid: bigint; teamsize: number }> {
+      async upsertSeasonConfig(): Promise<{
+        id: bigint;
+        leagueseasonid: bigint;
+        teamsize: number;
+      }> {
         return { id: 1n, leagueseasonid: 1n, teamsize: 2 };
       },
     };
@@ -270,6 +274,52 @@ describe('GolfLeagueService', () => {
       expect(result.leagueDay).toBe(5);
       expect(result.holesPerMatch).toBe(original.holesPerMatch);
       expect(result.timeBetweenTeeTimes).toBe(original.timeBetweenTeeTimes);
+    });
+
+    describe('absent player penalty validation', () => {
+      it('allows penalty when absentPlayerMode is handicapPenalty', async () => {
+        const result = await service.updateLeagueSetup(100n, 1n, {
+          absentPlayerMode: 'handicapPenalty',
+          absentPlayerPenalty: 5,
+        });
+
+        expect(result).toBeDefined();
+      });
+
+      it('throws ValidationError when penalty is set with opponentWins mode', async () => {
+        await expect(
+          service.updateLeagueSetup(100n, 1n, {
+            absentPlayerMode: 'opponentWins',
+            absentPlayerPenalty: 5,
+          }),
+        ).rejects.toBeInstanceOf(ValidationError);
+      });
+
+      it('throws ValidationError when penalty is set with skipPairing mode', async () => {
+        await expect(
+          service.updateLeagueSetup(100n, 1n, {
+            absentPlayerMode: 'skipPairing',
+            absentPlayerPenalty: 3,
+          }),
+        ).rejects.toBeInstanceOf(ValidationError);
+      });
+
+      it('allows zero penalty with any mode', async () => {
+        const result = await service.updateLeagueSetup(100n, 1n, {
+          absentPlayerMode: 'opponentWins',
+          absentPlayerPenalty: 0,
+        });
+
+        expect(result).toBeDefined();
+      });
+
+      it('throws ValidationError when penalty is set without specifying mode (defaults to opponentWins)', async () => {
+        await expect(
+          service.updateLeagueSetup(100n, 1n, {
+            absentPlayerPenalty: 5,
+          }),
+        ).rejects.toBeInstanceOf(ValidationError);
+      });
     });
   });
 

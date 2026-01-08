@@ -25637,6 +25637,29 @@
           "againstFieldDescPoints": {
             "type": "integer",
             "default": 0
+          },
+          "absentPlayerMode": {
+            "type": "string",
+            "enum": [
+              "opponentWins",
+              "handicapPenalty",
+              "skipPairing"
+            ],
+            "default": "opponentWins"
+          },
+          "absentPlayerPenalty": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 36,
+            "default": 0
+          },
+          "fullTeamAbsentMode": {
+            "type": "string",
+            "enum": [
+              "forfeit",
+              "handicapPenalty"
+            ],
+            "default": "forfeit"
           }
         },
         "required": [
@@ -25722,6 +25745,29 @@
           "againstFieldDescPoints": {
             "type": "integer",
             "default": 0
+          },
+          "absentPlayerMode": {
+            "type": "string",
+            "enum": [
+              "opponentWins",
+              "handicapPenalty",
+              "skipPairing"
+            ],
+            "default": "opponentWins"
+          },
+          "absentPlayerPenalty": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 36,
+            "default": 0
+          },
+          "fullTeamAbsentMode": {
+            "type": "string",
+            "enum": [
+              "forfeit",
+              "handicapPenalty"
+            ],
+            "default": "forfeit"
           },
           "presidentId": {
             "type": "string",
@@ -27036,6 +27082,9 @@
                 "differential": {
                   "type": "number"
                 },
+                "courseHandicap": {
+                  "type": "integer"
+                },
                 "courseName": {
                   "type": "string"
                 },
@@ -27272,6 +27321,9 @@
                 },
                 "differential": {
                   "type": "number"
+                },
+                "courseHandicap": {
+                  "type": "integer"
                 },
                 "courseName": {
                   "type": "string"
@@ -27693,6 +27745,9 @@
           },
           "differential": {
             "type": "number"
+          },
+          "courseHandicap": {
+            "type": "integer"
           },
           "courseName": {
             "type": "string"
@@ -29358,6 +29413,33 @@
         "title": "Golfer",
         "description": "A golfer profile with optional home course and calculated stats"
       },
+      "GolferSummary": {
+        "type": "object",
+        "properties": {
+          "handicapIndex": {
+            "type": "number",
+            "nullable": true
+          },
+          "isInitialHandicap": {
+            "type": "boolean",
+            "default": false
+          },
+          "averageScore": {
+            "type": "number",
+            "nullable": true
+          },
+          "roundsPlayed": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "handicapIndex",
+          "averageScore",
+          "roundsPlayed"
+        ],
+        "title": "GolferSummary",
+        "description": "Public summary statistics for an individual golf account"
+      },
       "UpdateGolferHomeCourse": {
         "type": "object",
         "properties": {
@@ -29587,6 +29669,9 @@
                 },
                 "differential": {
                   "type": "number"
+                },
+                "courseHandicap": {
+                  "type": "integer"
                 },
                 "courseName": {
                   "type": "string"
@@ -31703,6 +31788,56 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golfer/summary": {
+      "get": {
+        "operationId": "getAccountGolferSummary",
+        "summary": "Get public golfer summary for account",
+        "description": "Get public summary statistics (handicap index, rounds played, average score) for an individual golf account. No authentication required.",
+        "tags": [
+          "Accounts"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Golfer summary statistics or null if not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/GolferSummary"
+                    },
+                    {
+                      "nullable": true
+                    }
+                  ]
                 }
               }
             }

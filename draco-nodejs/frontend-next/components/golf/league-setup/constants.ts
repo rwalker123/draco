@@ -57,3 +57,20 @@ export const SCORING_POINTS_FIELDS = [
   { name: 'againstFieldPoints', label: 'Against Field', tooltip: SCORING_TOOLTIPS.againstFieldPoints },
   { name: 'againstFieldDescPoints', label: 'Against Field (Desc)', tooltip: SCORING_TOOLTIPS.againstFieldDescPoints },
 ] as const;
+
+export const ABSENT_PLAYER_MODE_OPTIONS = [
+  { value: 'opponentWins', label: 'Opponent Wins Pairing' },
+  { value: 'handicapPenalty', label: 'Use Handicap + Penalty' },
+  { value: 'skipPairing', label: 'Skip Pairing (No Points)' },
+] as const;
+
+export const FULL_TEAM_ABSENT_MODE_OPTIONS = [
+  { value: 'forfeit', label: 'Forfeit Match' },
+  { value: 'handicapPenalty', label: 'Use Team Handicaps + Penalty' },
+] as const;
+
+export const ABSENT_PLAYER_TOOLTIPS = {
+  absentPlayerMode: 'How to handle individual player absences: opponent auto-wins the pairing, use handicap with penalty strokes, or skip the pairing entirely',
+  absentPlayerPenalty: 'Number of penalty strokes added to handicap-based score for absent players (0-36)',
+  fullTeamAbsentMode: 'What happens when an entire team is absent: forfeit the match or use team handicaps with penalty strokes',
+} as const;

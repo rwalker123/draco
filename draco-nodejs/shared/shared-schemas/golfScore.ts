@@ -63,6 +63,7 @@ export const GolfScoreWithDetailsSchema = GolfScoreSchema.extend({
   player: GolfPlayerSchema.optional(),
   tee: GolfCourseTeeSchema.optional(),
   differential: z.number().optional(),
+  courseHandicap: z.number().int().optional(),
   courseName: z.string().optional(),
   courseCity: z.string().nullable().optional(),
   courseState: z.string().nullable().optional(),

@@ -19,6 +19,7 @@ interface PlayerScore {
   totalScore: number;
   handicapIndex?: number | null;
   courseHandicap?: number;
+  differential?: number;
 }
 
 interface ScorecardTableProps {
@@ -236,9 +237,14 @@ export default function ScorecardTable({
                   <Typography variant="body2" fontWeight={600} noWrap>
                     {player.playerName}
                   </Typography>
-                  {player.courseHandicap !== undefined && (
+                  {(player.courseHandicap !== undefined || player.differential !== undefined) && (
                     <Typography variant="caption" color="text.secondary">
-                      CH: {player.courseHandicap}
+                      {player.courseHandicap !== undefined && `CH: ${player.courseHandicap}`}
+                      {player.courseHandicap !== undefined &&
+                        player.differential !== undefined &&
+                        '  '}
+                      {player.differential !== undefined &&
+                        `Diff: ${player.differential.toFixed(1)}`}
                     </Typography>
                   )}
                 </Box>

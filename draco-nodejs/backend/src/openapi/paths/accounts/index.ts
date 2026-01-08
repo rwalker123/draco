@@ -84,6 +84,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     SocialFeedQuerySchemaRef,
     AdminDashboardSummarySchemaRef,
     GolferSchemaRef,
+    GolferSummarySchemaRef,
     UpdateGolferHomeCourseSchemaRef,
     CreateGolfScoreSchemaRef,
     UpdateGolfScoreSchemaRef,
@@ -1315,6 +1316,46 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/golfer/summary
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/golfer/summary',
+    operationId: 'getAccountGolferSummary',
+    summary: 'Get public golfer summary for account',
+    description:
+      'Get public summary statistics (handicap index, rounds played, average score) for an individual golf account. No authentication required.',
+    tags: ['Accounts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Golfer summary statistics or null if not found',
+        content: {
+          'application/json': {
+            schema: GolferSummarySchemaRef.nullable(),
           },
         },
       },

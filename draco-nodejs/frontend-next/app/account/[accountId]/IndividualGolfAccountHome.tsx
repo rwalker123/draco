@@ -24,7 +24,12 @@ import {
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
 import AccountPageHeader from '../../../components/AccountPageHeader';
-import { getAccountById, Golfer, GolfScoreWithDetails } from '@draco/shared-api-client';
+import {
+  getAccountById,
+  Golfer,
+  GolfScoreWithDetails,
+  GolferSummary,
+} from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
 import {
@@ -43,6 +48,7 @@ const IndividualGolfAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
   const [currentSeason, setCurrentSeason] = useState<AccountSeasonWithStatusType | null>(null);
   const [golfer, setGolfer] = useState<Golfer | null>(null);
+  const [golferSummary, setGolferSummary] = useState<GolferSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [homeCourseDialogOpen, setHomeCourseDialogOpen] = useState(false);
@@ -57,7 +63,8 @@ const IndividualGolfAccountHome: React.FC = () => {
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
-  const { getGolfer, updateHomeCourse, getScores, deleteScore } = useIndividualGolfAccountService();
+  const { getGolfer, getGolferSummary, updateHomeCourse, getScores, deleteScore } =
+    useIndividualGolfAccountService();
 
   useEffect(() => {
     if (!accountIdStr) {
@@ -90,17 +97,27 @@ const IndividualGolfAccountHome: React.FC = () => {
           result,
           'Account not found or not publicly accessible',
         );
-        setAccount(accountData as AccountType);
+        const typedAccount = accountData as AccountType;
+        setAccount(typedAccount);
         setCurrentSeason(responseCurrentSeason as AccountSeasonWithStatusType | null);
 
-        const golferResult = await getGolfer(accountIdStr);
-        if (isMounted && golferResult.success) {
-          setGolfer(golferResult.data);
+        const summaryResult = await getGolferSummary(accountIdStr);
+        if (isMounted && summaryResult.success) {
+          setGolferSummary(summaryResult.data);
         }
 
-        const scoresResult = await getScores(accountIdStr, 20);
-        if (isMounted && scoresResult.success) {
-          setRecentScores(scoresResult.data);
+        const isCurrentUserOwner = user?.userId === typedAccount.accountOwner?.user?.userId;
+
+        if (isCurrentUserOwner) {
+          const golferResult = await getGolfer(accountIdStr);
+          if (isMounted && golferResult.success) {
+            setGolfer(golferResult.data);
+          }
+
+          const scoresResult = await getScores(accountIdStr, 20);
+          if (isMounted && scoresResult.success) {
+            setRecentScores(scoresResult.data);
+          }
         }
       } catch (err) {
         if (!isMounted) {
@@ -122,7 +139,7 @@ const IndividualGolfAccountHome: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [accountIdStr, apiClient, getGolfer, getScores]);
+  }, [accountIdStr, apiClient, getGolfer, getGolferSummary, getScores, user?.userId]);
 
   const handleRoundEntered = useCallback(
     async (score: GolfScoreWithDetails) => {
@@ -130,13 +147,13 @@ const IndividualGolfAccountHome: React.FC = () => {
       setRoundEntryDialogOpen(false);
 
       if (accountIdStr) {
-        const golferResult = await getGolfer(accountIdStr);
-        if (golferResult.success) {
-          setGolfer(golferResult.data);
+        const summaryResult = await getGolferSummary(accountIdStr);
+        if (summaryResult.success) {
+          setGolferSummary(summaryResult.data);
         }
       }
     },
-    [accountIdStr, getGolfer],
+    [accountIdStr, getGolferSummary],
   );
 
   const handleUpdateHomeCourse = useCallback(
@@ -163,13 +180,13 @@ const IndividualGolfAccountHome: React.FC = () => {
       setEditingScore(null);
 
       if (accountIdStr) {
-        const golferResult = await getGolfer(accountIdStr);
-        if (golferResult.success) {
-          setGolfer(golferResult.data);
+        const summaryResult = await getGolferSummary(accountIdStr);
+        if (summaryResult.success) {
+          setGolferSummary(summaryResult.data);
         }
       }
     },
-    [accountIdStr, getGolfer],
+    [accountIdStr, getGolferSummary],
   );
 
   const handleDeleteScore = useCallback(async () => {
@@ -184,14 +201,14 @@ const IndividualGolfAccountHome: React.FC = () => {
       setRecentScores((prev) => prev.filter((score) => score.id !== deleteConfirmScore.id));
       setDeleteConfirmScore(null);
 
-      const golferResult = await getGolfer(accountIdStr);
-      if (golferResult.success) {
-        setGolfer(golferResult.data);
+      const summaryResult = await getGolferSummary(accountIdStr);
+      if (summaryResult.success) {
+        setGolferSummary(summaryResult.data);
       }
     } else {
       setDeleteError(result.error);
     }
-  }, [accountIdStr, deleteConfirmScore, deleteScore, getGolfer]);
+  }, [accountIdStr, deleteConfirmScore, deleteScore, getGolferSummary]);
 
   const contributingIndices = useMemo(() => {
     const indexedDifferentials = recentScores
@@ -285,9 +302,9 @@ const IndividualGolfAccountHome: React.FC = () => {
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <GolferStatsCards
-          roundsPlayed={golfer?.roundsPlayed ?? 0}
-          handicapIndex={golfer?.handicapIndex ?? null}
-          averageScore={golfer?.averageScore ?? null}
+          roundsPlayed={golferSummary?.roundsPlayed ?? 0}
+          handicapIndex={golferSummary?.handicapIndex ?? null}
+          averageScore={golferSummary?.averageScore ?? null}
           seasonLabel={currentSeason ? 'This season' : 'Total rounds'}
         />
 
@@ -349,14 +366,16 @@ const IndividualGolfAccountHome: React.FC = () => {
           </Paper>
         )}
 
-        <GolfScoresList
-          scores={recentScores}
-          contributingIndices={contributingIndices}
-          showOwnerActions={isOwner}
-          onEdit={setEditingScore}
-          onDelete={setDeleteConfirmScore}
-          emptyMessage="No rounds recorded yet. Start tracking your golf scores to see your history here."
-        />
+        {isOwner && (
+          <GolfScoresList
+            scores={recentScores}
+            contributingIndices={contributingIndices}
+            showOwnerActions={isOwner}
+            onEdit={setEditingScore}
+            onDelete={setDeleteConfirmScore}
+            emptyMessage="No rounds recorded yet. Start tracking your golf scores to see your history here."
+          />
+        )}
 
         <OrganizationsWidget
           title="My Organizations"

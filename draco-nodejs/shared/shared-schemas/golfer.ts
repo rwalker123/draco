@@ -51,7 +51,20 @@ export const ContactIndividualGolfAccountSchema = z
     description: 'Individual golf account summary for a contact, or null if no account exists',
   });
 
+export const GolferSummarySchema = z
+  .object({
+    handicapIndex: z.number().nullable(),
+    isInitialHandicap: z.boolean().default(false),
+    averageScore: z.number().nullable(),
+    roundsPlayed: z.number(),
+  })
+  .openapi({
+    title: 'GolferSummary',
+    description: 'Public summary statistics for an individual golf account',
+  });
+
 export type GenderType = z.infer<typeof GenderSchema>;
 export type GolferType = z.infer<typeof GolferSchema>;
 export type UpdateGolferHomeCourseType = z.infer<typeof UpdateGolferHomeCourseSchema>;
 export type ContactIndividualGolfAccountType = z.infer<typeof ContactIndividualGolfAccountSchema>;
+export type GolferSummaryType = z.infer<typeof GolferSummarySchema>;

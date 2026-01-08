@@ -16,11 +16,20 @@ import {
   Checkbox,
   Grid,
   TextField,
+  MenuItem,
+  Select,
+  InputLabel,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Control, FieldValues, Path, useWatch, useFormContext, Controller } from 'react-hook-form';
-import { SCORING_TOOLTIPS, SCORING_POINTS_FIELDS } from './constants';
+import {
+  SCORING_TOOLTIPS,
+  SCORING_POINTS_FIELDS,
+  ABSENT_PLAYER_MODE_OPTIONS,
+  FULL_TEAM_ABSENT_MODE_OPTIONS,
+  ABSENT_PLAYER_TOOLTIPS,
+} from './constants';
 
 type ScoringType = 'individual' | 'team';
 
@@ -57,7 +66,13 @@ export function ScoringConfigurationSection<T extends FieldValues>({
     name: 'holesPerMatch' as Path<T>,
   }) as number | undefined;
 
+  const absentPlayerMode = useWatch({
+    control,
+    name: 'absentPlayerMode' as Path<T>,
+  }) as string | undefined;
+
   const isIndividualPlay = teamSize === 1;
+  const isPenaltyEnabled = absentPlayerMode === 'handicapPenalty';
   const isNineHoles = holesPerMatch === 9;
   const prevTeamSizeRef = useRef<number | undefined>(teamSize);
 
@@ -70,10 +85,10 @@ export function ScoringConfigurationSection<T extends FieldValues>({
     }
 
     if (teamSize === 1 && prevTeamSize !== 1) {
-      setValue('scoringType' as Path<T>, 'individual' as T[Path<T>]);
-      setValue('useBestBall' as Path<T>, false as T[Path<T>]);
+      setValue('scoringType' as Path<T>, 'individual' as T[Path<T>], { shouldDirty: true });
+      setValue('useBestBall' as Path<T>, false as T[Path<T>], { shouldDirty: true });
     } else if (teamSize > 1 && prevTeamSize === 1) {
-      setValue('scoringType' as Path<T>, 'team' as T[Path<T>]);
+      setValue('scoringType' as Path<T>, 'team' as T[Path<T>], { shouldDirty: true });
     }
   }, [teamSize, setValue]);
 
@@ -81,14 +96,14 @@ export function ScoringConfigurationSection<T extends FieldValues>({
     if (isIndividualPlay && newType === 'team') {
       return;
     }
-    setValue('scoringType' as Path<T>, newType as T[Path<T>]);
+    setValue('scoringType' as Path<T>, newType as T[Path<T>], { shouldDirty: true });
     if (newType === 'individual') {
-      setValue('useBestBall' as Path<T>, false as T[Path<T>]);
+      setValue('useBestBall' as Path<T>, false as T[Path<T>], { shouldDirty: true });
     }
   };
 
   const handleHandicapModeChange = (useHandicap: boolean) => {
-    setValue('useHandicapScoring' as Path<T>, useHandicap as T[Path<T>]);
+    setValue('useHandicapScoring' as Path<T>, useHandicap as T[Path<T>], { shouldDirty: true });
   };
 
   return (
@@ -264,6 +279,102 @@ export function ScoringConfigurationSection<T extends FieldValues>({
               </Grid>
             );
           })}
+        </Grid>
+
+        <Typography variant="subtitle1" sx={{ mt: 3, mb: 2, fontWeight: 'medium' }}>
+          Absent Player Handling
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Controller
+              name={'absentPlayerMode' as Path<T>}
+              control={control}
+              render={({ field }) => (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="absent-player-mode-label">Partial Absence Mode</InputLabel>
+                    <Select
+                      labelId="absent-player-mode-label"
+                      label="Partial Absence Mode"
+                      value={field.value ?? 'opponentWins'}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    >
+                      {ABSENT_PLAYER_MODE_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <Tooltip title={ABSENT_PLAYER_TOOLTIPS.absentPlayerMode} placement="top" arrow>
+                    <InfoOutlinedIcon fontSize="small" color="action" sx={{ ml: 0.5, mt: 1 }} />
+                  </Tooltip>
+                </Box>
+              )}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Controller
+              name={'absentPlayerPenalty' as Path<T>}
+              control={control}
+              render={({ field, fieldState }) => (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                  <Tooltip
+                    title={!isPenaltyEnabled ? 'Penalty strokes only apply when using Handicap + Penalty mode' : ''}
+                    placement="top"
+                    arrow
+                  >
+                    <TextField
+                      {...field}
+                      type="number"
+                      label="Penalty Strokes"
+                      size="small"
+                      fullWidth
+                      value={field.value ?? 0}
+                      onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                      inputProps={{ min: 0, max: 36 }}
+                      disabled={!isPenaltyEnabled}
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                    />
+                  </Tooltip>
+                  <Tooltip title={ABSENT_PLAYER_TOOLTIPS.absentPlayerPenalty} placement="top" arrow>
+                    <InfoOutlinedIcon fontSize="small" color="action" sx={{ ml: 0.5, mt: 1 }} />
+                  </Tooltip>
+                </Box>
+              )}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Controller
+              name={'fullTeamAbsentMode' as Path<T>}
+              control={control}
+              render={({ field }) => (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="full-team-absent-mode-label">Full Team Absence Mode</InputLabel>
+                    <Select
+                      labelId="full-team-absent-mode-label"
+                      label="Full Team Absence Mode"
+                      value={field.value ?? 'forfeit'}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    >
+                      {FULL_TEAM_ABSENT_MODE_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <Tooltip title={ABSENT_PLAYER_TOOLTIPS.fullTeamAbsentMode} placement="top" arrow>
+                    <InfoOutlinedIcon fontSize="small" color="action" sx={{ ml: 0.5, mt: 1 }} />
+                  </Tooltip>
+                </Box>
+              )}
+            />
+          </Grid>
         </Grid>
       </AccordionDetails>
     </Accordion>

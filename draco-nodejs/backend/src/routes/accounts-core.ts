@@ -234,6 +234,19 @@ router.delete(
 );
 
 /**
+ * GET /api/accounts/:accountId/golfer/summary
+ * Get public summary stats for an individual golf account (no authentication required)
+ */
+router.get(
+  '/:accountId/golfer/summary',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const summary = await golferService.getGolferSummaryForAccount(accountId);
+    res.json(summary);
+  }),
+);
+
+/**
  * GET /api/accounts/:accountId/golfer
  * Get the golfer profile for an individual golf account
  */

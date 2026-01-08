@@ -1,5 +1,11 @@
-import { UpdateGolfLeagueSetupType } from '@draco/shared-schemas';
+import {
+  UpdateGolfLeagueSetupType,
+  AbsentPlayerModeType,
+  FullTeamAbsentModeType,
+} from '@draco/shared-schemas';
 import { DateUtils } from './dateUtils.js';
+import { AbsentPlayerMode, FullTeamAbsentMode } from './golfConstants.js';
+import { ValidationError } from './customErrors.js';
 
 type FieldMapping<T> = {
   camelCase: keyof T;
@@ -8,6 +14,23 @@ type FieldMapping<T> = {
 };
 
 const toBigIntOrNull = (value: unknown): bigint | null => (value ? BigInt(value as string) : null);
+
+const toAbsentPlayerModeInt = (value: unknown): number => {
+  const modes: Record<AbsentPlayerModeType, number> = {
+    opponentWins: AbsentPlayerMode.OPPONENT_WINS,
+    handicapPenalty: AbsentPlayerMode.HANDICAP_PENALTY,
+    skipPairing: AbsentPlayerMode.SKIP_PAIRING,
+  };
+  return modes[value as AbsentPlayerModeType] ?? AbsentPlayerMode.OPPONENT_WINS;
+};
+
+const toFullTeamAbsentModeInt = (value: unknown): number => {
+  const modes: Record<FullTeamAbsentModeType, number> = {
+    forfeit: FullTeamAbsentMode.FORFEIT,
+    handicapPenalty: FullTeamAbsentMode.HANDICAP_PENALTY,
+  };
+  return modes[value as FullTeamAbsentModeType] ?? FullTeamAbsentMode.FORFEIT;
+};
 
 const GOLF_LEAGUE_FIELD_MAPPINGS: FieldMapping<UpdateGolfLeagueSetupType>[] = [
   { camelCase: 'leagueDay', snakeCase: 'leagueday' },
@@ -32,7 +55,29 @@ const GOLF_LEAGUE_FIELD_MAPPINGS: FieldMapping<UpdateGolfLeagueSetupType>[] = [
   { camelCase: 'totalHolesPoints', snakeCase: 'totalholespoints' },
   { camelCase: 'againstFieldPoints', snakeCase: 'againstfieldpoints' },
   { camelCase: 'againstFieldDescPoints', snakeCase: 'againstfielddescpoints' },
+  {
+    camelCase: 'absentPlayerMode',
+    snakeCase: 'absentplayermode',
+    transform: toAbsentPlayerModeInt,
+  },
+  { camelCase: 'absentPlayerPenalty', snakeCase: 'absentplayerpenalty' },
+  {
+    camelCase: 'fullTeamAbsentMode',
+    snakeCase: 'fullteamabsentmode',
+    transform: toFullTeamAbsentModeInt,
+  },
 ];
+
+export function validateAbsentPlayerPenalty(data: UpdateGolfLeagueSetupType): void {
+  if (data.absentPlayerPenalty && data.absentPlayerPenalty > 0) {
+    const effectiveMode = data.absentPlayerMode ?? 'opponentWins';
+    if (effectiveMode !== 'handicapPenalty') {
+      throw new ValidationError(
+        'absentPlayerPenalty can only be set when absentPlayerMode is handicapPenalty',
+      );
+    }
+  }
+}
 
 export function mapGolfLeagueFieldsForUpdate(
   data: UpdateGolfLeagueSetupType,
@@ -64,6 +109,9 @@ type DefaultValues = {
   totalHolesPoints: number;
   againstFieldPoints: number;
   againstFieldDescPoints: number;
+  absentPlayerMode: number;
+  absentPlayerPenalty: number;
+  fullTeamAbsentMode: number;
 };
 
 const DEFAULTS: DefaultValues = {
@@ -81,6 +129,9 @@ const DEFAULTS: DefaultValues = {
   totalHolesPoints: 0,
   againstFieldPoints: 0,
   againstFieldDescPoints: 0,
+  absentPlayerMode: AbsentPlayerMode.OPPONENT_WINS,
+  absentPlayerPenalty: 0,
+  fullTeamAbsentMode: FullTeamAbsentMode.FORFEIT,
 };
 
 export function mapGolfLeagueFieldsForCreate(
@@ -111,5 +162,12 @@ export function mapGolfLeagueFieldsForCreate(
     totalholespoints: data.totalHolesPoints ?? DEFAULTS.totalHolesPoints,
     againstfieldpoints: data.againstFieldPoints ?? DEFAULTS.againstFieldPoints,
     againstfielddescpoints: data.againstFieldDescPoints ?? DEFAULTS.againstFieldDescPoints,
+    absentplayermode: data.absentPlayerMode
+      ? toAbsentPlayerModeInt(data.absentPlayerMode)
+      : DEFAULTS.absentPlayerMode,
+    absentplayerpenalty: data.absentPlayerPenalty ?? DEFAULTS.absentPlayerPenalty,
+    fullteamabsentmode: data.fullTeamAbsentMode
+      ? toFullTeamAbsentModeInt(data.fullTeamAbsentMode)
+      : DEFAULTS.fullTeamAbsentMode,
   };
 }

@@ -6,6 +6,8 @@ import { NamedContactSchema } from './contact.js';
 extendZodWithOpenApi(z);
 
 export const ScoringTypeEnum = z.enum(['individual', 'team']);
+export const AbsentPlayerModeEnum = z.enum(['opponentWins', 'handicapPenalty', 'skipPairing']);
+export const FullTeamAbsentModeEnum = z.enum(['forfeit', 'handicapPenalty']);
 
 export const GolfScoringConfigSchema = z.object({
   scoringType: ScoringTypeEnum.default('team'),
@@ -17,6 +19,9 @@ export const GolfScoringConfigSchema = z.object({
   totalHolesPoints: z.number().int().default(0),
   againstFieldPoints: z.number().int().default(0),
   againstFieldDescPoints: z.number().int().default(0),
+  absentPlayerMode: AbsentPlayerModeEnum.default('opponentWins'),
+  absentPlayerPenalty: z.number().int().min(0).max(36).default(0),
+  fullTeamAbsentMode: FullTeamAbsentModeEnum.default('forfeit'),
 });
 
 export const GolfLeagueSetupSchema = z
@@ -99,6 +104,8 @@ export const UpdateGolfSeasonConfigSchema = GolfSeasonConfigSchema.omit({
 }).partial();
 
 export type ScoringType = z.infer<typeof ScoringTypeEnum>;
+export type AbsentPlayerModeType = z.infer<typeof AbsentPlayerModeEnum>;
+export type FullTeamAbsentModeType = z.infer<typeof FullTeamAbsentModeEnum>;
 export type GolfScoringConfigType = z.infer<typeof GolfScoringConfigSchema>;
 export type GolfLeagueSetupType = z.infer<typeof GolfLeagueSetupSchema>;
 export type CreateGolfLeagueSetupType = z.infer<typeof CreateGolfLeagueSetupSchema>;

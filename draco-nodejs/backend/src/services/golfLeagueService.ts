@@ -8,6 +8,7 @@ import { GolfLeagueSetupType, UpdateGolfLeagueSetupType } from '@draco/shared-sc
 import {
   mapGolfLeagueFieldsForUpdate,
   mapGolfLeagueFieldsForCreate,
+  validateAbsentPlayerPenalty,
 } from '../utils/golfLeagueFieldMapper.js';
 
 export class GolfLeagueService {
@@ -30,6 +31,8 @@ export class GolfLeagueService {
     leagueSeasonId: bigint,
     data: UpdateGolfLeagueSetupType,
   ): Promise<GolfLeagueSetupType> {
+    validateAbsentPlayerPenalty(data);
+
     const existingSetup = await this.leagueRepository.findByLeagueSeasonId(leagueSeasonId);
 
     if (!existingSetup) {
