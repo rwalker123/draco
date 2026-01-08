@@ -1,6 +1,11 @@
-import { UpdateGolfLeagueSetupType, AbsentPlayerModeType, FullTeamAbsentModeType } from '@draco/shared-schemas';
+import {
+  UpdateGolfLeagueSetupType,
+  AbsentPlayerModeType,
+  FullTeamAbsentModeType,
+} from '@draco/shared-schemas';
 import { DateUtils } from './dateUtils.js';
 import { AbsentPlayerMode, FullTeamAbsentMode } from './golfConstants.js';
+import { ValidationError } from './customErrors.js';
 
 type FieldMapping<T> = {
   camelCase: keyof T;
@@ -50,10 +55,28 @@ const GOLF_LEAGUE_FIELD_MAPPINGS: FieldMapping<UpdateGolfLeagueSetupType>[] = [
   { camelCase: 'totalHolesPoints', snakeCase: 'totalholespoints' },
   { camelCase: 'againstFieldPoints', snakeCase: 'againstfieldpoints' },
   { camelCase: 'againstFieldDescPoints', snakeCase: 'againstfielddescpoints' },
-  { camelCase: 'absentPlayerMode', snakeCase: 'absentplayermode', transform: toAbsentPlayerModeInt },
+  {
+    camelCase: 'absentPlayerMode',
+    snakeCase: 'absentplayermode',
+    transform: toAbsentPlayerModeInt,
+  },
   { camelCase: 'absentPlayerPenalty', snakeCase: 'absentplayerpenalty' },
-  { camelCase: 'fullTeamAbsentMode', snakeCase: 'fullteamabsentmode', transform: toFullTeamAbsentModeInt },
+  {
+    camelCase: 'fullTeamAbsentMode',
+    snakeCase: 'fullteamabsentmode',
+    transform: toFullTeamAbsentModeInt,
+  },
 ];
+
+export function validateAbsentPlayerPenalty(data: UpdateGolfLeagueSetupType): void {
+  if (data.absentPlayerPenalty && data.absentPlayerPenalty > 0) {
+    if (data.absentPlayerMode && data.absentPlayerMode !== 'handicapPenalty') {
+      throw new ValidationError(
+        'absentPlayerPenalty can only be set when absentPlayerMode is handicapPenalty',
+      );
+    }
+  }
+}
 
 export function mapGolfLeagueFieldsForUpdate(
   data: UpdateGolfLeagueSetupType,

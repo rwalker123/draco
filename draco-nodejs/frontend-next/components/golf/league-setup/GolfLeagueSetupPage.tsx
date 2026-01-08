@@ -204,8 +204,9 @@ export function GolfLeagueSetupPage() {
   const handleConfirmLeave = useCallback(() => {
     setShowUnsavedChangesDialog(false);
     if (pendingNavigation === 'back') {
-      // For browser back button, go back in history
-      window.history.go(-1);
+      // For browser back button, go back 2 entries:
+      // -1 for the entry we pushed on mount, -1 for the entry we pushed when blocking
+      window.history.go(-2);
     } else {
       // For breadcrumb navigation, push to the admin page
       router.push(`/account/${accountId}/seasons/${seasonId}/golf/admin`);
@@ -224,7 +225,9 @@ export function GolfLeagueSetupPage() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+      <Box
+        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -241,7 +244,10 @@ export function GolfLeagueSetupPage() {
           {leagueName ? `${leagueName} Setup` : 'League Setup'}
         </Typography>
         {seasonName && (
-          <Typography variant="body1" sx={{ mt: 0.5, textAlign: 'center', color: 'text.secondary' }}>
+          <Typography
+            variant="body1"
+            sx={{ mt: 0.5, textAlign: 'center', color: 'text.secondary' }}
+          >
             {seasonName}
           </Typography>
         )}
@@ -302,11 +308,7 @@ export function GolfLeagueSetupPage() {
                 boxShadow: 3,
               }}
             >
-              <Button
-                variant="outlined"
-                onClick={() => reset()}
-                disabled={!isDirty}
-              >
+              <Button variant="outlined" onClick={() => reset()} disabled={!isDirty}>
                 Discard Changes
               </Button>
               <Button

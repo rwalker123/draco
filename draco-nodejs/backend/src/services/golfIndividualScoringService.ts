@@ -392,19 +392,9 @@ export class GolfIndividualScoringService {
 
     indexedHoles.sort((a, b) => a.handicapIndex - b.handicapIndex);
 
-    let strokesRemaining = penaltyStrokes;
-    let pass = 0;
-
-    while (strokesRemaining > 0) {
-      for (const { holeIndex } of indexedHoles) {
-        if (strokesRemaining <= 0) break;
-        if (indexedHoles.findIndex((h) => h.holeIndex === holeIndex) <= pass * holesPlayed) {
-          syntheticScores[holeIndex]++;
-          strokesRemaining--;
-        }
-      }
-      pass++;
-      if (pass > 10) break;
+    for (let i = 0; i < penaltyStrokes; i++) {
+      const { holeIndex } = indexedHoles[i % holesPlayed];
+      syntheticScores[holeIndex]++;
     }
 
     return syntheticScores;
