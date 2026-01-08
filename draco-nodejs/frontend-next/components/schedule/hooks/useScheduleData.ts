@@ -50,6 +50,7 @@ interface UseScheduleDataReturn {
   clearLeagueTeams: () => void;
   upsertGameInCache: (game: Game) => void;
   removeGameFromCache: (gameId: string) => void;
+  deleteGame: (game: Game) => Promise<void>;
   filteredGames: Game[];
   startDate: Date;
   endDate: Date;
@@ -487,6 +488,19 @@ export const useScheduleData = ({
     [pruneGameFromCache, refreshGamesForLastRange],
   );
 
+  const deleteGame = useCallback(
+    async (game: Game) => {
+      const seasonId = await fetchCurrentSeason();
+      await adapter.deleteGame({
+        accountId,
+        seasonId,
+        gameId: game.id,
+        apiClient,
+      });
+    },
+    [accountId, adapter, apiClient, fetchCurrentSeason],
+  );
+
   const filteredGames = games;
 
   const fields: Field[] = useMemo(
@@ -538,6 +552,7 @@ export const useScheduleData = ({
     clearLeagueTeams,
     upsertGameInCache,
     removeGameFromCache,
+    deleteGame,
     filteredGames,
     startDate,
     endDate,

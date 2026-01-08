@@ -13,6 +13,7 @@ interface DeleteGameDialogProps {
   onError?: (message: string) => void;
   getTeamName: (teamId: string) => string;
   accountId: string;
+  onDelete?: (game: Game) => Promise<void>;
 }
 
 const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
@@ -23,8 +24,14 @@ const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
   onError,
   getTeamName,
   accountId,
+  onDelete,
 }) => {
-  const { deleteGame, loading, error, resetError } = useGameDeletion({ accountId });
+  const {
+    deleteGame: defaultDeleteGame,
+    loading,
+    error,
+    resetError,
+  } = useGameDeletion({ accountId });
 
   useEffect(() => {
     if (!open) {
@@ -47,15 +54,20 @@ const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
     }
 
     try {
-      const result = await deleteGame(selectedGame);
-      onSuccess?.(result);
+      if (onDelete) {
+        await onDelete(selectedGame);
+        onSuccess?.({ message: 'Game deleted successfully', gameId: selectedGame.id });
+      } else {
+        const result = await defaultDeleteGame(selectedGame);
+        onSuccess?.(result);
+      }
       resetError();
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete game';
       onError?.(message);
     }
-  }, [deleteGame, onClose, onError, onSuccess, resetError, selectedGame]);
+  }, [defaultDeleteGame, onClose, onDelete, onError, onSuccess, resetError, selectedGame]);
 
   if (!selectedGame) return null;
 
@@ -70,7 +82,7 @@ const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
       message="Are you sure you want to delete this game?"
       content={
         <>
-          <Box sx={{ p: 2, backgroundColor: 'grey.100', borderRadius: 1 }}>
+          <Box sx={{ p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
               Game Details:
             </Typography>
