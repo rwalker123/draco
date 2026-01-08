@@ -4,6 +4,7 @@ import {
   GolfScoreWithDetailsType,
   UpdateGolfScoreType,
   ContactIndividualGolfAccountType,
+  GolferSummaryType,
 } from '@draco/shared-schemas';
 import {
   IGolferRepository,
@@ -328,6 +329,36 @@ export class GolferService {
   async deleteScoreForAccount(accountId: bigint, scoreId: bigint): Promise<void> {
     await this.verifyScoreOwnership(accountId, scoreId);
     await this.golfScoreRepository.delete(scoreId);
+  }
+
+  async getGolferSummaryForAccount(accountId: bigint): Promise<GolferSummaryType | null> {
+    const account = await this.accountRepository.findById(accountId);
+    if (!account) {
+      return null;
+    }
+
+    const ownerContact = await this.findOwnerContact(accountId, account.owneruserid);
+    if (!ownerContact) {
+      return null;
+    }
+
+    const golfer = await this.golferRepository.findByContactId(ownerContact.id);
+    if (!golfer) {
+      return null;
+    }
+
+    const scores = await this.golfScoreRepository.findByGolferId(golfer.id, RECENT_SCORES_LIMIT);
+    const stats = await this.calculateGolferStats(golfer, scores);
+
+    return {
+      handicapIndex: stats.handicapIndex,
+      isInitialHandicap:
+        golfer.initialdifferential !== null &&
+        stats.handicapIndex !== null &&
+        stats.handicapIndex === golfer.initialdifferential,
+      averageScore: stats.averageScore,
+      roundsPlayed: stats.roundsPlayed,
+    };
   }
 
   async getIndividualGolfAccountForContact(

@@ -359,6 +359,7 @@ import {
   IndividualGolfAccountResponseSchema,
   AuthenticatedGolfAccountResponseSchema,
   GolferSchema,
+  GolferSummarySchema,
   UpdateGolferHomeCourseSchema,
   PlayerSeasonScoresResponseSchema,
   ContactIndividualGolfAccountSchema,
@@ -1406,6 +1407,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     ExternalCourseTeeSchema,
   );
   const GolferSchemaRef = registry.register('Golfer', GolferSchema);
+  const GolferSummarySchemaRef = registry.register('GolferSummary', GolferSummarySchema);
   const UpdateGolferHomeCourseSchemaRef = registry.register(
     'UpdateGolferHomeCourse',
     UpdateGolferHomeCourseSchema,
@@ -1781,6 +1783,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     ExternalCourseDetailSchemaRef,
     ExternalCourseTeeSchemaRef,
     GolferSchemaRef,
+    GolferSummarySchemaRef,
     UpdateGolferHomeCourseSchemaRef,
     PlayerSeasonScoresResponseSchemaRef,
     ContactIndividualGolfAccountSchemaRef,

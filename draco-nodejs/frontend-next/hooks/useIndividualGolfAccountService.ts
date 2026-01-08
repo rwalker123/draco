@@ -6,6 +6,7 @@ import {
   createAuthenticatedGolfAccount,
   deleteIndividualGolfAccount,
   getAccountGolfer,
+  getAccountGolferSummary,
   updateGolferHomeCourse,
   createGolferScore,
   getGolferScores,
@@ -14,6 +15,7 @@ import {
   IndividualGolfAccountResponse,
   AuthenticatedGolfAccountResponse,
   Golfer,
+  GolferSummary,
   GolfScoreWithDetails,
   CreateGolfScore,
   UpdateGolfScore,
@@ -55,6 +57,10 @@ export type DeleteGolfAccountResult =
   | { success: false; error: string };
 
 export type GetGolferResult = { success: true; data: Golfer } | { success: false; error: string };
+
+export type GetGolferSummaryResult =
+  | { success: true; data: GolferSummary | null }
+  | { success: false; error: string };
 
 export type UpdateHomeCourseResult =
   | { success: true; data: Golfer }
@@ -192,6 +198,29 @@ export const useIndividualGolfAccountService = () => {
     [apiClient],
   );
 
+  const getGolferSummary = useCallback(
+    async (accountId: string): Promise<GetGolferSummaryResult> => {
+      try {
+        const result = await getAccountGolferSummary({
+          client: apiClient,
+          throwOnError: false,
+          path: { accountId },
+        });
+
+        if (result.error) {
+          const message = result.error.message ?? 'Failed to get golfer summary.';
+          return { success: false, error: message } as const;
+        }
+
+        return { success: true, data: result.data ?? null } as const;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to get golfer summary.';
+        return { success: false, error: message } as const;
+      }
+    },
+    [apiClient],
+  );
+
   const updateHomeCourse = useCallback(
     async (accountId: string, homeCourseId: string | null): Promise<UpdateHomeCourseResult> => {
       try {
@@ -310,6 +339,7 @@ export const useIndividualGolfAccountService = () => {
     createAuthenticated,
     deleteAccount,
     getGolfer,
+    getGolferSummary,
     updateHomeCourse,
     createScore,
     getScores,
