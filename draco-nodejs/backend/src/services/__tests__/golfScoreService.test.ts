@@ -397,7 +397,7 @@ describe('GolfScoreService', () => {
   });
 
   describe('submitMatchResults - Full Team Absence Handicap Penalty Mode', () => {
-    it('throws ValidationError when handicap penalty mode is selected', async () => {
+    it('proceeds with normal score submission when handicap penalty mode is selected', async () => {
       const matchId = 1n;
       const match = createMockMatch();
       const leagueSetup = createMockLeagueSetup({
@@ -408,17 +408,27 @@ describe('GolfScoreService', () => {
       vi.mocked(mockMatchRepository.findByIdWithScores!).mockResolvedValue(match as never);
       vi.mocked(mockCourseRepository.findById!).mockResolvedValue(course as never);
       vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue(leagueSetup as never);
+      vi.mocked(mockScoreRepository.submitMatchScoresTransactional!).mockResolvedValue({
+        createdScoreIds: [1n],
+      });
+      vi.mocked(mockScoreRepository.findByTeamAndMatch!).mockResolvedValue([]);
+      vi.mocked(mockMatchRepository.findById!).mockResolvedValue(match as never);
+
+      vi.mocked(mockRosterRepository.findByIds!).mockResolvedValue([
+        createMockRosterEntry(200n, 2000n, 'Player200'),
+      ] as never);
 
       const submitData = {
         courseId: '5',
         scores: [createPlayerScore('10', '100', true), createPlayerScore('20', '200', false)],
       };
 
-      await expect(service.submitMatchResults(matchId, submitData)).rejects.toThrow(
-        ValidationError,
-      );
-      await expect(service.submitMatchResults(matchId, submitData)).rejects.toThrow(
-        'Handicap penalty mode for full team absence is not yet implemented',
+      await service.submitMatchResults(matchId, submitData);
+
+      expect(mockScoreRepository.submitMatchScoresTransactional).toHaveBeenCalled();
+      expect(mockMatchRepository.updateStatus).not.toHaveBeenCalledWith(
+        matchId,
+        GolfMatchStatus.FORFEIT,
       );
     });
   });

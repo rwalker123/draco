@@ -457,8 +457,8 @@ describe('GolfIndividualScoringService', () => {
       });
     });
 
-    describe('HANDICAP_PENALTY mode (fallback)', () => {
-      it('returns zero points (not yet implemented)', () => {
+    describe('HANDICAP_PENALTY mode', () => {
+      it('is not handled by calculateAbsentPairingPoints (uses calculateHandicapPenaltyPairingPoints instead)', () => {
         const result = service.calculateAbsentPairingPoints(
           AbsentPlayerMode.HANDICAP_PENALTY,
           defaultScoringConfig,
@@ -469,6 +469,157 @@ describe('GolfIndividualScoringService', () => {
         expect(result.team1Points).toBe(0);
         expect(result.team2Points).toBe(0);
       });
+    });
+  });
+
+  describe('calculateHandicapPenaltyPairingPoints', () => {
+    const createMockCourseForPenalty = () => {
+      const course: Record<string, number | bigint> = { id: 1n };
+      for (let i = 1; i <= 18; i++) {
+        course[`menspar${i}`] = 4;
+        course[`womanspar${i}`] = 4;
+        course[`menshandicap${i}`] = i;
+        course[`womanshandicap${i}`] = i;
+      }
+      return course;
+    };
+
+    const createMockTeeInfo = () => ({
+      mensrating: 36,
+      menslope: 113,
+      womansrating: 36,
+      womanslope: 113,
+    });
+
+    const createMockLeagueSetupForPenalty = (penalty: number, useHandicap = false) => ({
+      scoringtype: 'individual',
+      perholepoints: 1,
+      perninepoints: 0,
+      permatchpoints: 2,
+      usehandicapscoring: useHandicap,
+      absentplayerpenalty: penalty,
+    });
+
+    const createMockPlayerEntry = (golferId: bigint, totalScore: number, holeScores: number[]) => {
+      const scoreObj: Record<string, number | bigint | null> = {
+        golferid: golferId,
+        totalscore: totalScore,
+        holesplayed: holeScores.length,
+        startindex: 10,
+        startindex9: 5,
+      };
+      for (let i = 1; i <= 18; i++) {
+        scoreObj[`holescrore${i}`] = holeScores[i - 1] ?? 0;
+      }
+      return {
+        teamsseason: { id: 1n },
+        golfer: { gender: 'M' },
+        golfscore: scoreObj,
+      };
+    };
+
+    it('generates synthetic score at par when penalty is 0', () => {
+      const course = createMockCourseForPenalty();
+      const teeInfo = createMockTeeInfo();
+      const leagueSetup = createMockLeagueSetupForPenalty(0);
+      const scoringConfig = {
+        perHolePoints: 1,
+        perNinePoints: 0,
+        perMatchPoints: 2,
+        useHandicapScoring: false,
+      };
+      const playerEntry = createMockPlayerEntry(1n, 40, [4, 5, 4, 5, 4, 5, 4, 5, 4]);
+
+      const result = service.calculateHandicapPenaltyPairingPoints(
+        playerEntry as never,
+        course as never,
+        teeInfo as never,
+        leagueSetup as never,
+        scoringConfig,
+        9,
+        true,
+      );
+
+      expect(result.syntheticTotalScore).toBe(36);
+      expect(result.presentPlayerTotalScore).toBe(40);
+    });
+
+    it('generates synthetic score at par + penalty when penalty is set', () => {
+      const course = createMockCourseForPenalty();
+      const teeInfo = createMockTeeInfo();
+      const leagueSetup = createMockLeagueSetupForPenalty(5);
+      const scoringConfig = {
+        perHolePoints: 1,
+        perNinePoints: 0,
+        perMatchPoints: 2,
+        useHandicapScoring: false,
+      };
+      const playerEntry = createMockPlayerEntry(1n, 40, [4, 5, 4, 5, 4, 5, 4, 5, 4]);
+
+      const result = service.calculateHandicapPenaltyPairingPoints(
+        playerEntry as never,
+        course as never,
+        teeInfo as never,
+        leagueSetup as never,
+        scoringConfig,
+        9,
+        true,
+      );
+
+      expect(result.syntheticTotalScore).toBe(41);
+      expect(result.presentPlayerTotalScore).toBe(40);
+    });
+
+    it('calculates points correctly when present player beats synthetic score', () => {
+      const course = createMockCourseForPenalty();
+      const teeInfo = createMockTeeInfo();
+      const leagueSetup = createMockLeagueSetupForPenalty(0);
+      const scoringConfig = {
+        perHolePoints: 1,
+        perNinePoints: 0,
+        perMatchPoints: 2,
+        useHandicapScoring: false,
+      };
+      const playerEntry = createMockPlayerEntry(1n, 32, [3, 4, 3, 4, 3, 4, 4, 4, 3]);
+
+      const result = service.calculateHandicapPenaltyPairingPoints(
+        playerEntry as never,
+        course as never,
+        teeInfo as never,
+        leagueSetup as never,
+        scoringConfig,
+        9,
+        true,
+      );
+
+      expect(result.result.team1Points).toBeGreaterThan(0);
+      expect(result.result.team1HoleWins).toBeGreaterThan(0);
+    });
+
+    it('calculates points correctly when synthetic score beats present player', () => {
+      const course = createMockCourseForPenalty();
+      const teeInfo = createMockTeeInfo();
+      const leagueSetup = createMockLeagueSetupForPenalty(0);
+      const scoringConfig = {
+        perHolePoints: 1,
+        perNinePoints: 0,
+        perMatchPoints: 2,
+        useHandicapScoring: false,
+      };
+      const playerEntry = createMockPlayerEntry(1n, 50, [5, 6, 5, 6, 5, 6, 6, 6, 5]);
+
+      const result = service.calculateHandicapPenaltyPairingPoints(
+        playerEntry as never,
+        course as never,
+        teeInfo as never,
+        leagueSetup as never,
+        scoringConfig,
+        9,
+        true,
+      );
+
+      expect(result.result.team2Points).toBeGreaterThan(0);
+      expect(result.result.team2HoleWins).toBeGreaterThan(0);
     });
   });
 

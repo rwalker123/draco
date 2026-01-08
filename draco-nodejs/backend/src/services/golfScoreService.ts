@@ -114,7 +114,10 @@ export class GolfScoreService {
     const team1FullAbsent = team1Players.length > 0 && team1Present.length === 0;
     const team2FullAbsent = team2Players.length > 0 && team2Present.length === 0;
 
-    if (team1FullAbsent || team2FullAbsent) {
+    if (
+      (team1FullAbsent || team2FullAbsent) &&
+      leagueSetup.fullteamabsentmode === FullTeamAbsentMode.FORFEIT
+    ) {
       return this.handleFullTeamAbsence(
         matchId,
         match,
@@ -217,46 +220,42 @@ export class GolfScoreService {
     team1FullAbsent: boolean,
     team2FullAbsent: boolean,
   ): Promise<GolfMatchType> {
-    if (leagueSetup.fullteamabsentmode === FullTeamAbsentMode.FORFEIT) {
-      const maxPoints = this.calculateMaxPossiblePoints(leagueSetup);
+    const maxPoints = this.calculateMaxPossiblePoints(leagueSetup);
 
-      let team1Points = 0;
-      let team2Points = 0;
-      let team1MatchWins = 0;
-      let team2MatchWins = 0;
+    let team1Points = 0;
+    let team2Points = 0;
+    let team1MatchWins = 0;
+    let team2MatchWins = 0;
 
-      if (team1FullAbsent && !team2FullAbsent) {
-        team2Points = maxPoints;
-        team2MatchWins = 1;
-      } else if (team2FullAbsent && !team1FullAbsent) {
-        team1Points = maxPoints;
-        team1MatchWins = 1;
-      }
-
-      await this.matchRepository.updateStatus(matchId, GolfMatchStatus.FORFEIT);
-      await this.matchRepository.updatePoints(matchId, {
-        team1points: team1Points,
-        team2points: team2Points,
-        team1totalscore: 0,
-        team2totalscore: 0,
-        team1netscore: 0,
-        team2netscore: 0,
-        team1holewins: 0,
-        team2holewins: 0,
-        team1ninewins: 0,
-        team2ninewins: 0,
-        team1matchwins: team1MatchWins,
-        team2matchwins: team2MatchWins,
-      });
-
-      const updatedMatch = await this.matchRepository.findById(matchId);
-      if (!updatedMatch) {
-        throw new NotFoundError('Golf match not found after forfeit update');
-      }
-      return GolfMatchResponseFormatter.format(updatedMatch);
+    if (team1FullAbsent && !team2FullAbsent) {
+      team2Points = maxPoints;
+      team2MatchWins = 1;
+    } else if (team2FullAbsent && !team1FullAbsent) {
+      team1Points = maxPoints;
+      team1MatchWins = 1;
     }
 
-    throw new ValidationError('Handicap penalty mode for full team absence is not yet implemented');
+    await this.matchRepository.updateStatus(matchId, GolfMatchStatus.FORFEIT);
+    await this.matchRepository.updatePoints(matchId, {
+      team1points: team1Points,
+      team2points: team2Points,
+      team1totalscore: 0,
+      team2totalscore: 0,
+      team1netscore: 0,
+      team2netscore: 0,
+      team1holewins: 0,
+      team2holewins: 0,
+      team1ninewins: 0,
+      team2ninewins: 0,
+      team1matchwins: team1MatchWins,
+      team2matchwins: team2MatchWins,
+    });
+
+    const updatedMatch = await this.matchRepository.findById(matchId);
+    if (!updatedMatch) {
+      throw new NotFoundError('Golf match not found after forfeit update');
+    }
+    return GolfMatchResponseFormatter.format(updatedMatch);
   }
 
   private calculateMaxPossiblePoints(
