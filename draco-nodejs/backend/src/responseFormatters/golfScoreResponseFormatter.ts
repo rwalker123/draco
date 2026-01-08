@@ -160,7 +160,7 @@ export class GolfScoreResponseFormatter {
     }
 
     let differential: number | undefined;
-    let courseHandicapValue: number | undefined;
+    let courseHandicap: number | undefined;
 
     if (course && tee) {
       const gender = normalizeGender(matchScore.golfer.gender);
@@ -185,18 +185,18 @@ export class GolfScoreResponseFormatter {
         : allHoleHandicapIndexes;
       const totalPar = calculateTotalPar(holePars);
 
-      let courseHandicapForCalc: number | null = null;
+      let courseHandicapForNdb: number | null = null;
       if (handicapIndex !== undefined && handicapIndex !== null) {
-        courseHandicapForCalc = calculateCourseHandicap(
+        courseHandicapForNdb = calculateCourseHandicap(
           handicapIndex,
           slopeRating,
           courseRating,
           totalPar,
         );
         if (is9Hole) {
-          courseHandicapForCalc = Math.round(courseHandicapForCalc / 2);
+          courseHandicapForNdb = Math.round(courseHandicapForNdb / 2);
         }
-        courseHandicapValue = courseHandicapForCalc;
+        courseHandicap = courseHandicapForNdb;
       }
 
       if (!score.totalsonly) {
@@ -204,7 +204,7 @@ export class GolfScoreResponseFormatter {
           holeScores,
           holePars,
           holeHandicapIndexes,
-          courseHandicapForCalc,
+          courseHandicapForNdb,
         );
         const adjustedScore = adjustedHoleScores.reduce((sum, s) => sum + s, 0);
         differential = calculateScoreDifferential(adjustedScore, courseRating, slopeRating);
@@ -232,7 +232,7 @@ export class GolfScoreResponseFormatter {
         middleName: matchScore.golfer.contact.middlename || undefined,
       },
       differential,
-      courseHandicap: courseHandicapValue,
+      courseHandicap,
     };
   }
 
