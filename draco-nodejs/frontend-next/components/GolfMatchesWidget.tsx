@@ -229,6 +229,7 @@ export default function GolfMatchesWidget({
   const handleLiveScoringClose = () => {
     setLiveScoringMatchId(null);
     loadActiveSessions();
+    loadMatches();
   };
 
   const handleWatchClick = (matchId: string) => {
@@ -238,6 +239,7 @@ export default function GolfMatchesWidget({
   const handleWatchClose = () => {
     setWatchingMatchId(null);
     loadActiveSessions();
+    loadMatches();
   };
 
   const isUserParticipant = useCallback(

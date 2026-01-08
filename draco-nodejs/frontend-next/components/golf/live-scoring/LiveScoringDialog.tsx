@@ -182,12 +182,24 @@ function LiveScoringDialogContent({
     }
   };
 
-  const handleSubmitScore = async (golferId: string) => {
+  const handleScoreBlur = async (golferId: string) => {
     const scoreStr = scoreInputs[golferId];
+    const existingScore = getScoreForGolferHole(golferId, currentHole);
+
+    // If empty and no existing score, nothing to do
+    if (!scoreStr && existingScore === undefined) return;
+
+    // If the value hasn't changed from existing, nothing to do
+    if (scoreStr === String(existingScore)) return;
+
+    // If empty but had existing score, don't submit (user might be clearing to re-enter)
     if (!scoreStr) return;
 
     const score = parseInt(scoreStr, 10);
     if (isNaN(score) || score < 1 || score > 20) return;
+
+    // Don't submit if same as existing score
+    if (existingScore === score) return;
 
     setSubmittingGolferId(golferId);
     await submitScore(matchId, {
@@ -196,13 +208,38 @@ function LiveScoringDialogContent({
       score,
     });
     setSubmittingGolferId(null);
-    setScoreInputs((prev) => ({ ...prev, [golferId]: '' }));
   };
 
   const handleAdvanceHole = async (direction: 'prev' | 'next') => {
     const newHole = direction === 'next' ? currentHole + 1 : currentHole - 1;
     if (newHole < 1 || newHole > 18) return;
 
+    // Submit any pending scores before changing holes
+    const pendingSubmissions = golfers
+      .filter((golfer) => {
+        const inputValue = scoreInputs[golfer.golferId];
+        const existingScore = getScoreForGolferHole(golfer.golferId, currentHole);
+        if (!inputValue) return false;
+        const score = parseInt(inputValue, 10);
+        if (isNaN(score) || score < 1 || score > 20) return false;
+        return existingScore !== score;
+      })
+      .map((golfer) => ({
+        golferId: golfer.golferId,
+        score: parseInt(scoreInputs[golfer.golferId], 10),
+      }));
+
+    // Submit all pending scores
+    for (const { golferId, score } of pendingSubmissions) {
+      await submitScore(matchId, {
+        golferId,
+        holeNumber: currentHole,
+        score,
+      });
+    }
+
+    // Clear inputs and switch to new hole
+    setScoreInputs({});
     setCurrentHole(newHole);
     if (sessionState) {
       await advanceHole(matchId, newHole);
@@ -285,7 +322,7 @@ function LiveScoringDialogContent({
           )}
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {isConnected && (
+          {isConnected && viewerCount > 0 && (
             <Chip
               icon={<VisibilityIcon sx={{ fontSize: 14 }} />}
               label={viewerCount}
@@ -394,24 +431,22 @@ function LiveScoringDialogContent({
                     </Box>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {existingScore !== undefined ? (
-                        <Box sx={{ textAlign: 'right' }}>
-                          <Typography variant="h6" fontWeight={700}>
-                            {existingScore}
-                          </Typography>
-                          {enteredBy && (
-                            <Typography variant="caption" color="text.secondary">
-                              by {enteredBy}
-                            </Typography>
-                          )}
-                        </Box>
-                      ) : (
-                        <>
+                      <Box
+                        sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <TextField
                             type="number"
                             size="small"
-                            value={scoreInputs[golfer.golferId] || ''}
+                            value={
+                              scoreInputs[golfer.golferId] !== undefined
+                                ? scoreInputs[golfer.golferId]
+                                : existingScore !== undefined
+                                  ? String(existingScore)
+                                  : ''
+                            }
                             onChange={(e) => handleScoreChange(golfer.golferId, e.target.value)}
+                            onBlur={() => handleScoreBlur(golfer.golferId)}
                             disabled={isSessionFinalized || isSubmitting}
                             inputProps={{
                               min: 1,
@@ -420,18 +455,14 @@ function LiveScoringDialogContent({
                             }}
                             sx={{ width: 70 }}
                           />
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => handleSubmitScore(golfer.golferId)}
-                            disabled={
-                              !scoreInputs[golfer.golferId] || isSessionFinalized || isSubmitting
-                            }
-                          >
-                            {isSubmitting ? <CircularProgress size={16} /> : 'Save'}
-                          </Button>
-                        </>
-                      )}
+                          {isSubmitting && <CircularProgress size={16} />}
+                        </Box>
+                        {enteredBy && (
+                          <Typography variant="caption" color="text.secondary">
+                            by {enteredBy}
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
                   </Box>
                 );

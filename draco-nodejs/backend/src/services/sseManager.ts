@@ -56,6 +56,9 @@ export class SSEManager {
 
     // Send initial connection event
     this.sendEvent(clientId, 'connected', { clientId, matchId: matchKey });
+
+    // Broadcast updated viewer count to all clients watching this match
+    this.broadcastViewerCount(matchId);
   }
 
   /**
@@ -64,14 +67,29 @@ export class SSEManager {
   removeClient(clientId: string): void {
     const client = this.clients.get(clientId);
     if (client) {
-      const matchKey = client.matchId.toString();
+      const matchId = client.matchId;
+      const matchKey = matchId.toString();
       this.matchSubscriptions.get(matchKey)?.delete(clientId);
-      if (this.matchSubscriptions.get(matchKey)?.size === 0) {
+      const remainingClients = this.matchSubscriptions.get(matchKey)?.size ?? 0;
+      if (remainingClients === 0) {
         this.matchSubscriptions.delete(matchKey);
       }
       this.clients.delete(clientId);
       console.log(`📡 SSE client ${clientId} disconnected. Total clients: ${this.clients.size}`);
+
+      // Broadcast updated viewer count to remaining clients
+      if (remainingClients > 0) {
+        this.broadcastViewerCount(matchId);
+      }
     }
+  }
+
+  /**
+   * Broadcasts the current viewer count to all clients watching a match.
+   */
+  broadcastViewerCount(matchId: bigint): void {
+    const viewerCount = this.getMatchViewerCount(matchId);
+    this.broadcastToMatch(matchId, 'viewer_count', { viewerCount });
   }
 
   /**

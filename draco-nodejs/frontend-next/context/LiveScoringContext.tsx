@@ -268,6 +268,11 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
         // Keep-alive ping received - no action needed
       });
 
+      eventSource.addEventListener('viewer_count', (event) => {
+        const data = JSON.parse(event.data) as { viewerCount: number };
+        setViewerCount(data.viewerCount);
+      });
+
       eventSource.addEventListener('no_session', () => {
         setConnectionError('No active live scoring session found. The session may have ended.');
         eventSource.close();

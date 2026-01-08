@@ -55,8 +55,8 @@ interface LiveScoringData {
   connectionError: string | null;
   sessionState: { status: string; scores: LiveHoleScore[]; holesPlayed: number } | null;
   viewerCount: number;
-  onSessionFinalized: (callback: () => void) => () => void;
-  onSessionStopped: (callback: () => void) => () => void;
+  onSessionFinalized: (callback: (event: unknown) => void) => () => void;
+  onSessionStopped: (callback: (event: unknown) => void) => () => void;
 }
 
 interface GolfScorecardDialogContentProps {
@@ -93,13 +93,6 @@ function GolfScorecardDialogContent({
   const isLiveMode = !!liveData;
 
   const loadData = useCallback(async () => {
-    console.log('[GolfScorecardDialog] loadData called', {
-      matchId,
-      isLiveMode,
-      seasonId,
-      team1Id,
-      team2Id,
-    });
     if (!matchId) return;
 
     setLoading(true);
@@ -113,11 +106,6 @@ function GolfScorecardDialogContent({
       });
 
       const match = unwrapApiResult<GolfMatchWithScores>(matchResult, 'Failed to load match');
-      console.log('[GolfScorecardDialog] Match loaded', {
-        matchId: match.id,
-        team1Scores: match.team1Scores?.length || 0,
-        team2Scores: match.team2Scores?.length || 0,
-      });
       setMatchData(match);
 
       if (match.course?.id) {
@@ -127,18 +115,10 @@ function GolfScorecardDialogContent({
           throwOnError: false,
         });
         const course = unwrapApiResult<GolfCourseWithTees>(courseResult, 'Failed to load course');
-        console.log('[GolfScorecardDialog] Course loaded', { courseId: course.id });
         setCourseData(course);
       }
 
-      console.log('[GolfScorecardDialog] Checking roster fetch condition', {
-        isLiveMode,
-        seasonId,
-        team1Id,
-        team2Id,
-      });
       if (isLiveMode && seasonId && team1Id && team2Id) {
-        console.log('[GolfScorecardDialog] Fetching rosters...');
         setRosterError(null);
         const [team1Result, team2Result] = await Promise.all([
           getGolfTeamWithRoster({
@@ -152,13 +132,6 @@ function GolfScorecardDialogContent({
             throwOnError: false,
           }),
         ]);
-
-        console.log('[GolfScorecardDialog] Roster results', {
-          team1Data: team1Result.data,
-          team1Error: team1Result.error,
-          team2Data: team2Result.data,
-          team2Error: team2Result.error,
-        });
 
         if (team1Result.data) {
           setTeam1Roster(team1Result.data);
@@ -177,11 +150,8 @@ function GolfScorecardDialogContent({
             setRosterError('Unable to load player roster');
           }
         }
-      } else {
-        console.log('[GolfScorecardDialog] Skipping roster fetch - condition not met');
       }
     } catch (err) {
-      console.error('[GolfScorecardDialog] loadData error', err);
       const message = err instanceof Error ? err.message : 'Failed to load scorecard';
       setError(message);
     } finally {
@@ -222,17 +192,9 @@ function GolfScorecardDialogContent({
   }, [matchData, liveData?.sessionState?.holesPlayed]);
 
   const playerScores = useMemo(() => {
-    console.log('[GolfScorecardDialog] playerScores memo', {
-      hasMatchData: !!matchData,
-      isLiveMode,
-      team1Roster: team1Roster?.roster?.length || 0,
-      team2Roster: team2Roster?.roster?.length || 0,
-      liveScores: liveData?.sessionState?.scores?.length || 0,
-    });
     if (!matchData) return [];
 
     const allScores = [...(matchData.team1Scores || []), ...(matchData.team2Scores || [])];
-    console.log('[GolfScorecardDialog] allScores from match', allScores.length);
 
     if (allScores.length > 0) {
       return allScores.map((score) => {
@@ -265,13 +227,7 @@ function GolfScorecardDialogContent({
       });
     }
 
-    console.log('[GolfScorecardDialog] Checking roster fallback', {
-      isLiveMode,
-      hasTeam1Roster: !!team1Roster,
-      hasTeam2Roster: !!team2Roster,
-    });
     if (isLiveMode && (team1Roster || team2Roster)) {
-      console.log('[GolfScorecardDialog] Using roster data for players');
       const players: Array<{
         playerName: string;
         holeScores: number[];
@@ -442,13 +398,6 @@ function GolfScorecardDialogContent({
   };
 
   const renderScorecard = () => {
-    console.log('[GolfScorecardDialog] renderScorecard', {
-      hasMatchData: !!matchData,
-      hasCourseData: !!courseData,
-      playerScoresLength: playerScores.length,
-      isLiveMode,
-      rosterError,
-    });
     if (!matchData || !courseData) return null;
 
     const allScores = [...(matchData.team1Scores || []), ...(matchData.team2Scores || [])];
@@ -461,10 +410,6 @@ function GolfScorecardDialogContent({
     const distances = teeWithDistances?.distances;
 
     if (playerScores.length === 0) {
-      console.log(
-        '[GolfScorecardDialog] No players - showing scorecard with error/waiting message',
-      );
-
       if (rosterError) {
         return (
           <ScorecardTable
@@ -672,7 +617,6 @@ function LiveScorecardWrapper({
   team1Id,
   team2Id,
 }: LiveScorecardWrapperProps) {
-  console.log('[LiveScorecardWrapper] Rendering', { matchId, seasonId, team1Id, team2Id });
   const {
     connect,
     disconnect,
@@ -686,20 +630,11 @@ function LiveScorecardWrapper({
   } = useLiveScoring();
 
   useEffect(() => {
-    console.log('[LiveScorecardWrapper] Connecting to SSE', matchId);
     connect(matchId);
     return () => {
-      console.log('[LiveScorecardWrapper] Disconnecting from SSE');
       disconnect();
     };
   }, [matchId, connect, disconnect]);
-
-  console.log('[LiveScorecardWrapper] liveScoring state', {
-    isConnected,
-    isConnecting,
-    connectionError,
-    sessionState,
-  });
 
   const liveData: LiveScoringData = {
     isConnected,
