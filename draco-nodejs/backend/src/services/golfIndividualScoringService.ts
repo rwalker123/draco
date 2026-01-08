@@ -17,8 +17,6 @@ import {
   calculateCourseHandicap,
   getRatingsForGender,
   normalizeGender,
-  type CourseHandicaps,
-  type CoursePars,
   type Gender,
 } from '../utils/whsCalculator.js';
 
@@ -302,8 +300,8 @@ export class GolfIndividualScoringService {
     const presentScore = presentPlayerEntry.golfscore;
     const presentGender = normalizeGender(presentPlayerEntry.golfer.gender);
 
-    const holePars = getHolePars(course as CoursePars, presentGender).slice(0, holesPlayed);
-    const holeHandicapIndexes = getHoleHandicapIndexes(course as CourseHandicaps, presentGender);
+    const holePars = getHolePars(course, presentGender).slice(0, holesPlayed);
+    const holeHandicapIndexes = getHoleHandicapIndexes(course, presentGender);
 
     let presentCourseHandicap = 0;
     if (leagueSetup.usehandicapscoring && teeInfo) {
@@ -561,7 +559,7 @@ export class GolfIndividualScoringService {
     const gender1 = normalizeGender(team1Entry.golfer.gender);
     const gender2 = normalizeGender(team2Entry.golfer.gender);
 
-    const holeHandicapIndexes = getHoleHandicapIndexes(course as CourseHandicaps, gender1);
+    const holeHandicapIndexes = getHoleHandicapIndexes(course, gender1);
 
     let team1CourseHandicap = 0;
     let team2CourseHandicap = 0;
@@ -624,8 +622,8 @@ export class GolfIndividualScoringService {
       gender: gender2,
     };
 
-    const holePars1 = getHolePars(course as CoursePars, gender1);
-    const holePars2 = getHolePars(course as CoursePars, gender2);
+    const holePars1 = getHolePars(course, gender1);
+    const holePars2 = getHolePars(course, gender2);
     const holePars =
       gender1 === gender2 ? holePars1 : holePars1.map((p, i) => Math.round((p + holePars2[i]) / 2));
 

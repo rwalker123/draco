@@ -14,6 +14,7 @@
  */
 
 import { getWhsUseCount, getWhsAdjustment } from '@draco/shared-schemas';
+import type { golfcourse } from '#prisma/client';
 
 export interface HandicapResult {
   handicapIndex: number;
@@ -270,83 +271,85 @@ export function getRatingsForGender(
   };
 }
 
-export interface CoursePars {
-  menspar1: number;
-  menspar2: number;
-  menspar3: number;
-  menspar4: number;
-  menspar5: number;
-  menspar6: number;
-  menspar7: number;
-  menspar8: number;
-  menspar9: number;
-  menspar10: number;
-  menspar11: number;
-  menspar12: number;
-  menspar13: number;
-  menspar14: number;
-  menspar15: number;
-  menspar16: number;
-  menspar17: number;
-  menspar18: number;
-  womanspar1: number;
-  womanspar2: number;
-  womanspar3: number;
-  womanspar4: number;
-  womanspar5: number;
-  womanspar6: number;
-  womanspar7: number;
-  womanspar8: number;
-  womanspar9: number;
-  womanspar10: number;
-  womanspar11: number;
-  womanspar12: number;
-  womanspar13: number;
-  womanspar14: number;
-  womanspar15: number;
-  womanspar16: number;
-  womanspar17: number;
-  womanspar18: number;
-}
+export type CoursePars = Pick<
+  golfcourse,
+  | 'menspar1'
+  | 'menspar2'
+  | 'menspar3'
+  | 'menspar4'
+  | 'menspar5'
+  | 'menspar6'
+  | 'menspar7'
+  | 'menspar8'
+  | 'menspar9'
+  | 'menspar10'
+  | 'menspar11'
+  | 'menspar12'
+  | 'menspar13'
+  | 'menspar14'
+  | 'menspar15'
+  | 'menspar16'
+  | 'menspar17'
+  | 'menspar18'
+  | 'womanspar1'
+  | 'womanspar2'
+  | 'womanspar3'
+  | 'womanspar4'
+  | 'womanspar5'
+  | 'womanspar6'
+  | 'womanspar7'
+  | 'womanspar8'
+  | 'womanspar9'
+  | 'womanspar10'
+  | 'womanspar11'
+  | 'womanspar12'
+  | 'womanspar13'
+  | 'womanspar14'
+  | 'womanspar15'
+  | 'womanspar16'
+  | 'womanspar17'
+  | 'womanspar18'
+>;
 
-export interface CourseHandicaps {
-  menshandicap1: number;
-  menshandicap2: number;
-  menshandicap3: number;
-  menshandicap4: number;
-  menshandicap5: number;
-  menshandicap6: number;
-  menshandicap7: number;
-  menshandicap8: number;
-  menshandicap9: number;
-  menshandicap10: number;
-  menshandicap11: number;
-  menshandicap12: number;
-  menshandicap13: number;
-  menshandicap14: number;
-  menshandicap15: number;
-  menshandicap16: number;
-  menshandicap17: number;
-  menshandicap18: number;
-  womanshandicap1: number;
-  womanshandicap2: number;
-  womanshandicap3: number;
-  womanshandicap4: number;
-  womanshandicap5: number;
-  womanshandicap6: number;
-  womanshandicap7: number;
-  womanshandicap8: number;
-  womanshandicap9: number;
-  womanshandicap10: number;
-  womanshandicap11: number;
-  womanshandicap12: number;
-  womanshandicap13: number;
-  womanshandicap14: number;
-  womanshandicap15: number;
-  womanshandicap16: number;
-  womanshandicap17: number;
-  womanshandicap18: number;
-}
+export type CourseHandicaps = Pick<
+  golfcourse,
+  | 'menshandicap1'
+  | 'menshandicap2'
+  | 'menshandicap3'
+  | 'menshandicap4'
+  | 'menshandicap5'
+  | 'menshandicap6'
+  | 'menshandicap7'
+  | 'menshandicap8'
+  | 'menshandicap9'
+  | 'menshandicap10'
+  | 'menshandicap11'
+  | 'menshandicap12'
+  | 'menshandicap13'
+  | 'menshandicap14'
+  | 'menshandicap15'
+  | 'menshandicap16'
+  | 'menshandicap17'
+  | 'menshandicap18'
+  | 'womanshandicap1'
+  | 'womanshandicap2'
+  | 'womanshandicap3'
+  | 'womanshandicap4'
+  | 'womanshandicap5'
+  | 'womanshandicap6'
+  | 'womanshandicap7'
+  | 'womanshandicap8'
+  | 'womanshandicap9'
+  | 'womanshandicap10'
+  | 'womanshandicap11'
+  | 'womanshandicap12'
+  | 'womanshandicap13'
+  | 'womanshandicap14'
+  | 'womanshandicap15'
+  | 'womanshandicap16'
+  | 'womanshandicap17'
+  | 'womanshandicap18'
+>;
 
 /**
  * Get hole pars as an array for a given gender
