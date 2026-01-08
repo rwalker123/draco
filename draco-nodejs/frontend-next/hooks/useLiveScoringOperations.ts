@@ -8,6 +8,7 @@ import {
   submitLiveHoleScore,
   advanceLiveHole,
   finalizeLiveScoringSession,
+  stopLiveScoringSession,
   getActiveLiveScoringSessions,
 } from '@draco/shared-api-client';
 import type {
@@ -28,7 +29,10 @@ export interface UseLiveScoringOperationsReturn {
   submitScore: (matchId: string, data: SubmitLiveHoleScore) => Promise<LiveHoleScore | null>;
   advanceHole: (matchId: string, holeNumber: number) => Promise<boolean>;
   finalizeSession: (matchId: string) => Promise<boolean>;
-  getActiveSessions: () => Promise<{ matchId: string; sessionId: string }[] | null>;
+  stopSession: (matchId: string) => Promise<boolean>;
+  getActiveSessions: (
+    accountIdOverride?: string,
+  ) => Promise<{ matchId: string; sessionId: string }[] | null>;
   clearError: () => void;
 }
 
@@ -232,37 +236,73 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
     [apiClient, currentAccount?.id],
   );
 
-  const getActiveSessions = useCallback(async (): Promise<
-    { matchId: string; sessionId: string }[] | null
-  > => {
-    if (!currentAccount?.id) {
-      setError('No account selected');
-      return null;
-    }
+  const stopSession = useCallback(
+    async (matchId: string): Promise<boolean> => {
+      if (!currentAccount?.id) {
+        setError('No account selected');
+        return false;
+      }
 
-    setIsLoading(true);
-    setError(null);
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const result = await getActiveLiveScoringSessions({
-        client: apiClient,
-        path: {
-          accountId: currentAccount.id,
-        },
-      });
+      try {
+        await stopLiveScoringSession({
+          client: apiClient,
+          path: {
+            accountId: currentAccount.id,
+            matchId,
+          },
+          body: { confirm: true },
+        });
 
-      return unwrapApiResult(result, 'Failed to get active sessions') as {
-        matchId: string;
-        sessionId: string;
-      }[];
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to get active sessions';
-      setError(message);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiClient, currentAccount?.id]);
+        return true;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to stop session';
+        setError(message);
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [apiClient, currentAccount?.id],
+  );
+
+  const getActiveSessions = useCallback(
+    async (
+      accountIdOverride?: string,
+    ): Promise<{ matchId: string; sessionId: string }[] | null> => {
+      const accountId = accountIdOverride ?? currentAccount?.id;
+      if (!accountId) {
+        // Don't set error - this is expected for unauthenticated users without override
+        return null;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await getActiveLiveScoringSessions({
+          client: apiClient,
+          path: {
+            accountId,
+          },
+        });
+
+        return unwrapApiResult(result, 'Failed to get active sessions') as {
+          matchId: string;
+          sessionId: string;
+        }[];
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to get active sessions';
+        setError(message);
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [apiClient, currentAccount?.id],
+  );
 
   return {
     isLoading,
@@ -273,6 +313,7 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
     submitScore,
     advanceHole: advanceHoleOp,
     finalizeSession,
+    stopSession,
     getActiveSessions,
     clearError,
   };

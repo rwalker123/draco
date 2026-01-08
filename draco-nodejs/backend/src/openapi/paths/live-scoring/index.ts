@@ -15,6 +15,8 @@ const registerLiveScoringEndpoints = ({ registry, schemaRefs }: RegisterContext)
     SubmitLiveHoleScoreSchemaRef,
     AdvanceHoleSchemaRef,
     FinalizeLiveScoringSchemaRef,
+    StopLiveScoringSchemaRef,
+    SseTicketResponseSchemaRef,
   } = schemaRefs;
 
   const AccountIdParam = {
@@ -83,14 +85,16 @@ const registerLiveScoringEndpoints = ({ registry, schemaRefs }: RegisterContext)
   });
 
   // GET /api/accounts/{accountId}/golf/matches/{matchId}/live
+  // Public endpoint - allows guests to view live scoring state (read-only)
   registry.registerPath({
     method: 'get',
     path: '/api/accounts/{accountId}/golf/matches/{matchId}/live',
-    description: 'Get the current state of a live scoring session',
+    description:
+      'Get the current state of a live scoring session. This is a public endpoint for read-only access.',
     operationId: 'getLiveScoringState',
     summary: 'Get live scoring state',
     tags: ['Live Scoring'],
-    security: [{ bearerAuth: [] }],
+    security: [],
     parameters: [AccountIdParam, MatchIdParam],
     responses: {
       200: {
@@ -101,13 +105,43 @@ const registerLiveScoringEndpoints = ({ registry, schemaRefs }: RegisterContext)
           },
         },
       },
+      404: {
+        description: 'No active session found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  // POST /api/accounts/{accountId}/golf/matches/{matchId}/live/ticket
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/golf/matches/{matchId}/live/ticket',
+    description: 'Get a short-lived ticket for SSE subscription authentication',
+    operationId: 'getLiveScoringTicket',
+    summary: 'Get SSE connection ticket',
+    tags: ['Live Scoring'],
+    security: [{ bearerAuth: [] }],
+    parameters: [AccountIdParam, MatchIdParam],
+    responses: {
+      201: {
+        description: 'SSE connection ticket',
+        content: {
+          'application/json': {
+            schema: SseTicketResponseSchemaRef,
+          },
+        },
+      },
       401: {
         description: 'Authentication required',
         content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
       },
-      404: {
-        description: 'No active session found',
-        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      403: {
+        description: 'Not authorized',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
       },
       500: {
         description: 'Internal server error',
@@ -316,15 +350,64 @@ const registerLiveScoringEndpoints = ({ registry, schemaRefs }: RegisterContext)
     },
   });
 
-  // GET /api/accounts/{accountId}/golf/matches/active
+  // POST /api/accounts/{accountId}/golf/matches/{matchId}/live/stop
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/golf/matches/{matchId}/live/stop',
+    description: 'Stop the live scoring session without saving scores',
+    operationId: 'stopLiveScoringSession',
+    summary: 'Stop live scoring',
+    tags: ['Live Scoring'],
+    security: [{ bearerAuth: [] }],
+    parameters: [AccountIdParam, MatchIdParam],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: StopLiveScoringSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Session stopped successfully',
+        content: {
+          'application/json': {
+            schema: SuccessResponseSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Not authorized',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'No active session found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/golf/matches/live/active
+  // Public endpoint - no auth required (allows guests to see active live sessions)
   registry.registerPath({
     method: 'get',
-    path: '/api/accounts/{accountId}/golf/matches/active',
-    description: 'Get all matches with active live scoring sessions for the account',
+    path: '/api/accounts/{accountId}/golf/matches/live/active',
+    description:
+      'Get all matches with active live scoring sessions for the account. This is a public endpoint.',
     operationId: 'getActiveLiveScoringSessions',
     summary: 'List active live sessions',
     tags: ['Live Scoring'],
-    security: [{ bearerAuth: [] }],
+    security: [],
     parameters: [AccountIdParam],
     responses: {
       200: {
@@ -334,10 +417,6 @@ const registerLiveScoringEndpoints = ({ registry, schemaRefs }: RegisterContext)
             schema: ActiveSessionsListSchemaRef,
           },
         },
-      },
-      401: {
-        description: 'Authentication required',
-        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
       },
       500: {
         description: 'Internal server error',

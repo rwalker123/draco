@@ -3,12 +3,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { getSSEManager } from '../services/sseManager.js';
+import { getSseTicketManager } from '../services/sseTicketManager.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
 import {
   StartLiveScoringSchema,
   SubmitLiveHoleScoreSchema,
   AdvanceHoleSchema,
   FinalizeLiveScoringSchema,
+  StopLiveScoringSchema,
 } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
@@ -27,10 +29,9 @@ router.get(
   }),
 );
 
+// Public endpoint - allows guests to view live scoring state (read-only)
 router.get(
   '/:matchId/live',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { matchId } = extractBigIntParams(req.params, 'matchId');
     const state = await liveScoringService.getSessionState(matchId);
@@ -42,13 +43,47 @@ router.get(
   }),
 );
 
-router.get(
-  '/:matchId/live/subscribe',
+router.post(
+  '/:matchId/live/ticket',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { matchId } = extractBigIntParams(req.params, 'matchId');
+    const { accountId } = extractBigIntParams(req.params, 'accountId');
     const userId = req.user!.id;
+
+    const ticketManager = getSseTicketManager();
+    const { ticket, expiresIn } = ticketManager.createTicket(userId, matchId, accountId);
+
+    res.status(201).json({ ticket, expiresIn });
+  }),
+);
+
+router.get(
+  '/:matchId/live/subscribe',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { matchId, accountId } = extractBigIntParams(req.params, 'matchId', 'accountId');
+    const ticket = req.query.ticket as string | undefined;
+
+    if (!ticket) {
+      res.status(401).json({ error: 'Ticket required for SSE subscription' });
+      return;
+    }
+
+    const ticketManager = getSseTicketManager();
+    const validation = ticketManager.validateTicket(ticket, matchId);
+
+    if (!validation.valid) {
+      res.status(401).json({ error: validation.reason });
+      return;
+    }
+
+    if (validation.accountId !== accountId) {
+      res.status(403).json({ error: 'Ticket not valid for this account' });
+      return;
+    }
+
+    const userId = validation.userId;
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -62,10 +97,16 @@ router.get(
 
     sseManager.addClient(clientId, res, userId, matchId);
 
+    res.write(`event: connected\n`);
+    res.write(`data: ${JSON.stringify({ clientId, matchId: matchId.toString() })}\n\n`);
+
     const sessionState = await liveScoringService.getSessionState(matchId);
     if (sessionState) {
       res.write(`event: state\n`);
       res.write(`data: ${JSON.stringify(sessionState)}\n\n`);
+    } else {
+      res.write(`event: no_session\n`);
+      res.write(`data: ${JSON.stringify({ matchId: matchId.toString() })}\n\n`);
     }
 
     req.on('close', () => {
@@ -134,10 +175,24 @@ router.post(
   }),
 );
 
-router.get(
-  '/active',
+router.post(
+  '/:matchId/live/stop',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { matchId } = extractBigIntParams(req.params, 'matchId');
+    const { accountId } = extractBigIntParams(req.params, 'accountId');
+    const userId = req.user!.id;
+
+    StopLiveScoringSchema.parse(req.body);
+    await liveScoringService.stopSession(matchId, userId, accountId);
+    res.status(200).json({ success: true });
+  }),
+);
+
+// Public endpoint - no auth required (allows guests to see active live sessions)
+router.get(
+  '/live/active',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractBigIntParams(req.params, 'accountId');
     const sessions = await liveScoringService.getActiveSessionsForAccount(accountId);

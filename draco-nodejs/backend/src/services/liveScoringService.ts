@@ -23,12 +23,15 @@ const LIVE_SESSION_STATUS = {
   ACTIVE: 1,
   PAUSED: 2,
   FINALIZED: 3,
+  ABANDONED: 4,
+  STOPPED: 5,
 } as const;
 
-const STATUS_MAP: Record<number, 'active' | 'paused' | 'finalized'> = {
+const STATUS_MAP: Record<number, 'active' | 'paused' | 'finalized' | 'stopped'> = {
   [LIVE_SESSION_STATUS.ACTIVE]: 'active',
   [LIVE_SESSION_STATUS.PAUSED]: 'paused',
   [LIVE_SESSION_STATUS.FINALIZED]: 'finalized',
+  [LIVE_SESSION_STATUS.STOPPED]: 'stopped',
 };
 
 export class LiveScoringService {
@@ -88,9 +91,12 @@ export class LiveScoringService {
       throw new ValidationError('Cannot start live scoring for a completed match');
     }
 
-    const existingSession = await this.liveScoringRepository.findActiveByMatch(matchId);
+    const existingSession = await this.liveScoringRepository.findByMatch(matchId);
     if (existingSession) {
-      throw new ValidationError('A live scoring session is already active for this match');
+      if (existingSession.status === LIVE_SESSION_STATUS.ACTIVE) {
+        throw new ValidationError('A live scoring session is already active for this match');
+      }
+      await this.liveScoringRepository.deleteSession(existingSession.id);
     }
 
     await this.validateUserIsMatchParticipant(userId, accountId, match.team1, match.team2);
@@ -158,7 +164,7 @@ export class LiveScoringService {
       teamId: teamId?.toString(),
       holeNumber: holeScore.holenumber,
       score: holeScore.score,
-      enteredBy: holeScore.enteredby,
+      enteredBy: holeScore.enteredbyuser?.username ?? holeScore.enteredby,
       timestamp: holeScore.enteredat.toISOString(),
     };
 
@@ -218,6 +224,29 @@ export class LiveScoringService {
       matchId: matchId.toString(),
       finalizedBy: userId,
       finalizedAt: new Date().toISOString(),
+    });
+  }
+
+  async stopSession(matchId: bigint, userId: string, accountId: bigint): Promise<void> {
+    const session = await this.liveScoringRepository.findActiveByMatch(matchId);
+    if (!session) {
+      throw new NotFoundError('No active live scoring session for this match');
+    }
+
+    const match = await this.matchRepository.findById(matchId);
+    if (!match) {
+      throw new NotFoundError('Golf match not found');
+    }
+
+    await this.validateUserIsMatchParticipant(userId, accountId, match.team1, match.team2);
+
+    await this.liveScoringRepository.updateStatus(session.id, LIVE_SESSION_STATUS.STOPPED);
+
+    getSSEManager().broadcastToMatch(matchId, 'session_stopped', {
+      sessionId: session.id.toString(),
+      matchId: matchId.toString(),
+      stoppedBy: userId,
+      stoppedAt: new Date().toISOString(),
     });
   }
 
@@ -323,5 +352,13 @@ export class LiveScoringService {
       enteredBy: score.enteredbyuser?.username ?? score.enteredby,
       enteredAt: score.enteredat.toISOString(),
     };
+  }
+
+  async cleanupStaleSessions(): Promise<number> {
+    const count = await this.liveScoringRepository.markAllActiveSessionsAbandoned();
+    if (count > 0) {
+      console.log(`🧹 Cleaned up ${count} stale live scoring session(s)`);
+    }
+    return count;
   }
 }

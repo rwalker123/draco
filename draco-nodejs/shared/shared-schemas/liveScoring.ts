@@ -5,10 +5,12 @@ import { bigintToStringSchema } from './standardSchema.js';
 extendZodWithOpenApi(z);
 
 // Live Scoring Session Status
-export const LiveScoringStatusSchema = z.enum(['active', 'paused', 'finalized']).openapi({
-  title: 'LiveScoringStatus',
-  description: 'Status of a live scoring session',
-});
+export const LiveScoringStatusSchema = z
+  .enum(['active', 'paused', 'finalized', 'stopped'])
+  .openapi({
+    title: 'LiveScoringStatus',
+    description: 'Status of a live scoring session',
+  });
 
 // SSE Event Types
 export const LiveScoringEventTypeSchema = z
@@ -19,6 +21,7 @@ export const LiveScoringEventTypeSchema = z
     'score_update',
     'hole_advanced',
     'session_finalized',
+    'session_stopped',
     'ping',
     'error',
   ])
@@ -147,6 +150,29 @@ export const SessionFinalizedEventSchema = z
     description: 'SSE event payload when a live scoring session is finalized',
   });
 
+// Stop Live Scoring Request
+export const StopLiveScoringSchema = z
+  .object({
+    confirm: z.literal(true),
+  })
+  .openapi({
+    title: 'StopLiveScoring',
+    description: 'Request to stop a live scoring session without saving scores',
+  });
+
+// SSE Session Stopped Event Payload
+export const SessionStoppedEventSchema = z
+  .object({
+    sessionId: bigintToStringSchema,
+    matchId: bigintToStringSchema,
+    stoppedBy: z.string(),
+    stoppedAt: z.string().datetime(),
+  })
+  .openapi({
+    title: 'SessionStoppedEvent',
+    description: 'SSE event payload when a live scoring session is stopped/cancelled',
+  });
+
 // Check if match has active live session (lightweight response)
 export const LiveSessionStatusSchema = z
   .object({
@@ -159,6 +185,17 @@ export const LiveSessionStatusSchema = z
     description: 'Lightweight status check for whether a match has an active live session',
   });
 
+// SSE Ticket Response
+export const SseTicketResponseSchema = z
+  .object({
+    ticket: z.string(),
+    expiresIn: z.number().int(),
+  })
+  .openapi({
+    title: 'SseTicketResponse',
+    description: 'Response containing a short-lived ticket for SSE subscription',
+  });
+
 // Type exports
 export type LiveScoringStatusType = z.infer<typeof LiveScoringStatusSchema>;
 export type LiveScoringEventTypeType = z.infer<typeof LiveScoringEventTypeSchema>;
@@ -166,9 +203,12 @@ export type StartLiveScoringType = z.infer<typeof StartLiveScoringSchema>;
 export type SubmitLiveHoleScoreType = z.infer<typeof SubmitLiveHoleScoreSchema>;
 export type AdvanceHoleType = z.infer<typeof AdvanceHoleSchema>;
 export type FinalizeLiveScoringType = z.infer<typeof FinalizeLiveScoringSchema>;
+export type StopLiveScoringType = z.infer<typeof StopLiveScoringSchema>;
 export type LiveHoleScoreType = z.infer<typeof LiveHoleScoreSchema>;
 export type LiveScoringStateType = z.infer<typeof LiveScoringStateSchema>;
 export type ScoreUpdateEventType = z.infer<typeof ScoreUpdateEventSchema>;
 export type SessionStartedEventType = z.infer<typeof SessionStartedEventSchema>;
 export type SessionFinalizedEventType = z.infer<typeof SessionFinalizedEventSchema>;
+export type SessionStoppedEventType = z.infer<typeof SessionStoppedEventSchema>;
 export type LiveSessionStatusType = z.infer<typeof LiveSessionStatusSchema>;
+export type SseTicketResponseType = z.infer<typeof SseTicketResponseSchema>;

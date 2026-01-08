@@ -370,6 +370,8 @@ import {
   SubmitLiveHoleScoreSchema,
   AdvanceHoleSchema,
   FinalizeLiveScoringSchema,
+  StopLiveScoringSchema,
+  SseTicketResponseSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1443,6 +1445,11 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'FinalizeLiveScoring',
     FinalizeLiveScoringSchema,
   );
+  const StopLiveScoringSchemaRef = registry.register('StopLiveScoring', StopLiveScoringSchema);
+  const SseTicketResponseSchemaRef = registry.register(
+    'SseTicketResponse',
+    SseTicketResponseSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1817,6 +1824,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SubmitLiveHoleScoreSchemaRef,
     AdvanceHoleSchemaRef,
     FinalizeLiveScoringSchemaRef,
+    StopLiveScoringSchemaRef,
+    SseTicketResponseSchemaRef,
   };
 };
 

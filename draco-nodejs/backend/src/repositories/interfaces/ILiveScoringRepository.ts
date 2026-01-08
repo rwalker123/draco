@@ -38,6 +38,11 @@ export interface ILiveScoringRepository {
   findActiveByMatch(matchId: bigint): Promise<LiveScoringSessionWithScores | null>;
 
   /**
+   * Find any session for a match (regardless of status).
+   */
+  findByMatch(matchId: bigint): Promise<LiveScoringSessionWithScores | null>;
+
+  /**
    * Find a session by its ID.
    */
   findById(sessionId: bigint): Promise<LiveScoringSessionWithScores | null>;
@@ -89,4 +94,10 @@ export interface ILiveScoringRepository {
   findActiveSessionsForAccount(
     accountId: bigint,
   ): Promise<{ matchId: bigint; sessionId: bigint }[]>;
+
+  /**
+   * Mark all active sessions as abandoned (for server restart cleanup).
+   * Returns the count of sessions marked as abandoned.
+   */
+  markAllActiveSessionsAbandoned(): Promise<number>;
 }

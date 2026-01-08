@@ -29781,7 +29781,8 @@
             "enum": [
               "active",
               "paused",
-              "finalized"
+              "finalized",
+              "stopped"
             ],
             "title": "LiveScoringStatus",
             "description": "Status of a live scoring session"
@@ -30021,6 +30022,39 @@
         ],
         "title": "FinalizeLiveScoring",
         "description": "Request to finalize a live scoring session and save scores permanently"
+      },
+      "StopLiveScoring": {
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "StopLiveScoring",
+        "description": "Request to stop a live scoring session without saving scores"
+      },
+      "SseTicketResponse": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ticket",
+          "expiresIn"
+        ],
+        "title": "SseTicketResponse",
+        "description": "Response containing a short-lived ticket for SSE subscription"
       }
     },
     "securitySchemes": {
@@ -53968,17 +54002,13 @@
     },
     "/api/accounts/{accountId}/golf/matches/{matchId}/live": {
       "get": {
-        "description": "Get the current state of a live scoring session",
+        "description": "Get the current state of a live scoring session. This is a public endpoint for read-only access.",
         "operationId": "getLiveScoringState",
         "summary": "Get live scoring state",
         "tags": [
           "Live Scoring"
         ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "parameters": [
           {
             "name": "accountId",
@@ -54010,6 +54040,73 @@
               }
             }
           },
+          "404": {
+            "description": "No active session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golf/matches/{matchId}/live/ticket": {
+      "post": {
+        "description": "Get a short-lived ticket for SSE subscription authentication",
+        "operationId": "getLiveScoringTicket",
+        "summary": "Get SSE connection ticket",
+        "tags": [
+          "Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "matchId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "SSE connection ticket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseTicketResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Authentication required",
             "content": {
@@ -54020,12 +54117,12 @@
               }
             }
           },
-          "404": {
-            "description": "No active session found",
+          "403": {
+            "description": "Not authorized",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
+                  "$ref": "#/components/schemas/AuthorizationError"
                 }
               }
             }
@@ -54483,11 +54580,11 @@
         }
       }
     },
-    "/api/accounts/{accountId}/golf/matches/active": {
-      "get": {
-        "description": "Get all matches with active live scoring sessions for the account",
-        "operationId": "getActiveLiveScoringSessions",
-        "summary": "List active live sessions",
+    "/api/accounts/{accountId}/golf/matches/{matchId}/live/stop": {
+      "post": {
+        "description": "Stop the live scoring session without saving scores",
+        "operationId": "stopLiveScoringSession",
+        "summary": "Stop live scoring",
         "tags": [
           "Live Scoring"
         ],
@@ -54496,6 +54593,111 @@
             "bearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "matchId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopLiveScoring"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session stopped successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "title": "SuccessResponse",
+                  "description": "Simple success response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golf/matches/live/active": {
+      "get": {
+        "description": "Get all matches with active live scoring sessions for the account. This is a public endpoint.",
+        "operationId": "getActiveLiveScoringSessions",
+        "summary": "List active live sessions",
+        "tags": [
+          "Live Scoring"
+        ],
+        "security": [],
         "parameters": [
           {
             "name": "accountId",
@@ -54531,16 +54733,6 @@
                   },
                   "title": "ActiveSessionsList",
                   "description": "List of matches with active live scoring sessions"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
                 }
               }
             }

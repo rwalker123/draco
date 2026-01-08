@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -31,16 +31,13 @@ interface GolfScorecardDialogProps {
   accountId: string;
 }
 
-export default function GolfScorecardDialog({
-  open,
+function GolfScorecardDialogContent({
   onClose,
   matchId,
   accountId,
-}: GolfScorecardDialogProps) {
+}: Omit<GolfScorecardDialogProps, 'open'>) {
   const apiClient = useApiClient();
   const timeZone = useAccountTimezone();
-  const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +45,7 @@ export default function GolfScorecardDialog({
   const [courseData, setCourseData] = useState<GolfCourseWithTees | null>(null);
 
   const loadData = useCallback(async () => {
-    if (!matchId || !open) return;
+    if (!matchId) return;
 
     setLoading(true);
     setError(null);
@@ -78,11 +75,37 @@ export default function GolfScorecardDialog({
     } finally {
       setLoading(false);
     }
-  }, [accountId, apiClient, matchId, open]);
+  }, [accountId, apiClient, matchId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const playerScores = useMemo(() => {
+    if (!matchData) return [];
+
+    const allScores = [...(matchData.team1Scores || []), ...(matchData.team2Scores || [])];
+    if (allScores.length === 0) return [];
+
+    const firstScore = allScores[0];
+    const holesPlayed = firstScore.holesPlayed || 18;
+
+    return allScores.map((score) => {
+      const baseHoleScores = [...(score.holeScores || Array(holesPlayed).fill(0))];
+      const totalScore = baseHoleScores.reduce((sum, s) => sum + (s || 0), 0);
+
+      return {
+        playerName: score.player
+          ? `${score.player.firstName} ${score.player.lastName}`
+          : 'Unknown Player',
+        holeScores: baseHoleScores,
+        totalScore,
+        handicapIndex: score.player?.handicapIndex,
+        courseHandicap: score.courseHandicap,
+        differential: score.differential,
+      };
+    });
+  }, [matchData]);
 
   const getTeeColorHex = (teeColor: string): string => {
     const colorMap: Record<string, string> = {
@@ -177,8 +200,7 @@ export default function GolfScorecardDialog({
   const renderScorecard = () => {
     if (!matchData || !courseData) return null;
 
-    const allScores = [...(matchData.team1Scores || []), ...(matchData.team2Scores || [])];
-    if (allScores.length === 0) {
+    if (playerScores.length === 0) {
       return (
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
           No scores recorded for this match.
@@ -186,20 +208,10 @@ export default function GolfScorecardDialog({
       );
     }
 
+    const allScores = [...(matchData.team1Scores || []), ...(matchData.team2Scores || [])];
     const firstScore = allScores[0];
-    const holesPlayed = (firstScore.holesPlayed || 18) as 9 | 18;
-    const tee = firstScore.tee;
-
-    const playerScores = allScores.map((score) => ({
-      playerName: score.player
-        ? `${score.player.firstName} ${score.player.lastName}`
-        : 'Unknown Player',
-      holeScores: score.holeScores,
-      totalScore: score.totalScore,
-      handicapIndex: score.player?.handicapIndex,
-      courseHandicap: score.courseHandicap,
-      differential: score.differential,
-    }));
+    const holesPlayed = (firstScore?.holesPlayed || 18) as 9 | 18;
+    const tee = firstScore?.tee;
 
     return (
       <ScorecardTable
@@ -208,7 +220,7 @@ export default function GolfScorecardDialog({
         distances={tee?.distances}
         playerScores={playerScores}
         holesPlayed={holesPlayed}
-        startIndex={firstScore.startIndex || 0}
+        startIndex={firstScore?.startIndex || 0}
       />
     );
   };
@@ -216,8 +228,10 @@ export default function GolfScorecardDialog({
   const renderTeamSummary = () => {
     if (!matchData) return null;
 
-    const hasScores =
-      matchData.team1TotalScore !== undefined || matchData.team2TotalScore !== undefined;
+    const team1Score = matchData.team1TotalScore;
+    const team2Score = matchData.team2TotalScore;
+
+    const hasScores = team1Score !== undefined || team2Score !== undefined;
     if (!hasScores) return null;
 
     const team1Won =
@@ -265,7 +279,7 @@ export default function GolfScorecardDialog({
             {matchData.team1.name}
           </Typography>
           <Typography variant="body2" textAlign="center">
-            {matchData.team1TotalScore ?? '-'}
+            {team1Score ?? '-'}
           </Typography>
           <Typography variant="body2" textAlign="center">
             {matchData.team1NetScore ?? '-'}
@@ -283,7 +297,7 @@ export default function GolfScorecardDialog({
             {matchData.team2.name}
           </Typography>
           <Typography variant="body2" textAlign="center">
-            {matchData.team2TotalScore ?? '-'}
+            {team2Score ?? '-'}
           </Typography>
           <Typography variant="body2" textAlign="center">
             {matchData.team2NetScore ?? '-'}
@@ -298,16 +312,7 @@ export default function GolfScorecardDialog({
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      fullScreen={fullScreen}
-      maxWidth="lg"
-      fullWidth
-      PaperProps={{
-        sx: { maxHeight: '90vh' },
-      }}
-    >
+    <>
       <DialogTitle
         component="div"
         sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
@@ -334,6 +339,31 @@ export default function GolfScorecardDialog({
           </>
         )}
       </DialogContent>
+    </>
+  );
+}
+
+export default function GolfScorecardDialog({
+  open,
+  onClose,
+  matchId,
+  accountId,
+}: GolfScorecardDialogProps) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullScreen={fullScreen}
+      maxWidth="lg"
+      fullWidth
+      PaperProps={{
+        sx: { maxHeight: '90vh' },
+      }}
+    >
+      <GolfScorecardDialogContent onClose={onClose} matchId={matchId} accountId={accountId} />
     </Dialog>
   );
 }

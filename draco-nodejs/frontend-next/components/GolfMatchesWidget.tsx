@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, CircularProgress, Alert, Divider } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Divider, Button } from '@mui/material';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import {
   listGolfMatchesForSeason,
   getGolfTeamWithRoster,
@@ -17,7 +19,12 @@ import { unwrapApiResult } from '../utils/apiResult';
 import WidgetShell from './ui/WidgetShell';
 import GameCard, { GameCardData } from './GameCard';
 import { useAccountTimezone } from '../context/AccountContext';
+import { useAuth } from '../context/AuthContext';
 import GolfScorecardDialog from './golf/GolfScorecardDialog';
+import LiveScoringDialog from './golf/live-scoring/LiveScoringDialog';
+import { AccountOptional } from './account/AccountOptional';
+import { useLiveScoringOperations } from '../hooks/useLiveScoringOperations';
+import { formatDateInTimezone } from '../utils/dateUtils';
 
 interface GolfMatchesWidgetProps {
   accountId: string;
@@ -32,6 +39,8 @@ export default function GolfMatchesWidget({
 }: GolfMatchesWidgetProps) {
   const apiClient = useApiClient();
   const timeZone = useAccountTimezone();
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
   const [recentMatches, setRecentMatches] = useState<GolfMatch[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<GolfMatch[]>([]);
   const [teams, setTeams] = useState<Map<string, GolfTeamWithRoster>>(new Map());
@@ -39,6 +48,34 @@ export default function GolfMatchesWidget({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [liveScoringMatchId, setLiveScoringMatchId] = useState<string | null>(null);
+  const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set());
+
+  const { getActiveSessions } = useLiveScoringOperations();
+
+  const isMatchToday = useCallback(
+    (matchDate: string): boolean => {
+      const matchDay = formatDateInTimezone(matchDate, timeZone, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      const today = formatDateInTimezone(new Date().toISOString(), timeZone, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      return matchDay === today;
+    },
+    [timeZone],
+  );
+
+  const loadActiveSessions = useCallback(async () => {
+    const sessions = await getActiveSessions(accountId);
+    if (sessions) {
+      setActiveSessions(new Set(sessions.map((s) => s.matchId)));
+    }
+  }, [getActiveSessions, accountId]);
 
   const loadMatches = useCallback(async () => {
     if (!seasonId || seasonId === '0') return;
@@ -156,7 +193,8 @@ export default function GolfMatchesWidget({
 
   useEffect(() => {
     loadMatches();
-  }, [loadMatches]);
+    loadActiveSessions();
+  }, [loadMatches, loadActiveSessions]);
 
   const getTeamName = (teamId: string, teamName: string | undefined): string => {
     const team = teams.get(teamId);
@@ -173,11 +211,26 @@ export default function GolfMatchesWidget({
   };
 
   const handleMatchClick = (game: GameCardData) => {
+    if (!isAuthenticated) return;
     setSelectedMatchId(game.id);
   };
 
   const handleScorecardClose = () => {
     setSelectedMatchId(null);
+  };
+
+  const handleLiveScoringClick = (matchId: string) => {
+    setLiveScoringMatchId(matchId);
+  };
+
+  const handleLiveScoringClose = () => {
+    setLiveScoringMatchId(null);
+    loadActiveSessions();
+  };
+
+  const getLiveScoringMatch = (): GolfMatch | undefined => {
+    if (!liveScoringMatchId) return undefined;
+    return [...recentMatches, ...upcomingMatches].find((m) => m.id === liveScoringMatchId);
   };
 
   const mapMatchToGameCardData = (match: GolfMatch): GameCardData => {
@@ -232,16 +285,57 @@ export default function GolfMatchesWidget({
         </Typography>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          {matches.map((match) => (
-            <GameCard
-              key={match.id}
-              game={mapMatchToGameCardData(match)}
-              layout="horizontal"
-              canEditGames={false}
-              timeZone={timeZone}
-              onClick={handleMatchClick}
-            />
-          ))}
+          {matches.map((match) => {
+            const hasActiveSession = activeSessions.has(match.id);
+            const showLiveButton = isMatchToday(match.matchDateTime) && match.matchStatus === 0;
+
+            return (
+              <Box key={match.id}>
+                <GameCard
+                  game={mapMatchToGameCardData(match)}
+                  layout="horizontal"
+                  canEditGames={false}
+                  timeZone={timeZone}
+                  onClick={handleMatchClick}
+                />
+                {isAuthenticated && hasActiveSession && (
+                  <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="error"
+                      startIcon={<FiberManualRecordIcon sx={{ fontSize: 12 }} />}
+                      onClick={() => handleLiveScoringClick(match.id)}
+                      sx={{
+                        animation: 'pulse 2s infinite',
+                        '@keyframes pulse': {
+                          '0%': { opacity: 1 },
+                          '50%': { opacity: 0.7 },
+                          '100%': { opacity: 1 },
+                        },
+                      }}
+                    >
+                      LIVE - Join Session
+                    </Button>
+                  </Box>
+                )}
+                {isAuthenticated && !hasActiveSession && showLiveButton && (
+                  <AccountOptional accountId={accountId} componentId="liveScoring.startButton">
+                    <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'flex-end' }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<PlayCircleOutlineIcon />}
+                        onClick={() => handleLiveScoringClick(match.id)}
+                      >
+                        Start Live Scoring
+                      </Button>
+                    </Box>
+                  </AccountOptional>
+                )}
+              </Box>
+            );
+          })}
         </Box>
       )}
     </Box>
@@ -305,6 +399,18 @@ export default function GolfMatchesWidget({
           onClose={handleScorecardClose}
           matchId={selectedMatchId}
           accountId={accountId}
+        />
+      )}
+      {liveScoringMatchId && getLiveScoringMatch() && (
+        <LiveScoringDialog
+          open={!!liveScoringMatchId}
+          onClose={handleLiveScoringClose}
+          matchId={liveScoringMatchId}
+          accountId={accountId}
+          seasonId={seasonId}
+          team1Id={getLiveScoringMatch()!.team1.id}
+          team2Id={getLiveScoringMatch()!.team2.id}
+          hasActiveSession={activeSessions.has(liveScoringMatchId)}
         />
       )}
     </>

@@ -227,7 +227,7 @@ const GolfLeagueAccountHome: React.FC = () => {
           }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-            {currentSeason && accountIdStr && (
+            {user && currentSeason && accountIdStr && (
               <GolfHandicapLeaderboard
                 accountId={accountIdStr}
                 seasonId={currentSeason.id}
@@ -241,6 +241,7 @@ const GolfLeagueAccountHome: React.FC = () => {
                 showAccountMessages
                 showTeamMessages={false}
                 title="Information Center"
+                hideWhenEmpty
               />
             ) : null}
 

@@ -114,6 +114,12 @@ app.use(
     level: 6, // Compression level (0-9)
     threshold: 1024, // Minimum size to compress (1KB)
     filter: (req, res) => {
+      // Skip compression for SSE - must send events immediately without buffering
+      const responseContentType = res.getHeader('Content-Type');
+      if (responseContentType && String(responseContentType).includes('text/event-stream')) {
+        return false;
+      }
+
       // Skip compression for binary files
       const contentType = req.headers['content-type'];
       if (

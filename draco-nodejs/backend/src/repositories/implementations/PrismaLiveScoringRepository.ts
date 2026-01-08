@@ -48,6 +48,15 @@ export class PrismaLiveScoringRepository implements ILiveScoringRepository {
     });
   }
 
+  async findByMatch(matchId: bigint): Promise<LiveScoringSessionWithScores | null> {
+    return this.prisma.livescoringsession.findFirst({
+      where: {
+        matchid: matchId,
+      },
+      include: sessionWithScoresInclude,
+    });
+  }
+
   async findById(sessionId: bigint): Promise<LiveScoringSessionWithScores | null> {
     return this.prisma.livescoringsession.findUnique({
       where: { id: sessionId },
@@ -168,5 +177,18 @@ export class PrismaLiveScoringRepository implements ILiveScoringRepository {
       matchId: s.matchid,
       sessionId: s.id,
     }));
+  }
+
+  async markAllActiveSessionsAbandoned(): Promise<number> {
+    const result = await this.prisma.livescoringsession.updateMany({
+      where: {
+        status: 1, // Active
+      },
+      data: {
+        status: 4, // Abandoned
+        lastactivity: new Date(),
+      },
+    });
+    return result.count;
   }
 }
