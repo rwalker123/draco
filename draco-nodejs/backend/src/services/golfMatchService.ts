@@ -222,15 +222,17 @@ export class GolfMatchService {
     return GolfMatchResponseFormatter.format(updatedMatch);
   }
 
-  async deleteMatch(matchId: bigint): Promise<void> {
+  async deleteMatch(matchId: bigint, force = false): Promise<void> {
     const match = await this.matchRepository.findById(matchId);
     if (!match) {
       throw new NotFoundError('Golf match not found');
     }
 
-    const hasScores = await this.matchRepository.hasScores(matchId);
-    if (hasScores) {
-      throw new ValidationError('Cannot delete match because it has recorded scores');
+    if (!force) {
+      const hasScores = await this.matchRepository.hasScores(matchId);
+      if (hasScores) {
+        throw new ValidationError('Cannot delete match because it has recorded scores');
+      }
     }
 
     await this.matchRepository.delete(matchId);

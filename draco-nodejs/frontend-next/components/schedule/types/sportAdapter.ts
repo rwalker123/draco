@@ -114,6 +114,7 @@ export interface DeleteGameParams {
   accountId: string;
   seasonId: string;
   gameId: string;
+  force?: boolean;
   apiClient: Client;
 }
 

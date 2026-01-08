@@ -50,7 +50,7 @@ interface UseScheduleDataReturn {
   clearLeagueTeams: () => void;
   upsertGameInCache: (game: Game) => void;
   removeGameFromCache: (gameId: string) => void;
-  deleteGame: (game: Game) => Promise<void>;
+  deleteGame: (game: Game, force?: boolean) => Promise<void>;
   filteredGames: Game[];
   startDate: Date;
   endDate: Date;
@@ -489,12 +489,13 @@ export const useScheduleData = ({
   );
 
   const deleteGame = useCallback(
-    async (game: Game) => {
+    async (game: Game, force?: boolean) => {
       const seasonId = await fetchCurrentSeason();
       await adapter.deleteGame({
         accountId,
         seasonId,
         gameId: game.id,
+        force,
         apiClient,
       });
     },
