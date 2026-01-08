@@ -313,12 +313,12 @@ describe('GolfLeagueService', () => {
         expect(result).toBeDefined();
       });
 
-      it('allows penalty without specifying mode (defaults to handicapPenalty assumed)', async () => {
-        const result = await service.updateLeagueSetup(100n, 1n, {
-          absentPlayerPenalty: 5,
-        });
-
-        expect(result).toBeDefined();
+      it('throws ValidationError when penalty is set without specifying mode (defaults to opponentWins)', async () => {
+        await expect(
+          service.updateLeagueSetup(100n, 1n, {
+            absentPlayerPenalty: 5,
+          }),
+        ).rejects.toBeInstanceOf(ValidationError);
       });
     });
   });

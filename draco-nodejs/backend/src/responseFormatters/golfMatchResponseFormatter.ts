@@ -48,11 +48,15 @@ export class GolfMatchResponseFormatter {
 
     const team1Scores = match.golfmatchscores
       .filter((ms) => ms.teamid === match.team1)
-      .map((ms) => GolfScoreResponseFormatter.formatMatchScore(ms));
+      .map((ms) =>
+        GolfScoreResponseFormatter.formatMatchScore(ms, match.golfcourse, match.golfteeinformation),
+      );
 
     const team2Scores = match.golfmatchscores
       .filter((ms) => ms.teamid === match.team2)
-      .map((ms) => GolfScoreResponseFormatter.formatMatchScore(ms));
+      .map((ms) =>
+        GolfScoreResponseFormatter.formatMatchScore(ms, match.golfcourse, match.golfteeinformation),
+      );
 
     const team1TotalScore = team1Scores.reduce((sum, s) => sum + s.totalScore, 0);
     const team2TotalScore = team2Scores.reduce((sum, s) => sum + s.totalScore, 0);

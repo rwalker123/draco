@@ -70,7 +70,8 @@ const GOLF_LEAGUE_FIELD_MAPPINGS: FieldMapping<UpdateGolfLeagueSetupType>[] = [
 
 export function validateAbsentPlayerPenalty(data: UpdateGolfLeagueSetupType): void {
   if (data.absentPlayerPenalty && data.absentPlayerPenalty > 0) {
-    if (data.absentPlayerMode && data.absentPlayerMode !== 'handicapPenalty') {
+    const effectiveMode = data.absentPlayerMode ?? 'opponentWins';
+    if (effectiveMode !== 'handicapPenalty') {
       throw new ValidationError(
         'absentPlayerPenalty can only be set when absentPlayerMode is handicapPenalty',
       );

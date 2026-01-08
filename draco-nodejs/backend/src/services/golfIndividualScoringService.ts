@@ -392,6 +392,8 @@ export class GolfIndividualScoringService {
 
     indexedHoles.sort((a, b) => a.handicapIndex - b.handicapIndex);
 
+    // Distribute penalty strokes to hardest holes first (lowest handicap index = hardest).
+    // If penalty exceeds holes played, cycle back to hardest holes for additional strokes.
     for (let i = 0; i < penaltyStrokes; i++) {
       const { holeIndex } = indexedHoles[i % holesPlayed];
       syntheticScores[holeIndex]++;

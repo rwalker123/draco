@@ -197,6 +197,8 @@ export default function GolfScorecardDialog({
       holeScores: score.holeScores,
       totalScore: score.totalScore,
       handicapIndex: score.player?.handicapIndex,
+      courseHandicap: score.courseHandicap,
+      differential: score.differential,
     }));
 
     return (

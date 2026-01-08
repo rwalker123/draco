@@ -1,4 +1,5 @@
 import { GolfScoreType, GolfScoreWithDetailsType } from '@draco/shared-schemas';
+import { golfcourse, golfteeinformation } from '#prisma/client';
 import { GolfScoreWithDetails } from '../repositories/interfaces/IGolfScoreRepository.js';
 import { GolfMatchScoreEntry } from '../repositories/interfaces/IGolfMatchRepository.js';
 import {
@@ -128,7 +129,11 @@ export class GolfScoreResponseFormatter {
     };
   }
 
-  static formatMatchScore(matchScore: GolfMatchScoreEntry): GolfScoreWithDetailsType {
+  static formatMatchScore(
+    matchScore: GolfMatchScoreEntry,
+    course?: golfcourse | null,
+    tee?: golfteeinformation | null,
+  ): GolfScoreWithDetailsType {
     const score = matchScore.golfscore;
     const holeScores = [
       score.holescrore1,
@@ -156,6 +161,141 @@ export class GolfScoreResponseFormatter {
       );
     }
 
+    let differential: number | undefined;
+    let courseHandicapValue: number | undefined;
+
+    if (course && tee) {
+      const gender = normalizeGender(matchScore.golfer.gender);
+      const handicapIndex = score.holesplayed === 9 ? score.startindex9 : score.startindex;
+
+      const teeRatings: TeeRatings = {
+        mensRating: Number(tee.mensrating) || 72,
+        mensSlope: Number(tee.menslope) || 113,
+        womansRating: Number(tee.womansrating) || 72,
+        womansSlope: Number(tee.womanslope) || 113,
+      };
+
+      const { courseRating, slopeRating } = getRatingsForGender(teeRatings, gender);
+
+      const is9Hole = score.holesplayed === 9;
+      const allHolePars = getHolePars(
+        {
+          menspar1: course.menspar1,
+          menspar2: course.menspar2,
+          menspar3: course.menspar3,
+          menspar4: course.menspar4,
+          menspar5: course.menspar5,
+          menspar6: course.menspar6,
+          menspar7: course.menspar7,
+          menspar8: course.menspar8,
+          menspar9: course.menspar9,
+          menspar10: course.menspar10,
+          menspar11: course.menspar11,
+          menspar12: course.menspar12,
+          menspar13: course.menspar13,
+          menspar14: course.menspar14,
+          menspar15: course.menspar15,
+          menspar16: course.menspar16,
+          menspar17: course.menspar17,
+          menspar18: course.menspar18,
+          womanspar1: course.womanspar1,
+          womanspar2: course.womanspar2,
+          womanspar3: course.womanspar3,
+          womanspar4: course.womanspar4,
+          womanspar5: course.womanspar5,
+          womanspar6: course.womanspar6,
+          womanspar7: course.womanspar7,
+          womanspar8: course.womanspar8,
+          womanspar9: course.womanspar9,
+          womanspar10: course.womanspar10,
+          womanspar11: course.womanspar11,
+          womanspar12: course.womanspar12,
+          womanspar13: course.womanspar13,
+          womanspar14: course.womanspar14,
+          womanspar15: course.womanspar15,
+          womanspar16: course.womanspar16,
+          womanspar17: course.womanspar17,
+          womanspar18: course.womanspar18,
+        },
+        gender,
+      );
+
+      const allHoleHandicapIndexes = getHoleHandicapIndexes(
+        {
+          menshandicap1: course.menshandicap1,
+          menshandicap2: course.menshandicap2,
+          menshandicap3: course.menshandicap3,
+          menshandicap4: course.menshandicap4,
+          menshandicap5: course.menshandicap5,
+          menshandicap6: course.menshandicap6,
+          menshandicap7: course.menshandicap7,
+          menshandicap8: course.menshandicap8,
+          menshandicap9: course.menshandicap9,
+          menshandicap10: course.menshandicap10,
+          menshandicap11: course.menshandicap11,
+          menshandicap12: course.menshandicap12,
+          menshandicap13: course.menshandicap13,
+          menshandicap14: course.menshandicap14,
+          menshandicap15: course.menshandicap15,
+          menshandicap16: course.menshandicap16,
+          menshandicap17: course.menshandicap17,
+          menshandicap18: course.menshandicap18,
+          womanshandicap1: course.womanshandicap1,
+          womanshandicap2: course.womanshandicap2,
+          womanshandicap3: course.womanshandicap3,
+          womanshandicap4: course.womanshandicap4,
+          womanshandicap5: course.womanshandicap5,
+          womanshandicap6: course.womanshandicap6,
+          womanshandicap7: course.womanshandicap7,
+          womanshandicap8: course.womanshandicap8,
+          womanshandicap9: course.womanshandicap9,
+          womanshandicap10: course.womanshandicap10,
+          womanshandicap11: course.womanshandicap11,
+          womanshandicap12: course.womanshandicap12,
+          womanshandicap13: course.womanshandicap13,
+          womanshandicap14: course.womanshandicap14,
+          womanshandicap15: course.womanshandicap15,
+          womanshandicap16: course.womanshandicap16,
+          womanshandicap17: course.womanshandicap17,
+          womanshandicap18: course.womanshandicap18,
+        },
+        gender,
+      );
+
+      const holePars = is9Hole ? allHolePars.slice(0, 9) : allHolePars;
+      const holeHandicapIndexes = is9Hole
+        ? allHoleHandicapIndexes.slice(0, 9)
+        : allHoleHandicapIndexes;
+      const totalPar = calculateTotalPar(holePars);
+
+      let courseHandicapForCalc: number | null = null;
+      if (handicapIndex !== undefined && handicapIndex !== null) {
+        courseHandicapForCalc = calculateCourseHandicap(
+          handicapIndex,
+          slopeRating,
+          courseRating,
+          totalPar,
+        );
+        if (is9Hole) {
+          courseHandicapForCalc = Math.round(courseHandicapForCalc / 2);
+        }
+        courseHandicapValue = courseHandicapForCalc;
+      }
+
+      if (!score.totalsonly) {
+        const adjustedHoleScores = applyNetDoubleBogey(
+          holeScores,
+          holePars,
+          holeHandicapIndexes,
+          courseHandicapForCalc,
+        );
+        const adjustedScore = adjustedHoleScores.reduce((sum, s) => sum + s, 0);
+        differential = calculateScoreDifferential(adjustedScore, courseRating, slopeRating);
+      } else {
+        differential = calculateScoreDifferential(score.totalscore, courseRating, slopeRating);
+      }
+    }
+
     return {
       id: score.id.toString(),
       courseId: score.courseid.toString(),
@@ -174,6 +314,8 @@ export class GolfScoreResponseFormatter {
         lastName: matchScore.golfer.contact.lastname,
         middleName: matchScore.golfer.contact.middlename || undefined,
       },
+      differential,
+      courseHandicap: courseHandicapValue,
     };
   }
 

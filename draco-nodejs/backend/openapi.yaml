@@ -20406,6 +20406,8 @@ components:
                   hole distances
               differential:
                 type: number
+              courseHandicap:
+                type: integer
               courseName:
                 type: string
               courseCity:
@@ -20593,6 +20595,8 @@ components:
                   hole distances
               differential:
                 type: number
+              courseHandicap:
+                type: integer
               courseName:
                 type: string
               courseCity:
@@ -20924,6 +20928,8 @@ components:
             hole distances
         differential:
           type: number
+        courseHandicap:
+          type: integer
         courseName:
           type: string
         courseCity:
@@ -22366,6 +22372,8 @@ components:
                   hole distances
               differential:
                 type: number
+              courseHandicap:
+                type: integer
               courseName:
                 type: string
               courseCity:
