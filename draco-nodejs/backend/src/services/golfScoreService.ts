@@ -13,11 +13,12 @@ import {
 import { IGolfMatchRepository } from '../repositories/interfaces/IGolfMatchRepository.js';
 import { IGolfRosterRepository } from '../repositories/interfaces/IGolfRosterRepository.js';
 import { IGolfCourseRepository } from '../repositories/interfaces/IGolfCourseRepository.js';
+import { IGolfLeagueRepository } from '../repositories/interfaces/IGolfLeagueRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { GolfScoreResponseFormatter } from '../responseFormatters/golfScoreResponseFormatter.js';
 import { GolfMatchResponseFormatter } from '../responseFormatters/golfMatchResponseFormatter.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
-import { GolfMatchStatus } from '../utils/golfConstants.js';
+import { GolfMatchStatus, FullTeamAbsentMode } from '../utils/golfConstants.js';
 import { ServiceFactory } from './serviceFactory.js';
 
 export class GolfScoreService {
@@ -25,17 +26,20 @@ export class GolfScoreService {
   private readonly matchRepository: IGolfMatchRepository;
   private readonly rosterRepository: IGolfRosterRepository;
   private readonly courseRepository: IGolfCourseRepository;
+  private readonly leagueRepository: IGolfLeagueRepository;
 
   constructor(
     scoreRepository?: IGolfScoreRepository,
     matchRepository?: IGolfMatchRepository,
     rosterRepository?: IGolfRosterRepository,
     courseRepository?: IGolfCourseRepository,
+    leagueRepository?: IGolfLeagueRepository,
   ) {
     this.scoreRepository = scoreRepository ?? RepositoryFactory.getGolfScoreRepository();
     this.matchRepository = matchRepository ?? RepositoryFactory.getGolfMatchRepository();
     this.rosterRepository = rosterRepository ?? RepositoryFactory.getGolfRosterRepository();
     this.courseRepository = courseRepository ?? RepositoryFactory.getGolfCourseRepository();
+    this.leagueRepository = leagueRepository ?? RepositoryFactory.getGolfLeagueRepository();
   }
 
   async getScoreById(scoreId: bigint): Promise<GolfScoreWithDetailsType> {
@@ -84,6 +88,11 @@ export class GolfScoreService {
       throw new NotFoundError('Golf course not found');
     }
 
+    const leagueSetup = await this.leagueRepository.findByLeagueSeasonId(match.leagueid);
+    if (!leagueSetup) {
+      throw new NotFoundError('League setup not found');
+    }
+
     const scoresByTeam = new Map<bigint, PlayerMatchScoreType[]>();
     for (const playerScore of data.scores) {
       const teamSeasonId = BigInt(playerScore.teamSeasonId);
@@ -96,6 +105,23 @@ export class GolfScoreService {
         scoresByTeam.set(teamSeasonId, []);
       }
       scoresByTeam.get(teamSeasonId)!.push(playerScore);
+    }
+
+    const team1Players = scoresByTeam.get(match.team1) ?? [];
+    const team2Players = scoresByTeam.get(match.team2) ?? [];
+    const team1Present = team1Players.filter((p) => !p.isAbsent);
+    const team2Present = team2Players.filter((p) => !p.isAbsent);
+    const team1FullAbsent = team1Players.length > 0 && team1Present.length === 0;
+    const team2FullAbsent = team2Players.length > 0 && team2Present.length === 0;
+
+    if (team1FullAbsent || team2FullAbsent) {
+      return this.handleFullTeamAbsence(
+        matchId,
+        match,
+        leagueSetup,
+        team1FullAbsent,
+        team2FullAbsent,
+      );
     }
 
     const rosterIds = data.scores.filter((ps) => !ps.isAbsent).map((ps) => BigInt(ps.rosterId));
@@ -182,6 +208,72 @@ export class GolfScoreService {
       throw new NotFoundError('Golf match not found after update');
     }
     return GolfMatchResponseFormatter.format(updatedMatch);
+  }
+
+  private async handleFullTeamAbsence(
+    matchId: bigint,
+    _match: Awaited<ReturnType<IGolfMatchRepository['findByIdWithScores']>> & object,
+    leagueSetup: Awaited<ReturnType<IGolfLeagueRepository['findByLeagueSeasonId']>> & object,
+    team1FullAbsent: boolean,
+    team2FullAbsent: boolean,
+  ): Promise<GolfMatchType> {
+    if (leagueSetup.fullteamabsentmode === FullTeamAbsentMode.FORFEIT) {
+      const maxPoints = this.calculateMaxPossiblePoints(leagueSetup);
+
+      let team1Points = 0;
+      let team2Points = 0;
+      let team1MatchWins = 0;
+      let team2MatchWins = 0;
+
+      if (team1FullAbsent && !team2FullAbsent) {
+        team2Points = maxPoints;
+        team2MatchWins = 1;
+      } else if (team2FullAbsent && !team1FullAbsent) {
+        team1Points = maxPoints;
+        team1MatchWins = 1;
+      }
+
+      await this.matchRepository.updateStatus(matchId, GolfMatchStatus.FORFEIT);
+      await this.matchRepository.updatePoints(matchId, {
+        team1points: team1Points,
+        team2points: team2Points,
+        team1totalscore: 0,
+        team2totalscore: 0,
+        team1netscore: 0,
+        team2netscore: 0,
+        team1holewins: 0,
+        team2holewins: 0,
+        team1ninewins: 0,
+        team2ninewins: 0,
+        team1matchwins: team1MatchWins,
+        team2matchwins: team2MatchWins,
+      });
+
+      const updatedMatch = await this.matchRepository.findById(matchId);
+      if (!updatedMatch) {
+        throw new NotFoundError('Golf match not found after forfeit update');
+      }
+      return GolfMatchResponseFormatter.format(updatedMatch);
+    }
+
+    throw new ValidationError('Handicap penalty mode for full team absence is not yet implemented');
+  }
+
+  private calculateMaxPossiblePoints(
+    leagueSetup: Awaited<ReturnType<IGolfLeagueRepository['findByLeagueSeasonId']>> & object,
+  ): number {
+    const holesPerMatch = leagueSetup.holespermatch;
+    const perHolePoints = leagueSetup.perholepoints;
+    const perNinePoints = leagueSetup.perninepoints;
+    const perMatchPoints = leagueSetup.permatchpoints;
+
+    let maxPoints = holesPerMatch * perHolePoints;
+    if (holesPerMatch === 18) {
+      maxPoints += perNinePoints * 2;
+    }
+    maxPoints += perMatchPoints;
+
+    return maxPoints;
   }
 
   async deleteMatchScores(matchId: bigint): Promise<void> {
