@@ -142,7 +142,7 @@ router.post(
     const data = AdvanceIndividualLiveHoleSchema.parse(req.body);
     const service = ServiceFactory.getIndividualLiveScoringService();
     await service.advanceHole(accountId, userId, data.holeNumber);
-    res.status(200).json({ success: true });
+    res.status(204).send();
   }),
 );
 
@@ -155,7 +155,7 @@ router.post(
 
     const service = ServiceFactory.getIndividualLiveScoringService();
     await service.finalizeSession(accountId, userId);
-    res.status(200).json({ success: true });
+    res.status(204).send();
   }),
 );
 
@@ -168,7 +168,7 @@ router.post(
 
     const service = ServiceFactory.getIndividualLiveScoringService();
     await service.stopSession(accountId, userId);
-    res.status(200).json({ success: true });
+    res.status(204).send();
   }),
 );
 

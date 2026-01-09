@@ -10,6 +10,8 @@ import React, {
   ReactNode,
 } from 'react';
 import { useAuth } from './AuthContext';
+import { useApiClient } from '../hooks/useApiClient';
+import { getIndividualLiveScoringTicket } from '@draco/shared-api-client';
 
 export interface IndividualLiveHoleScore {
   id: string;
@@ -95,6 +97,7 @@ interface IndividualLiveScoringProviderProps {
 
 export function IndividualLiveScoringProvider({ children }: IndividualLiveScoringProviderProps) {
   const { token } = useAuth();
+  const apiClient = useApiClient();
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
@@ -311,35 +314,24 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
       setIsConnecting(true);
       setConnectionError(null);
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const ticketUrl = `${apiUrl}/api/accounts/${accountId}/golfer/live/ticket`;
-
-      fetch(ticketUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      getIndividualLiveScoringTicket({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
       })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Failed to get connection ticket');
-          }
-          return response.json();
-        })
-        .then((data: { ticket: string }) => {
+        .then((result) => {
           if (currentAccountIdRef.current !== accountId) {
             return;
           }
 
-          if (!data.ticket) {
+          if (result.error || !result.data?.ticket) {
             isConnectingRef.current = false;
             setIsConnecting(false);
             setConnectionError('Failed to get connection ticket');
             return;
           }
 
-          connectWithTicket(accountId, data.ticket);
+          connectWithTicket(accountId, result.data.ticket);
         })
         .catch(() => {
           if (currentAccountIdRef.current !== accountId) {
@@ -350,7 +342,7 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
           setConnectionError('Failed to get connection ticket');
         });
     },
-    [token, disconnect, connectWithTicket],
+    [token, apiClient, disconnect, connectWithTicket],
   );
 
   useEffect(() => {

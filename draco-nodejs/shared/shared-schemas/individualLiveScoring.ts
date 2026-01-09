@@ -146,6 +146,16 @@ export const IndividualHoleAdvancedEventSchema = z
     description: 'SSE event payload when the current hole is advanced in individual live scoring',
   });
 
+export const IndividualSseTicketResponseSchema = z
+  .object({
+    ticket: z.string(),
+    expiresIn: z.number().int(),
+  })
+  .openapi({
+    title: 'IndividualSseTicketResponse',
+    description: 'SSE connection ticket response for individual live scoring',
+  });
+
 export type StartIndividualLiveScoringType = z.infer<typeof StartIndividualLiveScoringSchema>;
 export type SubmitIndividualLiveHoleScoreType = z.infer<typeof SubmitIndividualLiveHoleScoreSchema>;
 export type AdvanceIndividualLiveHoleType = z.infer<typeof AdvanceIndividualLiveHoleSchema>;
@@ -159,3 +169,4 @@ export type IndividualSessionFinalizedEventType = z.infer<
 >;
 export type IndividualSessionStoppedEventType = z.infer<typeof IndividualSessionStoppedEventSchema>;
 export type IndividualHoleAdvancedEventType = z.infer<typeof IndividualHoleAdvancedEventSchema>;
+export type IndividualSseTicketResponseType = z.infer<typeof IndividualSseTicketResponseSchema>;

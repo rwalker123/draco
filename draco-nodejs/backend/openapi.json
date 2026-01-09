@@ -30030,6 +30030,269 @@
         ],
         "title": "SseTicketResponse",
         "description": "Response containing a short-lived ticket for SSE subscription"
+      },
+      "IndividualLiveScoringState": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "finalized",
+              "stopped"
+            ],
+            "title": "LiveScoringStatus",
+            "description": "Status of a live scoring session"
+          },
+          "currentHole": {
+            "type": "integer"
+          },
+          "holesPlayed": {
+            "type": "integer"
+          },
+          "courseId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "courseName": {
+            "type": "string"
+          },
+          "teeId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "teeName": {
+            "type": "string"
+          },
+          "datePlayed": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedBy": {
+            "type": "string"
+          },
+          "viewerCount": {
+            "type": "integer"
+          },
+          "scores": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "holeNumber": {
+                  "type": "integer"
+                },
+                "score": {
+                  "type": "integer"
+                },
+                "enteredBy": {
+                  "type": "string"
+                },
+                "enteredAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "holeNumber",
+                "score",
+                "enteredBy",
+                "enteredAt"
+              ],
+              "title": "IndividualLiveHoleScore",
+              "description": "A single hole score in an individual live scoring session"
+            }
+          }
+        },
+        "required": [
+          "sessionId",
+          "accountId",
+          "status",
+          "currentHole",
+          "holesPlayed",
+          "courseId",
+          "courseName",
+          "teeId",
+          "teeName",
+          "datePlayed",
+          "startedAt",
+          "startedBy",
+          "scores"
+        ],
+        "title": "IndividualLiveScoringState",
+        "description": "Current state of an individual live scoring session"
+      },
+      "IndividualLiveSessionStatus": {
+        "type": "object",
+        "properties": {
+          "hasActiveSession": {
+            "type": "boolean"
+          },
+          "sessionId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "viewerCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasActiveSession"
+        ],
+        "title": "IndividualLiveSessionStatus",
+        "description": "Lightweight status check for whether an account has an active individual live session"
+      },
+      "IndividualLiveHoleScore": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "holeNumber": {
+            "type": "integer"
+          },
+          "score": {
+            "type": "integer"
+          },
+          "enteredBy": {
+            "type": "string"
+          },
+          "enteredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "holeNumber",
+          "score",
+          "enteredBy",
+          "enteredAt"
+        ],
+        "title": "IndividualLiveHoleScore",
+        "description": "A single hole score in an individual live scoring session"
+      },
+      "StartIndividualLiveScoring": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string"
+          },
+          "teeId": {
+            "type": "string"
+          },
+          "datePlayed": {
+            "type": "string"
+          },
+          "startingHole": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 18,
+            "default": 1
+          },
+          "holesPlayed": {
+            "anyOf": [
+              {
+                "type": "number",
+                "enum": [
+                  9
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  18
+                ]
+              }
+            ],
+            "default": 18
+          }
+        },
+        "required": [
+          "courseId",
+          "teeId",
+          "datePlayed"
+        ],
+        "title": "StartIndividualLiveScoring",
+        "description": "Request to start an individual live scoring session"
+      },
+      "SubmitIndividualLiveHoleScore": {
+        "type": "object",
+        "properties": {
+          "holeNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 18
+          },
+          "score": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "holeNumber",
+          "score"
+        ],
+        "title": "SubmitIndividualLiveHoleScore",
+        "description": "Request to submit a single hole score during individual live scoring"
+      },
+      "AdvanceIndividualLiveHole": {
+        "type": "object",
+        "properties": {
+          "holeNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 18
+          }
+        },
+        "required": [
+          "holeNumber"
+        ],
+        "title": "AdvanceIndividualLiveHole",
+        "description": "Request to advance to a specific hole in individual live scoring"
+      },
+      "IndividualSseTicketResponse": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ticket",
+          "expiresIn"
+        ],
+        "title": "IndividualSseTicketResponse",
+        "description": "SSE connection ticket response for individual live scoring"
       }
     },
     "securitySchemes": {
@@ -51473,6 +51736,612 @@
           },
           "404": {
             "description": "Handout or team not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golfer/live/status": {
+      "get": {
+        "description": "Check if an individual golfer account has an active live scoring session",
+        "operationId": "getIndividualLiveSessionStatus",
+        "summary": "Get individual live session status",
+        "tags": [
+          "Individual Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Individual live session status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndividualLiveSessionStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golfer/live": {
+      "get": {
+        "description": "Get the current state of an individual live scoring session. This is a public endpoint for read-only access.",
+        "operationId": "getIndividualLiveScoringState",
+        "summary": "Get individual live scoring state",
+        "tags": [
+          "Individual Live Scoring"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current individual live scoring state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndividualLiveScoringState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golfer/live/ticket": {
+      "post": {
+        "description": "Get a short-lived ticket for SSE subscription authentication",
+        "operationId": "getIndividualLiveScoringTicket",
+        "summary": "Get SSE connection ticket for individual live scoring",
+        "tags": [
+          "Individual Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "SSE connection ticket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndividualSseTicketResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golfer/live/start": {
+      "post": {
+        "description": "Start a new individual live scoring session",
+        "operationId": "startIndividualLiveScoringSession",
+        "summary": "Start individual live scoring",
+        "tags": [
+          "Individual Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartIndividualLiveScoring"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Individual live scoring session started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndividualLiveScoringState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or session already active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golfer/live/scores": {
+      "post": {
+        "description": "Submit a score for a specific hole during individual live scoring",
+        "operationId": "submitIndividualLiveHoleScore",
+        "summary": "Submit individual hole score",
+        "tags": [
+          "Individual Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitIndividualLiveHoleScore"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Score submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndividualLiveHoleScore"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golfer/live/advance": {
+      "post": {
+        "description": "Advance to a specific hole number in individual live scoring",
+        "operationId": "advanceIndividualLiveHole",
+        "summary": "Advance individual hole",
+        "tags": [
+          "Individual Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvanceIndividualLiveHole"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Hole advanced successfully"
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golfer/live/finalize": {
+      "post": {
+        "description": "Finalize the individual live scoring session and save scores permanently",
+        "operationId": "finalizeIndividualLiveScoringSession",
+        "summary": "Finalize individual live scoring",
+        "tags": [
+          "Individual Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Session finalized successfully"
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/golfer/live/stop": {
+      "post": {
+        "description": "Stop the individual live scoring session without saving scores",
+        "operationId": "stopIndividualLiveScoringSession",
+        "summary": "Stop individual live scoring",
+        "tags": [
+          "Individual Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Session stopped successfully"
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active session found",
             "content": {
               "application/json": {
                 "schema": {

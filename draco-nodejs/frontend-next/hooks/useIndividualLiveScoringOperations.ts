@@ -1,28 +1,22 @@
 import { useCallback, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useApiClient } from './useApiClient';
+import {
+  getIndividualLiveSessionStatus,
+  getIndividualLiveScoringState,
+  startIndividualLiveScoringSession,
+  submitIndividualLiveHoleScore,
+  advanceIndividualLiveHole,
+  finalizeIndividualLiveScoringSession,
+  stopIndividualLiveScoringSession,
+} from '@draco/shared-api-client';
 import type {
+  IndividualLiveSessionStatus,
   IndividualLiveScoringState,
   IndividualLiveHoleScore,
-} from '../context/IndividualLiveScoringContext';
-
-export interface IndividualLiveSessionStatus {
-  hasActiveSession: boolean;
-  sessionId?: string;
-  viewerCount?: number;
-}
-
-export interface StartIndividualLiveScoring {
-  courseId: string;
-  teeId: string;
-  datePlayed: string;
-  startingHole?: number;
-  holesPlayed?: 9 | 18;
-}
-
-export interface SubmitIndividualLiveHoleScore {
-  holeNumber: number;
-  score: number;
-}
+  StartIndividualLiveScoring,
+  SubmitIndividualLiveHoleScore,
+} from '@draco/shared-api-client';
+import { unwrapApiResult } from '../utils/apiResult';
 
 export interface UseIndividualLiveScoringOperationsReturn {
   isLoading: boolean;
@@ -44,48 +38,9 @@ export interface UseIndividualLiveScoringOperationsReturn {
 }
 
 export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOperationsReturn {
-  const { token } = useAuth();
+  const apiClient = useApiClient();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const getApiUrl = useCallback(() => {
-    return process.env.NEXT_PUBLIC_API_URL || '';
-  }, []);
-
-  const makeRequest = useCallback(
-    async <T>(
-      url: string,
-      options: RequestInit = {},
-    ): Promise<{ data: T | null; error: string | null }> => {
-      if (!token) {
-        return { data: null, error: 'Authentication required' };
-      }
-
-      try {
-        const response = await fetch(url, {
-          ...options,
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            ...options.headers,
-          },
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          const errorMessage = errorData?.error || errorData?.message || `Request failed`;
-          return { data: null, error: errorMessage };
-        }
-
-        const data = await response.json();
-        return { data, error: null };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Request failed';
-        return { data: null, error: message };
-      }
-    },
-    [token],
-  );
 
   const clearError = useCallback(() => {
     setError(null);
@@ -96,17 +51,22 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
       setIsLoading(true);
       setError(null);
 
-      const url = `${getApiUrl()}/api/accounts/${accountId}/golfer/live/status`;
-      const { data, error: requestError } = await makeRequest<IndividualLiveSessionStatus>(url);
+      try {
+        const result = await getIndividualLiveSessionStatus({
+          client: apiClient,
+          path: { accountId },
+        });
 
-      setIsLoading(false);
-      if (requestError) {
-        setError(requestError);
+        return unwrapApiResult(result, 'Failed to check session status');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to check session status';
+        setError(message);
         return null;
+      } finally {
+        setIsLoading(false);
       }
-      return data;
     },
-    [getApiUrl, makeRequest],
+    [apiClient],
   );
 
   const getSessionState = useCallback(
@@ -114,17 +74,22 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
       setIsLoading(true);
       setError(null);
 
-      const url = `${getApiUrl()}/api/accounts/${accountId}/golfer/live`;
-      const { data, error: requestError } = await makeRequest<IndividualLiveScoringState>(url);
+      try {
+        const result = await getIndividualLiveScoringState({
+          client: apiClient,
+          path: { accountId },
+        });
 
-      setIsLoading(false);
-      if (requestError) {
-        setError(requestError);
+        return unwrapApiResult(result, 'Failed to get session state');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to get session state';
+        setError(message);
         return null;
+      } finally {
+        setIsLoading(false);
       }
-      return data;
     },
-    [getApiUrl, makeRequest],
+    [apiClient],
   );
 
   const startSession = useCallback(
@@ -135,20 +100,23 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
       setIsLoading(true);
       setError(null);
 
-      const url = `${getApiUrl()}/api/accounts/${accountId}/golfer/live/start`;
-      const { data, error: requestError } = await makeRequest<IndividualLiveScoringState>(url, {
-        method: 'POST',
-        body: JSON.stringify(options),
-      });
+      try {
+        const result = await startIndividualLiveScoringSession({
+          client: apiClient,
+          path: { accountId },
+          body: options,
+        });
 
-      setIsLoading(false);
-      if (requestError) {
-        setError(requestError);
+        return unwrapApiResult(result, 'Failed to start live scoring');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to start live scoring';
+        setError(message);
         return null;
+      } finally {
+        setIsLoading(false);
       }
-      return data;
     },
-    [getApiUrl, makeRequest],
+    [apiClient],
   );
 
   const submitScore = useCallback(
@@ -159,42 +127,47 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
       setIsLoading(true);
       setError(null);
 
-      const url = `${getApiUrl()}/api/accounts/${accountId}/golfer/live/scores`;
-      const { data: responseData, error: requestError } =
-        await makeRequest<IndividualLiveHoleScore>(url, {
-          method: 'POST',
-          body: JSON.stringify(data),
+      try {
+        const result = await submitIndividualLiveHoleScore({
+          client: apiClient,
+          path: { accountId },
+          body: data,
         });
 
-      setIsLoading(false);
-      if (requestError) {
-        setError(requestError);
+        return unwrapApiResult(result, 'Failed to submit score');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to submit score';
+        setError(message);
         return null;
+      } finally {
+        setIsLoading(false);
       }
-      return responseData;
     },
-    [getApiUrl, makeRequest],
+    [apiClient],
   );
 
-  const advanceHole = useCallback(
+  const advanceHoleOp = useCallback(
     async (accountId: string, holeNumber: number): Promise<boolean> => {
       setIsLoading(true);
       setError(null);
 
-      const url = `${getApiUrl()}/api/accounts/${accountId}/golfer/live/advance`;
-      const { error: requestError } = await makeRequest<{ success: boolean }>(url, {
-        method: 'POST',
-        body: JSON.stringify({ holeNumber }),
-      });
+      try {
+        await advanceIndividualLiveHole({
+          client: apiClient,
+          path: { accountId },
+          body: { holeNumber },
+        });
 
-      setIsLoading(false);
-      if (requestError) {
-        setError(requestError);
+        return true;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to advance hole';
+        setError(message);
         return false;
+      } finally {
+        setIsLoading(false);
       }
-      return true;
     },
-    [getApiUrl, makeRequest],
+    [apiClient],
   );
 
   const finalizeSession = useCallback(
@@ -202,20 +175,22 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
       setIsLoading(true);
       setError(null);
 
-      const url = `${getApiUrl()}/api/accounts/${accountId}/golfer/live/finalize`;
-      const { error: requestError } = await makeRequest<{ success: boolean }>(url, {
-        method: 'POST',
-        body: JSON.stringify({}),
-      });
+      try {
+        await finalizeIndividualLiveScoringSession({
+          client: apiClient,
+          path: { accountId },
+        });
 
-      setIsLoading(false);
-      if (requestError) {
-        setError(requestError);
+        return true;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to finalize session';
+        setError(message);
         return false;
+      } finally {
+        setIsLoading(false);
       }
-      return true;
     },
-    [getApiUrl, makeRequest],
+    [apiClient],
   );
 
   const stopSession = useCallback(
@@ -223,20 +198,22 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
       setIsLoading(true);
       setError(null);
 
-      const url = `${getApiUrl()}/api/accounts/${accountId}/golfer/live/stop`;
-      const { error: requestError } = await makeRequest<{ success: boolean }>(url, {
-        method: 'POST',
-        body: JSON.stringify({}),
-      });
+      try {
+        await stopIndividualLiveScoringSession({
+          client: apiClient,
+          path: { accountId },
+        });
 
-      setIsLoading(false);
-      if (requestError) {
-        setError(requestError);
+        return true;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to stop session';
+        setError(message);
         return false;
+      } finally {
+        setIsLoading(false);
       }
-      return true;
     },
-    [getApiUrl, makeRequest],
+    [apiClient],
   );
 
   return {
@@ -246,7 +223,7 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
     getSessionState,
     startSession,
     submitScore,
-    advanceHole,
+    advanceHole: advanceHoleOp,
     finalizeSession,
     stopSession,
     clearError,

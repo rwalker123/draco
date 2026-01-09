@@ -327,14 +327,9 @@ export class IndividualLiveScoringService {
   }
 
   private async getOrCreateGolferForAccount(accountId: bigint): Promise<{ id: bigint }> {
-    const account = await this.accountRepository.findById(accountId);
-    if (!account || !account.owneruserid) {
-      throw new NotFoundError('Account not found or has no owner');
-    }
-
-    const contact = await this.contactRepository.findByUserId(account.owneruserid, accountId);
+    const contact = await this.contactRepository.findAccountOwner(accountId);
     if (!contact) {
-      throw new NotFoundError('Owner contact not found');
+      throw new NotFoundError('Owner contact not found for account');
     }
 
     let golfer = await this.golferRepository.findByContactId(contact.id);
