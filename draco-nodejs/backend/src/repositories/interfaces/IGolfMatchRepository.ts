@@ -68,6 +68,8 @@ export interface IGolfMatchRepository {
   update(matchId: bigint, data: UpdateGolfMatchData): Promise<golfmatch>;
   delete(matchId: bigint): Promise<golfmatch>;
   updateStatus(matchId: bigint, status: number): Promise<golfmatch>;
+
+  updateTee(matchId: bigint, teeId: bigint): Promise<void>;
   hasScores(matchId: bigint): Promise<boolean>;
   seasonHasLeagueSeasons(seasonId: bigint): Promise<boolean>;
   updatePoints(

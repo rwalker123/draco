@@ -28,6 +28,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import type { GameDialogProps } from '../types/sportAdapter';
 import { useGolfMatchOperations } from '../hooks/useGolfMatchOperations';
 import { listGolfCourseTees } from '@draco/shared-api-client';
+import { GameStatus } from '@/types/schedule';
 import type { GolfCourseTee } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 
@@ -63,6 +64,30 @@ const GolfMatchDialog: React.FC<GameDialogProps> = (props) => {
 
   if (props.mode === 'edit' && !props.selectedGame) {
     return null;
+  }
+
+  // Check if trying to edit a completed match
+  if (props.mode === 'edit' && props.selectedGame?.gameStatus === GameStatus.Completed) {
+    return (
+      <Dialog open onClose={props.onClose} maxWidth="sm" fullWidth>
+        <Box sx={{ p: 3, pb: 1 }}>
+          <Typography variant="h5" component="h2" gutterBottom>
+            Edit Match
+          </Typography>
+        </Box>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            This match has been completed and cannot be edited. To make changes, clear the scores
+            first from the score entry dialog.
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={props.onClose} variant="contained">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
   }
 
   // Create a key that changes when we need to remount with fresh form state

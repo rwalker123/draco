@@ -343,6 +343,41 @@ describe('GolfIndividualScoringService', () => {
       expect(result.team1NetScore).toBe(36);
       expect(result.team2NetScore).toBe(36);
     });
+
+    it('calculates net as gross minus individual course handicap when both players have handicaps', () => {
+      const team1Score = {
+        golferId: 1n,
+        holeScores: [4, 4, 4, 4, 4, 4, 4, 4, 4],
+        totalScore: 36,
+        courseHandicap: 9,
+        gender: 'M' as const,
+      };
+      const team2Score = {
+        golferId: 2n,
+        holeScores: [4, 4, 4, 4, 4, 4, 4, 4, 4],
+        totalScore: 36,
+        courseHandicap: 17,
+        gender: 'M' as const,
+      };
+      const scoringConfig = {
+        perHolePoints: 1,
+        perNinePoints: 0,
+        perMatchPoints: 2,
+        useHandicapScoring: true,
+      };
+
+      const result = service.calculateIndividualMatchPoints(
+        team1Score,
+        team2Score,
+        defaultHoleHandicapIndexes,
+        defaultHolePars,
+        scoringConfig,
+        9,
+      );
+
+      expect(result.team1NetScore).toBe(27);
+      expect(result.team2NetScore).toBe(19);
+    });
   });
 
   describe('calculateAbsentPairingPoints', () => {

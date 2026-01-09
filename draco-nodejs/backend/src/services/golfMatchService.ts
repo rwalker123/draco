@@ -10,6 +10,7 @@ import { IGolfTeamRepository } from '../repositories/interfaces/IGolfTeamReposit
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { GolfMatchResponseFormatter } from '../responseFormatters/golfMatchResponseFormatter.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
+import { GolfMatchStatus } from '../utils/golfConstants.js';
 
 export class GolfMatchService {
   private readonly matchRepository: IGolfMatchRepository;
@@ -164,6 +165,23 @@ export class GolfMatchService {
     const match = await this.matchRepository.findById(matchId);
     if (!match) {
       throw new NotFoundError('Golf match not found');
+    }
+
+    if (match.matchstatus === GolfMatchStatus.COMPLETED) {
+      const hasDefinitionChanges =
+        data.team1Id !== undefined ||
+        data.team2Id !== undefined ||
+        data.matchDateTime !== undefined ||
+        data.courseId !== undefined ||
+        data.teeId !== undefined ||
+        data.matchType !== undefined ||
+        data.comment !== undefined;
+
+      if (hasDefinitionChanges) {
+        throw new ValidationError(
+          'Cannot edit a completed match. Clear the scores first to make changes.',
+        );
+      }
     }
 
     const updateData: Parameters<IGolfMatchRepository['update']>[1] = {};

@@ -148,11 +148,16 @@ export class GolfIndividualScoringService {
 
     const team1NetScores: number[] = [];
     const team2NetScores: number[] = [];
+    let team1AdjustedGross = 0;
+    let team2AdjustedGross = 0;
 
     for (let hole = 0; hole < holesPlayed; hole++) {
       const t1Gross = team1Score.holeScores[hole] || 0;
       const t2Gross = team2Score.holeScores[hole] || 0;
       const par = holePars[hole] || 4;
+
+      team1AdjustedGross += t1Gross === 0 ? par : t1Gross;
+      team2AdjustedGross += t2Gross === 0 ? par : t2Gross;
 
       const t1Net = t1Gross === 0 ? par : t1Gross - team1Strokes[hole];
       const t2Net = t2Gross === 0 ? par : t2Gross - team2Strokes[hole];
@@ -228,8 +233,8 @@ export class GolfIndividualScoringService {
       team2NineWins,
       team1MatchWins,
       team2MatchWins,
-      team1NetScore: team1Total,
-      team2NetScore: team2Total,
+      team1NetScore: team1AdjustedGross - team1Score.courseHandicap,
+      team2NetScore: team2AdjustedGross - team2Score.courseHandicap,
     };
   }
 

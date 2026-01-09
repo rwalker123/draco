@@ -109,6 +109,7 @@ describe('GolfScoreService', () => {
       findByIdWithScores: vi.fn(),
       updateStatus: vi.fn(),
       updatePoints: vi.fn(),
+      updateTee: vi.fn(),
     };
     mockRosterRepository = {
       findByIds: vi.fn(),

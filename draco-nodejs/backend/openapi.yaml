@@ -20702,7 +20702,6 @@ components:
           example: "12345"
         matchType:
           type: integer
-          default: 0
         comment:
           type: string
           maxLength: 255

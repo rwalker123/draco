@@ -27456,8 +27456,7 @@
             "example": "12345"
           },
           "matchType": {
-            "type": "integer",
-            "default": 0
+            "type": "integer"
           },
           "comment": {
             "type": "string",
