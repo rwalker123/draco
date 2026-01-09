@@ -9,6 +9,7 @@ import {
   MatchScoreSubmission,
   SubmitMatchScoresResult,
 } from '../interfaces/IGolfScoreRepository.js';
+import { GolfMatchStatus } from '../../utils/golfConstants.js';
 
 const scoreWithDetailsInclude = {
   golfer: {
@@ -38,7 +39,39 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
 
   async findByGolferId(golferId: bigint, limit = 20): Promise<GolfScoreWithDetails[]> {
     return this.prisma.golfscore.findMany({
-      where: { golferid: golferId },
+      where: {
+        golferid: golferId,
+        golfmatchscores: {
+          some: {
+            golfmatch: {
+              matchstatus: GolfMatchStatus.COMPLETED,
+            },
+          },
+        },
+      },
+      include: scoreWithDetailsInclude,
+      orderBy: { dateplayed: 'desc' },
+      take: limit,
+    });
+  }
+
+  async findByGolferIdBeforeDate(
+    golferId: bigint,
+    beforeDate: Date,
+    limit = 20,
+  ): Promise<GolfScoreWithDetails[]> {
+    return this.prisma.golfscore.findMany({
+      where: {
+        golferid: golferId,
+        dateplayed: { lt: beforeDate },
+        golfmatchscores: {
+          some: {
+            golfmatch: {
+              matchstatus: GolfMatchStatus.COMPLETED,
+            },
+          },
+        },
+      },
       include: scoreWithDetailsInclude,
       orderBy: { dateplayed: 'desc' },
       take: limit,
@@ -174,6 +207,7 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
         golfmatchscores: {
           some: {
             golfmatch: {
+              matchstatus: GolfMatchStatus.COMPLETED,
               leagueseason: {
                 seasonid: seasonId,
               },
@@ -230,7 +264,15 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
         const existing = existingByGolfer.get(golferKey);
 
         if (existing) {
-          // Update score data but preserve startindex/startindex9 (set only on creation)
+          // Check if existing score has NULL startindex - if so, backfill it
+          const existingScore = await tx.golfscore.findUnique({
+            where: { id: existing.scoreid },
+            select: { startindex: true },
+          });
+
+          const shouldBackfillStartindex =
+            existingScore?.startindex === null && submission.scoreData.startindex !== null;
+
           await tx.golfscore.update({
             where: { id: existing.scoreid },
             data: {
@@ -258,6 +300,11 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
               holescrore16: submission.scoreData.holescrore16,
               holescrore17: submission.scoreData.holescrore17,
               holescrore18: submission.scoreData.holescrore18,
+              // Backfill startindex only if existing was NULL
+              ...(shouldBackfillStartindex && {
+                startindex: submission.scoreData.startindex,
+                startindex9: submission.scoreData.startindex9,
+              }),
             },
           });
 

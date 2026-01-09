@@ -202,7 +202,6 @@ export class GolferService {
       holescrore16: holeScores[15] ?? 0,
       holescrore17: holeScores[16] ?? 0,
       holescrore18: holeScores[17] ?? 0,
-      startindex: scoreData.startIndex ?? null,
     };
 
     const createdScore = await this.golfScoreRepository.create(createData);

@@ -335,24 +335,8 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     scoreService,
   ]);
 
-  const handicapIndexMap = useMemo(() => {
-    const map: Record<string, number | null> = {};
-    if (courseHandicapData?.players) {
-      for (const player of courseHandicapData.players) {
-        map[player.golferId] = player.handicapIndex;
-      }
-    }
-    return map;
-  }, [courseHandicapData]);
-
   const buildPlayerScores = useCallback(
-    (
-      scores: Record<string, PlayerScoreData>,
-      teamSeasonId: string,
-      roster: GolfRosterEntryType[],
-    ): PlayerMatchScoreType[] => {
-      const rosterMap = new Map(roster.map((r) => [r.id, r.golferId]));
-
+    (scores: Record<string, PlayerScoreData>, teamSeasonId: string): PlayerMatchScoreType[] => {
       return Object.values(scores)
         .filter((score) => !score.isAbsent || score.substituteGolferId)
         .map((score) => {
@@ -365,9 +349,6 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
           };
 
           if (score.totalScore > 0) {
-            const golferId = rosterMap.get(score.rosterId);
-            const handicapIndex = golferId ? handicapIndexMap[golferId] : null;
-
             playerScore.score = {
               courseId: selectedGame?.fieldId || '',
               teeId: selectedTeeId,
@@ -376,15 +357,13 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
               totalsOnly: score.totalsOnly || showHoleByHole === false,
               totalScore: score.totalScore,
               holeScores: score.totalsOnly ? undefined : score.holeScores.filter((s) => s > 0),
-              startIndex: numberOfHoles === 18 ? handicapIndex : undefined,
-              startIndex9: numberOfHoles === 9 ? handicapIndex : undefined,
             };
           }
 
           return playerScore;
         });
     },
-    [selectedGame, selectedTeeId, numberOfHoles, showHoleByHole, handicapIndexMap],
+    [selectedGame, selectedTeeId, numberOfHoles, showHoleByHole],
   );
 
   const handleSave = async () => {
@@ -394,16 +373,8 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     setError(null);
 
     try {
-      const team1PlayerScores = buildPlayerScores(
-        team1Scores,
-        selectedGame.homeTeamId,
-        team1Roster,
-      );
-      const team2PlayerScores = buildPlayerScores(
-        team2Scores,
-        selectedGame.visitorTeamId,
-        team2Roster,
-      );
+      const team1PlayerScores = buildPlayerScores(team1Scores, selectedGame.homeTeamId);
+      const team2PlayerScores = buildPlayerScores(team2Scores, selectedGame.visitorTeamId);
 
       const allScores = [...team1PlayerScores, ...team2PlayerScores];
 

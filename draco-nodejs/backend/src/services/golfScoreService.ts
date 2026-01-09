@@ -131,6 +131,7 @@ export class GolfScoreService {
     const rosterEntries = await this.rosterRepository.findByIds(rosterIds);
     const rosterMap = new Map(rosterEntries.map((r) => [r.id, r]));
 
+    const handicapService = ServiceFactory.getGolfHandicapService();
     const submissions: MatchScoreSubmission[] = [];
 
     for (const [teamId, teamScores] of scoresByTeam) {
@@ -156,6 +157,15 @@ export class GolfScoreService {
 
         const totalScore =
           scoreData.totalScore ?? holeScores.reduce((sum: number, s: number) => sum + s, 0);
+
+        let startIndex = await handicapService.calculateHandicapIndexAsOf(
+          rosterEntry.golferid,
+          match.matchdate,
+        );
+        if (startIndex === null) {
+          startIndex = rosterEntry.golfer.initialdifferential ?? null;
+        }
+        const startIndex9 = startIndex !== null ? startIndex / 2 : null;
 
         submissions.push({
           teamId,
@@ -186,8 +196,8 @@ export class GolfScoreService {
             holescrore16: holeScores[15] ?? 0,
             holescrore17: holeScores[16] ?? 0,
             holescrore18: holeScores[17] ?? 0,
-            startindex: scoreData.startIndex ?? null,
-            startindex9: scoreData.startIndex9 ?? null,
+            startindex: startIndex,
+            startindex9: startIndex9,
           },
         });
       }
