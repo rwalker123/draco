@@ -235,7 +235,10 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     submissions: MatchScoreSubmission[],
   ): Promise<SubmitMatchScoresResult> {
     return this.prisma.$transaction(async (tx) => {
-      const existingByGolfer = new Map<string, { scoreid: bigint; teamid: bigint }>();
+      const existingByGolfer = new Map<
+        string,
+        { scoreid: bigint; teamid: bigint; startindex: number | null }
+      >();
 
       for (const teamId of teamIds) {
         const existingMatchScores = await tx.golfmatchscores.findMany({
@@ -243,13 +246,21 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
             matchid: matchId,
             teamid: teamId,
           },
-          select: { golferid: true, scoreid: true, teamid: true },
+          select: {
+            golferid: true,
+            scoreid: true,
+            teamid: true,
+            golfscore: {
+              select: { startindex: true },
+            },
+          },
         });
 
         for (const ms of existingMatchScores) {
           existingByGolfer.set(ms.golferid.toString(), {
             scoreid: ms.scoreid,
             teamid: ms.teamid,
+            startindex: ms.golfscore.startindex,
           });
         }
       }
@@ -264,14 +275,8 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
         const existing = existingByGolfer.get(golferKey);
 
         if (existing) {
-          // Check if existing score has NULL startindex - if so, backfill it
-          const existingScore = await tx.golfscore.findUnique({
-            where: { id: existing.scoreid },
-            select: { startindex: true },
-          });
-
           const shouldBackfillStartindex =
-            existingScore?.startindex === null && submission.scoreData.startindex !== null;
+            existing.startindex === null && submission.scoreData.startindex !== null;
 
           await tx.golfscore.update({
             where: { id: existing.scoreid },
@@ -300,7 +305,6 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
               holescrore16: submission.scoreData.holescrore16,
               holescrore17: submission.scoreData.holescrore17,
               holescrore18: submission.scoreData.holescrore18,
-              // Backfill startindex only if existing was NULL
               ...(shouldBackfillStartindex && {
                 startindex: submission.scoreData.startindex,
                 startindex9: submission.scoreData.startindex9,
