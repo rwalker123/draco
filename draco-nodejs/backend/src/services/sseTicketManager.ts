@@ -5,6 +5,7 @@ interface SseTicket {
   userId: string;
   matchId: bigint;
   accountId: bigint;
+  gameId?: bigint;
   createdAt: Date;
   expiresAt: Date;
   used: boolean;
@@ -127,6 +128,64 @@ class SseTicketManager {
     return {
       valid: true,
       userId: ticketData.userId,
+    };
+  }
+
+  createGameTicket(
+    userId: string,
+    gameId: bigint,
+    accountId: bigint,
+  ): { ticket: string; expiresIn: number } {
+    const ticket = crypto.randomBytes(32).toString('hex');
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + TICKET_EXPIRY_MS);
+
+    this.tickets.set(ticket, {
+      ticket,
+      userId,
+      matchId: BigInt(0),
+      accountId,
+      gameId,
+      createdAt: now,
+      expiresAt,
+      used: false,
+    });
+
+    return {
+      ticket,
+      expiresIn: TICKET_EXPIRY_MS / 1000,
+    };
+  }
+
+  validateGameTicket(
+    ticket: string,
+    gameId: bigint,
+  ): { valid: true; userId: string; accountId: bigint } | { valid: false; reason: string } {
+    const ticketData = this.tickets.get(ticket);
+
+    if (!ticketData) {
+      return { valid: false, reason: 'Ticket not found' };
+    }
+
+    if (ticketData.used) {
+      return { valid: false, reason: 'Ticket already used' };
+    }
+
+    if (new Date() > ticketData.expiresAt) {
+      this.tickets.delete(ticket);
+      return { valid: false, reason: 'Ticket expired' };
+    }
+
+    if (ticketData.gameId !== gameId) {
+      return { valid: false, reason: 'Ticket not valid for this game' };
+    }
+
+    ticketData.used = true;
+
+    return {
+      valid: true,
+      userId: ticketData.userId,
+      accountId: ticketData.accountId,
     };
   }
 

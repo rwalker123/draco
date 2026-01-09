@@ -12,6 +12,10 @@ interface TodayScoreboardProps {
   layout?: 'vertical' | 'horizontal';
   currentSeasonId: string;
   onGamesLoaded?: (games: Game[]) => void;
+  liveSessionGameIds?: Set<string>;
+  canStartLiveScoring?: (game: Game) => boolean;
+  onStartLiveScoring?: (game: Game) => void;
+  onWatchLiveScoring?: (game: Game) => void;
 }
 
 const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
@@ -20,6 +24,10 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
   layout = 'vertical',
   currentSeasonId,
   onGamesLoaded,
+  liveSessionGameIds,
+  canStartLiveScoring,
+  onStartLiveScoring,
+  onWatchLiveScoring,
 }) => {
   const apiClient = useApiClient();
   const loadTodayGames = React.useCallback(async () => {
@@ -76,6 +84,10 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
       title="Today"
       loadGames={loadTodayGames}
       renderWrapper={renderWrapper}
+      liveSessionGameIds={liveSessionGameIds}
+      canStartLiveScoring={canStartLiveScoring}
+      onStartLiveScoring={onStartLiveScoring}
+      onWatchLiveScoring={onWatchLiveScoring}
     />
   );
 };

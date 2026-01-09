@@ -67,3 +67,4 @@ export * from './IGolfScoreRepository.js';
 export * from './IGolferRepository.js';
 export * from './ILiveScoringRepository.js';
 export * from './IIndividualLiveScoringRepository.js';
+export * from './IBaseballLiveScoringRepository.js';

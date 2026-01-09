@@ -69,6 +69,7 @@ import {
   IGolferRepository,
   ILiveScoringRepository,
   IIndividualLiveScoringRepository,
+  IBaseballLiveScoringRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -139,6 +140,7 @@ import {
   PrismaGolferRepository,
   PrismaLiveScoringRepository,
   PrismaIndividualLiveScoringRepository,
+  PrismaBaseballLiveScoringRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -216,6 +218,7 @@ export class RepositoryFactory {
   private static golferRepository: IGolferRepository;
   private static liveScoringRepository: ILiveScoringRepository;
   private static individualLiveScoringRepository: IIndividualLiveScoringRepository;
+  private static baseballLiveScoringRepository: IBaseballLiveScoringRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -721,5 +724,12 @@ export class RepositoryFactory {
       this.individualLiveScoringRepository = new PrismaIndividualLiveScoringRepository(prisma);
     }
     return this.individualLiveScoringRepository;
+  }
+
+  static getBaseballLiveScoringRepository(): IBaseballLiveScoringRepository {
+    if (!this.baseballLiveScoringRepository) {
+      this.baseballLiveScoringRepository = new PrismaBaseballLiveScoringRepository(prisma);
+    }
+    return this.baseballLiveScoringRepository;
   }
 }

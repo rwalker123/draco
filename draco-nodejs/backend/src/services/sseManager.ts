@@ -6,6 +6,7 @@ interface SSEClient {
   userId: string;
   matchId?: bigint;
   accountId?: bigint;
+  gameId?: bigint;
   lastPing: number;
 }
 
@@ -17,6 +18,7 @@ export class SSEManager {
   private clients: Map<string, SSEClient> = new Map();
   private matchSubscriptions: Map<string, Set<string>> = new Map(); // matchId -> clientIds
   private accountSubscriptions: Map<string, Set<string>> = new Map(); // accountId -> clientIds
+  private gameSubscriptions: Map<string, Set<string>> = new Map(); // gameId -> clientIds (baseball)
   private pingInterval: NodeJS.Timeout | null = null;
   private readonly PING_INTERVAL_MS = 30000; // 30 seconds (Railway has 60s timeout)
   private readonly STALE_THRESHOLD_MS = 120000; // 2 minutes
@@ -94,6 +96,19 @@ export class SSEManager {
 
         if (remainingClients > 0) {
           this.broadcastAccountViewerCount(client.accountId);
+        }
+      } else if (client.gameId) {
+        const gameKey = client.gameId.toString();
+        this.gameSubscriptions.get(gameKey)?.delete(clientId);
+        const remainingClients = this.gameSubscriptions.get(gameKey)?.size ?? 0;
+        if (remainingClients === 0) {
+          this.gameSubscriptions.delete(gameKey);
+        }
+        this.clients.delete(clientId);
+        console.log(`📡 SSE client ${clientId} disconnected. Total clients: ${this.clients.size}`);
+
+        if (remainingClients > 0) {
+          this.broadcastGameViewerCount(client.gameId);
         }
       } else {
         this.clients.delete(clientId);
@@ -180,6 +195,64 @@ export class SSEManager {
    */
   getAccountViewerCount(accountId: bigint): number {
     return this.accountSubscriptions.get(accountId.toString())?.size ?? 0;
+  }
+
+  /**
+   * Adds a new SSE client connection for a specific game (baseball live scoring).
+   */
+  addGameClient(clientId: string, res: Response, userId: string, gameId: bigint): void {
+    const client: SSEClient = {
+      id: clientId,
+      res,
+      userId,
+      gameId,
+      lastPing: Date.now(),
+    };
+
+    this.clients.set(clientId, client);
+
+    const gameKey = gameId.toString();
+    if (!this.gameSubscriptions.has(gameKey)) {
+      this.gameSubscriptions.set(gameKey, new Set());
+    }
+    this.gameSubscriptions.get(gameKey)!.add(clientId);
+
+    console.log(
+      `📡 SSE client ${clientId} connected to game ${gameKey}. Total clients: ${this.clients.size}`,
+    );
+
+    this.sendEvent(clientId, 'connected', { clientId, gameId: gameKey });
+
+    this.broadcastGameViewerCount(gameId);
+  }
+
+  /**
+   * Broadcasts the current viewer count to all clients watching a game.
+   */
+  broadcastGameViewerCount(gameId: bigint): void {
+    const viewerCount = this.getGameViewerCount(gameId);
+    this.broadcastToGame(gameId, 'viewer_count', { viewerCount });
+  }
+
+  /**
+   * Broadcasts an event to all clients subscribed to a specific game.
+   */
+  broadcastToGame(gameId: bigint, event: string, data: unknown): void {
+    const gameKey = gameId.toString();
+    const clientIds = this.gameSubscriptions.get(gameKey);
+
+    if (clientIds) {
+      for (const clientId of clientIds) {
+        this.sendEvent(clientId, event, data);
+      }
+    }
+  }
+
+  /**
+   * Gets the number of viewers for a specific game.
+   */
+  getGameViewerCount(gameId: bigint): number {
+    return this.gameSubscriptions.get(gameId.toString())?.size ?? 0;
   }
 
   /**
@@ -293,6 +366,7 @@ export class SSEManager {
     this.clients.clear();
     this.matchSubscriptions.clear();
     this.accountSubscriptions.clear();
+    this.gameSubscriptions.clear();
     console.log('📡 SSE Manager shutdown complete');
   }
 }

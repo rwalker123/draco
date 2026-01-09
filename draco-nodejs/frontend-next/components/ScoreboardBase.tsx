@@ -27,6 +27,10 @@ interface ScoreboardBaseProps {
     state: 'loading' | 'error' | 'empty' | 'content',
     context: { title: string },
   ) => React.ReactNode;
+  liveSessionGameIds?: Set<string>;
+  canStartLiveScoring?: (game: Game) => boolean;
+  onStartLiveScoring?: (game: Game) => void;
+  onWatchLiveScoring?: (game: Game) => void;
 }
 
 const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
@@ -38,6 +42,10 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
   title,
   loadGames,
   renderWrapper,
+  liveSessionGameIds,
+  canStartLiveScoring,
+  onStartLiveScoring,
+  onWatchLiveScoring,
 }) => {
   const [games, setGames] = React.useState<Game[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -313,6 +321,10 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
         onViewRecap={handleOpenViewRecap}
         layout={layout}
         timeZone={timeZone}
+        liveSessionGameIds={liveSessionGameIds}
+        canStartLiveScoring={canStartLiveScoring}
+        onStartLiveScoring={onStartLiveScoring}
+        onWatchLiveScoring={onWatchLiveScoring}
       />
       {canEditGames && (
         <EnterGameResultsDialog

@@ -33,6 +33,10 @@ export interface GameListDisplayProps {
   layout?: 'vertical' | 'horizontal';
   timeZone?: string;
   accent?: WidgetAccent | 'none';
+  liveSessionGameIds?: Set<string>;
+  canStartLiveScoring?: (game: Game) => boolean;
+  onStartLiveScoring?: (game: Game) => void;
+  onWatchLiveScoring?: (game: Game) => void;
 }
 
 const GameListDisplay: React.FC<GameListDisplayProps> = ({
@@ -46,6 +50,10 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   layout = 'vertical',
   timeZone = DEFAULT_TIMEZONE,
   accent = 'warning',
+  liveSessionGameIds,
+  canStartLiveScoring,
+  onStartLiveScoring,
+  onWatchLiveScoring,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -208,6 +216,10 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                           onViewRecap={onViewRecap}
                           fitContent={true}
                           timeZone={timeZone}
+                          hasLiveSession={liveSessionGameIds?.has(game.id)}
+                          canStartLiveScoring={canStartLiveScoring?.(game)}
+                          onStartLiveScoring={onStartLiveScoring}
+                          onWatchLiveScoring={onWatchLiveScoring}
                         />
                       ))
                     : section.games.map((game, index) => (
@@ -221,6 +233,10 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                             onEditRecap={onEditRecap}
                             onViewRecap={onViewRecap}
                             timeZone={timeZone}
+                            hasLiveSession={liveSessionGameIds?.has(game.id)}
+                            canStartLiveScoring={canStartLiveScoring?.(game)}
+                            onStartLiveScoring={onStartLiveScoring}
+                            onWatchLiveScoring={onWatchLiveScoring}
                           />
                         </Box>
                       ))}

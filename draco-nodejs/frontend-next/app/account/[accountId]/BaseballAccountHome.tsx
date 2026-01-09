@@ -50,6 +50,10 @@ import SpecialAnnouncementsWidget, {
 } from '@/components/announcements/SpecialAnnouncementsWidget';
 import InformationWidget from '@/components/information/InformationWidget';
 import AccountOptional from '@/components/account/AccountOptional';
+import { useBaseballLiveScoringOperations } from '@/hooks/useBaseballLiveScoringOperations';
+import BaseballLiveScoringDialog from '@/components/baseball/live-scoring/BaseballLiveScoringDialog';
+import BaseballLiveWatchDialog from '@/components/baseball/live-scoring/BaseballLiveWatchDialog';
+import type { Game } from '@/components/GameListDisplay';
 
 interface TeamAnnouncementSection {
   teamId: string;
@@ -75,8 +79,17 @@ const BaseballAccountHome: React.FC = () => {
   const [teamAnnouncements, setTeamAnnouncements] = useState<TeamAnnouncementSection[]>([]);
   const [teamAnnouncementsLoading, setTeamAnnouncementsLoading] = useState(false);
   const [teamAnnouncementsError, setTeamAnnouncementsError] = useState<string | null>(null);
+  const [liveSessionGameIds, setLiveSessionGameIds] = useState<Set<string>>(new Set());
+  const [liveScoringDialog, setLiveScoringDialog] = useState<{
+    open: boolean;
+    game: Game | null;
+  }>({ open: false, game: null });
+  const [liveWatchDialog, setLiveWatchDialog] = useState<{
+    open: boolean;
+    game: Game | null;
+  }>({ open: false, game: null });
   const { user, token } = useAuth();
-  const { hasRole, hasRoleInAccount } = useRole();
+  const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
   const router = useRouter();
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
@@ -95,6 +108,59 @@ const BaseballAccountHome: React.FC = () => {
   const canSubmitPhotos = Boolean(isAccountMember);
   const showSubmissionPanel = Boolean(isAccountMember);
   const shouldShowJoinLeagueNearSponsors = Boolean(user && hasAccountContact);
+
+  const liveScoringOperations = useBaseballLiveScoringOperations();
+
+  const canStartLiveScoringForGame = useCallback(
+    (game: Game): boolean => {
+      if (!user || !accountIdStr) return false;
+      const isAdmin = hasRole('Administrator') || hasRoleInAccount('AccountAdmin', accountIdStr);
+      if (isAdmin) return true;
+      const canEditHome = hasRoleInTeam('TeamAdmin', game.homeTeamId);
+      const canEditVisitor = hasRoleInTeam('TeamAdmin', game.visitorTeamId);
+      return canEditHome || canEditVisitor;
+    },
+    [user, accountIdStr, hasRole, hasRoleInAccount, hasRoleInTeam],
+  );
+
+  const handleStartLiveScoring = useCallback((game: Game) => {
+    setLiveScoringDialog({ open: true, game });
+  }, []);
+
+  const handleWatchLiveScoring = useCallback(
+    (game: Game) => {
+      if (canStartLiveScoringForGame(game)) {
+        setLiveScoringDialog({ open: true, game });
+      } else {
+        setLiveWatchDialog({ open: true, game });
+      }
+    },
+    [canStartLiveScoringForGame],
+  );
+
+  const handleCloseLiveScoringDialog = useCallback(() => {
+    setLiveScoringDialog({ open: false, game: null });
+  }, []);
+
+  const handleCloseLiveWatchDialog = useCallback(() => {
+    setLiveWatchDialog({ open: false, game: null });
+  }, []);
+
+  useEffect(() => {
+    if (!accountIdStr) return;
+
+    const fetchActiveSessions = async () => {
+      const sessions = await liveScoringOperations.getActiveSessions();
+      if (sessions) {
+        const gameIds = new Set(sessions.map((s) => s.gameId));
+        setLiveSessionGameIds(gameIds);
+      }
+    };
+
+    fetchActiveSessions();
+    const interval = setInterval(fetchActiveSessions, 30000);
+    return () => clearInterval(interval);
+  }, [accountIdStr, liveScoringOperations]);
 
   const canModerateAccountPhotos = useMemo(() => {
     if (!accountIdStr) {
@@ -1038,6 +1104,10 @@ const BaseballAccountHome: React.FC = () => {
                 accountId={accountIdStr}
                 layout="vertical"
                 currentSeasonId={currentSeason.id}
+                liveSessionGameIds={liveSessionGameIds}
+                canStartLiveScoring={canStartLiveScoringForGame}
+                onStartLiveScoring={handleStartLiveScoring}
+                onWatchLiveScoring={handleWatchLiveScoring}
               />
             ) : null}
 
@@ -1091,6 +1161,28 @@ const BaseballAccountHome: React.FC = () => {
           </Box>
         </Box>
       </Container>
+
+      {liveScoringDialog.game && accountIdStr && (
+        <BaseballLiveScoringDialog
+          open={liveScoringDialog.open}
+          onClose={handleCloseLiveScoringDialog}
+          gameId={liveScoringDialog.game.id}
+          accountId={accountIdStr}
+          homeTeamName={liveScoringDialog.game.homeTeamName}
+          visitorTeamName={liveScoringDialog.game.visitorTeamName}
+        />
+      )}
+
+      {liveWatchDialog.game && accountIdStr && (
+        <BaseballLiveWatchDialog
+          open={liveWatchDialog.open}
+          onClose={handleCloseLiveWatchDialog}
+          gameId={liveWatchDialog.game.id}
+          accountId={accountIdStr}
+          homeTeamName={liveWatchDialog.game.homeTeamName}
+          visitorTeamName={liveWatchDialog.game.visitorTeamName}
+        />
+      )}
     </main>
   );
 };

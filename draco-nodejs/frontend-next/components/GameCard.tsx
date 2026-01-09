@@ -17,6 +17,8 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import FmdGoodOutlinedIcon from '@mui/icons-material/FmdGoodOutlined';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { getGameStatusShortText } from '../utils/gameUtils';
 import { formatDateInTimezone, formatGameTime } from '../utils/dateUtils';
 import { DEFAULT_TIMEZONE } from '../utils/timezones';
@@ -88,6 +90,10 @@ export interface GameCardProps {
    */
   fitContent?: boolean;
   timeZone?: string;
+  hasLiveSession?: boolean;
+  canStartLiveScoring?: boolean;
+  onStartLiveScoring?: (game: GameCardData) => void;
+  onWatchLiveScoring?: (game: GameCardData) => void;
 }
 
 const GameCard: React.FC<GameCardProps> = ({
@@ -105,6 +111,10 @@ const GameCard: React.FC<GameCardProps> = ({
   showDate = false,
   fitContent = false,
   timeZone = DEFAULT_TIMEZONE,
+  hasLiveSession = false,
+  canStartLiveScoring = false,
+  onStartLiveScoring,
+  onWatchLiveScoring,
 }) => {
   const leagueLabel = useMemo(() => {
     const original = game.leagueName?.trim() ?? '';
@@ -213,6 +223,62 @@ const GameCard: React.FC<GameCardProps> = ({
     if (onViewRecap) {
       onViewRecap(game);
     }
+  };
+
+  const handleLiveScoringClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (hasLiveSession && onWatchLiveScoring) {
+      onWatchLiveScoring(game);
+    } else if (canStartLiveScoring && onStartLiveScoring) {
+      onStartLiveScoring(game);
+    } else if (hasLiveSession && onStartLiveScoring) {
+      onStartLiveScoring(game);
+    }
+  };
+
+  const renderLiveScoringButton = () => {
+    if (hasLiveSession) {
+      return (
+        <Chip
+          icon={<FiberManualRecordIcon sx={{ fontSize: 12 }} />}
+          label="LIVE"
+          size="small"
+          color="error"
+          onClick={handleLiveScoringClick}
+          sx={{
+            cursor: 'pointer',
+            animation: 'pulse 2s infinite',
+            '@keyframes pulse': {
+              '0%': { opacity: 1 },
+              '50%': { opacity: 0.6 },
+              '100%': { opacity: 1 },
+            },
+          }}
+        />
+      );
+    }
+
+    if (canStartLiveScoring && onStartLiveScoring) {
+      return (
+        <Tooltip title="Start Live Scoring">
+          <IconButton
+            size="small"
+            onClick={handleLiveScoringClick}
+            color="primary"
+            sx={{
+              p: 0.5,
+              '&:hover': {
+                bgcolor: 'action.hover',
+              },
+            }}
+          >
+            <PlayArrowIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      );
+    }
+
+    return null;
   };
 
   const handleFieldLinkClick = (event: React.MouseEvent) => {
@@ -397,7 +463,8 @@ const GameCard: React.FC<GameCardProps> = ({
                 )}
               </Box>
               {showActions && (
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                  {renderLiveScoringButton()}
                   {canEditGames && onEnterGameResults && (
                     <Tooltip title="Enter Game Results">
                       <IconButton
@@ -644,6 +711,7 @@ const GameCard: React.FC<GameCardProps> = ({
               </Box>
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {showActions && renderLiveScoringButton()}
                 {game.gameStatus !== GameStatus.Scheduled &&
                   game.gameStatus !== GameStatus.Completed && (
                     <Box

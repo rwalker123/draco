@@ -22855,6 +22855,180 @@ components:
         - expiresIn
       title: IndividualSseTicketResponse
       description: SSE connection ticket response for individual live scoring
+    BaseballLiveScoringState:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        gameId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        status:
+          type: string
+          enum:
+            - active
+            - paused
+            - finalized
+            - stopped
+          title: BaseballLiveScoringStatus
+          description: Status of a baseball live scoring session
+        currentInning:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        startedBy:
+          type: string
+        viewerCount:
+          type: integer
+        scores:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              inningNumber:
+                type: integer
+              isHomeTeam:
+                type: boolean
+              runs:
+                type: integer
+              enteredBy:
+                type: string
+              enteredAt:
+                type: string
+                format: date-time
+            required:
+              - id
+              - inningNumber
+              - isHomeTeam
+              - runs
+              - enteredBy
+              - enteredAt
+            title: BaseballLiveInningScore
+            description: A single inning score in a baseball live scoring session
+        homeTeamTotal:
+          type: integer
+        visitorTeamTotal:
+          type: integer
+      required:
+        - sessionId
+        - gameId
+        - status
+        - currentInning
+        - startedAt
+        - startedBy
+        - scores
+        - homeTeamTotal
+        - visitorTeamTotal
+      title: BaseballLiveScoringState
+      description: Current state of a baseball live scoring session
+    BaseballLiveSessionStatus:
+      type: object
+      properties:
+        hasActiveSession:
+          type: boolean
+        sessionId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        viewerCount:
+          type: integer
+      required:
+        - hasActiveSession
+      title: BaseballLiveSessionStatus
+      description: Lightweight status check for whether a game has an active live session
+    BaseballLiveInningScore:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        inningNumber:
+          type: integer
+        isHomeTeam:
+          type: boolean
+        runs:
+          type: integer
+        enteredBy:
+          type: string
+        enteredAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - inningNumber
+        - isHomeTeam
+        - runs
+        - enteredBy
+        - enteredAt
+      title: BaseballLiveInningScore
+      description: A single inning score in a baseball live scoring session
+    StartBaseballLiveScoring:
+      type: object
+      properties: {}
+      title: StartBaseballLiveScoring
+      description: Request to start a baseball live scoring session
+    SubmitBaseballLiveInningScore:
+      type: object
+      properties:
+        inningNumber:
+          type: integer
+          minimum: 1
+          maximum: 99
+        isHomeTeam:
+          type: boolean
+        runs:
+          type: integer
+          minimum: 0
+          maximum: 99
+      required:
+        - inningNumber
+        - isHomeTeam
+        - runs
+      title: SubmitBaseballLiveInningScore
+      description: Request to submit runs for a specific inning and team during live scoring
+    AdvanceBaseballInning:
+      type: object
+      properties:
+        inningNumber:
+          type: integer
+          minimum: 1
+          maximum: 99
+      required:
+        - inningNumber
+      title: AdvanceBaseballInning
+      description: Request to advance to a specific inning
+    FinalizeBaseballLiveScoring:
+      type: object
+      properties:
+        confirm:
+          type: boolean
+          enum:
+            - true
+      required:
+        - confirm
+      title: FinalizeBaseballLiveScoring
+      description: Request to finalize a baseball live scoring session and save scores
+        permanently
+    StopBaseballLiveScoring:
+      type: object
+      properties:
+        confirm:
+          type: boolean
+          enum:
+            - true
+      required:
+        - confirm
+      title: StopBaseballLiveScoring
+      description: Request to stop a baseball live scoring session without saving scores
   securitySchemes:
     bearerAuth:
       type: http
@@ -28907,6 +29081,432 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/games/{gameId}/live/status:
+    get:
+      description: Check if a baseball game has an active live scoring session
+      operationId: getBaseballLiveSessionStatus
+      summary: Get baseball live session status
+      tags:
+        - Baseball Live Scoring
+      security: []
+      parameters:
+        - &a9
+          name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - &a10
+          name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Baseball live session status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaseballLiveSessionStatus"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/games/{gameId}/live:
+    get:
+      description: Get the current state of a baseball live scoring session. This is a
+        public endpoint for read-only access.
+      operationId: getBaseballLiveScoringState
+      summary: Get baseball live scoring state
+      tags:
+        - Baseball Live Scoring
+      security: []
+      parameters:
+        - *a9
+        - *a10
+      responses:
+        "200":
+          description: Current baseball live scoring state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaseballLiveScoringState"
+        "404":
+          description: No active session found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/games/{gameId}/live/ticket:
+    post:
+      description: Get a short-lived ticket for SSE subscription authentication
+      operationId: getBaseballLiveScoringTicket
+      summary: Get SSE connection ticket for baseball
+      tags:
+        - Baseball Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a9
+        - *a10
+      responses:
+        "201":
+          description: SSE connection ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SseTicketResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/games/{gameId}/live/start:
+    post:
+      description: Start a new baseball live scoring session for a game
+      operationId: startBaseballLiveScoringSession
+      summary: Start baseball live scoring
+      tags:
+        - Baseball Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a9
+        - *a10
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartBaseballLiveScoring"
+      responses:
+        "201":
+          description: Baseball live scoring session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaseballLiveScoringState"
+        "400":
+          description: Validation error or session already active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized (not a TeamAdmin or account admin)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/games/{gameId}/live/scores:
+    post:
+      description: Submit runs for a specific inning and team during baseball live scoring
+      operationId: submitBaseballLiveInningScore
+      summary: Submit inning score
+      tags:
+        - Baseball Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a9
+        - *a10
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitBaseballLiveInningScore"
+      responses:
+        "201":
+          description: Score submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaseballLiveInningScore"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: No active session found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/games/{gameId}/live/advance:
+    post:
+      description: Advance to a specific inning number
+      operationId: advanceBaseballInning
+      summary: Advance inning
+      tags:
+        - Baseball Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a9
+        - *a10
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdvanceBaseballInning"
+      responses:
+        "200":
+          description: Inning advanced successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                required:
+                  - success
+                title: SuccessResponse
+                description: Simple success response
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: No active session found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/games/{gameId}/live/finalize:
+    post:
+      description: Finalize the baseball live scoring session and save scores
+        permanently to the game
+      operationId: finalizeBaseballLiveScoringSession
+      summary: Finalize baseball live scoring
+      tags:
+        - Baseball Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a9
+        - *a10
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinalizeBaseballLiveScoring"
+      responses:
+        "200":
+          description: Session finalized successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                required:
+                  - success
+                title: SuccessResponse
+                description: Simple success response
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: No active session found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/games/{gameId}/live/stop:
+    post:
+      description: Stop the baseball live scoring session without saving scores
+      operationId: stopBaseballLiveScoringSession
+      summary: Stop baseball live scoring
+      tags:
+        - Baseball Live Scoring
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a9
+        - *a10
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StopBaseballLiveScoring"
+      responses:
+        "200":
+          description: Session stopped successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                required:
+                  - success
+                title: SuccessResponse
+                description: Simple success response
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: No active session found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/games/live/active:
+    get:
+      description: Get all baseball games with active live scoring sessions for the
+        account. This is a public endpoint.
+      operationId: getActiveBaseballLiveScoringSessions
+      summary: List active baseball live sessions
+      tags:
+        - Baseball Live Scoring
+      security: []
+      parameters:
+        - *a9
+      responses:
+        "200":
+          description: List of active sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    gameId:
+                      type: string
+                    sessionId:
+                      type: string
+                  required:
+                    - gameId
+                    - sessionId
+                title: BaseballActiveSessionsList
+                description: List of games with active baseball live scoring sessions
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/contacts/{contactId}/auto-register:
     post:
       summary: Auto-register contact into account
@@ -31036,14 +31636,14 @@ paths:
       tags:
         - Exports
       parameters:
-        - &a9
+        - &a11
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a10
+        - &a12
           name: seasonId
           in: path
           required: true
@@ -31060,7 +31660,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: &a11
+            text/csv: &a13
               schema:
                 type: string
                 format: binary
@@ -31098,8 +31698,8 @@ paths:
       tags:
         - Exports
       parameters:
-        - *a9
-        - *a10
+        - *a11
+        - *a12
         - name: leagueSeasonId
           in: path
           required: true
@@ -31110,7 +31710,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a11
+            text/csv: *a13
         "401":
           description: Authentication required
           content:
@@ -31145,8 +31745,8 @@ paths:
       tags:
         - Exports
       parameters:
-        - *a9
-        - *a10
+        - *a11
+        - *a12
         - name: leagueSeasonId
           in: path
           required: true
@@ -31157,7 +31757,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a11
+            text/csv: *a13
         "401":
           description: Authentication required
           content:
@@ -31191,14 +31791,14 @@ paths:
         - bearerAuth: []
       tags:
         - Exports
-      parameters: &a12
-        - *a9
-        - *a10
+      parameters: &a14
+        - *a11
+        - *a12
       responses:
         "200":
           description: CSV file export
           content:
-            text/csv: *a11
+            text/csv: *a13
         "401":
           description: Authentication required
           content:
@@ -31232,12 +31832,12 @@ paths:
         - bearerAuth: []
       tags:
         - Exports
-      parameters: *a12
+      parameters: *a14
       responses:
         "200":
           description: CSV file export
           content:
-            text/csv: *a11
+            text/csv: *a13
         "401":
           description: Authentication required
           content:
@@ -31305,7 +31905,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a11
+            text/csv: *a13
         "401":
           description: Authentication required
           content:
@@ -36124,7 +36724,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a13
+        - &a15
           name: accountId
           in: path
           required: true
@@ -36160,7 +36760,7 @@ paths:
         - Individual Live Scoring
       security: []
       parameters:
-        - *a13
+        - *a15
       responses:
         "200":
           description: Current individual live scoring state
@@ -36190,7 +36790,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
+        - *a15
       responses:
         "201":
           description: SSE connection ticket
@@ -36226,7 +36826,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
+        - *a15
       requestBody:
         content:
           application/json:
@@ -36279,7 +36879,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
+        - *a15
       requestBody:
         content:
           application/json:
@@ -36332,7 +36932,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
+        - *a15
       requestBody:
         content:
           application/json:
@@ -36381,7 +36981,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
+        - *a15
       responses:
         "204":
           description: Session finalized successfully
@@ -36419,7 +37019,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
+        - *a15
       responses:
         "204":
           description: Session stopped successfully
@@ -36456,7 +37056,7 @@ paths:
       tags:
         - League FAQ
       parameters:
-        - &a14
+        - &a16
           name: accountId
           in: path
           required: true
@@ -36485,7 +37085,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
+        - *a16
       requestBody:
         content:
           application/json:
@@ -36531,8 +37131,8 @@ paths:
       tags:
         - League FAQ
       parameters:
-        - *a14
-        - &a15
+        - *a16
+        - &a17
           name: faqId
           in: path
           required: true
@@ -36567,8 +37167,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
-        - *a15
+        - *a16
+        - *a17
       requestBody:
         content:
           application/json:
@@ -36620,8 +37220,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a14
-        - *a15
+        - *a16
+        - *a17
       responses:
         "204":
           description: League FAQ entry deleted
@@ -37939,14 +38539,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a16
+        - &a18
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a17
+        - &a19
           name: matchId
           in: path
           required: true
@@ -37982,8 +38582,8 @@ paths:
         - Live Scoring
       security: []
       parameters:
-        - *a16
-        - *a17
+        - *a18
+        - *a19
       responses:
         "200":
           description: Current live scoring state
@@ -38013,8 +38613,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a16
-        - *a17
+        - *a18
+        - *a19
       responses:
         "201":
           description: SSE connection ticket
@@ -38050,8 +38650,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a16
-        - *a17
+        - *a18
+        - *a19
       requestBody:
         content:
           application/json:
@@ -38104,8 +38704,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a16
-        - *a17
+        - *a18
+        - *a19
       requestBody:
         content:
           application/json:
@@ -38158,8 +38758,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a16
-        - *a17
+        - *a18
+        - *a19
       requestBody:
         content:
           application/json:
@@ -38221,8 +38821,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a16
-        - *a17
+        - *a18
+        - *a19
       requestBody:
         content:
           application/json:
@@ -38278,8 +38878,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a16
-        - *a17
+        - *a18
+        - *a19
       requestBody:
         content:
           application/json:
@@ -38335,7 +38935,7 @@ paths:
         - Live Scoring
       security: []
       parameters:
-        - *a16
+        - *a18
       responses:
         "200":
           description: List of active sessions
@@ -38632,7 +39232,7 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - &a18
+        - &a20
           name: accountId
           in: path
           required: true
@@ -38683,7 +39283,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
+        - *a20
       requestBody:
         content:
           application/json:
@@ -38740,8 +39340,8 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - *a18
-        - &a19
+        - *a20
+        - &a21
           name: memberBusinessId
           in: path
           required: true
@@ -38776,8 +39376,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
-        - *a19
+        - *a20
+        - *a21
       requestBody:
         content:
           application/json:
@@ -38835,8 +39435,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
-        - *a19
+        - *a20
+        - *a21
       responses:
         "204":
           description: Member business entry deleted
@@ -39831,7 +40431,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a20
+        - &a22
           name: accountId
           in: path
           required: true
@@ -39875,7 +40475,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a20
+        - *a22
       requestBody:
         content:
           application/json:
@@ -39922,8 +40522,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a20
-        - &a21
+        - *a22
+        - &a23
           name: categoryId
           in: path
           required: true
@@ -39982,8 +40582,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a20
-        - *a21
+        - *a22
+        - *a23
       responses:
         "204":
           description: Survey category deleted successfully.
@@ -40022,8 +40622,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a20
-        - *a21
+        - *a22
+        - *a23
       requestBody:
         content:
           application/json:
@@ -40076,8 +40676,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a20
-        - &a22
+        - *a22
+        - &a24
           name: questionId
           in: path
           required: true
@@ -40135,8 +40735,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a20
         - *a22
+        - *a24
       responses:
         "204":
           description: Survey question deleted successfully.
@@ -40173,7 +40773,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a20
+        - *a22
         - schema:
             type: integer
             minimum: 1
@@ -40224,8 +40824,8 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a20
-        - &a23
+        - *a22
+        - &a25
           name: playerId
           in: path
           required: true
@@ -40263,9 +40863,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a20
-        - *a23
         - *a22
+        - *a25
+        - *a24
       requestBody:
         content:
           application/json:
@@ -40318,9 +40918,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a20
-        - *a23
         - *a22
+        - *a25
+        - *a24
       responses:
         "204":
           description: Survey answer deleted successfully.
@@ -40357,7 +40957,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a20
+        - *a22
       responses:
         "200":
           description: Player survey spotlight result.
@@ -40386,7 +40986,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a20
+        - *a22
         - name: teamSeasonId
           in: path
           required: true
@@ -44006,14 +44606,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a24
+        - &a26
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a25
+        - &a27
           name: seasonId
           in: path
           required: true
@@ -44119,8 +44719,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a25
+        - *a26
+        - *a27
         - name: feedItemId
           in: path
           required: true
@@ -44163,8 +44763,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a25
+        - *a26
+        - *a27
         - name: feedItemId
           in: path
           required: true
@@ -44207,8 +44807,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a25
+        - *a26
+        - *a27
         - schema:
             type: string
             pattern: ^\d+$
@@ -44275,8 +44875,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a25
+        - *a26
+        - *a27
         - schema:
             type: string
             pattern: ^\d+$
@@ -44342,8 +44942,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a25
+        - *a26
+        - *a27
         - schema:
             type: string
             nullable: true
@@ -44387,8 +44987,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a25
+        - *a26
+        - *a27
         - schema:
             type: string
             pattern: ^\d+$
@@ -44455,8 +45055,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a25
+        - *a26
+        - *a27
       requestBody:
         content:
           application/json:
@@ -44509,9 +45109,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a25
-        - &a26
+        - *a26
+        - *a27
+        - &a28
           name: liveEventId
           in: path
           required: true
@@ -44558,9 +45158,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a25
         - *a26
+        - *a27
+        - *a28
       requestBody:
         content:
           application/json:
@@ -44612,9 +45212,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a24
-        - *a25
         - *a26
+        - *a27
+        - *a28
       responses:
         "204":
           description: Live event deleted.
@@ -45852,23 +46452,23 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a28
+        - &a30
           name: accountId
           in: path
           required: true
-          schema: &a27
+          schema: &a29
             type: string
             format: number
-        - &a29
+        - &a31
           name: seasonId
           in: path
           required: true
-          schema: *a27
-        - &a30
+          schema: *a29
+        - &a32
           name: teamSeasonId
           in: path
           required: true
-          schema: *a27
+          schema: *a29
       responses:
         "200":
           description: Completed games retrieved.
@@ -45914,14 +46514,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a28
-        - *a29
         - *a30
-        - &a31
+        - *a31
+        - *a32
+        - &a33
           name: gameId
           in: path
           required: true
-          schema: *a27
+          schema: *a29
       responses:
         "200":
           description: Batting stats retrieved.
@@ -45966,10 +46566,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a28
-        - *a29
         - *a30
         - *a31
+        - *a32
+        - *a33
       requestBody:
         required: true
         content:
@@ -46027,15 +46627,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a28
-        - *a29
         - *a30
         - *a31
-        - &a32
+        - *a32
+        - *a33
+        - &a34
           name: statId
           in: path
           required: true
-          schema: *a27
+          schema: *a29
       requestBody:
         required: true
         content:
@@ -46086,11 +46686,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a28
-        - *a29
         - *a30
         - *a31
         - *a32
+        - *a33
+        - *a34
       responses:
         "204":
           description: Batting stat deleted.
@@ -46132,10 +46732,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a28
-        - *a29
         - *a30
         - *a31
+        - *a32
+        - *a33
       responses:
         "200":
           description: Pitching stats retrieved.
@@ -46180,10 +46780,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a28
-        - *a29
         - *a30
         - *a31
+        - *a32
+        - *a33
       requestBody:
         required: true
         content:
@@ -46241,11 +46841,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a28
-        - *a29
         - *a30
         - *a31
         - *a32
+        - *a33
+        - *a34
       requestBody:
         required: true
         content:
@@ -46296,11 +46896,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a28
-        - *a29
         - *a30
         - *a31
         - *a32
+        - *a33
+        - *a34
       responses:
         "204":
           description: Pitching stat deleted.
@@ -46342,10 +46942,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a28
-        - *a29
         - *a30
         - *a31
+        - *a32
+        - *a33
       responses:
         "200":
           description: Attendance retrieved.
@@ -46390,10 +46990,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a28
-        - *a29
         - *a30
         - *a31
+        - *a32
+        - *a33
       requestBody:
         required: true
         content:
@@ -47743,7 +48343,7 @@ paths:
       tags:
         - Accounts
       parameters:
-        - &a33
+        - &a35
           name: accountId
           in: path
           required: true
@@ -47768,7 +48368,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
+        - *a35
       requestBody:
         content:
           application/json:
@@ -47807,8 +48407,8 @@ paths:
       tags:
         - Accounts
       parameters:
-        - *a33
-        - &a34
+        - *a35
+        - &a36
           name: messageId
           in: path
           required: true
@@ -47837,8 +48437,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
-        - *a34
+        - *a35
+        - *a36
       requestBody:
         content:
           application/json:
@@ -47884,8 +48484,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
-        - *a34
+        - *a35
+        - *a36
       responses:
         "204":
           description: Welcome message deleted successfully.
@@ -47916,8 +48516,8 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a33
-        - &a35
+        - *a35
+        - &a37
           name: teamSeasonId
           in: path
           required: true
@@ -47946,8 +48546,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a35
+        - *a37
       requestBody:
         content:
           application/json:
@@ -47992,9 +48592,9 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a33
         - *a35
-        - *a34
+        - *a37
+        - *a36
       responses:
         "200":
           description: Team welcome message retrieved successfully.
@@ -48017,9 +48617,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a35
-        - *a34
+        - *a37
+        - *a36
       requestBody:
         content:
           application/json:
@@ -48065,9 +48665,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a35
-        - *a34
+        - *a37
+        - *a36
       responses:
         "204":
           description: Team welcome message deleted successfully.

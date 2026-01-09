@@ -233,6 +233,8 @@ model aspnetusers {
   liveholescores_entered      liveholescore[]
   individuallivescoringsessions_started individuallivescoringsession[]
   individualliveholescores_entered      individualliveholescore[]
+  baseballlivescoringsessions_started   baseballlivescoringsession[]
+  baseballliveinningscores_entered      baseballliveinningscore[]
 }
 
 model accountdiscordsettings {
@@ -1248,6 +1250,7 @@ model leagueschedule {
   visitingteam                                        teamsseason      @relation("leagueschedule_vteamidToteamsseason", fields: [vteamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_leagueschedule_visitingteam")
   pitchstatsum                                        pitchstatsum[]
   playerrecap                                         playerrecap[]
+  baseballlivescoringsession                          baseballlivescoringsession?
 
   @@index([hteamid], map: "fki_L")
   @@index([vteamid], map: "fki_fk_leagueschedule_visitingteam")
@@ -1948,4 +1951,35 @@ model individualliveholescore {
 
   @@unique([sessionid, holenumber], map: "uq_indliveholescore_session_hole")
   @@index([sessionid], map: "idx_indliveholescore_session")
+}
+
+model baseballlivescoringsession {
+  id            BigInt                    @id @default(autoincrement())
+  gameid        BigInt                    @unique
+  startedby     String                    @db.VarChar(128)
+  startedat     DateTime                  @default(now()) @db.Timestamptz(6)
+  lastactivity  DateTime                  @default(now()) @db.Timestamptz(6)
+  status        Int                       @default(1)
+  currentinning Int                       @default(1)
+  leagueschedule leagueschedule           @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_baseballlivescoringsession_leagueschedule")
+  startedbyuser  aspnetusers              @relation(fields: [startedby], references: [id], onDelete: Cascade, map: "fk_baseballlivescoringsession_aspnetusers")
+  scores         baseballliveinningscore[]
+
+  @@index([gameid], map: "idx_baseballlivescoringsession_game")
+  @@index([status], map: "idx_baseballlivescoringsession_status")
+}
+
+model baseballliveinningscore {
+  id            BigInt                     @id @default(autoincrement())
+  sessionid     BigInt
+  inningnumber  Int
+  ishometeam    Boolean
+  runs          Int
+  enteredby     String                     @db.VarChar(128)
+  enteredat     DateTime                   @default(now()) @db.Timestamptz(6)
+  session       baseballlivescoringsession @relation(fields: [sessionid], references: [id], onDelete: Cascade, map: "fk_baseballliveinningscore_session")
+  enteredbyuser aspnetusers                @relation(fields: [enteredby], references: [id], onDelete: Cascade, map: "fk_baseballliveinningscore_aspnetusers")
+
+  @@unique([sessionid, inningnumber, ishometeam], map: "uq_baseballliveinningscore_session_inning_team")
+  @@index([sessionid], map: "idx_baseballliveinningscore_session")
 }
