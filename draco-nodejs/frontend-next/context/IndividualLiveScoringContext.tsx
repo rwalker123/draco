@@ -153,11 +153,24 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
     const baseSseUrl = `${sseBaseUrl}/api/accounts/${accountId}/golfer/live/subscribe`;
     const sseUrl = `${baseSseUrl}?ticket=${encodeURIComponent(ticket)}`;
 
+    console.log('[SSE] connectWithTicket called', {
+      sseBaseUrl,
+      baseSseUrl,
+      sseUrl,
+      accountId,
+    });
+
     const eventSource = new EventSource(sseUrl);
     eventSourceRef.current = eventSource;
 
+    console.log('[SSE] EventSource created, setting 30s timeout');
+
     // Set connection timeout
     connectionTimeoutRef.current = setTimeout(() => {
+      console.log('[SSE] Connection timeout fired after 30s', {
+        isConnectedRef: isConnectedRef.current,
+        hasEventSource: !!eventSourceRef.current,
+      });
       if (!isConnectedRef.current && eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
@@ -168,6 +181,7 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
     }, connectionTimeoutMs);
 
     eventSource.onopen = () => {
+      console.log('[SSE] onopen fired - connection successful');
       if (connectionTimeoutRef.current) {
         clearTimeout(connectionTimeoutRef.current);
         connectionTimeoutRef.current = null;
@@ -180,7 +194,12 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
       reconnectAttempts.current = 0;
     };
 
-    eventSource.onerror = () => {
+    eventSource.onerror = (error) => {
+      console.log('[SSE] onerror fired', {
+        error,
+        readyState: eventSource.readyState,
+        reconnectAttempts: reconnectAttempts.current,
+      });
       if (connectionTimeoutRef.current) {
         clearTimeout(connectionTimeoutRef.current);
         connectionTimeoutRef.current = null;
@@ -191,6 +210,7 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
       setIsConnecting(false);
 
       if (currentAccountIdRef.current !== accountId) {
+        console.log('[SSE] Account changed, closing connection');
         eventSource.close();
         return;
       }
@@ -319,7 +339,10 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
 
   const connect = useCallback(
     (accountId: string) => {
+      console.log('[SSE] connect called', { accountId, hasToken: !!token });
+
       if (!token) {
+        console.log('[SSE] No token, aborting');
         setConnectionError('Authentication required');
         return;
       }
@@ -328,6 +351,7 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
         currentAccountIdRef.current === accountId &&
         (isConnectedRef.current || isConnectingRef.current)
       ) {
+        console.log('[SSE] Already connected/connecting, skipping');
         return;
       }
 
@@ -338,13 +362,21 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
       setIsConnecting(true);
       setConnectionError(null);
 
+      console.log('[SSE] Requesting ticket...');
+
       getIndividualLiveScoringTicket({
         client: apiClient,
         path: { accountId },
         throwOnError: false,
       })
         .then((result) => {
+          console.log('[SSE] Ticket response received', {
+            hasError: !!result.error,
+            hasTicket: !!result.data?.ticket,
+          });
+
           if (currentAccountIdRef.current !== accountId) {
+            console.log('[SSE] Account changed during ticket request, aborting');
             return;
           }
 
