@@ -339,7 +339,7 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
 
   const connect = useCallback(
     (accountId: string) => {
-      console.log('[SSE] connect called', { accountId, hasToken: !!token });
+      console.log('DRACO_SSE_DEBUG: connect called', { accountId, hasToken: !!token });
 
       if (!token) {
         console.log('[SSE] No token, aborting');

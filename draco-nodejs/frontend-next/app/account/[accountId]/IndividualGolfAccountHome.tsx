@@ -251,18 +251,28 @@ const IndividualGolfAccountHome: React.FC = () => {
       startingHole: number;
       holesPlayed: 9 | 18;
     }): Promise<boolean> => {
-      if (!accountIdStr) return false;
+      console.log('[LIVE_HOME] handleStartLiveRound called', { accountIdStr, data });
+      if (!accountIdStr) {
+        console.log('[LIVE_HOME] No accountIdStr, returning false');
+        return false;
+      }
 
       setIsStartingLiveSession(true);
+      console.log('[LIVE_HOME] Calling startSession...');
       const result = await startSession(accountIdStr, data);
+      console.log('[LIVE_HOME] startSession returned', { result });
       setIsStartingLiveSession(false);
 
       if (result) {
+        console.log(
+          '[LIVE_HOME] Session started successfully, setting liveSession and opening dialog',
+        );
         setLiveSession(result);
         setStartLiveRoundDialogOpen(false);
         setLiveScoringDialogOpen(true);
         return true;
       }
+      console.log('[LIVE_HOME] startSession returned null/falsy');
       return false;
     },
     [accountIdStr, startSession],

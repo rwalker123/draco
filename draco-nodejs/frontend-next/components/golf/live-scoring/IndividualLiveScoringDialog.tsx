@@ -94,8 +94,12 @@ function IndividualLiveScoringDialogContent({
   } | null>(null);
 
   useEffect(() => {
+    console.log('[SSE_DIALOG] useEffect triggered', { hasActiveSession, accountId });
     if (hasActiveSession) {
+      console.log('[SSE_DIALOG] Calling connect()');
       connect(accountId);
+    } else {
+      console.log('[SSE_DIALOG] hasActiveSession is false, NOT connecting');
     }
     return () => {
       disconnect();
@@ -346,7 +350,7 @@ function IndividualLiveScoringDialogContent({
 
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
-        {isConnecting && (
+        {(isConnecting || (hasActiveSession && !sessionState && !connectionError)) && (
           <Button
             variant="outlined"
             color="error"
