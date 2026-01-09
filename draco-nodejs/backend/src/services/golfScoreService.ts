@@ -14,6 +14,7 @@ import { IGolfMatchRepository } from '../repositories/interfaces/IGolfMatchRepos
 import { IGolfRosterRepository } from '../repositories/interfaces/IGolfRosterRepository.js';
 import { IGolfCourseRepository } from '../repositories/interfaces/IGolfCourseRepository.js';
 import { IGolfLeagueRepository } from '../repositories/interfaces/IGolfLeagueRepository.js';
+import { IGolfTeeRepository } from '../repositories/interfaces/IGolfTeeRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { GolfScoreResponseFormatter } from '../responseFormatters/golfScoreResponseFormatter.js';
 import { GolfMatchResponseFormatter } from '../responseFormatters/golfMatchResponseFormatter.js';
@@ -27,6 +28,7 @@ export class GolfScoreService {
   private readonly rosterRepository: IGolfRosterRepository;
   private readonly courseRepository: IGolfCourseRepository;
   private readonly leagueRepository: IGolfLeagueRepository;
+  private readonly teeRepository: IGolfTeeRepository;
 
   constructor(
     scoreRepository?: IGolfScoreRepository,
@@ -34,12 +36,14 @@ export class GolfScoreService {
     rosterRepository?: IGolfRosterRepository,
     courseRepository?: IGolfCourseRepository,
     leagueRepository?: IGolfLeagueRepository,
+    teeRepository?: IGolfTeeRepository,
   ) {
     this.scoreRepository = scoreRepository ?? RepositoryFactory.getGolfScoreRepository();
     this.matchRepository = matchRepository ?? RepositoryFactory.getGolfMatchRepository();
     this.rosterRepository = rosterRepository ?? RepositoryFactory.getGolfRosterRepository();
     this.courseRepository = courseRepository ?? RepositoryFactory.getGolfCourseRepository();
     this.leagueRepository = leagueRepository ?? RepositoryFactory.getGolfLeagueRepository();
+    this.teeRepository = teeRepository ?? RepositoryFactory.getGolfTeeRepository();
   }
 
   async getScoreById(scoreId: bigint): Promise<GolfScoreWithDetailsType> {
@@ -60,8 +64,15 @@ export class GolfScoreService {
     if (!match) {
       throw new NotFoundError('Golf match not found');
     }
+
+    // Get course and tee for courseHandicap calculation from stored startIndex
+    const course = match.courseid ? await this.courseRepository.findById(match.courseid) : null;
+    const tee = match.teeid ? await this.teeRepository.findById(match.teeid) : null;
+
     const matchScores = await this.scoreRepository.findByMatchId(matchId);
-    return matchScores.map((ms) => GolfScoreResponseFormatter.formatWithDetails(ms.golfscore));
+    return matchScores.map((ms) =>
+      GolfScoreResponseFormatter.formatMatchScoreFromDetails(ms, course, tee),
+    );
   }
 
   async getScoresForTeamInMatch(
@@ -131,6 +142,7 @@ export class GolfScoreService {
     const rosterEntries = await this.rosterRepository.findByIds(rosterIds);
     const rosterMap = new Map(rosterEntries.map((r) => [r.id, r]));
 
+    const handicapService = ServiceFactory.getGolfHandicapService();
     const submissions: MatchScoreSubmission[] = [];
 
     for (const [teamId, teamScores] of scoresByTeam) {
@@ -156,6 +168,15 @@ export class GolfScoreService {
 
         const totalScore =
           scoreData.totalScore ?? holeScores.reduce((sum: number, s: number) => sum + s, 0);
+
+        let startIndex = await handicapService.calculateHandicapIndexAsOf(
+          rosterEntry.golferid,
+          match.matchdate,
+        );
+        if (startIndex === null) {
+          startIndex = rosterEntry.golfer.initialdifferential ?? null;
+        }
+        const startIndex9 = startIndex !== null ? startIndex / 2 : null;
 
         submissions.push({
           teamId,
@@ -186,8 +207,8 @@ export class GolfScoreService {
             holescrore16: holeScores[15] ?? 0,
             holescrore17: holeScores[16] ?? 0,
             holescrore18: holeScores[17] ?? 0,
-            startindex: scoreData.startIndex ?? null,
-            startindex9: scoreData.startIndex9 ?? null,
+            startindex: startIndex,
+            startindex9: startIndex9,
           },
         });
       }
@@ -195,6 +216,11 @@ export class GolfScoreService {
 
     const teamIds = Array.from(scoresByTeam.keys());
     await this.scoreRepository.submitMatchScoresTransactional(matchId, teamIds, submissions);
+
+    const firstTeeId = submissions[0]?.scoreData.teeid;
+    if (firstTeeId) {
+      await this.matchRepository.updateTee(matchId, firstTeeId);
+    }
 
     const team1Scores = await this.scoreRepository.findByTeamAndMatch(matchId, match.team1);
     const team2Scores = await this.scoreRepository.findByTeamAndMatch(matchId, match.team2);

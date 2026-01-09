@@ -9,6 +9,7 @@ import {
   MatchScoreSubmission,
   SubmitMatchScoresResult,
 } from '../interfaces/IGolfScoreRepository.js';
+import { GolfMatchStatus } from '../../utils/golfConstants.js';
 
 const scoreWithDetailsInclude = {
   golfer: {
@@ -38,7 +39,39 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
 
   async findByGolferId(golferId: bigint, limit = 20): Promise<GolfScoreWithDetails[]> {
     return this.prisma.golfscore.findMany({
-      where: { golferid: golferId },
+      where: {
+        golferid: golferId,
+        golfmatchscores: {
+          some: {
+            golfmatch: {
+              matchstatus: GolfMatchStatus.COMPLETED,
+            },
+          },
+        },
+      },
+      include: scoreWithDetailsInclude,
+      orderBy: { dateplayed: 'desc' },
+      take: limit,
+    });
+  }
+
+  async findByGolferIdBeforeDate(
+    golferId: bigint,
+    beforeDate: Date,
+    limit = 20,
+  ): Promise<GolfScoreWithDetails[]> {
+    return this.prisma.golfscore.findMany({
+      where: {
+        golferid: golferId,
+        dateplayed: { lt: beforeDate },
+        golfmatchscores: {
+          some: {
+            golfmatch: {
+              matchstatus: GolfMatchStatus.COMPLETED,
+            },
+          },
+        },
+      },
       include: scoreWithDetailsInclude,
       orderBy: { dateplayed: 'desc' },
       take: limit,
@@ -174,6 +207,7 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
         golfmatchscores: {
           some: {
             golfmatch: {
+              matchstatus: GolfMatchStatus.COMPLETED,
               leagueseason: {
                 seasonid: seasonId,
               },
@@ -201,7 +235,10 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     submissions: MatchScoreSubmission[],
   ): Promise<SubmitMatchScoresResult> {
     return this.prisma.$transaction(async (tx) => {
-      const existingByGolfer = new Map<string, { scoreid: bigint; teamid: bigint }>();
+      const existingByGolfer = new Map<
+        string,
+        { scoreid: bigint; teamid: bigint; startindex: number | null }
+      >();
 
       for (const teamId of teamIds) {
         const existingMatchScores = await tx.golfmatchscores.findMany({
@@ -209,13 +246,21 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
             matchid: matchId,
             teamid: teamId,
           },
-          select: { golferid: true, scoreid: true, teamid: true },
+          select: {
+            golferid: true,
+            scoreid: true,
+            teamid: true,
+            golfscore: {
+              select: { startindex: true },
+            },
+          },
         });
 
         for (const ms of existingMatchScores) {
           existingByGolfer.set(ms.golferid.toString(), {
             scoreid: ms.scoreid,
             teamid: ms.teamid,
+            startindex: ms.golfscore.startindex,
           });
         }
       }
@@ -230,7 +275,9 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
         const existing = existingByGolfer.get(golferKey);
 
         if (existing) {
-          // Update score data but preserve startindex/startindex9 (set only on creation)
+          const shouldBackfillStartindex =
+            existing.startindex === null && submission.scoreData.startindex !== null;
+
           await tx.golfscore.update({
             where: { id: existing.scoreid },
             data: {
@@ -258,6 +305,10 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
               holescrore16: submission.scoreData.holescrore16,
               holescrore17: submission.scoreData.holescrore17,
               holescrore18: submission.scoreData.holescrore18,
+              ...(shouldBackfillStartindex && {
+                startindex: submission.scoreData.startindex,
+                startindex9: submission.scoreData.startindex9,
+              }),
             },
           });
 

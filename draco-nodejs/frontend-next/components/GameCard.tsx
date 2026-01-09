@@ -12,6 +12,7 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  Chip,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -226,6 +227,9 @@ const GameCard: React.FC<GameCardProps> = ({
 
   const renderFieldLink = () => {
     if (!fieldDisplayName) {
+      if (hasGolfExtras) {
+        return <Chip label="No Course" size="small" color="error" variant="outlined" />;
+      }
       return null;
     }
 
@@ -428,7 +432,8 @@ const GameCard: React.FC<GameCardProps> = ({
                   >
                     {game.visitorTeamName}
                   </Typography>
-                  {renderHandicapBadge(game.golfExtras?.visitorCourseHandicap)}
+                  {game.gameStatus !== GameStatus.Completed &&
+                    renderHandicapBadge(game.golfExtras?.visitorCourseHandicap)}
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Typography
@@ -439,7 +444,8 @@ const GameCard: React.FC<GameCardProps> = ({
                   >
                     {game.homeTeamName}
                   </Typography>
-                  {renderHandicapBadge(game.golfExtras?.homeCourseHandicap)}
+                  {game.gameStatus !== GameStatus.Completed &&
+                    renderHandicapBadge(game.golfExtras?.homeCourseHandicap)}
                 </Box>
               </Box>
 
@@ -559,7 +565,8 @@ const GameCard: React.FC<GameCardProps> = ({
                   >
                     {game.visitorTeamName}
                   </Typography>
-                  {renderHandicapBadge(game.golfExtras?.visitorCourseHandicap)}
+                  {game.gameStatus !== GameStatus.Completed &&
+                    renderHandicapBadge(game.golfExtras?.visitorCourseHandicap)}
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Typography
@@ -570,7 +577,8 @@ const GameCard: React.FC<GameCardProps> = ({
                   >
                     {game.homeTeamName}
                   </Typography>
-                  {renderHandicapBadge(game.golfExtras?.homeCourseHandicap)}
+                  {game.gameStatus !== GameStatus.Completed &&
+                    renderHandicapBadge(game.golfExtras?.homeCourseHandicap)}
                 </Box>
               </Box>
               {/* Scores column */}

@@ -79,8 +79,16 @@ export const CreateGolfMatchSchema = z
     description: 'Data required to create a new golf match',
   });
 
-export const UpdateGolfMatchSchema = CreateGolfMatchSchema.partial()
-  .extend({
+export const UpdateGolfMatchSchema = z
+  .object({
+    leagueSeasonId: bigintToStringSchema.optional(),
+    team1Id: bigintToStringSchema.optional(),
+    team2Id: bigintToStringSchema.optional(),
+    matchDateTime: isoDateTimeSchema.optional(),
+    courseId: bigintToStringSchema.optional(),
+    teeId: bigintToStringSchema.optional(),
+    matchType: z.number().int().optional(),
+    comment: z.string().max(255).optional(),
     matchStatus: z.number().int().optional(),
   })
   .openapi({

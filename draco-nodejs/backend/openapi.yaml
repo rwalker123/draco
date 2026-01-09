@@ -20702,7 +20702,6 @@ components:
           example: "12345"
         matchType:
           type: integer
-          default: 0
         comment:
           type: string
           maxLength: 255
@@ -20986,12 +20985,6 @@ components:
             maximum: 20
           minItems: 9
           maxItems: 18
-        startIndex:
-          type: number
-          nullable: true
-        startIndex9:
-          type: number
-          nullable: true
       required:
         - courseId
         - teeId
@@ -21094,12 +21087,6 @@ components:
                       maximum: 20
                     minItems: 9
                     maxItems: 18
-                  startIndex:
-                    type: number
-                    nullable: true
-                  startIndex9:
-                    type: number
-                    nullable: true
                 required:
                   - courseId
                   - teeId
@@ -21170,12 +21157,6 @@ components:
                 maximum: 20
               minItems: 9
               maxItems: 18
-            startIndex:
-              type: number
-              nullable: true
-            startIndex9:
-              type: number
-              nullable: true
           required:
             - courseId
             - teeId

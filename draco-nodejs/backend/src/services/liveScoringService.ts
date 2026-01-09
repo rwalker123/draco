@@ -5,6 +5,8 @@ import {
   SubmitLiveHoleScoreType,
   LiveSessionStatusType,
   ScoreUpdateEventType,
+  SubmitMatchResultsType,
+  PlayerMatchScoreType,
 } from '@draco/shared-schemas';
 import {
   ILiveScoringRepository,
@@ -14,10 +16,6 @@ import {
 import { IGolfMatchRepository } from '../repositories/interfaces/IGolfMatchRepository.js';
 import { IGolfRosterRepository } from '../repositories/interfaces/IGolfRosterRepository.js';
 import { IContactRepository } from '../repositories/interfaces/IContactRepository.js';
-import {
-  IGolfScoreRepository,
-  MatchScoreSubmission,
-} from '../repositories/interfaces/IGolfScoreRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { getSSEManager } from './sseManager.js';
 import { ServiceFactory } from './serviceFactory.js';
@@ -44,21 +42,18 @@ export class LiveScoringService {
   private readonly matchRepository: IGolfMatchRepository;
   private readonly rosterRepository: IGolfRosterRepository;
   private readonly contactRepository: IContactRepository;
-  private readonly scoreRepository: IGolfScoreRepository;
 
   constructor(
     liveScoringRepository?: ILiveScoringRepository,
     matchRepository?: IGolfMatchRepository,
     rosterRepository?: IGolfRosterRepository,
     contactRepository?: IContactRepository,
-    scoreRepository?: IGolfScoreRepository,
   ) {
     this.liveScoringRepository =
       liveScoringRepository ?? RepositoryFactory.getLiveScoringRepository();
     this.matchRepository = matchRepository ?? RepositoryFactory.getGolfMatchRepository();
     this.rosterRepository = rosterRepository ?? RepositoryFactory.getGolfRosterRepository();
     this.contactRepository = contactRepository ?? RepositoryFactory.getContactRepository();
-    this.scoreRepository = scoreRepository ?? RepositoryFactory.getGolfScoreRepository();
   }
 
   async getSessionStatus(matchId: bigint): Promise<LiveSessionStatusType> {
@@ -229,7 +224,40 @@ export class LiveScoringService {
       throw new ValidationError('Match must have a course and tee assigned to save scores');
     }
 
-    // Group live scores by golfer
+    // Build the payload for submitMatchResults (same API as manual score entry)
+    const payload = await this.buildMatchResultsPayload(session, {
+      team1: match.team1,
+      team2: match.team2,
+      courseid: match.courseid,
+      teeid: match.teeid,
+      matchdate: match.matchdate,
+    });
+
+    // Use the same service as manual entry - this handles:
+    // - Creating/updating golf scores
+    // - Setting match status to COMPLETED
+    // - Calculating handicap indexes (time-based, using match date)
+    // - Calculating and storing match points
+    const golfScoreService = ServiceFactory.getGolfScoreService();
+    await golfScoreService.submitMatchResults(matchId, payload);
+
+    // Mark live session as finalized
+    await this.liveScoringRepository.updateStatus(session.id, LIVE_SESSION_STATUS.FINALIZED);
+
+    // Broadcast finalization event
+    getSSEManager().broadcastToMatch(matchId, 'session_finalized', {
+      sessionId: session.id.toString(),
+      matchId: matchId.toString(),
+      finalizedBy: userId,
+      finalizedAt: new Date().toISOString(),
+    });
+  }
+
+  private async buildMatchResultsPayload(
+    session: LiveScoringSessionWithScores,
+    match: { team1: bigint; team2: bigint; courseid: bigint; teeid: bigint; matchdate: Date },
+  ): Promise<SubmitMatchResultsType> {
+    // Group scores by golfer
     const scoresByGolfer = new Map<bigint, LiveHoleScoreWithDetails[]>();
     for (const score of session.scores) {
       const existing = scoresByGolfer.get(score.golferid) ?? [];
@@ -237,94 +265,65 @@ export class LiveScoringService {
       scoresByGolfer.set(score.golferid, existing);
     }
 
-    // Batch load rosters for both teams (2 queries instead of N*2)
+    // Batch load rosters for both teams
     const [team1Roster, team2Roster] = await Promise.all([
       this.rosterRepository.findByTeamSeasonId(match.team1),
       this.rosterRepository.findByTeamSeasonId(match.team2),
     ]);
 
-    // Build golfer → teamId lookup map
-    const golferTeamMap = new Map<string, bigint>();
-    team1Roster.forEach((entry) => golferTeamMap.set(entry.golferid.toString(), match.team1));
-    team2Roster.forEach((entry) => golferTeamMap.set(entry.golferid.toString(), match.team2));
+    // Build golfer → roster mapping
+    const golferToRoster = new Map<string, { rosterId: bigint; teamSeasonId: bigint }>();
+    for (const entry of team1Roster) {
+      golferToRoster.set(entry.golferid.toString(), {
+        rosterId: entry.id,
+        teamSeasonId: match.team1,
+      });
+    }
+    for (const entry of team2Roster) {
+      golferToRoster.set(entry.golferid.toString(), {
+        rosterId: entry.id,
+        teamSeasonId: match.team2,
+      });
+    }
 
-    // Build match score submissions for each golfer
-    const submissions: MatchScoreSubmission[] = [];
+    // Build PlayerMatchScoreType array
+    const scores: PlayerMatchScoreType[] = [];
     for (const [golferId, holeScores] of scoresByGolfer) {
-      const teamId = golferTeamMap.get(golferId.toString());
-      if (!teamId) {
+      const rosterInfo = golferToRoster.get(golferId.toString());
+      if (!rosterInfo) {
         console.warn(`Golfer ${golferId} not found in either team roster, skipping`);
         continue;
       }
 
       // Build hole scores array (18 holes, 0 if not entered)
-      const holeScoresArray = Array(18).fill(0);
+      const holeScoresArray: number[] = Array(18).fill(0);
       for (const hs of holeScores) {
         if (hs.holenumber >= 1 && hs.holenumber <= 18) {
           holeScoresArray[hs.holenumber - 1] = hs.score;
         }
       }
 
-      const totalScore = holeScoresArray.reduce((sum, s) => sum + s, 0);
-
-      submissions.push({
-        teamId,
-        golferId,
-        scoreData: {
-          courseid: match.courseid,
-          golferid: golferId,
-          teeid: match.teeid,
-          dateplayed: match.matchdate,
-          holesplayed: 18,
-          totalscore: totalScore,
-          totalsonly: false,
-          holescrore1: holeScoresArray[0],
-          holescrore2: holeScoresArray[1],
-          holescrore3: holeScoresArray[2],
-          holescrore4: holeScoresArray[3],
-          holescrore5: holeScoresArray[4],
-          holescrore6: holeScoresArray[5],
-          holescrore7: holeScoresArray[6],
-          holescrore8: holeScoresArray[7],
-          holescrore9: holeScoresArray[8],
-          holescrore10: holeScoresArray[9],
-          holescrore11: holeScoresArray[10],
-          holescrore12: holeScoresArray[11],
-          holescrore13: holeScoresArray[12],
-          holescrore14: holeScoresArray[13],
-          holescrore15: holeScoresArray[14],
-          holescrore16: holeScoresArray[15],
-          holescrore17: holeScoresArray[16],
-          holescrore18: holeScoresArray[17],
+      scores.push({
+        teamSeasonId: rosterInfo.teamSeasonId.toString(),
+        rosterId: rosterInfo.rosterId.toString(),
+        isAbsent: false,
+        isSubstitute: false,
+        score: {
+          courseId: match.courseid.toString(),
+          teeId: match.teeid.toString(),
+          datePlayed: match.matchdate.toISOString().split('T')[0],
+          holesPlayed: 18,
+          totalsOnly: false,
+          holeScores: holeScoresArray,
+          // startIndex intentionally omitted - server will calculate based on match date
         },
       });
     }
 
-    // Persist scores to the database
-    if (submissions.length > 0) {
-      await this.scoreRepository.submitMatchScoresTransactional(
-        matchId,
-        [match.team1, match.team2],
-        submissions,
-      );
-      console.log(`✅ Saved ${submissions.length} scores for match ${matchId}`);
-    }
-
-    // Update match status to completed
-    await this.matchRepository.updateStatus(matchId, GolfMatchStatus.COMPLETED);
-
-    // Calculate and store match points
-    const scoringService = ServiceFactory.getGolfIndividualScoringService();
-    await scoringService.calculateAndStoreMatchPoints(matchId);
-
-    await this.liveScoringRepository.updateStatus(session.id, LIVE_SESSION_STATUS.FINALIZED);
-
-    getSSEManager().broadcastToMatch(matchId, 'session_finalized', {
-      sessionId: session.id.toString(),
-      matchId: matchId.toString(),
-      finalizedBy: userId,
-      finalizedAt: new Date().toISOString(),
-    });
+    return {
+      courseId: match.courseid.toString(),
+      scores,
+    };
   }
 
   async stopSession(matchId: bigint, userId: string, accountId: bigint): Promise<void> {

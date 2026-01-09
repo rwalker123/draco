@@ -1,6 +1,9 @@
 import { GolfScoreType, GolfScoreWithDetailsType } from '@draco/shared-schemas';
 import { golfcourse, golfteeinformation } from '#prisma/client';
-import { GolfScoreWithDetails } from '../repositories/interfaces/IGolfScoreRepository.js';
+import {
+  GolfScoreWithDetails,
+  GolfMatchScoreWithDetails,
+} from '../repositories/interfaces/IGolfScoreRepository.js';
 import { GolfMatchScoreEntry } from '../repositories/interfaces/IGolfMatchRepository.js';
 import {
   Gender,
@@ -220,6 +223,115 @@ export class GolfScoreResponseFormatter {
         firstName: matchScore.golfer.contact.firstname,
         lastName: matchScore.golfer.contact.lastname,
         middleName: matchScore.golfer.contact.middlename || undefined,
+      },
+      differential,
+      courseHandicap,
+    };
+  }
+
+  static formatMatchScoreFromDetails(
+    matchScore: GolfMatchScoreWithDetails,
+    course?: golfcourse | null,
+    tee?: golfteeinformation | null,
+  ): GolfScoreWithDetailsType {
+    const score = matchScore.golfscore;
+    const holeScores = [
+      score.holescrore1,
+      score.holescrore2,
+      score.holescrore3,
+      score.holescrore4,
+      score.holescrore5,
+      score.holescrore6,
+      score.holescrore7,
+      score.holescrore8,
+      score.holescrore9,
+    ];
+
+    if (score.holesplayed === 18) {
+      holeScores.push(
+        score.holescrore10,
+        score.holescrore11,
+        score.holescrore12,
+        score.holescrore13,
+        score.holescrore14,
+        score.holescrore15,
+        score.holescrore16,
+        score.holescrore17,
+        score.holescrore18,
+      );
+    }
+
+    let differential: number | undefined;
+    let courseHandicap: number | undefined;
+
+    if (course && tee) {
+      const gender = normalizeGender(score.golfer.gender);
+      const handicapIndex = score.holesplayed === 9 ? score.startindex9 : score.startindex;
+
+      const teeRatings: TeeRatings = {
+        mensRating: Number(tee.mensrating) || 72,
+        mensSlope: Number(tee.menslope) || 113,
+        womansRating: Number(tee.womansrating) || 72,
+        womansSlope: Number(tee.womanslope) || 113,
+      };
+
+      const { courseRating, slopeRating } = getRatingsForGender(teeRatings, gender);
+
+      const is9Hole = score.holesplayed === 9;
+      const allHolePars = getHolePars(course, gender);
+      const allHoleHandicapIndexes = getHoleHandicapIndexes(course, gender);
+
+      const holePars = is9Hole ? allHolePars.slice(0, 9) : allHolePars;
+      const holeHandicapIndexes = is9Hole
+        ? allHoleHandicapIndexes.slice(0, 9)
+        : allHoleHandicapIndexes;
+      const totalPar = calculateTotalPar(holePars);
+
+      let courseHandicapForNdb: number | null = null;
+      if (handicapIndex !== undefined && handicapIndex !== null) {
+        courseHandicapForNdb = calculateCourseHandicap(
+          handicapIndex,
+          slopeRating,
+          courseRating,
+          totalPar,
+        );
+        if (is9Hole) {
+          courseHandicapForNdb = Math.round(courseHandicapForNdb / 2);
+        }
+        courseHandicap = courseHandicapForNdb;
+      }
+
+      if (!score.totalsonly) {
+        const adjustedHoleScores = applyNetDoubleBogey(
+          holeScores,
+          holePars,
+          holeHandicapIndexes,
+          courseHandicapForNdb,
+        );
+        const adjustedScore = adjustedHoleScores.reduce((sum, s) => sum + s, 0);
+        differential = calculateScoreDifferential(adjustedScore, courseRating, slopeRating);
+      } else {
+        differential = calculateScoreDifferential(score.totalscore, courseRating, slopeRating);
+      }
+    }
+
+    return {
+      id: score.id.toString(),
+      courseId: score.courseid.toString(),
+      golferId: score.golferid.toString(),
+      teeId: score.teeid.toString(),
+      datePlayed: score.dateplayed.toISOString().split('T')[0],
+      holesPlayed: score.holesplayed,
+      totalScore: score.totalscore,
+      totalsOnly: score.totalsonly,
+      startIndex: score.startindex ?? undefined,
+      startIndex9: score.startindex9 ?? undefined,
+      holeScores,
+      player: {
+        id: score.golfer.contact.id.toString(),
+        firstName: score.golfer.contact.firstname,
+        lastName: score.golfer.contact.lastname,
+        middleName: score.golfer.contact.middlename || undefined,
       },
       differential,
       courseHandicap,

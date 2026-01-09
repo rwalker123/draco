@@ -184,8 +184,8 @@ export default function GolfMatchesWidget({
         .filter((m) => m.matchStatus !== MATCH_STATUS_COMPLETED && new Date(m.matchDateTime) >= now)
         .sort((a, b) => new Date(a.matchDateTime).getTime() - new Date(b.matchDateTime).getTime());
 
-      setRecentMatches(recent.slice(0, 5));
-      setUpcomingMatches(upcoming.slice(0, 5));
+      setRecentMatches(recent.slice(0, 25));
+      setUpcomingMatches(upcoming.slice(0, 25));
     } catch (err) {
       console.error('Error loading golf matches:', err);
       setError('Failed to load matches');
@@ -317,7 +317,8 @@ export default function GolfMatchesWidget({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           {matches.map((match) => {
             const hasActiveSession = activeSessions.has(match.id);
-            const showLiveButton = isMatchToday(match.matchDateTime) && match.matchStatus === 0;
+            const showLiveButton =
+              isMatchToday(match.matchDateTime) && match.matchStatus === 0 && !!match.course;
             const isParticipant = isUserParticipant(match);
 
             return (

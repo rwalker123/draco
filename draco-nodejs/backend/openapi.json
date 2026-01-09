@@ -27456,8 +27456,7 @@
             "example": "12345"
           },
           "matchType": {
-            "type": "integer",
-            "default": 0
+            "type": "integer"
           },
           "comment": {
             "type": "string",
@@ -27818,14 +27817,6 @@
             },
             "minItems": 9,
             "maxItems": 18
-          },
-          "startIndex": {
-            "type": "number",
-            "nullable": true
-          },
-          "startIndex9": {
-            "type": "number",
-            "nullable": true
           }
         },
         "required": [
@@ -27955,14 +27946,6 @@
                       },
                       "minItems": 9,
                       "maxItems": 18
-                    },
-                    "startIndex": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "startIndex9": {
-                      "type": "number",
-                      "nullable": true
                     }
                   },
                   "required": [
@@ -28056,14 +28039,6 @@
                 },
                 "minItems": 9,
                 "maxItems": 18
-              },
-              "startIndex": {
-                "type": "number",
-                "nullable": true
-              },
-              "startIndex9": {
-                "type": "number",
-                "nullable": true
               }
             },
             "required": [

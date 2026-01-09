@@ -194,6 +194,13 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
     });
   }
 
+  async updateTee(matchId: bigint, teeId: bigint): Promise<void> {
+    await this.prisma.golfmatch.update({
+      where: { id: matchId },
+      data: { teeid: teeId },
+    });
+  }
+
   async hasScores(matchId: bigint): Promise<boolean> {
     const count = await this.prisma.golfmatchscores.count({
       where: { matchid: matchId },

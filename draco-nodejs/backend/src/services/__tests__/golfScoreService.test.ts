@@ -1,4 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+const serviceFactoryMock = vi.hoisted(() => {
+  const handicapService = {
+    calculateHandicapIndexAsOf: vi.fn().mockResolvedValue(null),
+  };
+  return {
+    getGolfHandicapService: vi.fn(() => handicapService),
+    getGolfIndividualScoringService: vi.fn(() => ({
+      calculateAndStoreMatchPoints: vi.fn().mockResolvedValue(undefined),
+    })),
+  };
+});
+
+vi.mock('../serviceFactory.js', () => ({
+  ServiceFactory: serviceFactoryMock,
+}));
+
 import { GolfScoreService } from '../golfScoreService.js';
 import type { IGolfScoreRepository } from '../../repositories/interfaces/IGolfScoreRepository.js';
 import type { IGolfMatchRepository } from '../../repositories/interfaces/IGolfMatchRepository.js';
@@ -92,6 +109,7 @@ describe('GolfScoreService', () => {
       findByIdWithScores: vi.fn(),
       updateStatus: vi.fn(),
       updatePoints: vi.fn(),
+      updateTee: vi.fn(),
     };
     mockRosterRepository = {
       findByIds: vi.fn(),

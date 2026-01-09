@@ -77,6 +77,26 @@ export class GolfHandicapService {
     return this.computeHandicapFromDifferentials(differentials);
   }
 
+  async calculateHandicapIndexAsOf(golferId: bigint, asOfDate: Date): Promise<number | null> {
+    const scores = await this.scoreRepository.findByGolferIdBeforeDate(
+      golferId,
+      asOfDate,
+      MAX_SCORES_TO_FETCH,
+    );
+
+    if (scores.length === 0) {
+      return null;
+    }
+
+    const differentials = this.processScorestoDifferentials(scores);
+
+    if (differentials.length < 3) {
+      return null;
+    }
+
+    return this.computeHandicapFromDifferentials(differentials);
+  }
+
   private processScorestoDifferentials(
     scores: Array<{
       id: bigint;
