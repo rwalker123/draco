@@ -193,6 +193,18 @@ function IndividualLiveWatchDialogContent({
 
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
+        {isConnecting && (
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => {
+              disconnect();
+              onClose();
+            }}
+          >
+            Cancel
+          </Button>
+        )}
       </DialogActions>
 
       <style jsx global>{`
