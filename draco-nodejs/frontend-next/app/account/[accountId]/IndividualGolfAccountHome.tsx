@@ -482,7 +482,7 @@ const IndividualGolfAccountHome: React.FC = () => {
             showOwnerActions={isOwner}
             onEdit={setEditingScore}
             onDelete={setDeleteConfirmScore}
-            emptyMessage="No rounds recorded yet. Start tracking your golf scores to see your history here."
+            emptyMessage="No rounds recorded yet. Start tracking your golf scores to see your previously played rounds."
           />
         )}
 
