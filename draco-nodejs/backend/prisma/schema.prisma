@@ -82,6 +82,7 @@ model accounts {
   accountdiscordfeaturesync accountdiscordfeaturesync[]
   accountdiscordteamforums  accountdiscordteamforums[]
   userdiscordaccounts       userdiscordaccounts[]
+  individuallivescoringsessions individuallivescoringsession[]
 }
 
 model accountblueskycredentials {
@@ -230,6 +231,8 @@ model aspnetusers {
   userdiscordaccounts         userdiscordaccounts[]
   livescoringsessions_started livescoringsession[]
   liveholescores_entered      liveholescore[]
+  individuallivescoringsessions_started individuallivescoringsession[]
+  individualliveholescores_entered      individualliveholescore[]
 }
 
 model accountdiscordsettings {
@@ -769,6 +772,7 @@ model golfcourse {
   golfscore             golfscore[]
   golfteeinformation    golfteeinformation[]
   golfersWithHomeCourse golfer[]               @relation("GolferHomeCourse")
+  individuallivescoringsessions individuallivescoringsession[]
 
   @@index([externalid])
 }
@@ -896,6 +900,7 @@ model golfer {
   matchscores         golfmatchscores[]
   scores              golfscore[]
   liveholescores      liveholescore[]
+  individuallivescoringsessions individuallivescoringsession[]
 }
 
 model golfleaguesub {
@@ -1027,6 +1032,7 @@ model golfteeinformation {
   golfscore          golfscore[]
   golfmatch          golfmatch[]
   golfcourse         golfcourse  @relation(fields: [courseid], references: [id], onDelete: Cascade, map: "fk_golfteeinformation_golfcourse")
+  individuallivescoringsessions individuallivescoringsession[]
 }
 
 model hof {
@@ -1903,4 +1909,43 @@ model liveholescore {
 
   @@unique([sessionid, golferid, holenumber], map: "uq_liveholescore_session_golfer_hole")
   @@index([sessionid], map: "idx_liveholescore_session")
+}
+
+model individuallivescoringsession {
+  id           BigInt                    @id @default(autoincrement())
+  accountid    BigInt
+  golferid     BigInt
+  courseid     BigInt
+  teeid        BigInt
+  startedby    String                    @db.VarChar(128)
+  startedat    DateTime                  @default(now()) @db.Timestamptz(6)
+  lastactivity DateTime                  @default(now()) @db.Timestamptz(6)
+  status       Int                       @default(1)
+  currenthole  Int                       @default(1)
+  holesplayed  Int                       @default(18)
+  dateplayed   DateTime                  @db.Timestamptz(6)
+  account      accounts                  @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_indlivescoringsession_accounts")
+  golfer       golfer                    @relation(fields: [golferid], references: [id], onDelete: Cascade, map: "fk_indlivescoringsession_golfer")
+  golfcourse   golfcourse                @relation(fields: [courseid], references: [id], onDelete: Cascade, map: "fk_indlivescoringsession_golfcourse")
+  golfteeinformation golfteeinformation  @relation(fields: [teeid], references: [id], onDelete: Cascade, map: "fk_indlivescoringsession_golfteeinformation")
+  startedbyuser aspnetusers              @relation(fields: [startedby], references: [id], onDelete: Cascade, map: "fk_indlivescoringsession_aspnetusers")
+  scores       individualliveholescore[]
+
+  @@unique([accountid, status], map: "uq_indlivescoringsession_account_active")
+  @@index([accountid], map: "idx_indlivescoringsession_account")
+  @@index([status], map: "idx_indlivescoringsession_status")
+}
+
+model individualliveholescore {
+  id            BigInt                       @id @default(autoincrement())
+  sessionid     BigInt
+  holenumber    Int
+  score         Int
+  enteredby     String                       @db.VarChar(128)
+  enteredat     DateTime                     @default(now()) @db.Timestamptz(6)
+  session       individuallivescoringsession @relation(fields: [sessionid], references: [id], onDelete: Cascade, map: "fk_indliveholescore_session")
+  enteredbyuser aspnetusers                  @relation(fields: [enteredby], references: [id], onDelete: Cascade, map: "fk_indliveholescore_aspnetusers")
+
+  @@unique([sessionid, holenumber], map: "uq_indliveholescore_session_hole")
+  @@index([sessionid], map: "idx_indliveholescore_session")
 }

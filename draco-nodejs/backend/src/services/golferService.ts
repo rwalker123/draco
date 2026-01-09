@@ -78,7 +78,7 @@ export class GolferService {
       throw new NotFoundError('Golfer profile not found for this account');
     }
 
-    const scores = await this.golfScoreRepository.findByGolferId(golfer.id, RECENT_SCORES_LIMIT);
+    const scores = await this.golfScoreRepository.findAllByGolferId(golfer.id, RECENT_SCORES_LIMIT);
     const stats = await this.calculateGolferStats(golfer, scores);
 
     return GolferResponseFormatter.format(golfer, stats);
@@ -230,7 +230,7 @@ export class GolferService {
       return [];
     }
 
-    const scores = await this.golfScoreRepository.findByGolferId(golfer.id, limit);
+    const scores = await this.golfScoreRepository.findAllByGolferId(golfer.id, limit);
     return scores.map((score) => GolfScoreResponseFormatter.formatWithDetails(score));
   }
 
@@ -346,7 +346,7 @@ export class GolferService {
       return null;
     }
 
-    const scores = await this.golfScoreRepository.findByGolferId(golfer.id, RECENT_SCORES_LIMIT);
+    const scores = await this.golfScoreRepository.findAllByGolferId(golfer.id, RECENT_SCORES_LIMIT);
     const stats = await this.calculateGolferStats(golfer, scores);
 
     return {

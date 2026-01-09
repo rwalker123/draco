@@ -20,6 +20,7 @@ import {
   Add as AddIcon,
   Home as HomeIcon,
   Edit as EditIcon,
+  PlayCircle as LiveIcon,
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
@@ -43,6 +44,12 @@ import IndividualRoundEntryDialog from '../../../components/golf/dialogs/Individ
 import OrganizationsWidget from '../../../components/OrganizationsWidget';
 import GolferStatsCards from '../../../components/golf/stats/GolferStatsCards';
 import GolfScoresList from '../../../components/golf/scores/GolfScoresList';
+import StartLiveRoundDialog from '../../../components/golf/dialogs/StartLiveRoundDialog';
+import LiveRoundCard from '../../../components/golf/live-scoring/LiveRoundCard';
+import IndividualLiveScoringDialog from '../../../components/golf/live-scoring/IndividualLiveScoringDialog';
+import IndividualLiveWatchDialog from '../../../components/golf/live-scoring/IndividualLiveWatchDialog';
+import { useIndividualLiveScoringOperations } from '../../../hooks/useIndividualLiveScoringOperations';
+import type { IndividualLiveScoringState } from '../../../context/IndividualLiveScoringContext';
 
 const IndividualGolfAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -58,6 +65,11 @@ const IndividualGolfAccountHome: React.FC = () => {
   const [deleteConfirmScore, setDeleteConfirmScore] = useState<GolfScoreWithDetails | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [startLiveRoundDialogOpen, setStartLiveRoundDialogOpen] = useState(false);
+  const [liveScoringDialogOpen, setLiveScoringDialogOpen] = useState(false);
+  const [liveWatchDialogOpen, setLiveWatchDialogOpen] = useState(false);
+  const [liveSession, setLiveSession] = useState<IndividualLiveScoringState | null>(null);
+  const [isStartingLiveSession, setIsStartingLiveSession] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
@@ -65,6 +77,8 @@ const IndividualGolfAccountHome: React.FC = () => {
   const apiClient = useApiClient();
   const { getGolfer, getGolferSummary, updateHomeCourse, getScores, deleteScore } =
     useIndividualGolfAccountService();
+  const { checkSessionStatus, getSessionState, startSession } =
+    useIndividualLiveScoringOperations();
 
   useEffect(() => {
     if (!accountIdStr) {
@@ -119,6 +133,14 @@ const IndividualGolfAccountHome: React.FC = () => {
             setRecentScores(scoresResult.data);
           }
         }
+
+        const liveStatus = await checkSessionStatus(accountIdStr);
+        if (isMounted && liveStatus?.hasActiveSession) {
+          const sessionState = await getSessionState(accountIdStr);
+          if (isMounted && sessionState) {
+            setLiveSession(sessionState);
+          }
+        }
       } catch (err) {
         if (!isMounted) {
           return;
@@ -139,7 +161,16 @@ const IndividualGolfAccountHome: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [accountIdStr, apiClient, getGolfer, getGolferSummary, getScores, user?.userId]);
+  }, [
+    accountIdStr,
+    apiClient,
+    getGolfer,
+    getGolferSummary,
+    getScores,
+    user?.userId,
+    checkSessionStatus,
+    getSessionState,
+  ]);
 
   const handleRoundEntered = useCallback(
     async (score: GolfScoreWithDetails) => {
@@ -209,6 +240,48 @@ const IndividualGolfAccountHome: React.FC = () => {
       setDeleteError(result.error);
     }
   }, [accountIdStr, deleteConfirmScore, deleteScore, getGolferSummary]);
+
+  const handleStartLiveRound = useCallback(
+    async (data: {
+      courseId: string;
+      teeId: string;
+      datePlayed: string;
+      startingHole: number;
+      holesPlayed: 9 | 18;
+    }): Promise<boolean> => {
+      if (!accountIdStr) return false;
+
+      setIsStartingLiveSession(true);
+      const result = await startSession(accountIdStr, data);
+      setIsStartingLiveSession(false);
+
+      if (result) {
+        setLiveSession(result);
+        setStartLiveRoundDialogOpen(false);
+        setLiveScoringDialogOpen(true);
+        return true;
+      }
+      return false;
+    },
+    [accountIdStr, startSession],
+  );
+
+  const handleLiveSessionEnded = useCallback(async () => {
+    setLiveSession(null);
+    setLiveScoringDialogOpen(false);
+
+    if (accountIdStr) {
+      const scoresResult = await getScores(accountIdStr, 20);
+      if (scoresResult.success) {
+        setRecentScores(scoresResult.data);
+      }
+
+      const summaryResult = await getGolferSummary(accountIdStr);
+      if (summaryResult.success) {
+        setGolferSummary(summaryResult.data);
+      }
+    }
+  }, [accountIdStr, getScores, getGolferSummary]);
 
   const contributingIndices = useMemo(() => {
     const indexedDifferentials = recentScores
@@ -301,6 +374,15 @@ const IndividualGolfAccountHome: React.FC = () => {
       </Box>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
+        {liveSession && (
+          <LiveRoundCard
+            session={liveSession}
+            isOwner={isOwner}
+            onContinue={() => setLiveScoringDialogOpen(true)}
+            onWatch={() => setLiveWatchDialogOpen(true)}
+          />
+        )}
+
         <GolferStatsCards
           roundsPlayed={golferSummary?.roundsPlayed ?? 0}
           handicapIndex={golferSummary?.handicapIndex ?? null}
@@ -347,7 +429,7 @@ const IndividualGolfAccountHome: React.FC = () => {
           </Paper>
         )}
 
-        {isOwner && (
+        {isOwner && !liveSession && (
           <Paper sx={{ p: 4, mb: 4, textAlign: 'center' }}>
             <Typography variant="h5" gutterBottom>
               Get Started
@@ -355,14 +437,25 @@ const IndividualGolfAccountHome: React.FC = () => {
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               Track your golf rounds to see your handicap and statistics.
             </Typography>
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={<AddIcon />}
-              onClick={() => setRoundEntryDialogOpen(true)}
-            >
-              Enter a Round
-            </Button>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<AddIcon />}
+                onClick={() => setRoundEntryDialogOpen(true)}
+              >
+                Enter a Round
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                startIcon={<LiveIcon />}
+                onClick={() => setStartLiveRoundDialogOpen(true)}
+                color="error"
+              >
+                Start Live Round
+              </Button>
+            </Box>
           </Paper>
         )}
 
@@ -452,6 +545,26 @@ const IndividualGolfAccountHome: React.FC = () => {
               </Button>
             </DialogActions>
           </Dialog>
+          <StartLiveRoundDialog
+            open={startLiveRoundDialogOpen}
+            onClose={() => setStartLiveRoundDialogOpen(false)}
+            onStart={handleStartLiveRound}
+            accountId={accountIdStr}
+            homeCourse={golfer?.homeCourse}
+            isStarting={isStartingLiveSession}
+          />
+          <IndividualLiveScoringDialog
+            open={liveScoringDialogOpen}
+            onClose={() => setLiveScoringDialogOpen(false)}
+            accountId={accountIdStr}
+            hasActiveSession={!!liveSession}
+            onSessionEnded={handleLiveSessionEnded}
+          />
+          <IndividualLiveWatchDialog
+            open={liveWatchDialogOpen}
+            onClose={() => setLiveWatchDialogOpen(false)}
+            accountId={accountIdStr}
+          />
         </>
       )}
     </main>
