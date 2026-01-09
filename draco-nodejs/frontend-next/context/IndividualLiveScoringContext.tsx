@@ -107,9 +107,11 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
   const eventSourceRef = useRef<EventSource | null>(null);
   const currentAccountIdRef = useRef<string | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
   const baseReconnectDelay = 1000;
+  const connectionTimeoutMs = 30000;
 
   const scoreUpdateCallbacks = useRef<Set<(event: ScoreUpdateEvent) => void>>(new Set());
   const sessionStartedCallbacks = useRef<Set<(event: SessionStartedEvent) => void>>(new Set());
@@ -124,6 +126,11 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
+    }
+
+    if (connectionTimeoutRef.current) {
+      clearTimeout(connectionTimeoutRef.current);
+      connectionTimeoutRef.current = null;
     }
 
     if (eventSourceRef.current) {
@@ -142,16 +149,29 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
   }, []);
 
   const connectWithTicket = useCallback((accountId: string, ticket: string) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const baseSseUrl = apiUrl
-      ? `${apiUrl}/api/accounts/${accountId}/golfer/live/subscribe`
-      : `${window.location.origin}/api/accounts/${accountId}/golfer/live/subscribe`;
+    const sseBaseUrl = process.env.NEXT_PUBLIC_SSE_URL || '';
+    const baseSseUrl = `${sseBaseUrl}/api/accounts/${accountId}/golfer/live/subscribe`;
     const sseUrl = `${baseSseUrl}?ticket=${encodeURIComponent(ticket)}`;
 
     const eventSource = new EventSource(sseUrl);
     eventSourceRef.current = eventSource;
 
+    // Set connection timeout
+    connectionTimeoutRef.current = setTimeout(() => {
+      if (!isConnectedRef.current && eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+        isConnectingRef.current = false;
+        setIsConnecting(false);
+        setConnectionError('Connection timed out. Please try again.');
+      }
+    }, connectionTimeoutMs);
+
     eventSource.onopen = () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
       isConnectingRef.current = false;
       isConnectedRef.current = true;
       setIsConnecting(false);
@@ -161,6 +181,10 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
     };
 
     eventSource.onerror = () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
       isConnectedRef.current = false;
       isConnectingRef.current = false;
       setIsConnected(false);

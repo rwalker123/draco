@@ -487,6 +487,18 @@ function LiveScoringDialogContent({
 
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
+        {isConnecting && (
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => {
+              disconnect();
+              onClose();
+            }}
+          >
+            Cancel
+          </Button>
+        )}
         {isSessionActive && (
           <>
             <Button variant="outlined" color="error" onClick={handleStop} disabled={isLoading}>

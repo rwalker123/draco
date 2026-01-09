@@ -8,6 +8,7 @@ import {
   PlayArrow as ContinueIcon,
   Tv as WatchIcon,
   GolfCourse as GolfCourseIcon,
+  Cancel as CancelIcon,
 } from '@mui/icons-material';
 import type { IndividualLiveScoringState } from '../../../context/IndividualLiveScoringContext';
 
@@ -16,6 +17,7 @@ interface LiveRoundCardProps {
   isOwner: boolean;
   onContinue?: () => void;
   onWatch?: () => void;
+  onCancel?: () => void;
 }
 
 export const LiveRoundCard: React.FC<LiveRoundCardProps> = ({
@@ -23,6 +25,7 @@ export const LiveRoundCard: React.FC<LiveRoundCardProps> = ({
   isOwner,
   onContinue,
   onWatch,
+  onCancel,
 }) => {
   const completedHoles = session.scores.length;
   const progress = (completedHoles / session.holesPlayed) * 100;
@@ -112,6 +115,23 @@ export const LiveRoundCard: React.FC<LiveRoundCardProps> = ({
       )}
 
       <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+        {isOwner && onCancel && (
+          <Button
+            variant="outlined"
+            startIcon={<CancelIcon />}
+            onClick={onCancel}
+            sx={{
+              borderColor: 'rgba(255,255,255,0.5)',
+              color: 'white',
+              '&:hover': {
+                borderColor: 'white',
+                bgcolor: 'rgba(255,255,255,0.1)',
+              },
+            }}
+          >
+            Cancel Session
+          </Button>
+        )}
         {isOwner ? (
           <Button
             variant="contained"

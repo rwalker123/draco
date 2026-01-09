@@ -70,6 +70,8 @@ const IndividualGolfAccountHome: React.FC = () => {
   const [liveWatchDialogOpen, setLiveWatchDialogOpen] = useState(false);
   const [liveSession, setLiveSession] = useState<IndividualLiveScoringState | null>(null);
   const [isStartingLiveSession, setIsStartingLiveSession] = useState(false);
+  const [cancelSessionConfirmOpen, setCancelSessionConfirmOpen] = useState(false);
+  const [isCancellingSession, setIsCancellingSession] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
@@ -77,7 +79,7 @@ const IndividualGolfAccountHome: React.FC = () => {
   const apiClient = useApiClient();
   const { getGolfer, getGolferSummary, updateHomeCourse, getScores, deleteScore } =
     useIndividualGolfAccountService();
-  const { checkSessionStatus, getSessionState, startSession } =
+  const { checkSessionStatus, getSessionState, startSession, stopSession } =
     useIndividualLiveScoringOperations();
 
   useEffect(() => {
@@ -283,6 +285,19 @@ const IndividualGolfAccountHome: React.FC = () => {
     }
   }, [accountIdStr, getScores, getGolferSummary]);
 
+  const handleCancelSession = useCallback(async () => {
+    if (!accountIdStr) return;
+
+    setIsCancellingSession(true);
+    const success = await stopSession(accountIdStr);
+    setIsCancellingSession(false);
+
+    if (success) {
+      setLiveSession(null);
+      setCancelSessionConfirmOpen(false);
+    }
+  }, [accountIdStr, stopSession]);
+
   const contributingIndices = useMemo(() => {
     const indexedDifferentials = recentScores
       .map((score, idx) => ({ idx, diff: score.differential }))
@@ -380,6 +395,7 @@ const IndividualGolfAccountHome: React.FC = () => {
             isOwner={isOwner}
             onContinue={() => setLiveScoringDialogOpen(true)}
             onWatch={() => setLiveWatchDialogOpen(true)}
+            onCancel={() => setCancelSessionConfirmOpen(true)}
           />
         )}
 
@@ -542,6 +558,36 @@ const IndividualGolfAccountHome: React.FC = () => {
                 disabled={isDeleting}
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </DialogActions>
+          </Dialog>
+          <Dialog
+            open={cancelSessionConfirmOpen}
+            onClose={() => setCancelSessionConfirmOpen(false)}
+            maxWidth="xs"
+            fullWidth
+          >
+            <DialogTitle>Cancel Live Session?</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                Are you sure you want to cancel this live scoring session? All scores entered during
+                this session will be discarded and cannot be recovered.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={() => setCancelSessionConfirmOpen(false)}
+                disabled={isCancellingSession}
+              >
+                Keep Session
+              </Button>
+              <Button
+                onClick={handleCancelSession}
+                color="error"
+                variant="contained"
+                disabled={isCancellingSession}
+              >
+                {isCancellingSession ? 'Cancelling...' : 'Cancel Session'}
               </Button>
             </DialogActions>
           </Dialog>
