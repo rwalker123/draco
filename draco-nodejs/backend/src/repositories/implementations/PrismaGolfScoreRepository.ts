@@ -55,6 +55,17 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     });
   }
 
+  async findAllByGolferId(golferId: bigint, limit = 20): Promise<GolfScoreWithDetails[]> {
+    return this.prisma.golfscore.findMany({
+      where: {
+        golferid: golferId,
+      },
+      include: scoreWithDetailsInclude,
+      orderBy: { dateplayed: 'desc' },
+      take: limit,
+    });
+  }
+
   async findByGolferIdBeforeDate(
     golferId: bigint,
     beforeDate: Date,

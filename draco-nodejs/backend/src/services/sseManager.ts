@@ -4,7 +4,8 @@ interface SSEClient {
   id: string;
   res: Response;
   userId: string;
-  matchId: bigint;
+  matchId?: bigint;
+  accountId?: bigint;
   lastPing: number;
 }
 
@@ -15,6 +16,7 @@ interface SSEClient {
 export class SSEManager {
   private clients: Map<string, SSEClient> = new Map();
   private matchSubscriptions: Map<string, Set<string>> = new Map(); // matchId -> clientIds
+  private accountSubscriptions: Map<string, Set<string>> = new Map(); // accountId -> clientIds
   private pingInterval: NodeJS.Timeout | null = null;
   private readonly PING_INTERVAL_MS = 30000; // 30 seconds (Railway has 60s timeout)
   private readonly STALE_THRESHOLD_MS = 120000; // 2 minutes
@@ -67,19 +69,35 @@ export class SSEManager {
   removeClient(clientId: string): void {
     const client = this.clients.get(clientId);
     if (client) {
-      const matchId = client.matchId;
-      const matchKey = matchId.toString();
-      this.matchSubscriptions.get(matchKey)?.delete(clientId);
-      const remainingClients = this.matchSubscriptions.get(matchKey)?.size ?? 0;
-      if (remainingClients === 0) {
-        this.matchSubscriptions.delete(matchKey);
-      }
-      this.clients.delete(clientId);
-      console.log(`📡 SSE client ${clientId} disconnected. Total clients: ${this.clients.size}`);
+      if (client.matchId) {
+        const matchKey = client.matchId.toString();
+        this.matchSubscriptions.get(matchKey)?.delete(clientId);
+        const remainingClients = this.matchSubscriptions.get(matchKey)?.size ?? 0;
+        if (remainingClients === 0) {
+          this.matchSubscriptions.delete(matchKey);
+        }
+        this.clients.delete(clientId);
+        console.log(`📡 SSE client ${clientId} disconnected. Total clients: ${this.clients.size}`);
 
-      // Broadcast updated viewer count to remaining clients
-      if (remainingClients > 0) {
-        this.broadcastViewerCount(matchId);
+        if (remainingClients > 0) {
+          this.broadcastViewerCount(client.matchId);
+        }
+      } else if (client.accountId) {
+        const accountKey = client.accountId.toString();
+        this.accountSubscriptions.get(accountKey)?.delete(clientId);
+        const remainingClients = this.accountSubscriptions.get(accountKey)?.size ?? 0;
+        if (remainingClients === 0) {
+          this.accountSubscriptions.delete(accountKey);
+        }
+        this.clients.delete(clientId);
+        console.log(`📡 SSE client ${clientId} disconnected. Total clients: ${this.clients.size}`);
+
+        if (remainingClients > 0) {
+          this.broadcastAccountViewerCount(client.accountId);
+        }
+      } else {
+        this.clients.delete(clientId);
+        console.log(`📡 SSE client ${clientId} disconnected. Total clients: ${this.clients.size}`);
       }
     }
   }
@@ -104,6 +122,64 @@ export class SSEManager {
         this.sendEvent(clientId, event, data);
       }
     }
+  }
+
+  /**
+   * Adds a new SSE client connection for a specific account (individual live scoring).
+   */
+  addAccountClient(clientId: string, res: Response, userId: string, accountId: bigint): void {
+    const client: SSEClient = {
+      id: clientId,
+      res,
+      userId,
+      accountId,
+      lastPing: Date.now(),
+    };
+
+    this.clients.set(clientId, client);
+
+    const accountKey = accountId.toString();
+    if (!this.accountSubscriptions.has(accountKey)) {
+      this.accountSubscriptions.set(accountKey, new Set());
+    }
+    this.accountSubscriptions.get(accountKey)!.add(clientId);
+
+    console.log(
+      `📡 SSE client ${clientId} connected to account ${accountKey}. Total clients: ${this.clients.size}`,
+    );
+
+    this.sendEvent(clientId, 'connected', { clientId, accountId: accountKey });
+
+    this.broadcastAccountViewerCount(accountId);
+  }
+
+  /**
+   * Broadcasts the current viewer count to all clients watching an account.
+   */
+  broadcastAccountViewerCount(accountId: bigint): void {
+    const viewerCount = this.getAccountViewerCount(accountId);
+    this.broadcastToAccount(accountId, 'viewer_count', { viewerCount });
+  }
+
+  /**
+   * Broadcasts an event to all clients subscribed to a specific account.
+   */
+  broadcastToAccount(accountId: bigint, event: string, data: unknown): void {
+    const accountKey = accountId.toString();
+    const clientIds = this.accountSubscriptions.get(accountKey);
+
+    if (clientIds) {
+      for (const clientId of clientIds) {
+        this.sendEvent(clientId, event, data);
+      }
+    }
+  }
+
+  /**
+   * Gets the number of viewers for a specific account.
+   */
+  getAccountViewerCount(accountId: bigint): number {
+    return this.accountSubscriptions.get(accountId.toString())?.size ?? 0;
   }
 
   /**
@@ -216,6 +292,7 @@ export class SSEManager {
 
     this.clients.clear();
     this.matchSubscriptions.clear();
+    this.accountSubscriptions.clear();
     console.log('📡 SSE Manager shutdown complete');
   }
 }

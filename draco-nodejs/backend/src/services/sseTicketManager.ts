@@ -78,6 +78,58 @@ class SseTicketManager {
     };
   }
 
+  createAccountTicket(userId: string, accountId: bigint): { ticket: string; expiresIn: number } {
+    const ticket = crypto.randomBytes(32).toString('hex');
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + TICKET_EXPIRY_MS);
+
+    this.tickets.set(ticket, {
+      ticket,
+      userId,
+      matchId: BigInt(0),
+      accountId,
+      createdAt: now,
+      expiresAt,
+      used: false,
+    });
+
+    return {
+      ticket,
+      expiresIn: TICKET_EXPIRY_MS / 1000,
+    };
+  }
+
+  validateAccountTicket(
+    ticket: string,
+    accountId: bigint,
+  ): { valid: true; userId: string } | { valid: false; reason: string } {
+    const ticketData = this.tickets.get(ticket);
+
+    if (!ticketData) {
+      return { valid: false, reason: 'Ticket not found' };
+    }
+
+    if (ticketData.used) {
+      return { valid: false, reason: 'Ticket already used' };
+    }
+
+    if (new Date() > ticketData.expiresAt) {
+      this.tickets.delete(ticket);
+      return { valid: false, reason: 'Ticket expired' };
+    }
+
+    if (ticketData.accountId !== accountId) {
+      return { valid: false, reason: 'Ticket not valid for this account' };
+    }
+
+    ticketData.used = true;
+
+    return {
+      valid: true,
+      userId: ticketData.userId,
+    };
+  }
+
   private startCleanup(): void {
     this.cleanupInterval = setInterval(() => {
       this.cleanup();

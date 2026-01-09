@@ -372,6 +372,13 @@ import {
   FinalizeLiveScoringSchema,
   StopLiveScoringSchema,
   SseTicketResponseSchema,
+  IndividualLiveScoringStateSchema,
+  IndividualLiveSessionStatusSchema,
+  IndividualLiveHoleScoreSchema,
+  StartIndividualLiveScoringSchema,
+  SubmitIndividualLiveHoleScoreSchema,
+  AdvanceIndividualLiveHoleSchema,
+  IndividualSseTicketResponseSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1450,6 +1457,34 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'SseTicketResponse',
     SseTicketResponseSchema,
   );
+  const IndividualLiveScoringStateSchemaRef = registry.register(
+    'IndividualLiveScoringState',
+    IndividualLiveScoringStateSchema,
+  );
+  const IndividualLiveSessionStatusSchemaRef = registry.register(
+    'IndividualLiveSessionStatus',
+    IndividualLiveSessionStatusSchema,
+  );
+  const IndividualLiveHoleScoreSchemaRef = registry.register(
+    'IndividualLiveHoleScore',
+    IndividualLiveHoleScoreSchema,
+  );
+  const StartIndividualLiveScoringSchemaRef = registry.register(
+    'StartIndividualLiveScoring',
+    StartIndividualLiveScoringSchema,
+  );
+  const SubmitIndividualLiveHoleScoreSchemaRef = registry.register(
+    'SubmitIndividualLiveHoleScore',
+    SubmitIndividualLiveHoleScoreSchema,
+  );
+  const AdvanceIndividualLiveHoleSchemaRef = registry.register(
+    'AdvanceIndividualLiveHole',
+    AdvanceIndividualLiveHoleSchema,
+  );
+  const IndividualSseTicketResponseSchemaRef = registry.register(
+    'IndividualSseTicketResponse',
+    IndividualSseTicketResponseSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1826,6 +1861,13 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     FinalizeLiveScoringSchemaRef,
     StopLiveScoringSchemaRef,
     SseTicketResponseSchemaRef,
+    IndividualLiveScoringStateSchemaRef,
+    IndividualLiveSessionStatusSchemaRef,
+    IndividualLiveHoleScoreSchemaRef,
+    StartIndividualLiveScoringSchemaRef,
+    SubmitIndividualLiveHoleScoreSchemaRef,
+    AdvanceIndividualLiveHoleSchemaRef,
+    IndividualSseTicketResponseSchemaRef,
   };
 };
 

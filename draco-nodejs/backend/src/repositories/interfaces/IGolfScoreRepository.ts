@@ -64,6 +64,7 @@ export type SubmitMatchScoresResult = {
 export interface IGolfScoreRepository {
   findById(scoreId: bigint): Promise<GolfScoreWithDetails | null>;
   findByGolferId(golferId: bigint, limit?: number): Promise<GolfScoreWithDetails[]>;
+  findAllByGolferId(golferId: bigint, limit?: number): Promise<GolfScoreWithDetails[]>;
   findByGolferIdBeforeDate(
     golferId: bigint,
     beforeDate: Date,
