@@ -57029,15 +57029,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Manager removed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
+          "204": {
+            "description": "Manager removed"
           },
           "401": {
             "description": "Authentication required",

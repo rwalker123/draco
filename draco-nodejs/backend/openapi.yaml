@@ -39214,12 +39214,8 @@ paths:
             type: string
             format: number
       responses:
-        "200":
+        "204":
           description: Manager removed
-          content:
-            application/json:
-              schema:
-                type: string
         "401":
           description: Authentication required
           content:
