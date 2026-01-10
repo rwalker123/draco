@@ -5,6 +5,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useLayoutEffect,
   useCallback,
   useRef,
   ReactNode,
@@ -401,13 +402,11 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
     [token, apiClient, disconnect, connectWithTicket],
   );
 
-  useEffect(() => {
+  // useLayoutEffect runs synchronously after render but before effects,
+  // ensuring connectRef is available for the reconnect timeout callback
+  useLayoutEffect(() => {
     connectRef.current = connect;
   }, [connect]);
-
-  const stableConnect = useCallback((accountId: string) => {
-    connectRef.current?.(accountId);
-  }, []);
 
   const stableDisconnect = useCallback(() => {
     disconnect();
@@ -460,7 +459,7 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
     connectionError,
     sessionState,
     viewerCount,
-    connect: stableConnect,
+    connect,
     disconnect: stableDisconnect,
     onScoreUpdate,
     onSessionStarted,
