@@ -14,21 +14,7 @@ import { IScheduleRepository } from '../repositories/interfaces/IScheduleReposit
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { getSSEManager } from './sseManager.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
-
-const BASEBALL_LIVE_SESSION_STATUS = {
-  ACTIVE: 1,
-  PAUSED: 2,
-  FINALIZED: 3,
-  STOPPED: 4,
-  ABANDONED: 5,
-} as const;
-
-const STATUS_MAP: Record<number, 'active' | 'paused' | 'finalized' | 'stopped'> = {
-  [BASEBALL_LIVE_SESSION_STATUS.ACTIVE]: 'active',
-  [BASEBALL_LIVE_SESSION_STATUS.PAUSED]: 'paused',
-  [BASEBALL_LIVE_SESSION_STATUS.FINALIZED]: 'finalized',
-  [BASEBALL_LIVE_SESSION_STATUS.STOPPED]: 'stopped',
-};
+import { LIVE_SESSION_STATUS, LIVE_SESSION_STATUS_MAP } from '../constants/liveSessionConstants.js';
 
 // Game status constants (from game.ts schema)
 const GAME_STATUS = {
@@ -84,7 +70,7 @@ export class BaseballLiveScoringService {
 
     const existingSession = await this.baseballLiveScoringRepository.findByGame(gameId);
     if (existingSession) {
-      if (existingSession.status === BASEBALL_LIVE_SESSION_STATUS.ACTIVE) {
+      if (existingSession.status === LIVE_SESSION_STATUS.ACTIVE) {
         throw new ValidationError('A live scoring session is already active for this game');
       }
       await this.baseballLiveScoringRepository.deleteSession(existingSession.id);
@@ -121,7 +107,7 @@ export class BaseballLiveScoringService {
       throw new NotFoundError('No active live scoring session for this game');
     }
 
-    if (session.status !== BASEBALL_LIVE_SESSION_STATUS.ACTIVE) {
+    if (session.status !== LIVE_SESSION_STATUS.ACTIVE) {
       throw new ValidationError('Live scoring session is not active');
     }
 
@@ -189,7 +175,7 @@ export class BaseballLiveScoringService {
     // Mark live session as finalized
     await this.baseballLiveScoringRepository.updateStatus(
       session.id,
-      BASEBALL_LIVE_SESSION_STATUS.FINALIZED,
+      LIVE_SESSION_STATUS.FINALIZED,
     );
 
     // Broadcast finalization event
@@ -209,10 +195,7 @@ export class BaseballLiveScoringService {
       throw new NotFoundError('No active live scoring session for this game');
     }
 
-    await this.baseballLiveScoringRepository.updateStatus(
-      session.id,
-      BASEBALL_LIVE_SESSION_STATUS.STOPPED,
-    );
+    await this.baseballLiveScoringRepository.updateStatus(session.id, LIVE_SESSION_STATUS.STOPPED);
 
     getSSEManager().broadcastToGame(gameId, 'session_stopped', {
       sessionId: session.id.toString(),
@@ -267,7 +250,7 @@ export class BaseballLiveScoringService {
     return {
       sessionId: session.id.toString(),
       gameId: session.gameid.toString(),
-      status: STATUS_MAP[session.status] ?? 'active',
+      status: LIVE_SESSION_STATUS_MAP[session.status] ?? 'active',
       currentInning: session.currentinning,
       startedAt: session.startedat.toISOString(),
       startedBy: session.startedbyuser?.username ?? session.startedby,

@@ -13,21 +13,7 @@ import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { getSSEManager } from './sseManager.js';
 import { ServiceFactory } from './serviceFactory.js';
 import { NotFoundError, ValidationError, AuthorizationError } from '../utils/customErrors.js';
-
-export const INDIVIDUAL_LIVE_SESSION_STATUS = {
-  ACTIVE: 1,
-  PAUSED: 2,
-  FINALIZED: 3,
-  STOPPED: 4,
-  ABANDONED: 5,
-} as const;
-
-const STATUS_MAP: Record<number, 'active' | 'paused' | 'finalized' | 'stopped'> = {
-  [INDIVIDUAL_LIVE_SESSION_STATUS.ACTIVE]: 'active',
-  [INDIVIDUAL_LIVE_SESSION_STATUS.PAUSED]: 'paused',
-  [INDIVIDUAL_LIVE_SESSION_STATUS.FINALIZED]: 'finalized',
-  [INDIVIDUAL_LIVE_SESSION_STATUS.STOPPED]: 'stopped',
-};
+import { LIVE_SESSION_STATUS, LIVE_SESSION_STATUS_MAP } from '../constants/liveSessionConstants.js';
 
 export interface IndividualLiveSessionStatusType {
   hasActiveSession: boolean;
@@ -137,7 +123,7 @@ export class IndividualLiveScoringService {
 
     const existingSession = await this.individualLiveScoringRepository.findByAccount(accountId);
     if (existingSession) {
-      if (existingSession.status === INDIVIDUAL_LIVE_SESSION_STATUS.ACTIVE) {
+      if (existingSession.status === LIVE_SESSION_STATUS.ACTIVE) {
         throw new ValidationError('A live scoring session is already active for this account');
       }
       await this.individualLiveScoringRepository.deleteSession(existingSession.id);
@@ -194,7 +180,7 @@ export class IndividualLiveScoringService {
       throw new NotFoundError('No active live scoring session for this account');
     }
 
-    if (session.status !== INDIVIDUAL_LIVE_SESSION_STATUS.ACTIVE) {
+    if (session.status !== LIVE_SESSION_STATUS.ACTIVE) {
       throw new ValidationError('Live scoring session is not active');
     }
 
@@ -263,7 +249,7 @@ export class IndividualLiveScoringService {
 
     await this.individualLiveScoringRepository.updateStatus(
       session.id,
-      INDIVIDUAL_LIVE_SESSION_STATUS.FINALIZED,
+      LIVE_SESSION_STATUS.FINALIZED,
     );
 
     getSSEManager().broadcastToAccount(accountId, 'session_finalized', {
@@ -304,7 +290,7 @@ export class IndividualLiveScoringService {
 
     await this.individualLiveScoringRepository.updateStatus(
       session.id,
-      INDIVIDUAL_LIVE_SESSION_STATUS.STOPPED,
+      LIVE_SESSION_STATUS.STOPPED,
     );
 
     getSSEManager().broadcastToAccount(accountId, 'session_stopped', {
@@ -353,7 +339,7 @@ export class IndividualLiveScoringService {
     return {
       sessionId: session.id.toString(),
       accountId: session.accountid.toString(),
-      status: STATUS_MAP[session.status] ?? 'active',
+      status: LIVE_SESSION_STATUS_MAP[session.status] ?? 'active',
       currentHole: session.currenthole,
       holesPlayed: session.holesplayed,
       courseId: session.courseid.toString(),

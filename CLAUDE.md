@@ -16,6 +16,9 @@ For domain-specific workflows, start with these focused references:
 - Whenever you add or rename backend permissions (e.g., new entries in `ROLE_PERMISSIONS`), bump the `version` string returned from `GET /api/roles/roles/metadata` in `backend/src/routes/roles.ts` and update `ROLE_METADATA_CLIENT_VERSION` in `frontend-next/context/RoleContext.tsx` so the frontend invalidates its cached role metadata.
 - Never modify API response shapes without first searching for ALL consumers (frontend components, backend services, tests) and updating them together. Breaking changes require explicit approval.
 
+## ESlint disable pragma
+- Never disable eslint issues in code. If you ever think you need to do it, stop and get approval first,  no exceptions.
+
 ## Project Structure & Module Organization
 The root `package.json` supervises npm workspaces for `draco-nodejs/backend`, `draco-nodejs/frontend-next`, and `draco-nodejs/shared/*`. Backend TypeScript code lives in `backend/src` with controllers, routes, services, and middleware split into dedicated folders; database schema and migrations stay in `backend/prisma`. The Next.js app sits in `frontend-next/app` and `components`, with shared state and utilities in `context`, `hooks`, and `utils`. Generated schemas and API clients are stored under `draco-nodejs/shared` and must be regenerated when the OpenAPI spec changes.
 

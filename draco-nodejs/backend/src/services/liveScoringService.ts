@@ -21,21 +21,7 @@ import { getSSEManager } from './sseManager.js';
 import { ServiceFactory } from './serviceFactory.js';
 import { NotFoundError, ValidationError, AuthorizationError } from '../utils/customErrors.js';
 import { GolfMatchStatus } from '../utils/golfConstants.js';
-
-const LIVE_SESSION_STATUS = {
-  ACTIVE: 1,
-  PAUSED: 2,
-  FINALIZED: 3,
-  ABANDONED: 4,
-  STOPPED: 5,
-} as const;
-
-const STATUS_MAP: Record<number, 'active' | 'paused' | 'finalized' | 'stopped'> = {
-  [LIVE_SESSION_STATUS.ACTIVE]: 'active',
-  [LIVE_SESSION_STATUS.PAUSED]: 'paused',
-  [LIVE_SESSION_STATUS.FINALIZED]: 'finalized',
-  [LIVE_SESSION_STATUS.STOPPED]: 'stopped',
-};
+import { LIVE_SESSION_STATUS, LIVE_SESSION_STATUS_MAP } from '../constants/liveSessionConstants.js';
 
 export class LiveScoringService {
   private readonly liveScoringRepository: ILiveScoringRepository;
@@ -426,7 +412,7 @@ export class LiveScoringService {
     return {
       sessionId: session.id.toString(),
       matchId: session.matchid.toString(),
-      status: STATUS_MAP[session.status] ?? 'active',
+      status: LIVE_SESSION_STATUS_MAP[session.status] ?? 'active',
       currentHole: session.currenthole,
       holesPlayed: 18,
       startedAt: session.startedat.toISOString(),
