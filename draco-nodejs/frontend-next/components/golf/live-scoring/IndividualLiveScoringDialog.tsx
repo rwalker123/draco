@@ -346,7 +346,7 @@ function IndividualLiveScoringDialogContent({
 
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
-        {isConnecting && (
+        {(isConnecting || (hasActiveSession && !sessionState && !connectionError)) && (
           <Button
             variant="outlined"
             color="error"

@@ -142,7 +142,7 @@ function IndividualLiveWatchDialogContent({
           </Alert>
         )}
 
-        {isConnecting && (
+        {(isConnecting || (!sessionState && !connectionError)) && (
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
             <CircularProgress size={24} sx={{ mr: 2 }} />
             <Typography variant="body1" color="text.secondary">
@@ -181,19 +181,11 @@ function IndividualLiveWatchDialogContent({
             )}
           </>
         )}
-
-        {!sessionState && !isConnecting && !connectionError && (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="body1" color="text.secondary">
-              No active live scoring session found.
-            </Typography>
-          </Box>
-        )}
       </DialogContent>
 
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
-        {isConnecting && (
+        {(isConnecting || (!sessionState && !connectionError)) && (
           <Button
             variant="outlined"
             color="error"

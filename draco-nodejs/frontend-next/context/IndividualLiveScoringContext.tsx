@@ -5,6 +5,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useLayoutEffect,
   useCallback,
   useRef,
   ReactNode,
@@ -218,9 +219,8 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
       }
     };
 
-    eventSource.addEventListener('connected', (event) => {
-      const data = JSON.parse(event.data);
-      console.log('Individual SSE connected:', data);
+    eventSource.addEventListener('connected', () => {
+      // Connection acknowledged by server
     });
 
     eventSource.addEventListener('state', (event) => {
@@ -369,8 +369,8 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
     [token, apiClient, disconnect, connectWithTicket],
   );
 
-  // useLayoutEffect runs synchronously after render but before other effects,
-  // ensuring connectRef is available when stableConnect is called from child useEffects
+  // useLayoutEffect runs synchronously after render but before effects,
+  // ensuring connectRef is available for the reconnect timeout callback
   useLayoutEffect(() => {
     connectRef.current = connect;
   }, [connect]);
