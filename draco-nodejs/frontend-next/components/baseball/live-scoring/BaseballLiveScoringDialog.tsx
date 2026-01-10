@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -41,6 +41,143 @@ interface BaseballLiveScoringDialogProps {
   hasActiveSession?: boolean;
 }
 
+interface InningScoreEntryProps {
+  inning: number;
+  homeScore: number | undefined;
+  visitorScore: number | undefined;
+  homeTeamName: string;
+  visitorTeamName: string;
+  gameId: string;
+  disabled: boolean;
+}
+
+function InningScoreEntry({
+  inning,
+  homeScore,
+  visitorScore,
+  homeTeamName,
+  visitorTeamName,
+  gameId,
+  disabled,
+}: InningScoreEntryProps) {
+  const { submitScore } = useBaseballLiveScoringOperations();
+
+  const [homeRunsInput, setHomeRunsInput] = useState(
+    homeScore !== undefined ? String(homeScore) : '',
+  );
+  const [visitorRunsInput, setVisitorRunsInput] = useState(
+    visitorScore !== undefined ? String(visitorScore) : '',
+  );
+  const [submittingTeam, setSubmittingTeam] = useState<'home' | 'visitor' | null>(null);
+
+  const handleRunsChange = (team: 'home' | 'visitor', value: string) => {
+    if (value === '' || /^\d{1,2}$/.test(value)) {
+      if (team === 'home') {
+        setHomeRunsInput(value);
+      } else {
+        setVisitorRunsInput(value);
+      }
+    }
+  };
+
+  const handleScoreBlur = async (isHomeTeam: boolean) => {
+    const runsStr = isHomeTeam ? homeRunsInput : visitorRunsInput;
+    const existingScore = isHomeTeam ? homeScore : visitorScore;
+
+    if (!runsStr && existingScore === undefined) return;
+    if (runsStr === String(existingScore)) return;
+    if (!runsStr) return;
+
+    const runs = parseInt(runsStr, 10);
+    if (isNaN(runs) || runs < 0 || runs > 99) return;
+    if (existingScore === runs) return;
+
+    setSubmittingTeam(isHomeTeam ? 'home' : 'visitor');
+    await submitScore(gameId, {
+      inningNumber: inning,
+      isHomeTeam,
+      runs,
+    });
+    setSubmittingTeam(null);
+  };
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Typography variant="subtitle1" fontWeight="bold">
+        Enter Runs for Inning {inning}:
+      </Typography>
+
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          p: 1.5,
+          borderRadius: 1,
+          bgcolor: 'background.paper',
+          border: 1,
+          borderColor: 'divider',
+        }}
+      >
+        <Typography variant="body1" fontWeight={500}>
+          {visitorTeamName}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <TextField
+            type="number"
+            size="small"
+            value={visitorRunsInput}
+            onChange={(e) => handleRunsChange('visitor', e.target.value)}
+            onBlur={() => handleScoreBlur(false)}
+            disabled={disabled || submittingTeam === 'visitor'}
+            inputProps={{
+              min: 0,
+              max: 99,
+              style: { width: 50, textAlign: 'center' },
+            }}
+            sx={{ width: 70 }}
+          />
+          {submittingTeam === 'visitor' && <CircularProgress size={16} />}
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          p: 1.5,
+          borderRadius: 1,
+          bgcolor: 'background.paper',
+          border: 1,
+          borderColor: 'divider',
+        }}
+      >
+        <Typography variant="body1" fontWeight={500}>
+          {homeTeamName}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <TextField
+            type="number"
+            size="small"
+            value={homeRunsInput}
+            onChange={(e) => handleRunsChange('home', e.target.value)}
+            onBlur={() => handleScoreBlur(true)}
+            disabled={disabled || submittingTeam === 'home'}
+            inputProps={{
+              min: 0,
+              max: 99,
+              style: { width: 50, textAlign: 'center' },
+            }}
+            sx={{ width: 70 }}
+          />
+          {submittingTeam === 'home' && <CircularProgress size={16} />}
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
 function BaseballLiveScoringDialogContent({
   gameId,
   homeTeamName,
@@ -57,23 +194,21 @@ function BaseballLiveScoringDialogContent({
     scorerCount,
     connect,
     disconnect,
+    onSessionStarted,
+    onInningAdvanced,
   } = useBaseballLiveScoring();
 
   const {
     isLoading,
     error: operationError,
     startSession,
-    submitScore,
     advanceInning,
     finalizeSession,
     stopSession,
     clearError,
   } = useBaseballLiveScoringOperations();
 
-  const [currentInning, setCurrentInning] = useState(1);
-  const [homeRunsInput, setHomeRunsInput] = useState<string>('');
-  const [visitorRunsInput, setVisitorRunsInput] = useState<string>('');
-  const [submittingTeam, setSubmittingTeam] = useState<'home' | 'visitor' | null>(null);
+  const [userSelectedInning, setUserSelectedInning] = useState<number | null>(null);
   const [startingSession, setStartingSession] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -84,6 +219,9 @@ function BaseballLiveScoringDialogContent({
     confirmColor: 'error' | 'primary' | 'success';
   } | null>(null);
 
+  // Derive effective inning: user selection takes precedence, falls back to server state
+  const effectiveInning = userSelectedInning ?? sessionState?.currentInning ?? 1;
+
   useEffect(() => {
     if (hasActiveSession) {
       connect(gameId, 'scorer');
@@ -93,19 +231,19 @@ function BaseballLiveScoringDialogContent({
     };
   }, [gameId, hasActiveSession, connect, disconnect]);
 
+  // Subscribe to session start event to clear loading state
   useEffect(() => {
-    if (sessionState?.currentInning) {
-      /* eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate sync from SSE session state */
-      setCurrentInning(sessionState.currentInning);
-    }
-  }, [sessionState?.currentInning]);
-
-  useEffect(() => {
-    if (isConnected && sessionState) {
-      /* eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate sync from SSE connection state */
+    return onSessionStarted(() => {
       setStartingSession(false);
-    }
-  }, [isConnected, sessionState]);
+    });
+  }, [onSessionStarted]);
+
+  // Subscribe to inning advance events to follow server
+  useEffect(() => {
+    return onInningAdvanced(() => {
+      setUserSelectedInning(null);
+    });
+  }, [onInningAdvanced]);
 
   const getScoreForInning = useCallback(
     (inning: number, isHomeTeam: boolean): number | undefined => {
@@ -117,16 +255,12 @@ function BaseballLiveScoringDialogContent({
     [sessionState?.scores],
   );
 
-  useEffect(() => {
-    if (sessionState) {
-      const homeScore = getScoreForInning(currentInning, true);
-      const visitorScore = getScoreForInning(currentInning, false);
-      /* eslint-disable react-hooks/set-state-in-effect -- legitimate sync from SSE session scores */
-      setHomeRunsInput(homeScore !== undefined ? String(homeScore) : '');
-      setVisitorRunsInput(visitorScore !== undefined ? String(visitorScore) : '');
-      /* eslint-enable react-hooks/set-state-in-effect */
-    }
-  }, [currentInning, sessionState, getScoreForInning]);
+  // Generate key for InningScoreEntry to reset form when inning or scores change
+  const scoreEntryKey = useMemo(() => {
+    const homeScore = getScoreForInning(effectiveInning, true);
+    const visitorScore = getScoreForInning(effectiveInning, false);
+    return `${effectiveInning}-${homeScore ?? 'null'}-${visitorScore ?? 'null'}`;
+  }, [effectiveInning, getScoreForInning]);
 
   const handleStartSession = useCallback(async () => {
     setStartingSession(true);
@@ -138,66 +272,11 @@ function BaseballLiveScoringDialogContent({
     }
   }, [gameId, startSession, connect]);
 
-  const handleRunsChange = (team: 'home' | 'visitor', value: string) => {
-    if (value === '' || /^\d{1,2}$/.test(value)) {
-      if (team === 'home') {
-        setHomeRunsInput(value);
-      } else {
-        setVisitorRunsInput(value);
-      }
-    }
-  };
-
-  const handleScoreBlur = async (isHomeTeam: boolean) => {
-    const runsStr = isHomeTeam ? homeRunsInput : visitorRunsInput;
-    const existingScore = getScoreForInning(currentInning, isHomeTeam);
-
-    if (!runsStr && existingScore === undefined) return;
-    if (runsStr === String(existingScore)) return;
-    if (!runsStr) return;
-
-    const runs = parseInt(runsStr, 10);
-    if (isNaN(runs) || runs < 0 || runs > 99) return;
-    if (existingScore === runs) return;
-
-    setSubmittingTeam(isHomeTeam ? 'home' : 'visitor');
-    await submitScore(gameId, {
-      inningNumber: currentInning,
-      isHomeTeam,
-      runs,
-    });
-    setSubmittingTeam(null);
-  };
-
   const handleAdvanceInning = async (direction: 'prev' | 'next') => {
-    const newInning = direction === 'next' ? currentInning + 1 : currentInning - 1;
+    const newInning = direction === 'next' ? effectiveInning + 1 : effectiveInning - 1;
     if (newInning < 1 || newInning > 99) return;
 
-    // Submit any pending scores before changing innings
-    const homeRuns = parseInt(homeRunsInput, 10);
-    const visitorRuns = parseInt(visitorRunsInput, 10);
-
-    if (!isNaN(homeRuns) && homeRuns >= 0 && getScoreForInning(currentInning, true) !== homeRuns) {
-      await submitScore(gameId, {
-        inningNumber: currentInning,
-        isHomeTeam: true,
-        runs: homeRuns,
-      });
-    }
-
-    if (
-      !isNaN(visitorRuns) &&
-      visitorRuns >= 0 &&
-      getScoreForInning(currentInning, false) !== visitorRuns
-    ) {
-      await submitScore(gameId, {
-        inningNumber: currentInning,
-        isHomeTeam: false,
-        runs: visitorRuns,
-      });
-    }
-
-    setCurrentInning(newInning);
+    setUserSelectedInning(newInning);
     if (sessionState) {
       await advanceInning(gameId, newInning);
     }
@@ -254,7 +333,7 @@ function BaseballLiveScoringDialogContent({
   const maxInning = getMaxInningWithScores();
 
   // Build innings array for the scoreboard (up to current inning or max scored inning + 1)
-  const displayInnings = Math.max(currentInning, maxInning, 1);
+  const displayInnings = Math.max(effectiveInning, maxInning, 1);
   const inningsToShow = Array.from({ length: Math.min(displayInnings, 9) }, (_, i) => i + 1);
 
   return (
@@ -338,12 +417,12 @@ function BaseballLiveScoringDialogContent({
             >
               <IconButton
                 onClick={() => handleAdvanceInning('prev')}
-                disabled={currentInning <= 1 || isSessionFinalized}
+                disabled={effectiveInning <= 1 || isSessionFinalized}
               >
                 <ChevronLeftIcon />
               </IconButton>
               <Typography variant="h5" sx={{ minWidth: 120, textAlign: 'center' }}>
-                Inning {currentInning}
+                Inning {effectiveInning}
               </Typography>
               <IconButton onClick={() => handleAdvanceInning('next')} disabled={isSessionFinalized}>
                 <ChevronRightIcon />
@@ -361,8 +440,8 @@ function BaseballLiveScoringDialogContent({
                         key={inning}
                         align="center"
                         sx={{
-                          bgcolor: inning === currentInning ? 'primary.light' : undefined,
-                          color: inning === currentInning ? 'primary.contrastText' : undefined,
+                          bgcolor: inning === effectiveInning ? 'primary.light' : undefined,
+                          color: inning === effectiveInning ? 'primary.contrastText' : undefined,
                         }}
                       >
                         {inning}
@@ -385,8 +464,8 @@ function BaseballLiveScoringDialogContent({
                           key={inning}
                           align="center"
                           sx={{
-                            bgcolor: inning === currentInning ? 'primary.light' : undefined,
-                            color: inning === currentInning ? 'primary.contrastText' : undefined,
+                            bgcolor: inning === effectiveInning ? 'primary.light' : undefined,
+                            color: inning === effectiveInning ? 'primary.contrastText' : undefined,
                           }}
                         >
                           {runs ?? '-'}
@@ -408,8 +487,8 @@ function BaseballLiveScoringDialogContent({
                           key={inning}
                           align="center"
                           sx={{
-                            bgcolor: inning === currentInning ? 'primary.light' : undefined,
-                            color: inning === currentInning ? 'primary.contrastText' : undefined,
+                            bgcolor: inning === effectiveInning ? 'primary.light' : undefined,
+                            color: inning === effectiveInning ? 'primary.contrastText' : undefined,
                           }}
                         >
                           {runs ?? '-'}
@@ -426,79 +505,16 @@ function BaseballLiveScoringDialogContent({
 
             {/* Current Inning Score Entry */}
             {!isSessionFinalized && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  Enter Runs for Inning {currentInning}:
-                </Typography>
-
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    p: 1.5,
-                    borderRadius: 1,
-                    bgcolor: 'background.paper',
-                    border: 1,
-                    borderColor: 'divider',
-                  }}
-                >
-                  <Typography variant="body1" fontWeight={500}>
-                    {visitorTeamName}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <TextField
-                      type="number"
-                      size="small"
-                      value={visitorRunsInput}
-                      onChange={(e) => handleRunsChange('visitor', e.target.value)}
-                      onBlur={() => handleScoreBlur(false)}
-                      disabled={isSessionFinalized || submittingTeam === 'visitor'}
-                      inputProps={{
-                        min: 0,
-                        max: 99,
-                        style: { width: 50, textAlign: 'center' },
-                      }}
-                      sx={{ width: 70 }}
-                    />
-                    {submittingTeam === 'visitor' && <CircularProgress size={16} />}
-                  </Box>
-                </Box>
-
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    p: 1.5,
-                    borderRadius: 1,
-                    bgcolor: 'background.paper',
-                    border: 1,
-                    borderColor: 'divider',
-                  }}
-                >
-                  <Typography variant="body1" fontWeight={500}>
-                    {homeTeamName}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <TextField
-                      type="number"
-                      size="small"
-                      value={homeRunsInput}
-                      onChange={(e) => handleRunsChange('home', e.target.value)}
-                      onBlur={() => handleScoreBlur(true)}
-                      disabled={isSessionFinalized || submittingTeam === 'home'}
-                      inputProps={{
-                        min: 0,
-                        max: 99,
-                        style: { width: 50, textAlign: 'center' },
-                      }}
-                      sx={{ width: 70 }}
-                    />
-                    {submittingTeam === 'home' && <CircularProgress size={16} />}
-                  </Box>
-                </Box>
-              </Box>
+              <InningScoreEntry
+                key={scoreEntryKey}
+                inning={effectiveInning}
+                homeScore={getScoreForInning(effectiveInning, true)}
+                visitorScore={getScoreForInning(effectiveInning, false)}
+                homeTeamName={homeTeamName}
+                visitorTeamName={visitorTeamName}
+                gameId={gameId}
+                disabled={isSessionFinalized}
+              />
             )}
 
             {(isConnecting ||
