@@ -387,6 +387,7 @@ import {
   FinalizeBaseballLiveScoringSchema,
   StopBaseballLiveScoringSchema,
   IndividualSseTicketResponseSchema,
+  GetBaseballLiveScoringTicketSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1525,6 +1526,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'StopBaseballLiveScoring',
     StopBaseballLiveScoringSchema,
   );
+  const GetBaseballLiveScoringTicketSchemaRef = registry.register(
+    'GetBaseballLiveScoringTicket',
+    GetBaseballLiveScoringTicketSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1916,6 +1921,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     AdvanceBaseballInningSchemaRef,
     FinalizeBaseballLiveScoringSchemaRef,
     StopBaseballLiveScoringSchemaRef,
+    GetBaseballLiveScoringTicketSchemaRef,
   };
 };
 

@@ -52,13 +52,16 @@ interface InningAdvancedEvent {
   timestamp: string;
 }
 
+type SseRole = 'scorer' | 'watcher';
+
 interface BaseballLiveScoringContextValue {
   isConnected: boolean;
   isConnecting: boolean;
   connectionError: string | null;
   sessionState: BaseballLiveScoringState | null;
   viewerCount: number;
-  connect: (gameId: string) => void;
+  scorerCount: number;
+  connect: (gameId: string, role?: SseRole) => void;
   disconnect: () => void;
   onScoreUpdate: (callback: (event: ScoreUpdateEvent) => void) => () => void;
   onSessionStarted: (callback: (event: SessionStartedEvent) => void) => () => void;
@@ -84,6 +87,7 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [sessionState, setSessionState] = useState<BaseballLiveScoringState | null>(null);
   const [viewerCount, setViewerCount] = useState(0);
+  const [scorerCount, setScorerCount] = useState(0);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const currentGameIdRef = useRef<string | null>(null);
@@ -97,7 +101,7 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
   const sessionFinalizedCallbacks = useRef<Set<(event: SessionFinalizedEvent) => void>>(new Set());
   const sessionStoppedCallbacks = useRef<Set<(event: SessionStoppedEvent) => void>>(new Set());
   const inningAdvancedCallbacks = useRef<Set<(event: InningAdvancedEvent) => void>>(new Set());
-  const connectRef = useRef<((gameId: string) => void) | null>(null);
+  const connectRef = useRef<((gameId: string, role?: SseRole) => void) | null>(null);
   const disconnectRef = useRef<(() => void) | null>(null);
   const isConnectedRef = useRef(false);
   const isConnectingRef = useRef(false);
@@ -121,6 +125,7 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
     setIsConnecting(false);
     setSessionState(null);
     setViewerCount(0);
+    setScorerCount(0);
   }, []);
 
   const connectWithTicket = useCallback(
@@ -293,6 +298,11 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
         setViewerCount(data.viewerCount);
       });
 
+      eventSource.addEventListener('scorer_count', (event) => {
+        const data = JSON.parse(event.data) as { scorerCount: number };
+        setScorerCount(data.scorerCount);
+      });
+
       eventSource.addEventListener('no_session', () => {
         setConnectionError('No active live scoring session found. The session may have ended.');
         eventSource.close();
@@ -304,7 +314,7 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
   );
 
   const connect = useCallback(
-    (gameId: string) => {
+    (gameId: string, role: SseRole = 'watcher') => {
       if (!token || !currentAccount?.id) {
         setConnectionError('Authentication required');
         return;
@@ -327,6 +337,7 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
       getBaseballLiveScoringTicket({
         client: apiClient,
         path: { accountId: currentAccount.id, gameId },
+        body: { role },
         throwOnError: false,
       })
         .then((result) => {
@@ -363,8 +374,8 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
     disconnectRef.current = disconnect;
   }, [disconnect]);
 
-  const stableConnect = useCallback((gameId: string) => {
-    connectRef.current?.(gameId);
+  const stableConnect = useCallback((gameId: string, role?: SseRole) => {
+    connectRef.current?.(gameId, role);
   }, []);
 
   const stableDisconnect = useCallback(() => {
@@ -418,6 +429,7 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
     connectionError,
     sessionState,
     viewerCount,
+    scorerCount,
     connect: stableConnect,
     disconnect: stableDisconnect,
     onScoreUpdate,

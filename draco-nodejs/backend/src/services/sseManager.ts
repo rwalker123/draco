@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import type { SseRole } from './sseTicketManager.js';
 
 interface SSEClient {
   id: string;
@@ -7,6 +8,7 @@ interface SSEClient {
   matchId?: bigint;
   accountId?: bigint;
   gameId?: bigint;
+  role?: SseRole;
   lastPing: number;
 }
 
@@ -99,6 +101,7 @@ export class SSEManager {
         }
       } else if (client.gameId) {
         const gameKey = client.gameId.toString();
+        const wasScorer = client.role === 'scorer';
         this.gameSubscriptions.get(gameKey)?.delete(clientId);
         const remainingClients = this.gameSubscriptions.get(gameKey)?.size ?? 0;
         if (remainingClients === 0) {
@@ -109,6 +112,9 @@ export class SSEManager {
 
         if (remainingClients > 0) {
           this.broadcastGameViewerCount(client.gameId);
+          if (wasScorer) {
+            this.broadcastGameScorerCount(client.gameId);
+          }
         }
       } else {
         this.clients.delete(clientId);
@@ -200,12 +206,19 @@ export class SSEManager {
   /**
    * Adds a new SSE client connection for a specific game (baseball live scoring).
    */
-  addGameClient(clientId: string, res: Response, userId: string, gameId: bigint): void {
+  addGameClient(
+    clientId: string,
+    res: Response,
+    userId: string,
+    gameId: bigint,
+    role: SseRole = 'watcher',
+  ): void {
     const client: SSEClient = {
       id: clientId,
       res,
       userId,
       gameId,
+      role,
       lastPing: Date.now(),
     };
 
@@ -218,12 +231,13 @@ export class SSEManager {
     this.gameSubscriptions.get(gameKey)!.add(clientId);
 
     console.log(
-      `📡 SSE client ${clientId} connected to game ${gameKey}. Total clients: ${this.clients.size}`,
+      `📡 SSE client ${clientId} (${role}) connected to game ${gameKey}. Total clients: ${this.clients.size}`,
     );
 
     this.sendEvent(clientId, 'connected', { clientId, gameId: gameKey });
 
     this.broadcastGameViewerCount(gameId);
+    this.broadcastGameScorerCount(gameId);
   }
 
   /**
@@ -253,6 +267,30 @@ export class SSEManager {
    */
   getGameViewerCount(gameId: bigint): number {
     return this.gameSubscriptions.get(gameId.toString())?.size ?? 0;
+  }
+
+  /**
+   * Gets the number of scorers (not watchers) for a specific game.
+   */
+  getGameScorerCount(gameId: bigint): number {
+    const gameKey = gameId.toString();
+    const clientIds = this.gameSubscriptions.get(gameKey);
+    if (!clientIds) return 0;
+
+    let count = 0;
+    for (const clientId of clientIds) {
+      const client = this.clients.get(clientId);
+      if (client?.role === 'scorer') count++;
+    }
+    return count;
+  }
+
+  /**
+   * Broadcasts the current scorer count to all clients watching a game.
+   */
+  broadcastGameScorerCount(gameId: bigint): void {
+    const scorerCount = this.getGameScorerCount(gameId);
+    this.broadcastToGame(gameId, 'scorer_count', { scorerCount });
   }
 
   /**

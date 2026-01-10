@@ -73,7 +73,7 @@ function BaseballLiveWatchDialogContent({
         if (result.error || !result.data) {
           setNoSession(true);
         } else {
-          connect(gameId);
+          connect(gameId, 'watcher');
         }
       } catch {
         setNoSession(true);
@@ -156,7 +156,7 @@ function BaseballLiveWatchDialogContent({
             sx={{ mb: 2 }}
             action={
               !isConnecting ? (
-                <Button color="inherit" size="small" onClick={() => connect(gameId)}>
+                <Button color="inherit" size="small" onClick={() => connect(gameId, 'watcher')}>
                   Retry
                 </Button>
               ) : undefined

@@ -30331,6 +30331,9 @@
           "viewerCount": {
             "type": "integer"
           },
+          "scorerCount": {
+            "type": "integer"
+          },
           "scores": {
             "type": "array",
             "items": {
@@ -30525,6 +30528,23 @@
         ],
         "title": "StopBaseballLiveScoring",
         "description": "Request to stop a baseball live scoring session without saving scores"
+      },
+      "GetBaseballLiveScoringTicket": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "scorer",
+              "watcher"
+            ],
+            "default": "watcher",
+            "title": "SseRole",
+            "description": "Role for SSE connection - scorer can enter scores, watcher can only view"
+          }
+        },
+        "title": "GetBaseballLiveScoringTicket",
+        "description": "Request to get SSE connection ticket with optional role"
       }
     },
     "securitySchemes": {
@@ -40482,6 +40502,15 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetBaseballLiveScoringTicket"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "SSE connection ticket",

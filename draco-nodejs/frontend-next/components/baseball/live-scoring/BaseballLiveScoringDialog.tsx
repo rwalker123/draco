@@ -54,6 +54,7 @@ function BaseballLiveScoringDialogContent({
     connectionError,
     sessionState,
     viewerCount,
+    scorerCount,
     connect,
     disconnect,
   } = useBaseballLiveScoring();
@@ -85,7 +86,7 @@ function BaseballLiveScoringDialogContent({
 
   useEffect(() => {
     if (hasActiveSession) {
-      connect(gameId);
+      connect(gameId, 'scorer');
     }
     return () => {
       disconnect();
@@ -219,10 +220,16 @@ function BaseballLiveScoringDialogContent({
   };
 
   const handleStop = () => {
+    const otherScorers = Math.max(0, scorerCount - 1);
+    const message =
+      otherScorers > 0
+        ? `There ${otherScorers === 1 ? 'is' : 'are'} ${otherScorers} other ${otherScorers === 1 ? 'person' : 'people'} currently entering scores. Stopping this session will end it for everyone. Scores will NOT be saved.`
+        : 'Are you sure you want to stop this live scoring session? Scores will NOT be saved.';
+
     setConfirmDialog({
       open: true,
       title: 'Stop Session',
-      message: 'Are you sure you want to stop this live scoring session? Scores will NOT be saved.',
+      message,
       confirmText: 'Stop Session',
       confirmColor: 'error',
       onConfirm: async () => {

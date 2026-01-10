@@ -255,7 +255,9 @@ export class BaseballLiveScoringService {
     session: BaseballLiveScoringSessionWithScores,
     gameId: bigint,
   ): BaseballLiveScoringStateType {
-    const viewerCount = getSSEManager().getGameViewerCount(gameId);
+    const sseManager = getSSEManager();
+    const viewerCount = sseManager.getGameViewerCount(gameId);
+    const scorerCount = sseManager.getGameScorerCount(gameId);
     const { homeTeamTotal, visitorTeamTotal } = this.calculateTotals(session.scores);
 
     const formattedScores: BaseballLiveInningScoreType[] = session.scores.map((score) =>
@@ -270,6 +272,7 @@ export class BaseballLiveScoringService {
       startedAt: session.startedat.toISOString(),
       startedBy: session.startedbyuser?.username ?? session.startedby,
       viewerCount,
+      scorerCount,
       scores: formattedScores,
       homeTeamTotal,
       visitorTeamTotal,

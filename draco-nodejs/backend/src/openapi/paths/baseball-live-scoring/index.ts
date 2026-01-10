@@ -17,6 +17,7 @@ const registerBaseballLiveScoringEndpoints = ({ registry, schemaRefs }: Register
     FinalizeBaseballLiveScoringSchemaRef,
     StopBaseballLiveScoringSchemaRef,
     SseTicketResponseSchemaRef,
+    GetBaseballLiveScoringTicketSchemaRef,
   } = schemaRefs;
 
   const AccountIdParam = {
@@ -123,6 +124,15 @@ const registerBaseballLiveScoringEndpoints = ({ registry, schemaRefs }: Register
     tags: ['Baseball Live Scoring'],
     security: [{ bearerAuth: [] }],
     parameters: [AccountIdParam, GameIdParam],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: GetBaseballLiveScoringTicketSchemaRef,
+          },
+        },
+      },
+    },
     responses: {
       201: {
         description: 'SSE connection ticket',

@@ -99,6 +99,7 @@ router.get(
 
 // POST /api/accounts/:accountId/games/:gameId/live/ticket
 // Get SSE subscription ticket (authenticated)
+// Body: { role?: 'scorer' | 'watcher' }
 router.post(
   '/:gameId/live/ticket',
   authenticateToken,
@@ -106,9 +107,10 @@ router.post(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { gameId, accountId } = extractBigIntParams(req.params, 'gameId', 'accountId');
     const userId = req.user!.id;
+    const role = req.body.role === 'scorer' ? 'scorer' : 'watcher';
 
     const ticketManager = getSseTicketManager();
-    const { ticket, expiresIn } = ticketManager.createGameTicket(userId, gameId, accountId);
+    const { ticket, expiresIn } = ticketManager.createGameTicket(userId, gameId, accountId, role);
 
     res.status(201).json({ ticket, expiresIn });
   }),
@@ -136,6 +138,7 @@ router.get(
     }
 
     const userId = validation.userId;
+    const role = validation.role;
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -147,7 +150,7 @@ router.get(
     const clientId = uuidv4();
     const sseManager = getSSEManager();
 
-    sseManager.addGameClient(clientId, res, userId, gameId);
+    sseManager.addGameClient(clientId, res, userId, gameId, role);
 
     res.write(`event: connected\n`);
     res.write(`data: ${JSON.stringify({ clientId, gameId: gameId.toString() })}\n\n`);

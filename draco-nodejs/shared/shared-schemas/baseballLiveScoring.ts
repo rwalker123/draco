@@ -31,6 +31,22 @@ export const BaseballLiveScoringEventTypeSchema = z
     description: 'Types of SSE events for baseball live scoring',
   });
 
+// SSE Role Schema
+export const SseRoleSchema = z.enum(['scorer', 'watcher']).openapi({
+  title: 'SseRole',
+  description: 'Role for SSE connection - scorer can enter scores, watcher can only view',
+});
+
+// Get SSE Ticket Request
+export const GetBaseballLiveScoringTicketSchema = z
+  .object({
+    role: SseRoleSchema.optional().default('watcher'),
+  })
+  .openapi({
+    title: 'GetBaseballLiveScoringTicket',
+    description: 'Request to get SSE connection ticket with optional role',
+  });
+
 // Start Baseball Live Scoring Request - no configuration needed
 export const StartBaseballLiveScoringSchema = z.object({}).openapi({
   title: 'StartBaseballLiveScoring',
@@ -104,6 +120,7 @@ export const BaseballLiveScoringStateSchema = z
     startedAt: z.string().datetime(),
     startedBy: z.string(),
     viewerCount: z.number().int().optional(),
+    scorerCount: z.number().int().optional(),
     scores: z.array(BaseballLiveInningScoreSchema),
     homeTeamTotal: z.number().int(),
     visitorTeamTotal: z.number().int(),
@@ -183,6 +200,8 @@ export const BaseballLiveSessionStatusSchema = z
 // Type exports
 export type BaseballLiveScoringStatusType = z.infer<typeof BaseballLiveScoringStatusSchema>;
 export type BaseballLiveScoringEventTypeType = z.infer<typeof BaseballLiveScoringEventTypeSchema>;
+export type SseRoleType = z.infer<typeof SseRoleSchema>;
+export type GetBaseballLiveScoringTicketType = z.infer<typeof GetBaseballLiveScoringTicketSchema>;
 export type StartBaseballLiveScoringType = z.infer<typeof StartBaseballLiveScoringSchema>;
 export type SubmitBaseballLiveInningScoreType = z.infer<typeof SubmitBaseballLiveInningScoreSchema>;
 export type AdvanceBaseballInningType = z.infer<typeof AdvanceBaseballInningSchema>;
