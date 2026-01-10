@@ -109,7 +109,7 @@ const BaseballAccountHome: React.FC = () => {
   const showSubmissionPanel = Boolean(isAccountMember);
   const shouldShowJoinLeagueNearSponsors = Boolean(user && hasAccountContact);
 
-  const liveScoringOperations = useBaseballLiveScoringOperations();
+  const { getActiveSessions: getActiveBaseballSessions } = useBaseballLiveScoringOperations();
 
   const canStartLiveScoringForGame = useCallback(
     (game: Game): boolean => {
@@ -150,7 +150,7 @@ const BaseballAccountHome: React.FC = () => {
     if (!accountIdStr) return;
 
     const fetchActiveSessions = async () => {
-      const sessions = await liveScoringOperations.getActiveSessions();
+      const sessions = await getActiveBaseballSessions(accountIdStr);
       if (sessions) {
         const gameIds = new Set(sessions.map((s) => s.gameId));
         setLiveSessionGameIds(gameIds);
@@ -160,7 +160,7 @@ const BaseballAccountHome: React.FC = () => {
     fetchActiveSessions();
     const interval = setInterval(fetchActiveSessions, 30000);
     return () => clearInterval(interval);
-  }, [accountIdStr, liveScoringOperations]);
+  }, [accountIdStr, getActiveBaseballSessions]);
 
   const canModerateAccountPhotos = useMemo(() => {
     if (!accountIdStr) {
