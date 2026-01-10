@@ -5,6 +5,10 @@ import { GameStatus } from '../../types/schedule';
 import { ThemeProvider } from '@mui/material/styles';
 import { dracoTheme } from '../../theme';
 
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => ({ user: null }),
+}));
+
 // Mock the gameUtils module
 vi.mock('../../utils/gameUtils', () => ({
   getGameStatusShortText: vi.fn((status: number) => {
