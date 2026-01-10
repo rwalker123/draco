@@ -80,6 +80,7 @@ const BaseballAccountHome: React.FC = () => {
   const [teamAnnouncementsLoading, setTeamAnnouncementsLoading] = useState(false);
   const [teamAnnouncementsError, setTeamAnnouncementsError] = useState<string | null>(null);
   const [liveSessionGameIds, setLiveSessionGameIds] = useState<Set<string>>(new Set());
+  const [scoreboardRefreshTrigger, setScoreboardRefreshTrigger] = useState(0);
   const [liveScoringDialog, setLiveScoringDialog] = useState<{
     open: boolean;
     game: Game | null;
@@ -127,23 +128,18 @@ const BaseballAccountHome: React.FC = () => {
     setLiveScoringDialog({ open: true, game });
   }, []);
 
-  const handleWatchLiveScoring = useCallback(
-    (game: Game) => {
-      if (canStartLiveScoringForGame(game)) {
-        setLiveScoringDialog({ open: true, game });
-      } else {
-        setLiveWatchDialog({ open: true, game });
-      }
-    },
-    [canStartLiveScoringForGame],
-  );
+  const handleWatchLiveScoring = useCallback((game: Game) => {
+    setLiveWatchDialog({ open: true, game });
+  }, []);
 
   const handleCloseLiveScoringDialog = useCallback(() => {
     setLiveScoringDialog({ open: false, game: null });
+    setScoreboardRefreshTrigger((prev) => prev + 1);
   }, []);
 
   const handleCloseLiveWatchDialog = useCallback(() => {
     setLiveWatchDialog({ open: false, game: null });
+    setScoreboardRefreshTrigger((prev) => prev + 1);
   }, []);
 
   useEffect(() => {
@@ -1108,6 +1104,7 @@ const BaseballAccountHome: React.FC = () => {
                 canStartLiveScoring={canStartLiveScoringForGame}
                 onStartLiveScoring={handleStartLiveScoring}
                 onWatchLiveScoring={handleWatchLiveScoring}
+                refreshTrigger={scoreboardRefreshTrigger}
               />
             ) : null}
 
@@ -1170,6 +1167,7 @@ const BaseballAccountHome: React.FC = () => {
           accountId={accountIdStr}
           homeTeamName={liveScoringDialog.game.homeTeamName}
           visitorTeamName={liveScoringDialog.game.visitorTeamName}
+          hasActiveSession={liveSessionGameIds.has(liveScoringDialog.game.id)}
         />
       )}
 

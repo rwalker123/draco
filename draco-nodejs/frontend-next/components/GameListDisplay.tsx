@@ -37,6 +37,7 @@ export interface GameListDisplayProps {
   canStartLiveScoring?: (game: Game) => boolean;
   onStartLiveScoring?: (game: Game) => void;
   onWatchLiveScoring?: (game: Game) => void;
+  accountId?: string;
 }
 
 const GameListDisplay: React.FC<GameListDisplayProps> = ({
@@ -54,6 +55,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   canStartLiveScoring,
   onStartLiveScoring,
   onWatchLiveScoring,
+  accountId,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -220,6 +222,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                           canStartLiveScoring={canStartLiveScoring?.(game)}
                           onStartLiveScoring={onStartLiveScoring}
                           onWatchLiveScoring={onWatchLiveScoring}
+                          accountId={accountId}
                         />
                       ))
                     : section.games.map((game, index) => (
@@ -237,6 +240,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                             canStartLiveScoring={canStartLiveScoring?.(game)}
                             onStartLiveScoring={onStartLiveScoring}
                             onWatchLiveScoring={onWatchLiveScoring}
+                            accountId={accountId}
                           />
                         </Box>
                       ))}

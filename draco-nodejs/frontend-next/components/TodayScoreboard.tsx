@@ -16,6 +16,7 @@ interface TodayScoreboardProps {
   canStartLiveScoring?: (game: Game) => boolean;
   onStartLiveScoring?: (game: Game) => void;
   onWatchLiveScoring?: (game: Game) => void;
+  refreshTrigger?: number;
 }
 
 const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
@@ -28,6 +29,7 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
   canStartLiveScoring,
   onStartLiveScoring,
   onWatchLiveScoring,
+  refreshTrigger,
 }) => {
   const apiClient = useApiClient();
   const loadTodayGames = React.useCallback(async () => {
@@ -88,6 +90,7 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
       canStartLiveScoring={canStartLiveScoring}
       onStartLiveScoring={onStartLiveScoring}
       onWatchLiveScoring={onWatchLiveScoring}
+      refreshTrigger={refreshTrigger}
     />
   );
 };

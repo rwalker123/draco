@@ -12,8 +12,10 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  DialogTitle,
   Chip,
 } from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import FmdGoodOutlinedIcon from '@mui/icons-material/FmdGoodOutlined';
@@ -25,6 +27,8 @@ import { DEFAULT_TIMEZONE } from '../utils/timezones';
 import RecapButton from './RecapButton';
 import { GameStatus, GameType } from '../types/schedule';
 import FieldDetailsCard, { FieldDetails } from './fields/FieldDetailsCard';
+import AccountOptional from './account/AccountOptional';
+import { useAuth } from '../context/AuthContext';
 
 // Sport-specific extension types
 export interface GolfGameExtras {
@@ -86,7 +90,7 @@ export interface GameCardProps {
   /**
    * Controls width behavior for horizontal layout.
    * - `false` (default): Card fills container width (min: 240px, max: 100%)
-   * - `true`: Card fits content width (min: 280px, max: 500px)
+   * - `true`: Card fits content width (min: 240px, max: 500px)
    */
   fitContent?: boolean;
   timeZone?: string;
@@ -94,6 +98,7 @@ export interface GameCardProps {
   canStartLiveScoring?: boolean;
   onStartLiveScoring?: (game: GameCardData) => void;
   onWatchLiveScoring?: (game: GameCardData) => void;
+  accountId?: string;
 }
 
 const GameCard: React.FC<GameCardProps> = ({
@@ -115,7 +120,11 @@ const GameCard: React.FC<GameCardProps> = ({
   canStartLiveScoring = false,
   onStartLiveScoring,
   onWatchLiveScoring,
+  accountId,
 }) => {
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
+
   const leagueLabel = useMemo(() => {
     const original = game.leagueName?.trim() ?? '';
     if (original.length === 0) {
@@ -142,6 +151,7 @@ const GameCard: React.FC<GameCardProps> = ({
   }, [game.leagueName]);
 
   const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
+  const [liveSessionChoiceOpen, setLiveSessionChoiceOpen] = useState(false);
   const suppressClicksUntilRef = useRef(0);
   const localTime = formatGameTime(game.date, timeZone);
   const formattedDateLabel = formatDateInTimezone(game.date, timeZone, {
@@ -227,54 +237,82 @@ const GameCard: React.FC<GameCardProps> = ({
 
   const handleLiveScoringClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (hasLiveSession && onWatchLiveScoring) {
+    if (hasLiveSession && canStartLiveScoring && onStartLiveScoring && onWatchLiveScoring) {
+      setLiveSessionChoiceOpen(true);
+    } else if (hasLiveSession && onWatchLiveScoring) {
       onWatchLiveScoring(game);
-    } else if (canStartLiveScoring && onStartLiveScoring) {
-      onStartLiveScoring(game);
     } else if (hasLiveSession && onStartLiveScoring) {
+      onStartLiveScoring(game);
+    } else if (canStartLiveScoring && onStartLiveScoring) {
       onStartLiveScoring(game);
     }
   };
 
+  const handleJoinLiveSession = () => {
+    setLiveSessionChoiceOpen(false);
+    if (onStartLiveScoring) {
+      onStartLiveScoring(game);
+    }
+  };
+
+  const handleWatchLiveSession = () => {
+    setLiveSessionChoiceOpen(false);
+    if (onWatchLiveScoring) {
+      onWatchLiveScoring(game);
+    }
+  };
+
   const renderLiveScoringButton = () => {
+    if (!isAuthenticated) {
+      return null;
+    }
+
+    if (game.gameStatus === GameStatus.Completed) {
+      return null;
+    }
+
     if (hasLiveSession) {
       return (
-        <Chip
-          icon={<FiberManualRecordIcon sx={{ fontSize: 12 }} />}
-          label="LIVE"
-          size="small"
-          color="error"
-          onClick={handleLiveScoringClick}
-          sx={{
-            cursor: 'pointer',
-            animation: 'pulse 2s infinite',
-            '@keyframes pulse': {
-              '0%': { opacity: 1 },
-              '50%': { opacity: 0.6 },
-              '100%': { opacity: 1 },
-            },
-          }}
-        />
+        <AccountOptional accountId={accountId} componentId="liveScoring.badge">
+          <Chip
+            icon={<FiberManualRecordIcon sx={{ fontSize: 12 }} />}
+            label="LIVE"
+            size="small"
+            color="error"
+            onClick={handleLiveScoringClick}
+            sx={{
+              cursor: 'pointer',
+              animation: 'pulse 2s infinite',
+              '@keyframes pulse': {
+                '0%': { opacity: 1 },
+                '50%': { opacity: 0.6 },
+                '100%': { opacity: 1 },
+              },
+            }}
+          />
+        </AccountOptional>
       );
     }
 
     if (canStartLiveScoring && onStartLiveScoring) {
       return (
-        <Tooltip title="Start Live Scoring">
-          <IconButton
-            size="small"
-            onClick={handleLiveScoringClick}
-            color="primary"
-            sx={{
-              p: 0.5,
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
-            }}
-          >
-            <PlayArrowIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <AccountOptional accountId={accountId} componentId="liveScoring.startButton">
+          <Tooltip title="Start Live Scoring">
+            <IconButton
+              size="small"
+              onClick={handleLiveScoringClick}
+              color="primary"
+              sx={{
+                p: 0.5,
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+              }}
+            >
+              <PlayArrowIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </AccountOptional>
       );
     }
 
@@ -761,6 +799,43 @@ const GameCard: React.FC<GameCardProps> = ({
           >
             Close
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={liveSessionChoiceOpen}
+        onClose={() => setLiveSessionChoiceOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        aria-label="Live session options"
+      >
+        <DialogTitle>Live Session in Progress</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            This game has an active live scoring session. How would you like to proceed?
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<EditIcon />}
+              onClick={handleJoinLiveSession}
+              fullWidth
+            >
+              Join Session (Enter Scores)
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<VisibilityIcon />}
+              onClick={handleWatchLiveSession}
+              fullWidth
+            >
+              Watch Only
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLiveSessionChoiceOpen(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
     </Card>

@@ -31,6 +31,7 @@ interface ScoreboardBaseProps {
   canStartLiveScoring?: (game: Game) => boolean;
   onStartLiveScoring?: (game: Game) => void;
   onWatchLiveScoring?: (game: Game) => void;
+  refreshTrigger?: number;
 }
 
 const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
@@ -46,6 +47,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
   canStartLiveScoring,
   onStartLiveScoring,
   onWatchLiveScoring,
+  refreshTrigger,
 }) => {
   const [games, setGames] = React.useState<Game[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -255,7 +257,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
       .finally(() => {
         setLoading(false);
       });
-  }, [accountId, teamId, currentSeasonId, loadGames, onGamesLoaded]);
+  }, [accountId, teamId, currentSeasonId, loadGames, onGamesLoaded, refreshTrigger]);
 
   const sections = React.useMemo<GameListSection[]>(() => [{ title, games }], [title, games]);
 
@@ -325,6 +327,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
         canStartLiveScoring={canStartLiveScoring}
         onStartLiveScoring={onStartLiveScoring}
         onWatchLiveScoring={onWatchLiveScoring}
+        accountId={accountId}
       />
       {canEditGames && (
         <EnterGameResultsDialog
