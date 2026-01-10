@@ -369,12 +369,18 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
     [token, apiClient, disconnect, connectWithTicket],
   );
 
-  useEffect(() => {
+  // useLayoutEffect runs synchronously after render but before other effects,
+  // ensuring connectRef is available when stableConnect is called from child useEffects
+  useLayoutEffect(() => {
     connectRef.current = connect;
   }, [connect]);
 
+  // stableConnect provides a stable function reference that doesn't change across re-renders,
+  // preventing unnecessary disconnect/reconnect cycles when connect's dependencies change
   const stableConnect = useCallback((accountId: string) => {
-    connectRef.current?.(accountId);
+    if (connectRef.current) {
+      connectRef.current(accountId);
+    }
   }, []);
 
   const stableDisconnect = useCallback(() => {
