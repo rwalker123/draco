@@ -29,6 +29,7 @@ class SseTicketManager {
     userId: string,
     matchId: bigint,
     accountId: bigint,
+    role: SseRole = 'watcher',
   ): { ticket: string; expiresIn: number } {
     const ticket = crypto.randomBytes(32).toString('hex');
     const now = new Date();
@@ -39,6 +40,7 @@ class SseTicketManager {
       userId,
       matchId,
       accountId,
+      role,
       createdAt: now,
       expiresAt,
       used: false,
@@ -53,7 +55,9 @@ class SseTicketManager {
   validateTicket(
     ticket: string,
     matchId: bigint,
-  ): { valid: true; userId: string; accountId: bigint } | { valid: false; reason: string } {
+  ):
+    | { valid: true; userId: string; accountId: bigint; role: SseRole }
+    | { valid: false; reason: string } {
     const ticketData = this.tickets.get(ticket);
 
     if (!ticketData) {
@@ -79,6 +83,7 @@ class SseTicketManager {
       valid: true,
       userId: ticketData.userId,
       accountId: ticketData.accountId,
+      role: ticketData.role ?? 'watcher',
     };
   }
 

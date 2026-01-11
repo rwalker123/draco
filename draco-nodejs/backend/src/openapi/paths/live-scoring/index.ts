@@ -16,6 +16,7 @@ const registerLiveScoringEndpoints = ({ registry, schemaRefs }: RegisterContext)
     AdvanceHoleSchemaRef,
     FinalizeLiveScoringSchemaRef,
     StopLiveScoringSchemaRef,
+    GetLiveScoringTicketSchemaRef,
     SseTicketResponseSchemaRef,
   } = schemaRefs;
 
@@ -126,6 +127,15 @@ const registerLiveScoringEndpoints = ({ registry, schemaRefs }: RegisterContext)
     tags: ['Live Scoring'],
     security: [{ bearerAuth: [] }],
     parameters: [AccountIdParam, MatchIdParam],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: GetLiveScoringTicketSchemaRef,
+          },
+        },
+      },
+    },
     responses: {
       201: {
         description: 'SSE connection ticket',

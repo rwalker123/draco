@@ -1,9 +1,22 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, CircularProgress, Alert, Divider, Button } from '@mui/material';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+  Divider,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import EditIcon from '@mui/icons-material/Edit';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   listGolfMatchesForSeason,
   getGolfTeamWithRoster,
@@ -51,6 +64,8 @@ export default function GolfMatchesWidget({
   const [liveScoringMatchId, setLiveScoringMatchId] = useState<string | null>(null);
   const [watchingMatchId, setWatchingMatchId] = useState<string | null>(null);
   const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set());
+  const [liveSessionChoiceOpen, setLiveSessionChoiceOpen] = useState(false);
+  const [choiceMatchId, setChoiceMatchId] = useState<string | null>(null);
 
   const currentContactId = user?.contact?.id;
 
@@ -222,8 +237,27 @@ export default function GolfMatchesWidget({
     setSelectedMatchId(null);
   };
 
-  const handleLiveScoringClick = (matchId: string) => {
-    setLiveScoringMatchId(matchId);
+  const handleLiveScoringClick = (matchId: string, hasActiveSession: boolean) => {
+    if (hasActiveSession) {
+      setChoiceMatchId(matchId);
+      setLiveSessionChoiceOpen(true);
+    } else {
+      setLiveScoringMatchId(matchId);
+    }
+  };
+
+  const handleJoinLiveSession = () => {
+    setLiveSessionChoiceOpen(false);
+    if (choiceMatchId) {
+      setLiveScoringMatchId(choiceMatchId);
+    }
+  };
+
+  const handleWatchLiveSession = () => {
+    setLiveSessionChoiceOpen(false);
+    if (choiceMatchId) {
+      setWatchingMatchId(choiceMatchId);
+    }
   };
 
   const handleLiveScoringClose = () => {
@@ -337,7 +371,7 @@ export default function GolfMatchesWidget({
                       variant="contained"
                       color="error"
                       startIcon={<FiberManualRecordIcon sx={{ fontSize: 12 }} />}
-                      onClick={() => handleLiveScoringClick(match.id)}
+                      onClick={() => handleLiveScoringClick(match.id, true)}
                       sx={{
                         animation: 'pulse 2s infinite',
                         '@keyframes pulse': {
@@ -347,7 +381,7 @@ export default function GolfMatchesWidget({
                         },
                       }}
                     >
-                      LIVE - Join Session
+                      LIVE
                     </Button>
                   </Box>
                 )}
@@ -379,7 +413,7 @@ export default function GolfMatchesWidget({
                         size="small"
                         variant="outlined"
                         startIcon={<PlayCircleOutlineIcon />}
-                        onClick={() => handleLiveScoringClick(match.id)}
+                        onClick={() => handleLiveScoringClick(match.id, false)}
                       >
                         Start Live Scoring
                       </Button>
@@ -478,6 +512,42 @@ export default function GolfMatchesWidget({
           team2Id={getWatchingMatch()!.team2.id}
         />
       )}
+      <Dialog
+        open={liveSessionChoiceOpen}
+        onClose={() => setLiveSessionChoiceOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        aria-label="Live session options"
+      >
+        <DialogTitle>Live Session in Progress</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            This match has an active live scoring session. How would you like to proceed?
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<EditIcon />}
+              onClick={handleJoinLiveSession}
+              fullWidth
+            >
+              Join Session (Enter Scores)
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<VisibilityIcon />}
+              onClick={handleWatchLiveSession}
+              fullWidth
+            >
+              Watch Only
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLiveSessionChoiceOpen(false)}>Cancel</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

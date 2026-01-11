@@ -61,6 +61,7 @@ function LiveScoringDialogContent({
     connectionError,
     sessionState,
     viewerCount,
+    scorerCount,
     connect,
     disconnect,
   } = useLiveScoring();
@@ -147,7 +148,7 @@ function LiveScoringDialogContent({
 
   useEffect(() => {
     if (hasActiveSession) {
-      connect(matchId);
+      connect(matchId, 'scorer');
     }
     return () => {
       disconnect();
@@ -170,7 +171,7 @@ function LiveScoringDialogContent({
     setStartingSession(true);
     const result = await startSession(matchId, { startingHole: 1 });
     if (result) {
-      connect(matchId);
+      connect(matchId, 'scorer');
     } else {
       setStartingSession(false);
     }
@@ -263,10 +264,16 @@ function LiveScoringDialogContent({
   };
 
   const handleStop = () => {
+    const otherScorers = Math.max(0, scorerCount - 1);
+    const message =
+      otherScorers > 0
+        ? `There ${otherScorers === 1 ? 'is' : 'are'} ${otherScorers} other ${otherScorers === 1 ? 'person' : 'people'} currently entering scores. Stopping this session will end it for everyone. Scores will NOT be saved.`
+        : 'Are you sure you want to stop this live scoring session? Scores will NOT be saved.';
+
     setConfirmDialog({
       open: true,
       title: 'Stop Session',
-      message: 'Are you sure you want to stop this live scoring session? Scores will NOT be saved.',
+      message,
       confirmText: 'Stop Session',
       confirmColor: 'error',
       onConfirm: async () => {

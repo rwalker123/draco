@@ -22648,6 +22648,20 @@ components:
         - confirm
       title: StopLiveScoring
       description: Request to stop a live scoring session without saving scores
+    GetLiveScoringTicket:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - scorer
+            - watcher
+          default: watcher
+          title: GolfSseRole
+          description: Role for SSE connection - scorer can enter scores, watcher can only
+            view
+      title: GetLiveScoringTicket
+      description: Request to get SSE connection ticket with optional role
     SseTicketResponse:
       type: object
       properties:
@@ -38636,6 +38650,11 @@ paths:
       parameters:
         - *a18
         - *a19
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GetLiveScoringTicket"
       responses:
         "201":
           description: SSE connection ticket

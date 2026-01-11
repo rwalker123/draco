@@ -185,6 +185,22 @@ export const LiveSessionStatusSchema = z
     description: 'Lightweight status check for whether a match has an active live session',
   });
 
+// SSE Role (scorer can enter scores, watcher can only view)
+export const GolfSseRoleSchema = z.enum(['scorer', 'watcher']).openapi({
+  title: 'GolfSseRole',
+  description: 'Role for SSE connection - scorer can enter scores, watcher can only view',
+});
+
+// Get Live Scoring Ticket Request
+export const GetLiveScoringTicketSchema = z
+  .object({
+    role: GolfSseRoleSchema.optional().default('watcher'),
+  })
+  .openapi({
+    title: 'GetLiveScoringTicket',
+    description: 'Request to get SSE connection ticket with optional role',
+  });
+
 // SSE Ticket Response
 export const SseTicketResponseSchema = z
   .object({
@@ -211,4 +227,6 @@ export type SessionStartedEventType = z.infer<typeof SessionStartedEventSchema>;
 export type SessionFinalizedEventType = z.infer<typeof SessionFinalizedEventSchema>;
 export type SessionStoppedEventType = z.infer<typeof SessionStoppedEventSchema>;
 export type LiveSessionStatusType = z.infer<typeof LiveSessionStatusSchema>;
+export type GolfSseRoleType = z.infer<typeof GolfSseRoleSchema>;
+export type GetLiveScoringTicketType = z.infer<typeof GetLiveScoringTicketSchema>;
 export type SseTicketResponseType = z.infer<typeof SseTicketResponseSchema>;
