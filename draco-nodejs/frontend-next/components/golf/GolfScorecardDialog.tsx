@@ -49,11 +49,24 @@ interface GolfScorecardDialogProps {
   team2Id?: string;
 }
 
+interface TeamPoints {
+  team1Name: string;
+  team1Points: number;
+  team2Name: string;
+  team2Points: number;
+}
+
 interface LiveScoringData {
   isConnected: boolean;
   isConnecting: boolean;
   connectionError: string | null;
-  sessionState: { status: string; scores: LiveHoleScore[]; holesPlayed: number } | null;
+  sessionState: {
+    status: string;
+    scores: LiveHoleScore[];
+    holesPlayed: number;
+    teamPoints?: TeamPoints;
+    courseHandicaps?: Record<string, number>;
+  } | null;
   viewerCount: number;
   onSessionFinalized: (callback: (event: unknown) => void) => () => void;
   onSessionStopped: (callback: (event: unknown) => void) => () => void;
@@ -478,6 +491,27 @@ function GolfScorecardDialogContent({
     return { team1Total, team2Total };
   }, [isSessionActive, matchData, playerScores, team1Roster, team2Roster]);
 
+  const liveNetTotals = useMemo(() => {
+    if (!isSessionActive || !liveData?.sessionState?.scores || !matchData) return null;
+
+    const team1Id = team1Roster?.id || matchData.team1.id;
+    const team2Id = team2Roster?.id || matchData.team2.id;
+
+    let team1NetTotal = 0;
+    let team2NetTotal = 0;
+
+    for (const score of liveData.sessionState.scores) {
+      const netScore = score.netScore ?? score.score;
+      if (score.teamId === team1Id) {
+        team1NetTotal += netScore;
+      } else if (score.teamId === team2Id) {
+        team2NetTotal += netScore;
+      }
+    }
+
+    return { team1NetTotal, team2NetTotal };
+  }, [isSessionActive, liveData?.sessionState?.scores, matchData, team1Roster, team2Roster]);
+
   const renderTeamSummary = () => {
     if (!matchData) return null;
 
@@ -539,10 +573,14 @@ function GolfScorecardDialogContent({
             {team1Score ?? '-'}
           </Typography>
           <Typography variant="body2" textAlign="center">
-            {matchData.team1NetScore ?? '-'}
+            {isSessionActive && liveNetTotals
+              ? liveNetTotals.team1NetTotal
+              : (matchData.team1NetScore ?? '-')}
           </Typography>
           <Typography variant="body2" textAlign="center" fontWeight={600}>
-            {matchData.team1Points ?? '-'}
+            {isSessionActive && liveData?.sessionState?.teamPoints
+              ? liveData.sessionState.teamPoints.team1Points
+              : (matchData.team1Points ?? '-')}
           </Typography>
           <Box>{team1Won && <Typography color="success.main">✓</Typography>}</Box>
 
@@ -557,10 +595,14 @@ function GolfScorecardDialogContent({
             {team2Score ?? '-'}
           </Typography>
           <Typography variant="body2" textAlign="center">
-            {matchData.team2NetScore ?? '-'}
+            {isSessionActive && liveNetTotals
+              ? liveNetTotals.team2NetTotal
+              : (matchData.team2NetScore ?? '-')}
           </Typography>
           <Typography variant="body2" textAlign="center" fontWeight={600}>
-            {matchData.team2Points ?? '-'}
+            {isSessionActive && liveData?.sessionState?.teamPoints
+              ? liveData.sessionState.teamPoints.team2Points
+              : (matchData.team2Points ?? '-')}
           </Typography>
           <Box>{team2Won && <Typography color="success.main">✓</Typography>}</Box>
         </Box>
