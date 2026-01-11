@@ -1,6 +1,6 @@
 import { RegisterContext } from '../../openapiTypes.js';
 
-export const registerManagersEndpoints = ({ registry, schemaRefs, z }: RegisterContext) => {
+export const registerManagersEndpoints = ({ registry, schemaRefs }: RegisterContext) => {
   const {
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
@@ -339,13 +339,8 @@ export const registerManagersEndpoints = ({ registry, schemaRefs, z }: RegisterC
     ],
     request: {},
     responses: {
-      200: {
+      204: {
         description: 'Manager removed',
-        content: {
-          'application/json': {
-            schema: z.string(),
-          },
-        },
       },
       401: {
         description: 'Authentication required',

@@ -14,6 +14,8 @@ import { ICleanupRepository, RepositoryFactory } from '../repositories/index.js'
 import { ValidationError, InternalServerError } from '../utils/customErrors.js';
 import { performanceMonitor } from '../utils/performanceMonitor.js';
 import { ClassifiedExpirationEmailService } from './player-classified/ClassifiedExpirationEmailService.js';
+import { ServiceFactory } from './serviceFactory.js';
+import { STALE_SESSION_THRESHOLD_MS } from '../constants/liveSessionConstants.js';
 
 export class CleanupService implements ICleanupService {
   private repository: ICleanupRepository;
@@ -109,6 +111,9 @@ export class CleanupService implements ICleanupService {
       const expiredPlayersWanted = await this.cleanupExpiredPlayersWanted();
       const expiredTeamsWanted = await this.cleanupExpiredTeamsWanted();
 
+      // Clean up stale live scoring sessions (older than 5 hours)
+      const staleLiveSessions = await this.cleanupStaleLiveSessions();
+
       const totalDeleted = expiredPlayersWanted + expiredTeamsWanted;
       const duration = Date.now() - startTime;
       this.lastCleanup = new Date();
@@ -128,6 +133,9 @@ export class CleanupService implements ICleanupService {
       );
       console.log(`  - Players Wanted: ${expiredPlayersWanted}`);
       console.log(`  - Teams Wanted: ${expiredTeamsWanted}`);
+      if (staleLiveSessions > 0) {
+        console.log(`  - Stale live sessions abandoned: ${staleLiveSessions}`);
+      }
     } catch (error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -382,6 +390,47 @@ export class CleanupService implements ICleanupService {
         // Continue cleanup even if email fails
       }
     }
+  }
+
+  /**
+   * Clean up stale live scoring sessions (older than threshold)
+   * Marks sessions as abandoned if their last activity is older than the configured threshold
+   * @returns Total count of sessions marked as abandoned across all live scoring types
+   */
+  private async cleanupStaleLiveSessions(): Promise<number> {
+    let totalCleaned = 0;
+
+    try {
+      const liveScoringService = ServiceFactory.getLiveScoringService();
+      const golfCount = await liveScoringService.cleanupStaleSessionsByAge(
+        STALE_SESSION_THRESHOLD_MS,
+      );
+      totalCleaned += golfCount;
+    } catch (error) {
+      console.error('⚠️ Failed to clean up stale golf live scoring sessions:', error);
+    }
+
+    try {
+      const individualLiveScoringService = ServiceFactory.getIndividualLiveScoringService();
+      const individualGolfCount = await individualLiveScoringService.cleanupStaleSessionsByAge(
+        STALE_SESSION_THRESHOLD_MS,
+      );
+      totalCleaned += individualGolfCount;
+    } catch (error) {
+      console.error('⚠️ Failed to clean up stale individual golf live scoring sessions:', error);
+    }
+
+    try {
+      const baseballLiveScoringService = ServiceFactory.getBaseballLiveScoringService();
+      const baseballCount = await baseballLiveScoringService.cleanupStaleSessionsByAge(
+        STALE_SESSION_THRESHOLD_MS,
+      );
+      totalCleaned += baseballCount;
+    } catch (error) {
+      console.error('⚠️ Failed to clean up stale baseball live scoring sessions:', error);
+    }
+
+    return totalCleaned;
   }
 
   /**

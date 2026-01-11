@@ -191,4 +191,21 @@ export class PrismaLiveScoringRepository implements ILiveScoringRepository {
     });
     return result.count;
   }
+
+  async markStaleActiveSessionsAbandoned(staleThresholdMs: number): Promise<number> {
+    const cutoffDate = new Date(Date.now() - staleThresholdMs);
+    const result = await this.prisma.livescoringsession.updateMany({
+      where: {
+        status: 1, // Active
+        lastactivity: {
+          lt: cutoffDate,
+        },
+      },
+      data: {
+        status: 4, // Abandoned
+        lastactivity: new Date(),
+      },
+    });
+    return result.count;
+  }
 }

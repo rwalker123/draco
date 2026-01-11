@@ -56,7 +56,7 @@ router.delete(
   asyncHandler(async (req: Request, res: Response) => {
     const { managerId } = extractBigIntParams(req.params, 'managerId');
     await teamManagerService.removeManager(managerId);
-    res.json();
+    res.status(204).send();
   }),
 );
 

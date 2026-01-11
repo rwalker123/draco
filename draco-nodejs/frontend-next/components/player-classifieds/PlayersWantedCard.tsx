@@ -20,7 +20,7 @@ import {
   Email as EmailIcon,
 } from '@mui/icons-material';
 import { IPlayersWantedCardProps } from '../../types/playerClassifieds';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDateOfBirth } from '../../utils/dateUtils';
 import { playerClassifiedService } from '../../services/playerClassifiedService';
 import { useParams } from 'next/navigation';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -47,10 +47,11 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
   // Calculate expiration date from dateCreated + expirationDays
   const getExpirationDate = (): string => {
     if (!classified.dateCreated) return '';
-    const createdDate = new Date(classified.dateCreated);
-    const expirationDate = new Date(createdDate);
-    expirationDate.setDate(expirationDate.getDate() + classifiedsConfig.expirationDays);
-    return formatDate(expirationDate.toISOString());
+    const [year, month, day] = classified.dateCreated.split('-').map(Number);
+    const expirationDate = new Date(
+      Date.UTC(year, month - 1, day + classifiedsConfig.expirationDays),
+    );
+    return formatDateOfBirth(expirationDate.toISOString().split('T')[0]);
   };
 
   // Parse positions from comma-separated string
@@ -144,7 +145,7 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
         <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
           <CalendarIcon fontSize="small" color="action" />
           <Typography variant="caption" color="text.secondary">
-            Posted {formatDate(classified.dateCreated ?? '')}
+            Posted {formatDateOfBirth(classified.dateCreated ?? '')}
           </Typography>
           {classified.dateCreated && (
             <>

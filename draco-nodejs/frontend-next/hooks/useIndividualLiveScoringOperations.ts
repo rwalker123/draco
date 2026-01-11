@@ -97,28 +97,18 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
       accountId: string,
       options: StartIndividualLiveScoring,
     ): Promise<IndividualLiveScoringState | null> => {
-      console.log('[LIVE_OPS] startSession called', { accountId, options });
       setIsLoading(true);
       setError(null);
 
       try {
-        console.log('[LIVE_OPS] Calling startIndividualLiveScoringSession API...');
         const result = await startIndividualLiveScoringSession({
           client: apiClient,
           path: { accountId },
           body: options,
         });
-        console.log('[LIVE_OPS] startSession API response', {
-          hasData: !!result.data,
-          hasError: !!result.error,
-          error: result.error,
-        });
 
-        const unwrapped = unwrapApiResult(result, 'Failed to start live scoring');
-        console.log('[LIVE_OPS] startSession unwrapped result', { unwrapped });
-        return unwrapped;
+        return unwrapApiResult(result, 'Failed to start live scoring');
       } catch (err) {
-        console.error('[LIVE_OPS] startSession caught error', err);
         const message = err instanceof Error ? err.message : 'Failed to start live scoring';
         setError(message);
         return null;

@@ -378,7 +378,16 @@ import {
   StartIndividualLiveScoringSchema,
   SubmitIndividualLiveHoleScoreSchema,
   AdvanceIndividualLiveHoleSchema,
+  BaseballLiveScoringStateSchema,
+  BaseballLiveSessionStatusSchema,
+  BaseballLiveInningScoreSchema,
+  StartBaseballLiveScoringSchema,
+  SubmitBaseballLiveInningScoreSchema,
+  AdvanceBaseballInningSchema,
+  FinalizeBaseballLiveScoringSchema,
+  StopBaseballLiveScoringSchema,
   IndividualSseTicketResponseSchema,
+  GetBaseballLiveScoringTicketSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -1485,6 +1494,42 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'IndividualSseTicketResponse',
     IndividualSseTicketResponseSchema,
   );
+  const BaseballLiveScoringStateSchemaRef = registry.register(
+    'BaseballLiveScoringState',
+    BaseballLiveScoringStateSchema,
+  );
+  const BaseballLiveSessionStatusSchemaRef = registry.register(
+    'BaseballLiveSessionStatus',
+    BaseballLiveSessionStatusSchema,
+  );
+  const BaseballLiveInningScoreSchemaRef = registry.register(
+    'BaseballLiveInningScore',
+    BaseballLiveInningScoreSchema,
+  );
+  const StartBaseballLiveScoringSchemaRef = registry.register(
+    'StartBaseballLiveScoring',
+    StartBaseballLiveScoringSchema,
+  );
+  const SubmitBaseballLiveInningScoreSchemaRef = registry.register(
+    'SubmitBaseballLiveInningScore',
+    SubmitBaseballLiveInningScoreSchema,
+  );
+  const AdvanceBaseballInningSchemaRef = registry.register(
+    'AdvanceBaseballInning',
+    AdvanceBaseballInningSchema,
+  );
+  const FinalizeBaseballLiveScoringSchemaRef = registry.register(
+    'FinalizeBaseballLiveScoring',
+    FinalizeBaseballLiveScoringSchema,
+  );
+  const StopBaseballLiveScoringSchemaRef = registry.register(
+    'StopBaseballLiveScoring',
+    StopBaseballLiveScoringSchema,
+  );
+  const GetBaseballLiveScoringTicketSchemaRef = registry.register(
+    'GetBaseballLiveScoringTicket',
+    GetBaseballLiveScoringTicketSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -1868,6 +1913,15 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SubmitIndividualLiveHoleScoreSchemaRef,
     AdvanceIndividualLiveHoleSchemaRef,
     IndividualSseTicketResponseSchemaRef,
+    BaseballLiveScoringStateSchemaRef,
+    BaseballLiveSessionStatusSchemaRef,
+    BaseballLiveInningScoreSchemaRef,
+    StartBaseballLiveScoringSchemaRef,
+    SubmitBaseballLiveInningScoreSchemaRef,
+    AdvanceBaseballInningSchemaRef,
+    FinalizeBaseballLiveScoringSchemaRef,
+    StopBaseballLiveScoringSchemaRef,
+    GetBaseballLiveScoringTicketSchemaRef,
   };
 };
 

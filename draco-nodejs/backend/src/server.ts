@@ -24,6 +24,12 @@ async function bootstrap() {
     console.error('⚠️ Failed to clean up stale individual live scoring sessions:', error);
   });
 
+  // Clean up any stale baseball live scoring sessions from previous server runs
+  const baseballLiveScoringService = ServiceFactory.getBaseballLiveScoringService();
+  await baseballLiveScoringService.cleanupStaleSessions().catch((error) => {
+    console.error('⚠️ Failed to clean up stale baseball live scoring sessions:', error);
+  });
+
   // Now import and start the app
   const { default: app } = await import('./app.js'); // or wherever your Next.js app lives
 

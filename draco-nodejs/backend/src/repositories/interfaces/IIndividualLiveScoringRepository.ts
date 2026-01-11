@@ -66,4 +66,6 @@ export interface IIndividualLiveScoringRepository {
   deleteSession(sessionId: bigint): Promise<individuallivescoringsession>;
 
   markAllActiveSessionsAbandoned(): Promise<number>;
+
+  markStaleActiveSessionsAbandoned(staleThresholdMs: number): Promise<number>;
 }

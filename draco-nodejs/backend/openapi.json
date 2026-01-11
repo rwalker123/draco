@@ -30293,6 +30293,258 @@
         ],
         "title": "IndividualSseTicketResponse",
         "description": "SSE connection ticket response for individual live scoring"
+      },
+      "BaseballLiveScoringState": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "gameId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "finalized",
+              "stopped"
+            ],
+            "title": "BaseballLiveScoringStatus",
+            "description": "Status of a baseball live scoring session"
+          },
+          "currentInning": {
+            "type": "integer"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedBy": {
+            "type": "string"
+          },
+          "viewerCount": {
+            "type": "integer"
+          },
+          "scorerCount": {
+            "type": "integer"
+          },
+          "scores": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "inningNumber": {
+                  "type": "integer"
+                },
+                "isHomeTeam": {
+                  "type": "boolean"
+                },
+                "runs": {
+                  "type": "integer"
+                },
+                "enteredBy": {
+                  "type": "string"
+                },
+                "enteredAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "inningNumber",
+                "isHomeTeam",
+                "runs",
+                "enteredBy",
+                "enteredAt"
+              ],
+              "title": "BaseballLiveInningScore",
+              "description": "A single inning score in a baseball live scoring session"
+            }
+          },
+          "homeTeamTotal": {
+            "type": "integer"
+          },
+          "visitorTeamTotal": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sessionId",
+          "gameId",
+          "status",
+          "currentInning",
+          "startedAt",
+          "startedBy",
+          "scores",
+          "homeTeamTotal",
+          "visitorTeamTotal"
+        ],
+        "title": "BaseballLiveScoringState",
+        "description": "Current state of a baseball live scoring session"
+      },
+      "BaseballLiveSessionStatus": {
+        "type": "object",
+        "properties": {
+          "hasActiveSession": {
+            "type": "boolean"
+          },
+          "sessionId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "viewerCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasActiveSession"
+        ],
+        "title": "BaseballLiveSessionStatus",
+        "description": "Lightweight status check for whether a game has an active live session"
+      },
+      "BaseballLiveInningScore": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "inningNumber": {
+            "type": "integer"
+          },
+          "isHomeTeam": {
+            "type": "boolean"
+          },
+          "runs": {
+            "type": "integer"
+          },
+          "enteredBy": {
+            "type": "string"
+          },
+          "enteredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "inningNumber",
+          "isHomeTeam",
+          "runs",
+          "enteredBy",
+          "enteredAt"
+        ],
+        "title": "BaseballLiveInningScore",
+        "description": "A single inning score in a baseball live scoring session"
+      },
+      "StartBaseballLiveScoring": {
+        "type": "object",
+        "properties": {},
+        "title": "StartBaseballLiveScoring",
+        "description": "Request to start a baseball live scoring session"
+      },
+      "SubmitBaseballLiveInningScore": {
+        "type": "object",
+        "properties": {
+          "inningNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99
+          },
+          "isHomeTeam": {
+            "type": "boolean"
+          },
+          "runs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 99
+          }
+        },
+        "required": [
+          "inningNumber",
+          "isHomeTeam",
+          "runs"
+        ],
+        "title": "SubmitBaseballLiveInningScore",
+        "description": "Request to submit runs for a specific inning and team during live scoring"
+      },
+      "AdvanceBaseballInning": {
+        "type": "object",
+        "properties": {
+          "inningNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99
+          }
+        },
+        "required": [
+          "inningNumber"
+        ],
+        "title": "AdvanceBaseballInning",
+        "description": "Request to advance to a specific inning"
+      },
+      "FinalizeBaseballLiveScoring": {
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "FinalizeBaseballLiveScoring",
+        "description": "Request to finalize a baseball live scoring session and save scores permanently"
+      },
+      "StopBaseballLiveScoring": {
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "StopBaseballLiveScoring",
+        "description": "Request to stop a baseball live scoring session without saving scores"
+      },
+      "GetBaseballLiveScoringTicket": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "scorer",
+              "watcher"
+            ],
+            "default": "watcher",
+            "title": "SseRole",
+            "description": "Role for SSE connection - scorer can enter scores, watcher can only view"
+          }
+        },
+        "title": "GetBaseballLiveScoringTicket",
+        "description": "Request to get SSE connection ticket with optional role"
       }
     },
     "securitySchemes": {
@@ -40090,6 +40342,818 @@
           },
           "500": {
             "description": "Unexpected error while checking the role.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/games/{gameId}/live/status": {
+      "get": {
+        "description": "Check if a baseball game has an active live scoring session",
+        "operationId": "getBaseballLiveSessionStatus",
+        "summary": "Get baseball live session status",
+        "tags": [
+          "Baseball Live Scoring"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Baseball live session status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseballLiveSessionStatus"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/games/{gameId}/live": {
+      "get": {
+        "description": "Get the current state of a baseball live scoring session. This is a public endpoint for read-only access.",
+        "operationId": "getBaseballLiveScoringState",
+        "summary": "Get baseball live scoring state",
+        "tags": [
+          "Baseball Live Scoring"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current baseball live scoring state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseballLiveScoringState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/games/{gameId}/live/ticket": {
+      "post": {
+        "description": "Get a short-lived ticket for SSE subscription authentication",
+        "operationId": "getBaseballLiveScoringTicket",
+        "summary": "Get SSE connection ticket for baseball",
+        "tags": [
+          "Baseball Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetBaseballLiveScoringTicket"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "SSE connection ticket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseTicketResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/games/{gameId}/live/start": {
+      "post": {
+        "description": "Start a new baseball live scoring session for a game",
+        "operationId": "startBaseballLiveScoringSession",
+        "summary": "Start baseball live scoring",
+        "tags": [
+          "Baseball Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartBaseballLiveScoring"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Baseball live scoring session started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseballLiveScoringState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or session already active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (not a TeamAdmin or account admin)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Game not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/games/{gameId}/live/scores": {
+      "post": {
+        "description": "Submit runs for a specific inning and team during baseball live scoring",
+        "operationId": "submitBaseballLiveInningScore",
+        "summary": "Submit inning score",
+        "tags": [
+          "Baseball Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitBaseballLiveInningScore"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Score submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseballLiveInningScore"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/games/{gameId}/live/advance": {
+      "post": {
+        "description": "Advance to a specific inning number",
+        "operationId": "advanceBaseballInning",
+        "summary": "Advance inning",
+        "tags": [
+          "Baseball Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvanceBaseballInning"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inning advanced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "title": "SuccessResponse",
+                  "description": "Simple success response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/games/{gameId}/live/finalize": {
+      "post": {
+        "description": "Finalize the baseball live scoring session and save scores permanently to the game",
+        "operationId": "finalizeBaseballLiveScoringSession",
+        "summary": "Finalize baseball live scoring",
+        "tags": [
+          "Baseball Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalizeBaseballLiveScoring"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session finalized successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "title": "SuccessResponse",
+                  "description": "Simple success response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/games/{gameId}/live/stop": {
+      "post": {
+        "description": "Stop the baseball live scoring session without saving scores",
+        "operationId": "stopBaseballLiveScoringSession",
+        "summary": "Stop baseball live scoring",
+        "tags": [
+          "Baseball Live Scoring"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopBaseballLiveScoring"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session stopped successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "title": "SuccessResponse",
+                  "description": "Simple success response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/games/live/active": {
+      "get": {
+        "description": "Get all baseball games with active live scoring sessions for the account. This is a public endpoint.",
+        "operationId": "getActiveBaseballLiveScoringSessions",
+        "summary": "List active baseball live sessions",
+        "tags": [
+          "Baseball Live Scoring"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of active sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "gameId": {
+                        "type": "string"
+                      },
+                      "sessionId": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "gameId",
+                      "sessionId"
+                    ]
+                  },
+                  "title": "BaseballActiveSessionsList",
+                  "description": "List of games with active baseball live scoring sessions"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
             "content": {
               "application/json": {
                 "schema": {
@@ -55965,15 +57029,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Manager removed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
+          "204": {
+            "description": "Manager removed"
           },
           "401": {
             "description": "Authentication required",
