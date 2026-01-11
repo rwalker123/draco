@@ -14,6 +14,7 @@ import { useAccount } from './AccountContext';
 import { useApiClient } from '../hooks/useApiClient';
 import { getLiveScoringTicket } from '@draco/shared-api-client';
 import type { LiveScoringState, LiveHoleScore } from '@draco/shared-api-client';
+import { safeJsonParse } from '../utils/sseUtils';
 
 interface ScoreUpdateEvent {
   golferId: string;
@@ -202,12 +203,14 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
       };
 
       eventSource.addEventListener('connected', (event) => {
-        const data = JSON.parse(event.data);
+        const data = safeJsonParse<{ message: string }>(event.data, 'connected');
+        if (!data) return;
         console.log('SSE connected:', data);
       });
 
       eventSource.addEventListener('state', (event) => {
-        const state = JSON.parse(event.data) as LiveScoringState;
+        const state = safeJsonParse<LiveScoringState>(event.data, 'state');
+        if (!state) return;
         setSessionState(state);
         if (state.viewerCount !== undefined) {
           setViewerCount(state.viewerCount);
@@ -215,12 +218,14 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
       });
 
       eventSource.addEventListener('session_started', (event) => {
-        const data = JSON.parse(event.data) as SessionStartedEvent;
+        const data = safeJsonParse<SessionStartedEvent>(event.data, 'session_started');
+        if (!data) return;
         sessionStartedCallbacks.current.forEach((cb) => cb(data));
       });
 
       eventSource.addEventListener('score_update', (event) => {
-        const data = JSON.parse(event.data) as ScoreUpdateEvent;
+        const data = safeJsonParse<ScoreUpdateEvent>(event.data, 'score_update');
+        if (!data) return;
 
         setSessionState((prev) => {
           if (!prev) return prev;
@@ -261,13 +266,15 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
       });
 
       eventSource.addEventListener('hole_advanced', (event) => {
-        const data = JSON.parse(event.data) as HoleAdvancedEvent;
+        const data = safeJsonParse<HoleAdvancedEvent>(event.data, 'hole_advanced');
+        if (!data) return;
         setSessionState((prev) => (prev ? { ...prev, currentHole: data.holeNumber } : prev));
         holeAdvancedCallbacks.current.forEach((cb) => cb(data));
       });
 
       eventSource.addEventListener('session_finalized', (event) => {
-        const data = JSON.parse(event.data) as SessionFinalizedEvent;
+        const data = safeJsonParse<SessionFinalizedEvent>(event.data, 'session_finalized');
+        if (!data) return;
         setSessionState((prev) => (prev ? { ...prev, status: 'finalized' } : prev));
         sessionFinalizedCallbacks.current.forEach((cb) => cb(data));
         eventSource.close();
@@ -278,7 +285,8 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
       });
 
       eventSource.addEventListener('session_stopped', (event) => {
-        const data = JSON.parse(event.data) as SessionStoppedEvent;
+        const data = safeJsonParse<SessionStoppedEvent>(event.data, 'session_stopped');
+        if (!data) return;
         setSessionState((prev) => (prev ? { ...prev, status: 'stopped' } : prev));
         sessionStoppedCallbacks.current.forEach((cb) => cb(data));
         eventSource.close();
@@ -293,7 +301,8 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
       });
 
       eventSource.addEventListener('viewer_count', (event) => {
-        const data = JSON.parse(event.data) as { viewerCount: number };
+        const data = safeJsonParse<{ viewerCount: number }>(event.data, 'viewer_count');
+        if (!data) return;
         setViewerCount(data.viewerCount);
       });
 

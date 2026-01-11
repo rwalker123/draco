@@ -14,6 +14,7 @@ import { useAccount } from './AccountContext';
 import { useApiClient } from '../hooks/useApiClient';
 import { getBaseballLiveScoringTicket } from '@draco/shared-api-client';
 import type { BaseballLiveScoringState, BaseballLiveInningScore } from '@draco/shared-api-client';
+import { safeJsonParse } from '../utils/sseUtils';
 
 interface ScoreUpdateEvent {
   inningNumber: number;
@@ -185,12 +186,14 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
       };
 
       eventSource.addEventListener('connected', (event) => {
-        const data = JSON.parse(event.data);
+        const data = safeJsonParse<{ message: string }>(event.data, 'connected');
+        if (!data) return;
         console.log('Baseball SSE connected:', data);
       });
 
       eventSource.addEventListener('state', (event) => {
-        const state = JSON.parse(event.data) as BaseballLiveScoringState;
+        const state = safeJsonParse<BaseballLiveScoringState>(event.data, 'state');
+        if (!state) return;
         setSessionState(state);
         if (state.viewerCount !== undefined) {
           setViewerCount(state.viewerCount);
@@ -198,12 +201,14 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
       });
 
       eventSource.addEventListener('session_started', (event) => {
-        const data = JSON.parse(event.data) as SessionStartedEvent;
+        const data = safeJsonParse<SessionStartedEvent>(event.data, 'session_started');
+        if (!data) return;
         sessionStartedCallbacks.current.forEach((cb) => cb(data));
       });
 
       eventSource.addEventListener('score_update', (event) => {
-        const data = JSON.parse(event.data) as ScoreUpdateEvent;
+        const data = safeJsonParse<ScoreUpdateEvent>(event.data, 'score_update');
+        if (!data) return;
 
         setSessionState((prev) => {
           if (!prev) return prev;
@@ -253,13 +258,15 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
       });
 
       eventSource.addEventListener('inning_advanced', (event) => {
-        const data = JSON.parse(event.data) as InningAdvancedEvent;
+        const data = safeJsonParse<InningAdvancedEvent>(event.data, 'inning_advanced');
+        if (!data) return;
         setSessionState((prev) => (prev ? { ...prev, currentInning: data.inningNumber } : prev));
         inningAdvancedCallbacks.current.forEach((cb) => cb(data));
       });
 
       eventSource.addEventListener('session_finalized', (event) => {
-        const data = JSON.parse(event.data) as SessionFinalizedEvent;
+        const data = safeJsonParse<SessionFinalizedEvent>(event.data, 'session_finalized');
+        if (!data) return;
         setSessionState((prev) =>
           prev
             ? {
@@ -279,7 +286,8 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
       });
 
       eventSource.addEventListener('session_stopped', (event) => {
-        const data = JSON.parse(event.data) as SessionStoppedEvent;
+        const data = safeJsonParse<SessionStoppedEvent>(event.data, 'session_stopped');
+        if (!data) return;
         setSessionState((prev) => (prev ? { ...prev, status: 'stopped' } : prev));
         sessionStoppedCallbacks.current.forEach((cb) => cb(data));
         eventSource.close();
@@ -294,12 +302,14 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
       });
 
       eventSource.addEventListener('viewer_count', (event) => {
-        const data = JSON.parse(event.data) as { viewerCount: number };
+        const data = safeJsonParse<{ viewerCount: number }>(event.data, 'viewer_count');
+        if (!data) return;
         setViewerCount(data.viewerCount);
       });
 
       eventSource.addEventListener('scorer_count', (event) => {
-        const data = JSON.parse(event.data) as { scorerCount: number };
+        const data = safeJsonParse<{ scorerCount: number }>(event.data, 'scorer_count');
+        if (!data) return;
         setScorerCount(data.scorerCount);
       });
 
