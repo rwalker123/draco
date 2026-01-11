@@ -616,9 +616,7 @@ export class LiveScoringService {
     }
 
     // Load course for pars and handicap indexes
-    const course = await this.courseRepository.findByIdWithTees(
-      BigInt(batchHandicaps.teeId.split('/')[0]) || match.teeid,
-    );
+    const course = await this.courseRepository.findByIdWithTees(match.teeid);
 
     // Get course pars using whsCalculator utility
     let coursePars: number[] = [];
@@ -858,19 +856,25 @@ export class LiveScoringService {
   }
 
   async cleanupStaleSessions(): Promise<number> {
-    const count = await this.liveScoringRepository.markAllActiveSessionsAbandoned();
-    if (count > 0) {
-      console.log(`🧹 Cleaned up ${count} stale live scoring session(s)`);
+    const matchIds = await this.liveScoringRepository.markAllActiveSessionsAbandoned();
+    for (const matchId of matchIds) {
+      sessionCourseDataCache.delete(matchId.toString());
     }
-    return count;
+    if (matchIds.length > 0) {
+      console.log(`🧹 Cleaned up ${matchIds.length} stale live scoring session(s)`);
+    }
+    return matchIds.length;
   }
 
   async cleanupStaleSessionsByAge(staleThresholdMs: number): Promise<number> {
-    const count =
+    const matchIds =
       await this.liveScoringRepository.markStaleActiveSessionsAbandoned(staleThresholdMs);
-    if (count > 0) {
-      console.log(`🧹 Cleaned up ${count} stale live scoring session(s) by age`);
+    for (const matchId of matchIds) {
+      sessionCourseDataCache.delete(matchId.toString());
     }
-    return count;
+    if (matchIds.length > 0) {
+      console.log(`🧹 Cleaned up ${matchIds.length} stale live scoring session(s) by age`);
+    }
+    return matchIds.length;
   }
 }
