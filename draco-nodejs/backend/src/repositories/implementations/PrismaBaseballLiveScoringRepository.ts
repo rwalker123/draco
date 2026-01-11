@@ -129,6 +129,16 @@ export class PrismaBaseballLiveScoringRepository implements IBaseballLiveScoring
   }
 
   async deleteSession(sessionId: bigint): Promise<baseballlivescoringsession> {
+    const existingScores = await this.prisma.baseballliveinningscore.count({
+      where: { sessionid: sessionId },
+    });
+
+    if (existingScores > 0) {
+      console.log(
+        `🗑️ Deleting baseball live scoring session ${sessionId} with ${existingScores} inning score(s) (cascade delete)`,
+      );
+    }
+
     return this.prisma.baseballlivescoringsession.delete({
       where: { id: sessionId },
     });
