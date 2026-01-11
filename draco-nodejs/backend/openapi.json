@@ -29807,6 +29807,9 @@
                 "score": {
                   "type": "integer"
                 },
+                "netScore": {
+                  "type": "integer"
+                },
                 "enteredBy": {
                   "type": "string"
                 },
@@ -29827,6 +29830,43 @@
               "title": "LiveHoleScore",
               "description": "A single hole score in a live scoring session"
             }
+          },
+          "coursePars": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "courseHandicaps": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "teamPoints": {
+            "type": "object",
+            "properties": {
+              "team1Name": {
+                "type": "string"
+              },
+              "team1Points": {
+                "type": "number"
+              },
+              "team2Name": {
+                "type": "string"
+              },
+              "team2Points": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "team1Name",
+              "team1Points",
+              "team2Name",
+              "team2Points"
+            ],
+            "title": "LiveTeamPoints",
+            "description": "Accumulated team points during live scoring"
           }
         },
         "required": [
@@ -29888,6 +29928,9 @@
             "type": "integer"
           },
           "score": {
+            "type": "integer"
+          },
+          "netScore": {
             "type": "integer"
           },
           "enteredBy": {

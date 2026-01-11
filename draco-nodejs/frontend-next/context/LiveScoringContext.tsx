@@ -17,6 +17,13 @@ import type { LiveScoringState, LiveHoleScore } from '@draco/shared-api-client';
 import type { GolfSseRoleType } from '@draco/shared-schemas';
 import { safeJsonParse } from '../utils/sseUtils';
 
+interface TeamPoints {
+  team1Name: string;
+  team1Points: number;
+  team2Name: string;
+  team2Points: number;
+}
+
 interface ScoreUpdateEvent {
   golferId: string;
   golferName: string;
@@ -25,6 +32,7 @@ interface ScoreUpdateEvent {
   score: number;
   enteredBy: string;
   timestamp: string;
+  teamPoints?: TeamPoints;
 }
 
 interface SessionStartedEvent {
@@ -264,7 +272,11 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
             ];
           }
 
-          return { ...prev, scores: updatedScores };
+          return {
+            ...prev,
+            scores: updatedScores,
+            teamPoints: data.teamPoints ?? prev.teamPoints,
+          };
         });
 
         scoreUpdateCallbacks.current.forEach((cb) => cb(data));

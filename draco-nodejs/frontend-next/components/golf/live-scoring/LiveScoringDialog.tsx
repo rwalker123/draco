@@ -302,6 +302,19 @@ function LiveScoringDialogContent({
     return score?.enteredBy;
   };
 
+  const getGolferTotals = (
+    golferId: string,
+  ): { gross: number; net: number | null; holesPlayed: number } => {
+    const golferScores = sessionState?.scores.filter((s) => s.golferId === golferId) ?? [];
+    const gross = golferScores.reduce((sum, s) => sum + s.score, 0);
+    const courseHandicap = sessionState?.courseHandicaps?.[golferId];
+
+    const net =
+      courseHandicap !== undefined && golferScores.length > 0 ? gross - courseHandicap : null;
+
+    return { gross, net, holesPlayed: golferScores.length };
+  };
+
   if (loadingGolfers) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -397,8 +410,18 @@ function LiveScoringDialogContent({
               >
                 <ChevronLeftIcon />
               </IconButton>
-              <Typography variant="h5" sx={{ minWidth: 100, textAlign: 'center' }}>
+              <Typography variant="h5" sx={{ minWidth: 140, textAlign: 'center' }}>
                 Hole {currentHole}
+                {sessionState?.coursePars?.[currentHole - 1] && (
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ ml: 1 }}
+                  >
+                    (Par {sessionState.coursePars[currentHole - 1]})
+                  </Typography>
+                )}
               </Typography>
               <IconButton
                 onClick={() => handleAdvanceHole('next')}
@@ -408,11 +431,36 @@ function LiveScoringDialogContent({
               </IconButton>
             </Box>
 
+            {sessionState?.teamPoints && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 3,
+                  mb: 2,
+                  p: 1.5,
+                  borderRadius: 1,
+                  bgcolor: 'action.hover',
+                }}
+              >
+                <Typography variant="body2" fontWeight={500}>
+                  {sessionState.teamPoints.team1Name}: {sessionState.teamPoints.team1Points} pts
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  |
+                </Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  {sessionState.teamPoints.team2Name}: {sessionState.teamPoints.team2Points} pts
+                </Typography>
+              </Box>
+            )}
+
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {golfers.map((golfer) => {
                 const existingScore = getScoreForGolferHole(golfer.golferId, currentHole);
                 const enteredBy = getScoreEnteredBy(golfer.golferId, currentHole);
                 const isSubmitting = submittingGolferId === golfer.golferId;
+                const totals = getGolferTotals(golfer.golferId);
 
                 return (
                   <Box
@@ -432,9 +480,22 @@ function LiveScoringDialogContent({
                       <Typography variant="body1" fontWeight={500}>
                         {golfer.name}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {golfer.teamName}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {golfer.teamName}
+                        </Typography>
+                        {totals.holesPlayed > 0 && (
+                          <Typography variant="caption" fontWeight={500}>
+                            Total: {totals.gross}
+                            {totals.net !== null && (
+                              <Typography component="span" variant="caption" color="text.secondary">
+                                {' '}
+                                ({totals.net})
+                              </Typography>
+                            )}
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
