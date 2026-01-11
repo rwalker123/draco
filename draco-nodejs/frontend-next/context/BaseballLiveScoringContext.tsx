@@ -198,6 +198,9 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
         if (state.viewerCount !== undefined) {
           setViewerCount(state.viewerCount);
         }
+        if (state.scorerCount !== undefined) {
+          setScorerCount(state.scorerCount);
+        }
       });
 
       eventSource.addEventListener('session_started', (event) => {
