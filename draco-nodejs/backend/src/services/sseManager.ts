@@ -151,8 +151,9 @@ export class SSEManager {
     const clientIds = this.matchSubscriptions.get(matchKey);
 
     if (clientIds) {
+      const serializedData = JSON.stringify(data);
       for (const clientId of clientIds) {
-        this.sendEvent(clientId, event, data);
+        this.sendEventRaw(clientId, event, serializedData);
       }
     }
   }
@@ -202,8 +203,9 @@ export class SSEManager {
     const clientIds = this.accountSubscriptions.get(accountKey);
 
     if (clientIds) {
+      const serializedData = JSON.stringify(data);
       for (const clientId of clientIds) {
-        this.sendEvent(clientId, event, data);
+        this.sendEventRaw(clientId, event, serializedData);
       }
     }
   }
@@ -268,8 +270,9 @@ export class SSEManager {
     const clientIds = this.gameSubscriptions.get(gameKey);
 
     if (clientIds) {
+      const serializedData = JSON.stringify(data);
       for (const clientId of clientIds) {
-        this.sendEvent(clientId, event, data);
+        this.sendEventRaw(clientId, event, serializedData);
       }
     }
   }
@@ -310,6 +313,10 @@ export class SSEManager {
    * Returns true if successful, false if the client was removed due to error.
    */
   private sendEvent(clientId: string, event: string, data: unknown): boolean {
+    return this.sendEventRaw(clientId, event, JSON.stringify(data));
+  }
+
+  private sendEventRaw(clientId: string, event: string, serializedData: string): boolean {
     const client = this.clients.get(clientId);
     if (!client) {
       return false;
@@ -317,7 +324,7 @@ export class SSEManager {
 
     try {
       client.res.write(`event: ${event}\n`);
-      client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+      client.res.write(`data: ${serializedData}\n\n`);
       client.lastPing = Date.now();
       return true;
     } catch {
