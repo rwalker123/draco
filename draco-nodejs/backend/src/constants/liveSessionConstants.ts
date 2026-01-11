@@ -17,3 +17,5 @@ export const LIVE_SESSION_STATUS_MAP: Record<
   [LIVE_SESSION_STATUS.FINALIZED]: 'finalized',
   [LIVE_SESSION_STATUS.STOPPED]: 'stopped',
 };
+
+export const STALE_SESSION_THRESHOLD_MS = 5 * 60 * 60 * 1000; // 5 hours in milliseconds

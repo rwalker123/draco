@@ -442,4 +442,13 @@ export class LiveScoringService {
     }
     return count;
   }
+
+  async cleanupStaleSessionsByAge(staleThresholdMs: number): Promise<number> {
+    const count =
+      await this.liveScoringRepository.markStaleActiveSessionsAbandoned(staleThresholdMs);
+    if (count > 0) {
+      console.log(`🧹 Cleaned up ${count} stale live scoring session(s) by age`);
+    }
+    return count;
+  }
 }

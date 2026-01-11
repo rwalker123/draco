@@ -89,4 +89,11 @@ export interface IBaseballLiveScoringRepository {
    * Returns the count of sessions marked as abandoned.
    */
   markAllActiveSessionsAbandoned(): Promise<number>;
+
+  /**
+   * Mark active sessions as abandoned if their last activity is older than the threshold.
+   * @param staleThresholdMs - Sessions with lastactivity older than (now - staleThresholdMs) will be marked abandoned
+   * @returns The count of sessions marked as abandoned
+   */
+  markStaleActiveSessionsAbandoned(staleThresholdMs: number): Promise<number>;
 }

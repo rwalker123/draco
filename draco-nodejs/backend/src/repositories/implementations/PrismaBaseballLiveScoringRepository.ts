@@ -182,4 +182,21 @@ export class PrismaBaseballLiveScoringRepository implements IBaseballLiveScoring
     });
     return result.count;
   }
+
+  async markStaleActiveSessionsAbandoned(staleThresholdMs: number): Promise<number> {
+    const cutoffDate = new Date(Date.now() - staleThresholdMs);
+    const result = await this.prisma.baseballlivescoringsession.updateMany({
+      where: {
+        status: 1, // Active
+        lastactivity: {
+          lt: cutoffDate,
+        },
+      },
+      data: {
+        status: 5, // Abandoned
+        lastactivity: new Date(),
+      },
+    });
+    return result.count;
+  }
 }

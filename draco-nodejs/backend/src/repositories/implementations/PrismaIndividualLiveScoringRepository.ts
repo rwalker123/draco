@@ -162,4 +162,21 @@ export class PrismaIndividualLiveScoringRepository implements IIndividualLiveSco
     });
     return result.count;
   }
+
+  async markStaleActiveSessionsAbandoned(staleThresholdMs: number): Promise<number> {
+    const cutoffDate = new Date(Date.now() - staleThresholdMs);
+    const result = await this.prisma.individuallivescoringsession.updateMany({
+      where: {
+        status: 1,
+        lastactivity: {
+          lt: cutoffDate,
+        },
+      },
+      data: {
+        status: 5,
+        lastactivity: new Date(),
+      },
+    });
+    return result.count;
+  }
 }

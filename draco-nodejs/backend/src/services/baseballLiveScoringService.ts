@@ -282,4 +282,13 @@ export class BaseballLiveScoringService {
     }
     return count;
   }
+
+  async cleanupStaleSessionsByAge(staleThresholdMs: number): Promise<number> {
+    const count =
+      await this.baseballLiveScoringRepository.markStaleActiveSessionsAbandoned(staleThresholdMs);
+    if (count > 0) {
+      console.log(`🧹 Cleaned up ${count} stale baseball live scoring session(s) by age`);
+    }
+    return count;
+  }
 }
