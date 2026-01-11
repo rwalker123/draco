@@ -676,17 +676,19 @@ export class LiveScoringService {
       return 0;
     }
 
-    const holeHandicapIndex = holeHandicapIndexes[holeNumber - 1];
-    if (holeHandicapIndex === undefined) {
+    if (holeNumber < 1 || holeNumber > holeHandicapIndexes.length) {
       return 0;
     }
+
+    const holeHandicapIndex = holeHandicapIndexes[holeNumber - 1];
+    const numberOfHoles = holeHandicapIndexes.length;
 
     let strokes = 0;
     let remainingHandicap = courseHandicap;
 
     while (remainingHandicap > 0 && holeHandicapIndex <= remainingHandicap) {
       strokes++;
-      remainingHandicap -= 18;
+      remainingHandicap -= numberOfHoles;
     }
 
     return strokes;
