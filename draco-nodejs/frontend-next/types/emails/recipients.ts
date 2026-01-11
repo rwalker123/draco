@@ -302,6 +302,7 @@ export interface HierarchicalGroupSelectionProps {
     managersOnly: boolean,
   ) => void;
   loading?: boolean;
+  initialSelectedIds?: string[];
 }
 
 // Utility function types for hierarchical selection
@@ -961,6 +962,79 @@ export const extractHierarchicalSelectionState = (
   });
 
   return state;
+};
+
+/**
+ * Reconstructs hierarchicalSelectedIds Map from stored ContactGroups
+ * Used to restore Season tab selections when dialog reopens
+ */
+export const reconstructHierarchicalSelectedIds = (
+  selectedGroups: Map<GroupType, ContactGroup[]>,
+  hierarchicalData: HierarchicalSeason | null,
+): { selectedIds: Map<string, HierarchicalSelectionItem>; managersOnly: boolean } => {
+  const selectedIds = new Map<string, HierarchicalSelectionItem>();
+
+  if (!hierarchicalData) {
+    return { selectedIds, managersOnly: false };
+  }
+
+  const state = extractHierarchicalSelectionState(selectedGroups);
+
+  const getNodeCounts = (nodeId: string): { playerCount: number; managerCount: number } => {
+    if (hierarchicalData.id === nodeId) {
+      return {
+        playerCount: hierarchicalData.totalPlayers || 0,
+        managerCount: hierarchicalData.totalManagers || 0,
+      };
+    }
+    for (const league of hierarchicalData.leagues) {
+      if (league.id === nodeId) {
+        return {
+          playerCount: league.totalPlayers || 0,
+          managerCount: league.totalManagers || 0,
+        };
+      }
+      for (const division of league.divisions ?? []) {
+        if (division.id === nodeId) {
+          return {
+            playerCount: division.totalPlayers || 0,
+            managerCount: division.totalManagers || 0,
+          };
+        }
+        for (const team of division.teams) {
+          if (team.id === nodeId) {
+            return {
+              playerCount: team.playerCount || 0,
+              managerCount: team.managerCount || 0,
+            };
+          }
+        }
+      }
+    }
+    return { playerCount: 0, managerCount: 0 };
+  };
+
+  state.selectedSeasonIds.forEach((id) => {
+    const counts = getNodeCounts(id);
+    selectedIds.set(id, { state: 'selected', ...counts });
+  });
+
+  state.selectedLeagueIds.forEach((id) => {
+    const counts = getNodeCounts(id);
+    selectedIds.set(id, { state: 'selected', ...counts });
+  });
+
+  state.selectedDivisionIds.forEach((id) => {
+    const counts = getNodeCounts(id);
+    selectedIds.set(id, { state: 'selected', ...counts });
+  });
+
+  state.selectedTeamIds.forEach((id) => {
+    const counts = getNodeCounts(id);
+    selectedIds.set(id, { state: 'selected', ...counts });
+  });
+
+  return { selectedIds, managersOnly: state.managersOnly };
 };
 
 /**

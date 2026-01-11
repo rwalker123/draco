@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Box, Typography, Switch, Stack, CircularProgress, Alert, Paper } from '@mui/material';
 import { HierarchicalGroupSelectionProps } from '../../../types/emails/recipients';
 import { useHierarchicalData } from '../../../hooks/useHierarchicalData';
@@ -15,7 +15,9 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
   managersOnly,
   onSelectionChange,
   loading = false,
+  initialSelectedIds,
 }) => {
+  const initialSelectionAppliedRef = useRef(false);
   // Data fetching
   const {
     hierarchicalData,
@@ -28,7 +30,7 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
   const hierarchyMaps = useHierarchicalMaps(hierarchicalData, seasonId);
 
   // Selection logic
-  const { handleSelectionChange } = useHierarchicalSelection(
+  const { handleSelectionChange, applyMultipleSelections } = useHierarchicalSelection(
     itemSelectedState,
     hierarchyMaps,
     managersOnly,
@@ -41,6 +43,21 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
       loadHierarchicalData(accountId, seasonId);
     }
   }, [accountId, seasonId, loadHierarchicalData]);
+
+  // Apply initial selections when hierarchy maps become available
+  useEffect(() => {
+    if (
+      initialSelectionAppliedRef.current ||
+      !hierarchyMaps.parentMap.size ||
+      !initialSelectedIds?.length
+    ) {
+      return;
+    }
+
+    initialSelectionAppliedRef.current = true;
+
+    applyMultipleSelections(initialSelectedIds, 'selected');
+  }, [hierarchyMaps.parentMap.size, initialSelectedIds, applyMultipleSelections]);
 
   // Handle managers-only toggle
   const handleManagersOnlyChange = (event: React.ChangeEvent<HTMLInputElement>) => {

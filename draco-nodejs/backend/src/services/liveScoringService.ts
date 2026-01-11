@@ -36,6 +36,7 @@ interface LiveSessionCourseData {
   team2Id: string;
   team1Name: string;
   team2Name: string;
+  holesPerMatch: number;
   scoringConfig: {
     perHolePoints: number;
     perNinePoints: number;
@@ -255,8 +256,13 @@ export class LiveScoringService {
 
     await this.validateUserIsMatchParticipant(userId, accountId, match.team1, match.team2);
 
-    if (holeNumber < 1 || holeNumber > 18) {
-      throw new ValidationError('Hole number must be between 1 and 18');
+    // Get holesPerMatch from cached course data (defaults to 18 if not cached)
+    const cacheKey = matchId.toString();
+    const courseData = sessionCourseDataCache.get(cacheKey);
+    const holesPerMatch = courseData?.holesPerMatch ?? 18;
+
+    if (holeNumber < 1 || holeNumber > holesPerMatch) {
+      throw new ValidationError(`Hole number must be between 1 and ${holesPerMatch}`);
     }
 
     await this.liveScoringRepository.updateCurrentHole(session.id, holeNumber);
@@ -285,14 +291,23 @@ export class LiveScoringService {
       throw new ValidationError('Match must have a course and tee assigned to save scores');
     }
 
+    // Get holesPerMatch from cached course data (defaults to 18 if not cached)
+    const cacheKey = matchId.toString();
+    const courseData = sessionCourseDataCache.get(cacheKey);
+    const holesPerMatch = courseData?.holesPerMatch ?? 18;
+
     // Build the payload for submitMatchResults (same API as manual score entry)
-    const payload = await this.buildMatchResultsPayload(session, {
-      team1: match.team1,
-      team2: match.team2,
-      courseid: match.courseid,
-      teeid: match.teeid,
-      matchdate: match.matchdate,
-    });
+    const payload = await this.buildMatchResultsPayload(
+      session,
+      {
+        team1: match.team1,
+        team2: match.team2,
+        courseid: match.courseid,
+        teeid: match.teeid,
+        matchdate: match.matchdate,
+      },
+      holesPerMatch,
+    );
 
     // Use the same service as manual entry - this handles:
     // - Creating/updating golf scores
@@ -320,6 +335,7 @@ export class LiveScoringService {
   private async buildMatchResultsPayload(
     session: LiveScoringSessionWithScores,
     match: { team1: bigint; team2: bigint; courseid: bigint; teeid: bigint; matchdate: Date },
+    holesPerMatch: number,
   ): Promise<SubmitMatchResultsType> {
     // Group scores by golfer
     const scoresByGolfer = new Map<bigint, LiveHoleScoreWithDetails[]>();
@@ -359,10 +375,10 @@ export class LiveScoringService {
         continue;
       }
 
-      // Build hole scores array (18 holes, 0 if not entered)
-      const holeScoresArray: number[] = Array(18).fill(0);
+      // Build hole scores array sized for the configured holes per match
+      const holeScoresArray: number[] = Array(holesPerMatch).fill(0);
       for (const hs of holeScores) {
-        if (hs.holenumber >= 1 && hs.holenumber <= 18) {
+        if (hs.holenumber >= 1 && hs.holenumber <= holesPerMatch) {
           holeScoresArray[hs.holenumber - 1] = hs.score;
         }
       }
@@ -376,7 +392,7 @@ export class LiveScoringService {
           courseId: match.courseid.toString(),
           teeId: match.teeid.toString(),
           datePlayed: match.matchdate.toISOString().split('T')[0],
-          holesPlayed: 18,
+          holesPlayed: holesPerMatch as 9 | 18,
           totalsOnly: false,
           holeScores: holeScoresArray,
           // startIndex intentionally omitted - server will calculate based on match date
@@ -524,7 +540,7 @@ export class LiveScoringService {
       matchId: session.matchid.toString(),
       status: LIVE_SESSION_STATUS_MAP[session.status] ?? 'active',
       currentHole: session.currenthole,
-      holesPlayed: 18,
+      holesPlayed: courseData?.holesPerMatch ?? 18,
       startedAt: session.startedat.toISOString(),
       startedBy: session.startedbyuser?.username ?? session.startedby,
       viewerCount,
@@ -591,11 +607,14 @@ export class LiveScoringService {
       ...team2Roster.map((r) => r.golferid),
     ];
 
+    // Get holes per match from league setup
+    const holesPerMatch = leagueSetup.holespermatch;
+
     // Calculate course handicaps for all golfers
     const batchHandicaps = await handicapService.calculateBatchCourseHandicaps(
       allGolferIds,
       match.teeid,
-      18, // assuming 18 holes for now
+      holesPerMatch,
     );
 
     // Build course handicaps map (golferId -> courseHandicap)
@@ -638,6 +657,7 @@ export class LiveScoringService {
       team2Id: match.team2.toString(),
       team1Name: match.teamsseason_golfmatch_team1Toteamsseason.name,
       team2Name: match.teamsseason_golfmatch_team2Toteamsseason.name,
+      holesPerMatch,
       scoringConfig: {
         perHolePoints: leagueSetup.perholepoints,
         perNinePoints: leagueSetup.perninepoints,
@@ -677,6 +697,7 @@ export class LiveScoringService {
     courseData: LiveSessionCourseData,
   ): { team1: number; team2: number } {
     const scoringService = ServiceFactory.getGolfIndividualScoringService();
+    const holesPerMatch = courseData.holesPerMatch;
 
     const team1Scores = this.buildTeamScoreData(scoresByGolfer, courseData, 1);
     const team2Scores = this.buildTeamScoreData(scoresByGolfer, courseData, 2);
@@ -688,18 +709,19 @@ export class LiveScoringService {
       0,
       9,
     );
-    const back9Complete = this.isNineComplete(
-      team1Scores.holeScores,
-      team2Scores.holeScores,
-      9,
-      18,
-    );
+    // Back 9 only applies to 18-hole matches
+    const back9Complete =
+      holesPerMatch === 18 &&
+      this.isNineComplete(team1Scores.holeScores, team2Scores.holeScores, 9, 18);
 
     // Only award per-nine points if that nine is complete
     // We need to calculate this manually since calculateIndividualMatchPoints
     // doesn't support partial nine completion
     let perNinePoints = 0;
-    if (front9Complete && back9Complete) {
+    if (holesPerMatch === 9 && front9Complete) {
+      // 9-hole match with front 9 complete - award the single nine points
+      perNinePoints = courseData.scoringConfig.perNinePoints;
+    } else if (holesPerMatch === 18 && front9Complete && back9Complete) {
       // Both nines complete - use standard calculation
       perNinePoints = courseData.scoringConfig.perNinePoints;
     }
@@ -716,14 +738,18 @@ export class LiveScoringService {
         perMatchPoints: 0,
         useHandicapScoring: courseData.scoringConfig.useHandicapScoring,
       },
-      18,
+      holesPerMatch as 9 | 18,
     );
 
     let team1Points = result.team1Points;
     let team2Points = result.team2Points;
 
-    // If only one nine is complete, calculate that nine's points manually
-    if (courseData.scoringConfig.perNinePoints > 0 && front9Complete !== back9Complete) {
+    // If only one nine is complete (18-hole match only), calculate that nine's points manually
+    if (
+      holesPerMatch === 18 &&
+      courseData.scoringConfig.perNinePoints > 0 &&
+      front9Complete !== back9Complete
+    ) {
       const ninePoints = this.calculateCompletedNinePoints(
         team1Scores,
         team2Scores,
@@ -762,6 +788,7 @@ export class LiveScoringService {
     let team1Points = 0;
     let team2Points = 0;
     const perNinePoints = courseData.scoringConfig.perNinePoints;
+    const holesPerMatch = courseData.holesPerMatch;
 
     // Calculate stroke distribution for handicap adjustment
     const scoringService = ServiceFactory.getGolfIndividualScoringService();
@@ -770,9 +797,12 @@ export class LiveScoringService {
           team1Scores.courseHandicap,
           team2Scores.courseHandicap,
           courseData.holeHandicapIndexes,
-          18,
+          holesPerMatch as 9 | 18,
         )
-      : { team1Strokes: new Array(18).fill(0), team2Strokes: new Array(18).fill(0) };
+      : {
+          team1Strokes: new Array(holesPerMatch).fill(0),
+          team2Strokes: new Array(holesPerMatch).fill(0),
+        };
 
     if (front9Complete) {
       let front9Team1 = 0;
@@ -794,7 +824,7 @@ export class LiveScoringService {
     if (back9Complete) {
       let back9Team1 = 0;
       let back9Team2 = 0;
-      for (let i = 9; i < 18; i++) {
+      for (let i = 9; i < holesPerMatch; i++) {
         back9Team1 += team1Scores.holeScores[i] - team1Strokes[i];
         back9Team2 += team2Scores.holeScores[i] - team2Strokes[i];
       }
@@ -816,7 +846,7 @@ export class LiveScoringService {
     courseData: LiveSessionCourseData,
     teamNumber: 1 | 2,
   ): PlayerScoreData {
-    const holeScores: number[] = new Array(18).fill(0);
+    const holeScores: number[] = new Array(courseData.holesPerMatch).fill(0);
     let representativeGolferId = 0n;
     let courseHandicap = 0;
 
@@ -831,8 +861,10 @@ export class LiveScoringService {
 
       for (const score of scores) {
         const holeIdx = score.holenumber - 1;
-        if (holeScores[holeIdx] === 0 || score.score < holeScores[holeIdx]) {
-          holeScores[holeIdx] = score.score;
+        if (holeIdx < courseData.holesPerMatch) {
+          if (holeScores[holeIdx] === 0 || score.score < holeScores[holeIdx]) {
+            holeScores[holeIdx] = score.score;
+          }
         }
       }
     }

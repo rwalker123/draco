@@ -35,6 +35,7 @@ import {
 import { useNotifications } from '../../../hooks/useNotifications';
 import { useHierarchicalData } from '../../../hooks/useHierarchicalData';
 import { useHierarchicalMaps } from '../../../hooks/useHierarchicalMaps';
+import { useHierarchicalSelection } from '../../../hooks/useHierarchicalSelection';
 import HierarchicalGroupSelection from './HierarchicalGroupSelection';
 import { ManagerStateProvider } from './context/ManagerStateContext';
 import {
@@ -58,6 +59,7 @@ import {
   RecipientSelectionTab,
   HierarchicalSelectionItem,
   HierarchicalSelectionState,
+  HierarchicalSeason,
   convertHierarchicalToContactGroups,
   WorkoutRecipientSelection,
   TeamsWantedRecipientSelection,
@@ -111,6 +113,8 @@ export interface AdvancedRecipientDialogProps {
   initialTeamsWantedRecipients?: TeamsWantedRecipientSelection[];
   initialUmpireRecipients?: UmpireRecipientSelection[];
   initialIndividualContactDetails?: Map<string, RecipientContact>;
+  // Pre-loaded hierarchical data from parent (enables state restoration on remount)
+  preloadedHierarchicalData?: HierarchicalSeason | null;
 }
 
 interface LoadingState {
@@ -162,6 +166,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   initialTeamsWantedRecipients,
   initialUmpireRecipients,
   initialIndividualContactDetails,
+  preloadedHierarchicalData: _preloadedHierarchicalData,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -255,11 +260,42 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     getUmpireSelections,
   } = umpireHook;
 
-  // Hierarchical selection state for shared data model
+  // Extract hierarchical IDs from initialSelectedGroups for restoration
+  const initialHierarchicalIds = useMemo(() => {
+    if (!initialSelectedGroups) return [];
+    const ids: string[] = [];
+    (['season', 'league', 'division', 'team'] as const).forEach((groupType) => {
+      const groups = initialSelectedGroups.get(groupType);
+      groups?.forEach((group) => {
+        group.ids.forEach((id) => ids.push(id));
+      });
+    });
+    return ids;
+  }, [initialSelectedGroups]);
+
+  // Extract managersOnly from initialSelectedGroups
+  const initialHierarchicalManagersOnly = useMemo(() => {
+    if (!initialSelectedGroups) return false;
+    for (const groupType of ['season', 'league', 'division', 'team'] as const) {
+      const groups = initialSelectedGroups.get(groupType);
+      if (groups && groups.length > 0) {
+        return groups[0].managersOnly;
+      }
+    }
+    return false;
+  }, [initialSelectedGroups]);
+
+  // Hierarchical selection state - initialize empty, effect will apply selections
   const [hierarchicalSelectedIds, setHierarchicalSelectedIds] = useState<
     Map<string, HierarchicalSelectionItem>
-  >(new Map());
-  const [hierarchicalManagersOnly, setHierarchicalManagersOnly] = useState<boolean>(false);
+  >(() => new Map());
+  const [hierarchicalManagersOnly, setHierarchicalManagersOnly] = useState<boolean>(
+    () => initialHierarchicalManagersOnly,
+  );
+  // Track if selections have been cleared to prevent re-applying initial IDs
+  const [hierarchicalCleared, setHierarchicalCleared] = useState(false);
+  // Track if initial hierarchical selections have been applied at dialog level
+  const initialHierarchicalAppliedRef = useRef(false);
 
   // Contact fetching hook
   const contactFetching = useContactFetching({
@@ -421,21 +457,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     [],
   );
 
-  // Sync internal state with props when dialog opens
-  // This is a legitimate one-time sync to reset dialog state from parent props
-  useEffect(() => {
-    if (open) {
-      /* eslint-disable react-hooks/set-state-in-effect -- legitimate prop-to-state sync on dialog open */
-      // Reset selectedGroups to match parent state
-      setSelectedGroups(initialSelectedGroups || new Map());
-
-      // Clear hierarchical selections - they are transient dialog state
-      // The parent only stores the final ContactGroups, not intermediate hierarchical state
-      setHierarchicalSelectedIds(new Map());
-      setHierarchicalManagersOnly(false);
-      /* eslint-enable react-hooks/set-state-in-effect */
-    }
-  }, [open, initialSelectedGroups]);
+  // Use hierarchical selection hook to get applyMultipleSelections for initial selection restoration
+  const { applyMultipleSelections } = useHierarchicalSelection(
+    hierarchicalSelectedIds,
+    hierarchyMaps,
+    hierarchicalManagersOnly,
+    handleHierarchicalSelectionChange,
+  );
 
   // Track whether we've populated the cache for the current dialog session
   const cachePopulatedRef = useRef(false);
@@ -483,6 +511,27 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       // No seasonId provided, skipping season loading
     }
   }, [open, seasonId]);
+
+  // Apply initial hierarchical selections when hierarchy maps are available
+  // This runs at the dialog level so selections are restored even if Season tab is not visited
+  useEffect(() => {
+    if (
+      initialHierarchicalAppliedRef.current ||
+      hierarchicalCleared ||
+      !hierarchyMaps.parentMap.size ||
+      !initialHierarchicalIds.length
+    ) {
+      return;
+    }
+
+    initialHierarchicalAppliedRef.current = true;
+    applyMultipleSelections(initialHierarchicalIds, 'selected');
+  }, [
+    hierarchyMaps.parentMap.size,
+    initialHierarchicalIds,
+    hierarchicalCleared,
+    applyMultipleSelections,
+  ]);
 
   useEffect(() => {
     if (open) {
@@ -547,6 +596,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         setSelectedGroups(new Map());
         setHierarchicalSelectedIds(new Map()); // Clear hierarchical selections
         setHierarchicalManagersOnly(false); // Reset managers-only toggle
+        setHierarchicalCleared(true); // Prevent re-applying initial IDs
         clearWorkoutSelections();
         clearTeamsWantedSelections();
         clearUmpireSelections();
@@ -1207,6 +1257,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
                   managersOnly={hierarchicalManagersOnly}
                   onSelectionChange={handleHierarchicalSelectionChange}
                   loading={loadingState.teamGroups}
+                  initialSelectedIds={hierarchicalCleared ? [] : initialHierarchicalIds}
                 />
               )}
               {currentTab === 'workouts' && (
