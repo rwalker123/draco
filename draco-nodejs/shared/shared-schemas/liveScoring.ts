@@ -82,12 +82,26 @@ export const LiveHoleScoreSchema = z
     teamId: bigintToStringSchema.optional(),
     holeNumber: z.number().int(),
     score: z.number().int(),
+    netScore: z.number().int().optional(),
     enteredBy: z.string(),
     enteredAt: z.string().datetime(),
   })
   .openapi({
     title: 'LiveHoleScore',
     description: 'A single hole score in a live scoring session',
+  });
+
+// Team Points for live scoring
+export const LiveTeamPointsSchema = z
+  .object({
+    team1Name: z.string(),
+    team1Points: z.number(),
+    team2Name: z.string(),
+    team2Points: z.number(),
+  })
+  .openapi({
+    title: 'LiveTeamPoints',
+    description: 'Accumulated team points during live scoring',
   });
 
 // Live Scoring Session State
@@ -102,6 +116,9 @@ export const LiveScoringStateSchema = z
     startedBy: z.string(),
     viewerCount: z.number().int().optional(),
     scores: z.array(LiveHoleScoreSchema),
+    coursePars: z.array(z.number().int()).optional(),
+    courseHandicaps: z.record(z.string(), z.number().int()).optional(),
+    teamPoints: LiveTeamPointsSchema.optional(),
   })
   .openapi({
     title: 'LiveScoringState',
@@ -118,6 +135,7 @@ export const ScoreUpdateEventSchema = z
     score: z.number().int(),
     enteredBy: z.string(),
     timestamp: z.string().datetime(),
+    teamPoints: LiveTeamPointsSchema.optional(),
   })
   .openapi({
     title: 'ScoreUpdateEvent',
@@ -185,6 +203,22 @@ export const LiveSessionStatusSchema = z
     description: 'Lightweight status check for whether a match has an active live session',
   });
 
+// SSE Role (scorer can enter scores, watcher can only view)
+export const GolfSseRoleSchema = z.enum(['scorer', 'watcher']).openapi({
+  title: 'GolfSseRole',
+  description: 'Role for SSE connection - scorer can enter scores, watcher can only view',
+});
+
+// Get Live Scoring Ticket Request
+export const GetLiveScoringTicketSchema = z
+  .object({
+    role: GolfSseRoleSchema.optional().default('watcher'),
+  })
+  .openapi({
+    title: 'GetLiveScoringTicket',
+    description: 'Request to get SSE connection ticket with optional role',
+  });
+
 // SSE Ticket Response
 export const SseTicketResponseSchema = z
   .object({
@@ -205,10 +239,13 @@ export type AdvanceHoleType = z.infer<typeof AdvanceHoleSchema>;
 export type FinalizeLiveScoringType = z.infer<typeof FinalizeLiveScoringSchema>;
 export type StopLiveScoringType = z.infer<typeof StopLiveScoringSchema>;
 export type LiveHoleScoreType = z.infer<typeof LiveHoleScoreSchema>;
+export type LiveTeamPointsType = z.infer<typeof LiveTeamPointsSchema>;
 export type LiveScoringStateType = z.infer<typeof LiveScoringStateSchema>;
 export type ScoreUpdateEventType = z.infer<typeof ScoreUpdateEventSchema>;
 export type SessionStartedEventType = z.infer<typeof SessionStartedEventSchema>;
 export type SessionFinalizedEventType = z.infer<typeof SessionFinalizedEventSchema>;
 export type SessionStoppedEventType = z.infer<typeof SessionStoppedEventSchema>;
 export type LiveSessionStatusType = z.infer<typeof LiveSessionStatusSchema>;
+export type GolfSseRoleType = z.infer<typeof GolfSseRoleSchema>;
+export type GetLiveScoringTicketType = z.infer<typeof GetLiveScoringTicketSchema>;
 export type SseTicketResponseType = z.infer<typeof SseTicketResponseSchema>;

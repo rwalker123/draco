@@ -122,6 +122,7 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
   const connectRef = useRef<((accountId: string) => void) | null>(null);
   const isConnectedRef = useRef(false);
   const isConnectingRef = useRef(false);
+  const connectionRequestIdRef = useRef(0);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -333,6 +334,8 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
 
       disconnect();
 
+      const requestId = ++connectionRequestIdRef.current;
+
       currentAccountIdRef.current = accountId;
       isConnectingRef.current = true;
       setIsConnecting(true);
@@ -344,7 +347,10 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
         throwOnError: false,
       })
         .then((result) => {
-          if (currentAccountIdRef.current !== accountId) {
+          if (
+            currentAccountIdRef.current !== accountId ||
+            connectionRequestIdRef.current !== requestId
+          ) {
             return;
           }
 
@@ -358,7 +364,10 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
           connectWithTicket(accountId, result.data.ticket);
         })
         .catch(() => {
-          if (currentAccountIdRef.current !== accountId) {
+          if (
+            currentAccountIdRef.current !== accountId ||
+            connectionRequestIdRef.current !== requestId
+          ) {
             return;
           }
           isConnectingRef.current = false;

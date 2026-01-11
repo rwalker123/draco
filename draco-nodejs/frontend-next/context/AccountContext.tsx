@@ -4,6 +4,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useSyncExternalStore,
   ReactNode,
   useCallback,
   useRef,
@@ -65,30 +66,61 @@ const readPersistedAccount = (): Account | null => {
   }
 };
 
+const createAccountStorageStore = () => {
+  let cachedAccount: Account | null = null;
+  let cachedRaw: string | null = null;
+
+  const getSnapshot = (): Account | null => {
+    if (typeof window === 'undefined') return null;
+    const raw = window.localStorage.getItem(ACCOUNT_STORAGE_KEY);
+    if (raw !== cachedRaw) {
+      cachedRaw = raw;
+      cachedAccount = readPersistedAccount();
+    }
+    return cachedAccount;
+  };
+
+  const subscribe = (callback: () => void) => {
+    if (typeof window === 'undefined') return () => {};
+    const handler = (event: StorageEvent) => {
+      if (event.key === ACCOUNT_STORAGE_KEY) {
+        cachedRaw = event.newValue;
+        cachedAccount = readPersistedAccount();
+        callback();
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  };
+
+  const invalidate = () => {
+    cachedRaw = null;
+    cachedAccount = null;
+  };
+
+  return { getSnapshot, subscribe, invalidate };
+};
+
+const accountStorageStore = createAccountStorageStore();
+
+const getAccountServerSnapshot = (): Account | null => null;
+
 export const AccountProvider = ({ children }: { children: ReactNode }) => {
   const { token, loading: authLoading } = useAuth();
   const { userRoles, loading: roleLoading } = useRole();
   const apiClient = useApiClient();
-  const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
+  const [fetchedAccount, setFetchedAccount] = useState<Account | null>(null);
   const [userAccounts, setUserAccounts] = useState<Account[]>([]);
   const [error, setError] = useState<string | null>(null);
   const requestedAccountIdRef = useRef<string | null>(null);
-  const hasRestoredFromStorageRef = useRef(false);
 
-  // Restore persisted account from localStorage after hydration.
-  // This must run once on mount to sync with browser storage.
-  useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- legitimate one-time hydration sync */
-    if (hasRestoredFromStorageRef.current) {
-      return;
-    }
-    hasRestoredFromStorageRef.current = true;
-    const persisted = readPersistedAccount();
-    if (persisted) {
-      setCurrentAccount(persisted);
-    }
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, []);
+  const persistedAccount = useSyncExternalStore(
+    accountStorageStore.subscribe,
+    accountStorageStore.getSnapshot,
+    getAccountServerSnapshot,
+  );
+
+  const currentAccount = fetchedAccount ?? persistedAccount;
 
   const normalizeAccount = useCallback(
     (account: Account): Account => normalizeAccountShape(account),
@@ -105,6 +137,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
       } else {
         window.localStorage.removeItem(ACCOUNT_STORAGE_KEY);
       }
+      accountStorageStore.invalidate();
     } catch {
       // Ignore storage failures
     }
@@ -113,7 +146,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
   const handleSetCurrentAccount = useCallback(
     (account: Account) => {
       const normalized = normalizeAccount(account);
-      setCurrentAccount(normalized);
+      setFetchedAccount(normalized);
       persistAccount(normalized);
     },
     [normalizeAccount, persistAccount],
@@ -189,41 +222,13 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     token,
   ]);
 
-  // Sync across tabs
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== ACCOUNT_STORAGE_KEY) {
-        return;
-      }
-      if (!event.newValue) {
-        setCurrentAccount(null);
-        requestedAccountIdRef.current = null;
-        return;
-      }
-      try {
-        const parsed = JSON.parse(event.newValue) as Account;
-        if (parsed?.id) {
-          setCurrentAccount(normalizeAccount(parsed));
-          requestedAccountIdRef.current = null;
-        }
-      } catch {
-        // Ignore
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [normalizeAccount]);
-
-  const clearAccounts = () => {
-    setCurrentAccount(null);
+  const clearAccounts = useCallback(() => {
+    setFetchedAccount(null);
     setUserAccounts([]);
     setError(null);
     requestedAccountIdRef.current = null;
     persistAccount(null);
-  };
+  }, [persistAccount]);
 
   const requiresAccountSelection = Boolean(token && accountId && hasRoles);
   const awaitingAuthOrRole = authLoading || roleLoading;

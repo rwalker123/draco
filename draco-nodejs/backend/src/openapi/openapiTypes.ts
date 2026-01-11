@@ -371,6 +371,7 @@ import {
   AdvanceHoleSchema,
   FinalizeLiveScoringSchema,
   StopLiveScoringSchema,
+  GetLiveScoringTicketSchema,
   SseTicketResponseSchema,
   IndividualLiveScoringStateSchema,
   IndividualLiveSessionStatusSchema,
@@ -1462,6 +1463,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     FinalizeLiveScoringSchema,
   );
   const StopLiveScoringSchemaRef = registry.register('StopLiveScoring', StopLiveScoringSchema);
+  const GetLiveScoringTicketSchemaRef = registry.register(
+    'GetLiveScoringTicket',
+    GetLiveScoringTicketSchema,
+  );
   const SseTicketResponseSchemaRef = registry.register(
     'SseTicketResponse',
     SseTicketResponseSchema,
@@ -1905,6 +1910,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     AdvanceHoleSchemaRef,
     FinalizeLiveScoringSchemaRef,
     StopLiveScoringSchemaRef,
+    GetLiveScoringTicketSchemaRef,
     SseTicketResponseSchemaRef,
     IndividualLiveScoringStateSchemaRef,
     IndividualLiveSessionStatusSchemaRef,

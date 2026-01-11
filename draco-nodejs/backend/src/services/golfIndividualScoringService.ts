@@ -38,7 +38,7 @@ interface StrokeDistribution {
   team2Strokes: number[];
 }
 
-interface PlayerScoreData {
+export interface PlayerScoreData {
   golferId: bigint;
   holeScores: number[];
   totalScore: number;
@@ -46,7 +46,7 @@ interface PlayerScoreData {
   gender: Gender;
 }
 
-interface ScoringConfig {
+export interface ScoringConfig {
   perHolePoints: number;
   perNinePoints: number;
   perMatchPoints: number;

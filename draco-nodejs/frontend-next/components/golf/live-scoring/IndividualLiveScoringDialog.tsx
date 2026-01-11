@@ -420,9 +420,11 @@ export default function IndividualLiveScoringDialog(props: IndividualLiveScoring
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <IndividualLiveScoringProvider>
-        <IndividualLiveScoringDialogContent {...contentProps} onClose={onClose} />
-      </IndividualLiveScoringProvider>
+      {open && (
+        <IndividualLiveScoringProvider>
+          <IndividualLiveScoringDialogContent {...contentProps} onClose={onClose} />
+        </IndividualLiveScoringProvider>
+      )}
     </Dialog>
   );
 }

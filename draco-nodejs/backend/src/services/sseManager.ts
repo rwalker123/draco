@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import type { SseRole } from './sseTicketManager.js';
+import { type SseRole } from './sseTicketManager.js';
 
 interface SSEClient {
   id: string;
@@ -39,12 +39,19 @@ export class SSEManager {
   /**
    * Adds a new SSE client connection for a specific match.
    */
-  addClient(clientId: string, res: Response, userId: string, matchId: bigint): void {
+  addClient(
+    clientId: string,
+    res: Response,
+    userId: string,
+    matchId: bigint,
+    role: SseRole = 'watcher',
+  ): void {
     const client: SSEClient = {
       id: clientId,
       res,
       userId,
       matchId,
+      role,
       lastPing: Date.now(),
     };
 
@@ -57,14 +64,15 @@ export class SSEManager {
     this.matchSubscriptions.get(matchKey)!.add(clientId);
 
     console.log(
-      `📡 SSE client ${clientId} connected to match ${matchKey}. Total clients: ${this.clients.size}`,
+      `📡 SSE client ${clientId} (${role}) connected to match ${matchKey}. Total clients: ${this.clients.size}`,
     );
 
     // Send initial connection event
     this.sendEvent(clientId, 'connected', { clientId, matchId: matchKey });
 
-    // Broadcast updated viewer count to all clients watching this match
+    // Broadcast updated viewer and scorer counts to all clients watching this match
     this.broadcastViewerCount(matchId);
+    this.broadcastMatchScorerCount(matchId);
   }
 
   /**
@@ -75,6 +83,7 @@ export class SSEManager {
     if (client) {
       if (client.matchId) {
         const matchKey = client.matchId.toString();
+        const wasScorer = client.role === 'scorer';
         this.matchSubscriptions.get(matchKey)?.delete(clientId);
         const remainingClients = this.matchSubscriptions.get(matchKey)?.size ?? 0;
         if (remainingClients === 0) {
@@ -85,6 +94,9 @@ export class SSEManager {
 
         if (remainingClients > 0) {
           this.broadcastViewerCount(client.matchId);
+          if (wasScorer) {
+            this.broadcastMatchScorerCount(client.matchId);
+          }
         }
       } else if (client.accountId) {
         const accountKey = client.accountId.toString();
@@ -139,8 +151,9 @@ export class SSEManager {
     const clientIds = this.matchSubscriptions.get(matchKey);
 
     if (clientIds) {
+      const serializedData = JSON.stringify(data);
       for (const clientId of clientIds) {
-        this.sendEvent(clientId, event, data);
+        this.sendEventRaw(clientId, event, serializedData);
       }
     }
   }
@@ -190,8 +203,9 @@ export class SSEManager {
     const clientIds = this.accountSubscriptions.get(accountKey);
 
     if (clientIds) {
+      const serializedData = JSON.stringify(data);
       for (const clientId of clientIds) {
-        this.sendEvent(clientId, event, data);
+        this.sendEventRaw(clientId, event, serializedData);
       }
     }
   }
@@ -256,8 +270,9 @@ export class SSEManager {
     const clientIds = this.gameSubscriptions.get(gameKey);
 
     if (clientIds) {
+      const serializedData = JSON.stringify(data);
       for (const clientId of clientIds) {
-        this.sendEvent(clientId, event, data);
+        this.sendEventRaw(clientId, event, serializedData);
       }
     }
   }
@@ -298,6 +313,10 @@ export class SSEManager {
    * Returns true if successful, false if the client was removed due to error.
    */
   private sendEvent(clientId: string, event: string, data: unknown): boolean {
+    return this.sendEventRaw(clientId, event, JSON.stringify(data));
+  }
+
+  private sendEventRaw(clientId: string, event: string, serializedData: string): boolean {
     const client = this.clients.get(clientId);
     if (!client) {
       return false;
@@ -305,7 +324,7 @@ export class SSEManager {
 
     try {
       client.res.write(`event: ${event}\n`);
-      client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+      client.res.write(`data: ${serializedData}\n\n`);
       client.lastPing = Date.now();
       return true;
     } catch {
@@ -349,6 +368,30 @@ export class SSEManager {
    */
   getMatchViewerCount(matchId: bigint): number {
     return this.matchSubscriptions.get(matchId.toString())?.size ?? 0;
+  }
+
+  /**
+   * Gets the number of scorers (not watchers) for a specific match.
+   */
+  getMatchScorerCount(matchId: bigint): number {
+    const matchKey = matchId.toString();
+    const clientIds = this.matchSubscriptions.get(matchKey);
+    if (!clientIds) return 0;
+
+    let count = 0;
+    for (const clientId of clientIds) {
+      const client = this.clients.get(clientId);
+      if (client?.role === 'scorer') count++;
+    }
+    return count;
+  }
+
+  /**
+   * Broadcasts the current scorer count to all clients watching a match.
+   */
+  broadcastMatchScorerCount(matchId: bigint): void {
+    const scorerCount = this.getMatchScorerCount(matchId);
+    this.broadcastToMatch(matchId, 'scorer_count', { scorerCount });
   }
 
   /**

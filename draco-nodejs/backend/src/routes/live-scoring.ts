@@ -11,6 +11,7 @@ import {
   AdvanceHoleSchema,
   FinalizeLiveScoringSchema,
   StopLiveScoringSchema,
+  GetLiveScoringTicketSchema,
 } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
@@ -51,9 +52,10 @@ router.post(
     const { matchId } = extractBigIntParams(req.params, 'matchId');
     const { accountId } = extractBigIntParams(req.params, 'accountId');
     const userId = req.user!.id;
+    const data = GetLiveScoringTicketSchema.parse(req.body);
 
     const ticketManager = getSseTicketManager();
-    const { ticket, expiresIn } = ticketManager.createTicket(userId, matchId, accountId);
+    const { ticket, expiresIn } = ticketManager.createTicket(userId, matchId, accountId, data.role);
 
     res.status(201).json({ ticket, expiresIn });
   }),
@@ -84,6 +86,7 @@ router.get(
     }
 
     const userId = validation.userId;
+    const role = validation.role;
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -95,7 +98,7 @@ router.get(
     const clientId = uuidv4();
     const sseManager = getSSEManager();
 
-    sseManager.addClient(clientId, res, userId, matchId);
+    sseManager.addClient(clientId, res, userId, matchId, role);
 
     res.write(`event: connected\n`);
     res.write(`data: ${JSON.stringify({ clientId, matchId: matchId.toString() })}\n\n`);

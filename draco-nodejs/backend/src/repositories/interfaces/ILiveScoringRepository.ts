@@ -99,12 +99,12 @@ export interface ILiveScoringRepository {
    * Mark all active sessions as abandoned (for server restart cleanup).
    * Returns the count of sessions marked as abandoned.
    */
-  markAllActiveSessionsAbandoned(): Promise<number>;
+  markAllActiveSessionsAbandoned(): Promise<number[]>;
 
   /**
    * Mark active sessions as abandoned if their last activity is older than the threshold.
    * @param staleThresholdMs - Sessions with lastactivity older than (now - staleThresholdMs) will be marked abandoned
    * @returns The count of sessions marked as abandoned
    */
-  markStaleActiveSessionsAbandoned(staleThresholdMs: number): Promise<number>;
+  markStaleActiveSessionsAbandoned(staleThresholdMs: number): Promise<number[]>;
 }

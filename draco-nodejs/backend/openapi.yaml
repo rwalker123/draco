@@ -22498,6 +22498,8 @@ components:
                 type: integer
               score:
                 type: integer
+              netScore:
+                type: integer
               enteredBy:
                 type: string
               enteredAt:
@@ -22513,6 +22515,32 @@ components:
               - enteredAt
             title: LiveHoleScore
             description: A single hole score in a live scoring session
+        coursePars:
+          type: array
+          items:
+            type: integer
+        courseHandicaps:
+          type: object
+          additionalProperties:
+            type: integer
+        teamPoints:
+          type: object
+          properties:
+            team1Name:
+              type: string
+            team1Points:
+              type: number
+            team2Name:
+              type: string
+            team2Points:
+              type: number
+          required:
+            - team1Name
+            - team1Points
+            - team2Name
+            - team2Points
+          title: LiveTeamPoints
+          description: Accumulated team points during live scoring
       required:
         - sessionId
         - matchId
@@ -22559,6 +22587,8 @@ components:
         holeNumber:
           type: integer
         score:
+          type: integer
+        netScore:
           type: integer
         enteredBy:
           type: string
@@ -22648,6 +22678,20 @@ components:
         - confirm
       title: StopLiveScoring
       description: Request to stop a live scoring session without saving scores
+    GetLiveScoringTicket:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - scorer
+            - watcher
+          default: watcher
+          title: GolfSseRole
+          description: Role for SSE connection - scorer can enter scores, watcher can only
+            view
+      title: GetLiveScoringTicket
+      description: Request to get SSE connection ticket with optional role
     SseTicketResponse:
       type: object
       properties:
@@ -38636,6 +38680,11 @@ paths:
       parameters:
         - *a18
         - *a19
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GetLiveScoringTicket"
       responses:
         "201":
           description: SSE connection ticket

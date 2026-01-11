@@ -14,7 +14,15 @@ import { useAccount } from './AccountContext';
 import { useApiClient } from '../hooks/useApiClient';
 import { getLiveScoringTicket } from '@draco/shared-api-client';
 import type { LiveScoringState, LiveHoleScore } from '@draco/shared-api-client';
+import type { GolfSseRoleType } from '@draco/shared-schemas';
 import { safeJsonParse } from '../utils/sseUtils';
+
+interface TeamPoints {
+  team1Name: string;
+  team1Points: number;
+  team2Name: string;
+  team2Points: number;
+}
 
 interface ScoreUpdateEvent {
   golferId: string;
@@ -24,6 +32,7 @@ interface ScoreUpdateEvent {
   score: number;
   enteredBy: string;
   timestamp: string;
+  teamPoints?: TeamPoints;
 }
 
 interface SessionStartedEvent {
@@ -59,7 +68,8 @@ interface LiveScoringContextValue {
   connectionError: string | null;
   sessionState: LiveScoringState | null;
   viewerCount: number;
-  connect: (matchId: string) => void;
+  scorerCount: number;
+  connect: (matchId: string, role?: GolfSseRoleType) => void;
   disconnect: () => void;
   onScoreUpdate: (callback: (event: ScoreUpdateEvent) => void) => () => void;
   onSessionStarted: (callback: (event: SessionStartedEvent) => void) => () => void;
@@ -83,6 +93,7 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [sessionState, setSessionState] = useState<LiveScoringState | null>(null);
   const [viewerCount, setViewerCount] = useState(0);
+  const [scorerCount, setScorerCount] = useState(0);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const currentMatchIdRef = useRef<string | null>(null);
@@ -98,7 +109,8 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
   const sessionFinalizedCallbacks = useRef<Set<(event: SessionFinalizedEvent) => void>>(new Set());
   const sessionStoppedCallbacks = useRef<Set<(event: SessionStoppedEvent) => void>>(new Set());
   const holeAdvancedCallbacks = useRef<Set<(event: HoleAdvancedEvent) => void>>(new Set());
-  const connectRef = useRef<((matchId: string) => void) | null>(null);
+  const connectRef = useRef<((matchId: string, role?: GolfSseRoleType) => void) | null>(null);
+  const currentRoleRef = useRef<GolfSseRoleType>('watcher');
   const disconnectRef = useRef<(() => void) | null>(null);
   const isConnectedRef = useRef(false);
   const isConnectingRef = useRef(false);
@@ -127,6 +139,7 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
     setIsConnecting(false);
     setSessionState(null);
     setViewerCount(0);
+    setScorerCount(0);
   }, []);
 
   const connectWithTicket = useCallback(
@@ -189,7 +202,7 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
 
           reconnectTimeoutRef.current = setTimeout(() => {
             if (currentMatchIdRef.current === matchId && connectRef.current) {
-              connectRef.current(matchId);
+              connectRef.current(matchId, currentRoleRef.current);
             }
           }, delay);
         } else {
@@ -259,7 +272,11 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
             ];
           }
 
-          return { ...prev, scores: updatedScores };
+          return {
+            ...prev,
+            scores: updatedScores,
+            teamPoints: data.teamPoints ?? prev.teamPoints,
+          };
         });
 
         scoreUpdateCallbacks.current.forEach((cb) => cb(data));
@@ -306,6 +323,12 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
         setViewerCount(data.viewerCount);
       });
 
+      eventSource.addEventListener('scorer_count', (event) => {
+        const data = safeJsonParse<{ scorerCount: number }>(event.data, 'scorer_count');
+        if (!data) return;
+        setScorerCount(data.scorerCount);
+      });
+
       eventSource.addEventListener('no_session', () => {
         setConnectionError('No active live scoring session found. The session may have ended.');
         eventSource.close();
@@ -317,7 +340,7 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
   );
 
   const connect = useCallback(
-    (matchId: string) => {
+    (matchId: string, role: GolfSseRoleType = 'watcher') => {
       if (!token || !currentAccount?.id) {
         setConnectionError('Authentication required');
         return;
@@ -333,6 +356,7 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
       disconnect();
 
       currentMatchIdRef.current = matchId;
+      currentRoleRef.current = role;
       isConnectingRef.current = true;
       setIsConnecting(true);
       setConnectionError(null);
@@ -340,6 +364,7 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
       getLiveScoringTicket({
         client: apiClient,
         path: { accountId: currentAccount.id, matchId },
+        body: { role },
         throwOnError: false,
       })
         .then((result) => {
@@ -376,8 +401,8 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
     disconnectRef.current = disconnect;
   }, [disconnect]);
 
-  const stableConnect = useCallback((matchId: string) => {
-    connectRef.current?.(matchId);
+  const stableConnect = useCallback((matchId: string, role?: GolfSseRoleType) => {
+    connectRef.current?.(matchId, role);
   }, []);
 
   const stableDisconnect = useCallback(() => {
@@ -431,6 +456,7 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
     connectionError,
     sessionState,
     viewerCount,
+    scorerCount,
     connect: stableConnect,
     disconnect: stableDisconnect,
     onScoreUpdate,

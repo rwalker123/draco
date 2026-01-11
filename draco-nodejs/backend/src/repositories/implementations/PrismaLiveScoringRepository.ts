@@ -179,33 +179,66 @@ export class PrismaLiveScoringRepository implements ILiveScoringRepository {
     }));
   }
 
-  async markAllActiveSessionsAbandoned(): Promise<number> {
-    const result = await this.prisma.livescoringsession.updateMany({
+  async markAllActiveSessionsAbandoned(): Promise<number[]> {
+    const activeSessions = await this.prisma.livescoringsession.findMany({
       where: {
         status: 1, // Active
+      },
+      select: {
+        matchid: true,
+      },
+    });
+
+    if (activeSessions.length === 0) {
+      return [];
+    }
+
+    const matchIds = activeSessions.map((s) => s.matchid);
+
+    await this.prisma.livescoringsession.updateMany({
+      where: {
+        matchid: { in: matchIds },
       },
       data: {
         status: 4, // Abandoned
         lastactivity: new Date(),
       },
     });
-    return result.count;
+
+    return matchIds.map((id) => Number(id));
   }
 
-  async markStaleActiveSessionsAbandoned(staleThresholdMs: number): Promise<number> {
+  async markStaleActiveSessionsAbandoned(staleThresholdMs: number): Promise<number[]> {
     const cutoffDate = new Date(Date.now() - staleThresholdMs);
-    const result = await this.prisma.livescoringsession.updateMany({
+
+    const staleSessions = await this.prisma.livescoringsession.findMany({
       where: {
         status: 1, // Active
         lastactivity: {
           lt: cutoffDate,
         },
       },
+      select: {
+        matchid: true,
+      },
+    });
+
+    if (staleSessions.length === 0) {
+      return [];
+    }
+
+    const matchIds = staleSessions.map((s) => s.matchid);
+
+    await this.prisma.livescoringsession.updateMany({
+      where: {
+        matchid: { in: matchIds },
+      },
       data: {
         status: 4, // Abandoned
         lastactivity: new Date(),
       },
     });
-    return result.count;
+
+    return matchIds.map((id) => Number(id));
   }
 }

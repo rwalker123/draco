@@ -23,6 +23,7 @@ import {
 
 import { EmailComposeProvider, useEmailCompose } from './EmailComposeProvider';
 import { useNotifications } from '../../../hooks/useNotifications';
+import { useHierarchicalData } from '../../../hooks/useHierarchicalData';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { ComposeHeader } from './ComposeHeader';
 import { ComposeActions } from './ComposeActions';
@@ -64,6 +65,7 @@ interface ComponentErrorState {
 interface DialogState {
   scheduleDialogOpen: boolean;
   advancedRecipientDialogOpen: boolean;
+  advancedRecipientDialogKey: number;
   cancelConfirmDialogOpen: boolean;
   groupEditDialogOpen: boolean;
   editingGroup: ContactGroup | null;
@@ -104,6 +106,7 @@ const EmailComposePageInternal: React.FC<
     const [dialogState, setDialogState] = useState<DialogState>({
       scheduleDialogOpen: false,
       advancedRecipientDialogOpen: false,
+      advancedRecipientDialogKey: 0,
       cancelConfirmDialogOpen: false,
       groupEditDialogOpen: false,
       editingGroup: null,
@@ -123,6 +126,16 @@ const EmailComposePageInternal: React.FC<
 
     // Use centralized notification management
     const { notification, showNotification, hideNotification } = useNotifications();
+
+    // Pre-load hierarchical data so it's available when dialog opens
+    const { hierarchicalData, loadHierarchicalData } = useHierarchicalData();
+
+    // Load hierarchical data on mount
+    useEffect(() => {
+      if (accountId && seasonId) {
+        loadHierarchicalData(accountId, seasonId);
+      }
+    }, [accountId, seasonId, loadHierarchicalData]);
 
     // Overall loading state - memoized for performance
     const isGeneralLoading = useMemo(() => loading, [loading]);
@@ -191,7 +204,11 @@ const EmailComposePageInternal: React.FC<
 
     // Handle advanced recipient dialog
     const handleAdvancedRecipientOpen = useCallback(() => {
-      setDialogState((prev) => ({ ...prev, advancedRecipientDialogOpen: true }));
+      setDialogState((prev) => ({
+        ...prev,
+        advancedRecipientDialogOpen: true,
+        advancedRecipientDialogKey: prev.advancedRecipientDialogKey + 1,
+      }));
     }, []);
 
     const handleAdvancedRecipientClose = useCallback(() => {
@@ -573,6 +590,7 @@ const EmailComposePageInternal: React.FC<
           }}
         >
           <AdvancedRecipientDialog
+            key={`recipient-dialog-${dialogState.advancedRecipientDialogKey}`}
             open={dialogState.advancedRecipientDialogOpen}
             onClose={handleAdvancedRecipientClose}
             onApply={handleRecipientSelectionChange}
@@ -587,6 +605,7 @@ const EmailComposePageInternal: React.FC<
             initialTeamsWantedRecipients={state.recipientState?.selectedTeamsWantedRecipients}
             initialUmpireRecipients={state.recipientState?.selectedUmpireRecipients}
             initialIndividualContactDetails={state.recipientState?.individualContactDetails}
+            preloadedHierarchicalData={hierarchicalData}
           />
         </ErrorBoundary>
 
