@@ -661,18 +661,9 @@ export class LiveScoringService {
       return 0;
     }
 
-    // Distribute strokes based on hole handicap index
-    // Lower handicap index = harder hole = gets strokes first
     let strokes = 0;
     let remainingHandicap = courseHandicap;
 
-    // First pass: one stroke per hole starting from hardest
-    if (holeHandicapIndex <= remainingHandicap) {
-      strokes++;
-      remainingHandicap -= 18; // After 18 holes get a stroke, continue to second pass
-    }
-
-    // Second pass: additional strokes for very high handicaps
     while (remainingHandicap > 0 && holeHandicapIndex <= remainingHandicap) {
       strokes++;
       remainingHandicap -= 18;
