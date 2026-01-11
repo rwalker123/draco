@@ -221,9 +221,11 @@ export default function IndividualLiveWatchDialog(props: IndividualLiveWatchDial
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <IndividualLiveScoringProvider>
-        <IndividualLiveWatchDialogContent {...contentProps} onClose={onClose} />
-      </IndividualLiveScoringProvider>
+      {open && (
+        <IndividualLiveScoringProvider>
+          <IndividualLiveWatchDialogContent {...contentProps} onClose={onClose} />
+        </IndividualLiveScoringProvider>
+      )}
     </Dialog>
   );
 }
