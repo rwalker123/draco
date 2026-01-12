@@ -11,6 +11,7 @@ import {
   CircularProgress,
   Typography,
   Box,
+  TextField,
 } from '@mui/material';
 import {
   deleteSeasonTeam as apiDeleteSeasonTeam,
@@ -47,9 +48,13 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
   const apiClient = useApiClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmationText, setConfirmationText] = useState('');
+
+  const isConfirmed = confirmationText.toLowerCase() === 'yes';
 
   const handleClose = useCallback(() => {
     setError(null);
+    setConfirmationText('');
     onClose();
   }, [onClose]);
 
@@ -134,23 +139,35 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
           season?
         </Typography>
         <Alert severity="warning" sx={{ mb: 2 }}>
-          This action will remove the team from this season and all its associated data (divisions,
-          etc.). The system will also attempt to delete the team definition if
-          {" it's not used in other seasons."}
+          This action will remove the team from the season and all players will be released. If you
+          simply want to move the team to a new division, please use the Remove Team from Division
+          icon.
         </Alert>
-        {teamSeason && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              This team will be removed from the current season.
-            </Typography>
-          </Box>
-        )}
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            If you are sure you want to continue, type <strong>yes</strong> in the field below:
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            value={confirmationText}
+            onChange={(e) => setConfirmationText(e.target.value)}
+            placeholder="Type yes to confirm"
+            disabled={loading}
+            autoComplete="off"
+          />
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
-        <Button onClick={handleDelete} variant="contained" color="error" disabled={loading}>
+        <Button
+          onClick={handleDelete}
+          variant="contained"
+          color="error"
+          disabled={loading || !isConfirmed}
+        >
           {loading ? <CircularProgress size={20} /> : 'Remove Team'}
         </Button>
       </DialogActions>
