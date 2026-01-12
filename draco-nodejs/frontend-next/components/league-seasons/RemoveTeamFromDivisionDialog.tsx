@@ -12,11 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { removeLeagueSeasonTeamDivision as apiRemoveLeagueSeasonTeamDivision } from '@draco/shared-api-client';
-import type {
-  TeamSeasonType,
-  LeagueSeasonWithDivisionTeamsType,
-  DivisionSeasonWithTeamsType,
-} from '@draco/shared-schemas';
+import type { TeamSeasonType, LeagueSeasonWithDivisionTeamsType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
 
@@ -34,7 +30,6 @@ interface RemoveTeamFromDivisionDialogProps {
   teamSeason: TeamSeasonType | null;
   leagueSeason: LeagueSeasonWithDivisionTeamsType | null;
   onSuccess: (result: RemoveTeamFromDivisionResult, message: string) => void;
-  onError?: (error: string) => void;
 }
 
 const RemoveTeamFromDivisionDialog: React.FC<RemoveTeamFromDivisionDialogProps> = ({
@@ -45,7 +40,6 @@ const RemoveTeamFromDivisionDialog: React.FC<RemoveTeamFromDivisionDialogProps> 
   teamSeason,
   leagueSeason,
   onSuccess,
-  onError,
 }) => {
   const apiClient = useApiClient();
   const [loading, setLoading] = useState(false);
@@ -58,6 +52,15 @@ const RemoveTeamFromDivisionDialog: React.FC<RemoveTeamFromDivisionDialogProps> 
 
   const handleRemove = useCallback(async () => {
     if (!teamSeason || !leagueSeason) return;
+
+    const divisionSeason = leagueSeason.divisions?.find((div) =>
+      div.teams?.some((team) => team.id === teamSeason.id),
+    );
+
+    if (!divisionSeason) {
+      setError('Could not find the division for this team');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -76,31 +79,24 @@ const RemoveTeamFromDivisionDialog: React.FC<RemoveTeamFromDivisionDialogProps> 
 
       unwrapApiResult(result, 'Failed to remove team from division');
 
-      const divisionSeason = leagueSeason.divisions?.find((div) =>
-        div.teams?.some((team) => team.id === teamSeason.id),
-      ) as DivisionSeasonWithTeamsType | undefined;
-
-      if (divisionSeason) {
-        onSuccess(
-          {
-            leagueSeasonId: leagueSeason.id,
-            divisionSeasonId: divisionSeason.id,
-            teamSeason,
-          },
-          `Team "${teamSeason.name}" removed from division`,
-        );
-      }
+      onSuccess(
+        {
+          leagueSeasonId: leagueSeason.id,
+          divisionSeasonId: divisionSeason.id,
+          teamSeason,
+        },
+        `Team "${teamSeason.name}" removed from division`,
+      );
 
       handleClose();
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to remove team from division';
       setError(errorMessage);
-      onError?.(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [teamSeason, leagueSeason, accountId, seasonId, apiClient, onSuccess, onError, handleClose]);
+  }, [teamSeason, leagueSeason, accountId, seasonId, apiClient, onSuccess, handleClose]);
 
   const divisionName =
     leagueSeason?.divisions?.find((div) => div.teams?.some((team) => team.id === teamSeason?.id))

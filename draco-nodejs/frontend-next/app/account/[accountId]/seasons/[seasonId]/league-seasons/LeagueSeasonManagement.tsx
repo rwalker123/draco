@@ -1265,7 +1265,6 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             );
             setFeedback({ severity: 'success', message });
           }}
-          onError={(error) => setFeedback({ severity: 'error', message: error })}
         />
       </Box>
 
