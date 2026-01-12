@@ -40,7 +40,6 @@ import {
   getAccountSeason,
   deleteLeagueSeasonDivision as apiDeleteLeagueSeasonDivision,
   assignLeagueSeasonTeamDivision as apiAssignLeagueSeasonTeamDivision,
-  removeLeagueSeasonTeamDivision as apiRemoveLeagueSeasonTeamDivision,
   exportLeagueRoster,
   exportLeagueManagers,
   exportTeamRoster,
@@ -68,9 +67,11 @@ import {
   DeleteTeamDialog,
   EditDivisionDialog,
   EditLeagueDialog,
+  RemoveTeamFromDivisionDialog,
   type AddDivisionResult,
   type CreateTeamResult,
   type EditDivisionResult,
+  type RemoveTeamFromDivisionResult,
 } from '../../../../../../components/league-seasons';
 import EditTeamDialog from '../../../../../../components/EditTeamDialog';
 import TeamAvatar from '../../../../../../components/TeamAvatar';
@@ -174,6 +175,14 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   // Edit team state
   const [editTeamDialogOpen, setEditTeamDialogOpen] = useState(false);
   const [teamToEdit, setTeamToEdit] = useState<TeamSeasonType | null>(null);
+
+  // Remove team from division state
+  const [removeTeamFromDivisionDialogOpen, setRemoveTeamFromDivisionDialogOpen] = useState(false);
+  const [teamToRemoveFromDivision, setTeamToRemoveFromDivision] = useState<TeamSeasonType | null>(
+    null,
+  );
+  const [leagueSeasonForRemoveFromDivision, setLeagueSeasonForRemoveFromDivision] =
+    useState<LeagueSeasonWithDivisionTeamsType | null>(null);
 
   // State for managing selected teams per division
   const [selectedTeamsPerDivision, setSelectedTeamsPerDivision] = useState<Record<string, string>>(
@@ -513,49 +522,14 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       setExpandedAccordions(newExpanded);
     };
 
-  // Handler to remove team from division
-  const handleRemoveTeamFromDivision = async (
+  // Handler to open remove team from division dialog
+  const openRemoveTeamFromDivisionDialog = (
     teamSeason: TeamSeasonType,
     leagueSeason: LeagueSeasonWithDivisionTeamsType,
   ) => {
-    if (!accountId || !token) return;
-
-    setFormLoading(true);
-    try {
-      const result = await apiRemoveLeagueSeasonTeamDivision({
-        client: apiClient,
-        path: {
-          accountId,
-          seasonId,
-          leagueSeasonId: leagueSeason.id,
-          teamSeasonId: teamSeason.id,
-        },
-        throwOnError: false,
-      });
-
-      const removed = unwrapApiResult(result, 'Failed to remove team from division');
-
-      if (removed) {
-        const divisionSeason = leagueSeason.divisions?.find((div) =>
-          div.teams?.some((team) => team.id === teamSeason.id),
-        );
-        if (divisionSeason) {
-          removeTeamFromDivisionInState(leagueSeason.id, divisionSeason.id, teamSeason);
-        }
-        setFeedback({
-          severity: 'success',
-          message: `Team "${teamSeason.name}" removed from division`,
-        });
-      }
-    } catch (error) {
-      console.error('Error removing team from division:', error);
-      setFeedback({
-        severity: 'error',
-        message: error instanceof Error ? error.message : 'Failed to remove team from division',
-      });
-    } finally {
-      setFormLoading(false);
-    }
+    setTeamToRemoveFromDivision(teamSeason);
+    setLeagueSeasonForRemoveFromDivision(leagueSeason);
+    setRemoveTeamFromDivisionDialogOpen(true);
   };
 
   // Handler to navigate to team roster management
@@ -746,7 +720,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
           <IconButton
             size="small"
             color="error"
-            onClick={() => handleRemoveTeamFromDivision(team, leagueSeason)}
+            onClick={() => openRemoveTeamFromDivisionDialog(team, leagueSeason)}
             disabled={formLoading}
           >
             <RemoveIcon fontSize="small" />
@@ -1269,6 +1243,28 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             setTeamToEdit(null);
           }}
           onSuccess={handleTeamUpdateSuccess}
+        />
+
+        {/* Remove Team from Division Confirmation Dialog */}
+        <RemoveTeamFromDivisionDialog
+          open={removeTeamFromDivisionDialogOpen}
+          onClose={() => {
+            setRemoveTeamFromDivisionDialogOpen(false);
+            setTeamToRemoveFromDivision(null);
+            setLeagueSeasonForRemoveFromDivision(null);
+          }}
+          accountId={accountId}
+          seasonId={seasonId}
+          teamSeason={teamToRemoveFromDivision}
+          leagueSeason={leagueSeasonForRemoveFromDivision}
+          onSuccess={(result: RemoveTeamFromDivisionResult, message: string) => {
+            removeTeamFromDivisionInState(
+              result.leagueSeasonId,
+              result.divisionSeasonId,
+              result.teamSeason,
+            );
+            setFeedback({ severity: 'success', message });
+          }}
         />
       </Box>
 

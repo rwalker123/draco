@@ -5,7 +5,9 @@ export { default as DeleteLeagueDialog } from './DeleteLeagueDialog';
 export { default as DeleteTeamDialog } from './DeleteTeamDialog';
 export { default as EditDivisionDialog } from './EditDivisionDialog';
 export { default as EditLeagueDialog } from './EditLeagueDialog';
+export { default as RemoveTeamFromDivisionDialog } from './RemoveTeamFromDivisionDialog';
 
 export type { AddDivisionResult } from './AddDivisionDialog';
 export type { CreateTeamResult } from './CreateTeamDialog';
 export type { EditDivisionResult } from './EditDivisionDialog';
+export type { RemoveTeamFromDivisionResult } from './RemoveTeamFromDivisionDialog';
