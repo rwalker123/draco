@@ -253,7 +253,30 @@ export class PrismaContactRepository implements IContactRepository {
     options: ContactQueryOptions,
     seasonId?: bigint | null,
   ): Promise<dbContactWithRoleAndDetails[]> {
-    const { includeContactDetails, searchQuery, onlyWithRoles, pagination } = options;
+    const { includeContactDetails, searchQuery, onlyWithRoles, pagination, advancedFilter } =
+      options;
+
+    // Build advanced filter condition
+    const advancedFilterCondition = this.buildAdvancedFilterCondition(advancedFilter);
+
+    // Determine sort field and order
+    // Map sort fields to SQL columns (hardcoded for defense in depth)
+    const sortColumnMap: Record<string, string> = {
+      firstname: 'contacts.firstname',
+      lastname: 'contacts.lastname',
+      email: 'contacts.email',
+      id: 'contacts.id',
+      dateofbirth: 'contacts.dateofbirth',
+      firstyear: 'roster.firstyear',
+      zip: 'contacts.zip',
+    };
+    const sortBy = pagination?.sortBy ?? 'lastname';
+    const sortOrder = pagination?.sortOrder ?? 'asc';
+    const sortColumn = sortColumnMap[sortBy] ?? sortColumnMap['lastname'];
+    const orderDirection = sortOrder === 'desc' ? 'DESC' : 'ASC';
+    // For nullable fields, use NULLS LAST to ensure non-null values appear first regardless of sort order
+    const nullableFields = ['zip', 'dateofbirth', 'firstyear'];
+    const nullsOrder = nullableFields.includes(sortBy) ? 'NULLS LAST' : '';
 
     // Build the raw SQL query with proper parameter binding
     const query = Prisma.sql`
@@ -275,8 +298,11 @@ export class PrismaContactRepository implements IContactRepository {
         contacts.zip,
         contacts.dateofbirth,
         contacts.middlename,
+        roster.firstyear,
         `
-            : Prisma.empty
+            : Prisma.sql`
+        NULL::integer as firstyear,
+        `
         }
         CASE
           -- Team roles: Join teamsseason to get team name, validate season
@@ -299,19 +325,21 @@ export class PrismaContactRepository implements IContactRepository {
         cr.roleid,
         cr.roledata
       FROM contacts
+      -- Always join roster to get firstYear
+      LEFT JOIN roster ON roster.contactid = contacts.id
       LEFT JOIN contactroles cr ON (
-        contacts.id = cr.contactid 
+        contacts.id = cr.contactid
         AND cr.accountid = ${accountId}
         AND (
           -- Include all valid roles based on type-specific validation
           cr.roleid IS NULL  -- This won't match but keeps structure
-          
+
           -- Account roles: Validate roledata matches accountId
           OR (cr.roleid IN (${ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]}, ${ROLE_IDS[RoleNamesType.ACCOUNT_PHOTO_ADMIN]}) AND cr.roledata = ${accountId})
-          
+
           -- Global roles: No additional restrictions
           OR cr.roleid = ${ROLE_IDS[RoleNamesType.ADMINISTRATOR]}
-          
+
           -- Team and League roles: Will be validated by subsequent joins
           OR cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]}, ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]})
         )
@@ -349,6 +377,7 @@ export class PrismaContactRepository implements IContactRepository {
         `
             : Prisma.empty
         }
+        ${advancedFilterCondition}
         AND (
           ${
             !onlyWithRoles
@@ -360,19 +389,134 @@ export class PrismaContactRepository implements IContactRepository {
           }
           -- Include valid team roles (must have valid season)
           (cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]}) AND ls_ts.id IS NOT NULL)
-          
+
           -- Include valid league roles (must have valid season)
           OR (cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]} AND ls.id IS NOT NULL)
-          
+
           -- Include valid account roles
           OR (cr.roleid IN (${ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]}, ${ROLE_IDS[RoleNamesType.ACCOUNT_PHOTO_ADMIN]}) AND cr.roledata = ${accountId})
         )
-      ORDER BY contacts.lastname, contacts.firstname, cr.roleid
+      ORDER BY ${Prisma.raw(sortColumn)} ${Prisma.raw(orderDirection)} ${Prisma.raw(nullsOrder)}, contacts.firstname ${Prisma.raw(orderDirection)}, cr.roleid
       ${pagination ? Prisma.sql`LIMIT ${pagination.limit + 1} OFFSET ${(pagination.page - 1) * pagination.limit}` : Prisma.empty}
     `;
 
     // Execute the raw query
     return await this.prisma.$queryRaw<dbContactWithRoleAndDetails[]>(query);
+  }
+
+  /**
+   * Build SQL condition for advanced filtering
+   */
+  private buildAdvancedFilterCondition(
+    advancedFilter: ContactQueryOptions['advancedFilter'],
+  ): Prisma.Sql {
+    if (!advancedFilter?.filterField || !advancedFilter?.filterOp || !advancedFilter?.filterValue) {
+      return Prisma.empty;
+    }
+
+    const { filterField, filterOp, filterValue } = advancedFilter;
+
+    // Defense in depth: validate filterValue even though Zod validates upstream
+    // Max length check (matches schema max of 100)
+    if (filterValue.length > 100) {
+      return Prisma.empty;
+    }
+
+    // Allowed filter fields (must match ContactFilterFieldSchema)
+    const allowedFields = new Set(['lastName', 'firstName', 'firstYear', 'birthYear', 'zip']);
+    if (!allowedFields.has(filterField)) {
+      return Prisma.empty;
+    }
+
+    // Allowed filter operations (must match ContactFilterOpSchema)
+    const allowedOps = new Set([
+      'startsWith',
+      'endsWith',
+      'equals',
+      'notEquals',
+      'greaterThan',
+      'greaterThanOrEqual',
+      'lessThan',
+      'lessThanOrEqual',
+      'contains',
+    ]);
+    if (!allowedOps.has(filterOp)) {
+      return Prisma.empty;
+    }
+
+    // Map filter fields to SQL columns (only hardcoded values used with Prisma.raw)
+    const fieldMap: Record<string, string> = {
+      lastName: 'contacts.lastname',
+      firstName: 'contacts.firstname',
+      firstYear: 'roster.firstyear',
+      birthYear: 'EXTRACT(YEAR FROM contacts.dateofbirth)',
+      zip: 'contacts.zip',
+    };
+
+    const sqlField = fieldMap[filterField];
+    if (!sqlField) {
+      return Prisma.empty;
+    }
+
+    // Determine if field is numeric
+    const isNumericField = filterField === 'firstYear' || filterField === 'birthYear';
+
+    // For numeric fields, validate that value is a valid integer within reasonable bounds
+    if (isNumericField) {
+      const numValue = parseInt(filterValue, 10);
+      if (isNaN(numValue) || numValue < 1900 || numValue > 2100) {
+        return Prisma.empty;
+      }
+    }
+
+    // Build the condition based on operation
+    // Note: filterValue is safely parameterized by Prisma.sql tagged template
+    switch (filterOp) {
+      case 'startsWith':
+        return Prisma.sql`AND ${Prisma.raw(sqlField)} ILIKE ${filterValue + '%'}`;
+      case 'endsWith':
+        return Prisma.sql`AND ${Prisma.raw(sqlField)} ILIKE ${'%' + filterValue}`;
+      case 'contains':
+        return Prisma.sql`AND ${Prisma.raw(sqlField)} ILIKE ${'%' + filterValue + '%'}`;
+      case 'equals':
+        if (isNumericField) {
+          const numValue = parseInt(filterValue, 10);
+          return Prisma.sql`AND ${Prisma.raw(sqlField)} = ${numValue}`;
+        }
+        return Prisma.sql`AND ${Prisma.raw(sqlField)} ILIKE ${filterValue}`;
+      case 'notEquals':
+        if (isNumericField) {
+          const numValue = parseInt(filterValue, 10);
+          return Prisma.sql`AND ${Prisma.raw(sqlField)} != ${numValue}`;
+        }
+        return Prisma.sql`AND ${Prisma.raw(sqlField)} NOT ILIKE ${filterValue}`;
+      case 'greaterThan':
+        if (isNumericField) {
+          const numValue = parseInt(filterValue, 10);
+          return Prisma.sql`AND ${Prisma.raw(sqlField)} > ${numValue}`;
+        }
+        return Prisma.empty;
+      case 'greaterThanOrEqual':
+        if (isNumericField) {
+          const numValue = parseInt(filterValue, 10);
+          return Prisma.sql`AND ${Prisma.raw(sqlField)} >= ${numValue}`;
+        }
+        return Prisma.empty;
+      case 'lessThan':
+        if (isNumericField) {
+          const numValue = parseInt(filterValue, 10);
+          return Prisma.sql`AND ${Prisma.raw(sqlField)} < ${numValue}`;
+        }
+        return Prisma.empty;
+      case 'lessThanOrEqual':
+        if (isNumericField) {
+          const numValue = parseInt(filterValue, 10);
+          return Prisma.sql`AND ${Prisma.raw(sqlField)} <= ${numValue}`;
+        }
+        return Prisma.empty;
+      default:
+        return Prisma.empty;
+    }
   }
 
   async searchContactsByName(

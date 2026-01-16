@@ -6,9 +6,10 @@ import { createContextDataService } from '../services/contextDataService';
 import { getRoleDisplayName } from '../utils/roleUtils';
 import { FeedbackState, Role, UseUserManagementReturn } from '../types/users';
 import { useUserDataManager } from './useUserDataManager';
-import { useUserApiOperations } from './useUserApiOperations';
 import {
   BaseContactType,
+  ContactFilterFieldType,
+  ContactFilterOpType,
   ContactRoleType,
   ContactType,
   LeagueSeasonType,
@@ -16,6 +17,7 @@ import {
   TeamManagerWithTeamsType,
   TeamSeasonType,
 } from '@draco/shared-schemas';
+import { UserFilterState, UserSortState } from '../types/userFilters';
 
 // Pagination state for atomic updates
 interface PaginationState {
@@ -110,6 +112,20 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   // Filter state
   const [onlyWithRoles, setOnlyWithRoles] = useState(false);
 
+  // Advanced filter state
+  const [filter, setFilter] = useState<UserFilterState>({
+    filterField: '',
+    filterOp: '',
+    filterValue: '',
+  });
+  const [hasActiveFilter, setHasActiveFilter] = useState(false);
+
+  // Sort state
+  const [sort, setSort] = useState<UserSortState>({
+    sortBy: 'lastname',
+    sortDirection: 'asc',
+  });
+
   // Initialization guard
   const [initialized, setInitialized] = useState(false);
   const rowsPerPageRef = useRef(rowsPerPage);
@@ -141,7 +157,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
   // New architecture hooks
   const dataManager = useUserDataManager(dispatch);
-  const apiOperations = useUserApiOperations(userService!, accountId);
 
   // Helper to set error feedback
   const setFeedbackError = useCallback(
@@ -195,8 +210,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           {
             page: currentPage, // Backend uses 1-based pagination
             limit: limit || rowsPerPageRef.current,
-            sortBy: 'lastname',
-            sortOrder: 'asc',
+            sortBy: sort.sortBy,
+            sortOrder: sort.sortDirection,
           },
         );
 
@@ -218,6 +233,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       accountId,
       currentSeasonId,
       onlyWithRoles,
+      sort,
       updatePaginationData,
       setFeedbackError,
     ],
@@ -240,8 +256,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           {
             page: currentPage, // Backend uses 1-based pagination
             limit: limit || rowsPerPageRef.current,
-            sortBy: 'lastname',
-            sortOrder: 'asc',
+            sortBy: sort.sortBy,
+            sortOrder: sort.sortDirection,
           },
         );
 
@@ -256,7 +272,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
       }
     },
-    [userService, accountId, onlyWithRoles, setFeedbackError],
+    [userService, accountId, onlyWithRoles, sort, setFeedbackError],
   );
 
   // Load roles
@@ -327,7 +343,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     loadAutomaticRoleHolders,
   ]);
 
-  // Search handler
+  // Search handler - preserves advanced filter if active
   const handleSearch = useCallback(async () => {
     if (!userService || !accountId) return;
 
@@ -338,20 +354,27 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       if (!searchTerm.trim()) {
         // If search is empty, clear search results and load all users
         setIsShowingSearchResults(false);
-        await loadUsers(0);
+        await loadUsers(1);
       } else {
-        // Use the search endpoint with pagination
+        // Use the search endpoint with pagination, including advanced filter if active
         const searchResponse = await userService.searchUsers(
           accountId,
           searchTerm,
           currentSeasonId,
           onlyWithRoles,
           {
-            page: 0, // Frontend uses 0-based pagination
+            page: 1, // Backend uses 1-based pagination
             limit: rowsPerPageRef.current,
-            sortBy: 'lastname',
-            sortOrder: 'asc',
+            sortBy: sort.sortBy,
+            sortOrder: sort.sortDirection,
           },
+          hasActiveFilter && filter.filterField && filter.filterOp
+            ? {
+                filterField: filter.filterField as ContactFilterFieldType,
+                filterOp: filter.filterOp as ContactFilterOpType,
+                filterValue: filter.filterValue,
+              }
+            : undefined,
         );
 
         setIsShowingSearchResults(true);
@@ -374,8 +397,11 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     accountId,
     currentSeasonId,
     onlyWithRoles,
+    sort,
     loadUsers,
     setFeedbackError,
+    hasActiveFilter,
+    filter,
   ]);
 
   // Clear search handler
@@ -391,7 +417,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setIsShowingSearchResults(false);
 
       // Reset to first page and load default data
-      await loadUsers(0, undefined, true);
+      await loadUsers(1, undefined, true);
     } catch (err) {
       setFeedbackError(err instanceof Error ? err.message : 'Failed to clear search');
     } finally {
@@ -399,7 +425,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     }
   }, [userService, accountId, loadUsers, setFeedbackError]);
 
-  // Filter toggle handler
+  // Filter toggle handler (With Roles only)
   const handleFilterToggle = useCallback(
     async (filterValue: boolean) => {
       if (!userService || !accountId) return;
@@ -411,37 +437,32 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         // Update filter state
         setOnlyWithRoles(filterValue);
 
-        // If we have a search term, re-run the search with the new filter
-        if (searchTerm.trim()) {
-          const searchResults = await apiOperations.searchUsersWithFilter({
-            searchTerm,
-            seasonId: currentSeasonId,
-            onlyWithRoles: filterValue,
-          });
-          dataManager.setData(
-            searchResults.users,
-            searchResults.pagination.hasNext ?? false,
-            searchResults.pagination.hasPrev ?? false,
-            1,
-          );
-        } else {
-          // Use the unified API operations layer
-          const response = await apiOperations.searchUsersWithFilter({
-            searchTerm: '', // Empty search term for list-all
-            page: 1,
+        // Use userService.searchUsers to include advanced filter if active
+        const response = await userService.searchUsers(
+          accountId,
+          searchTerm.trim() || '',
+          currentSeasonId,
+          filterValue,
+          {
+            page: 1, // Backend uses 1-based pagination
             limit: rowsPerPageRef.current,
-            sortBy: 'lastname',
-            sortOrder: 'asc',
-            seasonId: currentSeasonId,
-            onlyWithRoles: filterValue,
-          });
-          dataManager.setData(
-            response.users,
-            response.pagination.hasNext ?? false,
-            response.pagination.hasPrev ?? false,
-            1,
-          );
-        }
+            sortBy: sort.sortBy,
+            sortOrder: sort.sortDirection,
+          },
+          hasActiveFilter && filter.filterField && filter.filterOp
+            ? {
+                filterField: filter.filterField as ContactFilterFieldType,
+                filterOp: filter.filterOp as ContactFilterOpType,
+                filterValue: filter.filterValue,
+              }
+            : undefined,
+        );
+        dataManager.setData(
+          response.users,
+          response.pagination.hasNext ?? false,
+          response.pagination.hasPrev ?? false,
+          1,
+        );
       } catch (err) {
         setFeedbackError(err instanceof Error ? err.message : 'Failed to apply filter');
         dataManager.clearData();
@@ -449,12 +470,175 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     },
     [
       dataManager,
-      apiOperations,
       searchTerm,
       currentSeasonId,
+      sort,
       setOnlyWithRoles,
       accountId,
       userService,
+      setFeedbackError,
+      hasActiveFilter,
+      filter,
+    ],
+  );
+
+  // Advanced filter handlers
+  const handleFilterChange = useCallback((newFilter: UserFilterState) => {
+    setFilter(newFilter);
+  }, []);
+
+  const handleApplyFilter = useCallback(async () => {
+    if (!userService || !accountId) return;
+    if (!filter.filterField || !filter.filterOp || !filter.filterValue.trim()) return;
+
+    try {
+      dataManager.setLoading();
+      setFeedbackError(null);
+
+      const response = await userService.searchUsers(
+        accountId,
+        searchTerm,
+        currentSeasonId,
+        onlyWithRoles,
+        {
+          page: 1,
+          limit: rowsPerPageRef.current,
+          sortBy: sort.sortBy,
+          sortOrder: sort.sortDirection,
+        },
+        {
+          filterField: filter.filterField as ContactFilterFieldType,
+          filterOp: filter.filterOp as ContactFilterOpType,
+          filterValue: filter.filterValue,
+        },
+      );
+
+      setHasActiveFilter(true);
+      dataManager.setData(
+        response.users,
+        response.pagination.hasNext ?? false,
+        response.pagination.hasPrev ?? false,
+        1,
+      );
+    } catch (err) {
+      setFeedbackError(err instanceof Error ? err.message : 'Failed to apply filter');
+      dataManager.clearData();
+    }
+  }, [
+    userService,
+    accountId,
+    filter,
+    searchTerm,
+    currentSeasonId,
+    onlyWithRoles,
+    sort,
+    dataManager,
+    setFeedbackError,
+  ]);
+
+  const handleClearFilter = useCallback(async () => {
+    if (!userService || !accountId) return;
+
+    try {
+      dataManager.setLoading();
+      setFeedbackError(null);
+
+      // Reset filter state
+      setFilter({
+        filterField: '',
+        filterOp: '',
+        filterValue: '',
+      });
+      setHasActiveFilter(false);
+
+      // Reload without filter
+      const response = await userService.searchUsers(
+        accountId,
+        searchTerm,
+        currentSeasonId,
+        onlyWithRoles,
+        {
+          page: 1,
+          limit: rowsPerPageRef.current,
+          sortBy: sort.sortBy,
+          sortOrder: sort.sortDirection,
+        },
+      );
+
+      dataManager.setData(
+        response.users,
+        response.pagination.hasNext ?? false,
+        response.pagination.hasPrev ?? false,
+        1,
+      );
+    } catch (err) {
+      setFeedbackError(err instanceof Error ? err.message : 'Failed to clear filter');
+      dataManager.clearData();
+    }
+  }, [
+    userService,
+    accountId,
+    searchTerm,
+    currentSeasonId,
+    onlyWithRoles,
+    sort,
+    dataManager,
+    setFeedbackError,
+  ]);
+
+  // Sort handler
+  const handleSortChange = useCallback(
+    async (newSort: UserSortState) => {
+      if (!userService || !accountId) return;
+
+      try {
+        setSort(newSort);
+        dataManager.setLoading();
+        setFeedbackError(null);
+
+        const advancedFilter =
+          hasActiveFilter && filter.filterField && filter.filterOp && filter.filterValue
+            ? {
+                filterField: filter.filterField as ContactFilterFieldType,
+                filterOp: filter.filterOp as ContactFilterOpType,
+                filterValue: filter.filterValue,
+              }
+            : undefined;
+
+        const response = await userService.searchUsers(
+          accountId,
+          searchTerm,
+          currentSeasonId,
+          onlyWithRoles,
+          {
+            page: 1,
+            limit: rowsPerPageRef.current,
+            sortBy: newSort.sortBy,
+            sortOrder: newSort.sortDirection,
+          },
+          advancedFilter,
+        );
+
+        dataManager.setData(
+          response.users,
+          response.pagination.hasNext ?? false,
+          response.pagination.hasPrev ?? false,
+          1,
+        );
+      } catch (err) {
+        setFeedbackError(err instanceof Error ? err.message : 'Failed to apply sort');
+        dataManager.clearData();
+      }
+    },
+    [
+      userService,
+      accountId,
+      searchTerm,
+      currentSeasonId,
+      onlyWithRoles,
+      hasActiveFilter,
+      filter,
+      dataManager,
       setFeedbackError,
     ],
   );
@@ -464,8 +648,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     if (hasNext && !loading) {
       const nextPage = page + 1;
 
-      // If showing search results, maintain search context
-      if (isShowingSearchResults && searchTerm.trim() && userService) {
+      // If showing search results or active filter, maintain context
+      if ((isShowingSearchResults || hasActiveFilter) && userService) {
         try {
           dispatch({ type: 'START_PAGINATION', page: nextPage });
           setFeedbackError(null);
@@ -476,11 +660,18 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             currentSeasonId,
             onlyWithRoles,
             {
-              page: nextPage - 1, // Backend uses 0-based pagination
+              page: nextPage, // Backend uses 1-based pagination
               limit: rowsPerPageRef.current,
-              sortBy: 'lastname',
-              sortOrder: 'asc',
+              sortBy: sort.sortBy,
+              sortOrder: sort.sortDirection,
             },
+            hasActiveFilter && filter.filterField && filter.filterOp
+              ? {
+                  filterField: filter.filterField as ContactFilterFieldType,
+                  filterOp: filter.filterOp as ContactFilterOpType,
+                  filterValue: filter.filterValue,
+                }
+              : undefined,
           );
 
           dispatch({
@@ -505,11 +696,14 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     loadUsers,
     loading,
     isShowingSearchResults,
+    hasActiveFilter,
+    filter,
     searchTerm,
     userService,
     accountId,
     currentSeasonId,
     onlyWithRoles,
+    sort,
     setFeedbackError,
   ]);
 
@@ -517,8 +711,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     if (hasPrev && !loading) {
       const prevPage = page - 1;
 
-      // If showing search results, maintain search context
-      if (isShowingSearchResults && searchTerm.trim() && userService) {
+      // If showing search results or active filter, maintain context
+      if ((isShowingSearchResults || hasActiveFilter) && userService) {
         try {
           dispatch({ type: 'START_PAGINATION', page: prevPage });
           setFeedbackError(null);
@@ -529,11 +723,18 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             currentSeasonId,
             onlyWithRoles,
             {
-              page: prevPage - 1, // Backend uses 0-based pagination
+              page: prevPage, // Backend uses 1-based pagination
               limit: rowsPerPageRef.current,
-              sortBy: 'lastname',
-              sortOrder: 'asc',
+              sortBy: sort.sortBy,
+              sortOrder: sort.sortDirection,
             },
+            hasActiveFilter && filter.filterField && filter.filterOp
+              ? {
+                  filterField: filter.filterField as ContactFilterFieldType,
+                  filterOp: filter.filterOp as ContactFilterOpType,
+                  filterValue: filter.filterValue,
+                }
+              : undefined,
           );
 
           dispatch({
@@ -558,11 +759,14 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     loadUsers,
     loading,
     isShowingSearchResults,
+    hasActiveFilter,
+    filter,
     searchTerm,
     userService,
     accountId,
     currentSeasonId,
     onlyWithRoles,
+    sort,
     setFeedbackError,
   ]);
 
@@ -571,8 +775,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       const newRowsPerPage = parseInt(event.target.value, 10);
       setRowsPerPage(newRowsPerPage);
 
-      // If showing search results, maintain search context
-      if (isShowingSearchResults && searchTerm.trim() && userService) {
+      // If showing search results or active filter, maintain context
+      if ((isShowingSearchResults || hasActiveFilter) && userService) {
         try {
           dispatch({ type: 'START_PAGINATION', page: 1 });
           setFeedbackError(null);
@@ -583,11 +787,18 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             currentSeasonId,
             onlyWithRoles,
             {
-              page: 0, // Backend uses 0-based pagination
+              page: 1, // Backend uses 1-based pagination
               limit: newRowsPerPage,
-              sortBy: 'lastname',
-              sortOrder: 'asc',
+              sortBy: sort.sortBy,
+              sortOrder: sort.sortDirection,
             },
+            hasActiveFilter && filter.filterField && filter.filterOp
+              ? {
+                  filterField: filter.filterField as ContactFilterFieldType,
+                  filterOp: filter.filterOp as ContactFilterOpType,
+                  filterValue: filter.filterValue,
+                }
+              : undefined,
           );
 
           dispatch({
@@ -609,11 +820,14 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     [
       loadUsers,
       isShowingSearchResults,
+      hasActiveFilter,
+      filter,
       searchTerm,
       userService,
       accountId,
       currentSeasonId,
       onlyWithRoles,
+      sort,
       setFeedbackError,
     ],
   );
@@ -879,6 +1093,13 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     isPaginating, // Use the state from reducer
     currentSeasonId, // Expose current season ID for export filtering
 
+    // Advanced filter state
+    filter,
+    hasActiveFilter,
+
+    // Sort state
+    sort,
+
     // Dialog states
     deleteContactDialogOpen,
     selectedUser,
@@ -916,5 +1137,13 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     handleRegistrationRevoked,
     handleRegistrationLinked,
     handleContactDeleted,
+
+    // Advanced filter actions
+    handleFilterChange,
+    handleApplyFilter,
+    handleClearFilter,
+
+    // Sort actions
+    handleSortChange,
   };
 };

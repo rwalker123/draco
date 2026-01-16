@@ -330,6 +330,16 @@ router.get(
       sortOrder: searchParams.sortOrder,
     };
 
+    // Build advanced filter options if provided
+    const advancedFilter =
+      searchParams.filterField && searchParams.filterOp && searchParams.filterValue
+        ? {
+            filterField: searchParams.filterField,
+            filterOp: searchParams.filterOp,
+            filterValue: searchParams.filterValue,
+          }
+        : undefined;
+
     // Use ContactService to get contacts with roles
     const result = await contactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
@@ -337,6 +347,7 @@ router.get(
       includeContactDetails,
       searchQuery: searchParams.q ? searchParams.q.toString() : undefined,
       pagination,
+      advancedFilter,
     });
 
     res.json(result);

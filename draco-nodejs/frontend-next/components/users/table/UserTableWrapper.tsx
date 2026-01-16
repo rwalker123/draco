@@ -10,6 +10,7 @@ import UserCardSkeleton from './UserCardSkeleton';
 import { useTableLoadingState } from '../../../hooks/useTableLoadingState';
 import { useEnhancedUsers } from './hooks/useUserSelection';
 import { ViewMode, DEFAULT_VIEW_CONFIG } from '../../../types/userTable';
+import { UserSortState } from '../../../types/userFilters';
 
 interface UserTableWrapperProps {
   // Data props
@@ -40,6 +41,10 @@ interface UserTableWrapperProps {
   searchTerm?: string;
   hasFilters?: boolean;
 
+  // Sort props
+  sort?: UserSortState;
+  onSortChange?: (sort: UserSortState) => void;
+
   // Loading configuration
   loadingDelay?: number;
   skeletonRows?: number;
@@ -63,6 +68,8 @@ const UserTableWrapper: React.FC<UserTableWrapperProps> = ({
   getRoleDisplayName,
   searchTerm,
   hasFilters = false,
+  sort,
+  onSortChange,
   loadingDelay = 500,
   skeletonRows = 5,
   skeletonCards = 6,
@@ -106,6 +113,8 @@ const UserTableWrapper: React.FC<UserTableWrapperProps> = ({
           getRoleDisplayName={getRoleDisplayName}
           searchTerm={searchTerm}
           hasFilters={hasFilters}
+          sort={sort}
+          onSortChange={onSortChange}
         />
       ) : (
         <UserCardGrid

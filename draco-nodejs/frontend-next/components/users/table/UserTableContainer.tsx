@@ -75,6 +75,17 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   // Export prop
   onExport,
 
+  // Advanced filter props
+  filter,
+  onFilterChange,
+  onApplyFilter,
+  onClearFilter,
+  hasActiveFilter,
+
+  // Sort props
+  sort,
+  onAdvancedSortChange,
+
   ..._restProps
 }) => {
   // Component initialization
@@ -244,6 +255,11 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
           onlyWithRoles={onlyWithRoles}
           onOnlyWithRolesChange={onOnlyWithRolesChange}
           onExport={onExport}
+          filter={filter}
+          onFilterChange={onFilterChange}
+          onApplyFilter={onApplyFilter}
+          onClearFilter={onClearFilter}
+          hasActiveFilter={hasActiveFilter}
         />
 
         {/* Table Header */}
@@ -287,6 +303,8 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
           getRoleDisplayName={getRoleDisplayName}
           searchTerm={currentSearchTerm}
           hasFilters={false}
+          sort={sort}
+          onSortChange={onAdvancedSortChange}
           loadingDelay={500}
           skeletonRows={5}
           skeletonCards={6}
@@ -349,6 +367,14 @@ const areEqual = (prevProps: UserTableContainerProps, nextProps: UserTableContai
   if (
     prevProps.searchTerm !== nextProps.searchTerm ||
     prevProps.searchLoading !== nextProps.searchLoading
+  ) {
+    return false;
+  }
+
+  // Always re-render if filter state changes
+  if (
+    prevProps.filter !== nextProps.filter ||
+    prevProps.hasActiveFilter !== nextProps.hasActiveFilter
   ) {
     return false;
   }

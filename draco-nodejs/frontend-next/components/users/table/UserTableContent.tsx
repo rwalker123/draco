@@ -1,10 +1,23 @@
 'use client';
 
-import React, { memo } from 'react';
-import { Table, TableBody, TableContainer, TableHead, TableRow, TableCell } from '@mui/material';
+import React, { memo, useCallback } from 'react';
+import {
+  Table,
+  TableBody,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableSortLabel,
+  Box,
+} from '@mui/material';
+import { visuallyHidden } from '@mui/utils';
 import { ContactRoleType, ContactType } from '@draco/shared-schemas';
 import UserCard from '../UserCard';
 import UserEmptyState from '../UserEmptyState';
+import { UserSortState } from '../../../types/userFilters';
+
+type SortableColumn = 'lastname' | 'zip' | 'dateofbirth' | 'firstyear';
 
 interface UserTableContentProps {
   users: ContactType[];
@@ -23,6 +36,8 @@ interface UserTableContentProps {
   ) => string;
   searchTerm?: string;
   hasFilters?: boolean;
+  sort?: UserSortState;
+  onSortChange?: (sort: UserSortState) => void;
 }
 
 const UserTableContent: React.FC<UserTableContentProps> = ({
@@ -38,29 +53,75 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
   getRoleDisplayName,
   searchTerm,
   hasFilters = false,
+  sort,
+  onSortChange,
 }) => {
+  const handleSortClick = useCallback(
+    (column: SortableColumn) => {
+      if (!onSortChange) return;
+
+      const isCurrentSort = sort?.sortBy === column;
+      const newDirection = isCurrentSort && sort?.sortDirection === 'asc' ? 'desc' : 'asc';
+
+      onSortChange({
+        sortBy: column,
+        sortDirection: newDirection,
+      });
+    },
+    [sort, onSortChange],
+  );
+
+  const renderSortableHeader = (column: SortableColumn, label: string) => {
+    if (!onSortChange) {
+      return label;
+    }
+
+    const isActive = sort?.sortBy === column;
+    const direction = isActive ? sort?.sortDirection : 'asc';
+
+    return (
+      <TableSortLabel
+        active={isActive}
+        direction={direction}
+        onClick={() => handleSortClick(column)}
+      >
+        {label}
+        {isActive && (
+          <Box component="span" sx={visuallyHidden}>
+            {direction === 'desc' ? 'sorted descending' : 'sorted ascending'}
+          </Box>
+        )}
+      </TableSortLabel>
+    );
+  };
+
+  const renderTableHeader = () => (
+    <TableHead>
+      <TableRow>
+        <TableCell>{renderSortableHeader('lastname', 'Name')}</TableCell>
+        <TableCell>Email</TableCell>
+        <TableCell>Registration Status</TableCell>
+        <TableCell>Phone Numbers</TableCell>
+        <TableCell>{renderSortableHeader('zip', 'Address')}</TableCell>
+        <TableCell>{renderSortableHeader('dateofbirth', 'Date of Birth')}</TableCell>
+        <TableCell>{renderSortableHeader('firstyear', 'First Year')}</TableCell>
+        <TableCell>Roles</TableCell>
+        <TableCell>Actions</TableCell>
+      </TableRow>
+    </TableHead>
+  );
+
   if (users.length === 0) {
     return (
       <TableContainer>
         <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Registration Status</TableCell>
-              <TableCell>Phone Numbers</TableCell>
-              <TableCell>Address</TableCell>
-              <TableCell>Date of Birth</TableCell>
-              <TableCell>Roles</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
+          {renderTableHeader()}
           <TableBody>
             <UserEmptyState
               searchTerm={searchTerm}
               hasFilters={hasFilters}
               wrapper="table-row"
-              colSpan={8}
+              colSpan={9}
               showIcon={false}
             />
           </TableBody>
@@ -72,18 +133,7 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
   return (
     <TableContainer>
       <Table stickyHeader>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell>Registration Status</TableCell>
-            <TableCell>Phone Numbers</TableCell>
-            <TableCell>Address</TableCell>
-            <TableCell>Date of Birth</TableCell>
-            <TableCell>Roles</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
+        {renderTableHeader()}
         <TableBody>
           {users.map((user) => (
             <UserCard
@@ -113,6 +163,7 @@ export default memo(UserTableContent, (prevProps, nextProps) => {
     prevProps.users === nextProps.users &&
     prevProps.canManageUsers === nextProps.canManageUsers &&
     prevProps.searchTerm === nextProps.searchTerm &&
-    prevProps.hasFilters === nextProps.hasFilters
+    prevProps.hasFilters === nextProps.hasFilters &&
+    prevProps.sort === nextProps.sort
   );
 });

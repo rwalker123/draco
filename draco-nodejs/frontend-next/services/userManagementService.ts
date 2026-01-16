@@ -10,6 +10,8 @@ import {
   ContactSearchParamsType,
   AutomaticRoleHoldersType,
   AutoRegisterContactResponseType,
+  ContactFilterFieldType,
+  ContactFilterOpType,
 } from '@draco/shared-schemas';
 import {
   assignRoleToUser,
@@ -76,6 +78,11 @@ export class UserManagementService {
       sortBy?: string;
       sortOrder?: 'asc' | 'desc';
     },
+    advancedFilter?: {
+      filterField: ContactFilterFieldType;
+      filterOp: ContactFilterOpType;
+      filterValue: string;
+    },
   ): Promise<{ users: ContactType[]; pagination: PaginationInfo }> {
     // Flat pagination params (API client serializes as flat query params, backend calculates skip)
     const searchParams: ContactSearchParamsType = {
@@ -89,6 +96,10 @@ export class UserManagementService {
       limit: pagination?.limit || 10,
       sortBy: pagination?.sortBy || 'name',
       sortOrder: pagination?.sortOrder || 'asc',
+      // Advanced filter params
+      filterField: advancedFilter?.filterField,
+      filterOp: advancedFilter?.filterOp,
+      filterValue: advancedFilter?.filterValue,
     };
 
     const result = await searchContacts({

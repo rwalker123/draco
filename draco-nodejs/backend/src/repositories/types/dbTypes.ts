@@ -1276,6 +1276,7 @@ export type dbContactWithRoleAndDetails = dbContactWithRole & {
   zip: string | null;
   dateofbirth: Date | null;
   middlename: string | null;
+  firstyear: number | null;
 };
 
 // Interface for raw account owner query result from getAutomaticRoleHolders

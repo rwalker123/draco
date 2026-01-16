@@ -8,6 +8,7 @@ import UserActions from './UserActions';
 import PhoneNumbersCell from './table/PhoneNumbersCell';
 import AddressCell from './table/AddressCell';
 import DateOfBirthCell from './table/DateOfBirthCell';
+import FirstYearCell from './table/FirstYearCell';
 import UserAvatar from './UserAvatar';
 import { getFormattedName } from '../../utils/contactUtils';
 import RegistrationStatusChip from './RegistrationStatusChip';
@@ -120,6 +121,9 @@ const UserCard: React.FC<UserCardProps> = ({
       </TableCell>
       <TableCell>
         <DateOfBirthCell contactDetails={user.contactDetails} />
+      </TableCell>
+      <TableCell>
+        <FirstYearCell contactDetails={user.contactDetails} />
       </TableCell>
       <TableCell>
         <UserRoleChips

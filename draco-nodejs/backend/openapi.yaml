@@ -117,6 +117,9 @@ components:
                       type: string
                       nullable: true
                       default: ""
+                    firstYear:
+                      type: number
+                      nullable: true
               required:
                 - id
                 - firstName
@@ -211,6 +214,9 @@ components:
                   type: string
                   nullable: true
                   default: ""
+                firstYear:
+                  type: number
+                  nullable: true
           required:
             - id
             - firstName
@@ -306,6 +312,9 @@ components:
                           type: string
                           nullable: true
                           default: ""
+                        firstYear:
+                          type: number
+                          nullable: true
                     photo:
                       type: string
                       format: binary
@@ -407,6 +416,9 @@ components:
               type: string
               nullable: true
               default: ""
+            firstYear:
+              type: number
+              nullable: true
         contactroles:
           type: array
           items:
@@ -509,6 +521,9 @@ components:
               type: string
               nullable: true
               default: ""
+            firstYear:
+              type: number
+              nullable: true
       required:
         - id
         - firstName
@@ -602,6 +617,9 @@ components:
               type: string
               nullable: true
               default: ""
+            firstYear:
+              type: number
+              nullable: true
         roles:
           type: array
           items:
@@ -949,6 +967,9 @@ components:
               type: string
               nullable: true
               default: ""
+            firstYear:
+              type: number
+              nullable: true
         photo:
           type: string
           format: binary
@@ -1052,6 +1073,9 @@ components:
                   type: string
                   nullable: true
                   default: ""
+                firstYear:
+                  type: number
+                  nullable: true
           required:
             - id
             - firstName
@@ -1185,6 +1209,9 @@ components:
                   type: string
                   nullable: true
                   default: ""
+                firstYear:
+                  type: number
+                  nullable: true
           required:
             - id
             - firstName
@@ -1490,6 +1517,9 @@ components:
                   type: string
                   nullable: true
                   default: ""
+                firstYear:
+                  type: number
+                  nullable: true
           required:
             - id
             - firstName
@@ -1833,6 +1863,9 @@ components:
                   type: string
                   nullable: true
                   default: ""
+                firstYear:
+                  type: number
+                  nullable: true
           required:
             - id
             - firstName
@@ -1961,6 +1994,9 @@ components:
                             type: string
                             nullable: true
                             default: ""
+                          firstYear:
+                            type: number
+                            nullable: true
                     required:
                       - id
                       - firstName
@@ -2383,6 +2419,9 @@ components:
               type: string
               nullable: true
               default: ""
+            firstYear:
+              type: number
+              nullable: true
         photo:
           type: string
           format: binary
@@ -3019,6 +3058,9 @@ components:
                     type: string
                     nullable: true
                     default: ""
+                  firstYear:
+                    type: number
+                    nullable: true
             required:
               - id
               - firstName
@@ -3137,6 +3179,9 @@ components:
               type: string
               nullable: true
               default: ""
+            firstYear:
+              type: number
+              nullable: true
       required:
         - id
         - accountId
@@ -3213,6 +3258,9 @@ components:
                     type: string
                     nullable: true
                     default: ""
+                  firstYear:
+                    type: number
+                    nullable: true
             required:
               - id
               - accountId
@@ -3423,6 +3471,9 @@ components:
                           type: string
                           nullable: true
                           default: ""
+                        firstYear:
+                          type: number
+                          nullable: true
                   required:
                     - id
                     - firstName
@@ -3649,6 +3700,9 @@ components:
                               type: string
                               nullable: true
                               default: ""
+                            firstYear:
+                              type: number
+                              nullable: true
                       required:
                         - id
                         - firstName
@@ -3825,6 +3879,9 @@ components:
                   type: string
                   nullable: true
                   default: ""
+                firstYear:
+                  type: number
+                  nullable: true
           required:
             - id
             - firstName
@@ -3898,6 +3955,9 @@ components:
                     type: string
                     nullable: true
                     default: ""
+                  firstYear:
+                    type: number
+                    nullable: true
               teams:
                 type: array
                 items:
@@ -4109,6 +4169,9 @@ components:
                   type: string
                   nullable: true
                   default: ""
+                firstYear:
+                  type: number
+                  nullable: true
           required:
             - firstName
             - lastName
@@ -4314,6 +4377,9 @@ components:
                               type: string
                               nullable: true
                               default: ""
+                            firstYear:
+                              type: number
+                              nullable: true
                       required:
                         - id
                         - firstName
@@ -4529,6 +4595,9 @@ components:
                               type: string
                               nullable: true
                               default: ""
+                            firstYear:
+                              type: number
+                              nullable: true
                       required:
                         - id
                         - firstName
@@ -7077,7 +7146,7 @@ components:
           default: false
         page:
           type: number
-          nullable: true
+          minimum: 1
           default: 1
         limit:
           type: number
@@ -7092,6 +7161,29 @@ components:
             - asc
             - desc
           default: asc
+        filterField:
+          type: string
+          enum:
+            - lastName
+            - firstName
+            - firstYear
+            - birthYear
+            - zip
+        filterOp:
+          type: string
+          enum:
+            - startsWith
+            - endsWith
+            - equals
+            - notEquals
+            - greaterThan
+            - greaterThanOrEqual
+            - lessThan
+            - lessThanOrEqual
+            - contains
+        filterValue:
+          type: string
+          maxLength: 100
     PlayerBattingStats:
       type: object
       properties:
@@ -18253,6 +18345,9 @@ components:
               type: string
               nullable: true
               default: ""
+            firstYear:
+              type: number
+              nullable: true
         photo:
           type: string
           format: binary
@@ -24103,6 +24198,9 @@ paths:
                           type: string
                           nullable: true
                           default: ""
+                        firstYear:
+                          type: number
+                          nullable: true
                   required:
                     - firstName
                     - lastName
@@ -29935,7 +30033,7 @@ paths:
           in: query
         - schema:
             type: number
-            nullable: true
+            minimum: 1
             default: 1
           required: false
           name: page
@@ -29961,6 +30059,38 @@ paths:
             default: asc
           required: false
           name: sortOrder
+          in: query
+        - schema:
+            type: string
+            enum:
+              - lastName
+              - firstName
+              - firstYear
+              - birthYear
+              - zip
+          required: false
+          name: filterField
+          in: query
+        - schema:
+            type: string
+            enum:
+              - startsWith
+              - endsWith
+              - equals
+              - notEquals
+              - greaterThan
+              - greaterThanOrEqual
+              - lessThan
+              - lessThanOrEqual
+              - contains
+          required: false
+          name: filterOp
+          in: query
+        - schema:
+            type: string
+            maxLength: 100
+          required: false
+          name: filterValue
           in: query
       responses:
         "200":
@@ -30049,6 +30179,9 @@ paths:
                       type: string
                       nullable: true
                       default: ""
+                    firstYear:
+                      type: number
+                      nullable: true
                 photo:
                   type: string
                   format: binary
@@ -30111,6 +30244,9 @@ paths:
                       type: string
                       nullable: true
                       default: ""
+                    firstYear:
+                      type: number
+                      nullable: true
                 photo:
                   type: string
                   format: binary
@@ -30288,6 +30424,9 @@ paths:
                       type: string
                       nullable: true
                       default: ""
+                    firstYear:
+                      type: number
+                      nullable: true
                 photo:
                   type: string
                   format: binary
@@ -30350,6 +30489,9 @@ paths:
                       type: string
                       nullable: true
                       default: ""
+                    firstYear:
+                      type: number
+                      nullable: true
                 photo:
                   type: string
                   format: binary

@@ -1,5 +1,6 @@
 import { ContactType, ContactRoleType } from '@draco/shared-schemas';
 import { UserTableProps } from './users';
+import { UserFilterState, UserSortState } from './userFilters';
 
 // Enhanced user interface with computed properties for the modern table
 export interface EnhancedUser extends ContactType {
@@ -180,7 +181,7 @@ export interface UserTableSearchProps {
 }
 
 export interface UserTableToolbarProps {
-  userCount: number; // Changed from users array to just count
+  userCount: number;
   selectedUsers: EnhancedUser[];
   searchTerm: string;
   onSearchChange: (term: string) => void;
@@ -194,9 +195,12 @@ export interface UserTableToolbarProps {
   canManageUsers: boolean;
   enableAdvancedFilters: boolean;
   loading?: boolean;
-  showFilters?: boolean;
-  onToggleFilters?: () => void;
   onExport?: () => void;
+  filter?: UserFilterState;
+  onFilterChange?: (filter: UserFilterState) => void;
+  onApplyFilter?: () => void;
+  onClearFilter?: () => void;
+  hasActiveFilter?: boolean;
 }
 
 export interface UserTableRowProps {
@@ -369,6 +373,17 @@ export interface UserTableContainerProps extends ModernUserTableProps {
 
   // Export functionality
   onExport?: () => void;
+
+  // Advanced filter props
+  filter?: UserFilterState;
+  onFilterChange?: (filter: UserFilterState) => void;
+  onApplyFilter?: () => void;
+  onClearFilter?: () => void;
+  hasActiveFilter?: boolean;
+
+  // Sort props
+  sort?: UserSortState;
+  onAdvancedSortChange?: (sort: UserSortState) => void;
 }
 
 // Backward compatibility props mapping
@@ -406,4 +421,15 @@ export interface UserTableEnhancedProps extends UserTableProps {
 
   // Export functionality
   onExport?: () => void;
+
+  // Advanced filter props
+  filter?: UserFilterState;
+  onFilterChange?: (filter: UserFilterState) => void;
+  onApplyFilter?: () => void;
+  onClearFilter?: () => void;
+  hasActiveFilter?: boolean;
+
+  // Sort props
+  sort?: UserSortState;
+  onAdvancedSortChange?: (sort: UserSortState) => void;
 }
