@@ -80,3 +80,5 @@ To ensure secure communication between the frontend and backend during local dev
 ---
 
 For more details, see the mkcert [GitHub page](https://github.com/FiloSottile/mkcert).
+
+<!-- Last deployed: 2025-01-16 -->
