@@ -260,26 +260,23 @@ export class PrismaContactRepository implements IContactRepository {
     const advancedFilterCondition = this.buildAdvancedFilterCondition(advancedFilter);
 
     // Determine sort field and order
-    const allowedSortFields = [
-      'firstname',
-      'lastname',
-      'email',
-      'id',
-      'dateofbirth',
-      'firstyear',
-      'zip',
-    ];
+    // Map sort fields to SQL columns (hardcoded for defense in depth)
+    const sortColumnMap: Record<string, string> = {
+      firstname: 'contacts.firstname',
+      lastname: 'contacts.lastname',
+      email: 'contacts.email',
+      id: 'contacts.id',
+      dateofbirth: 'contacts.dateofbirth',
+      firstyear: 'roster.firstyear',
+      zip: 'contacts.zip',
+    };
     const sortBy = pagination?.sortBy ?? 'lastname';
     const sortOrder = pagination?.sortOrder ?? 'asc';
-    const validatedSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'lastname';
-
-    // Map sort field to SQL column
-    const sortColumn =
-      validatedSortBy === 'firstyear' ? 'roster.firstyear' : `contacts.${validatedSortBy}`;
+    const sortColumn = sortColumnMap[sortBy] ?? sortColumnMap['lastname'];
     const orderDirection = sortOrder === 'desc' ? 'DESC' : 'ASC';
     // For nullable fields, use NULLS LAST to ensure non-null values appear first regardless of sort order
     const nullableFields = ['zip', 'dateofbirth', 'firstyear'];
-    const nullsOrder = nullableFields.includes(validatedSortBy) ? 'NULLS LAST' : '';
+    const nullsOrder = nullableFields.includes(sortBy) ? 'NULLS LAST' : '';
 
     // Build the raw SQL query with proper parameter binding
     const query = Prisma.sql`
