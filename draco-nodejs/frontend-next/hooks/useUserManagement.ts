@@ -354,7 +354,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       if (!searchTerm.trim()) {
         // If search is empty, clear search results and load all users
         setIsShowingSearchResults(false);
-        await loadUsers(0);
+        await loadUsers(1);
       } else {
         // Use the search endpoint with pagination, including advanced filter if active
         const searchResponse = await userService.searchUsers(
@@ -363,7 +363,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           currentSeasonId,
           onlyWithRoles,
           {
-            page: 0, // Frontend uses 0-based pagination
+            page: 1, // Backend uses 1-based pagination
             limit: rowsPerPageRef.current,
             sortBy: sort.sortBy,
             sortOrder: sort.sortDirection,
@@ -417,7 +417,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setIsShowingSearchResults(false);
 
       // Reset to first page and load default data
-      await loadUsers(0, undefined, true);
+      await loadUsers(1, undefined, true);
     } catch (err) {
       setFeedbackError(err instanceof Error ? err.message : 'Failed to clear search');
     } finally {
@@ -444,7 +444,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           currentSeasonId,
           filterValue,
           {
-            page: 0,
+            page: 1, // Backend uses 1-based pagination
             limit: rowsPerPageRef.current,
             sortBy: sort.sortBy,
             sortOrder: sort.sortDirection,
@@ -660,7 +660,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             currentSeasonId,
             onlyWithRoles,
             {
-              page: nextPage - 1, // Backend uses 0-based pagination
+              page: nextPage, // Backend uses 1-based pagination
               limit: rowsPerPageRef.current,
               sortBy: sort.sortBy,
               sortOrder: sort.sortDirection,
@@ -723,7 +723,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             currentSeasonId,
             onlyWithRoles,
             {
-              page: prevPage - 1, // Backend uses 0-based pagination
+              page: prevPage, // Backend uses 1-based pagination
               limit: rowsPerPageRef.current,
               sortBy: sort.sortBy,
               sortOrder: sort.sortDirection,
@@ -787,7 +787,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             currentSeasonId,
             onlyWithRoles,
             {
-              page: 0, // Backend uses 0-based pagination
+              page: 1, // Backend uses 1-based pagination
               limit: newRowsPerPage,
               sortBy: sort.sortBy,
               sortOrder: sort.sortDirection,

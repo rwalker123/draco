@@ -7146,7 +7146,7 @@ components:
           default: false
         page:
           type: number
-          nullable: true
+          minimum: 1
           default: 1
         limit:
           type: number
@@ -30033,7 +30033,7 @@ paths:
           in: query
         - schema:
             type: number
-            nullable: true
+            minimum: 1
             default: 1
           required: false
           name: page

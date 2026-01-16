@@ -277,13 +277,9 @@ export class PrismaContactRepository implements IContactRepository {
     const sortColumn =
       validatedSortBy === 'firstyear' ? 'roster.firstyear' : `contacts.${validatedSortBy}`;
     const orderDirection = sortOrder === 'desc' ? 'DESC' : 'ASC';
-    // For nullable fields, use NULLS LAST for ASC (values first) and NULLS FIRST for DESC (values first)
+    // For nullable fields, use NULLS LAST to ensure non-null values appear first regardless of sort order
     const nullableFields = ['zip', 'dateofbirth', 'firstyear'];
-    const nullsOrder = nullableFields.includes(validatedSortBy)
-      ? sortOrder === 'desc'
-        ? 'NULLS LAST'
-        : 'NULLS LAST'
-      : '';
+    const nullsOrder = nullableFields.includes(validatedSortBy) ? 'NULLS LAST' : '';
 
     // Build the raw SQL query with proper parameter binding
     const query = Prisma.sql`
@@ -423,7 +419,35 @@ export class PrismaContactRepository implements IContactRepository {
 
     const { filterField, filterOp, filterValue } = advancedFilter;
 
-    // Map filter fields to SQL columns
+    // Defense in depth: validate filterValue even though Zod validates upstream
+    // Max length check (matches schema max of 100)
+    if (filterValue.length > 100) {
+      return Prisma.empty;
+    }
+
+    // Allowed filter fields (must match ContactFilterFieldSchema)
+    const allowedFields = new Set(['lastName', 'firstName', 'firstYear', 'birthYear', 'zip']);
+    if (!allowedFields.has(filterField)) {
+      return Prisma.empty;
+    }
+
+    // Allowed filter operations (must match ContactFilterOpSchema)
+    const allowedOps = new Set([
+      'startsWith',
+      'endsWith',
+      'equals',
+      'notEquals',
+      'greaterThan',
+      'greaterThanOrEqual',
+      'lessThan',
+      'lessThanOrEqual',
+      'contains',
+    ]);
+    if (!allowedOps.has(filterOp)) {
+      return Prisma.empty;
+    }
+
+    // Map filter fields to SQL columns (only hardcoded values used with Prisma.raw)
     const fieldMap: Record<string, string> = {
       lastName: 'contacts.lastname',
       firstName: 'contacts.firstname',
@@ -440,7 +464,16 @@ export class PrismaContactRepository implements IContactRepository {
     // Determine if field is numeric
     const isNumericField = filterField === 'firstYear' || filterField === 'birthYear';
 
+    // For numeric fields, validate that value is a valid integer within reasonable bounds
+    if (isNumericField) {
+      const numValue = parseInt(filterValue, 10);
+      if (isNaN(numValue) || numValue < 1900 || numValue > 2100) {
+        return Prisma.empty;
+      }
+    }
+
     // Build the condition based on operation
+    // Note: filterValue is safely parameterized by Prisma.sql tagged template
     switch (filterOp) {
       case 'startsWith':
         return Prisma.sql`AND ${Prisma.raw(sqlField)} ILIKE ${filterValue + '%'}`;
@@ -451,45 +484,39 @@ export class PrismaContactRepository implements IContactRepository {
       case 'equals':
         if (isNumericField) {
           const numValue = parseInt(filterValue, 10);
-          if (isNaN(numValue)) return Prisma.empty;
           return Prisma.sql`AND ${Prisma.raw(sqlField)} = ${numValue}`;
         }
         return Prisma.sql`AND ${Prisma.raw(sqlField)} ILIKE ${filterValue}`;
       case 'notEquals':
         if (isNumericField) {
           const numValue = parseInt(filterValue, 10);
-          if (isNaN(numValue)) return Prisma.empty;
           return Prisma.sql`AND ${Prisma.raw(sqlField)} != ${numValue}`;
         }
         return Prisma.sql`AND ${Prisma.raw(sqlField)} NOT ILIKE ${filterValue}`;
       case 'greaterThan':
         if (isNumericField) {
           const numValue = parseInt(filterValue, 10);
-          if (isNaN(numValue)) return Prisma.empty;
           return Prisma.sql`AND ${Prisma.raw(sqlField)} > ${numValue}`;
         }
-        return Prisma.sql`AND ${Prisma.raw(sqlField)} > ${filterValue}`;
+        return Prisma.empty;
       case 'greaterThanOrEqual':
         if (isNumericField) {
           const numValue = parseInt(filterValue, 10);
-          if (isNaN(numValue)) return Prisma.empty;
           return Prisma.sql`AND ${Prisma.raw(sqlField)} >= ${numValue}`;
         }
-        return Prisma.sql`AND ${Prisma.raw(sqlField)} >= ${filterValue}`;
+        return Prisma.empty;
       case 'lessThan':
         if (isNumericField) {
           const numValue = parseInt(filterValue, 10);
-          if (isNaN(numValue)) return Prisma.empty;
           return Prisma.sql`AND ${Prisma.raw(sqlField)} < ${numValue}`;
         }
-        return Prisma.sql`AND ${Prisma.raw(sqlField)} < ${filterValue}`;
+        return Prisma.empty;
       case 'lessThanOrEqual':
         if (isNumericField) {
           const numValue = parseInt(filterValue, 10);
-          if (isNaN(numValue)) return Prisma.empty;
           return Prisma.sql`AND ${Prisma.raw(sqlField)} <= ${numValue}`;
         }
-        return Prisma.sql`AND ${Prisma.raw(sqlField)} <= ${filterValue}`;
+        return Prisma.empty;
       default:
         return Prisma.empty;
     }

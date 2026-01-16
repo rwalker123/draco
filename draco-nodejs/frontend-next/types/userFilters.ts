@@ -37,9 +37,9 @@ export const FILTER_OPERATIONS: FilterOpOption[] = [
   { value: 'equals', label: 'Equals', applicableTypes: ['string', 'number'] },
   { value: 'notEquals', label: 'Not Equals', applicableTypes: ['string', 'number'] },
   { value: 'contains', label: 'Contains', applicableTypes: ['string'] },
-  { value: 'greaterThan', label: 'Greater Than', applicableTypes: ['string', 'number'] },
+  { value: 'greaterThan', label: 'Greater Than', applicableTypes: ['number'] },
   { value: 'greaterThanOrEqual', label: 'Greater Than or Equal', applicableTypes: ['number'] },
-  { value: 'lessThan', label: 'Less Than', applicableTypes: ['string', 'number'] },
+  { value: 'lessThan', label: 'Less Than', applicableTypes: ['number'] },
   { value: 'lessThanOrEqual', label: 'Less Than or Equal', applicableTypes: ['number'] },
 ];
 

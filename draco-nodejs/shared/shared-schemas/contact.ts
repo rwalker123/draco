@@ -287,24 +287,61 @@ export const ContactFilterOpSchema = z.enum([
   'contains',
 ]);
 
-export const ContactSearchParamsSchema = z.object({
-  q: z.string().trim().max(100).optional(),
-  includeRoles: booleanQueryParam.optional().default(false),
-  contactDetails: booleanQueryParam.optional().default(false),
-  seasonId: z.string().trim().optional(),
-  teamSeasonId: z.string().trim().optional(),
-  onlyWithRoles: booleanQueryParam.optional().default(false),
-  includeInactive: booleanQueryParam.optional().default(false),
-  // Flat pagination params - API client serializes with style: 'form' producing flat query params
-  page: z.coerce.number().default(1),
-  limit: z.coerce.number().min(1).max(100).default(50),
-  sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).default('asc'),
-  // Advanced filter params
-  filterField: ContactFilterFieldSchema.optional(),
-  filterOp: ContactFilterOpSchema.optional(),
-  filterValue: z.string().trim().max(100).optional(),
-});
+// Numeric fields that support comparison operations
+const NUMERIC_FILTER_FIELDS = ['firstYear', 'birthYear'] as const;
+
+// Comparison operations that only work with numeric fields
+const NUMERIC_ONLY_OPERATIONS = [
+  'greaterThan',
+  'greaterThanOrEqual',
+  'lessThan',
+  'lessThanOrEqual',
+] as const;
+
+export const ContactSearchParamsSchema = z
+  .object({
+    q: z.string().trim().max(100).optional(),
+    includeRoles: booleanQueryParam.optional().default(false),
+    contactDetails: booleanQueryParam.optional().default(false),
+    seasonId: z.string().trim().optional(),
+    teamSeasonId: z.string().trim().optional(),
+    onlyWithRoles: booleanQueryParam.optional().default(false),
+    includeInactive: booleanQueryParam.optional().default(false),
+    // Flat pagination params - API client serializes with style: 'form' producing flat query params
+    page: z.coerce.number().min(1).default(1),
+    limit: z.coerce.number().min(1).max(100).default(50),
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('asc'),
+    // Advanced filter params
+    filterField: ContactFilterFieldSchema.optional(),
+    filterOp: ContactFilterOpSchema.optional(),
+    filterValue: z.string().trim().max(100).optional(),
+  })
+  .refine(
+    (data) => {
+      // If no filter operation, no validation needed
+      if (!data.filterOp || !data.filterField) return true;
+
+      // Check if operation is numeric-only
+      const isNumericOnlyOp = NUMERIC_ONLY_OPERATIONS.includes(
+        data.filterOp as (typeof NUMERIC_ONLY_OPERATIONS)[number],
+      );
+
+      // If it's a numeric-only operation, the field must be numeric
+      if (isNumericOnlyOp) {
+        return NUMERIC_FILTER_FIELDS.includes(
+          data.filterField as (typeof NUMERIC_FILTER_FIELDS)[number],
+        );
+      }
+
+      return true;
+    },
+    {
+      message:
+        'Comparison operations (greaterThan, lessThan, etc.) are only valid for numeric fields (firstYear, birthYear)',
+      path: ['filterOp'],
+    },
+  );
 
 export type NamedContactType = z.infer<typeof NamedContactSchema>;
 export type ContactDetailsType = z.infer<typeof ContactDetailsSchema>;

@@ -9736,7 +9736,7 @@
           },
           "page": {
             "type": "number",
-            "nullable": true,
+            "minimum": 1,
             "default": 1
           },
           "limit": {
@@ -41934,7 +41934,7 @@
           {
             "schema": {
               "type": "number",
-              "nullable": true,
+              "minimum": 1,
               "default": 1
             },
             "required": false,
