@@ -17,6 +17,7 @@ const allowedDevOrigins = Array.from(
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
+  output: 'standalone',
   allowedDevOrigins,
   /* config options here */
   async rewrites() {
