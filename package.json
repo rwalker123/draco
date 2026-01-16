@@ -55,7 +55,7 @@
     "format": "npm run format --workspaces",
     "type-check": "npm run type-check --workspaces",
     "test": "npm run test --workspaces",
-    "start": "concurrently \"npm start -w @draco/backend\" \"npm run start:local -w @draco/frontend-next\"",
+    "start": "concurrently \"npm start -w @draco/backend\" \"npm start -w @draco/frontend-next\"",
     "secrets:update-baseline": "node scripts/update-baseline.js",
     "sync:api": "npm -w @draco/backend run generate:openapi && npm -w @draco/backend run generate:client",
     "mobile:start": "npm run start -w @draco/mobile",
