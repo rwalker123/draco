@@ -66,6 +66,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     accountOwner,
     teamManagers,
 
+    // Advanced filter state
+    filter,
+    hasActiveFilter,
+
+    // Sort state
+    sort,
+
     // Actions
     handleSearch,
     handleClearSearch,
@@ -84,6 +91,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     handleRegistrationLinked,
     handleContactDeleted,
     loadContextData,
+
+    // Advanced filter actions
+    handleFilterChange,
+    handleApplyFilter,
+    handleClearFilter,
+
+    // Sort actions
+    handleSortChange,
   } = useUserManagement(accountId);
 
   // Check if user can manage users (this is handled in the hook)
@@ -353,6 +368,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onOnlyWithRolesChange={handleFilterToggle}
         // Export functionality
         onExport={handleExportUsers}
+        // Advanced filter props
+        filter={filter}
+        onFilterChange={handleFilterChange}
+        onApplyFilter={handleApplyFilter}
+        onClearFilter={handleClearFilter}
+        hasActiveFilter={hasActiveFilter}
+        // Sort props
+        sort={sort}
+        onAdvancedSortChange={handleSortChange}
         // Disable the title header above the search bar
         title={null}
       />

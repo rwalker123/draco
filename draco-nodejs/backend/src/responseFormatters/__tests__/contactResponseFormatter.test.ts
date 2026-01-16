@@ -71,6 +71,7 @@ describe('ContactResponseFormatter.formatContactResponse', () => {
         state: 'TX',
         zip: '78701',
         dateOfBirth: 'formatted-1990-05-21T00:00:00.000Z',
+        firstYear: null,
       },
     });
 

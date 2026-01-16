@@ -13,6 +13,10 @@ import {
   MenuItem,
   Switch,
   FormControlLabel,
+  FormControl,
+  InputLabel,
+  Select,
+  Divider,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -20,7 +24,14 @@ import {
   GetApp as ExportIcon,
   MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
+import { ContactFilterFieldType, ContactFilterOpType } from '@draco/shared-schemas';
 import { UserTableToolbarProps, UserTableAction } from '../../../../types/userTable';
+import {
+  FILTER_FIELDS,
+  FILTER_OPERATIONS,
+  getApplicableOperations,
+  getFieldType,
+} from '../../../../types/userFilters';
 
 const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
   userCount,
@@ -37,6 +48,12 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
   onlyWithRoles = false,
   onOnlyWithRolesChange,
   onExport,
+  enableAdvancedFilters = false,
+  filter,
+  onFilterChange,
+  onApplyFilter,
+  onClearFilter,
+  hasActiveFilter = false,
 }) => {
   const [bulkMenuAnchor, setBulkMenuAnchor] = useState<null | HTMLElement>(null);
 
@@ -54,6 +71,50 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
     onOnlyWithRolesChange?.(!onlyWithRoles);
   };
 
+  const selectedFieldType = filter?.filterField ? getFieldType(filter.filterField) : 'string';
+  const applicableOperations = getApplicableOperations(selectedFieldType);
+
+  const handleFieldChange = (field: ContactFilterFieldType | '') => {
+    if (!filter || !onFilterChange) return;
+    const newFieldType = field ? getFieldType(field) : 'string';
+    const currentOpValid =
+      filter.filterOp &&
+      FILTER_OPERATIONS.find(
+        (op) => op.value === filter.filterOp && op.applicableTypes.includes(newFieldType),
+      );
+
+    onFilterChange({
+      ...filter,
+      filterField: field,
+      filterOp: currentOpValid ? filter.filterOp : '',
+    });
+  };
+
+  const handleOpChange = (op: ContactFilterOpType | '') => {
+    if (!filter || !onFilterChange) return;
+    onFilterChange({
+      ...filter,
+      filterOp: op,
+    });
+  };
+
+  const handleValueChange = (value: string) => {
+    if (!filter || !onFilterChange) return;
+    onFilterChange({
+      ...filter,
+      filterValue: value,
+    });
+  };
+
+  const handleFilterKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' && canApplyFilter) {
+      onApplyFilter?.();
+    }
+  };
+
+  const canApplyFilter =
+    filter && filter.filterField && filter.filterOp && filter.filterValue.trim();
+
   const handleBulkMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setBulkMenuAnchor(event.currentTarget);
   };
@@ -67,7 +128,6 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
     await onBulkAction(action, selectedUsers);
   };
 
-  // Available bulk actions for selected users
   const availableBulkActions = customActions.filter((action) => {
     if (!canManageUsers && action.requiresPermission) return false;
     if (action.disabled) return !action.disabled(selectedUsers);
@@ -75,7 +135,7 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
   });
 
   return (
-    <>
+    <Box>
       <Toolbar
         sx={{
           pl: 2,
@@ -85,7 +145,6 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
         }}
       >
         {selectedUsers.length > 0 ? (
-          // Bulk actions toolbar when users are selected
           <>
             <Typography
               sx={{ flex: '1 1 100%' }}
@@ -144,16 +203,24 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
             )}
           </>
         ) : (
-          // Normal toolbar with search and filters
           <>
-            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                flexWrap: 'wrap',
+                rowGap: 1.5,
+              }}
+            >
               <TextField
                 size="small"
                 placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
                 onKeyPress={handleSearchKeyPress}
-                sx={{ minWidth: 250 }}
+                sx={{ minWidth: 200, maxWidth: 250 }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -185,12 +252,87 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
                   />
                 }
                 label="With roles only"
-                sx={{ ml: 1 }}
+                sx={{ ml: 0 }}
               />
+
+              {enableAdvancedFilters && filter && onFilterChange && (
+                <>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+                  <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <InputLabel>Field</InputLabel>
+                    <Select
+                      value={filter.filterField}
+                      onChange={(e) =>
+                        handleFieldChange(e.target.value as ContactFilterFieldType | '')
+                      }
+                      label="Field"
+                      disabled={loading}
+                    >
+                      <MenuItem value="">
+                        <em>Select</em>
+                      </MenuItem>
+                      {FILTER_FIELDS.map((field) => (
+                        <MenuItem key={field.value} value={field.value}>
+                          {field.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl size="small" sx={{ minWidth: 130 }} disabled={!filter.filterField}>
+                    <InputLabel>Operation</InputLabel>
+                    <Select
+                      value={filter.filterOp}
+                      onChange={(e) => handleOpChange(e.target.value as ContactFilterOpType | '')}
+                      label="Operation"
+                      disabled={loading || !filter.filterField}
+                    >
+                      <MenuItem value="">
+                        <em>Select</em>
+                      </MenuItem>
+                      {applicableOperations.map((op) => (
+                        <MenuItem key={op.value} value={op.value}>
+                          {op.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <TextField
+                    size="small"
+                    label="Value"
+                    value={filter.filterValue}
+                    onChange={(e) => handleValueChange(e.target.value)}
+                    onKeyPress={handleFilterKeyPress}
+                    disabled={loading || !filter.filterOp}
+                    sx={{ minWidth: 100, maxWidth: 140 }}
+                    type={selectedFieldType === 'number' ? 'number' : 'text'}
+                  />
+
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={onApplyFilter}
+                    disabled={loading || !canApplyFilter}
+                  >
+                    Apply
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={onClearFilter}
+                    disabled={loading || !hasActiveFilter}
+                  >
+                    Clear
+                  </Button>
+                </>
+              )}
             </Box>
 
             {canManageUsers && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
                 <Button
                   variant="outlined"
                   size="small"
@@ -205,26 +347,26 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
           </>
         )}
       </Toolbar>
-    </>
+    </Box>
   );
 };
 
-// Custom comparison function for UserTableToolbar
 const areToolbarPropsEqual = (
   prevProps: UserTableToolbarProps,
   nextProps: UserTableToolbarProps,
 ) => {
-  // Re-render only if these specific props change
   return (
     prevProps.searchTerm === nextProps.searchTerm &&
     prevProps.loading === nextProps.loading &&
     prevProps.canManageUsers === nextProps.canManageUsers &&
     prevProps.onlyWithRoles === nextProps.onlyWithRoles &&
-    prevProps.selectedUsers.length === nextProps.selectedUsers.length && // Compare selection count instead of array
-    prevProps.userCount === nextProps.userCount && // Compare user count directly
+    prevProps.selectedUsers.length === nextProps.selectedUsers.length &&
+    prevProps.userCount === nextProps.userCount &&
     prevProps.onSearchChange === nextProps.onSearchChange &&
     prevProps.onSearchSubmit === nextProps.onSearchSubmit &&
-    prevProps.onSearchClear === nextProps.onSearchClear
+    prevProps.onSearchClear === nextProps.onSearchClear &&
+    prevProps.hasActiveFilter === nextProps.hasActiveFilter &&
+    prevProps.filter === nextProps.filter
   );
 };
 

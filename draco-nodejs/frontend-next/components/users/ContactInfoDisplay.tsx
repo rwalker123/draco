@@ -2,7 +2,12 @@
 
 import React from 'react';
 import { Stack, Typography, Card, CardContent, Divider, Chip, Box } from '@mui/material';
-import { Person as PersonIcon, Email as EmailIcon, Cake as CakeIcon } from '@mui/icons-material';
+import {
+  Person as PersonIcon,
+  Email as EmailIcon,
+  Cake as CakeIcon,
+  SportsBaseball as SportsBaseballIcon,
+} from '@mui/icons-material';
 import { ContactDetailsType } from '@draco/shared-schemas';
 import { formatDateOfBirth } from '../../utils/dateUtils';
 import { getFullName } from '../../utils/contactUtils';
@@ -97,6 +102,14 @@ const ContactInfoDisplay: React.FC<ContactInfoDisplayProps> = ({
                 sx={{ mr: 0.5, mb: 0.5 }}
               />
             )}
+            {contactDetails?.firstYear && (
+              <Chip
+                label={`⚾ First Year: ${contactDetails.firstYear}`}
+                size="small"
+                variant="outlined"
+                sx={{ mr: 0.5, mb: 0.5 }}
+              />
+            )}
           </Box>
         )}
       </Stack>
@@ -151,6 +164,16 @@ const ContactInfoDisplay: React.FC<ContactInfoDisplayProps> = ({
                     <Typography variant="body2">
                       <strong>Date of Birth:</strong>{' '}
                       {formatDateOfBirth(contactDetails.dateOfBirth)}
+                    </Typography>
+                  </Stack>
+                )}
+
+                {/* First Year */}
+                {contactDetails?.firstYear && (
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <SportsBaseballIcon color="action" fontSize="small" />
+                    <Typography variant="body2">
+                      <strong>First Year:</strong> {contactDetails.firstYear}
                     </Typography>
                   </Stack>
                 )}

@@ -59,6 +59,7 @@ export const ContactDetailsSchema = z.object({
   state: z.string().trim().max(50).nullable().default(''),
   zip: z.string().trim().max(10).nullable().default(''),
   dateOfBirth: z.string().trim().nullable().default(''),
+  firstYear: z.number().nullable().optional(),
 });
 
 // Canonical base Contact interface - single source of truth for Contact structure
@@ -264,6 +265,28 @@ export const RoleCheckResponseSchema = z.object({
   context: z.string().optional(),
 });
 
+// Filter field options for advanced contact filtering
+export const ContactFilterFieldSchema = z.enum([
+  'lastName',
+  'firstName',
+  'firstYear',
+  'birthYear',
+  'zip',
+]);
+
+// Filter operations for advanced contact filtering
+export const ContactFilterOpSchema = z.enum([
+  'startsWith',
+  'endsWith',
+  'equals',
+  'notEquals',
+  'greaterThan',
+  'greaterThanOrEqual',
+  'lessThan',
+  'lessThanOrEqual',
+  'contains',
+]);
+
 export const ContactSearchParamsSchema = z.object({
   q: z.string().trim().max(100).optional(),
   includeRoles: booleanQueryParam.optional().default(false),
@@ -277,6 +300,10 @@ export const ContactSearchParamsSchema = z.object({
   limit: z.coerce.number().min(1).max(100).default(50),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
+  // Advanced filter params
+  filterField: ContactFilterFieldSchema.optional(),
+  filterOp: ContactFilterOpSchema.optional(),
+  filterValue: z.string().trim().max(100).optional(),
 });
 
 export type NamedContactType = z.infer<typeof NamedContactSchema>;
@@ -301,6 +328,8 @@ export type SignInUserNameType = z.infer<typeof SignInUserNameSchema>;
 export type SignInCredentialsType = z.infer<typeof SignInCredentialsSchema>;
 export type RegisteredUserType = z.infer<typeof RegisteredUserSchema>;
 export type ContactSearchParamsType = z.infer<typeof ContactSearchParamsSchema>;
+export type ContactFilterFieldType = z.infer<typeof ContactFilterFieldSchema>;
+export type ContactFilterOpType = z.infer<typeof ContactFilterOpSchema>;
 export type RegisteredUserWithRolesType = z.infer<typeof RegisteredUserWithRolesSchema>;
 export type ContactWithContactRolesType = z.infer<typeof ContactWithContactRolesSchema>;
 export type VerifyTokenRequestType = z.infer<typeof VerifyTokenRequestSchema>;

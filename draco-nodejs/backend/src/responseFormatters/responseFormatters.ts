@@ -46,6 +46,7 @@ export class ContactResponseFormatter {
         state: contact.state || '',
         zip: contact.zip || '',
         dateOfBirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
+        firstYear: null, // Not available without roster join
       },
     };
     return contactEntry;
@@ -134,6 +135,7 @@ export class ContactResponseFormatter {
             state: contactRow.state || '',
             zip: contactRow.zip || '',
             dateOfBirth: DateUtils.formatDateOfBirthForResponse(contactRow.dateofbirth),
+            firstYear: contactRow.firstyear ?? null,
           };
         }
 
@@ -163,12 +165,10 @@ export class ContactResponseFormatter {
       }
     }
 
-    // Convert map to array and sort
-    const allContacts = Array.from(contactMap.values()).sort((a, b) => {
-      const lastNameCompare = a.lastName.localeCompare(b.lastName);
-      if (lastNameCompare !== 0) return lastNameCompare;
-      return a.firstName.localeCompare(b.firstName);
-    });
+    // Convert map to array - preserve insertion order from SQL query
+    // The SQL query already applies the requested sort order, and JavaScript Maps
+    // maintain insertion order, so we don't need to re-sort here
+    const allContacts = Array.from(contactMap.values());
 
     // Handle pagination with efficient hasNext approach
     if (pagination) {
@@ -224,6 +224,7 @@ export class ContactResponseFormatter {
           state: contact.state || '',
           zip: contact.zip || '',
           dateOfBirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
+          firstYear: null, // Not available in simple contact query - would require roster join
         },
       }),
     }));

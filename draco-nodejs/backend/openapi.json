@@ -153,6 +153,10 @@
                         "type": "string",
                         "nullable": true,
                         "default": ""
+                      },
+                      "firstYear": {
+                        "type": "number",
+                        "nullable": true
                       }
                     }
                   }
@@ -275,6 +279,10 @@
                     "type": "string",
                     "nullable": true,
                     "default": ""
+                  },
+                  "firstYear": {
+                    "type": "number",
+                    "nullable": true
                   }
                 }
               }
@@ -400,6 +408,10 @@
                             "type": "string",
                             "nullable": true,
                             "default": ""
+                          },
+                          "firstYear": {
+                            "type": "number",
+                            "nullable": true
                           }
                         }
                       },
@@ -538,6 +550,10 @@
                 "type": "string",
                 "nullable": true,
                 "default": ""
+              },
+              "firstYear": {
+                "type": "number",
+                "nullable": true
               }
             }
           },
@@ -670,6 +686,10 @@
                 "type": "string",
                 "nullable": true,
                 "default": ""
+              },
+              "firstYear": {
+                "type": "number",
+                "nullable": true
               }
             }
           }
@@ -790,6 +810,10 @@
                 "type": "string",
                 "nullable": true,
                 "default": ""
+              },
+              "firstYear": {
+                "type": "number",
+                "nullable": true
               }
             }
           },
@@ -1278,6 +1302,10 @@
                 "type": "string",
                 "nullable": true,
                 "default": ""
+              },
+              "firstYear": {
+                "type": "number",
+                "nullable": true
               }
             }
           },
@@ -1410,6 +1438,10 @@
                     "type": "string",
                     "nullable": true,
                     "default": ""
+                  },
+                  "firstYear": {
+                    "type": "number",
+                    "nullable": true
                   }
                 }
               }
@@ -1585,6 +1617,10 @@
                     "type": "string",
                     "nullable": true,
                     "default": ""
+                  },
+                  "firstYear": {
+                    "type": "number",
+                    "nullable": true
                   }
                 }
               }
@@ -1995,6 +2031,10 @@
                     "type": "string",
                     "nullable": true,
                     "default": ""
+                  },
+                  "firstYear": {
+                    "type": "number",
+                    "nullable": true
                   }
                 }
               }
@@ -2460,6 +2500,10 @@
                     "type": "string",
                     "nullable": true,
                     "default": ""
+                  },
+                  "firstYear": {
+                    "type": "number",
+                    "nullable": true
                   }
                 }
               }
@@ -2625,6 +2669,10 @@
                               "type": "string",
                               "nullable": true,
                               "default": ""
+                            },
+                            "firstYear": {
+                              "type": "number",
+                              "nullable": true
                             }
                           }
                         }
@@ -3202,6 +3250,10 @@
                 "type": "string",
                 "nullable": true,
                 "default": ""
+              },
+              "firstYear": {
+                "type": "number",
+                "nullable": true
               }
             }
           },
@@ -4075,6 +4127,10 @@
                       "type": "string",
                       "nullable": true,
                       "default": ""
+                    },
+                    "firstYear": {
+                      "type": "number",
+                      "nullable": true
                     }
                   }
                 }
@@ -4234,6 +4290,10 @@
                 "type": "string",
                 "nullable": true,
                 "default": ""
+              },
+              "firstYear": {
+                "type": "number",
+                "nullable": true
               }
             }
           }
@@ -4331,6 +4391,10 @@
                       "type": "string",
                       "nullable": true,
                       "default": ""
+                    },
+                    "firstYear": {
+                      "type": "number",
+                      "nullable": true
                     }
                   }
                 }
@@ -4617,6 +4681,10 @@
                             "type": "string",
                             "nullable": true,
                             "default": ""
+                          },
+                          "firstYear": {
+                            "type": "number",
+                            "nullable": true
                           }
                         }
                       }
@@ -4929,6 +4997,10 @@
                                 "type": "string",
                                 "nullable": true,
                                 "default": ""
+                              },
+                              "firstYear": {
+                                "type": "number",
+                                "nullable": true
                               }
                             }
                           }
@@ -5174,6 +5246,10 @@
                     "type": "string",
                     "nullable": true,
                     "default": ""
+                  },
+                  "firstYear": {
+                    "type": "number",
+                    "nullable": true
                   }
                 }
               }
@@ -5267,6 +5343,10 @@
                       "type": "string",
                       "nullable": true,
                       "default": ""
+                    },
+                    "firstYear": {
+                      "type": "number",
+                      "nullable": true
                     }
                   }
                 },
@@ -5561,6 +5641,10 @@
                     "type": "string",
                     "nullable": true,
                     "default": ""
+                  },
+                  "firstYear": {
+                    "type": "number",
+                    "nullable": true
                   }
                 }
               }
@@ -5836,6 +5920,10 @@
                                 "type": "string",
                                 "nullable": true,
                                 "default": ""
+                              },
+                              "firstYear": {
+                                "type": "number",
+                                "nullable": true
                               }
                             }
                           }
@@ -6133,6 +6221,10 @@
                                 "type": "string",
                                 "nullable": true,
                                 "default": ""
+                              },
+                              "firstYear": {
+                                "type": "number",
+                                "nullable": true
                               }
                             }
                           }
@@ -9663,6 +9755,34 @@
               "desc"
             ],
             "default": "asc"
+          },
+          "filterField": {
+            "type": "string",
+            "enum": [
+              "lastName",
+              "firstName",
+              "firstYear",
+              "birthYear",
+              "zip"
+            ]
+          },
+          "filterOp": {
+            "type": "string",
+            "enum": [
+              "startsWith",
+              "endsWith",
+              "equals",
+              "notEquals",
+              "greaterThan",
+              "greaterThanOrEqual",
+              "lessThan",
+              "lessThanOrEqual",
+              "contains"
+            ]
+          },
+          "filterValue": {
+            "type": "string",
+            "maxLength": 100
           }
         }
       },
@@ -24286,6 +24406,10 @@
                 "type": "string",
                 "nullable": true,
                 "default": ""
+              },
+              "firstYear": {
+                "type": "number",
+                "nullable": true
               }
             }
           },
@@ -32184,6 +32308,10 @@
                             "type": "string",
                             "nullable": true,
                             "default": ""
+                          },
+                          "firstYear": {
+                            "type": "number",
+                            "nullable": true
                           }
                         }
                       }
@@ -41844,6 +41972,49 @@
             "required": false,
             "name": "sortOrder",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "lastName",
+                "firstName",
+                "firstYear",
+                "birthYear",
+                "zip"
+              ]
+            },
+            "required": false,
+            "name": "filterField",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "startsWith",
+                "endsWith",
+                "equals",
+                "notEquals",
+                "greaterThan",
+                "greaterThanOrEqual",
+                "lessThan",
+                "lessThanOrEqual",
+                "contains"
+              ]
+            },
+            "required": false,
+            "name": "filterOp",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "filterValue",
+            "in": "query"
           }
         ],
         "responses": {
@@ -41962,6 +42133,10 @@
                         "type": "string",
                         "nullable": true,
                         "default": ""
+                      },
+                      "firstYear": {
+                        "type": "number",
+                        "nullable": true
                       }
                     }
                   },
@@ -42042,6 +42217,10 @@
                         "type": "string",
                         "nullable": true,
                         "default": ""
+                      },
+                      "firstYear": {
+                        "type": "number",
+                        "nullable": true
                       }
                     }
                   },
@@ -42312,6 +42491,10 @@
                         "type": "string",
                         "nullable": true,
                         "default": ""
+                      },
+                      "firstYear": {
+                        "type": "number",
+                        "nullable": true
                       }
                     }
                   },
@@ -42392,6 +42575,10 @@
                         "type": "string",
                         "nullable": true,
                         "default": ""
+                      },
+                      "firstYear": {
+                        "type": "number",
+                        "nullable": true
                       }
                     }
                   },

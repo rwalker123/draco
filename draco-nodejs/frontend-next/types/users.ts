@@ -12,6 +12,7 @@ import {
   TeamSeasonType,
   LeagueSeasonWithDivisionTeamsType,
 } from '@draco/shared-schemas';
+import { UserFilterState, UserSortState } from './userFilters';
 
 // Contact dependency types
 export interface ContactDependency {
@@ -198,6 +199,13 @@ export interface UseUserManagementReturn {
   isPaginating: boolean;
   currentSeasonId: string | null;
 
+  // Advanced filter state
+  filter: UserFilterState;
+  hasActiveFilter: boolean;
+
+  // Sort state
+  sort: UserSortState;
+
   // Dialog states
   deleteContactDialogOpen: boolean;
   selectedUser: ContactType | null;
@@ -239,4 +247,12 @@ export interface UseUserManagementReturn {
   handleRegistrationRevoked: (contactId: string) => void;
   handleRegistrationLinked: (contactId: string, userId: string) => void;
   handleContactDeleted: (contactId: string) => void;
+
+  // Advanced filter actions
+  handleFilterChange: (filter: UserFilterState) => void;
+  handleApplyFilter: () => Promise<void>;
+  handleClearFilter: () => Promise<void>;
+
+  // Sort actions
+  handleSortChange: (sort: UserSortState) => Promise<void>;
 }
