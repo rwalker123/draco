@@ -269,6 +269,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
 
   const handleExportUsers = useCallback(async () => {
     try {
+      // All three filter fields must be present (non-empty) for a valid filter
+      const hasCompleteFilter =
+        hasActiveFilter && filter.filterField && filter.filterOp && filter.filterValue;
+
       const result = await exportContacts({
         client: apiClient,
         path: { accountId },
@@ -276,9 +280,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
           searchTerm: isShowingSearchResults ? searchTerm : undefined,
           onlyWithRoles: onlyWithRoles ? 'true' : undefined,
           seasonId: currentSeasonId || undefined,
-          filterField: hasActiveFilter && filter.filterField ? filter.filterField : undefined,
-          filterOp: hasActiveFilter && filter.filterOp ? filter.filterOp : undefined,
-          filterValue: hasActiveFilter && filter.filterValue ? filter.filterValue : undefined,
+          // Only include filter params when all three are non-empty strings
+          // The || undefined converts empty string to undefined for type safety
+          filterField: hasCompleteFilter ? filter.filterField || undefined : undefined,
+          filterOp: hasCompleteFilter ? filter.filterOp || undefined : undefined,
+          filterValue: hasCompleteFilter ? filter.filterValue : undefined,
         },
         throwOnError: false,
         parseAs: 'blob',

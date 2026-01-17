@@ -21,6 +21,8 @@ import {
   ContactValidationSchema,
   PublicContactSearchQuerySchema,
   PublicContactSummaryType,
+  ContactFilterFieldSchema,
+  ContactFilterOpSchema,
   ContactFilterFieldType,
   ContactFilterOpType,
 } from '@draco/shared-schemas';
@@ -379,16 +381,27 @@ router.get(
     const account = await accountsService.getAccountName(accountId);
     const parsedSeasonId = typeof seasonId === 'string' && seasonId ? BigInt(seasonId) : undefined;
 
-    const advancedFilter =
+    // Validate filter params using Zod schemas at the boundary
+    let advancedFilter:
+      | { filterField: ContactFilterFieldType; filterOp: ContactFilterOpType; filterValue: string }
+      | undefined;
+
+    if (
       typeof filterField === 'string' &&
       typeof filterOp === 'string' &&
       typeof filterValue === 'string'
-        ? {
-            filterField: filterField as ContactFilterFieldType,
-            filterOp: filterOp as ContactFilterOpType,
-            filterValue,
-          }
-        : undefined;
+    ) {
+      const parsedField = ContactFilterFieldSchema.safeParse(filterField);
+      const parsedOp = ContactFilterOpSchema.safeParse(filterOp);
+
+      if (parsedField.success && parsedOp.success) {
+        advancedFilter = {
+          filterField: parsedField.data,
+          filterOp: parsedOp.data,
+          filterValue: filterValue.substring(0, 100),
+        };
+      }
+    }
 
     const result = await csvExportService.exportContacts(accountId, account.name, {
       searchTerm: typeof searchTerm === 'string' ? searchTerm : undefined,
