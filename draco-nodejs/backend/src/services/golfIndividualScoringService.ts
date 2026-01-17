@@ -92,26 +92,17 @@ export class GolfIndividualScoringService {
 
     indexedHoles.sort((a, b) => a.handicapIndex - b.handicapIndex);
 
-    let strokesRemaining = strokeDiff;
-    let pass = 0;
+    if (indexedHoles.length === 0) {
+      return { team1Strokes, team2Strokes };
+    }
 
-    while (strokesRemaining > 0) {
-      for (const { holeIndex } of indexedHoles) {
-        if (strokesRemaining <= 0) break;
-
-        if (team1GetsStrokes) {
-          if (team1Strokes[holeIndex] === pass) {
-            team1Strokes[holeIndex]++;
-            strokesRemaining--;
-          }
-        } else {
-          if (team2Strokes[holeIndex] === pass) {
-            team2Strokes[holeIndex]++;
-            strokesRemaining--;
-          }
-        }
+    for (let i = 0; i < strokeDiff; i++) {
+      const { holeIndex } = indexedHoles[i % indexedHoles.length];
+      if (team1GetsStrokes) {
+        team1Strokes[holeIndex]++;
+      } else {
+        team2Strokes[holeIndex]++;
       }
-      pass++;
     }
 
     return { team1Strokes, team2Strokes };
