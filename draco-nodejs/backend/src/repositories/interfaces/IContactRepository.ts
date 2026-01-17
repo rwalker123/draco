@@ -8,12 +8,13 @@ import {
   dbBirthdayContact,
   dbContactExportData,
 } from '../types/dbTypes.js';
-import { ContactQueryOptions } from '../../interfaces/contactInterfaces.js';
+import { ContactQueryOptions, AdvancedFilterOptions } from '../../interfaces/contactInterfaces.js';
 
 export interface ContactExportOptions {
   searchTerm?: string;
   onlyWithRoles?: boolean;
   seasonId?: bigint;
+  advancedFilter?: AdvancedFilterOptions;
 }
 
 export interface ActiveRosterContactFilters {

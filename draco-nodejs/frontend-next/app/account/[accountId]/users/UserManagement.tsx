@@ -276,6 +276,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
           searchTerm: isShowingSearchResults ? searchTerm : undefined,
           onlyWithRoles: onlyWithRoles ? 'true' : undefined,
           seasonId: currentSeasonId || undefined,
+          filterField: hasActiveFilter && filter.filterField ? filter.filterField : undefined,
+          filterOp: hasActiveFilter && filter.filterOp ? filter.filterOp : undefined,
+          filterValue: hasActiveFilter && filter.filterValue ? filter.filterValue : undefined,
         },
         throwOnError: false,
         parseAs: 'blob',
@@ -297,6 +300,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     onlyWithRoles,
     currentSeasonId,
     setFeedback,
+    hasActiveFilter,
+    filter,
   ]);
 
   return (

@@ -21,6 +21,8 @@ import {
   ContactValidationSchema,
   PublicContactSearchQuerySchema,
   PublicContactSummaryType,
+  ContactFilterFieldType,
+  ContactFilterOpType,
 } from '@draco/shared-schemas';
 import {
   handlePhotoUploadMiddleware,
@@ -361,6 +363,9 @@ router.get(
  *   - searchTerm: Optional search term to filter contacts
  *   - onlyWithRoles: If true, only export contacts that have roles
  *   - seasonId: Optional season ID to scope role filtering (required when onlyWithRoles is true)
+ *   - filterField: Optional field to filter contacts by
+ *   - filterOp: Optional filter operation to apply
+ *   - filterValue: Optional value to filter by
  */
 router.get(
   '/:accountId/contacts/export',
@@ -369,15 +374,27 @@ router.get(
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { searchTerm, onlyWithRoles, seasonId } = req.query;
+    const { searchTerm, onlyWithRoles, seasonId, filterField, filterOp, filterValue } = req.query;
 
     const account = await accountsService.getAccountName(accountId);
     const parsedSeasonId = typeof seasonId === 'string' && seasonId ? BigInt(seasonId) : undefined;
+
+    const advancedFilter =
+      typeof filterField === 'string' &&
+      typeof filterOp === 'string' &&
+      typeof filterValue === 'string'
+        ? {
+            filterField: filterField as ContactFilterFieldType,
+            filterOp: filterOp as ContactFilterOpType,
+            filterValue,
+          }
+        : undefined;
 
     const result = await csvExportService.exportContacts(accountId, account.name, {
       searchTerm: typeof searchTerm === 'string' ? searchTerm : undefined,
       onlyWithRoles: onlyWithRoles === 'true',
       seasonId: parsedSeasonId,
+      advancedFilter,
     });
 
     res.setHeader('Content-Type', 'text/csv');
