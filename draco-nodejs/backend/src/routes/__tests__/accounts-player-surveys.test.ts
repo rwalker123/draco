@@ -27,7 +27,7 @@ const createRouteProtectionMock = () => {
   const passThrough = () => (_req: Request, _res: Response, next: NextFunction) => next();
 
   const enforceAccountBoundary = () => (req: Request, _res: Response, next: NextFunction) => {
-    const accountId = req.params.accountId ? BigInt(req.params.accountId) : 1n;
+    const accountId = req.params.accountId ? BigInt(req.params.accountId as string) : 1n;
     const contactId = BigInt(contactBoundaryId);
     req.accountBoundary = {
       accountId,

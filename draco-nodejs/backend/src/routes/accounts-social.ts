@@ -11,7 +11,11 @@ import {
 import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { extractSeasonParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import {
+  extractSeasonParams,
+  extractBigIntParams,
+  getStringParam,
+} from '../utils/paramExtraction.js';
 import { AuthenticationError } from '../utils/customErrors.js';
 
 const router = Router({ mergeParams: true });
@@ -53,7 +57,7 @@ router.delete(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
-    const { feedItemId } = req.params;
+    const feedItemId = getStringParam(req.params.feedItemId)!;
     await socialHubService.deleteFeedItem(accountId, seasonId, feedItemId);
     res.status(204).send();
   }),
@@ -66,7 +70,7 @@ router.post(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
-    const { feedItemId } = req.params;
+    const feedItemId = getStringParam(req.params.feedItemId)!;
     await socialHubService.restoreFeedItem(accountId, seasonId, feedItemId);
     res.status(204).send();
   }),

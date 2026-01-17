@@ -9,6 +9,7 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
 import { SignInCredentialsSchema } from '@draco/shared-schemas';
+import { getStringParam } from '../utils/paramExtraction.js';
 
 const router = Router();
 const authService = ServiceFactory.getAuthService();
@@ -155,7 +156,7 @@ router.get(
       throw new AuthenticationError('User not authenticated');
     }
 
-    const { roleId } = req.params;
+    const roleId = getStringParam(req.params.roleId)!;
     const { accountId, teamId, leagueId } = req.query;
 
     const context = {

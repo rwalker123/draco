@@ -9,6 +9,7 @@ import {
   extractBigIntParams,
   extractLeagueSeasonParams,
   extractSeasonParams,
+  getStringParam,
 } from '../utils/paramExtraction.js';
 import { ValidationError } from '../utils/customErrors.js';
 import { LeagueSeasonQueryParamsSchema, UpsertDivisionSeasonSchema } from '@draco/shared-schemas';
@@ -131,7 +132,9 @@ router.get(
   '/:leagueSeasonId/games',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, leagueSeasonId } = extractLeagueSeasonParams(req.params);
-    const { startDate, endDate, teamId } = req.query as Record<string, string | undefined>;
+    const startDate = getStringParam(req.query.startDate);
+    const endDate = getStringParam(req.query.endDate);
+    const teamId = getStringParam(req.query.teamId);
 
     const options: {
       startDate?: Date;

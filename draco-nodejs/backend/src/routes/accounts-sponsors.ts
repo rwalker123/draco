@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { extractAccountParams } from '../utils/paramExtraction.js';
+import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import { CreateSponsorSchema, CreateSponsorType } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { logoUploadMiddleware } from '../middleware/logoUpload.js';
@@ -24,7 +24,7 @@ router.get(
   '/:accountId/sponsors/:sponsorId',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const sponsorId = BigInt(req.params.sponsorId);
+    const { sponsorId } = extractBigIntParams(req.params, 'sponsorId');
     const sponsor = await sponsorService.getSponsor(accountId, sponsorId);
     res.json(sponsor);
   }),
@@ -61,7 +61,7 @@ router.put(
   logoUploadMiddleware('photo'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const sponsorId = BigInt(req.params.sponsorId);
+    const { sponsorId } = extractBigIntParams(req.params, 'sponsorId');
     const hasBodyData = req.body && Object.keys(req.body).length > 0;
 
     if (hasBodyData) {
@@ -89,7 +89,7 @@ router.delete(
   routeProtection.requirePermission('account.sponsors.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const sponsorId = BigInt(req.params.sponsorId);
+    const { sponsorId } = extractBigIntParams(req.params, 'sponsorId');
 
     await sponsorService.deleteSponsor(accountId, sponsorId);
 

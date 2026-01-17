@@ -8,6 +8,7 @@ import {
   extractGameParams,
   extractRecapParams,
   extractSeasonParams,
+  ParamsObject,
 } from '../utils/paramExtraction.js';
 import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
 import {
@@ -20,7 +21,7 @@ const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const scheduleService = ServiceFactory.getScheduleService();
 
-const parseSeasonParams = (params: Record<string, string | undefined>) => {
+const parseSeasonParams = (params: ParamsObject) => {
   try {
     return extractSeasonParams(params);
   } catch {
@@ -28,7 +29,7 @@ const parseSeasonParams = (params: Record<string, string | undefined>) => {
   }
 };
 
-const parseGameParams = (params: Record<string, string | undefined>) => {
+const parseGameParams = (params: ParamsObject) => {
   try {
     return extractGameParams(params);
   } catch {
@@ -36,7 +37,7 @@ const parseGameParams = (params: Record<string, string | undefined>) => {
   }
 };
 
-const parseGameOnlyParams = (params: Record<string, string | undefined>) => {
+const parseGameOnlyParams = (params: ParamsObject) => {
   try {
     return extractGameOnlyParams(params);
   } catch {

@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { extractAccountParams } from '../utils/paramExtraction.js';
+import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import {
   CreateMemberBusinessSchema,
   CreateMemberBusinessType,
@@ -25,11 +25,8 @@ const routeProtection = ServiceFactory.getRouteProtection();
 const contactService = ServiceFactory.getContactService();
 
 const parseMemberBusinessId = (req: Request): bigint => {
-  try {
-    return BigInt(req.params.memberBusinessId);
-  } catch (_error) {
-    throw new ValidationError('memberBusinessId must be a valid identifier');
-  }
+  const { memberBusinessId } = extractBigIntParams(req.params, 'memberBusinessId');
+  return memberBusinessId;
 };
 
 const parseOptionalContactId = (contactId?: string) => {

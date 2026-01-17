@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { extractBigIntParams } from '../utils/paramExtraction.js';
+import { extractBigIntParams, getStringParam } from '../utils/paramExtraction.js';
 import {
   CreateGolfMatchSchema,
   UpdateGolfMatchSchema,
@@ -58,7 +58,7 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { seasonId } = extractBigIntParams(req.params, 'seasonId');
-    const { date } = req.params;
+    const date = getStringParam(req.params.date) || '';
     const matches = await golfMatchService.getMatchesByDate(seasonId, date);
     res.json(matches);
   }),

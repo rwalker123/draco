@@ -3,6 +3,7 @@ import { createStorageService } from '../services/storageService.js';
 import { validateLogoFile, getLogoUrl } from '../config/logo.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
+import { extractTeamParams } from '../utils/paramExtraction.js';
 
 const router = Router({ mergeParams: true });
 const storageService = createStorageService();
@@ -15,21 +16,19 @@ const teamService = ServiceFactory.getTeamService();
 router.get(
   '/:teamSeasonId/logo',
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    const accountId = req.params.accountId;
-    const seasonId = req.params.seasonId;
-    const teamSeasonId = req.params.teamSeasonId;
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
     // First, get the team season to find the teamId
     const teamSeason = await teamService.validateTeamSeasonWithTeamDetails(
-      BigInt(teamSeasonId),
-      BigInt(seasonId),
-      BigInt(accountId),
+      teamSeasonId,
+      seasonId,
+      accountId,
     );
 
     const teamId = teamSeason.teamid.toString();
 
     // Get the logo from storage service using teamId
-    const logoBuffer = await storageService.getLogo(accountId, teamId);
+    const logoBuffer = await storageService.getLogo(accountId.toString(), teamId);
 
     if (!logoBuffer) {
       res.status(404).json({

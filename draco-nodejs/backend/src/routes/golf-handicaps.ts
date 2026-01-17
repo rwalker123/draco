@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { extractBigIntParams } from '../utils/paramExtraction.js';
+import { extractBigIntParams, getStringParam } from '../utils/paramExtraction.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { BatchCourseHandicapRequestSchema } from '@draco/shared-schemas';
 import { ValidationError } from '../utils/customErrors.js';
@@ -58,7 +58,7 @@ router.get(
   '/esc/:courseHandicap',
   authenticateToken,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const courseHandicap = parseInt(req.params.courseHandicap, 10);
+    const courseHandicap = parseInt(getStringParam(req.params.courseHandicap) || '', 10);
     const maxScore = golfHandicapService.calculateESCMaxScore(courseHandicap);
     res.json({ courseHandicap, maxScore });
   }),

@@ -9,6 +9,7 @@ import { ValidationError, NotFoundError } from '../utils/customErrors.js';
 import { validateLogoFile, getAccountLogoUrl } from '../config/logo.js';
 import { createStorageService } from '../services/storageService.js';
 import { logoUploadMiddleware } from '../middleware/logoUpload.js';
+import { getStringParam } from '../utils/paramExtraction.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -28,7 +29,7 @@ router.post(
   routeProtection.requirePermission('account.manage'),
   logoUploadMiddleware(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = req.params.accountId;
+    const accountId = getStringParam(req.params.accountId)!;
     if (!req.file) {
       throw new ValidationError('No file uploaded');
     }
@@ -51,7 +52,7 @@ router.post(
 router.get(
   '/:accountId/logo',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = req.params.accountId;
+    const accountId = getStringParam(req.params.accountId)!;
     const logoBuffer = await storageService.getAccountLogo(accountId);
     if (!logoBuffer) {
       throw new NotFoundError('Account logo not found');
@@ -76,7 +77,7 @@ router.delete(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = req.params.accountId;
+    const accountId = getStringParam(req.params.accountId)!;
     await storageService.deleteAccountLogo(accountId);
     res.json(true);
   }),

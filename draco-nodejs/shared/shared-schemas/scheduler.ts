@@ -75,53 +75,55 @@ const hhmmSchema = z
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be formatted as HH:mm')
   .openapi({ example: '18:30' });
 
-export const SchedulerFieldAvailabilityRuleSchema = z
-  .object({
-    id: schedulerIdSchema,
-    seasonId: schedulerIdSchema,
-    fieldId: schedulerIdSchema,
-    startDate: isoDateSchema
-      .optional()
-      .openapi({ description: 'Optional. When omitted, treated as season start date.' }),
-    endDate: isoDateSchema
-      .optional()
-      .openapi({ description: 'Optional. When omitted, treated as season end date.' }),
-    /**
-     * Bitmask for days of week where bit 0 = Monday ... bit 6 = Sunday.
-     * Example: Monday+Wednesday+Friday = 0b0010101 = 21.
-     */
-    daysOfWeekMask: z.number().int().min(1).max(127).openapi({
-      example: 21,
-      description: 'Bitmask for days of week where bit 0=Mon ... bit 6=Sun.',
-    }),
-    startTimeLocal: hhmmSchema,
-    endTimeLocal: hhmmSchema,
-    enabled: z.boolean(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.startDate && data.endDate && data.startDate > data.endDate) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['startDate'],
-        message: 'startDate must be on or before endDate',
-      });
-    }
+const SchedulerFieldAvailabilityRuleBaseSchema = z.object({
+  id: schedulerIdSchema,
+  seasonId: schedulerIdSchema,
+  fieldId: schedulerIdSchema,
+  startDate: isoDateSchema
+    .optional()
+    .openapi({ description: 'Optional. When omitted, treated as season start date.' }),
+  endDate: isoDateSchema
+    .optional()
+    .openapi({ description: 'Optional. When omitted, treated as season end date.' }),
+  daysOfWeekMask: z.number().int().min(1).max(127).openapi({
+    example: 21,
+    description: 'Bitmask for days of week where bit 0=Mon ... bit 6=Sun.',
+  }),
+  startTimeLocal: hhmmSchema,
+  endTimeLocal: hhmmSchema,
+  enabled: z.boolean(),
+});
 
-    if (data.startTimeLocal >= data.endTimeLocal) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['startTimeLocal'],
-        message: 'startTimeLocal must be before endTimeLocal',
-      });
-    }
-  })
-  .openapi({ title: 'SchedulerFieldAvailabilityRule' });
+const fieldAvailabilityRuleRefinement = (
+  data: { startDate?: string; endDate?: string; startTimeLocal: string; endTimeLocal: string },
+  ctx: z.RefinementCtx,
+) => {
+  if (data.startDate && data.endDate && data.startDate > data.endDate) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['startDate'],
+      message: 'startDate must be on or before endDate',
+    });
+  }
 
-export const SchedulerFieldAvailabilityRuleUpsertSchema = SchedulerFieldAvailabilityRuleSchema.omit(
-  {
-    id: true,
-  },
-).openapi({ title: 'SchedulerFieldAvailabilityRuleUpsert' });
+  if (data.startTimeLocal >= data.endTimeLocal) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['startTimeLocal'],
+      message: 'startTimeLocal must be before endTimeLocal',
+    });
+  }
+};
+
+export const SchedulerFieldAvailabilityRuleSchema =
+  SchedulerFieldAvailabilityRuleBaseSchema.superRefine(fieldAvailabilityRuleRefinement).openapi({
+    title: 'SchedulerFieldAvailabilityRule',
+  });
+
+export const SchedulerFieldAvailabilityRuleUpsertSchema =
+  SchedulerFieldAvailabilityRuleBaseSchema.omit({ id: true })
+    .superRefine(fieldAvailabilityRuleRefinement)
+    .openapi({ title: 'SchedulerFieldAvailabilityRuleUpsert' });
 
 export const SchedulerFieldAvailabilityRulesSchema = z
   .object({
@@ -197,33 +199,41 @@ export const SchedulerSeasonWindowConfigUpsertSchema = SchedulerSeasonWindowConf
   title: 'SchedulerSeasonWindowConfigUpsert',
 });
 
-export const SchedulerSeasonExclusionSchema = z
-  .object({
-    id: schedulerIdSchema,
-    seasonId: schedulerIdSchema,
-    startTime: isoDateTimeSchema,
-    endTime: isoDateTimeSchema,
-    note: z.string().trim().min(1).max(255).optional(),
-    enabled: z.boolean(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.startTime >= data.endTime) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['startTime'],
-        message: 'startTime must be before endTime',
-      });
-    }
-  })
-  .openapi({
-    title: 'SchedulerSeasonExclusion',
-    description:
-      'Season-level exclusion window. When enabled, games must not be scheduled within the excluded time range.',
-  });
+const SchedulerSeasonExclusionBaseSchema = z.object({
+  id: schedulerIdSchema,
+  seasonId: schedulerIdSchema,
+  startTime: isoDateTimeSchema,
+  endTime: isoDateTimeSchema,
+  note: z.string().trim().min(1).max(255).optional(),
+  enabled: z.boolean(),
+});
 
-export const SchedulerSeasonExclusionUpsertSchema = SchedulerSeasonExclusionSchema.omit({
+const seasonExclusionRefinement = (
+  data: { startTime: string; endTime: string },
+  ctx: z.RefinementCtx,
+) => {
+  if (data.startTime >= data.endTime) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['startTime'],
+      message: 'startTime must be before endTime',
+    });
+  }
+};
+
+export const SchedulerSeasonExclusionSchema = SchedulerSeasonExclusionBaseSchema.superRefine(
+  seasonExclusionRefinement,
+).openapi({
+  title: 'SchedulerSeasonExclusion',
+  description:
+    'Season-level exclusion window. When enabled, games must not be scheduled within the excluded time range.',
+});
+
+export const SchedulerSeasonExclusionUpsertSchema = SchedulerSeasonExclusionBaseSchema.omit({
   id: true,
-}).openapi({ title: 'SchedulerSeasonExclusionUpsert' });
+})
+  .superRefine(seasonExclusionRefinement)
+  .openapi({ title: 'SchedulerSeasonExclusionUpsert' });
 
 export const SchedulerSeasonExclusionsSchema = z
   .object({
@@ -231,34 +241,42 @@ export const SchedulerSeasonExclusionsSchema = z
   })
   .openapi({ title: 'SchedulerSeasonExclusions' });
 
-export const SchedulerTeamExclusionSchema = z
-  .object({
-    id: schedulerIdSchema,
-    seasonId: schedulerIdSchema,
-    teamSeasonId: schedulerIdSchema,
-    startTime: isoDateTimeSchema,
-    endTime: isoDateTimeSchema,
-    note: z.string().trim().min(1).max(255).optional(),
-    enabled: z.boolean(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.startTime >= data.endTime) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['startTime'],
-        message: 'startTime must be before endTime',
-      });
-    }
-  })
-  .openapi({
-    title: 'SchedulerTeamExclusion',
-    description:
-      'Team-season exclusion window. When enabled, the team must not be scheduled within the excluded time range.',
-  });
+const SchedulerTeamExclusionBaseSchema = z.object({
+  id: schedulerIdSchema,
+  seasonId: schedulerIdSchema,
+  teamSeasonId: schedulerIdSchema,
+  startTime: isoDateTimeSchema,
+  endTime: isoDateTimeSchema,
+  note: z.string().trim().min(1).max(255).optional(),
+  enabled: z.boolean(),
+});
 
-export const SchedulerTeamExclusionUpsertSchema = SchedulerTeamExclusionSchema.omit({
+const teamExclusionRefinement = (
+  data: { startTime: string; endTime: string },
+  ctx: z.RefinementCtx,
+) => {
+  if (data.startTime >= data.endTime) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['startTime'],
+      message: 'startTime must be before endTime',
+    });
+  }
+};
+
+export const SchedulerTeamExclusionSchema = SchedulerTeamExclusionBaseSchema.superRefine(
+  teamExclusionRefinement,
+).openapi({
+  title: 'SchedulerTeamExclusion',
+  description:
+    'Team-season exclusion window. When enabled, the team must not be scheduled within the excluded time range.',
+});
+
+export const SchedulerTeamExclusionUpsertSchema = SchedulerTeamExclusionBaseSchema.omit({
   id: true,
-}).openapi({ title: 'SchedulerTeamExclusionUpsert' });
+})
+  .superRefine(teamExclusionRefinement)
+  .openapi({ title: 'SchedulerTeamExclusionUpsert' });
 
 export const SchedulerTeamExclusionsSchema = z
   .object({
@@ -266,34 +284,42 @@ export const SchedulerTeamExclusionsSchema = z
   })
   .openapi({ title: 'SchedulerTeamExclusions' });
 
-export const SchedulerUmpireExclusionSchema = z
-  .object({
-    id: schedulerIdSchema,
-    seasonId: schedulerIdSchema,
-    umpireId: schedulerIdSchema,
-    startTime: isoDateTimeSchema,
-    endTime: isoDateTimeSchema,
-    note: z.string().trim().min(1).max(255).optional(),
-    enabled: z.boolean(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.startTime >= data.endTime) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['startTime'],
-        message: 'startTime must be before endTime',
-      });
-    }
-  })
-  .openapi({
-    title: 'SchedulerUmpireExclusion',
-    description:
-      'Umpire exclusion window. When enabled, the umpire must not be assigned within the excluded time range.',
-  });
+const SchedulerUmpireExclusionBaseSchema = z.object({
+  id: schedulerIdSchema,
+  seasonId: schedulerIdSchema,
+  umpireId: schedulerIdSchema,
+  startTime: isoDateTimeSchema,
+  endTime: isoDateTimeSchema,
+  note: z.string().trim().min(1).max(255).optional(),
+  enabled: z.boolean(),
+});
 
-export const SchedulerUmpireExclusionUpsertSchema = SchedulerUmpireExclusionSchema.omit({
+const umpireExclusionRefinement = (
+  data: { startTime: string; endTime: string },
+  ctx: z.RefinementCtx,
+) => {
+  if (data.startTime >= data.endTime) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['startTime'],
+      message: 'startTime must be before endTime',
+    });
+  }
+};
+
+export const SchedulerUmpireExclusionSchema = SchedulerUmpireExclusionBaseSchema.superRefine(
+  umpireExclusionRefinement,
+).openapi({
+  title: 'SchedulerUmpireExclusion',
+  description:
+    'Umpire exclusion window. When enabled, the umpire must not be assigned within the excluded time range.',
+});
+
+export const SchedulerUmpireExclusionUpsertSchema = SchedulerUmpireExclusionBaseSchema.omit({
   id: true,
-}).openapi({ title: 'SchedulerUmpireExclusionUpsert' });
+})
+  .superRefine(umpireExclusionRefinement)
+  .openapi({ title: 'SchedulerUmpireExclusionUpsert' });
 
 export const SchedulerUmpireExclusionsSchema = z
   .object({

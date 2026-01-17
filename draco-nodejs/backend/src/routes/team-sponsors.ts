@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { extractTeamParams } from '../utils/paramExtraction.js';
+import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import { CreateSponsorSchema, CreateSponsorType } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { logoUploadMiddleware } from '../middleware/logoUpload.js';
@@ -65,7 +65,7 @@ router.put(
   logoUploadMiddleware('photo'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
-    const sponsorId = BigInt(req.params.sponsorId);
+    const { sponsorId } = extractBigIntParams(req.params, 'sponsorId');
     const hasBodyData = req.body && Object.keys(req.body).length > 0;
 
     if (hasBodyData) {
@@ -100,7 +100,7 @@ router.delete(
   routeProtection.requirePermission('team.sponsors.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
-    const sponsorId = BigInt(req.params.sponsorId);
+    const { sponsorId } = extractBigIntParams(req.params, 'sponsorId');
 
     await sponsorService.deleteTeamSponsor(accountId, seasonId, teamSeasonId, sponsorId);
     res.status(204).send();

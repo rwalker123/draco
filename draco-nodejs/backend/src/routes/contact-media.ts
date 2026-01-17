@@ -4,6 +4,7 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { extractContactParams } from '../utils/paramExtraction.js';
 
 const router = Router({ mergeParams: true });
 const storageService = createStorageService();
@@ -17,13 +18,16 @@ const contactService = ServiceFactory.getContactService();
 router.get(
   '/:contactId/photo',
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    const { accountId, contactId } = req.params;
+    const { accountId, contactId } = extractContactParams(req.params);
 
     // Verify the contact exists and belongs to this account
-    await contactService.getContact(BigInt(accountId), BigInt(contactId));
+    await contactService.getContact(accountId, contactId);
 
     // Get the photo from storage service
-    const photoBuffer = await storageService.getContactPhoto(accountId, contactId);
+    const photoBuffer = await storageService.getContactPhoto(
+      accountId.toString(),
+      contactId.toString(),
+    );
 
     if (!photoBuffer) {
       throw new NotFoundError('Photo not found');
@@ -49,13 +53,13 @@ router.delete(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    const { accountId, contactId } = req.params;
+    const { accountId, contactId } = extractContactParams(req.params);
 
     // Verify the contact exists and belongs to this account
-    const contact = await contactService.getContact(BigInt(accountId), BigInt(contactId));
+    const contact = await contactService.getContact(accountId, contactId);
 
     // Delete the photo from storage service
-    await storageService.deleteContactPhoto(accountId, contactId);
+    await storageService.deleteContactPhoto(accountId.toString(), contactId.toString());
 
     res.json(`Photo deleted for ${contact.firstName} ${contact.lastName}`);
   }),
