@@ -668,193 +668,70 @@ export class PrismaContactRepository implements IContactRepository {
     accountId: bigint,
     options: ContactExportOptions,
   ): Promise<dbContactExportData[]> {
-    const { searchTerm, onlyWithRoles, seasonId } = options;
+    const { searchTerm, onlyWithRoles, seasonId, advancedFilter } = options;
 
-    // When filtering by roles with a seasonId, we need to use raw SQL to properly
-    // validate that roles are for the current season (team/league roles are season-scoped)
-    if (onlyWithRoles && seasonId) {
-      return this.findContactsForExportWithSeasonRoles(accountId, seasonId, searchTerm);
-    }
-
-    // Simple case: no season filtering needed
-    const whereClause: Prisma.contactsWhereInput = {
-      creatoraccountid: accountId,
-      ...(searchTerm
-        ? {
-            OR: [
-              { firstname: { contains: searchTerm, mode: 'insensitive' } },
-              { lastname: { contains: searchTerm, mode: 'insensitive' } },
-              { email: { contains: searchTerm, mode: 'insensitive' } },
-            ],
-          }
-        : {}),
-      ...(onlyWithRoles
-        ? {
-            contactroles: {
-              some: {
-                accountid: accountId,
-              },
-            },
-          }
-        : {}),
-    };
-
-    return this.prisma.contacts.findMany({
-      where: whereClause,
-      orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }, { middlename: 'asc' }],
-      select: {
-        firstname: true,
-        lastname: true,
-        middlename: true,
-        email: true,
-        phone1: true,
-        phone2: true,
-        phone3: true,
-        streetaddress: true,
-        city: true,
-        state: true,
-        zip: true,
-        dateofbirth: true,
-        contactroles: {
-          where: {
-            accountid: accountId,
-          },
-          select: {
-            roleid: true,
-          },
-        },
+    // Reuse searchContactsWithRoles to ensure export matches exactly what the UI displays
+    // This eliminates DRY violation and ensures consistent filtering behavior
+    const searchResults = await this.searchContactsWithRoles(
+      accountId,
+      {
+        includeContactDetails: true,
+        searchQuery: searchTerm,
+        onlyWithRoles: onlyWithRoles,
+        advancedFilter: advancedFilter,
       },
-    });
-  }
+      seasonId ?? null,
+    );
 
-  /**
-   * Find contacts with roles that are valid for the given season.
-   * This validates that team/league roles are for the correct season.
-   */
-  private async findContactsForExportWithSeasonRoles(
-    accountId: bigint,
-    seasonId: bigint,
-    searchTerm?: string,
-  ): Promise<dbContactExportData[]> {
-    // Raw SQL query to get contacts with season-valid roles
-    const query = Prisma.sql`
-      SELECT DISTINCT
-        c.firstname,
-        c.lastname,
-        c.middlename,
-        c.email,
-        c.phone1,
-        c.phone2,
-        c.phone3,
-        c.streetaddress,
-        c.city,
-        c.state,
-        c.zip,
-        c.dateofbirth,
-        c.id AS contact_id
-      FROM contacts c
-      INNER JOIN contactroles cr ON c.id = cr.contactid AND cr.accountid = ${accountId}
-      -- Team roles: Join to teamsseason and validate season
-      LEFT JOIN teamsseason ts ON (
-        cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]})
-        AND cr.roledata = ts.id
-      )
-      LEFT JOIN leagueseason ls_ts ON (
-        cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]})
-        AND ts.leagueseasonid = ls_ts.id
-        AND ls_ts.seasonid = ${seasonId}
-      )
-      -- League role: Join to leagueseason and validate season
-      LEFT JOIN leagueseason ls ON (
-        cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]}
-        AND cr.roledata = ls.id
-        AND ls.seasonid = ${seasonId}
-      )
-      WHERE
-        c.creatoraccountid = ${accountId}
-        ${
-          searchTerm
-            ? Prisma.sql`
-        AND (
-          c.firstname ILIKE ${`%${searchTerm}%`}
-          OR c.lastname ILIKE ${`%${searchTerm}%`}
-          OR c.email ILIKE ${`%${searchTerm}%`}
-        )
-        `
-            : Prisma.empty
+    // Transform and deduplicate results (searchContactsWithRoles returns one row per contact-role)
+    const contactMap = new Map<
+      bigint,
+      {
+        contact: dbContactExportData;
+        roleIds: Set<string>;
+      }
+    >();
+
+    for (const row of searchResults) {
+      const existingEntry = contactMap.get(row.id);
+
+      if (existingEntry) {
+        // Add role to existing contact if present
+        if (row.roleid) {
+          existingEntry.roleIds.add(row.roleid);
         }
-        AND (
-          -- Include valid team roles (must have valid season)
-          (cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]}) AND ls_ts.id IS NOT NULL)
+      } else {
+        // Create new contact entry
+        const roleIds = new Set<string>();
+        if (row.roleid) {
+          roleIds.add(row.roleid);
+        }
 
-          -- Include valid league roles (must have valid season)
-          OR (cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]} AND ls.id IS NOT NULL)
-
-          -- Include valid account roles (always valid for the account)
-          OR (cr.roleid IN (${ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]}, ${ROLE_IDS[RoleNamesType.ACCOUNT_PHOTO_ADMIN]}) AND cr.roledata = ${accountId})
-        )
-      ORDER BY c.lastname, c.firstname, c.middlename
-    `;
-
-    interface RawContactResult {
-      firstname: string;
-      lastname: string;
-      middlename: string;
-      email: string | null;
-      phone1: string | null;
-      phone2: string | null;
-      phone3: string | null;
-      streetaddress: string | null;
-      city: string | null;
-      state: string | null;
-      zip: string | null;
-      dateofbirth: Date | null;
-      contact_id: bigint;
+        contactMap.set(row.id, {
+          contact: {
+            firstname: row.firstname,
+            lastname: row.lastname,
+            middlename: row.middlename ?? '',
+            email: row.email,
+            phone1: row.phone1 ?? null,
+            phone2: row.phone2 ?? null,
+            phone3: row.phone3 ?? null,
+            streetaddress: row.streetaddress ?? null,
+            city: row.city ?? null,
+            state: row.state ?? null,
+            zip: row.zip ?? null,
+            dateofbirth: row.dateofbirth ?? null,
+            contactroles: [],
+          },
+          roleIds,
+        });
+      }
     }
 
-    const rawContacts = await this.prisma.$queryRaw<RawContactResult[]>(query);
-
-    // Now fetch the contactroles for each contact (only for the current account)
-    const contactIds = rawContacts.map((c) => c.contact_id);
-
-    if (contactIds.length === 0) {
-      return [];
-    }
-
-    const contactRoles = await this.prisma.contactroles.findMany({
-      where: {
-        contactid: { in: contactIds },
-        accountid: accountId,
-      },
-      select: {
-        contactid: true,
-        roleid: true,
-      },
-    });
-
-    // Group roles by contact
-    const rolesByContact = new Map<bigint, { roleid: string }[]>();
-    for (const role of contactRoles) {
-      const existing = rolesByContact.get(role.contactid) || [];
-      existing.push({ roleid: role.roleid });
-      rolesByContact.set(role.contactid, existing);
-    }
-
-    // Transform to expected format
-    return rawContacts.map((c) => ({
-      firstname: c.firstname,
-      lastname: c.lastname,
-      middlename: c.middlename,
-      email: c.email,
-      phone1: c.phone1,
-      phone2: c.phone2,
-      phone3: c.phone3,
-      streetaddress: c.streetaddress,
-      city: c.city,
-      state: c.state,
-      zip: c.zip,
-      dateofbirth: c.dateofbirth,
-      contactroles: rolesByContact.get(c.contact_id) || [],
+    // Convert to final format with roles array
+    return Array.from(contactMap.values()).map(({ contact, roleIds }) => ({
+      ...contact,
+      contactroles: Array.from(roleIds).map((roleid) => ({ roleid })),
     }));
   }
 }

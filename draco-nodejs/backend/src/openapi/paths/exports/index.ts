@@ -171,6 +171,43 @@ export const registerExportsEndpoints = ({ registry, schemaRefs }: RegisterConte
         description:
           'Season ID to scope role filtering. When onlyWithRoles is true, this ensures only roles valid for this season are considered.',
       },
+      {
+        name: 'filterField',
+        in: 'query' as const,
+        required: false,
+        schema: {
+          type: 'string' as const,
+          enum: ['lastName', 'firstName', 'firstYear', 'birthYear', 'zip'],
+        },
+        description: 'Field to filter contacts by',
+      },
+      {
+        name: 'filterOp',
+        in: 'query' as const,
+        required: false,
+        schema: {
+          type: 'string' as const,
+          enum: [
+            'startsWith',
+            'endsWith',
+            'equals',
+            'notEquals',
+            'greaterThan',
+            'greaterThanOrEqual',
+            'lessThan',
+            'lessThanOrEqual',
+            'contains',
+          ],
+        },
+        description: 'Filter operation to apply',
+      },
+      {
+        name: 'filterValue',
+        in: 'query' as const,
+        required: false,
+        schema: { type: 'string' as const, maxLength: 100 },
+        description: 'Value to filter by',
+      },
     ],
     responses: csvResponse,
   });

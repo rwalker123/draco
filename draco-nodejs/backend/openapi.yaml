@@ -32108,6 +32108,41 @@ paths:
             format: number
           description: Season ID to scope role filtering. When onlyWithRoles is true, this
             ensures only roles valid for this season are considered.
+        - name: filterField
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - lastName
+              - firstName
+              - firstYear
+              - birthYear
+              - zip
+          description: Field to filter contacts by
+        - name: filterOp
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - startsWith
+              - endsWith
+              - equals
+              - notEquals
+              - greaterThan
+              - greaterThanOrEqual
+              - lessThan
+              - lessThanOrEqual
+              - contains
+          description: Filter operation to apply
+        - name: filterValue
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 100
+          description: Value to filter by
       responses:
         "200":
           description: CSV file export

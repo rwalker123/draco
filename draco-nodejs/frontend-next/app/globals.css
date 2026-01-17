@@ -116,6 +116,8 @@
 @layer base {
   html {
     @apply bg-background;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
   }
   * {
     @apply border-border outline-ring/50;
