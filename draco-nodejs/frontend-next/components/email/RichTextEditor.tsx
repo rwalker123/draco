@@ -124,6 +124,7 @@ function ToolbarPlugin({
   const [formatMenuAnchor, setFormatMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [alignmentMenuAnchor, setAlignmentMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [fontSizeMenuAnchor, setFontSizeMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [fontFamilyMenuAnchor, setFontFamilyMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [fontColorMenuAnchor, setFontColorMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [bgColorMenuAnchor, setBgColorMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [overflowMenuAnchor, setOverflowMenuAnchor] = React.useState<null | HTMLElement>(null);
@@ -335,6 +336,14 @@ function ToolbarPlugin({
     setFontSizeMenuAnchor(null);
   };
 
+  const openFontFamilyMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setFontFamilyMenuAnchor(event.currentTarget);
+  };
+
+  const closeFontFamilyMenu = () => {
+    setFontFamilyMenuAnchor(null);
+  };
+
   const openFontColorMenu = (event: React.MouseEvent<HTMLElement>) => {
     setFontColorMenuAnchor(event.currentTarget);
   };
@@ -436,6 +445,20 @@ function ToolbarPlugin({
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           $patchStyleText(selection, { 'font-size': value });
+        }
+      });
+    }
+  };
+
+  const applyFontFamily = (family: string) => {
+    const value = family === 'default' ? '' : family;
+    setFontFamily(family);
+    closeFontFamilyMenu();
+    if (!disabled) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $patchStyleText(selection, { 'font-family': value });
         }
       });
     }
@@ -704,7 +727,7 @@ function ToolbarPlugin({
 
       <Button
         size="small"
-        onClick={openFormatMenu}
+        onClick={openFontFamilyMenu}
         endIcon={<ArrowDropDown />}
         disabled={disabled}
         sx={{ textTransform: 'none', minWidth: 100 }}
@@ -714,60 +737,40 @@ function ToolbarPlugin({
         </Typography>
       </Button>
       <Menu
-        anchorEl={overflowMenuAnchor}
-        open={Boolean(overflowMenuAnchor)}
-        onClose={closeOverflowMenu}
+        anchorEl={fontFamilyMenuAnchor}
+        open={Boolean(fontFamilyMenuAnchor)}
+        onClose={closeFontFamilyMenu}
       >
-        {isCompactToolbar
-          ? [
-              {
-                key: 'compact-bullet',
-                label: 'Bullet list',
-                ariaLabel: 'Insert bullet list',
-                onClick: () => {
-                  closeOverflowMenu();
-                  insertBulletList();
-                },
-              },
-              {
-                key: 'compact-numbered',
-                label: 'Numbered list',
-                ariaLabel: 'Insert numbered list',
-                onClick: () => {
-                  closeOverflowMenu();
-                  insertNumberedList();
-                },
-              },
-              {
-                key: 'compact-outdent',
-                label: 'Decrease indent',
-                ariaLabel: 'Decrease indent',
-                onClick: () => {
-                  closeOverflowMenu();
-                  outdentContent();
-                },
-              },
-              {
-                key: 'compact-indent',
-                label: 'Increase indent',
-                ariaLabel: 'Increase indent',
-                onClick: () => {
-                  closeOverflowMenu();
-                  indentContent();
-                },
-              },
-            ].map((item) => (
-              <MenuItem
-                key={item.key}
-                onClick={() => {
-                  item.onClick();
-                }}
-                aria-label={item.ariaLabel}
-              >
-                {item.label}
-              </MenuItem>
-            ))
-          : null}
+        <MenuItem selected={fontFamily === 'default'} onClick={() => applyFontFamily('default')}>
+          Default
+        </MenuItem>
+        <MenuItem selected={fontFamily === 'Arial'} onClick={() => applyFontFamily('Arial')}>
+          Arial
+        </MenuItem>
+        <MenuItem selected={fontFamily === 'Georgia'} onClick={() => applyFontFamily('Georgia')}>
+          Georgia
+        </MenuItem>
+        <MenuItem
+          selected={fontFamily === 'Times New Roman'}
+          onClick={() => applyFontFamily('Times New Roman')}
+        >
+          Times New Roman
+        </MenuItem>
+        <MenuItem
+          selected={fontFamily === 'Courier New'}
+          onClick={() => applyFontFamily('Courier New')}
+        >
+          Courier New
+        </MenuItem>
+        <MenuItem selected={fontFamily === 'Verdana'} onClick={() => applyFontFamily('Verdana')}>
+          Verdana
+        </MenuItem>
+        <MenuItem
+          selected={fontFamily === 'Trebuchet MS'}
+          onClick={() => applyFontFamily('Trebuchet MS')}
+        >
+          Trebuchet MS
+        </MenuItem>
       </Menu>
 
       <Button
