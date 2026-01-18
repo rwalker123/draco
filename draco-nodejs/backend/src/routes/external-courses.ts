@@ -6,7 +6,7 @@ import {
   ExternalCourseSearchResultType,
 } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { extractAccountParams } from '../utils/paramExtraction.js';
+import { extractAccountParams, getStringParam } from '../utils/paramExtraction.js';
 
 const router = Router({ mergeParams: true });
 const externalCourseSearchService = ServiceFactory.getExternalCourseSearchService();
@@ -42,7 +42,7 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { externalId } = req.params;
+    const externalId = getStringParam(req.params.externalId)!;
     const course = await externalCourseSearchService.getCourseDetails(externalId);
     res.json(course);
   }),

@@ -23,7 +23,7 @@ vi.mock('../../middleware/authMiddleware.js', () => ({
 
 const createRouteProtectionMock = () => {
   const enforceAccountBoundary = () => (req: Request, _res: Response, next: NextFunction) => {
-    const accountId = req.params.accountId ? BigInt(req.params.accountId) : 1n;
+    const accountId = req.params.accountId ? BigInt(req.params.accountId as string) : 1n;
     req.accountBoundary = {
       accountId,
       contactId: 123n,

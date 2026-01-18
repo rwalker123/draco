@@ -2,7 +2,11 @@ import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import {
+  extractAccountParams,
+  extractBigIntParams,
+  ParamsObject,
+} from '../utils/paramExtraction.js';
 import {
   AccountPollType,
   CreatePollSchema,
@@ -18,7 +22,7 @@ const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const pollService = ServiceFactory.getPollService();
 
-const extractPollParams = (params: Record<string, string | undefined>) => {
+const extractPollParams = (params: ParamsObject) => {
   const { accountId, pollId } = extractBigIntParams(params, 'accountId', 'pollId');
   return { accountId, pollId };
 };

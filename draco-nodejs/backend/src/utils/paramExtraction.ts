@@ -3,17 +3,39 @@
  * Addresses the duplication of parameter extraction logic across route files
  */
 
+export type ParamValue = string | string[] | undefined;
+export type ParamsObject = Record<string, ParamValue>;
+
+/**
+ * Extracts a single string value from a param that may be string, string[], or query string type
+ */
+export const getStringParam = (value: unknown): string | undefined => {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (Array.isArray(value) && typeof value[0] === 'string') {
+    return value[0];
+  }
+  return undefined;
+};
+
 /**
  * Parse query parameters for pagination and filtering
  * @param query - The request query object
  * @returns Object with page, limit, firstName, and lastName
  */
-export const parseSearchQueryParams = (query: Record<string, string | undefined>) => {
+export const parseSearchQueryParams = (query: ParamsObject) => {
   return {
-    page: Math.max(1, parseInt(String(query.page || ''), 10) || 1),
-    limit: Math.min(100, Math.max(1, parseInt(String(query.limit || ''), 10) || 50)),
-    firstName: query.firstName ? String(query.firstName).trim() || undefined : undefined,
-    lastName: query.lastName ? String(query.lastName).trim() || undefined : undefined,
+    page: Math.max(1, parseInt(String(getStringParam(query.page) || ''), 10) || 1),
+    limit: Math.min(
+      100,
+      Math.max(1, parseInt(String(getStringParam(query.limit) || ''), 10) || 50),
+    ),
+    firstName: getStringParam(query.firstName)?.trim() || undefined,
+    lastName: getStringParam(query.lastName)?.trim() || undefined,
   };
 };
 
@@ -25,17 +47,16 @@ export const parseSearchQueryParams = (query: Record<string, string | undefined>
  * @throws Error if any required parameter is missing
  */
 export const extractBigIntParams = <T extends string>(
-  params: Record<string, string | undefined>,
+  params: ParamsObject,
   ...keys: T[]
 ): Record<T, bigint> => {
   const result = {} as Record<T, bigint>;
 
   for (const key of keys) {
-    if (!params[key]) {
+    const value = getStringParam(params[key]);
+    if (!value) {
       throw new Error(`Missing required parameter: ${key}`);
     }
-
-    const value = params[key]!;
 
     try {
       result[key] = BigInt(value);
@@ -52,7 +73,7 @@ export const extractBigIntParams = <T extends string>(
  * @param params - The request params object
  * @returns Object with accountId as BigInt
  */
-export const extractAccountParams = (params: Record<string, string | undefined>) => {
+export const extractAccountParams = (params: ParamsObject) => {
   return extractBigIntParams(params, 'accountId');
 };
 
@@ -61,7 +82,7 @@ export const extractAccountParams = (params: Record<string, string | undefined>)
  * @param params - The request params object
  * @returns Object with accountId and seasonId as BigInt
  */
-export const extractSeasonParams = (params: Record<string, string | undefined>) => {
+export const extractSeasonParams = (params: ParamsObject) => {
   return extractBigIntParams(params, 'accountId', 'seasonId');
 };
 
@@ -70,7 +91,7 @@ export const extractSeasonParams = (params: Record<string, string | undefined>) 
  * @param params - The request params object
  * @returns Object with accountId, seasonId, and teamSeasonId as BigInt
  */
-export const extractTeamParams = (params: Record<string, string | undefined>) => {
+export const extractTeamParams = (params: ParamsObject) => {
   return extractBigIntParams(params, 'accountId', 'seasonId', 'teamSeasonId');
 };
 
@@ -79,7 +100,7 @@ export const extractTeamParams = (params: Record<string, string | undefined>) =>
  * @param params - The request params object
  * @returns Object with accountId, seasonId, and gameId as BigInt
  */
-export const extractGameParams = (params: Record<string, string | undefined>) => {
+export const extractGameParams = (params: ParamsObject) => {
   return extractBigIntParams(params, 'accountId', 'seasonId', 'gameId');
 };
 
@@ -88,7 +109,7 @@ export const extractGameParams = (params: Record<string, string | undefined>) =>
  * @param params - The request params object
  * @returns Object with accountId and gameId as BigInt
  */
-export const extractGameOnlyParams = (params: Record<string, string | undefined>) => {
+export const extractGameOnlyParams = (params: ParamsObject) => {
   return extractBigIntParams(params, 'accountId', 'gameId');
 };
 
@@ -97,7 +118,7 @@ export const extractGameOnlyParams = (params: Record<string, string | undefined>
  * @param params - The request params object
  * @returns Object with accountId, seasonId, and leagueSeasonId as BigInt
  */
-export const extractLeagueSeasonParams = (params: Record<string, string | undefined>) => {
+export const extractLeagueSeasonParams = (params: ParamsObject) => {
   return extractBigIntParams(params, 'accountId', 'seasonId', 'leagueSeasonId');
 };
 
@@ -106,7 +127,7 @@ export const extractLeagueSeasonParams = (params: Record<string, string | undefi
  * @param params - The request params object
  * @returns Object with accountId, seasonId, and divisionSeasonId as BigInt
  */
-export const extractDivisionSeasonParams = (params: Record<string, string | undefined>) => {
+export const extractDivisionSeasonParams = (params: ParamsObject) => {
   return extractBigIntParams(params, 'accountId', 'seasonId', 'divisionSeasonId');
 };
 
@@ -115,7 +136,7 @@ export const extractDivisionSeasonParams = (params: Record<string, string | unde
  * @param params - The request params object
  * @returns Object with accountId and contactId as BigInt
  */
-export const extractContactParams = (params: Record<string, string | undefined>) => {
+export const extractContactParams = (params: ParamsObject) => {
   return extractBigIntParams(params, 'accountId', 'contactId');
 };
 
@@ -124,6 +145,6 @@ export const extractContactParams = (params: Record<string, string | undefined>)
  * @param params - The request params object
  * @returns Object with accountId, seasonId, gameId, and teamSeasonId as BigInt
  */
-export const extractRecapParams = (params: Record<string, string | undefined>) => {
+export const extractRecapParams = (params: ParamsObject) => {
   return extractBigIntParams(params, 'accountId', 'seasonId', 'gameId', 'teamSeasonId');
 };

@@ -17,6 +17,7 @@ import { ContactService } from '../services/contactService.js';
 import { UserService } from '../services/userService.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { TeamService } from '@/services/teamService.js';
+import { getStringParam } from '../utils/paramExtraction.js';
 
 export class RouteProtection {
   private roleService: IRoleMiddleware;
@@ -555,21 +556,16 @@ export class RouteProtection {
    * Extract account ID from request (from URL params, body, or query)
    */
   private extractAccountId(req: Request): bigint | undefined {
-    // Try to get from URL params first
-    if (req.params.accountId) {
-      return BigInt(req.params.accountId);
+    const paramValue = getStringParam(req.params.accountId);
+    if (paramValue) {
+      return BigInt(paramValue);
     }
-
-    // Try to get from body
     if (req.body?.accountId) {
       return BigInt(req.body.accountId);
     }
-
-    // Try to get from query
     if (req.query?.accountId) {
       return BigInt(req.query.accountId as string);
     }
-
     return undefined;
   }
 
@@ -577,8 +573,9 @@ export class RouteProtection {
    * Extract team ID from request
    */
   private extractTeamId(req: Request): bigint | undefined {
-    if (req.params.teamId) {
-      return BigInt(req.params.teamId);
+    const paramValue = getStringParam(req.params.teamId);
+    if (paramValue) {
+      return BigInt(paramValue);
     }
     if (req.body?.teamId) {
       return BigInt(req.body.teamId);
@@ -595,8 +592,9 @@ export class RouteProtection {
    * @returns Team season ID as bigint or undefined
    */
   private extractTeamSeasonId(req: Request): bigint | undefined {
-    if (req.params.teamSeasonId) {
-      return BigInt(req.params.teamSeasonId);
+    const paramValue = getStringParam(req.params.teamSeasonId);
+    if (paramValue) {
+      return BigInt(paramValue);
     }
     if (req.body?.teamSeasonId) {
       return BigInt(req.body.teamSeasonId);
@@ -611,8 +609,9 @@ export class RouteProtection {
    * Extract league ID from request
    */
   private extractLeagueId(req: Request): bigint | undefined {
-    if (req.params.leagueId) {
-      return BigInt(req.params.leagueId);
+    const paramValue = getStringParam(req.params.leagueId);
+    if (paramValue) {
+      return BigInt(paramValue);
     }
     if (req.body?.leagueId) {
       return BigInt(req.body.leagueId);
@@ -629,8 +628,9 @@ export class RouteProtection {
    * @returns
    */
   private extractLeagueSeasonId(req: Request): bigint | undefined {
-    if (req.params.leagueSeasonId) {
-      return BigInt(req.params.leagueSeasonId);
+    const paramValue = getStringParam(req.params.leagueSeasonId);
+    if (paramValue) {
+      return BigInt(paramValue);
     }
     if (req.body?.leagueSeasonId) {
       return BigInt(req.body.leagueSeasonId);
@@ -645,8 +645,9 @@ export class RouteProtection {
    * Extract season ID from request
    */
   private extractSeasonId(req: Request): bigint | undefined {
-    if (req.params.seasonId) {
-      return BigInt(req.params.seasonId);
+    const paramValue = getStringParam(req.params.seasonId);
+    if (paramValue) {
+      return BigInt(paramValue);
     }
     if (req.body?.seasonId) {
       return BigInt(req.body.seasonId);

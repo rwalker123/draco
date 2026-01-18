@@ -2,7 +2,11 @@ import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import {
+  extractAccountParams,
+  extractBigIntParams,
+  getStringParam,
+} from '../utils/paramExtraction.js';
 import {
   DiscordAccountConfigUpdateSchema,
   DiscordRoleMappingUpdateSchema,
@@ -274,7 +278,7 @@ router.get(
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const feature = parseFeature(req.params.feature);
+    const feature = parseFeature(getStringParam(req.params.feature)!);
     const status = await discordIntegrationService.getFeatureSyncStatus(accountId, feature);
     res.json(status);
   }),
@@ -287,7 +291,7 @@ router.put(
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const feature = parseFeature(req.params.feature);
+    const feature = parseFeature(getStringParam(req.params.feature)!);
     const payload = DiscordFeatureSyncUpdateSchema.parse(req.body);
     const status = await discordIntegrationService.updateFeatureSync(accountId, feature, payload);
     res.json(status);

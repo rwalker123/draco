@@ -15,7 +15,11 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
 import { PaginationHelper } from '../utils/pagination.js';
-import { extractAccountParams } from '../utils/paramExtraction.js';
+import {
+  extractAccountParams,
+  extractBigIntParams,
+  getStringParam,
+} from '../utils/paramExtraction.js';
 
 const router = Router();
 const emailService = ServiceFactory.getEmailService();
@@ -44,7 +48,7 @@ router.get(
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const seasonId = BigInt(req.params.seasonId);
+    const { seasonId } = extractBigIntParams(req.params, 'seasonId');
     const { groupType, groupId, managersOnly } = req.query;
 
     if (!groupType || !groupId) {
@@ -140,7 +144,7 @@ router.get(
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const emailId = BigInt(req.params.emailId);
+    const { emailId } = extractBigIntParams(req.params, 'emailId');
 
     return emailService.getEmailDetails(accountId, emailId).then((email) => {
       res.json(email);
@@ -160,7 +164,7 @@ router.delete(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const emailId = BigInt(req.params.emailId);
+    const { emailId } = extractBigIntParams(req.params, 'emailId');
 
     await emailService.deleteEmail(accountId, emailId);
 
@@ -232,7 +236,7 @@ router.get(
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const templateId = BigInt(req.params.templateId);
+    const { templateId } = extractBigIntParams(req.params, 'templateId');
 
     const template = await templateService.getTemplate(templateId, accountId);
 
@@ -256,7 +260,7 @@ router.put(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const templateId = BigInt(req.params.templateId);
+    const { templateId } = extractBigIntParams(req.params, 'templateId');
     const request = UpsertEmailTemplateSchema.parse(req.body);
 
     const template = await templateService.updateTemplate(templateId, accountId, request);
@@ -277,7 +281,7 @@ router.delete(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const templateId = BigInt(req.params.templateId);
+    const { templateId } = extractBigIntParams(req.params, 'templateId');
 
     await templateService.deleteTemplate(templateId, accountId);
 
@@ -297,7 +301,7 @@ router.post(
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const templateId = BigInt(req.params.templateId);
+    const { templateId } = extractBigIntParams(req.params, 'templateId');
     const variables = req.body.variables || {};
 
     const preview = await templateService.previewTemplate(templateId, accountId, variables);
@@ -329,7 +333,11 @@ router.post(
   },
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { emailId } = req.params;
+    const emailId = getStringParam(req.params.emailId);
+
+    if (!emailId) {
+      throw new ValidationError('emailId is required');
+    }
 
     if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
       throw new ValidationError('No files uploaded');
@@ -358,7 +366,7 @@ router.get(
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { emailId } = req.params;
+    const emailId = getStringParam(req.params.emailId)!;
 
     const attachments = await attachmentService.getEmailAttachments(accountId.toString(), emailId);
 
@@ -378,7 +386,8 @@ router.get(
   routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { emailId, attachmentId } = req.params;
+    const emailId = getStringParam(req.params.emailId)!;
+    const attachmentId = getStringParam(req.params.attachmentId)!;
 
     const { attachment, buffer } = await attachmentService.getAttachment(
       accountId.toString(),
@@ -406,7 +415,8 @@ router.delete(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { emailId, attachmentId } = req.params;
+    const emailId = getStringParam(req.params.emailId)!;
+    const attachmentId = getStringParam(req.params.attachmentId)!;
 
     await attachmentService.deleteAttachment(accountId.toString(), emailId, attachmentId);
 

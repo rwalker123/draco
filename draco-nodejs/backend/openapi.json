@@ -977,9 +977,6 @@
               },
               {
                 "nullable": true
-              },
-              {
-                "nullable": true
               }
             ]
           },
@@ -988,9 +985,6 @@
               {
                 "type": "string",
                 "maxLength": 25
-              },
-              {
-                "nullable": true
               },
               {
                 "nullable": true
@@ -1080,9 +1074,6 @@
                     },
                     {
                       "nullable": true
-                    },
-                    {
-                      "nullable": true
                     }
                   ]
                 },
@@ -1091,9 +1082,6 @@
                     {
                       "type": "string",
                       "maxLength": 25
-                    },
-                    {
-                      "nullable": true
                     },
                     {
                       "nullable": true
@@ -1208,9 +1196,6 @@
               },
               {
                 "nullable": true
-              },
-              {
-                "nullable": true
               }
             ]
           },
@@ -1219,9 +1204,6 @@
               {
                 "type": "string",
                 "maxLength": 25
-              },
-              {
-                "nullable": true
               },
               {
                 "nullable": true
@@ -14068,9 +14050,6 @@
                   },
                   {
                     "nullable": true
-                  },
-                  {
-                    "nullable": true
                   }
                 ]
               },
@@ -14079,9 +14058,6 @@
                   {
                     "type": "string",
                     "maxLength": 25
-                  },
-                  {
-                    "nullable": true
                   },
                   {
                     "nullable": true
@@ -14196,9 +14172,6 @@
                   },
                   {
                     "nullable": true
-                  },
-                  {
-                    "nullable": true
                   }
                 ]
               },
@@ -14207,9 +14180,6 @@
                   {
                     "type": "string",
                     "maxLength": 25
-                  },
-                  {
-                    "nullable": true
                   },
                   {
                     "nullable": true
@@ -16154,9 +16124,6 @@
                   },
                   {
                     "nullable": true
-                  },
-                  {
-                    "nullable": true
                   }
                 ]
               },
@@ -16165,9 +16132,6 @@
                   {
                     "type": "string",
                     "maxLength": 25
-                  },
-                  {
-                    "nullable": true
                   },
                   {
                     "nullable": true
@@ -16487,9 +16451,6 @@
                         },
                         {
                           "nullable": true
-                        },
-                        {
-                          "nullable": true
                         }
                       ]
                     },
@@ -16498,9 +16459,6 @@
                         {
                           "type": "string",
                           "maxLength": 25
-                        },
-                        {
-                          "nullable": true
                         },
                         {
                           "nullable": true
@@ -16788,9 +16746,6 @@
                         },
                         {
                           "nullable": true
-                        },
-                        {
-                          "nullable": true
                         }
                       ]
                     },
@@ -16799,9 +16754,6 @@
                         {
                           "type": "string",
                           "maxLength": 25
-                        },
-                        {
-                          "nullable": true
                         },
                         {
                           "nullable": true
@@ -17098,9 +17050,6 @@
                         },
                         {
                           "nullable": true
-                        },
-                        {
-                          "nullable": true
                         }
                       ]
                     },
@@ -17109,9 +17058,6 @@
                         {
                           "type": "string",
                           "maxLength": 25
-                        },
-                        {
-                          "nullable": true
                         },
                         {
                           "nullable": true
@@ -17963,9 +17909,6 @@
               },
               {
                 "nullable": true
-              },
-              {
-                "nullable": true
               }
             ],
             "description": "Album identifier that groups the photo. Null clears the current album."
@@ -18005,9 +17948,6 @@
                 "pattern": "^\\d+$",
                 "description": "Numeric identifier string representation",
                 "example": "123"
-              },
-              {
-                "nullable": true
               },
               {
                 "nullable": true
@@ -18125,9 +18065,6 @@
               },
               {
                 "nullable": true
-              },
-              {
-                "nullable": true
               }
             ],
             "description": "Team identifier associated with the album. Null creates an account-level album."
@@ -18139,9 +18076,6 @@
                 "pattern": "^\\d+$",
                 "description": "Numeric identifier string representation",
                 "example": "123"
-              },
-              {
-                "nullable": true
               },
               {
                 "nullable": true
@@ -18175,9 +18109,6 @@
               },
               {
                 "nullable": true
-              },
-              {
-                "nullable": true
               }
             ],
             "description": "Updated team association for the album. Null removes the association."
@@ -18189,9 +18120,6 @@
                 "pattern": "^\\d+$",
                 "description": "Numeric identifier string representation",
                 "example": "123"
-              },
-              {
-                "nullable": true
               },
               {
                 "nullable": true

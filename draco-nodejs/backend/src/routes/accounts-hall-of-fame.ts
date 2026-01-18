@@ -2,7 +2,11 @@ import { Router, Request, Response } from 'express';
 import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import {
+  extractAccountParams,
+  extractBigIntParams,
+  ParamsObject,
+} from '../utils/paramExtraction.js';
 import { hofNominationRateLimit } from '../middleware/rateLimitMiddleware.js';
 import {
   CreateHofMemberSchema,
@@ -32,12 +36,12 @@ const hofNominationService = ServiceFactory.getHofNominationService();
 const hofSetupService = ServiceFactory.getHofSetupService();
 const turnstileService = ServiceFactory.getTurnstileService();
 
-const extractMemberParams = (params: Record<string, string | undefined>) => {
+const extractMemberParams = (params: ParamsObject) => {
   const { accountId, memberId } = extractBigIntParams(params, 'accountId', 'memberId');
   return { accountId, memberId };
 };
 
-const extractNominationParams = (params: Record<string, string | undefined>) => {
+const extractNominationParams = (params: ParamsObject) => {
   const { accountId, nominationId } = extractBigIntParams(params, 'accountId', 'nominationId');
   return { accountId, nominationId };
 };

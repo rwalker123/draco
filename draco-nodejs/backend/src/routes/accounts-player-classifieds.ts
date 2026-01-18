@@ -14,7 +14,11 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 import { teamsWantedRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import {
+  extractAccountParams,
+  extractBigIntParams,
+  ParamsObject,
+} from '../utils/paramExtraction.js';
 import { AuthorizationError, ValidationError } from '../utils/customErrors.js';
 import { BASEBALL_POSITIONS, EXPERIENCE_LEVELS } from '../interfaces/playerClassifiedConstants.js';
 import { getCleanupConfig } from '../config/cleanup.js';
@@ -23,7 +27,7 @@ const router = Router({ mergeParams: true });
 const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
-const extractClassifiedParams = (params: Record<string, string | undefined>) => {
+const extractClassifiedParams = (params: ParamsObject) => {
   const { accountId } = extractAccountParams(params);
   const { classifiedId } = extractBigIntParams(params, 'classifiedId');
 
