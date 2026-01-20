@@ -372,26 +372,49 @@ export class LocalStorageService extends BaseStorageService {
   }
 }
 
+interface S3Config {
+  bucket: string;
+  region: string;
+  endpoint?: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  forcePathStyle: boolean;
+}
+
 export class S3StorageService extends BaseStorageService {
-  private s3Client: S3Client;
-  private bucketName: string;
+  protected s3Client: S3Client;
+  protected bucketName: string;
 
-  constructor() {
+  constructor(config?: S3Config) {
     super();
-    if (!process.env.S3_BUCKET) {
-      throw new Error('S3_BUCKET environment variable must be set for S3 storage');
-    }
-    this.bucketName = process.env.S3_BUCKET;
 
-    this.s3Client = new S3Client({
-      region: process.env.S3_REGION || 'us-east-1',
-      endpoint: process.env.S3_ENDPOINT, // For LocalStack
-      credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
-        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
-      },
-      forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true', // Required for LocalStack
-    });
+    if (config) {
+      this.bucketName = config.bucket;
+      this.s3Client = new S3Client({
+        region: config.region,
+        endpoint: config.endpoint,
+        credentials: {
+          accessKeyId: config.accessKeyId,
+          secretAccessKey: config.secretAccessKey,
+        },
+        forcePathStyle: config.forcePathStyle,
+      });
+    } else {
+      if (!process.env.S3_BUCKET) {
+        throw new Error('S3_BUCKET environment variable must be set for S3 storage');
+      }
+      this.bucketName = process.env.S3_BUCKET;
+
+      this.s3Client = new S3Client({
+        region: process.env.S3_REGION || 'us-east-1',
+        endpoint: process.env.S3_ENDPOINT,
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+        },
+        forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+      });
+    }
 
     // Ensure bucket exists on initialization
     this.ensureBucketExists();
@@ -431,7 +454,7 @@ export class S3StorageService extends BaseStorageService {
         Key: key,
         Body: resizedBuffer,
         ContentType: 'image/png',
-        CacheControl: 'public, max-age=3600',
+        CacheControl: 'public, max-age=31536000, immutable',
       });
 
       await this.s3Client.send(command);
@@ -533,7 +556,7 @@ export class S3StorageService extends BaseStorageService {
         Key: key,
         Body: resizedBuffer,
         ContentType: 'image/png',
-        CacheControl: 'public, max-age=3600',
+        CacheControl: 'public, max-age=31536000, immutable',
       });
       await this.s3Client.send(command);
       console.log(`Account logo saved to S3: ${key}`);
@@ -614,7 +637,7 @@ export class S3StorageService extends BaseStorageService {
         Key: key,
         Body: resizedBuffer,
         ContentType: 'image/png',
-        CacheControl: 'public, max-age=3600',
+        CacheControl: 'public, max-age=31536000, immutable',
       });
 
       await this.s3Client.send(command);
@@ -703,7 +726,7 @@ export class S3StorageService extends BaseStorageService {
         Key: key,
         Body: resizedBuffer,
         ContentType: 'image/png',
-        CacheControl: 'public, max-age=3600',
+        CacheControl: 'public, max-age=31536000, immutable',
       });
 
       await this.s3Client.send(command);
@@ -976,6 +999,26 @@ export class S3StorageService extends BaseStorageService {
   }
 }
 
+export class R2StorageService extends S3StorageService {
+  constructor() {
+    if (!process.env.R2_BUCKET) {
+      throw new Error('R2_BUCKET environment variable must be set for R2 storage');
+    }
+    if (!process.env.R2_ACCOUNT_ID) {
+      throw new Error('R2_ACCOUNT_ID environment variable must be set for R2 storage');
+    }
+
+    super({
+      bucket: process.env.R2_BUCKET,
+      region: 'auto',
+      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+      forcePathStyle: false,
+    });
+  }
+}
+
 // Factory function to create the appropriate storage service
 export function createStorageService(): StorageService {
   const storageProvider = process.env.STORAGE_PROVIDER || 'local';
@@ -983,6 +1026,8 @@ export function createStorageService(): StorageService {
   console.log(`Creating storage service with provider: ${storageProvider}`);
 
   switch (storageProvider.toLowerCase()) {
+    case 'r2':
+      return new R2StorageService();
     case 's3':
       return new S3StorageService();
     case 'local':

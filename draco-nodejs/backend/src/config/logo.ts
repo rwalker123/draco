@@ -37,7 +37,20 @@ export const generateLogoPath = (accountId: string, teamId: string): string => {
   return `${LOGO_CONFIG.STORAGE_PATH}/${accountId}/team-logos/${teamId}-logo.${LOGO_CONFIG.OUTPUT_FORMAT}`;
 };
 
+// Helper function to get R2 public URL
+const getR2PublicUrl = (path: string): string => {
+  const publicUrl = process.env.R2_PUBLIC_URL;
+  if (!publicUrl) {
+    throw new Error('R2_PUBLIC_URL environment variable must be set for R2 storage');
+  }
+  return `${publicUrl}/${path}`;
+};
+
 export const getLogoUrl = (accountId: string | number, teamId: string | number): string => {
+  if (process.env.STORAGE_PROVIDER === 'r2') {
+    return getR2PublicUrl(`${accountId}/team-logos/${teamId}-logo.png`);
+  }
+
   if (process.env.STORAGE_PROVIDER === 's3') {
     if (!process.env.S3_BUCKET) {
       throw new Error('S3_BUCKET environment variable must be set for S3 storage');
@@ -54,10 +67,10 @@ export const getLogoUrl = (accountId: string | number, teamId: string | number):
       // AWS S3 style URL
       return `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/team-logos/${teamId}-logo.png`;
     }
-  } else {
-    // Local storage
-    return `/${generateLogoPath(accountId.toString(), teamId.toString())}`;
   }
+
+  // Local storage
+  return `/${generateLogoPath(accountId.toString(), teamId.toString())}`;
 };
 
 // Account logo settings
@@ -73,6 +86,10 @@ export const generateAccountLogoPath = (accountId: string): string => {
 };
 
 export const getAccountLogoUrl = (accountId: string | number): string => {
+  if (process.env.STORAGE_PROVIDER === 'r2') {
+    return getR2PublicUrl(`${accountId}/logo.png`);
+  }
+
   if (process.env.STORAGE_PROVIDER === 's3') {
     if (!process.env.S3_BUCKET) {
       throw new Error('S3_BUCKET environment variable must be set for S3 storage');
@@ -88,10 +105,10 @@ export const getAccountLogoUrl = (accountId: string | number): string => {
       // AWS S3 style URL
       return `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/logo.png`;
     }
-  } else {
-    // Local storage
-    return `/${generateAccountLogoPath(accountId.toString())}`;
   }
+
+  // Local storage
+  return `/${generateAccountLogoPath(accountId.toString())}`;
 };
 
 // Contact photo settings
@@ -130,6 +147,10 @@ export const getContactPhotoUrl = (
   accountId: string | number,
   contactId: string | number,
 ): string => {
+  if (process.env.STORAGE_PROVIDER === 'r2') {
+    return getR2PublicUrl(`${accountId}/contact-photos/${contactId}-photo.png`);
+  }
+
   if (process.env.STORAGE_PROVIDER === 's3') {
     if (!process.env.S3_BUCKET) {
       throw new Error('S3_BUCKET environment variable must be set for S3 storage');
@@ -146,10 +167,10 @@ export const getContactPhotoUrl = (
       // AWS S3 style URL
       return `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/contact-photos/${contactId}-photo.png`;
     }
-  } else {
-    // Local storage
-    return `/${generateContactPhotoPath(accountId.toString(), contactId.toString())}`;
   }
+
+  // Local storage
+  return `/${generateContactPhotoPath(accountId.toString(), contactId.toString())}`;
 };
 
 export const SPONSOR_PHOTO_CONFIG = {
@@ -181,6 +202,10 @@ export const getSponsorPhotoUrl = (
   accountId: string | number,
   sponsorId: string | number,
 ): string => {
+  if (process.env.STORAGE_PROVIDER === 'r2') {
+    return getR2PublicUrl(`${accountId}/sponsor-photos/${sponsorId}-photo.png`);
+  }
+
   if (process.env.STORAGE_PROVIDER === 's3') {
     if (!process.env.S3_BUCKET) {
       throw new Error('S3_BUCKET environment variable must be set for S3 storage');

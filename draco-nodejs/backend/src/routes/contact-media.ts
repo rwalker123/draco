@@ -35,7 +35,7 @@ router.get(
 
     // Set appropriate headers
     res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.setHeader('Content-Length', photoBuffer.length.toString());
 
     // Send the image buffer
