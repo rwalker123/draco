@@ -76,6 +76,7 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
               style={{ objectFit: 'contain', maxWidth: '100%', maxHeight: '100%' }}
               onError={() => setFailedLogoUrl(logoUrl)}
               unoptimized
+              priority
             />
           ) : (
             <Typography
