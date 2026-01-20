@@ -64,6 +64,7 @@ import exportsRouter from './routes/exports.js';
 import liveScoringRouter from './routes/live-scoring.js';
 import individualLiveScoringRouter from './routes/individual-live-scoring.js';
 import baseballLiveScoringRouter from './routes/baseball-live-scoring.js';
+import migrationTempRouter from './routes/migration-temp.js';
 import { ServiceFactory } from './services/serviceFactory.js';
 import { socialIngestionConfig } from './config/socialIngestion.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
@@ -317,6 +318,7 @@ app.use(
   golfPlayerScoresRouter,
 );
 app.use('/api/contacts/:contactId/golf', contactsGolfRouter);
+app.use('/api/migration', migrationTempRouter);
 // Global error handler
 app.use(globalErrorHandler as express.ErrorRequestHandler);
 

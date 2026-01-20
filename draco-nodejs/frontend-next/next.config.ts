@@ -36,6 +36,16 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
+      // R2 public bucket (production)
+      ...(process.env.NEXT_PUBLIC_R2_DOMAIN
+        ? [
+            {
+              protocol: 'https' as const,
+              hostname: process.env.NEXT_PUBLIC_R2_DOMAIN,
+              pathname: '/**',
+            },
+          ]
+        : []),
       // Only allow localhost in development (LocalStack)
       ...(process.env.NODE_ENV === 'development'
         ? [

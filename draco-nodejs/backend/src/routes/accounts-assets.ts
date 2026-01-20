@@ -58,7 +58,7 @@ router.get(
       throw new NotFoundError('Account logo not found');
     }
     res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.setHeader('Content-Length', logoBuffer.length.toString());
     res.send(logoBuffer);
   }),
