@@ -1,11 +1,11 @@
-import { createStorageService } from './storageService.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 /**
  * Service for managing contact photos
  * Provides centralized photo operations following SOLID principles
  */
 export class ContactPhotoService {
-  private storageService = createStorageService();
+  private storageService = ServiceFactory.getStorageService();
 
   constructor() {}
 

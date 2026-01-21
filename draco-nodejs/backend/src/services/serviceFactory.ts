@@ -106,6 +106,7 @@ import { GolferService } from './golferService.js';
 import { LiveScoringService } from './liveScoringService.js';
 import { IndividualLiveScoringService } from './individualLiveScoringService.js';
 import { BaseballLiveScoringService } from './baseballLiveScoringService.js';
+import { createStorageService, StorageService } from './storageService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -203,6 +204,7 @@ export class ServiceFactory {
   private static liveScoringService: LiveScoringService;
   private static individualLiveScoringService: IndividualLiveScoringService;
   private static baseballLiveScoringService: BaseballLiveScoringService;
+  private static storageService: StorageService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -1069,5 +1071,12 @@ export class ServiceFactory {
       this.baseballLiveScoringService = new BaseballLiveScoringService();
     }
     return this.baseballLiveScoringService;
+  }
+
+  static getStorageService(): StorageService {
+    if (!this.storageService) {
+      this.storageService = createStorageService();
+    }
+    return this.storageService;
   }
 }

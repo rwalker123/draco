@@ -5,7 +5,7 @@ import {
   validateSponsorPhotoFile,
   getSponsorPhotoUrl,
 } from '../../config/logo.js';
-import { createStorageService } from '../../services/storageService.js';
+import { ServiceFactory } from '../../services/serviceFactory.js';
 
 /**
  * Helper function to handle contact photo upload for contact update route
@@ -26,10 +26,8 @@ export const handleContactPhotoUpload = async (
     throw new Error(validationError);
   }
 
-  const storageService = createStorageService();
-
   // Save the photo using the storage service
-  await storageService.saveContactPhoto(
+  await ServiceFactory.getStorageService().saveContactPhoto(
     accountId.toString(),
     contactId.toString(),
     req.file.buffer,
@@ -53,9 +51,7 @@ export const handleSponsorPhotoUpload = async (
     throw new Error(validationError);
   }
 
-  const storageService = createStorageService();
-
-  await storageService.saveSponsorPhoto(
+  await ServiceFactory.getStorageService().saveSponsorPhoto(
     accountId.toString(),
     sponsorId.toString(),
     req.file.buffer,

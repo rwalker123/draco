@@ -1,7 +1,7 @@
 // Email Attachment Service
 // Handles attachment upload, storage, and retrieval
 
-import { createStorageService, StorageService } from './storageService.js';
+import { StorageService } from './storageService.js';
 import {
   validateAttachmentFile,
   validateAttachments,
@@ -14,13 +14,14 @@ import { AttachmentUploadResultType } from '@draco/shared-schemas';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { IEmailAttachmentRepository } from '../repositories/interfaces/IEmailAttachmentRepository.js';
 import { dbCreateEmailAttachmentInput } from '../repositories/types/dbTypes.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 export class EmailAttachmentService {
   private storageService: StorageService;
   private attachmentRepository: IEmailAttachmentRepository;
 
   constructor() {
-    this.storageService = createStorageService();
+    this.storageService = ServiceFactory.getStorageService();
     this.attachmentRepository = RepositoryFactory.getEmailAttachmentRepository();
   }
 

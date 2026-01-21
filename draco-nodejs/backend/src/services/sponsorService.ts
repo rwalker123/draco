@@ -8,12 +8,12 @@ import {
 } from '../repositories/index.js';
 import { SponsorResponseFormatter } from '../responseFormatters/index.js';
 import { NotFoundError } from '../utils/customErrors.js';
-import { createStorageService } from './storageService.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 export class SponsorService {
   private sponsorRepository: ISponsorRepository;
   private teamRepository: ITeamRepository;
-  private storageService = createStorageService();
+  private storageService = ServiceFactory.getStorageService();
 
   constructor() {
     this.sponsorRepository = RepositoryFactory.getSponsorRepository();

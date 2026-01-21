@@ -18,7 +18,6 @@ import {
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { WorkoutListOptions } from '../repositories/interfaces/IWorkoutRepository.js';
 import { WorkoutResponseFormatter } from '../responseFormatters/WorkoutResponseFormatter.js';
-import { createStorageService } from './storageService.js';
 import {
   WorkoutNotFoundError,
   WorkoutRegistrationNotFoundError,
@@ -289,7 +288,7 @@ export class WorkoutService {
   }
 
   async getSources(accountId: string): Promise<WorkoutSourcesType> {
-    const storage = createStorageService();
+    const storage = ServiceFactory.getStorageService();
     const buffer = await storage.getAttachment(accountId, 'config', 'workout-sources.json');
 
     if (!buffer) {
@@ -318,7 +317,7 @@ export class WorkoutService {
 
   async putSources(accountId: string, sources: WorkoutSourcesType): Promise<WorkoutSourcesType> {
     const sanitized = this.sanitizeSources(sources);
-    const storage = createStorageService();
+    const storage = ServiceFactory.getStorageService();
     const payload = Buffer.from(JSON.stringify(sanitized, null, 2));
 
     await storage.saveAttachment(accountId, 'config', 'workout-sources.json', payload);
