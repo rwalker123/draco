@@ -18,6 +18,31 @@ const toStringOrNull = (value: bigint | null | undefined): string | null => {
 
 const buildAssetUrl = (relativePath: string): string => {
   const normalized = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
+
+  if (process.env.STORAGE_PROVIDER === 'r2') {
+    const publicUrl = process.env.R2_PUBLIC_URL;
+    if (!publicUrl) {
+      throw new Error('R2_PUBLIC_URL environment variable must be set for R2 storage');
+    }
+    return `${publicUrl}/${normalized}`;
+  }
+
+  if (process.env.STORAGE_PROVIDER === 's3') {
+    if (!process.env.S3_BUCKET) {
+      throw new Error('S3_BUCKET environment variable must be set for S3 storage');
+    }
+    const bucket = process.env.S3_BUCKET;
+    const region = process.env.S3_REGION || 'us-east-1';
+    const s3Endpoint = process.env.S3_ENDPOINT || '';
+
+    if (s3Endpoint.includes('localhost')) {
+      const endpoint = s3Endpoint.replace(/^https?:\/\//, '');
+      return `http://${endpoint}/${bucket}/${normalized}`;
+    } else {
+      return `https://${bucket}.s3.${region}.amazonaws.com/${normalized}`;
+    }
+  }
+
   return `/uploads/${normalized}`;
 };
 
