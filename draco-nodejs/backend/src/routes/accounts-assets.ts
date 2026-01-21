@@ -7,13 +7,11 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
 import { validateLogoFile, getAccountLogoUrl } from '../config/logo.js';
-import { createStorageService } from '../services/storageService.js';
 import { logoUploadMiddleware } from '../middleware/logoUpload.js';
 import { getStringParam } from '../utils/paramExtraction.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
-const storageService = createStorageService();
 
 /**
  * POST /api/accounts/:accountId/logo
@@ -37,7 +35,7 @@ router.post(
     if (validationError) {
       throw new ValidationError(validationError);
     }
-    await storageService.saveAccountLogo(accountId, req.file.buffer);
+    await ServiceFactory.getStorageService().saveAccountLogo(accountId, req.file.buffer);
     const accountLogoUrl = getAccountLogoUrl(accountId);
     res.json(accountLogoUrl);
   }),
@@ -53,7 +51,7 @@ router.get(
   '/:accountId/logo',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = getStringParam(req.params.accountId)!;
-    const logoBuffer = await storageService.getAccountLogo(accountId);
+    const logoBuffer = await ServiceFactory.getStorageService().getAccountLogo(accountId);
     if (!logoBuffer) {
       throw new NotFoundError('Account logo not found');
     }
@@ -78,7 +76,7 @@ router.delete(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = getStringParam(req.params.accountId)!;
-    await storageService.deleteAccountLogo(accountId);
+    await ServiceFactory.getStorageService().deleteAccountLogo(accountId);
     res.json(true);
   }),
 );

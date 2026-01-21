@@ -5,8 +5,9 @@ import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { IHandoutRepository, ITeamRepository } from '../repositories/interfaces/index.js';
 import { HandoutResponseFormatter } from '../responseFormatters/handoutResponseFormatter.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
-import { createStorageService, StorageService } from './storageService.js';
+import { StorageService } from './storageService.js';
 import { dbAccountHandout, dbTeamHandout } from '../repositories/types/index.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 interface HandoutFilePayload {
   buffer: Buffer;
@@ -28,7 +29,7 @@ export class HandoutService {
   constructor() {
     this.handoutRepository = RepositoryFactory.getHandoutRepository();
     this.teamRepository = RepositoryFactory.getTeamRepository();
-    this.storageService = createStorageService();
+    this.storageService = ServiceFactory.getStorageService();
   }
 
   async listAccountHandouts(accountId: bigint): Promise<HandoutType[]> {

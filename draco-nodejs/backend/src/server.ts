@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
 import { ServiceFactory } from './services/serviceFactory.js';
+import { shutdownSSEManager } from './services/sseManager.js';
 
 async function bootstrap() {
   // Initialize role IDs synchronously - this ensures they're loaded when we need them
@@ -39,13 +40,15 @@ async function bootstrap() {
   const certPath = './certs/cert.pem';
   const certFilesPresent = fs.existsSync(keyPath) && fs.existsSync(certPath);
 
+  let server: http.Server | https.Server;
+
   if (certFilesPresent) {
     const options = {
       key: fs.readFileSync(keyPath),
       cert: fs.readFileSync(certPath),
     };
 
-    https.createServer(options, app).listen(PORT, () => {
+    server = https.createServer(options, app).listen(PORT, () => {
       const host = process.env.HOST || 'localhost';
       const protocol = 'https';
       console.log(`🔒 ${protocol.toUpperCase()} server running on ${protocol}://${host}:${PORT}`);
@@ -53,7 +56,7 @@ async function bootstrap() {
       console.log(`🔗 Health check: ${protocol}://${host}:${PORT}/health`);
     });
   } else {
-    http.createServer(app).listen(PORT, () => {
+    server = http.createServer(app).listen(PORT, () => {
       const host = process.env.HOST || 'localhost';
       const protocol = 'http';
       console.log(`🚀 ${protocol.toUpperCase()} server running on ${protocol}://${host}:${PORT}`);
@@ -61,6 +64,29 @@ async function bootstrap() {
       console.log(`🔗 Health check: ${protocol}://${host}:${PORT}/health`);
     });
   }
+
+  // Graceful shutdown handler
+  const shutdown = async (signal: string) => {
+    console.log(`\n${signal} received. Starting graceful shutdown...`);
+
+    // Stop accepting new connections
+    server.close(() => {
+      console.log('📡 HTTP server closed');
+    });
+
+    // Shutdown SSE connections
+    shutdownSSEManager();
+    console.log('📡 SSE Manager shutdown complete');
+
+    // Disconnect from database
+    await prisma.$disconnect();
+    console.log('🗄️ Database disconnected');
+
+    process.exit(0);
+  };
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
 bootstrap();

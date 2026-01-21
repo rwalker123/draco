@@ -1,12 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { createStorageService } from '../services/storageService.js';
 import { validateLogoFile, getLogoUrl } from '../config/logo.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { extractTeamParams } from '../utils/paramExtraction.js';
 
 const router = Router({ mergeParams: true });
-const storageService = createStorageService();
 const teamService = ServiceFactory.getTeamService();
 
 /**
@@ -28,7 +26,10 @@ router.get(
     const teamId = teamSeason.teamid.toString();
 
     // Get the logo from storage service using teamId
-    const logoBuffer = await storageService.getLogo(accountId.toString(), teamId);
+    const logoBuffer = await ServiceFactory.getStorageService().getLogo(
+      accountId.toString(),
+      teamId,
+    );
 
     if (!logoBuffer) {
       res.status(404).json({
@@ -69,7 +70,11 @@ export const handleLogoUpload = async (
 
   try {
     // Save the logo using the storage service
-    await storageService.saveLogo(accountId.toString(), teamId.toString(), req.file.buffer);
+    await ServiceFactory.getStorageService().saveLogo(
+      accountId.toString(),
+      teamId.toString(),
+      req.file.buffer,
+    );
 
     // Generate the public logo URL for the response
     return getLogoUrl(accountId.toString(), teamId.toString());

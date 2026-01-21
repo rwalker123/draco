@@ -1,5 +1,4 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { createStorageService } from '../services/storageService.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
@@ -7,7 +6,6 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractContactParams } from '../utils/paramExtraction.js';
 
 const router = Router({ mergeParams: true });
-const storageService = createStorageService();
 const routeProtection = ServiceFactory.getRouteProtection();
 const contactService = ServiceFactory.getContactService();
 
@@ -24,7 +22,7 @@ router.get(
     await contactService.getContact(accountId, contactId);
 
     // Get the photo from storage service
-    const photoBuffer = await storageService.getContactPhoto(
+    const photoBuffer = await ServiceFactory.getStorageService().getContactPhoto(
       accountId.toString(),
       contactId.toString(),
     );
@@ -59,7 +57,10 @@ router.delete(
     const contact = await contactService.getContact(accountId, contactId);
 
     // Delete the photo from storage service
-    await storageService.deleteContactPhoto(accountId.toString(), contactId.toString());
+    await ServiceFactory.getStorageService().deleteContactPhoto(
+      accountId.toString(),
+      contactId.toString(),
+    );
 
     res.json(`Photo deleted for ${contact.firstName} ${contact.lastName}`);
   }),
