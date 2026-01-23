@@ -167,6 +167,26 @@ export const registerEmailsEndpoints = ({ registry, schemaRefs, z }: RegisterCon
     request: {
       body: {
         content: {
+          'multipart/form-data': {
+            schema: {
+              type: 'object',
+              properties: {
+                metadata: {
+                  type: 'string',
+                  description: 'JSON-encoded email send request (EmailSendSchema)',
+                },
+                attachments: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                    format: 'binary',
+                  },
+                  description: 'File attachments (optional)',
+                },
+              },
+              required: ['metadata'],
+            },
+          },
           'application/json': {
             schema: EmailSendSchemaRef,
           },

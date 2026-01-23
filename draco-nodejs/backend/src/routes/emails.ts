@@ -78,7 +78,7 @@ router.get(
 
 /**
  * @route POST /api/accounts/:accountId/emails/compose
- * @desc Compose and send email
+ * @desc Compose and send email with optional file attachments
  * @access Private - requires ContactAdmin or higher permissions
  */
 router.post(
@@ -86,6 +86,15 @@ router.post(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
+  (req: Request, res: Response, next: NextFunction) => {
+    upload.array('attachments')(req, res, (err: unknown) => {
+      if (err) {
+        res.status(400).json({ message: (err as Error).message });
+        return;
+      }
+      next();
+    });
+  },
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const userId = req.user?.id;
@@ -94,13 +103,20 @@ router.post(
       throw new ValidationError('User ID is required');
     }
 
-    const request = EmailSendSchema.parse(req.body);
+    // Parse metadata from either JSON body or FormData metadata field
+    const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : req.body;
+    const request = EmailSendSchema.parse(metadata);
 
     if (!request.subject || !request.body || !request.recipients) {
       throw new ValidationError('Subject, body, and recipients are required');
     }
 
-    const emailId = await emailService.composeAndSendEmailFromUser(accountId, userId, request);
+    // Extract attachment files if present
+    const attachmentFiles = (req.files as Express.Multer.File[]) || [];
+
+    const emailId = await emailService.composeAndSendEmailFromUser(accountId, userId, request, {
+      attachmentFiles,
+    });
 
     res.status(201).json({
       emailId: emailId.toString(),

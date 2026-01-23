@@ -75,48 +75,6 @@ const validateFiles = async (
   };
 };
 
-// Simulate file upload with progress
-const simulateFileUpload = async (
-  file: File,
-  onProgress: (progress: number) => void,
-  signal?: AbortSignal,
-  objectUrlsRef?: React.MutableRefObject<Set<string>>,
-): Promise<{ url: string; previewUrl?: string }> => {
-  return new Promise((resolve, reject) => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      if (signal?.aborted) {
-        clearInterval(interval);
-        reject(new Error('Upload cancelled'));
-        return;
-      }
-
-      progress += Math.random() * 20;
-      if (progress > 100) progress = 100;
-
-      onProgress(progress);
-
-      if (progress >= 100) {
-        clearInterval(interval);
-
-        // Create URLs and track them for cleanup
-        const url = URL.createObjectURL(file);
-        const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
-
-        // Track URLs for cleanup
-        if (objectUrlsRef) {
-          objectUrlsRef.current.add(url);
-          if (previewUrl) {
-            objectUrlsRef.current.add(previewUrl);
-          }
-        }
-
-        resolve({ url, previewUrl });
-      }
-    }, 200);
-  });
-};
-
 export function useFileUpload({
   config = DEFAULT_ATTACHMENT_CONFIG,
   maxConcurrentUploads = 3,
@@ -174,52 +132,37 @@ export function useFileUpload({
     onAttachmentsChangeRef.current?.(attachments);
   }, [attachments]);
 
-  // Calculate overall upload progress
-  const calculateProgress = useCallback((currentAttachments: EmailAttachment[]) => {
-    const uploadingAttachments = currentAttachments.filter((att) => att.status === 'uploading');
-    if (uploadingAttachments.length === 0) return 0;
-
-    const totalProgress = uploadingAttachments.reduce(
-      (sum, att) => sum + (att.uploadProgress || 0),
-      0,
-    );
-    return Math.round(totalProgress / uploadingAttachments.length);
-  }, []);
-
   // Upload single file with progress tracking
   const uploadSingleFile = useCallback(
     async (file: File, attachment: EmailAttachment): Promise<void> => {
       const controller = new AbortController();
       uploadControllersRef.current.set(attachment.id, controller);
-      fileInputRef.current.set(attachment.id, file);
 
       try {
-        updateAttachment(attachment.id, { status: 'uploading', uploadProgress: 0 });
+        updateAttachment(attachment.id, { status: 'uploading', uploadProgress: 0, file });
 
-        // Simulate upload with progress tracking
-        const result = await simulateFileUpload(
-          file,
-          (progress) => {
-            if (!controller.signal.aborted) {
-              updateAttachment(attachment.id, { uploadProgress: progress });
+        // Create preview URL for images
+        let previewUrl: string | undefined;
+        if (file.type.startsWith('image/')) {
+          previewUrl = URL.createObjectURL(file);
+          if (objectUrlsRef.current) {
+            objectUrlsRef.current.add(previewUrl);
+          }
+        }
 
-              // Update overall progress
-              setAttachmentsState((current) => {
-                setUploadProgress(calculateProgress(current));
-                return current;
-              });
-            }
-          },
-          controller.signal,
-          objectUrlsRef,
-        );
+        // Simulate brief progress for UX (actual upload happens during compose)
+        if (!controller.signal.aborted) {
+          updateAttachment(attachment.id, { uploadProgress: 50 });
+        }
+
+        // Short delay for visual feedback
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         if (!controller.signal.aborted) {
           updateAttachment(attachment.id, {
             status: 'uploaded',
             uploadProgress: 100,
-            url: result.url,
-            previewUrl: result.previewUrl,
+            previewUrl,
             error: undefined,
           });
         }
@@ -238,10 +181,9 @@ export function useFileUpload({
       } finally {
         uploadControllersRef.current.delete(attachment.id);
         uploadPromisesRef.current.delete(attachment.id);
-        fileInputRef.current.delete(attachment.id);
       }
     },
-    [updateAttachment, calculateProgress, onError],
+    [updateAttachment, onError],
   );
 
   // Add multiple files with validation

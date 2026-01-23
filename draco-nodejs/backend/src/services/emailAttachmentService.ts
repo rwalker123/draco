@@ -32,6 +32,7 @@ export class EmailAttachmentService {
     accountId: string,
     emailId: string,
     file: Express.Multer.File,
+    options?: { skipStatusCheck?: boolean },
   ): Promise<AttachmentUploadResultType> {
     // Validate file
     const validationError = validateAttachmentFile({
@@ -51,8 +52,11 @@ export class EmailAttachmentService {
     }
 
     // Check if email is in draft or scheduled status (can't add attachments to sent emails)
-    if (email.status !== 'draft' && email.status !== 'scheduled') {
-      throw new ValidationError('Cannot add attachments to sent emails');
+    // Skip this check when attachments are uploaded during compose (email is in 'sending' status)
+    if (!options?.skipStatusCheck) {
+      if (email.status !== 'draft' && email.status !== 'scheduled') {
+        throw new ValidationError('Cannot add attachments to sent emails');
+      }
     }
 
     // Check existing attachments count
@@ -105,6 +109,7 @@ export class EmailAttachmentService {
     accountId: string,
     emailId: string,
     files: Express.Multer.File[],
+    options?: { skipStatusCheck?: boolean },
   ): Promise<AttachmentUploadResultType[]> {
     // Validate all files
     const validationError = validateAttachments(
@@ -121,7 +126,7 @@ export class EmailAttachmentService {
     // Upload each file
     const results: AttachmentUploadResultType[] = [];
     for (const file of files) {
-      const result = await this.uploadAttachment(accountId, emailId, file);
+      const result = await this.uploadAttachment(accountId, emailId, file, options);
       results.push(result);
     }
 

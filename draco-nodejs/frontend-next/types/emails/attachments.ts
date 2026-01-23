@@ -11,6 +11,7 @@ export interface EmailAttachment {
   size: number;
   type: string;
   url?: string;
+  file?: File;
   uploadProgress?: number;
   status: 'pending' | 'uploading' | 'uploaded' | 'error';
   error?: string;

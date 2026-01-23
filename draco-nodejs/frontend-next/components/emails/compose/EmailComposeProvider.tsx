@@ -724,6 +724,11 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
           }
         }
 
+        // Extract File objects from uploaded attachments
+        const uploadedFiles = state.attachments
+          .filter((a) => a.status === 'uploaded' && a.file)
+          .map((a) => a.file!);
+
         const emailRequest: EmailComposeRequest = {
           recipients: {
             contacts,
@@ -754,13 +759,16 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
           subject: state.subject,
           body: bodyContent,
           templateId: state.selectedTemplate?.id,
-          attachments: state.attachments.filter((a) => a.status === 'uploaded').map((a) => a.url!),
           scheduledSend: state.isScheduled ? state.scheduledDate : undefined,
           seasonId,
         };
 
         dispatch({ type: 'SET_SENDING', payload: { isSending: true, progress: 50 } });
-        const emailId = await emailServiceRef.current!.composeEmail(accountId, emailRequest);
+        const emailId = await emailServiceRef.current!.composeEmail(
+          accountId,
+          emailRequest,
+          uploadedFiles.length > 0 ? uploadedFiles : undefined,
+        );
 
         dispatch({ type: 'SET_SENDING', payload: { isSending: true, progress: 100 } });
 

@@ -92,6 +92,7 @@ interface SenderContext {
 
 interface ComposeEmailOptions {
   isSystemEmail?: boolean;
+  attachmentFiles?: Express.Multer.File[];
 }
 
 interface EmailSendToAddressesRequest {
@@ -481,6 +482,16 @@ export class EmailService {
       reply_to_email: senderContext.replyTo,
       from_name_override: senderContext.displayName,
     });
+
+    // Upload attachments if provided (during compose with multipart form data)
+    if (options?.attachmentFiles && options.attachmentFiles.length > 0) {
+      await this.attachmentService.uploadMultipleAttachments(
+        accountId.toString(),
+        email.id.toString(),
+        options.attachmentFiles,
+        { skipStatusCheck: true },
+      );
+    }
 
     await this.sendBulkEmail(email.id, request, {
       queueImmediately: !shouldDelaySend,
