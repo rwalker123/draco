@@ -23,10 +23,4 @@ export function getSportAdapter(accountType: string | undefined): SportScheduleA
   return adapter;
 }
 
-export function registerSportAdapter(sportType: string, adapter: SportScheduleAdapter): void {
-  sportAdapterRegistry.set(sportType.toLowerCase(), adapter);
-}
-
-export { baseballAdapter } from './baseballAdapter';
-export { golfAdapter } from './golfAdapter';
 export type { SportScheduleAdapter } from '../types/sportAdapter';

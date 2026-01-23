@@ -1224,7 +1224,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           <Stack direction="row" sx={{ height: '100%', bgcolor: 'background.paper' }}>
             {/* Main Selection Panel */}
             <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              {/* Contacts Tab - Now using ContactSelectionTable with local state */}
               {currentTab === 'contacts' && (
                 <ContactsTabContent
                   errorState={errorState}

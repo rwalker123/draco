@@ -1,0 +1,59 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": [
+    "app/**/page.tsx",
+    "app/**/layout.tsx",
+    "app/**/route.ts",
+    "app/**/not-found.tsx",
+    "next.config.{js,ts,mjs}"
+  ],
+  "project": [
+    "**/*.{ts,tsx}",
+    "!**/__tests__/**",
+    "!**/*.test.{ts,tsx}",
+    "!**/__mocks__/**",
+    "!test-utils/**"
+  ],
+  "ignore": [
+    "**/__tests__/**",
+    "**/*.test.{ts,tsx}",
+    "**/__mocks__/**",
+    "test-utils/**",
+    "next-env.d.ts",
+    "jest.config.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts",
+    "postcss.config.mjs",
+    "tailwind.config.ts"
+  ],
+  "ignoreDependencies": [
+    "@testing-library/*",
+    "@types/*",
+    "vitest",
+    "jsdom",
+    "@vitest/*",
+    "@babel/*",
+    "eslint",
+    "eslint-config-next",
+    "tailwindcss",
+    "tw-animate-css",
+    "dotenv-cli",
+    "react-dom",
+    "@draco/shared-api-client",
+    "@draco/shared-schemas",
+    "@emotion/styled",
+    "@emotion/cache",
+    "@tanstack/react-query",
+    "react-dropzone",
+    "react-transition-group",
+    "validator",
+    "@lexical/*",
+    "@mui/system",
+    "@mui/utils"
+  ],
+  "ignoreBinaries": [
+    "dotenv",
+    "unset"
+  ],
+  "ignoreExportsUsedInFile": true
+}
