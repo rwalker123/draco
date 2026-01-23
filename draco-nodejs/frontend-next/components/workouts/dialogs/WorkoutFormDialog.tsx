@@ -11,11 +11,13 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   FormHelperText,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
@@ -72,6 +74,7 @@ const WorkoutFormSchema = z.object({
     .nullable()
     .optional(),
   comments: z.string().trim().max(2000, 'Comments cannot exceed 2000 characters').optional(),
+  publishToSocial: z.boolean().default(false),
 });
 
 type WorkoutFormValues = z.infer<typeof WorkoutFormSchema>;
@@ -81,6 +84,7 @@ const getDefaultValues = (): WorkoutFormValues => ({
   workoutDate: new Date(),
   fieldId: null,
   comments: '',
+  publishToSocial: false,
 });
 
 export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
@@ -170,6 +174,7 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
           workoutDate: new Date(workoutDetails.workoutDate),
           fieldId: workoutDetails.field?.id ?? null,
           comments: workoutDetails.comments ?? '',
+          publishToSocial: false,
         });
         setEditorKey((value) => value + 1);
       } else {
@@ -230,6 +235,7 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
         workoutDesc: values.workoutDesc.trim(),
         workoutDate: values.workoutDate.toISOString(),
         fieldId: values.fieldId ?? null,
+        publishToSocial: values.publishToSocial,
       };
 
       if (trimmedComments.length > 0) {
@@ -372,6 +378,31 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
                     {errors.comments.message}
                   </Typography>
                 ) : null}
+              </Box>
+
+              <Box>
+                <Controller
+                  control={control}
+                  name="publishToSocial"
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                      }
+                      label="Post to Social Media"
+                    />
+                  )}
+                />
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', ml: 6 }}
+                >
+                  When enabled, this workout will be shared to connected social media accounts.
+                </Typography>
               </Box>
             </Stack>
           )}

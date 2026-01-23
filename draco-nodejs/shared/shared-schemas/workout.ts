@@ -47,6 +47,7 @@ export const UpsertWorkoutSchema = z
       .nullable()
       .optional(),
     comments: z.string().trim().max(2000).optional(),
+    publishToSocial: z.boolean().optional().default(false),
   })
   .openapi({
     title: 'UpsertWorkout',

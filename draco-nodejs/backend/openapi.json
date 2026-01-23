@@ -14237,6 +14237,10 @@
           "comments": {
             "type": "string",
             "maxLength": 2000
+          },
+          "publishToSocial": {
+            "type": "boolean",
+            "default": false
           }
         },
         "required": [
