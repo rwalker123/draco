@@ -4,10 +4,12 @@ import {
   createAccountHandout as apiCreateAccountHandout,
   updateAccountHandout as apiUpdateAccountHandout,
   deleteAccountHandout as apiDeleteAccountHandout,
+  downloadAccountHandout as apiDownloadAccountHandout,
   listTeamHandouts as apiListTeamHandouts,
   createTeamHandout as apiCreateTeamHandout,
   updateTeamHandout as apiUpdateTeamHandout,
   deleteTeamHandout as apiDeleteTeamHandout,
+  downloadTeamHandout as apiDownloadTeamHandout,
 } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
 import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
@@ -98,6 +100,26 @@ export class HandoutService {
     });
 
     assertNoApiError(result, 'Failed to delete handout');
+  }
+
+  async downloadAccountHandout(accountId: string, handoutId: string): Promise<Blob> {
+    const result = await apiDownloadAccountHandout({
+      client: this.client,
+      path: { accountId, handoutId },
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to download handout');
+  }
+
+  async downloadTeamHandout(context: TeamContext, handoutId: string): Promise<Blob> {
+    const result = await apiDownloadTeamHandout({
+      client: this.client,
+      path: { accountId: context.accountId, teamId: context.teamId, handoutId },
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to download handout');
   }
 
   private async createHandout(context: BaseContext | TeamContext, input: HandoutInput) {
