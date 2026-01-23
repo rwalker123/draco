@@ -5,7 +5,7 @@ import { Alert, Fab, Snackbar, Stack } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import type { FieldType } from '@draco/shared-schemas';
 import { useRole } from '../../context/RoleContext';
-import { useDialogManager } from '../../hooks/useDialogManager';
+import { useDialog } from '../../hooks/useDialog';
 import FieldFormDialog from './FieldFormDialog';
 import FieldDeleteDialog from './FieldDeleteDialog';
 import { FieldsView, type FieldsViewRef } from './FieldsView';
@@ -25,12 +25,8 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
   const { hasPermission } = useRole();
   const canManage = hasPermission('account.manage', { accountId });
 
-  const dialogs = useDialogManager<{
-    form: FormDialogData;
-    delete: FieldType;
-  }>();
-  const formDialog = dialogs.createDialog('form');
-  const deleteDialog = dialogs.createDialog('delete');
+  const formDialog = useDialog<FormDialogData>();
+  const deleteDialog = useDialog<FieldType>();
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 

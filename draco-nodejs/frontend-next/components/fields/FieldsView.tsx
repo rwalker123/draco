@@ -158,8 +158,6 @@ export const FieldsView = forwardRef<FieldsViewRef, FieldsViewProps>(
       setPage(0);
     }, [trimmedSearch]);
 
-    const tableRows = useMemo(() => fields, [fields]);
-
     const totalCount = useMemo(
       () => pagination?.total ?? fields.length,
       [fields.length, pagination?.total],
@@ -307,7 +305,7 @@ export const FieldsView = forwardRef<FieldsViewRef, FieldsViewProps>(
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {tableRows.length === 0 ? (
+                      {fields.length === 0 ? (
                         <TableRow>
                           <TableCell
                             colSpan={hasActionsColumn ? COLUMNS.length + 1 : COLUMNS.length}
@@ -322,7 +320,7 @@ export const FieldsView = forwardRef<FieldsViewRef, FieldsViewProps>(
                           </TableCell>
                         </TableRow>
                       ) : (
-                        tableRows.map((field) => {
+                        fields.map((field) => {
                           const isSelected = selectedField?.id === field.id;
                           return (
                             <TableRow
