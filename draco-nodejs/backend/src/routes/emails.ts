@@ -2,6 +2,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import multer, { MulterError } from 'multer';
 import fs from 'fs/promises';
+import { mkdirSync } from 'fs';
 import os from 'os';
 import path from 'path';
 
@@ -16,7 +17,7 @@ import {
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { ValidationError, NotFoundError } from '../utils/customErrors.js';
+import { ValidationError, NotFoundError, PayloadTooLargeError } from '../utils/customErrors.js';
 import { PaginationHelper } from '../utils/pagination.js';
 import {
   extractAccountParams,
@@ -34,18 +35,34 @@ const routeProtection = ServiceFactory.getRouteProtection();
 // Files are written to temp directory and cleaned up after processing
 const uploadTempDir = path.join(os.tmpdir(), 'draco-email-attachments');
 
+// Create temp directory at module initialization (synchronous) to avoid race conditions
+// when multiple requests arrive simultaneously
+try {
+  mkdirSync(uploadTempDir, { recursive: true });
+} catch {
+  // Directory may already exist or be created by another process - that's fine
+}
+
+/**
+ * Sanitize filename to prevent path traversal attacks
+ * Removes directory separators and null bytes, keeps only safe characters
+ */
+function sanitizeFilename(originalName: string): string {
+  // Extract basename to remove any path components (e.g., "../" or "C:\")
+  const basename = path.basename(originalName);
+  // Replace any remaining unsafe characters with underscores
+  // Allow alphanumeric, dots, hyphens, underscores, and spaces
+  return basename.replace(/[^a-zA-Z0-9.\-_ ]/g, '_');
+}
+
 const diskStorage = multer.diskStorage({
-  destination: async (_req, _file, cb) => {
-    try {
-      await fs.mkdir(uploadTempDir, { recursive: true });
-      cb(null, uploadTempDir);
-    } catch (err) {
-      cb(err as Error, uploadTempDir);
-    }
+  destination: (_req, _file, cb) => {
+    cb(null, uploadTempDir);
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${uniqueSuffix}-${file.originalname}`);
+    const safeName = sanitizeFilename(file.originalname);
+    cb(null, `${uniqueSuffix}-${safeName}`);
   },
 });
 
@@ -58,16 +75,19 @@ const upload = multer({
 });
 
 /**
- * Read file buffer from disk and clean up temp file
- * Converts disk-stored multer files to have buffer property like memory storage
+ * Read file buffers from disk sequentially to reduce memory pressure
+ * Processing one at a time avoids loading all files into memory simultaneously
  */
 async function loadFileBuffers(files: Express.Multer.File[]): Promise<Express.Multer.File[]> {
-  return Promise.all(
-    files.map(async (file) => {
-      const buffer = await fs.readFile(file.path);
-      return { ...file, buffer };
-    }),
-  );
+  const result: Express.Multer.File[] = [];
+  for (const file of files) {
+    if (!file.path) {
+      throw new Error(`File path missing for uploaded file: ${file.originalname}`);
+    }
+    const buffer = await fs.readFile(file.path);
+    result.push({ ...file, buffer });
+  }
+  return result;
 }
 
 /**
@@ -138,8 +158,14 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   (req: Request, res: Response, next: NextFunction) => {
-    upload.array('attachmentFiles')(req, res, (err: unknown) => {
+    upload.array('attachmentFiles')(req, res, async (err: unknown) => {
       if (err) {
+        // Clean up any files that were written before the error occurred
+        const partialFiles = req.files as Express.Multer.File[] | undefined;
+        if (partialFiles?.length) {
+          await cleanupTempFiles(partialFiles);
+        }
+
         if (err instanceof MulterError) {
           const errorResponses: Record<string, { status: number; message: string }> = {
             LIMIT_FILE_SIZE: {
@@ -197,8 +223,17 @@ router.post(
     // Extract attachment files if present (disk storage - need to load buffers)
     const rawFiles = (req.files as Express.Multer.File[]) || [];
 
+    // Validate total attachment size before loading into memory
+    if (rawFiles.length > 0) {
+      const totalSize = rawFiles.reduce((sum, file) => sum + file.size, 0);
+      if (totalSize > ATTACHMENT_CONFIG.MAX_TOTAL_ATTACHMENTS_SIZE) {
+        const maxSizeMB = ATTACHMENT_CONFIG.MAX_TOTAL_ATTACHMENTS_SIZE / (1024 * 1024);
+        throw new PayloadTooLargeError(`Total attachment size exceeds maximum of ${maxSizeMB}MB`);
+      }
+    }
+
     try {
-      // Load file buffers from disk (disk storage doesn't populate buffer property)
+      // Load file buffers from disk sequentially (disk storage doesn't populate buffer property)
       const attachmentFiles = rawFiles.length > 0 ? await loadFileBuffers(rawFiles) : [];
 
       const emailId = await emailService.composeAndSendEmailFromUser(accountId, userId, request, {

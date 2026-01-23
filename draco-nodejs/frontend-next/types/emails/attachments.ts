@@ -4,6 +4,11 @@
 
 /**
  * File attachment metadata
+ *
+ * Note: The `file` property stores a File object reference. File objects cannot be
+ * serialized to JSON (they become `{}`). Do NOT persist this state to localStorage
+ * or sessionStorage. The file reference is used only during the compose session
+ * and extracted when sending the email.
  */
 export interface EmailAttachment {
   id: string;
