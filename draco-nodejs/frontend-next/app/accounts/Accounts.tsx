@@ -16,8 +16,6 @@ import CommunityHighlightsSection from '../../components/landing/CommunityHighli
 import HowItWorksSection from '../../components/landing/HowItWorksSection';
 import SportFeaturesSection from '../../components/landing/SportFeaturesSection';
 import IndividualGolfSignupDialog from '../../components/golf/dialogs/IndividualGolfSignupDialog';
-// FinalCtaSection import commented out - see TODO below
-// import FinalCtaSection from '../../components/landing/FinalCtaSection';
 
 type SearchState =
   | { status: 'idle'; results: SharedAccountType[] }
