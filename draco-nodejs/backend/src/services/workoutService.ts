@@ -78,7 +78,9 @@ export class WorkoutService {
     const createData = this.mapWorkoutCreateData(payload);
     const workout = await this.workoutRepository.createWorkout(accountId, createData);
 
-    void this.syncWorkoutToSocial(accountId, workout);
+    if (payload.publishToSocial === true) {
+      void this.syncWorkoutToSocial(accountId, workout);
+    }
 
     return WorkoutResponseFormatter.formatWorkout(workout);
   }
@@ -101,7 +103,10 @@ export class WorkoutService {
     }
 
     const workout = await this.workoutRepository.updateWorkout(accountId, workoutId, updateData);
-    void this.syncWorkoutToSocial(accountId, workout);
+
+    if (payload.publishToSocial === true) {
+      void this.syncWorkoutToSocial(accountId, workout);
+    }
 
     return WorkoutResponseFormatter.formatWorkout(workout);
   }

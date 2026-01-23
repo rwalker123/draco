@@ -584,17 +584,18 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
         setAccountHandoutsError(null);
         setTeamHandoutsError(null);
 
-        const response = await fetch(handout.downloadUrl, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Download failed with status ${response.status}`);
+        let blob: Blob;
+        if (handout.teamId && accountId) {
+          blob = await handoutService.downloadTeamHandout(
+            { accountId, teamId: handout.teamId },
+            handout.id,
+          );
+        } else if (accountId) {
+          blob = await handoutService.downloadAccountHandout(accountId, handout.id);
+        } else {
+          throw new Error('Account ID is required');
         }
 
-        const blob = await response.blob();
         const objectUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = objectUrl;
@@ -611,7 +612,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
         setDownloadingHandoutId(null);
       }
     },
-    [token],
+    [accountId, handoutService, token],
   );
 
   const handleAnnouncementSelect = React.useCallback(
