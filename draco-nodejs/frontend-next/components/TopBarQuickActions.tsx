@@ -570,12 +570,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
 
   const handleHandoutDownload = React.useCallback(
     async (handout: HandoutType) => {
-      if (!handout.downloadUrl) {
-        return;
-      }
-
-      if (!token) {
-        window.open(handout.downloadUrl, '_blank', 'noopener,noreferrer');
+      if (!handout.downloadUrl || !accountId) {
         return;
       }
 
@@ -585,15 +580,13 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
         setTeamHandoutsError(null);
 
         let blob: Blob;
-        if (handout.teamId && accountId) {
+        if (handout.teamId) {
           blob = await handoutService.downloadTeamHandout(
             { accountId, teamId: handout.teamId },
             handout.id,
           );
-        } else if (accountId) {
-          blob = await handoutService.downloadAccountHandout(accountId, handout.id);
         } else {
-          throw new Error('Account ID is required');
+          blob = await handoutService.downloadAccountHandout(accountId, handout.id);
         }
 
         const objectUrl = URL.createObjectURL(blob);
@@ -612,7 +605,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
         setDownloadingHandoutId(null);
       }
     },
-    [accountId, handoutService, token],
+    [accountId, handoutService],
   );
 
   const handleAnnouncementSelect = React.useCallback(
