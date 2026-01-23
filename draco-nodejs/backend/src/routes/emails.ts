@@ -11,6 +11,7 @@ import {
   RecipientGroupType,
 } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import { parseFormDataJSON } from '../middleware/fileUpload.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
@@ -87,7 +88,7 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   (req: Request, res: Response, next: NextFunction) => {
-    upload.array('attachments')(req, res, (err: unknown) => {
+    upload.array('attachmentFiles')(req, res, (err: unknown) => {
       if (err) {
         res.status(400).json({ message: (err as Error).message });
         return;
@@ -95,6 +96,7 @@ router.post(
       next();
     });
   },
+  parseFormDataJSON,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const userId = req.user?.id;
@@ -103,9 +105,7 @@ router.post(
       throw new ValidationError('User ID is required');
     }
 
-    // Parse metadata from either JSON body or FormData metadata field
-    const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : req.body;
-    const request = EmailSendSchema.parse(metadata);
+    const request = EmailSendSchema.parse(req.body);
 
     if (!request.subject || !request.body || !request.recipients) {
       throw new ValidationError('Subject, body, and recipients are required');

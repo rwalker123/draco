@@ -240,30 +240,13 @@ export class EmailService {
   ): Promise<string> {
     const payload = buildComposePayload(request);
 
-    if (files && files.length > 0) {
-      // Use multipart form data when files are present
-      // The OpenAPI generator types only the JSON content type, not multipart/form-data.
-      // The formDataBodySerializer handles the actual serialization correctly.
-      const result = await apiComposeAccountEmail({
-        client: this.client,
-        path: { accountId },
-        // @ts-expect-error - multipart body has different shape than JSON body; serializer handles it
-        body: { metadata: JSON.stringify(payload), attachments: files },
-        throwOnError: false,
-        ...formDataBodySerializer,
-        headers: { 'Content-Type': null },
-      });
-
-      const data = unwrapApiResult(result, 'Failed to send email');
-      return data.emailId;
-    }
-
-    // Use JSON when no files
     const result = await apiComposeAccountEmail({
       client: this.client,
       path: { accountId },
-      body: payload,
+      body: files?.length ? { ...payload, attachmentFiles: files } : payload,
       throwOnError: false,
+      ...formDataBodySerializer,
+      headers: { 'Content-Type': null },
     });
 
     const data = unwrapApiResult(result, 'Failed to send email');

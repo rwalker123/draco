@@ -43326,29 +43326,24 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "metadata": {
-                    "type": "string",
-                    "description": "JSON-encoded email send request (EmailSendSchema)"
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/EmailSend"
                   },
-                  "attachments": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "binary"
-                    },
-                    "description": "File attachments (optional)"
+                  {
+                    "type": "object",
+                    "properties": {
+                      "attachmentFiles": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "binary"
+                        },
+                        "description": "File attachments to upload with the email"
+                      }
+                    }
                   }
-                },
-                "required": [
-                  "metadata"
                 ]
-              }
-            },
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmailSend"
               }
             }
           }
