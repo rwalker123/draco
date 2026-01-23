@@ -11,7 +11,6 @@ import {
   RecipientGroupType,
 } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { parseFormDataJSON } from '../middleware/fileUpload.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
@@ -96,7 +95,6 @@ router.post(
       next();
     });
   },
-  parseFormDataJSON,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const userId = req.user?.id;
@@ -105,7 +103,20 @@ router.post(
       throw new ValidationError('User ID is required');
     }
 
-    const request = EmailSendSchema.parse(req.body);
+    // Handle multipart form data: parse JSON string fields
+    let body = req.body;
+    if (req.headers['content-type']?.includes('multipart/form-data')) {
+      body = { ...req.body };
+      if (typeof body.recipients === 'string') {
+        try {
+          body.recipients = JSON.parse(body.recipients);
+        } catch {
+          throw new ValidationError('Invalid recipients format: must be valid JSON');
+        }
+      }
+    }
+
+    const request = EmailSendSchema.parse(body);
 
     if (!request.subject || !request.body || !request.recipients) {
       throw new ValidationError('Subject, body, and recipients are required');

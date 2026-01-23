@@ -240,14 +240,28 @@ export class EmailService {
   ): Promise<string> {
     const payload = buildComposePayload(request);
 
-    const result = await apiComposeAccountEmail({
-      client: this.client,
-      path: { accountId },
-      body: files?.length ? { ...payload, attachmentFiles: files } : payload,
-      throwOnError: false,
-      ...formDataBodySerializer,
-      headers: { 'Content-Type': null },
-    });
+    // For multipart form data with files, we need to:
+    // 1. JSON stringify nested objects (recipients) since formDataBodySerializer doesn't handle them
+    // 2. Cast body type since SDK only types the JSON schema, not the multipart extension
+    const result = files?.length
+      ? await apiComposeAccountEmail({
+          client: this.client,
+          path: { accountId },
+          body: {
+            ...payload,
+            recipients: JSON.stringify(payload.recipients),
+            attachmentFiles: files,
+          } as typeof payload & { attachmentFiles: File[] },
+          throwOnError: false,
+          ...formDataBodySerializer,
+          headers: { 'Content-Type': null },
+        })
+      : await apiComposeAccountEmail({
+          client: this.client,
+          path: { accountId },
+          body: payload,
+          throwOnError: false,
+        });
 
     const data = unwrapApiResult(result, 'Failed to send email');
     return data.emailId;

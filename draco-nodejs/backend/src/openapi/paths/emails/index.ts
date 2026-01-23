@@ -167,6 +167,9 @@ export const registerEmailsEndpoints = ({ registry, schemaRefs, z }: RegisterCon
     request: {
       body: {
         content: {
+          'application/json': {
+            schema: EmailSendSchemaRef,
+          },
           'multipart/form-data': {
             schema: EmailSendSchemaRef.extend({
               attachmentFiles: z

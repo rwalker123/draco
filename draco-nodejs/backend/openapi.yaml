@@ -30987,6 +30987,9 @@ paths:
             format: number
       requestBody:
         content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailSend"
           multipart/form-data:
             schema:
               allOf:
