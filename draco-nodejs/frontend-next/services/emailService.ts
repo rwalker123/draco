@@ -46,6 +46,29 @@ import type {
 
 const DEFAULT_COMPOSE_EMAIL_ID = '0';
 
+/**
+ * Multipart form data body for email compose with attachments.
+ * The `recipients` field is JSON stringified because formDataBodySerializer
+ * doesn't handle nested objects (they become "[object Object]").
+ */
+interface ComposeEmailMultipartBody {
+  id?: string;
+  recipients: string;
+  subject: string;
+  body: string;
+  templateId?: string;
+  attachments?: string[];
+  scheduledSend?: string;
+  status?: 'scheduled' | 'sending';
+  seasonId?: string;
+  attachmentFiles: File[];
+}
+
+interface ComposeEmailResponse {
+  emailId: string;
+  status: 'scheduled' | 'sending';
+}
+
 const toOptionalIsoString = (value?: Date): string | undefined => {
   if (!value) {
     return undefined;
@@ -240,28 +263,34 @@ export class EmailService {
   ): Promise<string> {
     const payload = buildComposePayload(request);
 
-    // For multipart form data with files, we need to:
-    // 1. JSON stringify nested objects (recipients) since formDataBodySerializer doesn't handle them
-    // 2. Cast body type since SDK only types the JSON schema, not the multipart extension
-    const result = files?.length
-      ? await apiComposeAccountEmail({
-          client: this.client,
-          path: { accountId },
-          body: {
-            ...payload,
-            recipients: JSON.stringify(payload.recipients),
-            attachmentFiles: files,
-          } as typeof payload & { attachmentFiles: File[] },
-          throwOnError: false,
-          ...formDataBodySerializer,
-          headers: { 'Content-Type': null },
-        })
-      : await apiComposeAccountEmail({
-          client: this.client,
-          path: { accountId },
-          body: payload,
-          throwOnError: false,
-        });
+    if (files?.length) {
+      // Use direct client call for multipart form data with files.
+      // formDataBodySerializer doesn't handle nested objects (they become "[object Object]"),
+      // so we JSON stringify the recipients field explicitly.
+      const multipartBody: ComposeEmailMultipartBody = {
+        ...payload,
+        recipients: JSON.stringify(payload.recipients),
+        attachmentFiles: files,
+      };
+
+      const result = await this.client.post<ComposeEmailResponse>({
+        url: `/api/accounts/${accountId}/emails/compose`,
+        body: multipartBody,
+        security: [{ scheme: 'bearer', type: 'http' }],
+        ...formDataBodySerializer,
+        headers: { 'Content-Type': null },
+      });
+
+      const data = unwrapApiResult(result, 'Failed to send email');
+      return data.emailId;
+    }
+
+    const result = await apiComposeAccountEmail({
+      client: this.client,
+      path: { accountId },
+      body: payload,
+      throwOnError: false,
+    });
 
     const data = unwrapApiResult(result, 'Failed to send email');
     return data.emailId;

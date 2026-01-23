@@ -1,6 +1,9 @@
 // Email Routes
 import { Router, Request, Response, NextFunction } from 'express';
-import multer from 'multer';
+import multer, { MulterError } from 'multer';
+import fs from 'fs/promises';
+import os from 'os';
+import path from 'path';
 
 import { ATTACHMENT_CONFIG } from '../config/attachments.js';
 import { EmailStatus } from '../interfaces/emailInterfaces.js';
@@ -27,14 +30,62 @@ const templateService = ServiceFactory.getEmailTemplateService();
 const attachmentService = ServiceFactory.getEmailAttachmentService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
-// Configure multer for attachment uploads
+// Configure multer for attachment uploads with disk storage to reduce memory pressure
+// Files are written to temp directory and cleaned up after processing
+const uploadTempDir = path.join(os.tmpdir(), 'draco-email-attachments');
+
+const diskStorage = multer.diskStorage({
+  destination: async (_req, _file, cb) => {
+    try {
+      await fs.mkdir(uploadTempDir, { recursive: true });
+      cb(null, uploadTempDir);
+    } catch (err) {
+      cb(err as Error, uploadTempDir);
+    }
+  },
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
+  },
+});
+
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage: diskStorage,
   limits: {
     fileSize: ATTACHMENT_CONFIG.MAX_FILE_SIZE,
     files: ATTACHMENT_CONFIG.MAX_ATTACHMENTS_PER_EMAIL,
   },
 });
+
+/**
+ * Read file buffer from disk and clean up temp file
+ * Converts disk-stored multer files to have buffer property like memory storage
+ */
+async function loadFileBuffers(files: Express.Multer.File[]): Promise<Express.Multer.File[]> {
+  return Promise.all(
+    files.map(async (file) => {
+      const buffer = await fs.readFile(file.path);
+      return { ...file, buffer };
+    }),
+  );
+}
+
+/**
+ * Clean up temporary files after request processing
+ */
+async function cleanupTempFiles(files: Express.Multer.File[]): Promise<void> {
+  await Promise.all(
+    files.map(async (file) => {
+      try {
+        if (file.path) {
+          await fs.unlink(file.path);
+        }
+      } catch {
+        // Ignore cleanup errors - files will be cleaned up by OS eventually
+      }
+    }),
+  );
+}
 
 /**
  * @route GET /api/accounts/:accountId/seasons/:seasonId/group-contacts
@@ -89,7 +140,28 @@ router.post(
   (req: Request, res: Response, next: NextFunction) => {
     upload.array('attachmentFiles')(req, res, (err: unknown) => {
       if (err) {
-        res.status(400).json({ message: (err as Error).message });
+        if (err instanceof MulterError) {
+          const errorResponses: Record<string, { status: number; message: string }> = {
+            LIMIT_FILE_SIZE: {
+              status: 413,
+              message: 'File size exceeds the maximum allowed limit',
+            },
+            LIMIT_FILE_COUNT: { status: 400, message: 'Too many files uploaded' },
+            LIMIT_UNEXPECTED_FILE: { status: 400, message: 'Unexpected file field' },
+          };
+          const response = errorResponses[err.code] ?? { status: 400, message: err.message };
+          res.status(response.status).json({
+            message: response.message,
+            statusCode: response.status,
+            isRetryable: false,
+          });
+          return;
+        }
+        res.status(400).json({
+          message: err instanceof Error ? err.message : 'File upload failed',
+          statusCode: 400,
+          isRetryable: false,
+        });
         return;
       }
       next();
@@ -122,17 +194,27 @@ router.post(
       throw new ValidationError('Subject, body, and recipients are required');
     }
 
-    // Extract attachment files if present
-    const attachmentFiles = (req.files as Express.Multer.File[]) || [];
+    // Extract attachment files if present (disk storage - need to load buffers)
+    const rawFiles = (req.files as Express.Multer.File[]) || [];
 
-    const emailId = await emailService.composeAndSendEmailFromUser(accountId, userId, request, {
-      attachmentFiles,
-    });
+    try {
+      // Load file buffers from disk (disk storage doesn't populate buffer property)
+      const attachmentFiles = rawFiles.length > 0 ? await loadFileBuffers(rawFiles) : [];
 
-    res.status(201).json({
-      emailId: emailId.toString(),
-      status: request.scheduledSend ? 'scheduled' : 'sending',
-    });
+      const emailId = await emailService.composeAndSendEmailFromUser(accountId, userId, request, {
+        attachmentFiles,
+      });
+
+      res.status(201).json({
+        emailId: emailId.toString(),
+        status: request.scheduledSend ? 'scheduled' : 'sending',
+      });
+    } finally {
+      // Clean up temp files regardless of success or failure
+      if (rawFiles.length > 0) {
+        await cleanupTempFiles(rawFiles);
+      }
+    }
   }),
 );
 
