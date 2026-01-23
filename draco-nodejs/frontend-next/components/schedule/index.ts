@@ -2,7 +2,6 @@
 export { useScheduleData } from './hooks/useScheduleData';
 export { useScheduleFilters } from './hooks/useScheduleFilters';
 export { useGameManagement } from './hooks/useGameManagement';
-export type { DeleteGameResult } from './hooks/useGameDeletion';
 
 // Dialogs
 export { default as DeleteGameDialog } from './dialogs/DeleteGameDialog';

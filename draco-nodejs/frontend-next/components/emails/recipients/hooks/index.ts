@@ -13,9 +13,4 @@ export type {
   UseTeamsWantedSelectionResult,
 } from './useTeamsWantedSelection';
 export type { UseUmpireSelectionProps, UseUmpireSelectionResult } from './useUmpireSelection';
-export type {
-  UseContactPaginationProps,
-  UseContactPaginationResult,
-  PaginationState,
-} from './useContactPagination';
 export type { UseContactFetchingProps, UseContactFetchingResult } from './useContactFetching';
