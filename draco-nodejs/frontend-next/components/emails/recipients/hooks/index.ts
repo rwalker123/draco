@@ -1,7 +1,6 @@
 export { useWorkoutSelection } from './useWorkoutSelection';
 export { useTeamsWantedSelection } from './useTeamsWantedSelection';
 export { useUmpireSelection } from './useUmpireSelection';
-export { useContactPagination } from './useContactPagination';
 export { useContactFetching } from './useContactFetching';
 
 export type {
