@@ -151,7 +151,7 @@ export const generateContactPhotoPath = (accountId: string, contactId: string): 
 export const getContactPhotoUrl = (
   accountId: string | number,
   contactId: string | number,
-  cacheBuster?: number,
+  cacheBuster: number = Date.now(),
 ): string => {
   let url: string;
 
@@ -206,7 +206,7 @@ export const generateSponsorPhotoPath = (accountId: string, sponsorId: string): 
 export const getSponsorPhotoUrl = (
   accountId: string | number,
   sponsorId: string | number,
-  cacheBuster?: number,
+  cacheBuster: number = Date.now(),
 ): string => {
   let url: string;
 

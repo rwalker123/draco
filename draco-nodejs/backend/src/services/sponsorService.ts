@@ -205,6 +205,6 @@ export class SponsorService {
       file.buffer,
     );
 
-    return getSponsorPhotoUrl(accountId.toString(), sponsorId.toString(), Date.now());
+    return getSponsorPhotoUrl(accountId.toString(), sponsorId.toString());
   }
 }

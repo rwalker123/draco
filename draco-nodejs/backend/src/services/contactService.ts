@@ -436,6 +436,6 @@ export class ContactService {
       file.buffer,
     );
 
-    return getContactPhotoUrl(accountId.toString(), contactId.toString(), Date.now());
+    return getContactPhotoUrl(accountId.toString(), contactId.toString());
   }
 }
