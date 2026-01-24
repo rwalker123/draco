@@ -5,6 +5,7 @@ import { SponsorType } from '@draco/shared-schemas';
 import { SponsorInput, SponsorService } from '../services/sponsorService';
 import { useAuth } from '../context/AuthContext';
 import { useApiClient } from './useApiClient';
+import { addCacheBuster } from '../utils/addCacheBuster';
 
 export type SponsorScope =
   | {
@@ -49,15 +50,23 @@ export function useSponsorOperations(scope: SponsorScope) {
       setError(null);
 
       try {
+        let sponsor: SponsorType;
+
         if (type === 'account') {
-          return await service.createAccountSponsor(accountId, input);
+          sponsor = await service.createAccountSponsor(accountId, input);
+        } else {
+          if (!seasonId || !teamSeasonId) {
+            throw new Error('Team scope identifiers are missing');
+          }
+          sponsor = await service.createTeamSponsor(accountId, seasonId, teamSeasonId, input);
         }
 
-        if (!seasonId || !teamSeasonId) {
-          throw new Error('Team scope identifiers are missing');
-        }
-
-        return await service.createTeamSponsor(accountId, seasonId, teamSeasonId, input);
+        return {
+          ...sponsor,
+          photoUrl: sponsor.photoUrl
+            ? (addCacheBuster(sponsor.photoUrl, Date.now()) ?? undefined)
+            : undefined,
+        };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to create sponsor';
         setError(message);
@@ -75,15 +84,29 @@ export function useSponsorOperations(scope: SponsorScope) {
       setError(null);
 
       try {
+        let sponsor: SponsorType;
+
         if (type === 'account') {
-          return await service.updateAccountSponsor(accountId, sponsorId, input);
+          sponsor = await service.updateAccountSponsor(accountId, sponsorId, input);
+        } else {
+          if (!seasonId || !teamSeasonId) {
+            throw new Error('Team scope identifiers are missing');
+          }
+          sponsor = await service.updateTeamSponsor(
+            accountId,
+            seasonId,
+            teamSeasonId,
+            sponsorId,
+            input,
+          );
         }
 
-        if (!seasonId || !teamSeasonId) {
-          throw new Error('Team scope identifiers are missing');
-        }
-
-        return await service.updateTeamSponsor(accountId, seasonId, teamSeasonId, sponsorId, input);
+        return {
+          ...sponsor,
+          photoUrl: sponsor.photoUrl
+            ? (addCacheBuster(sponsor.photoUrl, Date.now()) ?? undefined)
+            : undefined,
+        };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to update sponsor';
         setError(message);
