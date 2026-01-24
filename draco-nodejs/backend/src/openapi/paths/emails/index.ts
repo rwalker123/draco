@@ -170,6 +170,14 @@ export const registerEmailsEndpoints = ({ registry, schemaRefs, z }: RegisterCon
           'application/json': {
             schema: EmailSendSchemaRef,
           },
+          'multipart/form-data': {
+            schema: EmailSendSchemaRef.extend({
+              attachmentFiles: z
+                .array(z.string().openapi({ type: 'string', format: 'binary' }))
+                .optional()
+                .openapi({ description: 'File attachments to upload with the email' }),
+            }),
+          },
         },
       },
     },

@@ -89,12 +89,25 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
     setDialogState({ open: false, mode: 'create', sponsor: null });
   };
 
-  const handleDialogSuccess = async ({ message }: { sponsor: SponsorType; message: string }) => {
+  const handleDialogSuccess = ({ sponsor, message }: { sponsor: SponsorType; message: string }) => {
     setSuccess(message);
     setError(null);
     setDialogError(null);
     handleDialogClose();
-    await refreshSponsors();
+
+    if (dialogState.mode === 'edit') {
+      setSponsors((prev) => prev.map((s) => (s.id === sponsor.id ? sponsor : s)));
+    } else {
+      setSponsors((prev) => [...prev, sponsor]);
+    }
+  };
+
+  const handleDeleteSuccess = ({ sponsor, message }: { sponsor: SponsorType; message: string }) => {
+    setSuccess(message);
+    setError(null);
+    setDialogError(null);
+    handleCloseDeleteDialog();
+    setSponsors((prev) => prev.filter((s) => s.id !== sponsor.id));
   };
 
   const handleOpenDeleteDialog = (sponsor: SponsorType) => {
@@ -235,9 +248,7 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
         open={deleteOpen}
         sponsor={sponsorToDelete}
         onClose={handleCloseDeleteDialog}
-        onSuccess={(result) =>
-          handleDialogSuccess({ sponsor: result.sponsor, message: result.message })
-        }
+        onSuccess={handleDeleteSuccess}
         onError={handleDialogError}
       />
 

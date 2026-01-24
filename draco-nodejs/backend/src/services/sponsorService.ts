@@ -1,5 +1,6 @@
 import { sponsors, teamsseason } from '#prisma/client';
 import { CreateSponsorType, SponsorType } from '@draco/shared-schemas';
+import { validateSponsorPhotoFile, getSponsorPhotoUrl } from '../config/logo.js';
 import {
   RepositoryFactory,
   ISponsorRepository,
@@ -7,7 +8,7 @@ import {
   dbSponsor,
 } from '../repositories/index.js';
 import { SponsorResponseFormatter } from '../responseFormatters/index.js';
-import { NotFoundError } from '../utils/customErrors.js';
+import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { ServiceFactory } from './serviceFactory.js';
 
 export class SponsorService {
@@ -177,5 +178,33 @@ export class SponsorService {
     }
 
     return { sponsor, teamSeason };
+  }
+
+  /**
+   * Upload a sponsor photo
+   * Validates the file and saves it to storage
+   * @returns The public URL of the uploaded photo, or null if no file provided
+   */
+  async uploadSponsorPhoto(
+    accountId: bigint,
+    sponsorId: bigint,
+    file: Express.Multer.File | undefined,
+  ): Promise<string | null> {
+    if (!file) {
+      return null;
+    }
+
+    const validationError = validateSponsorPhotoFile(file);
+    if (validationError) {
+      throw new ValidationError(validationError);
+    }
+
+    await this.storageService.saveSponsorPhoto(
+      accountId.toString(),
+      sponsorId.toString(),
+      file.buffer,
+    );
+
+    return getSponsorPhotoUrl(accountId.toString(), sponsorId.toString());
   }
 }

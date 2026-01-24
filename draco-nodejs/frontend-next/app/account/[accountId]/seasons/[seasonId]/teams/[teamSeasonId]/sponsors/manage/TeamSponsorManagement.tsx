@@ -128,11 +128,22 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
     setDialogState({ open: false, mode: 'create', sponsor: null });
   };
 
-  const handleDialogSuccess = async ({ message }: { sponsor: SponsorType; message: string }) => {
+  const handleDialogSuccess = async ({
+    sponsor,
+    message,
+  }: {
+    sponsor: SponsorType;
+    message: string;
+  }) => {
     setSuccess(message);
     setError(null);
     handleDialogClose();
-    await refreshSponsors();
+
+    if (dialogState.mode === 'edit') {
+      setSponsors((prev) => prev.map((s) => (s.id === sponsor.id ? sponsor : s)));
+    } else {
+      setSponsors((prev) => [...prev, sponsor]);
+    }
   };
 
   const handleDelete = async (sponsorId: string) => {

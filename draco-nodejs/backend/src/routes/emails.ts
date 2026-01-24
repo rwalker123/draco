@@ -1,8 +1,6 @@
 // Email Routes
-import { Router, Request, Response, NextFunction } from 'express';
-import multer from 'multer';
+import { Router, Request, Response } from 'express';
 
-import { ATTACHMENT_CONFIG } from '../config/attachments.js';
 import { EmailStatus } from '../interfaces/emailInterfaces.js';
 import {
   EmailSendSchema,
@@ -11,6 +9,8 @@ import {
   RecipientGroupType,
 } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import { emailAttachmentUploadMiddleware } from '../middleware/emailAttachmentUpload.js';
+import { parseFormDataJSON } from '../middleware/fileUpload.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
@@ -26,15 +26,6 @@ const emailService = ServiceFactory.getEmailService();
 const templateService = ServiceFactory.getEmailTemplateService();
 const attachmentService = ServiceFactory.getEmailAttachmentService();
 const routeProtection = ServiceFactory.getRouteProtection();
-
-// Configure multer for attachment uploads
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: ATTACHMENT_CONFIG.MAX_FILE_SIZE,
-    files: ATTACHMENT_CONFIG.MAX_ATTACHMENTS_PER_EMAIL,
-  },
-});
 
 /**
  * @route GET /api/accounts/:accountId/seasons/:seasonId/group-contacts
@@ -78,7 +69,7 @@ router.get(
 
 /**
  * @route POST /api/accounts/:accountId/emails/compose
- * @desc Compose and send email
+ * @desc Compose and send email with optional file attachments
  * @access Private - requires ContactAdmin or higher permissions
  */
 router.post(
@@ -86,6 +77,8 @@ router.post(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
+  emailAttachmentUploadMiddleware('attachmentFiles'),
+  parseFormDataJSON,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const userId = req.user?.id;
@@ -100,7 +93,12 @@ router.post(
       throw new ValidationError('Subject, body, and recipients are required');
     }
 
-    const emailId = await emailService.composeAndSendEmailFromUser(accountId, userId, request);
+    // Pass raw files from disk storage - service handles validation, loading, upload, cleanup
+    const attachmentFiles = (req.files as Express.Multer.File[]) || [];
+
+    const emailId = await emailService.composeAndSendEmailFromUser(accountId, userId, request, {
+      attachmentFiles,
+    });
 
     res.status(201).json({
       emailId: emailId.toString(),
@@ -322,15 +320,7 @@ router.post(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
-  (req: Request, res: Response, next: NextFunction) => {
-    upload.array('attachments')(req, res, (err: unknown) => {
-      if (err) {
-        res.status(400).json({ message: (err as Error).message });
-        return;
-      }
-      next();
-    });
-  },
+  emailAttachmentUploadMiddleware('attachments'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const emailId = getStringParam(req.params.emailId);
@@ -343,11 +333,13 @@ router.post(
       throw new ValidationError('No files uploaded');
     }
 
-    const files = req.files as Express.Multer.File[];
-    const results = await attachmentService.uploadMultipleAttachments(
+    // Pass raw files from disk storage - service handles validation, loading, upload, cleanup
+    const rawFiles = req.files as Express.Multer.File[];
+
+    const results = await attachmentService.prepareAndUploadFromDisk(
       accountId.toString(),
       emailId,
-      files,
+      rawFiles,
     );
 
     res.status(201).json(results);

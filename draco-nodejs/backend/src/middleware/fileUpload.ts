@@ -26,23 +26,27 @@ const executePhotoUpload = (req: Request, res: Response, next: NextFunction): vo
 
 export const handlePhotoUploadMiddleware = executePhotoUpload;
 
+// Fields that may be JSON stringified in multipart form data
+const JSON_STRING_FIELDS = ['contactDetails', 'recipients'];
+
 // Parse JSON strings back to objects for FormData requests
 export const parseFormDataJSON = (req: Request, res: Response, next: NextFunction): void => {
-  // Only process if we have a multipart form request (indicated by req.file or specific content-type)
+  // Only process if we have a multipart form request
   if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
-    // Parse JSON strings back to objects for FormData requests
-    if (req.body.contactDetails && typeof req.body.contactDetails === 'string') {
-      try {
-        req.body.contactDetails = JSON.parse(req.body.contactDetails);
-      } catch (error) {
-        res.status(400).json({
-          success: false,
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Invalid contactDetails format - must be valid JSON',
-        });
-        return;
+    for (const field of JSON_STRING_FIELDS) {
+      if (req.body[field] && typeof req.body[field] === 'string') {
+        try {
+          req.body[field] = JSON.parse(req.body[field]);
+        } catch (error) {
+          res.status(400).json({
+            success: false,
+            message:
+              error instanceof Error
+                ? error.message
+                : `Invalid ${field} format - must be valid JSON`,
+          });
+          return;
+        }
       }
     }
   }

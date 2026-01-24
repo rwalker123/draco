@@ -1,6 +1,8 @@
 // Email Attachment Configuration
 // Defines allowed file types, size limits, and validation rules
 
+import { fileTypeFromBuffer } from 'file-type';
+
 export const ATTACHMENT_CONFIG = {
   // Maximum file size in bytes (10MB default)
   MAX_FILE_SIZE: 10 * 1024 * 1024,
@@ -25,13 +27,12 @@ export const ATTACHMENT_CONFIG = {
     'text/csv',
     'application/rtf',
 
-    // Images
+    // Images (SVG removed - can contain JavaScript)
     'image/jpeg',
     'image/jpg',
     'image/png',
     'image/gif',
     'image/webp',
-    'image/svg+xml',
 
     // Archives
     'application/zip',
@@ -39,11 +40,10 @@ export const ATTACHMENT_CONFIG = {
     'application/x-rar-compressed',
     'application/x-7z-compressed',
 
-    // Other common formats
+    // Other common formats (HTML removed - can contain JavaScript)
     'application/json',
     'application/xml',
     'text/xml',
-    'text/html',
     'application/x-pdf',
   ],
 
@@ -64,13 +64,11 @@ export const ATTACHMENT_CONFIG = {
     '.png',
     '.gif',
     '.webp',
-    '.svg',
     '.zip',
     '.rar',
     '.7z',
     '.json',
     '.xml',
-    '.html',
   ],
 };
 
@@ -179,14 +177,126 @@ export function getMimeTypeFromFilename(filename: string): string | undefined {
     '.png': 'image/png',
     '.gif': 'image/gif',
     '.webp': 'image/webp',
-    '.svg': 'image/svg+xml',
     '.zip': 'application/zip',
     '.rar': 'application/x-rar-compressed',
     '.7z': 'application/x-7z-compressed',
     '.json': 'application/json',
     '.xml': 'application/xml',
-    '.html': 'text/html',
   };
 
   return mimeMap[extension];
+}
+
+export interface FileTypeVerificationResult {
+  valid: boolean;
+  detectedType?: string;
+  error?: string;
+}
+
+/**
+ * Maps claimed MIME types to their expected magic number signatures.
+ *
+ * file-type library detects actual content by reading magic bytes.
+ * This map defines which detected types are acceptable for each claimed type.
+ *
+ * Note: Text-based formats (txt, csv, json, xml, rtf) have no magic numbers
+ * and file-type returns undefined for them. These are validated by extension only.
+ *
+ * Office Open XML formats (.docx, .xlsx, .pptx) are ZIP archives internally,
+ * so file-type detects them as their specific Office MIME types.
+ *
+ * Legacy Office formats (.doc, .xls, .ppt) use Compound File Binary format,
+ * detected as 'application/x-cfb' by file-type.
+ */
+const MIME_TYPES_WITH_MAGIC_NUMBERS: Record<string, string[]> = {
+  // PDF
+  'application/pdf': ['application/pdf'],
+  'application/x-pdf': ['application/pdf'],
+
+  // Images
+  'image/jpeg': ['image/jpeg'],
+  'image/jpg': ['image/jpeg'],
+  'image/png': ['image/png'],
+  'image/gif': ['image/gif'],
+  'image/webp': ['image/webp'],
+
+  // Archives
+  'application/zip': ['application/zip', 'application/x-zip-compressed'],
+  'application/x-zip-compressed': ['application/zip', 'application/x-zip-compressed'],
+  'application/x-rar-compressed': ['application/x-rar-compressed', 'application/vnd.rar'],
+  'application/x-7z-compressed': ['application/x-7z-compressed'],
+
+  // Office Open XML (detected as their specific types, which are ZIP-based)
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/zip',
+  ],
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/zip',
+  ],
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': [
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/zip',
+  ],
+
+  // Legacy Office formats (Compound File Binary)
+  'application/msword': ['application/x-cfb', 'application/msword'],
+  'application/vnd.ms-excel': ['application/x-cfb', 'application/vnd.ms-excel'],
+  'application/vnd.ms-powerpoint': ['application/x-cfb', 'application/vnd.ms-powerpoint'],
+};
+
+/**
+ * MIME types that are text-based and have no magic numbers.
+ * file-type returns undefined for these, so we allow them through
+ * after extension validation (done in validateAttachmentFile).
+ */
+const TEXT_BASED_MIME_TYPES = new Set([
+  'text/plain',
+  'text/csv',
+  'application/json',
+  'application/xml',
+  'text/xml',
+  'application/rtf',
+]);
+
+export async function verifyFileType(
+  buffer: Buffer,
+  claimedMimeType: string,
+): Promise<FileTypeVerificationResult> {
+  const detected = await fileTypeFromBuffer(buffer);
+
+  if (detected) {
+    // File has a detectable magic number - verify it matches claimed type
+    const expectedTypes = MIME_TYPES_WITH_MAGIC_NUMBERS[claimedMimeType];
+    if (expectedTypes && !expectedTypes.includes(detected.mime)) {
+      return {
+        valid: false,
+        detectedType: detected.mime,
+        error: `File content (${detected.mime}) doesn't match claimed type (${claimedMimeType})`,
+      };
+    }
+
+    // Verify the detected type is in our allowed list
+    if (!ATTACHMENT_CONFIG.ALLOWED_MIME_TYPES.includes(detected.mime)) {
+      return {
+        valid: false,
+        detectedType: detected.mime,
+        error: `Detected file type '${detected.mime}' is not allowed`,
+      };
+    }
+  } else {
+    // No magic number detected - only allow text-based types
+    if (!TEXT_BASED_MIME_TYPES.has(claimedMimeType)) {
+      // Claimed type should have a magic number but doesn't - suspicious
+      if (MIME_TYPES_WITH_MAGIC_NUMBERS[claimedMimeType]) {
+        return {
+          valid: false,
+          error: `File claims to be '${claimedMimeType}' but has no valid file signature`,
+        };
+      }
+    }
+  }
+
+  return { valid: true };
 }

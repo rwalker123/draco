@@ -12,7 +12,6 @@ import {
   extractContactParams,
   getStringParam,
 } from '../utils/paramExtraction.js';
-import { handleContactPhotoUpload } from './utils/fileUpload.js';
 import {
   BaseContactType,
   ContactType,
@@ -492,7 +491,7 @@ router.put(
 
     // Handle photo upload if provided
     if (req.file) {
-      await handleContactPhotoUpload(req, accountId, contactId);
+      await contactService.uploadContactPhoto(accountId, contactId, req.file);
     }
 
     res.json(contact);
@@ -522,7 +521,7 @@ router.post(
 
     // Handle photo upload if provided
     if (req.file) {
-      await handleContactPhotoUpload(req, accountId, BigInt(contact.id));
+      await contactService.uploadContactPhoto(accountId, BigInt(contact.id), req.file);
     }
 
     res.status(201).json(contact);

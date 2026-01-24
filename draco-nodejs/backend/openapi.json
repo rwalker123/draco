@@ -43328,6 +43328,28 @@
               "schema": {
                 "$ref": "#/components/schemas/EmailSend"
               }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/EmailSend"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "attachmentFiles": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "binary"
+                        },
+                        "description": "File attachments to upload with the email"
+                      }
+                    }
+                  }
+                ]
+              }
             }
           }
         },

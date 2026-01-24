@@ -48,7 +48,7 @@ interface RoleContext {
 }
 
 // Cache keys for localStorage
-const ROLE_METADATA_CLIENT_VERSION = '1.5.0';
+const ROLE_METADATA_CLIENT_VERSION = '1.6.0';
 const ROLE_METADATA_CACHE_KEY = `draco_role_metadata_${ROLE_METADATA_CLIENT_VERSION}`;
 const ROLE_METADATA_VERSION_KEY = `draco_role_metadata_version_${ROLE_METADATA_CLIENT_VERSION}`;
 
