@@ -360,14 +360,20 @@ export class EmailAttachmentService {
    */
   private async loadFileBuffers(files: Express.Multer.File[]): Promise<Express.Multer.File[]> {
     const result: Express.Multer.File[] = [];
-    for (const file of files) {
-      if (!file.path) {
-        throw new ValidationError(`File path missing for uploaded file: ${file.originalname}`);
+    try {
+      for (const file of files) {
+        if (!file.path) {
+          throw new ValidationError(`File path missing for uploaded file: ${file.originalname}`);
+        }
+        const buffer = await fs.readFile(file.path);
+        result.push({ ...file, buffer });
       }
-      const buffer = await fs.readFile(file.path);
-      result.push({ ...file, buffer });
+      return result;
+    } catch (error) {
+      // Clean up temp files on failure to prevent disk leak
+      await this.cleanupTempFiles(files);
+      throw error;
     }
-    return result;
   }
 
   /**
@@ -380,8 +386,11 @@ export class EmailAttachmentService {
           if (file.path) {
             await fs.unlink(file.path);
           }
-        } catch {
-          // Ignore cleanup errors - files will be cleaned up by OS eventually
+        } catch (error) {
+          console.warn('Failed to cleanup temp file', {
+            path: file.path,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }),
     );

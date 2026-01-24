@@ -46,6 +46,11 @@ const getR2PublicUrl = (path: string): string => {
   return `${publicUrl}/${path}`;
 };
 
+// Helper to append cache buster to URL (only when provided)
+const withCacheBuster = (url: string, cacheBuster?: number): string => {
+  return cacheBuster !== undefined ? `${url}?v=${cacheBuster}` : url;
+};
+
 export const getLogoUrl = (accountId: string | number, teamId: string | number): string => {
   if (process.env.STORAGE_PROVIDER === 'r2') {
     return getR2PublicUrl(`${accountId}/team-logos/${teamId}-logo.png`);
@@ -148,13 +153,11 @@ export const getContactPhotoUrl = (
   contactId: string | number,
   cacheBuster?: number,
 ): string => {
-  const cb = cacheBuster ?? Date.now();
+  let url: string;
 
   if (process.env.STORAGE_PROVIDER === 'r2') {
-    return `${getR2PublicUrl(`${accountId}/contact-photos/${contactId}-photo.png`)}?v=${cb}`;
-  }
-
-  if (process.env.STORAGE_PROVIDER === 's3') {
+    url = getR2PublicUrl(`${accountId}/contact-photos/${contactId}-photo.png`);
+  } else if (process.env.STORAGE_PROVIDER === 's3') {
     if (!process.env.S3_BUCKET) {
       throw new Error('S3_BUCKET environment variable must be set for S3 storage');
     }
@@ -163,17 +166,16 @@ export const getContactPhotoUrl = (
     const s3Endpoint = process.env.S3_ENDPOINT || '';
 
     if (s3Endpoint.includes('localhost')) {
-      // LocalStack style URL
       const endpoint = s3Endpoint.replace(/^https?:\/\//, '');
-      return `http://${endpoint}/${bucket}/${accountId}/contact-photos/${contactId}-photo.png?v=${cb}`;
+      url = `http://${endpoint}/${bucket}/${accountId}/contact-photos/${contactId}-photo.png`;
     } else {
-      // AWS S3 style URL
-      return `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/contact-photos/${contactId}-photo.png?v=${cb}`;
+      url = `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/contact-photos/${contactId}-photo.png`;
     }
+  } else {
+    url = `/${generateContactPhotoPath(accountId.toString(), contactId.toString())}`;
   }
 
-  // Local storage
-  return `/${generateContactPhotoPath(accountId.toString(), contactId.toString())}?v=${cb}`;
+  return withCacheBuster(url, cacheBuster);
 };
 
 export const SPONSOR_PHOTO_CONFIG = {
@@ -206,13 +208,11 @@ export const getSponsorPhotoUrl = (
   sponsorId: string | number,
   cacheBuster?: number,
 ): string => {
-  const cb = cacheBuster ?? Date.now();
+  let url: string;
 
   if (process.env.STORAGE_PROVIDER === 'r2') {
-    return `${getR2PublicUrl(`${accountId}/sponsor-photos/${sponsorId}-photo.png`)}?v=${cb}`;
-  }
-
-  if (process.env.STORAGE_PROVIDER === 's3') {
+    url = getR2PublicUrl(`${accountId}/sponsor-photos/${sponsorId}-photo.png`);
+  } else if (process.env.STORAGE_PROVIDER === 's3') {
     if (!process.env.S3_BUCKET) {
       throw new Error('S3_BUCKET environment variable must be set for S3 storage');
     }
@@ -222,11 +222,13 @@ export const getSponsorPhotoUrl = (
 
     if (s3Endpoint.includes('localhost')) {
       const endpoint = s3Endpoint.replace(/^https?:\/\//, '');
-      return `http://${endpoint}/${bucket}/${accountId}/sponsor-photos/${sponsorId}-photo.png?v=${cb}`;
+      url = `http://${endpoint}/${bucket}/${accountId}/sponsor-photos/${sponsorId}-photo.png`;
+    } else {
+      url = `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/sponsor-photos/${sponsorId}-photo.png`;
     }
-
-    return `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/sponsor-photos/${sponsorId}-photo.png?v=${cb}`;
+  } else {
+    url = `/${generateSponsorPhotoPath(accountId.toString(), sponsorId.toString())}`;
   }
 
-  return `/${generateSponsorPhotoPath(accountId.toString(), sponsorId.toString())}?v=${cb}`;
+  return withCacheBuster(url, cacheBuster);
 };
