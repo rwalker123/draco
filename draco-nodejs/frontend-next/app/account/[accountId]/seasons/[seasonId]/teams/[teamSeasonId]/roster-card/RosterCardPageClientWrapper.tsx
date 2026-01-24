@@ -15,7 +15,7 @@ const RosterCardPageClientWrapper: React.FC<RosterCardPageClientWrapperProps> = 
   teamSeasonId,
 }) => {
   return (
-    <AccountOptional accountId={accountId} componentId="team.printableRosterCard" requireMatch>
+    <AccountOptional accountId={accountId} componentId="team.printableRosterCard">
       <RosterCardPageClient accountId={accountId} seasonId={seasonId} teamSeasonId={teamSeasonId} />
     </AccountOptional>
   );
