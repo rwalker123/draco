@@ -17,6 +17,9 @@ const allowedDevOrigins = Array.from(
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
+  experimental: {
+    reactCompiler: true,
+  },
   allowedDevOrigins,
   /* config options here */
   async rewrites() {

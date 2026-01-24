@@ -11,6 +11,9 @@
 - After changes, run `npm run frontend:lint` and check for errors.
 - If you add a new route with metadata, use the helpers in `lib/metadataParams` for both `searchParams` and `params`.
 
+## React Compiler (Automatic Memoization)
+**Do not introduce `useMemo` or `useCallback`** — the React Compiler handles memoization automatically at build time. If you believe manual memoization is necessary, stop and ask for approval first.
+
 ## Key Directories
 - `app` — Next.js App Router entries and nested layouts.
 - `components` — Reusable UI pieces following the dialog and service hook patterns.
@@ -425,7 +428,7 @@ const { currentAccount } = useAccount();
 ### Component Design
 - **Single Responsibility** — Each component has one clear purpose
 - **Avoid Prop Drilling** — Use context for global state
-- **Event Handling** — Use useCallback for event handlers to prevent re-renders
+- **Event Handling** — Define handlers as plain functions; React Compiler optimizes automatically
 
 ### Component Architecture
 - **Server Components First** — Default for Next.js pages; add `'use client'` only when needed for hooks, events, or browser APIs
@@ -439,7 +442,7 @@ const { currentAccount } = useAccount();
 - **Wait for API** — Never update state before receiving API confirmation
 
 ### Performance
-- **Memoization** — Use useMemo and useCallback appropriately
+- **Automatic Memoization** — React Compiler handles memoization; do not add manual `useMemo`/`useCallback`
 - **Code Splitting** — Lazy load components and routes
 - **Bundle Optimization** — Import only needed dependencies
 
@@ -495,7 +498,7 @@ React's own documentation—[You Might Not Need an Effect](https://react.dev/lea
 Our codebase enforces this by:
 
 1. Treating API responses and props as the single source of truth.
-2. Computing view-specific data (like sorting, filtering, or display keys) via `useMemo`/plain functions during render.
+2. Computing view-specific data (like sorting, filtering, or display keys) via plain functions during render (React Compiler handles memoization).
 3. Reserving `useEffect` for true side effects (e.g., kicking off fetches, subscribing/unsubscribing).
 4. Never reading mutable refs inside render; refs are only touched in event handlers or effects.
 
