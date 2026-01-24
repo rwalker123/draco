@@ -1,5 +1,6 @@
 import { contacts } from '#prisma/client';
 import { ContactQueryOptions } from '../interfaces/contactInterfaces.js';
+import { validateContactPhotoFile, getContactPhotoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import {
   AutomaticRoleHoldersType,
@@ -11,7 +12,7 @@ import {
   NamedContactType,
   PublicContactSummaryType,
 } from '@draco/shared-schemas';
-import { ConflictError, NotFoundError } from '../utils/customErrors.js';
+import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { ContactResponseFormatter, TeamResponseFormatter } from '../responseFormatters/index.js';
 import {
   RepositoryFactory,
@@ -20,16 +21,20 @@ import {
   ISeasonsRepository,
   ITeamRepository,
 } from '../repositories/index.js';
+import { ServiceFactory } from './serviceFactory.js';
+import { StorageService } from './storageService.js';
 
 export class ContactService {
   private contactRepository: IContactRepository;
   private seasonRepository: ISeasonsRepository;
   private teamRepository: ITeamRepository;
+  private storageService: StorageService;
 
   constructor() {
     this.contactRepository = RepositoryFactory.getContactRepository();
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
     this.teamRepository = RepositoryFactory.getTeamRepository();
+    this.storageService = ServiceFactory.getStorageService();
   }
 
   /**
@@ -404,5 +409,33 @@ export class ContactService {
       return false;
     }
     return dbAccountOwner.id === contactId;
+  }
+
+  /**
+   * Upload a contact photo
+   * Validates the file and saves it to storage
+   * @returns The public URL of the uploaded photo, or null if no file provided
+   */
+  async uploadContactPhoto(
+    accountId: bigint,
+    contactId: bigint,
+    file: Express.Multer.File | undefined,
+  ): Promise<string | null> {
+    if (!file) {
+      return null;
+    }
+
+    const validationError = validateContactPhotoFile(file);
+    if (validationError) {
+      throw new ValidationError(validationError);
+    }
+
+    await this.storageService.saveContactPhoto(
+      accountId.toString(),
+      contactId.toString(),
+      file.buffer,
+    );
+
+    return getContactPhotoUrl(accountId.toString(), contactId.toString());
   }
 }

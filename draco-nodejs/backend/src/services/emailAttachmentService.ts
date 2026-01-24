@@ -1,14 +1,18 @@
 // Email Attachment Service
 // Handles attachment upload, storage, and retrieval
 
+import fs from 'fs/promises';
+
 import { StorageService } from './storageService.js';
 import {
+  ATTACHMENT_CONFIG,
   validateAttachmentFile,
   validateAttachments,
   generateSafeFilename,
   getMimeTypeFromFilename,
+  verifyFileType,
 } from '../config/attachments.js';
-import { NotFoundError, ValidationError } from '../utils/customErrors.js';
+import { NotFoundError, PayloadTooLargeError, ValidationError } from '../utils/customErrors.js';
 import { AttachmentWithBuffer, ServerEmailAttachment } from '../interfaces/emailInterfaces.js';
 import { AttachmentUploadResultType } from '@draco/shared-schemas';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
@@ -308,5 +312,78 @@ export class EmailAttachmentService {
         });
       }
     }
+  }
+
+  /**
+   * Prepare attachments from disk storage and upload them.
+   * Used when attachments are uploaded via multer disk storage (for memory efficiency).
+   * Validates total size, loads files sequentially, uploads, then cleans up temp files.
+   */
+  async prepareAndUploadFromDisk(
+    accountId: string,
+    emailId: string,
+    rawFiles: Express.Multer.File[],
+    options?: { skipStatusCheck?: boolean },
+  ): Promise<AttachmentUploadResultType[]> {
+    if (!rawFiles.length) {
+      return [];
+    }
+
+    const totalSize = rawFiles.reduce((sum, f) => sum + f.size, 0);
+    if (totalSize > ATTACHMENT_CONFIG.MAX_TOTAL_ATTACHMENTS_SIZE) {
+      const maxSizeMB = ATTACHMENT_CONFIG.MAX_TOTAL_ATTACHMENTS_SIZE / (1024 * 1024);
+      await this.cleanupTempFiles(rawFiles);
+      throw new PayloadTooLargeError(`Total attachment size exceeds maximum of ${maxSizeMB}MB`);
+    }
+
+    const filesWithBuffers = await this.loadFileBuffers(rawFiles);
+
+    // Verify file types using magic numbers to prevent MIME type spoofing
+    for (const file of filesWithBuffers) {
+      const verification = await verifyFileType(file.buffer, file.mimetype);
+      if (!verification.valid) {
+        await this.cleanupTempFiles(rawFiles);
+        throw new ValidationError(verification.error || 'Invalid file type');
+      }
+    }
+
+    try {
+      return await this.uploadMultipleAttachments(accountId, emailId, filesWithBuffers, options);
+    } finally {
+      await this.cleanupTempFiles(rawFiles);
+    }
+  }
+
+  /**
+   * Read file buffers from disk sequentially to reduce memory pressure.
+   * Processing one at a time avoids loading all files into memory simultaneously.
+   */
+  private async loadFileBuffers(files: Express.Multer.File[]): Promise<Express.Multer.File[]> {
+    const result: Express.Multer.File[] = [];
+    for (const file of files) {
+      if (!file.path) {
+        throw new ValidationError(`File path missing for uploaded file: ${file.originalname}`);
+      }
+      const buffer = await fs.readFile(file.path);
+      result.push({ ...file, buffer });
+    }
+    return result;
+  }
+
+  /**
+   * Clean up temporary files after request processing.
+   */
+  private async cleanupTempFiles(files: Express.Multer.File[]): Promise<void> {
+    await Promise.all(
+      files.map(async (file) => {
+        try {
+          if (file.path) {
+            await fs.unlink(file.path);
+          }
+        } catch {
+          // Ignore cleanup errors - files will be cleaned up by OS eventually
+        }
+      }),
+    );
   }
 }

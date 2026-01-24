@@ -146,9 +146,12 @@ export const generateContactPhotoPath = (accountId: string, contactId: string): 
 export const getContactPhotoUrl = (
   accountId: string | number,
   contactId: string | number,
+  cacheBuster?: number,
 ): string => {
+  const cb = cacheBuster ?? Date.now();
+
   if (process.env.STORAGE_PROVIDER === 'r2') {
-    return getR2PublicUrl(`${accountId}/contact-photos/${contactId}-photo.png`);
+    return `${getR2PublicUrl(`${accountId}/contact-photos/${contactId}-photo.png`)}?v=${cb}`;
   }
 
   if (process.env.STORAGE_PROVIDER === 's3') {
@@ -162,15 +165,15 @@ export const getContactPhotoUrl = (
     if (s3Endpoint.includes('localhost')) {
       // LocalStack style URL
       const endpoint = s3Endpoint.replace(/^https?:\/\//, '');
-      return `http://${endpoint}/${bucket}/${accountId}/contact-photos/${contactId}-photo.png`;
+      return `http://${endpoint}/${bucket}/${accountId}/contact-photos/${contactId}-photo.png?v=${cb}`;
     } else {
       // AWS S3 style URL
-      return `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/contact-photos/${contactId}-photo.png`;
+      return `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/contact-photos/${contactId}-photo.png?v=${cb}`;
     }
   }
 
   // Local storage
-  return `/${generateContactPhotoPath(accountId.toString(), contactId.toString())}`;
+  return `/${generateContactPhotoPath(accountId.toString(), contactId.toString())}?v=${cb}`;
 };
 
 export const SPONSOR_PHOTO_CONFIG = {
@@ -201,9 +204,12 @@ export const generateSponsorPhotoPath = (accountId: string, sponsorId: string): 
 export const getSponsorPhotoUrl = (
   accountId: string | number,
   sponsorId: string | number,
+  cacheBuster?: number,
 ): string => {
+  const cb = cacheBuster ?? Date.now();
+
   if (process.env.STORAGE_PROVIDER === 'r2') {
-    return getR2PublicUrl(`${accountId}/sponsor-photos/${sponsorId}-photo.png`);
+    return `${getR2PublicUrl(`${accountId}/sponsor-photos/${sponsorId}-photo.png`)}?v=${cb}`;
   }
 
   if (process.env.STORAGE_PROVIDER === 's3') {
@@ -216,11 +222,11 @@ export const getSponsorPhotoUrl = (
 
     if (s3Endpoint.includes('localhost')) {
       const endpoint = s3Endpoint.replace(/^https?:\/\//, '');
-      return `http://${endpoint}/${bucket}/${accountId}/sponsor-photos/${sponsorId}-photo.png`;
+      return `http://${endpoint}/${bucket}/${accountId}/sponsor-photos/${sponsorId}-photo.png?v=${cb}`;
     }
 
-    return `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/sponsor-photos/${sponsorId}-photo.png`;
+    return `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/sponsor-photos/${sponsorId}-photo.png?v=${cb}`;
   }
 
-  return `/${generateSponsorPhotoPath(accountId.toString(), sponsorId.toString())}`;
+  return `/${generateSponsorPhotoPath(accountId.toString(), sponsorId.toString())}?v=${cb}`;
 };

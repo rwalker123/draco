@@ -1,12 +1,6 @@
 // Email Routes
-import { Router, Request, Response, NextFunction } from 'express';
-import multer, { MulterError } from 'multer';
-import fs from 'fs/promises';
-import { mkdirSync } from 'fs';
-import os from 'os';
-import path from 'path';
+import { Router, Request, Response } from 'express';
 
-import { ATTACHMENT_CONFIG } from '../config/attachments.js';
 import { EmailStatus } from '../interfaces/emailInterfaces.js';
 import {
   EmailSendSchema,
@@ -15,9 +9,11 @@ import {
   RecipientGroupType,
 } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import { emailAttachmentUploadMiddleware } from '../middleware/emailAttachmentUpload.js';
+import { parseFormDataJSON } from '../middleware/fileUpload.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { ValidationError, NotFoundError, PayloadTooLargeError } from '../utils/customErrors.js';
+import { ValidationError, NotFoundError } from '../utils/customErrors.js';
 import { PaginationHelper } from '../utils/pagination.js';
 import {
   extractAccountParams,
@@ -30,82 +26,6 @@ const emailService = ServiceFactory.getEmailService();
 const templateService = ServiceFactory.getEmailTemplateService();
 const attachmentService = ServiceFactory.getEmailAttachmentService();
 const routeProtection = ServiceFactory.getRouteProtection();
-
-// Configure multer for attachment uploads with disk storage to reduce memory pressure
-// Files are written to temp directory and cleaned up after processing
-const uploadTempDir = path.join(os.tmpdir(), 'draco-email-attachments');
-
-// Create temp directory at module initialization (synchronous) to avoid race conditions
-// when multiple requests arrive simultaneously
-try {
-  mkdirSync(uploadTempDir, { recursive: true });
-} catch {
-  // Directory may already exist or be created by another process - that's fine
-}
-
-/**
- * Sanitize filename to prevent path traversal attacks
- * Removes directory separators and null bytes, keeps only safe characters
- */
-function sanitizeFilename(originalName: string): string {
-  // Extract basename to remove any path components (e.g., "../" or "C:\")
-  const basename = path.basename(originalName);
-  // Replace any remaining unsafe characters with underscores
-  // Allow alphanumeric, dots, hyphens, underscores, and spaces
-  return basename.replace(/[^a-zA-Z0-9.\-_ ]/g, '_');
-}
-
-const diskStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadTempDir);
-  },
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const safeName = sanitizeFilename(file.originalname);
-    cb(null, `${uniqueSuffix}-${safeName}`);
-  },
-});
-
-const upload = multer({
-  storage: diskStorage,
-  limits: {
-    fileSize: ATTACHMENT_CONFIG.MAX_FILE_SIZE,
-    files: ATTACHMENT_CONFIG.MAX_ATTACHMENTS_PER_EMAIL,
-  },
-});
-
-/**
- * Read file buffers from disk sequentially to reduce memory pressure
- * Processing one at a time avoids loading all files into memory simultaneously
- */
-async function loadFileBuffers(files: Express.Multer.File[]): Promise<Express.Multer.File[]> {
-  const result: Express.Multer.File[] = [];
-  for (const file of files) {
-    if (!file.path) {
-      throw new Error(`File path missing for uploaded file: ${file.originalname}`);
-    }
-    const buffer = await fs.readFile(file.path);
-    result.push({ ...file, buffer });
-  }
-  return result;
-}
-
-/**
- * Clean up temporary files after request processing
- */
-async function cleanupTempFiles(files: Express.Multer.File[]): Promise<void> {
-  await Promise.all(
-    files.map(async (file) => {
-      try {
-        if (file.path) {
-          await fs.unlink(file.path);
-        }
-      } catch {
-        // Ignore cleanup errors - files will be cleaned up by OS eventually
-      }
-    }),
-  );
-}
 
 /**
  * @route GET /api/accounts/:accountId/seasons/:seasonId/group-contacts
@@ -157,42 +77,8 @@ router.post(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
-  (req: Request, res: Response, next: NextFunction) => {
-    upload.array('attachmentFiles')(req, res, async (err: unknown) => {
-      if (err) {
-        // Clean up any files that were written before the error occurred
-        const partialFiles = req.files as Express.Multer.File[] | undefined;
-        if (partialFiles?.length) {
-          await cleanupTempFiles(partialFiles);
-        }
-
-        if (err instanceof MulterError) {
-          const errorResponses: Record<string, { status: number; message: string }> = {
-            LIMIT_FILE_SIZE: {
-              status: 413,
-              message: 'File size exceeds the maximum allowed limit',
-            },
-            LIMIT_FILE_COUNT: { status: 400, message: 'Too many files uploaded' },
-            LIMIT_UNEXPECTED_FILE: { status: 400, message: 'Unexpected file field' },
-          };
-          const response = errorResponses[err.code] ?? { status: 400, message: err.message };
-          res.status(response.status).json({
-            message: response.message,
-            statusCode: response.status,
-            isRetryable: false,
-          });
-          return;
-        }
-        res.status(400).json({
-          message: err instanceof Error ? err.message : 'File upload failed',
-          statusCode: 400,
-          isRetryable: false,
-        });
-        return;
-      }
-      next();
-    });
-  },
+  emailAttachmentUploadMiddleware('attachmentFiles'),
+  parseFormDataJSON,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const userId = req.user?.id;
@@ -201,55 +87,23 @@ router.post(
       throw new ValidationError('User ID is required');
     }
 
-    // Handle multipart form data: parse JSON string fields
-    let body = req.body;
-    if (req.headers['content-type']?.includes('multipart/form-data')) {
-      body = { ...req.body };
-      if (typeof body.recipients === 'string') {
-        try {
-          body.recipients = JSON.parse(body.recipients);
-        } catch {
-          throw new ValidationError('Invalid recipients format: must be valid JSON');
-        }
-      }
-    }
-
-    const request = EmailSendSchema.parse(body);
+    const request = EmailSendSchema.parse(req.body);
 
     if (!request.subject || !request.body || !request.recipients) {
       throw new ValidationError('Subject, body, and recipients are required');
     }
 
-    // Extract attachment files if present (disk storage - need to load buffers)
-    const rawFiles = (req.files as Express.Multer.File[]) || [];
+    // Pass raw files from disk storage - service handles validation, loading, upload, cleanup
+    const attachmentFiles = (req.files as Express.Multer.File[]) || [];
 
-    // Validate total attachment size before loading into memory
-    if (rawFiles.length > 0) {
-      const totalSize = rawFiles.reduce((sum, file) => sum + file.size, 0);
-      if (totalSize > ATTACHMENT_CONFIG.MAX_TOTAL_ATTACHMENTS_SIZE) {
-        const maxSizeMB = ATTACHMENT_CONFIG.MAX_TOTAL_ATTACHMENTS_SIZE / (1024 * 1024);
-        throw new PayloadTooLargeError(`Total attachment size exceeds maximum of ${maxSizeMB}MB`);
-      }
-    }
+    const emailId = await emailService.composeAndSendEmailFromUser(accountId, userId, request, {
+      attachmentFiles,
+    });
 
-    try {
-      // Load file buffers from disk sequentially (disk storage doesn't populate buffer property)
-      const attachmentFiles = rawFiles.length > 0 ? await loadFileBuffers(rawFiles) : [];
-
-      const emailId = await emailService.composeAndSendEmailFromUser(accountId, userId, request, {
-        attachmentFiles,
-      });
-
-      res.status(201).json({
-        emailId: emailId.toString(),
-        status: request.scheduledSend ? 'scheduled' : 'sending',
-      });
-    } finally {
-      // Clean up temp files regardless of success or failure
-      if (rawFiles.length > 0) {
-        await cleanupTempFiles(rawFiles);
-      }
-    }
+    res.status(201).json({
+      emailId: emailId.toString(),
+      status: request.scheduledSend ? 'scheduled' : 'sending',
+    });
   }),
 );
 
@@ -466,15 +320,7 @@ router.post(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
-  (req: Request, res: Response, next: NextFunction) => {
-    upload.array('attachments')(req, res, (err: unknown) => {
-      if (err) {
-        res.status(400).json({ message: (err as Error).message });
-        return;
-      }
-      next();
-    });
-  },
+  emailAttachmentUploadMiddleware('attachments'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const emailId = getStringParam(req.params.emailId);
@@ -487,11 +333,13 @@ router.post(
       throw new ValidationError('No files uploaded');
     }
 
-    const files = req.files as Express.Multer.File[];
-    const results = await attachmentService.uploadMultipleAttachments(
+    // Pass raw files from disk storage - service handles validation, loading, upload, cleanup
+    const rawFiles = req.files as Express.Multer.File[];
+
+    const results = await attachmentService.prepareAndUploadFromDisk(
       accountId.toString(),
       emailId,
-      files,
+      rawFiles,
     );
 
     res.status(201).json(results);

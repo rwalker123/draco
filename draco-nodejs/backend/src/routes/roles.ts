@@ -118,7 +118,7 @@ router.get(
 
     // Create a timestamp for cache invalidation
     const timestamp = DateUtils.formatDateTimeForResponse(new Date());
-    const version = '1.5.0'; // Increment this when role metadata changes
+    const version = '1.6.0'; // Increment this when role metadata changes
 
     const result: RoleMetadataSchemaType = {
       version,

@@ -5,7 +5,6 @@ import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction
 import { CreateSponsorSchema, CreateSponsorType } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { logoUploadMiddleware } from '../middleware/logoUpload.js';
-import { handleSponsorPhotoUpload } from './utils/fileUpload.js';
 
 const router = Router({ mergeParams: true });
 const sponsorService = ServiceFactory.getSponsorService();
@@ -43,7 +42,7 @@ router.post(
     });
 
     if (req.file) {
-      await handleSponsorPhotoUpload(req, accountId, BigInt(sponsor.id));
+      await sponsorService.uploadSponsorPhoto(accountId, BigInt(sponsor.id), req.file);
     }
 
     const response = await sponsorService.getTeamSponsor(
@@ -79,7 +78,7 @@ router.put(
     }
 
     if (req.file) {
-      await handleSponsorPhotoUpload(req, accountId, sponsorId);
+      await sponsorService.uploadSponsorPhoto(accountId, sponsorId, req.file);
     }
 
     const response = await sponsorService.getTeamSponsor(

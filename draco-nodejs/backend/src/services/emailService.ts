@@ -484,8 +484,10 @@ export class EmailService {
     });
 
     // Upload attachments if provided (during compose with multipart form data)
+    // Files come from disk storage (multer), so use prepareAndUploadFromDisk
+    // which loads buffers, uploads, and cleans up temp files
     if (options?.attachmentFiles && options.attachmentFiles.length > 0) {
-      await this.attachmentService.uploadMultipleAttachments(
+      await this.attachmentService.prepareAndUploadFromDisk(
         accountId.toString(),
         email.id.toString(),
         options.attachmentFiles,

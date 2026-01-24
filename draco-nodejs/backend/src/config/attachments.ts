@@ -1,6 +1,8 @@
 // Email Attachment Configuration
 // Defines allowed file types, size limits, and validation rules
 
+import { fileTypeFromBuffer } from 'file-type';
+
 export const ATTACHMENT_CONFIG = {
   // Maximum file size in bytes (10MB default)
   MAX_FILE_SIZE: 10 * 1024 * 1024,
@@ -25,13 +27,12 @@ export const ATTACHMENT_CONFIG = {
     'text/csv',
     'application/rtf',
 
-    // Images
+    // Images (SVG removed - can contain JavaScript)
     'image/jpeg',
     'image/jpg',
     'image/png',
     'image/gif',
     'image/webp',
-    'image/svg+xml',
 
     // Archives
     'application/zip',
@@ -39,11 +40,10 @@ export const ATTACHMENT_CONFIG = {
     'application/x-rar-compressed',
     'application/x-7z-compressed',
 
-    // Other common formats
+    // Other common formats (HTML removed - can contain JavaScript)
     'application/json',
     'application/xml',
     'text/xml',
-    'text/html',
     'application/x-pdf',
   ],
 
@@ -64,13 +64,11 @@ export const ATTACHMENT_CONFIG = {
     '.png',
     '.gif',
     '.webp',
-    '.svg',
     '.zip',
     '.rar',
     '.7z',
     '.json',
     '.xml',
-    '.html',
   ],
 };
 
@@ -179,14 +177,58 @@ export function getMimeTypeFromFilename(filename: string): string | undefined {
     '.png': 'image/png',
     '.gif': 'image/gif',
     '.webp': 'image/webp',
-    '.svg': 'image/svg+xml',
     '.zip': 'application/zip',
     '.rar': 'application/x-rar-compressed',
     '.7z': 'application/x-7z-compressed',
     '.json': 'application/json',
     '.xml': 'application/xml',
-    '.html': 'text/html',
   };
 
   return mimeMap[extension];
+}
+
+export interface FileTypeVerificationResult {
+  valid: boolean;
+  detectedType?: string;
+  error?: string;
+}
+
+const MIME_TYPES_WITH_MAGIC_NUMBERS: Record<string, string[]> = {
+  'application/pdf': ['application/pdf'],
+  'image/jpeg': ['image/jpeg'],
+  'image/png': ['image/png'],
+  'image/gif': ['image/gif'],
+  'image/webp': ['image/webp'],
+  'application/zip': ['application/zip', 'application/x-zip-compressed'],
+  'application/x-zip-compressed': ['application/zip', 'application/x-zip-compressed'],
+  'application/x-rar-compressed': ['application/x-rar-compressed'],
+  'application/x-7z-compressed': ['application/x-7z-compressed'],
+};
+
+export async function verifyFileType(
+  buffer: Buffer,
+  claimedMimeType: string,
+): Promise<FileTypeVerificationResult> {
+  const detected = await fileTypeFromBuffer(buffer);
+
+  if (detected) {
+    const expectedTypes = MIME_TYPES_WITH_MAGIC_NUMBERS[claimedMimeType];
+    if (expectedTypes && !expectedTypes.includes(detected.mime)) {
+      return {
+        valid: false,
+        detectedType: detected.mime,
+        error: `File content (${detected.mime}) doesn't match claimed type (${claimedMimeType})`,
+      };
+    }
+
+    if (!ATTACHMENT_CONFIG.ALLOWED_MIME_TYPES.includes(detected.mime)) {
+      return {
+        valid: false,
+        detectedType: detected.mime,
+        error: `Detected file type '${detected.mime}' is not allowed`,
+      };
+    }
+  }
+
+  return { valid: true };
 }
