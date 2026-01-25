@@ -114,10 +114,10 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     setIsHydrated(true);
   }, []);
   const isCompact = isHydrated ? compactMediaQuery : false;
-  const showHandouts = Boolean(canViewHandouts && accountId);
-  const showAnnouncements = Boolean(canViewAnnouncements && accountId);
   const { user, token } = useAuth();
   const isIndividualGolfAccount = useIsIndividualGolfAccount();
+  const showHandouts = Boolean(canViewHandouts && accountId && !isIndividualGolfAccount);
+  const showAnnouncements = Boolean(canViewAnnouncements && accountId && !isIndividualGolfAccount);
   const apiClient = useApiClient();
   const handoutService = React.useMemo(
     () => new HandoutService(token, apiClient),
@@ -224,6 +224,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
 
   const loadAccountHandouts = React.useCallback(async () => {
     if (!showHandouts || !accountId) {
+      hasLoadedAccountHandoutsRef.current = true;
       return;
     }
 
@@ -265,6 +266,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
 
   const loadTeamHandouts = React.useCallback(async () => {
     if (!showHandouts || !accountId || !user || !token) {
+      hasLoadedTeamHandoutsRef.current = true;
       return;
     }
 
@@ -336,6 +338,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
 
   const loadAccountAnnouncements = React.useCallback(async () => {
     if (!showAnnouncements || !accountId) {
+      hasLoadedAccountAnnouncementsRef.current = true;
       return;
     }
 
@@ -359,6 +362,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
 
   const loadTeamAnnouncements = React.useCallback(async () => {
     if (!showAnnouncements || !accountId || !user || !token) {
+      hasLoadedTeamAnnouncementsRef.current = true;
       return;
     }
 
@@ -1136,27 +1140,24 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
 
   const shouldShowHandoutAction =
     showHandouts &&
-    (!hasLoadedAccountHandoutsRef.current ||
-      !hasLoadedTeamHandoutsRef.current ||
-      hasAccountHandoutItems ||
+    (hasAccountHandoutItems ||
       hasTeamHandoutItems ||
-      accountHandoutsLoading ||
-      teamHandoutsLoading ||
-      Boolean(accountHandoutsError) ||
-      Boolean(teamHandoutsError));
+      (hasLoadedAccountHandoutsRef.current && Boolean(accountHandoutsError)) ||
+      (hasLoadedTeamHandoutsRef.current && Boolean(teamHandoutsError)));
 
   const shouldShowAnnouncementAction =
     showAnnouncements &&
-    (!hasLoadedAccountAnnouncementsRef.current ||
-      !hasLoadedTeamAnnouncementsRef.current ||
-      hasAccountAnnouncementItems ||
+    (hasAccountAnnouncementItems ||
       hasTeamAnnouncementItems ||
-      accountAnnouncementsLoading ||
-      teamAnnouncementsLoading ||
-      Boolean(accountAnnouncementsError) ||
-      Boolean(teamAnnouncementsError));
+      (hasLoadedAccountAnnouncementsRef.current && Boolean(accountAnnouncementsError)) ||
+      (hasLoadedTeamAnnouncementsRef.current && Boolean(teamAnnouncementsError)));
 
   const shouldShowComposeAction = canComposeEmail && Boolean(composeHref);
+
+  const allQuickActionsLoaded =
+    (!showHandouts || (hasLoadedAccountHandoutsRef.current && hasLoadedTeamHandoutsRef.current)) &&
+    (!showAnnouncements ||
+      (hasLoadedAccountAnnouncementsRef.current && hasLoadedTeamAnnouncementsRef.current));
 
   const shouldShowQuickActionsMenu =
     shouldShowAnnouncementAction || shouldShowHandoutAction || shouldShowComposeAction;
@@ -1268,9 +1269,15 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
       return;
     }
 
+    if (!allQuickActionsLoaded) {
+      onCompactMenuItemsChange?.([]);
+      return;
+    }
+
     const items = buildCompactMenuItems(onUnifiedMenuClose ?? (() => {}));
     onCompactMenuItemsChange?.(items);
   }, [
+    allQuickActionsLoaded,
     buildCompactMenuItems,
     isCompact,
     onCompactMenuItemsChange,
@@ -1303,111 +1310,115 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     return (
       <>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {shouldShowAnnouncementAction ? (
+          {allQuickActionsLoaded && (
             <>
-              <Tooltip title="Announcements">
-                <IconButton
-                  color="inherit"
-                  size="small"
-                  onClick={handleAnnouncementMenuOpen}
-                  aria-haspopup="true"
-                  aria-controls={announcementAnchorEl ? 'announcement-menu' : undefined}
-                >
-                  <CampaignIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Menu
-                id="announcement-menu"
-                anchorEl={announcementAnchorEl}
-                open={Boolean(announcementAnchorEl)}
-                onClose={handleAnnouncementMenuClose}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                PaperProps={menuPaperStyles}
-              >
-                {(() => {
-                  const nodes: React.ReactNode[] = [];
+              {shouldShowAnnouncementAction ? (
+                <>
+                  <Tooltip title="Announcements">
+                    <IconButton
+                      color="inherit"
+                      size="small"
+                      onClick={handleAnnouncementMenuOpen}
+                      aria-haspopup="true"
+                      aria-controls={announcementAnchorEl ? 'announcement-menu' : undefined}
+                    >
+                      <CampaignIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Menu
+                    id="announcement-menu"
+                    anchorEl={announcementAnchorEl}
+                    open={Boolean(announcementAnchorEl)}
+                    onClose={handleAnnouncementMenuClose}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    PaperProps={menuPaperStyles}
+                  >
+                    {(() => {
+                      const nodes: React.ReactNode[] = [];
 
-                  const accountNodes = buildMenuSection(
-                    normalizeMenuContent(
-                      renderAccountAnnouncementItems(handleAnnouncementMenuClose),
-                    ),
-                    'desktop-account-announcements',
-                    'Account Announcements',
-                    `/account/${accountId}/announcements`,
-                  );
-                  if (accountNodes) {
-                    nodes.push(...accountNodes);
-                  }
+                      const accountNodes = buildMenuSection(
+                        normalizeMenuContent(
+                          renderAccountAnnouncementItems(handleAnnouncementMenuClose),
+                        ),
+                        'desktop-account-announcements',
+                        'Account Announcements',
+                        `/account/${accountId}/announcements`,
+                      );
+                      if (accountNodes) {
+                        nodes.push(...accountNodes);
+                      }
 
-                  const teamNodes = renderTeamAnnouncementSections(handleAnnouncementMenuClose);
-                  if (teamNodes.length > 0) {
-                    nodes.push(...teamNodes);
-                  }
+                      const teamNodes = renderTeamAnnouncementSections(handleAnnouncementMenuClose);
+                      if (teamNodes.length > 0) {
+                        nodes.push(...teamNodes);
+                      }
 
-                  return nodes.length > 0 ? nodes : null;
-                })()}
-              </Menu>
+                      return nodes.length > 0 ? nodes : null;
+                    })()}
+                  </Menu>
+                </>
+              ) : null}
+              {shouldShowHandoutAction ? (
+                <>
+                  <Tooltip title="Handouts">
+                    <IconButton
+                      color="inherit"
+                      size="small"
+                      onClick={handleHandoutMenuOpen}
+                      aria-haspopup="true"
+                      aria-controls={handoutAnchorEl ? 'handout-menu' : undefined}
+                    >
+                      <AttachFileIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Menu
+                    id="handout-menu"
+                    anchorEl={handoutAnchorEl}
+                    open={Boolean(handoutAnchorEl)}
+                    onClose={handleHandoutMenuClose}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    PaperProps={menuPaperStyles}
+                  >
+                    {(() => {
+                      const nodes: React.ReactNode[] = [];
+
+                      const accountNodes = buildMenuSection(
+                        normalizeMenuContent(renderAccountHandoutItems(handleHandoutMenuClose)),
+                        'desktop-account',
+                        'Account Handouts',
+                        `/account/${accountId}/handouts`,
+                      );
+                      if (accountNodes) {
+                        nodes.push(...accountNodes);
+                      }
+
+                      const teamNodes = renderTeamHandoutSections(handleHandoutMenuClose);
+                      if (teamNodes.length > 0) {
+                        nodes.push(...teamNodes);
+                      }
+
+                      return nodes.length > 0 ? nodes : null;
+                    })()}
+                  </Menu>
+                </>
+              ) : null}
+              {shouldShowComposeAction && composeHref ? (
+                <Tooltip title="Compose email">
+                  <IconButton
+                    color="inherit"
+                    size="small"
+                    component={NextLink}
+                    href={composeHref}
+                    aria-label="Compose email"
+                  >
+                    <ComposeEmailIcon size="small" />
+                  </IconButton>
+                </Tooltip>
+              ) : null}
             </>
-          ) : null}
-          {shouldShowHandoutAction ? (
-            <>
-              <Tooltip title="Handouts">
-                <IconButton
-                  color="inherit"
-                  size="small"
-                  onClick={handleHandoutMenuOpen}
-                  aria-haspopup="true"
-                  aria-controls={handoutAnchorEl ? 'handout-menu' : undefined}
-                >
-                  <AttachFileIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Menu
-                id="handout-menu"
-                anchorEl={handoutAnchorEl}
-                open={Boolean(handoutAnchorEl)}
-                onClose={handleHandoutMenuClose}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                PaperProps={menuPaperStyles}
-              >
-                {(() => {
-                  const nodes: React.ReactNode[] = [];
-
-                  const accountNodes = buildMenuSection(
-                    normalizeMenuContent(renderAccountHandoutItems(handleHandoutMenuClose)),
-                    'desktop-account',
-                    'Account Handouts',
-                    `/account/${accountId}/handouts`,
-                  );
-                  if (accountNodes) {
-                    nodes.push(...accountNodes);
-                  }
-
-                  const teamNodes = renderTeamHandoutSections(handleHandoutMenuClose);
-                  if (teamNodes.length > 0) {
-                    nodes.push(...teamNodes);
-                  }
-
-                  return nodes.length > 0 ? nodes : null;
-                })()}
-              </Menu>
-            </>
-          ) : null}
-          {shouldShowComposeAction && composeHref ? (
-            <Tooltip title="Compose email">
-              <IconButton
-                color="inherit"
-                size="small"
-                component={NextLink}
-                href={composeHref}
-                aria-label="Compose email"
-              >
-                <ComposeEmailIcon size="small" />
-              </IconButton>
-            </Tooltip>
-          ) : null}
+          )}
           <ThemeSwitcher />
         </Box>
         {announcementDialog}
