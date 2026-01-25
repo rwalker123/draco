@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -176,6 +176,29 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     error,
     clearError,
   } = useSeasonSchedulerOperations(accountId, seasonId);
+
+  const listFieldAvailabilityRulesRef = useRef(listFieldAvailabilityRules);
+  const listFieldExclusionDatesRef = useRef(listFieldExclusionDates);
+  const getSeasonWindowConfigRef = useRef(getSeasonWindowConfig);
+  const listSeasonExclusionsRef = useRef(listSeasonExclusions);
+  const listTeamExclusionsRef = useRef(listTeamExclusions);
+  const listUmpireExclusionsRef = useRef(listUmpireExclusions);
+
+  useEffect(() => {
+    listFieldAvailabilityRulesRef.current = listFieldAvailabilityRules;
+    listFieldExclusionDatesRef.current = listFieldExclusionDates;
+    getSeasonWindowConfigRef.current = getSeasonWindowConfig;
+    listSeasonExclusionsRef.current = listSeasonExclusions;
+    listTeamExclusionsRef.current = listTeamExclusions;
+    listUmpireExclusionsRef.current = listUmpireExclusions;
+  }, [
+    listFieldAvailabilityRules,
+    listFieldExclusionDates,
+    getSeasonWindowConfig,
+    listSeasonExclusions,
+    listTeamExclusions,
+    listUmpireExclusions,
+  ]);
 
   const [rules, setRules] = useState<SchedulerFieldAvailabilityRule[]>([]);
   const [exclusions, setExclusions] = useState<SchedulerFieldExclusionDate[]>([]);
@@ -365,23 +388,23 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     if (!seasonId) {
       return;
     }
-    const nextRules = await listFieldAvailabilityRules();
+    const nextRules = await listFieldAvailabilityRulesRef.current();
     setRules(nextRules);
-  }, [listFieldAvailabilityRules, seasonId]);
+  }, [seasonId]);
 
   const loadExclusions = useCallback(async () => {
     if (!seasonId) {
       return;
     }
-    const nextExclusions = await listFieldExclusionDates();
+    const nextExclusions = await listFieldExclusionDatesRef.current();
     setExclusions(nextExclusions);
-  }, [listFieldExclusionDates, seasonId]);
+  }, [seasonId]);
 
   const loadSeasonWindow = useCallback(async () => {
     if (!seasonId) {
       return;
     }
-    const config = await getSeasonWindowConfig();
+    const config = await getSeasonWindowConfigRef.current();
     setSeasonWindowConfig(config);
     if (config) {
       setSeasonStartDate(config.startDate);
@@ -407,31 +430,31 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         setLeagueSeasonSelection(config.leagueSeasonIds);
       }
     }
-  }, [getSeasonWindowConfig, seasonId]);
+  }, [seasonId]);
 
   const loadSeasonExclusions = useCallback(async () => {
     if (!seasonId) {
       return;
     }
-    const next = await listSeasonExclusions();
+    const next = await listSeasonExclusionsRef.current();
     setSeasonExclusions(next);
-  }, [listSeasonExclusions, seasonId]);
+  }, [seasonId]);
 
   const loadTeamExclusions = useCallback(async () => {
     if (!seasonId) {
       return;
     }
-    const next = await listTeamExclusions();
+    const next = await listTeamExclusionsRef.current();
     setTeamExclusions(next);
-  }, [listTeamExclusions, seasonId]);
+  }, [seasonId]);
 
   const loadUmpireExclusions = useCallback(async () => {
     if (!seasonId) {
       return;
     }
-    const next = await listUmpireExclusions();
+    const next = await listUmpireExclusionsRef.current();
     setUmpireExclusions(next);
-  }, [listUmpireExclusions, seasonId]);
+  }, [seasonId]);
 
   useEffect(() => {
     if (!canEdit || !seasonId) {
