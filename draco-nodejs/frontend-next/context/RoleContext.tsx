@@ -47,10 +47,9 @@ interface RoleContext {
   seasonId?: string;
 }
 
-// Cache keys for localStorage
-const ROLE_METADATA_CLIENT_VERSION = '1.6.0';
+// Cache keys for sessionStorage
+const ROLE_METADATA_CLIENT_VERSION = '1.7.0';
 const ROLE_METADATA_CACHE_KEY = `draco_role_metadata_${ROLE_METADATA_CLIENT_VERSION}`;
-const ROLE_METADATA_VERSION_KEY = `draco_role_metadata_version_${ROLE_METADATA_CLIENT_VERSION}`;
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
@@ -114,17 +113,16 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [authLoading, user, token, userRoles]);
 
-  // Fetch role metadata from API and cache in localStorage
+  // Fetch role metadata from API and cache in sessionStorage
   const fetchRoleMetadata = useCallback(async (): Promise<RoleMetadataSchemaType | null> => {
     if (!token) return null;
 
     try {
       const cachedMetadata = sessionStorage.getItem(ROLE_METADATA_CACHE_KEY);
-      const cachedVersion = sessionStorage.getItem(ROLE_METADATA_VERSION_KEY);
 
-      if (cachedMetadata && cachedVersion) {
+      if (cachedMetadata) {
         const parsedMetadata: RoleMetadataSchemaType = JSON.parse(cachedMetadata);
-        if (parsedMetadata.version === cachedVersion) {
+        if (parsedMetadata.version === ROLE_METADATA_CLIENT_VERSION) {
           return parsedMetadata;
         }
       }
@@ -137,7 +135,6 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       const metadata = unwrapApiResult(result, 'Failed to fetch role metadata');
 
       sessionStorage.setItem(ROLE_METADATA_CACHE_KEY, JSON.stringify(metadata));
-      sessionStorage.setItem(ROLE_METADATA_VERSION_KEY, metadata.version);
 
       return metadata;
     } catch (err: unknown) {

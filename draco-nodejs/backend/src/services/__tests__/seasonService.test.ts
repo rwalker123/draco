@@ -83,6 +83,64 @@ const createSourceSeason = (): dbSeasonCopySource => ({
         },
       ],
       golfleaguesetup: null,
+      golfseasonconfig: null,
+    },
+  ],
+});
+
+const createGolfSourceSeason = (): dbSeasonCopySource => ({
+  id: seasonId,
+  name: 'Spring 2024 Golf',
+  accountid: accountId,
+  accounts: {
+    accounttypes: {
+      name: 'Golf',
+    },
+  },
+  leagueseason: [
+    {
+      id: 50n,
+      leagueid: 75n,
+      divisionseason: [],
+      teamsseason: [
+        {
+          id: 300n,
+          teamid: 400n,
+          name: 'Team Alpha',
+          divisionseasonid: null,
+          rosterseason: [],
+          golfroster: [
+            {
+              golferid: 500n,
+              isactive: true,
+            },
+          ],
+          teamseasonmanager: [
+            {
+              contactid: 600n,
+            },
+          ],
+        },
+      ],
+      golfleaguesetup: {
+        leagueday: 1,
+        firstteetime: new Date('2024-01-01T08:00:00.000Z'),
+        timebetweenteetimes: 10,
+        holespermatch: 18,
+        teeoffformat: 1,
+        scoringtype: 'team',
+        usebestball: false,
+        usehandicapscoring: true,
+        perholepoints: 1,
+        perninepoints: 2,
+        permatchpoints: 3,
+        totalholespoints: 4,
+        againstfieldpoints: 5,
+        againstfielddescpoints: 1,
+      },
+      golfseasonconfig: {
+        teamsize: 4,
+      },
     },
   ],
 });
@@ -188,5 +246,25 @@ describe('SeasonService.copySeason', () => {
 
     await expect(service.copySeason(accountId, seasonId)).rejects.toBeInstanceOf(NotFoundError);
     expect(repository.findSeasonByName).not.toHaveBeenCalled();
+  });
+
+  it('copies golf season with golfseasonconfig and preserves teamsize', async () => {
+    const sourceSeason = createGolfSourceSeason();
+    const copiedSeasonRecord = createCopiedSeasonRecord();
+
+    repository.findSeasonForCopy.mockResolvedValue(sourceSeason);
+    repository.findSeasonByName.mockResolvedValue(null);
+    repository.copySeasonStructure.mockResolvedValue(copiedSeasonRecord);
+
+    const result = await service.copySeason(accountId, seasonId);
+
+    expect(repository.findSeasonForCopy).toHaveBeenCalledWith(accountId, seasonId);
+    expect(repository.findSeasonByName).toHaveBeenCalledWith(accountId, 'Spring 2024 Golf Copy');
+
+    const copyCall = repository.copySeasonStructure.mock.calls[0];
+    expect(copyCall[1].leagueseason[0].golfseasonconfig).toBeDefined();
+    expect(copyCall[1].leagueseason[0].golfseasonconfig?.teamsize).toBe(4);
+
+    expect(result).toBeDefined();
   });
 });

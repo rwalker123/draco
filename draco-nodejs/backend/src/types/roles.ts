@@ -46,6 +46,7 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
     permissions: [
       'account.communications.manage',
       'account.contacts.manage',
+      'account.contacts.photos.manage',
       'account.dashboard.view',
       'account.handouts.manage',
       'account.fields.manage',
@@ -79,7 +80,7 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
   },
   [RoleNamesType.ACCOUNT_PHOTO_ADMIN]: {
     roleId: RoleNamesType.ACCOUNT_PHOTO_ADMIN,
-    permissions: ['account.photos.manage', 'team.photos.manage'],
+    permissions: ['account.photos.manage', 'account.contacts.photos.manage', 'team.photos.manage'],
     context: 'account',
   },
   [RoleNamesType.LEAGUE_ADMIN]: {
@@ -90,6 +91,7 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
       'league.players.manage',
       'league.schedule.manage',
       'league.faq.manage',
+      'account.contacts.photos.manage',
       'player-classified.create-players-wanted',
       'player-classified.edit-players-wanted',
       'player-classified.delete-players-wanted',
@@ -114,7 +116,7 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
   },
   [RoleNamesType.TEAM_PHOTO_ADMIN]: {
     roleId: RoleNamesType.TEAM_PHOTO_ADMIN,
-    permissions: ['team.photos.manage'],
+    permissions: ['team.photos.manage', 'account.contacts.photos.manage'],
     context: 'team',
   },
 };
