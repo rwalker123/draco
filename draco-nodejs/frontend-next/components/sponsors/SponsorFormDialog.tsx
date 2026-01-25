@@ -101,15 +101,14 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
   const photoValue = useWatch({ control, name: 'photo' }) as File | null | undefined;
   const sponsorName = useWatch({ control, name: 'name' });
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
-  const handlePreviewError = React.useCallback(() => {
+  const handlePreviewError = () => {
     setPreviewUrl(null);
-  }, []);
+  };
 
   React.useEffect(() => {
     if (!open) {
       reset(defaultValues);
       setLocalError(null);
-      clearError();
       setPreviewUrl(null);
       return;
     }
@@ -130,8 +129,7 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
       reset(defaultValues);
     }
     setLocalError(null);
-    clearError();
-  }, [open, mode, initialSponsor, reset, clearError]);
+  }, [open, mode, initialSponsor, reset]);
 
   React.useEffect(() => {
     if (photoValue instanceof File) {

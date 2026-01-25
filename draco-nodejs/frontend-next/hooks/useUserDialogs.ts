@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { useDialog } from './useDialog';
 import { ContactType, ContactRoleType } from '@draco/shared-schemas';
 
@@ -104,12 +103,9 @@ export function useUserDialogs(): UserDialogs {
   }>();
 
   // Wrap the remove role dialog to accept two parameters
-  const openRemoveRoleDialog = useCallback(
-    (user: ContactType, role: ContactRoleType) => {
-      removeRoleDialog.open({ user, role });
-    },
-    [removeRoleDialog],
-  );
+  const openRemoveRoleDialog = (user: ContactType, role: ContactRoleType) => {
+    removeRoleDialog.open({ user, role });
+  };
 
   return {
     editContactDialog: {

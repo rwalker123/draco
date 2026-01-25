@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   Alert,
   Box,
@@ -140,6 +140,20 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
     clearError,
   } = useWelcomeMessageOperations(operationsScope);
 
+  const listMessagesRef = useRef(listMessages);
+  const createMessageRef = useRef(createMessage);
+  const updateMessageRef = useRef(updateMessage);
+  const deleteMessageRef = useRef(deleteMessage);
+  const clearErrorRef = useRef(clearError);
+
+  useEffect(() => {
+    listMessagesRef.current = listMessages;
+    createMessageRef.current = createMessage;
+    updateMessageRef.current = updateMessage;
+    deleteMessageRef.current = deleteMessage;
+    clearErrorRef.current = clearError;
+  }, [listMessages, createMessage, updateMessage, deleteMessage, clearError]);
+
   React.useEffect(() => {
     if (scope.type === 'team') {
       setActiveScope('team');
@@ -164,12 +178,12 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
     });
   }, [scope]);
 
-  const refreshMessages = React.useCallback(async () => {
+  const refreshMessages = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const data = await listMessages();
+      const data = await listMessagesRef.current();
       const sanitized = sortMessages(
         data.map((message) => ({
           ...message,
@@ -184,27 +198,32 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [listMessages]);
+  };
 
-  React.useEffect(() => {
+  const operationsScopeKey =
+    operationsScope.type === 'team'
+      ? `team-${operationsScope.teamSeasonId}`
+      : `account-${operationsScope.accountId}`;
+
+  useEffect(() => {
     void refreshMessages();
-  }, [refreshMessages, operationsScope]);
+  }, [operationsScopeKey]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setSuccessMessage(null);
     setError(null);
-    clearError();
-  }, [operationsScope, clearError]);
+    clearErrorRef.current();
+  }, [operationsScopeKey]);
 
   const handleCreate = () => {
-    clearError();
+    clearErrorRef.current();
     setDialogError(null);
     const scopeForDialog = scope.type === 'team' ? 'team' : activeScope;
     setDialogState({ open: true, mode: 'create', message: null, scope: scopeForDialog });
   };
 
   const handleEdit = (message: WelcomeMessageType) => {
-    clearError();
+    clearErrorRef.current();
     setDialogError(null);
     const scopeForDialog = message.isTeamScoped ? 'team' : 'account';
     setDialogState({ open: true, mode: 'edit', message, scope: scopeForDialog });
@@ -213,11 +232,11 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
   const handleDialogClose = () => {
     setDialogState({ open: false });
     setDialogError(null);
-    clearError();
+    clearErrorRef.current();
   };
 
   const handleDeletePrompt = (message: WelcomeMessageType) => {
-    clearError();
+    clearErrorRef.current();
     setConfirmState({ open: true, message });
   };
 
@@ -288,10 +307,10 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
       }
 
       if (dialogState.open && dialogState.mode === 'edit' && dialogState.message) {
-        await updateMessage(dialogState.message.id, payload, targetScope);
+        await updateMessageRef.current(dialogState.message.id, payload, targetScope);
         setSuccessMessage('Information message updated successfully.');
       } else {
-        await createMessage(payload, targetScope);
+        await createMessageRef.current(payload, targetScope);
         setSuccessMessage('Information message created successfully.');
       }
       setDialogState({ open: false });
@@ -309,7 +328,7 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
 
     try {
       const targetScope = resolveMessageScope(confirmState.message);
-      await deleteMessage(confirmState.message.id, targetScope);
+      await deleteMessageRef.current(confirmState.message.id, targetScope);
       setSuccessMessage('Information message deleted successfully.');
       setConfirmState({ open: false, message: null });
       await refreshMessages();
@@ -325,7 +344,7 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
 
   const handleDismissError = () => {
     setError(null);
-    clearError();
+    clearErrorRef.current();
   };
 
   const disabledCreateButton = mutationLoading || (effectiveScope === 'team' && !hasTeams);

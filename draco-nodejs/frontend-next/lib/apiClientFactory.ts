@@ -8,12 +8,26 @@ type CreateApiClientOptions = {
   frontendBaseUrl?: string;
 };
 
+type ApiClient = ReturnType<typeof createClient>;
+
+// Cache clients by token to avoid creating new instances on every render
+const clientCache = new Map<string | undefined, ApiClient>();
+
 export const createApiClient = ({
   token,
   baseUrl = '',
   transformHostHeader = false,
   frontendBaseUrl,
 }: CreateApiClientOptions = {}) => {
+  // Only use cache for default options (the common case from useApiClient)
+  const useCache = baseUrl === '' && !transformHostHeader && !frontendBaseUrl;
+
+  if (useCache) {
+    const cached = clientCache.get(token);
+    if (cached) {
+      return cached;
+    }
+  }
   const configOverrides: Parameters<typeof createConfig>[0] = {
     baseUrl,
   };
@@ -52,6 +66,11 @@ export const createApiClient = ({
 
       return request;
     });
+  }
+
+  // Cache the client for reuse
+  if (useCache) {
+    clientCache.set(token, client);
   }
 
   return client;

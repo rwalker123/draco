@@ -58,7 +58,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
   const canManage = Boolean(user && token && accountId && contactId);
 
   const loadMemberBusinesses = useCallback(async () => {
-    if (!accountId || !token) {
+    if (!accountId || !token || !contactId) {
       setMemberBusinesses([]);
       setError(null);
       setInfoMessage(null);
@@ -73,7 +73,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
       const result = await listMemberBusinesses({
         client: apiClient,
         path: { accountId },
-        query: contactId ? { contactId } : undefined,
+        query: { contactId },
         security: [{ type: 'http', scheme: 'bearer' }],
         throwOnError: false,
       });

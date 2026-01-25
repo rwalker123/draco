@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { createUserManagementService } from '../services/userManagementService';
 import { ContactType, ContactRoleType } from '@draco/shared-schemas';
@@ -30,42 +30,39 @@ export function useRoleRemoval(accountId: string) {
   const { token } = useAuth();
   const userService = token ? createUserManagementService(token) : null;
 
-  const removeRole = useCallback(
-    async (data: RoleRemovalData): Promise<RoleRemovalResult> => {
-      if (!userService) {
-        return { success: false, error: 'User service not available' };
-      }
+  const removeRole = async (data: RoleRemovalData): Promise<RoleRemovalResult> => {
+    if (!userService) {
+      return { success: false, error: 'User service not available' };
+    }
 
-      const { user, role } = data;
+    const { user, role } = data;
 
-      try {
-        setLoading(true);
+    try {
+      setLoading(true);
 
-        const removedRoleData = await userService.removeRole(
-          accountId,
-          user.id,
-          role.roleId,
-          role.roleData,
-        );
+      const removedRoleData = await userService.removeRole(
+        accountId,
+        user.id,
+        role.roleId,
+        role.roleData,
+      );
 
-        return {
-          success: true,
-          message: 'Role removed successfully',
-          removedRole: {
-            contactId: user.id,
-            roleId: role.roleId,
-            id: removedRoleData.id, // Extract unique ID from backend response
-          },
-        };
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to remove role';
-        return { success: false, error: errorMessage };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [userService, accountId],
-  );
+      return {
+        success: true,
+        message: 'Role removed successfully',
+        removedRole: {
+          contactId: user.id,
+          roleId: role.roleId,
+          id: removedRoleData.id, // Extract unique ID from backend response
+        },
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to remove role';
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
     removeRole,

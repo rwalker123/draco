@@ -1,7 +1,7 @@
 // useClassifiedsPagination Hook
 // Manages pagination for Player Classifieds
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { IUseClassifiedsPaginationReturn } from '../types/playerClassifieds';
 import { PaginationWithTotalType } from '@draco/shared-schemas';
 
@@ -27,17 +27,17 @@ export const useClassifiedsPagination = ({
   });
 
   // Handle page change
-  const setPage = useCallback((page: number) => {
+  const setPage = (page: number) => {
     setPagination((prev) => ({
       ...prev,
       page,
       hasNext: page < prev.totalPages,
       hasPrev: page > 1,
     }));
-  }, []);
+  };
 
   // Handle limit change
-  const setLimit = useCallback((limit: number) => {
+  const setLimit = (limit: number) => {
     setPagination((prev) => {
       const newTotalPages = Math.ceil(prev.total / limit);
       return {
@@ -49,10 +49,10 @@ export const useClassifiedsPagination = ({
         hasPrev: false,
       };
     });
-  }, []);
+  };
 
   // Navigate to next page
-  const goToNextPage = useCallback(() => {
+  const goToNextPage = () => {
     setPagination((prev) => {
       if (prev.hasNext) {
         const newPage = prev.page + 1;
@@ -65,10 +65,10 @@ export const useClassifiedsPagination = ({
       }
       return prev;
     });
-  }, []);
+  };
 
   // Navigate to previous page
-  const goToPrevPage = useCallback(() => {
+  const goToPrevPage = () => {
     setPagination((prev) => {
       if (prev.hasPrev) {
         const newPage = prev.page - 1;
@@ -81,27 +81,27 @@ export const useClassifiedsPagination = ({
       }
       return prev;
     });
-  }, []);
+  };
 
   // Navigate to first page
-  const goToFirstPage = useCallback(() => {
+  const goToFirstPage = () => {
     setPagination((prev) => ({
       ...prev,
       page: 1,
       hasNext: prev.totalPages > 1,
       hasPrev: false,
     }));
-  }, []);
+  };
 
   // Navigate to last page
-  const goToLastPage = useCallback(() => {
+  const goToLastPage = () => {
     setPagination((prev) => ({
       ...prev,
       page: prev.totalPages,
       hasNext: false,
       hasPrev: prev.totalPages > 1,
     }));
-  }, []);
+  };
 
   return {
     pagination,

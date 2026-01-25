@@ -23,12 +23,15 @@ import {
 } from '@mui/material';
 import { Add, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { SponsorType } from '@draco/shared-schemas';
+import { listTeamSponsors, getTeamSeasonDetails } from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../../../../../components/AccountPageHeader';
 import SponsorFormDialog from '../../../../../../../../../components/sponsors/SponsorFormDialog';
 import { useSponsorOperations } from '../../../../../../../../../hooks/useSponsorOperations';
+import { useApiClient } from '../../../../../../../../../hooks/useApiClient';
+import { unwrapApiResult } from '../../../../../../../../../utils/apiResult';
 import PageSectionHeader from '../../../../../../../../../components/common/PageSectionHeader';
 import TeamAvatar from '../../../../../../../../../components/TeamAvatar';
-import TeamInfoCard from '../../../../../../../../../components/TeamInfoCard';
+import type { TeamSeasonRecordType } from '@draco/shared-schemas';
 import NextLink from 'next/link';
 
 interface TeamSponsorManagementProps {
@@ -48,12 +51,8 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
   seasonId,
   teamSeasonId,
 }) => {
-  const {
-    listSponsors,
-    deleteSponsor,
-    loading: mutationLoading,
-    clearError,
-  } = useSponsorOperations({
+  const apiClient = useApiClient();
+  const { deleteSponsor, loading: mutationLoading } = useSponsorOperations({
     type: 'team',
     accountId,
     seasonId,
@@ -76,45 +75,91 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
     leagueId?: string;
   } | null>(null);
 
-  const handleTeamDataLoaded = React.useCallback(
-    (data: {
-      teamName: string;
-      leagueName: string;
-      seasonName: string;
-      accountName: string;
-      logoUrl?: string;
-      record?: { wins: number; losses: number; ties: number };
-      teamId?: string;
-      leagueId?: string;
-    }) => {
-      setTeamHeaderData({
-        teamName: data.teamName,
-        leagueName: data.leagueName,
-        logoUrl: data.logoUrl,
-        teamId: data.teamId,
-        leagueId: data.leagueId,
-      });
-    },
-    [],
-  );
+  React.useEffect(() => {
+    let cancelled = false;
 
-  const refreshSponsors = React.useCallback(async () => {
+    const loadTeamData = async () => {
+      try {
+        const result = await getTeamSeasonDetails({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          throwOnError: false,
+        });
+        if (cancelled) return;
+        const data = unwrapApiResult<TeamSeasonRecordType>(
+          result,
+          'Failed to fetch team information',
+        );
+        setTeamHeaderData({
+          teamName: data.name ?? 'Unknown Team',
+          leagueName: data.league?.name,
+          logoUrl: data.team.logoUrl ?? undefined,
+          teamId: data.team.id,
+          leagueId: data.league?.id ? String(data.league.id) : undefined,
+        });
+      } catch {
+        // Team header data is optional, don't set error state
+      }
+    };
+
+    loadTeamData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, seasonId, teamSeasonId, apiClient]);
+
+  const refreshSponsors = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await listSponsors();
-      setSponsors(data);
+      const result = await listTeamSponsors({
+        client: apiClient,
+        path: { accountId, seasonId, teamSeasonId },
+        throwOnError: false,
+      });
+      const data = unwrapApiResult(result, 'Failed to load team sponsors');
+      setSponsors(data.sponsors ?? []);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load team sponsors';
       setError(message);
     } finally {
       setLoading(false);
     }
-  }, [listSponsors]);
+  };
 
   React.useEffect(() => {
-    refreshSponsors();
-  }, [refreshSponsors]);
+    let cancelled = false;
+
+    const loadSponsors = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const result = await listTeamSponsors({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          throwOnError: false,
+        });
+        if (cancelled) return;
+        const data = unwrapApiResult(result, 'Failed to load team sponsors');
+        setSponsors(data.sponsors ?? []);
+      } catch (err) {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : 'Failed to load team sponsors';
+        setError(message);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSponsors();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, seasonId, teamSeasonId, apiClient]);
 
   const handleOpenCreate = () => {
     setDialogState({ open: true, mode: 'create', sponsor: null });
@@ -150,7 +195,6 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
     try {
       setSuccess(null);
       setError(null);
-      clearError();
       await deleteSponsor(sponsorId);
       setSuccess('Sponsor deleted successfully');
       await refreshSponsors();
@@ -184,15 +228,6 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
           </Stack>
         </Box>
       </AccountPageHeader>
-
-      <Box sx={{ display: 'none' }}>
-        <TeamInfoCard
-          accountId={accountId}
-          seasonId={seasonId}
-          teamSeasonId={teamSeasonId}
-          onTeamDataLoaded={handleTeamDataLoaded}
-        />
-      </Box>
 
       <Container maxWidth="md" sx={{ pt: 4, pb: 8 }}>
         <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 3 }}>

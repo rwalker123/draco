@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { createAccountUrl, deleteAccountUrl, updateAccountUrl } from '@draco/shared-api-client';
 import type { AccountUrlType } from '@draco/shared-schemas';
 import { useAuth } from '../context/AuthContext';
@@ -32,7 +32,7 @@ export function useAccountUrlsService(accountId: string) {
   const apiClient = useApiClient();
   const [state, setState] = useState<AccountUrlServiceState>({ loading: false, error: null });
 
-  const ensurePreconditions = useCallback(() => {
+  const ensurePreconditions = () => {
     if (!accountId) {
       throw new Error('Account identifier is required to manage URLs');
     }
@@ -40,117 +40,108 @@ export function useAccountUrlsService(accountId: string) {
     if (!token) {
       throw new Error('Authentication token is required to manage URLs');
     }
-  }, [accountId, token]);
+  };
 
-  const setLoading = useCallback((loading: boolean) => {
+  const setLoading = (loading: boolean) => {
     setState((previous) => ({ ...previous, loading }));
-  }, []);
+  };
 
-  const setError = useCallback((error: string | null) => {
+  const setError = (error: string | null) => {
     setState((previous) => ({ ...previous, error }));
-  }, []);
+  };
 
-  const createUrl = useCallback(
-    async (url: string): Promise<AccountUrlCreateResult> => {
-      setLoading(true);
-      setError(null);
+  const createUrl = async (url: string): Promise<AccountUrlCreateResult> => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        ensurePreconditions();
-        const result = await createAccountUrl({
-          client: apiClient,
-          path: { accountId },
-          body: { url },
-          throwOnError: false,
-        });
+    try {
+      ensurePreconditions();
+      const result = await createAccountUrl({
+        client: apiClient,
+        path: { accountId },
+        body: { url },
+        throwOnError: false,
+      });
 
-        const createdUrl = unwrapApiResult(result, 'Failed to add URL');
+      const createdUrl = unwrapApiResult(result, 'Failed to add URL');
 
-        if (!createdUrl) {
-          throw new Error('URL could not be created');
-        }
-
-        return {
-          url: createdUrl,
-          message: 'URL added successfully',
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to add URL';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
+      if (!createdUrl) {
+        throw new Error('URL could not be created');
       }
-    },
-    [accountId, apiClient, ensurePreconditions, setLoading, setError],
-  );
 
-  const updateUrl = useCallback(
-    async (urlId: string, url: string): Promise<AccountUrlUpdateResult> => {
-      setLoading(true);
-      setError(null);
+      return {
+        url: createdUrl,
+        message: 'URL added successfully',
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to add URL';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      try {
-        ensurePreconditions();
-        const result = await updateAccountUrl({
-          client: apiClient,
-          path: { accountId, urlId },
-          body: { url },
-          throwOnError: false,
-        });
+  const updateUrl = async (urlId: string, url: string): Promise<AccountUrlUpdateResult> => {
+    setLoading(true);
+    setError(null);
 
-        const updatedUrl = unwrapApiResult(result, 'Failed to update URL');
+    try {
+      ensurePreconditions();
+      const result = await updateAccountUrl({
+        client: apiClient,
+        path: { accountId, urlId },
+        body: { url },
+        throwOnError: false,
+      });
 
-        if (!updatedUrl) {
-          throw new Error('URL could not be updated');
-        }
+      const updatedUrl = unwrapApiResult(result, 'Failed to update URL');
 
-        return {
-          url: updatedUrl,
-          message: 'URL updated successfully',
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to update URL';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
+      if (!updatedUrl) {
+        throw new Error('URL could not be updated');
       }
-    },
-    [accountId, apiClient, ensurePreconditions, setLoading, setError],
-  );
 
-  const removeUrl = useCallback(
-    async (urlId: string): Promise<AccountUrlDeleteResult> => {
-      setLoading(true);
-      setError(null);
+      return {
+        url: updatedUrl,
+        message: 'URL updated successfully',
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update URL';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      try {
-        ensurePreconditions();
-        const result = await deleteAccountUrl({
-          client: apiClient,
-          path: { accountId, urlId },
-          throwOnError: false,
-        });
+  const removeUrl = async (urlId: string): Promise<AccountUrlDeleteResult> => {
+    setLoading(true);
+    setError(null);
 
-        assertNoApiError(result, 'Failed to delete URL');
+    try {
+      ensurePreconditions();
+      const result = await deleteAccountUrl({
+        client: apiClient,
+        path: { accountId, urlId },
+        throwOnError: false,
+      });
 
-        return {
-          urlId,
-          message: 'URL deleted successfully',
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to delete URL';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, apiClient, ensurePreconditions, setLoading, setError],
-  );
+      assertNoApiError(result, 'Failed to delete URL');
 
-  const clearError = useCallback(() => setError(null), [setError]);
+      return {
+        urlId,
+        message: 'URL deleted successfully',
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete URL';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearError = () => setError(null);
 
   return {
     createUrl,

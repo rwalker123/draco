@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   Alert,
   Box,
@@ -66,6 +66,21 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
     error: mutationError,
     clearError,
   } = useAnnouncementOperations(scope);
+
+  const listAnnouncementsRef = useRef(listAnnouncements);
+  const createAnnouncementRef = useRef(createAnnouncement);
+  const updateAnnouncementRef = useRef(updateAnnouncement);
+  const deleteAnnouncementRef = useRef(deleteAnnouncement);
+  const clearErrorRef = useRef(clearError);
+
+  useEffect(() => {
+    listAnnouncementsRef.current = listAnnouncements;
+    createAnnouncementRef.current = createAnnouncement;
+    updateAnnouncementRef.current = updateAnnouncement;
+    deleteAnnouncementRef.current = deleteAnnouncement;
+    clearErrorRef.current = clearError;
+  }, [listAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement, clearError]);
+
   const [announcements, setAnnouncements] = React.useState<AnnouncementType[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -77,11 +92,11 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
     announcement: null,
   });
 
-  const refreshAnnouncements = React.useCallback(async () => {
+  const refreshAnnouncements = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await listAnnouncements();
+      const data = await listAnnouncementsRef.current();
       setAnnouncements(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load announcements';
@@ -90,20 +105,22 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [listAnnouncements]);
+  };
 
-  React.useEffect(() => {
+  const teamSeasonId = 'teamSeasonId' in scope ? scope.teamSeasonId : null;
+
+  useEffect(() => {
     void refreshAnnouncements();
-  }, [refreshAnnouncements]);
+  }, [scope.type, scope.accountId, teamSeasonId]);
 
   const handleCreate = () => {
-    clearError();
+    clearErrorRef.current();
     setLocalError(null);
     setDialogState({ open: true, mode: 'create', announcement: null });
   };
 
   const handleEdit = (announcement: AnnouncementType) => {
-    clearError();
+    clearErrorRef.current();
     setLocalError(null);
     setDialogState({ open: true, mode: 'edit', announcement });
   };
@@ -111,22 +128,22 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
   const handleDialogClose = () => {
     setDialogState({ open: false });
     setLocalError(null);
-    clearError();
+    clearErrorRef.current();
   };
 
   const handleSubmit = async (payload: UpsertAnnouncementType) => {
     try {
       setLocalError(null);
-      clearError();
+      clearErrorRef.current();
       if (!dialogState.open) {
         return;
       }
 
       if (dialogState.mode === 'create') {
-        await createAnnouncement(payload);
+        await createAnnouncementRef.current(payload);
         setSuccessMessage('Announcement created successfully.');
       } else if (dialogState.mode === 'edit' && dialogState.announcement) {
-        await updateAnnouncement(dialogState.announcement.id, payload);
+        await updateAnnouncementRef.current(dialogState.announcement.id, payload);
         setSuccessMessage('Announcement updated successfully.');
       }
 
@@ -142,7 +159,7 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
   const handleDeletePrompt = (announcement: AnnouncementType) => {
     setConfirmState({ open: true, announcement });
     setLocalError(null);
-    clearError();
+    clearErrorRef.current();
   };
 
   const handleDeleteCancel = () => {
@@ -157,8 +174,8 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
 
     try {
       setLocalError(null);
-      clearError();
-      await deleteAnnouncement(target.id);
+      clearErrorRef.current();
+      await deleteAnnouncementRef.current(target.id);
       setSuccessMessage('Announcement deleted successfully.');
       setConfirmState({ open: false, announcement: null });
       await refreshAnnouncements();
@@ -174,7 +191,7 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
 
   const handleDismissError = () => {
     setLocalError(null);
-    clearError();
+    clearErrorRef.current();
   };
 
   const hasAnnouncements = announcements.length > 0;

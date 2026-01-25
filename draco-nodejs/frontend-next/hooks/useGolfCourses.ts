@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
 import {
   listGolfLeagueCourses,
   getGolfCourse,
@@ -45,7 +44,7 @@ export interface GolfCourseService {
 export function useGolfCourses(accountId: string): GolfCourseService {
   const apiClient = useApiClient();
 
-  const listCourses = useCallback<GolfCourseService['listCourses']>(async () => {
+  const listCourses: GolfCourseService['listCourses'] = async () => {
     try {
       const result = await listGolfLeagueCourses({
         client: apiClient,
@@ -64,207 +63,174 @@ export function useGolfCourses(accountId: string): GolfCourseService {
       const message = error instanceof Error ? error.message : 'Failed to load courses';
       return { success: false, error: message } as const;
     }
-  }, [accountId, apiClient]);
+  };
 
-  const getCourse = useCallback<GolfCourseService['getCourse']>(
-    async (courseId) => {
-      try {
-        const result = await getGolfCourse({
-          client: apiClient,
-          path: { accountId, courseId },
-          throwOnError: false,
-        });
+  const getCourse: GolfCourseService['getCourse'] = async (courseId) => {
+    try {
+      const result = await getGolfCourse({
+        client: apiClient,
+        path: { accountId, courseId },
+        throwOnError: false,
+      });
 
-        const course = unwrapApiResult(result, 'Failed to load course') as GolfCourseWithTeesType;
+      const course = unwrapApiResult(result, 'Failed to load course') as GolfCourseWithTeesType;
 
-        return {
-          success: true,
-          data: course,
-          message: 'Course loaded successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to load course';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: course,
+        message: 'Course loaded successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load course';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const createCourse = useCallback<GolfCourseService['createCourse']>(
-    async (payload) => {
-      try {
-        const result = await createGolfCourse({
-          client: apiClient,
-          path: { accountId },
-          body: payload,
-          throwOnError: false,
-        });
+  const createCourse: GolfCourseService['createCourse'] = async (payload) => {
+    try {
+      const result = await createGolfCourse({
+        client: apiClient,
+        path: { accountId },
+        body: payload,
+        throwOnError: false,
+      });
 
-        const course = unwrapApiResult(result, 'Failed to create course') as GolfCourseWithTeesType;
+      const course = unwrapApiResult(result, 'Failed to create course') as GolfCourseWithTeesType;
 
-        return {
-          success: true,
-          data: course,
-          message: 'Course created successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to create course';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: course,
+        message: 'Course created successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create course';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const updateCourse = useCallback<GolfCourseService['updateCourse']>(
-    async (courseId, payload) => {
-      try {
-        const result = await updateGolfCourse({
-          client: apiClient,
-          path: { accountId, courseId },
-          body: payload,
-          throwOnError: false,
-        });
+  const updateCourse: GolfCourseService['updateCourse'] = async (courseId, payload) => {
+    try {
+      const result = await updateGolfCourse({
+        client: apiClient,
+        path: { accountId, courseId },
+        body: payload,
+        throwOnError: false,
+      });
 
-        const course = unwrapApiResult(result, 'Failed to update course') as GolfCourseWithTeesType;
+      const course = unwrapApiResult(result, 'Failed to update course') as GolfCourseWithTeesType;
 
-        return {
-          success: true,
-          data: course,
-          message: 'Course updated successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to update course';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: course,
+        message: 'Course updated successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update course';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const deleteCourse = useCallback<GolfCourseService['deleteCourse']>(
-    async (courseId) => {
-      try {
-        const result = await deleteGolfCourse({
-          client: apiClient,
-          path: { accountId, courseId },
-          throwOnError: false,
-        });
+  const deleteCourse: GolfCourseService['deleteCourse'] = async (courseId) => {
+    try {
+      const result = await deleteGolfCourse({
+        client: apiClient,
+        path: { accountId, courseId },
+        throwOnError: false,
+      });
 
-        unwrapApiResult(result, 'Failed to delete course');
+      unwrapApiResult(result, 'Failed to delete course');
 
-        return {
-          success: true,
-          data: undefined as void,
-          message: 'Course deleted successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to delete course';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: undefined as void,
+        message: 'Course deleted successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete course';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const addCourseToLeague = useCallback<GolfCourseService['addCourseToLeague']>(
-    async (courseId) => {
-      try {
-        const result = await addGolfLeagueCourse({
-          client: apiClient,
-          path: { accountId },
-          body: { courseId },
-          throwOnError: false,
-        });
+  const addCourseToLeague: GolfCourseService['addCourseToLeague'] = async (courseId) => {
+    try {
+      const result = await addGolfLeagueCourse({
+        client: apiClient,
+        path: { accountId },
+        body: { courseId },
+        throwOnError: false,
+      });
 
-        const course = unwrapApiResult(
-          result,
-          'Failed to add course to league',
-        ) as GolfLeagueCourseType;
+      const course = unwrapApiResult(
+        result,
+        'Failed to add course to league',
+      ) as GolfLeagueCourseType;
 
-        return {
-          success: true,
-          data: course,
-          message: 'Course added to league successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to add course to league';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: course,
+        message: 'Course added to league successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to add course to league';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const removeCourseFromLeague = useCallback<GolfCourseService['removeCourseFromLeague']>(
-    async (courseId) => {
-      try {
-        const result = await removeGolfLeagueCourse({
-          client: apiClient,
-          path: { accountId, courseId },
-          throwOnError: false,
-        });
+  const removeCourseFromLeague: GolfCourseService['removeCourseFromLeague'] = async (courseId) => {
+    try {
+      const result = await removeGolfLeagueCourse({
+        client: apiClient,
+        path: { accountId, courseId },
+        throwOnError: false,
+      });
 
-        unwrapApiResult(result, 'Failed to remove course from league');
+      unwrapApiResult(result, 'Failed to remove course from league');
 
-        return {
-          success: true,
-          data: undefined as void,
-          message: 'Course removed from league successfully',
-        } as const;
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to remove course from league';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: undefined as void,
+        message: 'Course removed from league successfully',
+      } as const;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to remove course from league';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const importExternalCourse = useCallback<GolfCourseService['importExternalCourse']>(
-    async (externalId) => {
-      try {
-        const result = await importExternalGolfCourse({
-          client: apiClient,
-          path: { accountId },
-          body: { externalId },
-          throwOnError: false,
-        });
+  const importExternalCourse: GolfCourseService['importExternalCourse'] = async (externalId) => {
+    try {
+      const result = await importExternalGolfCourse({
+        client: apiClient,
+        path: { accountId },
+        body: { externalId },
+        throwOnError: false,
+      });
 
-        const course = unwrapApiResult(
-          result,
-          'Failed to import external course',
-        ) as GolfCourseWithTeesType;
+      const course = unwrapApiResult(
+        result,
+        'Failed to import external course',
+      ) as GolfCourseWithTeesType;
 
-        return {
-          success: true,
-          data: course,
-          message: 'Course imported successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to import external course';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: course,
+        message: 'Course imported successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to import external course';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  return useMemo(
-    () => ({
-      listCourses,
-      getCourse,
-      createCourse,
-      updateCourse,
-      deleteCourse,
-      addCourseToLeague,
-      removeCourseFromLeague,
-      importExternalCourse,
-    }),
-    [
-      listCourses,
-      getCourse,
-      createCourse,
-      updateCourse,
-      deleteCourse,
-      addCourseToLeague,
-      removeCourseFromLeague,
-      importExternalCourse,
-    ],
-  );
+  return {
+    listCourses,
+    getCourse,
+    createCourse,
+    updateCourse,
+    deleteCourse,
+    addCourseToLeague,
+    removeCourseFromLeague,
+    importExternalCourse,
+  };
 }

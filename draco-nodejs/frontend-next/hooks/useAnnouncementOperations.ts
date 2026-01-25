@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { UpsertAnnouncementType, AnnouncementType } from '@draco/shared-schemas';
 import { useAuth } from '../context/AuthContext';
 import { useApiClient } from './useApiClient';
@@ -20,11 +20,11 @@ export type AnnouncementScope =
 export function useAnnouncementOperations(scope: AnnouncementScope) {
   const { token } = useAuth();
   const apiClient = useApiClient();
-  const service = useMemo(() => new AnnouncementService(token, apiClient), [token, apiClient]);
+  const service = new AnnouncementService(token, apiClient);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const listAnnouncements = useCallback(async (): Promise<AnnouncementType[]> => {
+  const listAnnouncements = async (): Promise<AnnouncementType[]> => {
     if (scope.type === 'team') {
       return service.listTeamAnnouncements({
         accountId: scope.accountId,
@@ -33,85 +33,79 @@ export function useAnnouncementOperations(scope: AnnouncementScope) {
     }
 
     return service.listAccountAnnouncements(scope.accountId);
-  }, [scope, service]);
+  };
 
-  const createAnnouncement = useCallback(
-    async (input: UpsertAnnouncementType): Promise<AnnouncementType> => {
-      setLoading(true);
-      setError(null);
+  const createAnnouncement = async (input: UpsertAnnouncementType): Promise<AnnouncementType> => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        if (scope.type === 'team') {
-          return await service.createTeamAnnouncement(
-            { accountId: scope.accountId, teamId: scope.teamId },
-            input,
-          );
-        }
-
-        return await service.createAccountAnnouncement(scope.accountId, input);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to create announcement';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
+    try {
+      if (scope.type === 'team') {
+        return await service.createTeamAnnouncement(
+          { accountId: scope.accountId, teamId: scope.teamId },
+          input,
+        );
       }
-    },
-    [scope, service],
-  );
 
-  const updateAnnouncement = useCallback(
-    async (announcementId: string, input: UpsertAnnouncementType): Promise<AnnouncementType> => {
-      setLoading(true);
-      setError(null);
+      return await service.createAccountAnnouncement(scope.accountId, input);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create announcement';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      try {
-        if (scope.type === 'team') {
-          return await service.updateTeamAnnouncement(
-            { accountId: scope.accountId, teamId: scope.teamId },
-            announcementId,
-            input,
-          );
-        }
+  const updateAnnouncement = async (
+    announcementId: string,
+    input: UpsertAnnouncementType,
+  ): Promise<AnnouncementType> => {
+    setLoading(true);
+    setError(null);
 
-        return await service.updateAccountAnnouncement(scope.accountId, announcementId, input);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to update announcement';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
+    try {
+      if (scope.type === 'team') {
+        return await service.updateTeamAnnouncement(
+          { accountId: scope.accountId, teamId: scope.teamId },
+          announcementId,
+          input,
+        );
       }
-    },
-    [scope, service],
-  );
 
-  const deleteAnnouncement = useCallback(
-    async (announcementId: string): Promise<void> => {
-      setLoading(true);
-      setError(null);
+      return await service.updateAccountAnnouncement(scope.accountId, announcementId, input);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update announcement';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      try {
-        if (scope.type === 'team') {
-          await service.deleteTeamAnnouncement(
-            { accountId: scope.accountId, teamId: scope.teamId },
-            announcementId,
-          );
-        } else {
-          await service.deleteAccountAnnouncement(scope.accountId, announcementId);
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to delete announcement';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
+  const deleteAnnouncement = async (announcementId: string): Promise<void> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (scope.type === 'team') {
+        await service.deleteTeamAnnouncement(
+          { accountId: scope.accountId, teamId: scope.teamId },
+          announcementId,
+        );
+      } else {
+        await service.deleteAccountAnnouncement(scope.accountId, announcementId);
       }
-    },
-    [scope, service],
-  );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete announcement';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const clearError = useCallback(() => setError(null), []);
+  const clearError = () => setError(null);
 
   return {
     listAnnouncements,

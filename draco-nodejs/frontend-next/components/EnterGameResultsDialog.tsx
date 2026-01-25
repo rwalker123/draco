@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -100,7 +100,18 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
   onSuccess,
   timeZone = DEFAULT_TIMEZONE,
 }) => {
-  const [formError, setFormError] = useState<string | null>(null);
+  const gameId = game?.id ?? null;
+  const [formErrorState, setFormErrorState] = useState<{
+    gameId: string | null;
+    error: string | null;
+  }>({ gameId: null, error: null });
+
+  const formError = formErrorState.gameId !== gameId ? null : formErrorState.error;
+
+  const setFormError = (error: string | null) => {
+    setFormErrorState({ gameId, error });
+  };
+
   const {
     control,
     handleSubmit,
@@ -116,19 +127,21 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
     seasonId: game?.seasonId ?? '',
   });
 
-  // Initialize form data when game changes
-  React.useEffect(() => {
+  const resetErrorRef = useRef(resetError);
+  useEffect(() => {
+    resetErrorRef.current = resetError;
+  }, [resetError]);
+
+  useEffect(() => {
     if (!game) {
       reset(defaultFormValues);
-      setFormError(null);
-      resetError();
+      resetErrorRef.current();
       return;
     }
 
     reset(mapGameToFormValues(game));
-    setFormError(null);
-    resetError();
-  }, [game, reset, resetError]);
+    resetErrorRef.current();
+  }, [game, reset]);
 
   const handleSave = handleSubmit(async (values) => {
     if (!game) {

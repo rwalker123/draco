@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 import type {
   SchedulerApplyResult,
   SchedulerFieldAvailabilityRule,
@@ -27,20 +27,18 @@ import { SchedulerService } from '../services/schedulerService';
 export const useSeasonSchedulerOperations = (accountId: string, seasonId: string | null) => {
   const { token } = useAuth();
   const apiClient = useApiClient();
-  const service = useMemo(() => new SchedulerService(token, apiClient), [token, apiClient]);
+  const service = new SchedulerService(token, apiClient);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const requireSeasonId = useCallback((): string => {
+  const requireSeasonId = (): string => {
     if (!seasonId) {
       throw new Error('Missing current season. Please reload and try again.');
     }
     return seasonId;
-  }, [seasonId]);
+  };
 
-  const listFieldAvailabilityRules = useCallback(async (): Promise<
-    SchedulerFieldAvailabilityRule[]
-  > => {
+  const listFieldAvailabilityRules = async (): Promise<SchedulerFieldAvailabilityRule[]> => {
     setLoading(true);
     setError(null);
     try {
@@ -54,9 +52,9 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     } finally {
       setLoading(false);
     }
-  }, [accountId, requireSeasonId, service]);
+  };
 
-  const getProblemSpecPreview = useCallback(async (): Promise<SchedulerProblemSpecPreview> => {
+  const getProblemSpecPreview = async (): Promise<SchedulerProblemSpecPreview> => {
     setLoading(true);
     setError(null);
     try {
@@ -70,45 +68,43 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     } finally {
       setLoading(false);
     }
-  }, [accountId, requireSeasonId, service]);
+  };
 
-  const getSeasonWindowConfig =
-    useCallback(async (): Promise<SchedulerSeasonWindowConfig | null> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.getSeasonWindowConfig(accountId, resolvedSeasonId);
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to load scheduler season window config';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    }, [accountId, requireSeasonId, service]);
+  const getSeasonWindowConfig = async (): Promise<SchedulerSeasonWindowConfig | null> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.getSeasonWindowConfig(accountId, resolvedSeasonId);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to load scheduler season window config';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const upsertSeasonWindowConfig = useCallback(
-    async (input: SchedulerSeasonWindowConfigUpsert): Promise<SchedulerSeasonWindowConfig> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.upsertSeasonWindowConfig(accountId, resolvedSeasonId, input);
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to save scheduler season window config';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const upsertSeasonWindowConfig = async (
+    input: SchedulerSeasonWindowConfigUpsert,
+  ): Promise<SchedulerSeasonWindowConfig> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.upsertSeasonWindowConfig(accountId, resolvedSeasonId, input);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to save scheduler season window config';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const listSeasonExclusions = useCallback(async (): Promise<SchedulerSeasonExclusion[]> => {
+  const listSeasonExclusions = async (): Promise<SchedulerSeasonExclusion[]> => {
     setLoading(true);
     setError(null);
     try {
@@ -121,66 +117,59 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     } finally {
       setLoading(false);
     }
-  }, [accountId, requireSeasonId, service]);
+  };
 
-  const createSeasonExclusion = useCallback(
-    async (input: SchedulerSeasonExclusionUpsert): Promise<SchedulerSeasonExclusion> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.createSeasonExclusion(accountId, resolvedSeasonId, input);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to create season exclusion';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const createSeasonExclusion = async (
+    input: SchedulerSeasonExclusionUpsert,
+  ): Promise<SchedulerSeasonExclusion> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.createSeasonExclusion(accountId, resolvedSeasonId, input);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create season exclusion';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const updateSeasonExclusion = useCallback(
-    async (
-      exclusionId: string,
-      input: SchedulerSeasonExclusionUpsert,
-    ): Promise<SchedulerSeasonExclusion> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.updateSeasonExclusion(accountId, resolvedSeasonId, exclusionId, input);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to update season exclusion';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const updateSeasonExclusion = async (
+    exclusionId: string,
+    input: SchedulerSeasonExclusionUpsert,
+  ): Promise<SchedulerSeasonExclusion> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.updateSeasonExclusion(accountId, resolvedSeasonId, exclusionId, input);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update season exclusion';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const deleteSeasonExclusion = useCallback(
-    async (exclusionId: string): Promise<void> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        await service.deleteSeasonExclusion(accountId, resolvedSeasonId, exclusionId);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to delete season exclusion';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const deleteSeasonExclusion = async (exclusionId: string): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      await service.deleteSeasonExclusion(accountId, resolvedSeasonId, exclusionId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete season exclusion';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const listTeamExclusions = useCallback(async (): Promise<SchedulerTeamExclusion[]> => {
+  const listTeamExclusions = async (): Promise<SchedulerTeamExclusion[]> => {
     setLoading(true);
     setError(null);
     try {
@@ -193,66 +182,59 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     } finally {
       setLoading(false);
     }
-  }, [accountId, requireSeasonId, service]);
+  };
 
-  const createTeamExclusion = useCallback(
-    async (input: SchedulerTeamExclusionUpsert): Promise<SchedulerTeamExclusion> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.createTeamExclusion(accountId, resolvedSeasonId, input);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to create team exclusion';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const createTeamExclusion = async (
+    input: SchedulerTeamExclusionUpsert,
+  ): Promise<SchedulerTeamExclusion> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.createTeamExclusion(accountId, resolvedSeasonId, input);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create team exclusion';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const updateTeamExclusion = useCallback(
-    async (
-      exclusionId: string,
-      input: SchedulerTeamExclusionUpsert,
-    ): Promise<SchedulerTeamExclusion> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.updateTeamExclusion(accountId, resolvedSeasonId, exclusionId, input);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to update team exclusion';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const updateTeamExclusion = async (
+    exclusionId: string,
+    input: SchedulerTeamExclusionUpsert,
+  ): Promise<SchedulerTeamExclusion> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.updateTeamExclusion(accountId, resolvedSeasonId, exclusionId, input);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update team exclusion';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const deleteTeamExclusion = useCallback(
-    async (exclusionId: string): Promise<void> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        await service.deleteTeamExclusion(accountId, resolvedSeasonId, exclusionId);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to delete team exclusion';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const deleteTeamExclusion = async (exclusionId: string): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      await service.deleteTeamExclusion(accountId, resolvedSeasonId, exclusionId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete team exclusion';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const listUmpireExclusions = useCallback(async (): Promise<SchedulerUmpireExclusion[]> => {
+  const listUmpireExclusions = async (): Promise<SchedulerUmpireExclusion[]> => {
     setLoading(true);
     setError(null);
     try {
@@ -265,133 +247,112 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     } finally {
       setLoading(false);
     }
-  }, [accountId, requireSeasonId, service]);
+  };
 
-  const createUmpireExclusion = useCallback(
-    async (input: SchedulerUmpireExclusionUpsert): Promise<SchedulerUmpireExclusion> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.createUmpireExclusion(accountId, resolvedSeasonId, input);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to create umpire exclusion';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const createUmpireExclusion = async (
+    input: SchedulerUmpireExclusionUpsert,
+  ): Promise<SchedulerUmpireExclusion> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.createUmpireExclusion(accountId, resolvedSeasonId, input);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create umpire exclusion';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const updateUmpireExclusion = useCallback(
-    async (
-      exclusionId: string,
-      input: SchedulerUmpireExclusionUpsert,
-    ): Promise<SchedulerUmpireExclusion> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.updateUmpireExclusion(accountId, resolvedSeasonId, exclusionId, input);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to update umpire exclusion';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const updateUmpireExclusion = async (
+    exclusionId: string,
+    input: SchedulerUmpireExclusionUpsert,
+  ): Promise<SchedulerUmpireExclusion> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.updateUmpireExclusion(accountId, resolvedSeasonId, exclusionId, input);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update umpire exclusion';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const deleteUmpireExclusion = useCallback(
-    async (exclusionId: string): Promise<void> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        await service.deleteUmpireExclusion(accountId, resolvedSeasonId, exclusionId);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to delete umpire exclusion';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const deleteUmpireExclusion = async (exclusionId: string): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      await service.deleteUmpireExclusion(accountId, resolvedSeasonId, exclusionId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete umpire exclusion';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const createFieldAvailabilityRule = useCallback(
-    async (
-      input: SchedulerFieldAvailabilityRuleUpsert,
-    ): Promise<SchedulerFieldAvailabilityRule> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.createFieldAvailabilityRule(accountId, resolvedSeasonId, input);
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to create field availability rule';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const createFieldAvailabilityRule = async (
+    input: SchedulerFieldAvailabilityRuleUpsert,
+  ): Promise<SchedulerFieldAvailabilityRule> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.createFieldAvailabilityRule(accountId, resolvedSeasonId, input);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to create field availability rule';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const updateFieldAvailabilityRule = useCallback(
-    async (
-      ruleId: string,
-      input: SchedulerFieldAvailabilityRuleUpsert,
-    ): Promise<SchedulerFieldAvailabilityRule> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.updateFieldAvailabilityRule(
-          accountId,
-          resolvedSeasonId,
-          ruleId,
-          input,
-        );
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to update field availability rule';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const updateFieldAvailabilityRule = async (
+    ruleId: string,
+    input: SchedulerFieldAvailabilityRuleUpsert,
+  ): Promise<SchedulerFieldAvailabilityRule> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.updateFieldAvailabilityRule(accountId, resolvedSeasonId, ruleId, input);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to update field availability rule';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const deleteFieldAvailabilityRule = useCallback(
-    async (ruleId: string): Promise<void> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        await service.deleteFieldAvailabilityRule(accountId, resolvedSeasonId, ruleId);
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to delete field availability rule';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const deleteFieldAvailabilityRule = async (ruleId: string): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      await service.deleteFieldAvailabilityRule(accountId, resolvedSeasonId, ruleId);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to delete field availability rule';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const listFieldExclusionDates = useCallback(async (): Promise<SchedulerFieldExclusionDate[]> => {
+  const listFieldExclusionDates = async (): Promise<SchedulerFieldExclusionDate[]> => {
     setLoading(true);
     setError(null);
     try {
@@ -404,113 +365,99 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     } finally {
       setLoading(false);
     }
-  }, [accountId, requireSeasonId, service]);
+  };
 
-  const createFieldExclusionDate = useCallback(
-    async (input: SchedulerFieldExclusionDateUpsert): Promise<SchedulerFieldExclusionDate> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.createFieldExclusionDate(accountId, resolvedSeasonId, input);
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to create field exclusion date';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const createFieldExclusionDate = async (
+    input: SchedulerFieldExclusionDateUpsert,
+  ): Promise<SchedulerFieldExclusionDate> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.createFieldExclusionDate(accountId, resolvedSeasonId, input);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create field exclusion date';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const updateFieldExclusionDate = useCallback(
-    async (
-      exclusionId: string,
-      input: SchedulerFieldExclusionDateUpsert,
-    ): Promise<SchedulerFieldExclusionDate> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.updateFieldExclusionDate(
-          accountId,
-          resolvedSeasonId,
-          exclusionId,
-          input,
-        );
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to update field exclusion date';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const updateFieldExclusionDate = async (
+    exclusionId: string,
+    input: SchedulerFieldExclusionDateUpsert,
+  ): Promise<SchedulerFieldExclusionDate> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.updateFieldExclusionDate(
+        accountId,
+        resolvedSeasonId,
+        exclusionId,
+        input,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update field exclusion date';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const deleteFieldExclusionDate = useCallback(
-    async (exclusionId: string): Promise<void> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        await service.deleteFieldExclusionDate(accountId, resolvedSeasonId, exclusionId);
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to delete field exclusion date';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const deleteFieldExclusionDate = async (exclusionId: string): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      await service.deleteFieldExclusionDate(accountId, resolvedSeasonId, exclusionId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete field exclusion date';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const solveSeason = useCallback(
-    async (
-      request: SchedulerSeasonSolveRequest,
-      options?: { idempotencyKey?: string },
-    ): Promise<SchedulerSolveResult> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.solveSeason(accountId, resolvedSeasonId, request, options);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to generate schedule proposal';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const solveSeason = async (
+    request: SchedulerSeasonSolveRequest,
+    options?: { idempotencyKey?: string },
+  ): Promise<SchedulerSolveResult> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.solveSeason(accountId, resolvedSeasonId, request, options);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to generate schedule proposal';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const applySeason = useCallback(
-    async (request: SchedulerSeasonApplyRequest): Promise<SchedulerApplyResult> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resolvedSeasonId = requireSeasonId();
-        return await service.applySeason(accountId, resolvedSeasonId, request);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to apply schedule proposal';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, requireSeasonId, service],
-  );
+  const applySeason = async (
+    request: SchedulerSeasonApplyRequest,
+  ): Promise<SchedulerApplyResult> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resolvedSeasonId = requireSeasonId();
+      return await service.applySeason(accountId, resolvedSeasonId, request);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to apply schedule proposal';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const clearError = useCallback(() => setError(null), []);
+  const clearError = () => setError(null);
 
   return {
     getProblemSpecPreview,

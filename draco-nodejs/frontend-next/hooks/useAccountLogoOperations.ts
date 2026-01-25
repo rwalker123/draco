@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { deleteAccountLogo, uploadAccountLogo } from '@draco/shared-api-client';
 import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
 import { assertNoApiError } from '../utils/apiResult';
@@ -35,55 +35,52 @@ export const useAccountLogoOperations = (accountId: string | null) => {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const clearError = useCallback(() => setError(null), []);
+  const clearError = () => setError(null);
 
-  const uploadLogo = useCallback(
-    async (file: File): Promise<AccountLogoOperationResult> => {
-      if (!accountId) {
-        const result = buildMissingAccountResult('upload');
-        setError(result.error);
-        return result;
-      }
+  const uploadLogo = async (file: File): Promise<AccountLogoOperationResult> => {
+    if (!accountId) {
+      const result = buildMissingAccountResult('upload');
+      setError(result.error);
+      return result;
+    }
 
-      setUploading(true);
-      setError(null);
+    setUploading(true);
+    setError(null);
 
-      try {
-        const apiResult = await uploadAccountLogo({
-          client: apiClient,
-          path: { accountId },
-          body: { logo: file },
-          headers: { 'Content-Type': null },
-          throwOnError: false,
-          ...formDataBodySerializer,
-        });
+    try {
+      const apiResult = await uploadAccountLogo({
+        client: apiClient,
+        path: { accountId },
+        body: { logo: file },
+        headers: { 'Content-Type': null },
+        throwOnError: false,
+        ...formDataBodySerializer,
+      });
 
-        assertNoApiError(apiResult, 'Failed to upload account logo');
+      assertNoApiError(apiResult, 'Failed to upload account logo');
 
-        const logoUrl = typeof apiResult.data === 'string' ? apiResult.data : null;
+      const logoUrl = typeof apiResult.data === 'string' ? apiResult.data : null;
 
-        return {
-          success: true,
-          action: 'upload',
-          message: 'Account logo updated successfully.',
-          logoUrl,
-        };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to upload account logo';
-        setError(message);
-        return {
-          success: false,
-          action: 'upload',
-          error: message,
-        };
-      } finally {
-        setUploading(false);
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        action: 'upload',
+        message: 'Account logo updated successfully.',
+        logoUrl,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to upload account logo';
+      setError(message);
+      return {
+        success: false,
+        action: 'upload',
+        error: message,
+      };
+    } finally {
+      setUploading(false);
+    }
+  };
 
-  const deleteLogo = useCallback(async (): Promise<AccountLogoOperationResult> => {
+  const deleteLogo = async (): Promise<AccountLogoOperationResult> => {
     if (!accountId) {
       const result = buildMissingAccountResult('delete');
       setError(result.error);
@@ -119,7 +116,7 @@ export const useAccountLogoOperations = (accountId: string | null) => {
     } finally {
       setDeleting(false);
     }
-  }, [accountId, apiClient]);
+  };
 
   return {
     uploadLogo,

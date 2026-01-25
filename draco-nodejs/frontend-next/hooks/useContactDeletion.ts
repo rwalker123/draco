@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { createUserManagementService } from '../services/userManagementService';
 import { DependencyCheckResult } from '../types/users';
@@ -28,58 +28,55 @@ export function useContactDeletion(accountId: string) {
   const [loading, setLoading] = useState(false);
   const [checkingDependencies, setCheckingDependencies] = useState(false);
   const { token } = useAuth();
-  const userService = useMemo(() => (token ? createUserManagementService(token) : null), [token]);
+  const userService = token ? createUserManagementService(token) : null;
 
-  const checkDependencies = useCallback(
-    async (contactId: string): Promise<DependencyCheckResponse> => {
-      if (!userService) {
-        return { success: false, error: 'User service not available' };
-      }
+  const checkDependencies = async (contactId: string): Promise<DependencyCheckResponse> => {
+    if (!userService) {
+      return { success: false, error: 'User service not available' };
+    }
 
-      try {
-        setCheckingDependencies(true);
-        const result = await userService.checkContactDependencies(accountId, contactId);
-        return {
-          success: true,
-          dependencyCheck: result.dependencyCheck,
-        };
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to check dependencies';
-        return { success: false, error: errorMessage };
-      } finally {
-        setCheckingDependencies(false);
-      }
-    },
-    [userService, accountId],
-  );
+    try {
+      setCheckingDependencies(true);
+      const result = await userService.checkContactDependencies(accountId, contactId);
+      return {
+        success: true,
+        dependencyCheck: result.dependencyCheck,
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to check dependencies';
+      return { success: false, error: errorMessage };
+    } finally {
+      setCheckingDependencies(false);
+    }
+  };
 
-  const deleteContact = useCallback(
-    async (contactId: string, force: boolean = false): Promise<ContactDeletionResult> => {
-      if (!userService) {
-        return { success: false, error: 'User service not available' };
-      }
+  const deleteContact = async (
+    contactId: string,
+    force: boolean = false,
+  ): Promise<ContactDeletionResult> => {
+    if (!userService) {
+      return { success: false, error: 'User service not available' };
+    }
 
-      try {
-        setLoading(true);
+    try {
+      setLoading(true);
 
-        const result = await userService.deleteContact(accountId, contactId, force);
+      const result = await userService.deleteContact(accountId, contactId, force);
 
-        return {
-          success: true,
-          message: result.message,
-          contactId,
-          dependenciesDeleted: result.dependenciesDeleted,
-          wasForced: force,
-        };
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to delete contact';
-        return { success: false, error: errorMessage };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [userService, accountId],
-  );
+      return {
+        success: true,
+        message: result.message,
+        contactId,
+        dependenciesDeleted: result.dependenciesDeleted,
+        wasForced: force,
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete contact';
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
     deleteContact,

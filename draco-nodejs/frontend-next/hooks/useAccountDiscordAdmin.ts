@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
 import type {
   DiscordAccountConfigType,
   DiscordAccountConfigUpdateType,
@@ -21,91 +20,57 @@ import { DiscordIntegrationService } from '@/services/discordIntegrationService'
 
 export const useAccountDiscordAdmin = () => {
   const apiClient = useApiClient();
-  const service = useMemo(() => new DiscordIntegrationService(apiClient), [apiClient]);
+  const service = new DiscordIntegrationService(apiClient);
 
-  const fetchConfig = useCallback(
-    (accountId: string): Promise<DiscordAccountConfigType> => service.getAccountConfig(accountId),
-    [service],
-  );
+  const fetchConfig = (accountId: string): Promise<DiscordAccountConfigType> =>
+    service.getAccountConfig(accountId);
 
-  const updateConfig = useCallback(
-    (accountId: string, payload: DiscordAccountConfigUpdateType) =>
-      service.updateAccountConfig(accountId, payload),
-    [service],
-  );
+  const updateConfig = (accountId: string, payload: DiscordAccountConfigUpdateType) =>
+    service.updateAccountConfig(accountId, payload);
 
-  const disconnectGuild = useCallback(
-    (accountId: string) => service.disconnectAccountGuild(accountId),
-    [service],
-  );
+  const disconnectGuild = (accountId: string) => service.disconnectAccountGuild(accountId);
 
-  const fetchRoleMappings = useCallback(
-    (accountId: string): Promise<DiscordRoleMappingListType> => service.listRoleMappings(accountId),
-    [service],
-  );
+  const fetchRoleMappings = (accountId: string): Promise<DiscordRoleMappingListType> =>
+    service.listRoleMappings(accountId);
 
-  const createRoleMapping = useCallback(
-    (accountId: string, payload: DiscordRoleMappingUpdateType): Promise<DiscordRoleMappingType> =>
-      service.createRoleMapping(accountId, payload),
-    [service],
-  );
+  const createRoleMapping = (
+    accountId: string,
+    payload: DiscordRoleMappingUpdateType,
+  ): Promise<DiscordRoleMappingType> => service.createRoleMapping(accountId, payload);
 
-  const updateRoleMapping = useCallback(
-    (accountId: string, roleMappingId: string, payload: DiscordRoleMappingUpdateType) =>
-      service.updateRoleMapping(accountId, roleMappingId, payload),
-    [service],
-  );
+  const updateRoleMapping = (
+    accountId: string,
+    roleMappingId: string,
+    payload: DiscordRoleMappingUpdateType,
+  ) => service.updateRoleMapping(accountId, roleMappingId, payload);
 
-  const deleteRoleMapping = useCallback(
-    (accountId: string, roleMappingId: string) =>
-      service.deleteRoleMapping(accountId, roleMappingId),
-    [service],
-  );
+  const deleteRoleMapping = (accountId: string, roleMappingId: string) =>
+    service.deleteRoleMapping(accountId, roleMappingId);
 
-  const startInstall = useCallback(
-    (accountId: string): Promise<DiscordOAuthStartResponseType> =>
-      service.startBotInstall(accountId),
-    [service],
-  );
+  const startInstall = (accountId: string): Promise<DiscordOAuthStartResponseType> =>
+    service.startBotInstall(accountId);
 
-  const fetchAvailableChannels = useCallback(
-    (accountId: string): Promise<DiscordGuildChannelType[]> =>
-      service.listAvailableChannels(accountId),
-    [service],
-  );
+  const fetchAvailableChannels = (accountId: string): Promise<DiscordGuildChannelType[]> =>
+    service.listAvailableChannels(accountId);
 
-  const fetchChannelMappings = useCallback(
-    (accountId: string): Promise<DiscordChannelMappingListType> =>
-      service.listChannelMappings(accountId),
-    [service],
-  );
+  const fetchChannelMappings = (accountId: string): Promise<DiscordChannelMappingListType> =>
+    service.listChannelMappings(accountId);
 
-  const createChannelMapping = useCallback(
-    (
-      accountId: string,
-      payload: DiscordChannelMappingCreateType,
-    ): Promise<DiscordChannelMappingType> => service.createChannelMapping(accountId, payload),
-    [service],
-  );
+  const createChannelMapping = (
+    accountId: string,
+    payload: DiscordChannelMappingCreateType,
+  ): Promise<DiscordChannelMappingType> => service.createChannelMapping(accountId, payload);
 
-  const deleteChannelMapping = useCallback(
-    (accountId: string, mappingId: string) => service.deleteChannelMapping(accountId, mappingId),
-    [service],
-  );
+  const deleteChannelMapping = (accountId: string, mappingId: string) =>
+    service.deleteChannelMapping(accountId, mappingId);
 
-  const fetchTeamForums = useCallback(
-    (
-      accountId: string,
-      query?: Partial<DiscordTeamForumQueryType>,
-    ): Promise<DiscordTeamForumListType> => service.listTeamForums(accountId, query),
-    [service],
-  );
+  const fetchTeamForums = (
+    accountId: string,
+    query?: Partial<DiscordTeamForumQueryType>,
+  ): Promise<DiscordTeamForumListType> => service.listTeamForums(accountId, query);
 
-  const repairTeamForums = useCallback(
-    (accountId: string): Promise<DiscordTeamForumRepairResultType> =>
-      service.repairTeamForums(accountId),
-    [service],
-  );
+  const repairTeamForums = (accountId: string): Promise<DiscordTeamForumRepairResultType> =>
+    service.repairTeamForums(accountId);
 
   return {
     fetchConfig,

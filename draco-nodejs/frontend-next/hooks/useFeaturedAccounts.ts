@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from './useApiClient';
 import type { AccountType } from '@draco/shared-schemas';
@@ -17,7 +17,7 @@ export function useFeaturedAccounts(accountIds: string[]): FeaturedAccountsResul
   const [error, setError] = useState<string | null>(null);
   const apiClient = useApiClient();
 
-  const accountIdsKey = useMemo(() => accountIds.join(','), [accountIds]);
+  const accountIdsKey = accountIds.join(',');
 
   useEffect(() => {
     const ids = accountIdsKey ? accountIdsKey.split(',') : [];

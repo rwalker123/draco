@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ComponentType } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { Game, Field, Umpire, League, FilterType } from '@/types/schedule';
 import {
@@ -13,7 +12,7 @@ import {
   startOfWeek,
   startOfYear,
 } from 'date-fns';
-import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
+import { getCurrentSeason, listSeasonLeagueSeasons } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../../../utils/apiResult';
 import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 import { TeamSeasonType } from '@draco/shared-schemas';
@@ -83,7 +82,6 @@ export const useScheduleData = ({
   onError,
 }: UseScheduleDataProps): UseScheduleDataReturn => {
   const { loading: authLoading } = useAuth();
-  const { fetchCurrentSeason } = useCurrentSeason(accountId);
   const apiClient = useApiClient();
 
   const adapter = useMemo(() => getSportAdapter(accountType), [accountType]);
@@ -108,6 +106,8 @@ export const useScheduleData = ({
   const gamesCacheRef = useRef<Map<string, Game[]>>(new Map());
   const gamesRequestCacheRef = useRef<Map<string, Promise<Game[]>>>(new Map());
   const lastRangeRef = useRef<{ start: number; end: number } | null>(null);
+  const seasonIdRef = useRef<string | null>(null);
+  const seasonFetchPromiseRef = useRef<Promise<string> | null>(null);
 
   const [loadingGames, setLoadingGames] = useState(false);
   const [loadingStaticData, setLoadingStaticData] = useState(true);
@@ -215,6 +215,8 @@ export const useScheduleData = ({
     gamesCacheRef.current.clear();
     gamesRequestCacheRef.current.clear();
     lastRangeRef.current = null;
+    seasonIdRef.current = null;
+    seasonFetchPromiseRef.current = null;
     setGames([]);
   }, [accountId]);
 
@@ -222,7 +224,27 @@ export const useScheduleData = ({
     try {
       setLoadingStaticData(true);
 
-      const currentSeasonId = await fetchCurrentSeason();
+      let currentSeasonId = seasonIdRef.current;
+      if (!currentSeasonId) {
+        let promise = seasonFetchPromiseRef.current;
+        if (!promise) {
+          promise = (async () => {
+            const result = await getCurrentSeason({
+              client: apiClient,
+              path: { accountId },
+              throwOnError: false,
+            });
+            const season = unwrapApiResult(result, 'Failed to load current season');
+            seasonIdRef.current = season.id;
+            return season.id;
+          })();
+          seasonFetchPromiseRef.current = promise;
+          promise.finally(() => {
+            seasonFetchPromiseRef.current = null;
+          });
+        }
+        currentSeasonId = await promise;
+      }
 
       try {
         if (adapter.loadTeams) {
@@ -308,7 +330,7 @@ export const useScheduleData = ({
     } finally {
       setLoadingStaticData(false);
     }
-  }, [accountId, apiClient, fetchCurrentSeason, onError, adapter]);
+  }, [accountId, apiClient, onError, adapter]);
 
   const loadGamesData = useCallback(async () => {
     try {
@@ -316,7 +338,28 @@ export const useScheduleData = ({
         setLoadingGames(true);
       }
 
-      const seasonId = await fetchCurrentSeason();
+      let seasonId = seasonIdRef.current;
+      if (!seasonId) {
+        let promise = seasonFetchPromiseRef.current;
+        if (!promise) {
+          promise = (async () => {
+            const result = await getCurrentSeason({
+              client: apiClient,
+              path: { accountId },
+              throwOnError: false,
+            });
+            const season = unwrapApiResult(result, 'Failed to load current season');
+            seasonIdRef.current = season.id;
+            return season.id;
+          })();
+          seasonFetchPromiseRef.current = promise;
+          promise.finally(() => {
+            seasonFetchPromiseRef.current = null;
+          });
+        }
+        seasonId = await promise;
+      }
+
       const monthKeys = getMonthKeysForRange(startDate, endDate);
 
       if (monthKeys.length === 0) {
@@ -379,7 +422,6 @@ export const useScheduleData = ({
     adapter,
     collectGamesForRange,
     endDate,
-    fetchCurrentSeason,
     getMonthKeysForRange,
     getMonthRangeForKey,
     onError,
@@ -490,7 +532,28 @@ export const useScheduleData = ({
 
   const deleteGame = useCallback(
     async (game: Game, force?: boolean) => {
-      const seasonId = await fetchCurrentSeason();
+      let seasonId = seasonIdRef.current;
+      if (!seasonId) {
+        let promise = seasonFetchPromiseRef.current;
+        if (!promise) {
+          promise = (async () => {
+            const result = await getCurrentSeason({
+              client: apiClient,
+              path: { accountId },
+              throwOnError: false,
+            });
+            const season = unwrapApiResult(result, 'Failed to load current season');
+            seasonIdRef.current = season.id;
+            return season.id;
+          })();
+          seasonFetchPromiseRef.current = promise;
+          promise.finally(() => {
+            seasonFetchPromiseRef.current = null;
+          });
+        }
+        seasonId = await promise;
+      }
+
       await adapter.deleteGame({
         accountId,
         seasonId,
@@ -499,7 +562,7 @@ export const useScheduleData = ({
         apiClient,
       });
     },
-    [accountId, adapter, apiClient, fetchCurrentSeason],
+    [accountId, adapter, apiClient],
   );
 
   const filteredGames = games;

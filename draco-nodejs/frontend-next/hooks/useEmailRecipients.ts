@@ -16,7 +16,7 @@
  * ```
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { EmailRecipientService, Season } from '../services/emailRecipientService';
 import { RecipientContact } from '../types/emails/recipients';
@@ -68,27 +68,92 @@ export function useEmailRecipients(accountId: string, seasonId?: string): UseEma
   const [error, setError] = useState<EmailRecipientError | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // Service instance with error handling configuration
-  const service = useMemo(() => {
-    if (!token) return null;
-    return new EmailRecipientService({
+  // Validation
+  const isValidAccountId = accountId && accountId.trim() !== '';
+
+  /**
+   * Enhanced search function with error handling
+   */
+  const searchContacts = async (query: string): Promise<RecipientContact[]> => {
+    if (!token || !isValidAccountId) {
+      throw createEmailRecipientError(
+        EmailRecipientErrorCode.INVALID_DATA,
+        'Service not available or invalid account ID',
+        { context: { operation: 'useEmailRecipients.searchContacts', accountId, query } },
+      );
+    }
+
+    if (!query || query.trim() === '') {
+      return [];
+    }
+
+    const service = new EmailRecipientService({
       enableRetries: true,
       maxRetries: 3,
       timeoutMs: 30000,
     });
-  }, [token]);
 
-  // Validation
-  const isValidAccountId = useMemo(() => {
-    return accountId && accountId.trim() !== '';
-  }, [accountId]);
+    const result = await service.searchContacts(accountId, token, query.trim(), {
+      seasonId,
+      roles: true,
+      limit: 50,
+    });
+
+    if (result && result.success) {
+      const recipientContacts: RecipientContact[] = result.data.contacts.map((contact) => ({
+        ...contact,
+        displayName: contact.firstName + ' ' + contact.lastName,
+        hasValidEmail: !!contact.email,
+      }));
+      return recipientContacts;
+    } else {
+      const normalizedError =
+        result?.error ??
+        createEmailRecipientError(
+          EmailRecipientErrorCode.UNKNOWN_ERROR,
+          'Failed to search contacts',
+          { context: { operation: 'useEmailRecipients.searchContacts', accountId, query } },
+        );
+      logError(normalizedError, 'useEmailRecipients.searchContacts');
+      throw normalizedError;
+    }
+  };
 
   /**
-   * Enhanced fetch function with comprehensive error handling
+   * Enhanced refresh with retry logic
    */
-  const fetchRecipients = useCallback(async (): Promise<void> => {
-    if (!service || !isValidAccountId) {
+  const refresh = async (): Promise<void> => {
+    if (isRetrying) return; // Prevent multiple concurrent retries
+
+    setIsRetrying(true);
+    setRetryCount((prev) => prev + 1);
+    setRefreshKey((prev) => prev + 1);
+  };
+
+  /**
+   * Clear error state
+   */
+  const clearError = () => {
+    setError(null);
+    setRetryCount(0);
+  };
+
+  // Computed properties for error recovery
+  const canRetry = error?.retryable === true && retryCount < 3;
+
+  const recoveryActions = !error
+    ? []
+    : [
+        'Try refreshing the data',
+        'Check your internet connection',
+        'Contact support if the problem persists',
+      ];
+
+  // Initial data fetch with dependency validation
+  useEffect(() => {
+    if (!token || !isValidAccountId) {
       if (!isValidAccountId) {
         setError(
           createEmailRecipientError(
@@ -101,145 +166,76 @@ export function useEmailRecipients(accountId: string, seasonId?: string): UseEma
       return;
     }
 
-    try {
-      setIsLoading(true);
-      setError(null);
+    let cancelled = false;
 
-      // Use the service's comprehensive method
-      const result = await service.getRecipientData(accountId, token, seasonId);
+    const fetchRecipients = async (): Promise<void> => {
+      const service = new EmailRecipientService({
+        enableRetries: true,
+        maxRetries: 3,
+        timeoutMs: 30000,
+      });
 
-      if (result.success) {
-        // Update state with successful data
-        setContacts(result.data.contacts);
-        setHasMoreContacts(result.data.pagination?.hasNext ?? false);
+      try {
+        setIsLoading(true);
+        setError(null);
 
-        // Reset retry count on success
-        setRetryCount(0);
-      } else {
-        // Handle service-level errors
-        const normalizedError = result.error;
+        // Use the service's comprehensive method
+        const result = await service.getRecipientData(accountId, token, seasonId);
+
+        if (cancelled) return;
+
+        if (result.success) {
+          // Update state with successful data
+          setContacts(result.data.contacts);
+          setHasMoreContacts(result.data.pagination?.hasNext ?? false);
+
+          // Reset retry count on success
+          setRetryCount(0);
+        } else {
+          // Handle service-level errors
+          const normalizedError = result.error;
+          setError(normalizedError);
+          logError(normalizedError, 'useEmailRecipients.fetchRecipients');
+        }
+      } catch (err) {
+        if (cancelled) return;
+        // Handle unexpected errors
+        const normalizedError = normalizeError(err, {
+          operation: 'useEmailRecipients.fetchRecipients',
+          accountId,
+          seasonId,
+        });
+
         setError(normalizedError);
-        logError(normalizedError, 'useEmailRecipients.fetchRecipients');
-
-        // Keep existing data on non-critical errors
-        if (normalizedError.recoverable && contacts.length > 0) {
-          console.warn('Using cached data due to recoverable error:', normalizedError.userMessage);
+        logError(normalizedError, 'useEmailRecipients.fetchRecipients - unexpected error');
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+          setIsRetrying(false);
         }
       }
-    } catch (err) {
-      // Handle unexpected errors
-      const normalizedError = normalizeError(err, {
-        operation: 'useEmailRecipients.fetchRecipients',
-        accountId,
-        seasonId,
-      });
+    };
 
-      setError(normalizedError);
-      logError(normalizedError, 'useEmailRecipients.fetchRecipients - unexpected error');
-    } finally {
-      setIsLoading(false);
-      setIsRetrying(false);
-    }
-  }, [service, isValidAccountId, accountId, token, seasonId, contacts.length]);
+    void fetchRecipients();
 
-  /**
-   * Enhanced search function with error handling
-   */
-  const searchContacts = useCallback(
-    async (query: string): Promise<RecipientContact[]> => {
-      if (!service || !isValidAccountId) {
-        throw createEmailRecipientError(
-          EmailRecipientErrorCode.INVALID_DATA,
-          'Service not available or invalid account ID',
-          { context: { operation: 'useEmailRecipients.searchContacts', accountId, query } },
-        );
-      }
-
-      if (!query || query.trim() === '') {
-        return [];
-      }
-
-      const result = await service.searchContacts(accountId, token, query.trim(), {
-        seasonId,
-        roles: true,
-        limit: 50,
-      });
-
-      if (result && result.success) {
-        const recipientContacts: RecipientContact[] = result.data.contacts.map((contact) => ({
-          ...contact,
-          displayName: contact.firstName + ' ' + contact.lastName,
-          hasValidEmail: !!contact.email,
-        }));
-        return recipientContacts;
-      } else {
-        const normalizedError =
-          result?.error ??
-          createEmailRecipientError(
-            EmailRecipientErrorCode.UNKNOWN_ERROR,
-            'Failed to search contacts',
-            { context: { operation: 'useEmailRecipients.searchContacts', accountId, query } },
-          );
-        logError(normalizedError, 'useEmailRecipients.searchContacts');
-        throw normalizedError;
-      }
-    },
-    [service, isValidAccountId, accountId, token, seasonId],
-  );
-
-  /**
-   * Enhanced refresh with retry logic
-   */
-  const refresh = useCallback(async (): Promise<void> => {
-    if (isRetrying) return; // Prevent multiple concurrent retries
-
-    setIsRetrying(true);
-    setRetryCount((prev) => prev + 1);
-    await fetchRecipients();
-  }, [fetchRecipients, isRetrying]);
-
-  /**
-   * Clear error state
-   */
-  const clearError = useCallback(() => {
-    setError(null);
-    setRetryCount(0);
-  }, []);
-
-  // Computed properties for error recovery
-  const canRetry = useMemo(() => {
-    return error?.retryable === true && retryCount < 3;
-  }, [error, retryCount]);
-
-  const recoveryActions = useMemo(() => {
-    if (!error) return [];
-
-    // Import getRecoveryActions here to avoid circular dependency
-    return [
-      'Try refreshing the data',
-      'Check your internet connection',
-      'Contact support if the problem persists',
-    ];
-  }, [error]);
-
-  // Initial data fetch with dependency validation
-  useEffect(() => {
-    if (service && isValidAccountId) {
-      fetchRecipients();
-    }
-  }, [service, isValidAccountId, fetchRecipients]);
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, seasonId, isValidAccountId, token, refreshKey]);
 
   // Auto-retry on network recovery
   useEffect(() => {
     const handleOnline = () => {
       if (error?.code === EmailRecipientErrorCode.NETWORK_ERROR) {
-        refresh();
+        setIsRetrying(true);
+        setRetryCount((prev) => prev + 1);
+        setRefreshKey((prev) => prev + 1);
       }
     };
 
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
-  }, [error, refresh]);
+  }, [error]);
 
   return {
     contacts,
@@ -283,13 +279,12 @@ export function useContactSearch(contacts: RecipientContact[]): UseContactSearch
   const [searchError, setSearchError] = useState<EmailRecipientError | null>(null);
 
   // Validation
-  const validContacts = useMemo(() => {
-    if (!Array.isArray(contacts)) {
-      console.warn('useContactSearch: contacts is not an array, using empty array');
-      return [];
-    }
-    return contacts;
-  }, [contacts]);
+  const validContacts = !Array.isArray(contacts)
+    ? (() => {
+        console.warn('useContactSearch: contacts is not an array, using empty array');
+        return [];
+      })()
+    : contacts;
 
   // Debounce search query (300ms)
   useEffect(() => {
@@ -302,7 +297,7 @@ export function useContactSearch(contacts: RecipientContact[]): UseContactSearch
   }, [searchQuery]);
 
   // Set search query with validation
-  const setSearchQuery = useCallback((query: string) => {
+  const setSearchQuery = (query: string) => {
     if (typeof query !== 'string') {
       setSearchError(
         createEmailRecipientError(
@@ -320,15 +315,15 @@ export function useContactSearch(contacts: RecipientContact[]): UseContactSearch
     if (query.length > 0) {
       setIsSearching(true);
     }
-  }, []);
+  };
 
   // Clear search error
-  const clearSearchError = useCallback(() => {
+  const clearSearchError = () => {
     setSearchError(null);
-  }, []);
+  };
 
   // Filter contacts based on debounced query with comprehensive error handling
-  const filterOutcome = useMemo(() => {
+  const filterOutcome = (() => {
     if (!debouncedQuery.trim()) {
       return { contacts: validContacts, error: null as EmailRecipientError | null };
     }
@@ -388,7 +383,7 @@ export function useContactSearch(contacts: RecipientContact[]): UseContactSearch
     logError(filterResult.error, 'useContactSearch.filteredContacts');
     // Return original contacts as fallback
     return { contacts: validContacts, error: filterResult.error };
-  }, [validContacts, debouncedQuery]);
+  })();
 
   const filteredContacts = filterOutcome.contacts;
   const derivedSearchError = filterOutcome.error;
@@ -429,54 +424,56 @@ export function useCurrentSeason(accountId: string): UseCurrentSeasonReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<EmailRecipientError | null>(null);
 
-  // Service instance
-  const service = useMemo(() => {
-    if (!token) return null;
-    return new EmailRecipientService();
-  }, [token]);
-
-  /**
-   * Fetch current season data
-   */
-  const fetchSeasonData = useCallback(async (): Promise<void> => {
-    if (!service || !accountId) {
+  // Initial data fetch
+  useEffect(() => {
+    if (!token || !accountId) {
       return;
     }
 
-    try {
-      setIsLoading(true);
-      setError(null);
+    let cancelled = false;
 
-      // Fetch current season
-      const currentSeasonResult = await service.fetchCurrentSeason(accountId, token);
-      if (currentSeasonResult.success) {
-        setCurrentSeason(currentSeasonResult.data);
-      } else {
-        logError(currentSeasonResult.error, 'useCurrentSeason.fetchSeasonData');
-        throw currentSeasonResult.error;
+    const fetchSeasonData = async (): Promise<void> => {
+      const service = new EmailRecipientService();
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Fetch current season
+        const currentSeasonResult = await service.fetchCurrentSeason(accountId, token);
+
+        if (cancelled) return;
+
+        if (currentSeasonResult.success) {
+          setCurrentSeason(currentSeasonResult.data);
+          // Note: Seasons list would require additional API endpoint
+          // For now, we only provide the current season
+          setSeasons(currentSeasonResult.data ? [currentSeasonResult.data] : []);
+        } else {
+          logError(currentSeasonResult.error, 'useCurrentSeason.fetchSeasonData');
+          throw currentSeasonResult.error;
+        }
+      } catch (err) {
+        if (cancelled) return;
+        const normalizedError = normalizeError(err, {
+          operation: 'useCurrentSeason.fetchSeasonData',
+          accountId,
+        });
+        setError(normalizedError);
+        logError(normalizedError, 'useCurrentSeason.fetchSeasonData');
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
+    };
 
-      // Note: Seasons list would require additional API endpoint
-      // For now, we only provide the current season
-      setSeasons(currentSeasonResult.data ? [currentSeasonResult.data] : []);
-    } catch (err) {
-      const normalizedError = normalizeError(err, {
-        operation: 'useCurrentSeason.fetchSeasonData',
-        accountId,
-      });
-      setError(normalizedError);
-      logError(normalizedError, 'useCurrentSeason.fetchSeasonData');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [service, accountId, token]);
+    void fetchSeasonData();
 
-  // Initial data fetch
-  useEffect(() => {
-    if (service && accountId) {
-      fetchSeasonData();
-    }
-  }, [service, accountId, fetchSeasonData]);
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, token]);
 
   return {
     currentSeason,

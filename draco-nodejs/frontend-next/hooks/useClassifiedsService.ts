@@ -2,7 +2,7 @@
 
 import { useAuth } from '../context/AuthContext';
 import { useApiClient } from './useApiClient';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import {
   createPlayersWantedClassified,
   deletePlayersWantedClassified,
@@ -58,35 +58,32 @@ function useRunOperation() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const runOperation = useCallback(
-    async <T>({
-      operation,
-      defaultError,
-      successMessage,
-    }: RunOperationConfig<T>): Promise<ClassifiedsOperationResult<T>> => {
-      try {
-        setLoading(true);
-        setError(null);
+  const runOperation = async <T>({
+    operation,
+    defaultError,
+    successMessage,
+  }: RunOperationConfig<T>): Promise<ClassifiedsOperationResult<T>> => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const data = await operation();
+      const data = await operation();
 
-        return {
-          success: true,
-          data,
-          message: successMessage,
-        };
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : defaultError;
-        setError(errorMessage);
-        return { success: false, error: errorMessage };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
+      return {
+        success: true,
+        data,
+        message: successMessage,
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : defaultError;
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const resetError = useCallback(() => setError(null), []);
+  const resetError = () => setError(null);
 
   return { runOperation, loading, error, resetError };
 }
@@ -96,112 +93,102 @@ export function usePlayersWantedClassifieds(accountId: string) {
   const apiClient = useApiClient();
   const { runOperation, loading, error, resetError } = useRunOperation();
 
-  const requireAuth = useCallback(() => {
+  const requireAuth = () => {
     if (!token) {
       return 'Authentication required to manage Players Wanted classifieds';
     }
     return null;
-  }, [token]);
+  };
 
-  const listPlayersWanted = useCallback(
-    async (
-      params?: Partial<PlayerClassifiedSearchQueryType>,
-    ): Promise<ClassifiedsOperationResult<PlayersWantedClassifiedPagedType>> => {
-      return runOperation<PlayersWantedClassifiedPagedType>({
-        defaultError: 'Failed to load Players Wanted classifieds',
-        operation: async () => {
-          const result = await listPlayersWantedClassifieds({
-            client: apiClient,
-            path: { accountId },
-            query: buildListQuery(params),
-            throwOnError: false,
-          });
+  const listPlayersWanted = async (
+    params?: Partial<PlayerClassifiedSearchQueryType>,
+  ): Promise<ClassifiedsOperationResult<PlayersWantedClassifiedPagedType>> => {
+    return runOperation<PlayersWantedClassifiedPagedType>({
+      defaultError: 'Failed to load Players Wanted classifieds',
+      operation: async () => {
+        const result = await listPlayersWantedClassifieds({
+          client: apiClient,
+          path: { accountId },
+          query: buildListQuery(params),
+          throwOnError: false,
+        });
 
-          return unwrapApiResult(result, 'Failed to load Players Wanted classifieds');
-        },
-      });
-    },
-    [accountId, apiClient, runOperation],
-  );
+        return unwrapApiResult(result, 'Failed to load Players Wanted classifieds');
+      },
+    });
+  };
 
-  const createPlayersWanted = useCallback(
-    async (
-      payload: UpsertPlayersWantedClassifiedType,
-    ): Promise<ClassifiedsOperationResult<PlayersWantedClassifiedType>> => {
-      const authError = requireAuth();
-      if (authError) {
-        return { success: false, error: authError };
-      }
+  const createPlayersWanted = async (
+    payload: UpsertPlayersWantedClassifiedType,
+  ): Promise<ClassifiedsOperationResult<PlayersWantedClassifiedType>> => {
+    const authError = requireAuth();
+    if (authError) {
+      return { success: false, error: authError };
+    }
 
-      return runOperation<PlayersWantedClassifiedType>({
-        defaultError: 'Failed to create Players Wanted classified',
-        successMessage: 'Players Wanted ad created successfully',
-        operation: async () => {
-          const result = await createPlayersWantedClassified({
-            client: apiClient,
-            path: { accountId },
-            body: payload,
-            throwOnError: false,
-          });
+    return runOperation<PlayersWantedClassifiedType>({
+      defaultError: 'Failed to create Players Wanted classified',
+      successMessage: 'Players Wanted ad created successfully',
+      operation: async () => {
+        const result = await createPlayersWantedClassified({
+          client: apiClient,
+          path: { accountId },
+          body: payload,
+          throwOnError: false,
+        });
 
-          return unwrapApiResult(result, 'Failed to create Players Wanted classified');
-        },
-      });
-    },
-    [accountId, apiClient, requireAuth, runOperation],
-  );
+        return unwrapApiResult(result, 'Failed to create Players Wanted classified');
+      },
+    });
+  };
 
-  const updatePlayersWanted = useCallback(
-    async (
-      classifiedId: string,
-      payload: UpsertPlayersWantedClassifiedType,
-    ): Promise<ClassifiedsOperationResult<PlayersWantedClassifiedType>> => {
-      const authError = requireAuth();
-      if (authError) {
-        return { success: false, error: authError };
-      }
+  const updatePlayersWanted = async (
+    classifiedId: string,
+    payload: UpsertPlayersWantedClassifiedType,
+  ): Promise<ClassifiedsOperationResult<PlayersWantedClassifiedType>> => {
+    const authError = requireAuth();
+    if (authError) {
+      return { success: false, error: authError };
+    }
 
-      return runOperation<PlayersWantedClassifiedType>({
-        defaultError: 'Failed to update Players Wanted classified',
-        successMessage: 'Players Wanted ad updated successfully',
-        operation: async () => {
-          const result = await updatePlayersWantedClassified({
-            client: apiClient,
-            path: { accountId, classifiedId },
-            body: payload,
-            throwOnError: false,
-          });
+    return runOperation<PlayersWantedClassifiedType>({
+      defaultError: 'Failed to update Players Wanted classified',
+      successMessage: 'Players Wanted ad updated successfully',
+      operation: async () => {
+        const result = await updatePlayersWantedClassified({
+          client: apiClient,
+          path: { accountId, classifiedId },
+          body: payload,
+          throwOnError: false,
+        });
 
-          return unwrapApiResult(result, 'Failed to update Players Wanted classified');
-        },
-      });
-    },
-    [accountId, apiClient, requireAuth, runOperation],
-  );
+        return unwrapApiResult(result, 'Failed to update Players Wanted classified');
+      },
+    });
+  };
 
-  const deletePlayersWanted = useCallback(
-    async (classifiedId: string): Promise<ClassifiedsOperationResult<void>> => {
-      const authError = requireAuth();
-      if (authError) {
-        return { success: false, error: authError };
-      }
+  const deletePlayersWanted = async (
+    classifiedId: string,
+  ): Promise<ClassifiedsOperationResult<void>> => {
+    const authError = requireAuth();
+    if (authError) {
+      return { success: false, error: authError };
+    }
 
-      return runOperation<void>({
-        defaultError: 'Failed to delete Players Wanted classified',
-        successMessage: 'Players Wanted ad deleted successfully',
-        operation: async () => {
-          const result = await deletePlayersWantedClassified({
-            client: apiClient,
-            path: { accountId, classifiedId },
-            throwOnError: false,
-          });
+    return runOperation<void>({
+      defaultError: 'Failed to delete Players Wanted classified',
+      successMessage: 'Players Wanted ad deleted successfully',
+      operation: async () => {
+        const result = await deletePlayersWantedClassified({
+          client: apiClient,
+          path: { accountId, classifiedId },
+          throwOnError: false,
+        });
 
-          assertNoApiError(result, 'Failed to delete Players Wanted classified');
-        },
-      });
-    },
-    [accountId, apiClient, requireAuth, runOperation],
-  );
+        assertNoApiError(result, 'Failed to delete Players Wanted classified');
+      },
+    });
+  };
 
   return {
     loading,
@@ -226,110 +213,98 @@ export function useTeamsWantedClassifieds(accountId: string) {
   const apiClient = useApiClient();
   const { runOperation, loading, error, resetError } = useRunOperation();
 
-  const createTeamsWanted = useCallback(
-    async (
-      payload: UpsertTeamsWantedClassifiedType,
-      options?: CreateTeamsWantedOptions,
-    ): Promise<ClassifiedsOperationResult<TeamsWantedOwnerClassifiedType>> => {
-      return runOperation<TeamsWantedOwnerClassifiedType>({
-        defaultError: 'Failed to create Teams Wanted classified',
-        successMessage: 'Teams Wanted ad created successfully',
-        operation: async () => {
-          const result = await createTeamsWantedClassified({
-            client: apiClient,
-            path: { accountId },
-            body: payload,
-            headers: options?.captchaToken
-              ? { 'cf-turnstile-token': options.captchaToken }
-              : undefined,
-            throwOnError: false,
-          });
+  const createTeamsWanted = async (
+    payload: UpsertTeamsWantedClassifiedType,
+    options?: CreateTeamsWantedOptions,
+  ): Promise<ClassifiedsOperationResult<TeamsWantedOwnerClassifiedType>> => {
+    return runOperation<TeamsWantedOwnerClassifiedType>({
+      defaultError: 'Failed to create Teams Wanted classified',
+      successMessage: 'Teams Wanted ad created successfully',
+      operation: async () => {
+        const result = await createTeamsWantedClassified({
+          client: apiClient,
+          path: { accountId },
+          body: payload,
+          headers: options?.captchaToken
+            ? { 'cf-turnstile-token': options.captchaToken }
+            : undefined,
+          throwOnError: false,
+        });
 
-          return unwrapApiResult(result, 'Failed to create Teams Wanted classified');
-        },
-      });
-    },
-    [accountId, apiClient, runOperation],
-  );
+        return unwrapApiResult(result, 'Failed to create Teams Wanted classified');
+      },
+    });
+  };
 
-  const updateTeamsWanted = useCallback(
-    async (
-      classifiedId: string,
-      payload: UpsertTeamsWantedClassifiedType,
-      options?: TeamsWantedOperationOptions,
-    ): Promise<ClassifiedsOperationResult<TeamsWantedOwnerClassifiedType>> => {
-      return runOperation<TeamsWantedOwnerClassifiedType>({
-        defaultError: 'Failed to update Teams Wanted classified',
-        successMessage: 'Teams Wanted ad updated successfully',
-        operation: async () => {
-          const requestBody: UpsertTeamsWantedClassifiedType = {
-            ...payload,
-            ...(options?.accessCode ? { accessCode: options.accessCode } : {}),
-          };
+  const updateTeamsWanted = async (
+    classifiedId: string,
+    payload: UpsertTeamsWantedClassifiedType,
+    options?: TeamsWantedOperationOptions,
+  ): Promise<ClassifiedsOperationResult<TeamsWantedOwnerClassifiedType>> => {
+    return runOperation<TeamsWantedOwnerClassifiedType>({
+      defaultError: 'Failed to update Teams Wanted classified',
+      successMessage: 'Teams Wanted ad updated successfully',
+      operation: async () => {
+        const requestBody: UpsertTeamsWantedClassifiedType = {
+          ...payload,
+          ...(options?.accessCode ? { accessCode: options.accessCode } : {}),
+        };
 
-          const result = await updateTeamsWantedClassified({
-            client: apiClient,
-            path: { accountId, classifiedId },
-            body: requestBody,
-            throwOnError: false,
-          });
+        const result = await updateTeamsWantedClassified({
+          client: apiClient,
+          path: { accountId, classifiedId },
+          body: requestBody,
+          throwOnError: false,
+        });
 
-          return unwrapApiResult(result, 'Failed to update Teams Wanted classified');
-        },
-      });
-    },
-    [accountId, apiClient, runOperation],
-  );
+        return unwrapApiResult(result, 'Failed to update Teams Wanted classified');
+      },
+    });
+  };
 
-  const deleteTeamsWanted = useCallback(
-    async (
-      classifiedId: string,
-      options?: TeamsWantedOperationOptions,
-    ): Promise<ClassifiedsOperationResult<void>> => {
-      return runOperation<void>({
-        defaultError: 'Failed to delete Teams Wanted classified',
-        successMessage: 'Teams Wanted ad deleted successfully',
-        operation: async () => {
-          const result = await deleteTeamsWantedClassified({
-            client: apiClient,
-            path: { accountId, classifiedId },
-            ...(options?.accessCode ? { body: { accessCode: options.accessCode } } : {}),
-            throwOnError: false,
-          });
+  const deleteTeamsWanted = async (
+    classifiedId: string,
+    options?: TeamsWantedOperationOptions,
+  ): Promise<ClassifiedsOperationResult<void>> => {
+    return runOperation<void>({
+      defaultError: 'Failed to delete Teams Wanted classified',
+      successMessage: 'Teams Wanted ad deleted successfully',
+      operation: async () => {
+        const result = await deleteTeamsWantedClassified({
+          client: apiClient,
+          path: { accountId, classifiedId },
+          ...(options?.accessCode ? { body: { accessCode: options.accessCode } } : {}),
+          throwOnError: false,
+        });
 
-          assertNoApiError(result, 'Failed to delete Teams Wanted classified');
-        },
-      });
-    },
-    [accountId, apiClient, runOperation],
-  );
+        assertNoApiError(result, 'Failed to delete Teams Wanted classified');
+      },
+    });
+  };
 
-  const getTeamsWantedContactForEdit = useCallback(
-    async (
-      classifiedId: string,
-      options?: TeamsWantedOperationOptions,
-    ): Promise<ClassifiedsOperationResult<TeamsWantedContactInfoType>> => {
-      return runOperation<TeamsWantedContactInfoType>({
-        defaultError: 'Failed to fetch Teams Wanted contact information',
-        operation: async () => {
-          const query = options?.accessCode ? { accessCode: options.accessCode } : undefined;
+  const getTeamsWantedContactForEdit = async (
+    classifiedId: string,
+    options?: TeamsWantedOperationOptions,
+  ): Promise<ClassifiedsOperationResult<TeamsWantedContactInfoType>> => {
+    return runOperation<TeamsWantedContactInfoType>({
+      defaultError: 'Failed to fetch Teams Wanted contact information',
+      operation: async () => {
+        const query = options?.accessCode ? { accessCode: options.accessCode } : undefined;
 
-          const result = await getTeamsWantedContactInfo({
-            client: apiClient,
-            path: { accountId, classifiedId },
-            query,
-            throwOnError: false,
-          });
+        const result = await getTeamsWantedContactInfo({
+          client: apiClient,
+          path: { accountId, classifiedId },
+          query,
+          throwOnError: false,
+        });
 
-          return unwrapApiResult(
-            result,
-            'Failed to fetch Teams Wanted contact information',
-          ) as TeamsWantedContactInfoType;
-        },
-      });
-    },
-    [accountId, apiClient, runOperation],
-  );
+        return unwrapApiResult(
+          result,
+          'Failed to fetch Teams Wanted contact information',
+        ) as TeamsWantedContactInfoType;
+      },
+    });
+  };
 
   return {
     loading,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -43,9 +43,9 @@ interface OrganizationsWidgetProps {
   onSearchTermChange?: (searchTerm: string) => void;
   // Account ID to exclude from the list (e.g., current account)
   excludeAccountId?: string;
-  // Callback when organizations are loaded
-  onOrganizationsLoaded?: (organizations: AccountType[]) => void;
   scrollable?: boolean;
+  // If true, widget returns null when no organizations are found (after loading)
+  autoHide?: boolean;
 }
 
 const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
@@ -61,13 +61,14 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   searchTerm: providedSearchTerm,
   onSearchTermChange,
   excludeAccountId,
-  onOrganizationsLoaded,
   scrollable = false,
+  autoHide = false,
 }) => {
   const [accounts, setAccounts] = useState<AccountType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { user } = useAuth();
   const apiClient = useApiClient();
   const router = useRouter();
@@ -84,38 +85,46 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     ? displayAccounts.filter((account) => account.id !== excludeAccountId)
     : displayAccounts;
 
-  const loadUserAccounts = useCallback(async () => {
-    if (!user || providedOrganizations) return; // Don't load if organizations are provided
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await getMyAccounts({
-        client: apiClient,
-        throwOnError: false,
-      });
-
-      const organizations =
-        (
-          unwrapApiResult(result, 'Failed to load your organizations. Please try again.') as
-            | AccountType[]
-            | undefined
-        )?.filter((account) => (excludeAccountId ? account.id !== excludeAccountId : true)) ?? [];
-      setAccounts(organizations);
-      if (onOrganizationsLoaded) {
-        onOrganizationsLoaded(organizations);
-      }
-    } catch {
-      setError('Failed to load your organizations. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [user, providedOrganizations, onOrganizationsLoaded, apiClient, excludeAccountId]);
-
   useEffect(() => {
-    if (user && !providedOrganizations) {
-      loadUserAccounts();
-    }
-  }, [user, providedOrganizations, loadUserAccounts]);
+    if (!user || providedOrganizations) return;
+
+    let cancelled = false;
+
+    const fetchAccounts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await getMyAccounts({
+          client: apiClient,
+          throwOnError: false,
+        });
+
+        if (cancelled) return;
+
+        const organizations =
+          (
+            unwrapApiResult(result, 'Failed to load your organizations. Please try again.') as
+              | AccountType[]
+              | undefined
+          )?.filter((account) => (excludeAccountId ? account.id !== excludeAccountId : true)) ?? [];
+        setAccounts(organizations);
+      } catch {
+        if (!cancelled) {
+          setError('Failed to load your organizations. Please try again.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchAccounts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, providedOrganizations, apiClient, excludeAccountId, refreshKey]);
 
   const handleSearch = async () => {
     if (!displaySearchTerm.trim()) return;
@@ -159,7 +168,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     }
     setAccounts([]);
     if (user && !providedOrganizations) {
-      loadUserAccounts();
+      setRefreshKey((prev) => prev + 1);
     }
   };
 
@@ -275,6 +284,17 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
 
   // Don't show widget for non-authenticated users unless organizations are provided or search is enabled
   if (!user && !providedOrganizations && !showSearch) {
+    return null;
+  }
+
+  // Auto-hide when no organizations found (after loading completes)
+  if (
+    autoHide &&
+    user &&
+    !providedOrganizations &&
+    !displayLoading &&
+    filteredAccounts.length === 0
+  ) {
     return null;
   }
 

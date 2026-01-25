@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 
 interface ScrollPosition {
   x: number;
@@ -17,8 +17,8 @@ export const useScrollPosition = (options: UseScrollPositionOptions = {}) => {
   const scrollPositionRef = useRef<ScrollPosition>({ x: 0, y: 0, timestamp: 0 });
   const debounceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // Save current scroll position
-  const saveScrollPosition = useCallback(() => {
+  // Save current scroll position - uses current option values from closure
+  const saveScrollPosition = () => {
     if (!enabled) return;
 
     const element = elementId ? document.getElementById(elementId) : window;
@@ -31,10 +31,10 @@ export const useScrollPosition = (options: UseScrollPositionOptions = {}) => {
     };
 
     scrollPositionRef.current = newPosition;
-  }, [elementId, enabled]);
+  };
 
   // Restore scroll position
-  const restoreScrollPosition = useCallback(() => {
+  const restoreScrollPosition = () => {
     if (!enabled) return;
 
     const element = elementId ? document.getElementById(elementId) : window;
@@ -52,24 +52,24 @@ export const useScrollPosition = (options: UseScrollPositionOptions = {}) => {
         (element as Element).scrollTop = position.y;
       }
     });
-  }, [elementId, enabled]);
+  };
 
   // Get current scroll position
-  const getScrollPosition = useCallback((): ScrollPosition => {
+  const getScrollPosition = (): ScrollPosition => {
     return { ...scrollPositionRef.current };
-  }, []);
+  };
 
   // Set scroll position manually
-  const setScrollPosition = useCallback((position: Partial<ScrollPosition>) => {
+  const setScrollPosition = (position: Partial<ScrollPosition>) => {
     scrollPositionRef.current = {
       ...scrollPositionRef.current,
       ...position,
       timestamp: Date.now(),
     };
-  }, []);
+  };
 
-  // Debounced scroll position saving
-  const saveScrollPositionDebounced = useCallback(() => {
+  // Debounced scroll position saving - uses current debounceMs from closure
+  const saveScrollPositionDebounced = () => {
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
@@ -77,7 +77,7 @@ export const useScrollPosition = (options: UseScrollPositionOptions = {}) => {
     debounceTimeoutRef.current = setTimeout(() => {
       saveScrollPosition();
     }, debounceMs);
-  }, [saveScrollPosition, debounceMs]);
+  };
 
   // Setup scroll event listeners
   useEffect(() => {
@@ -86,19 +86,44 @@ export const useScrollPosition = (options: UseScrollPositionOptions = {}) => {
     const element = elementId ? document.getElementById(elementId) : window;
     if (!element) return;
 
-    // Save initial position
-    saveScrollPosition();
+    // Save initial position - define inline to capture current values
+    const saveInitialPosition = () => {
+      const newPosition: ScrollPosition = {
+        x: element === window ? window.scrollX : (element as Element).scrollLeft,
+        y: element === window ? window.scrollY : (element as Element).scrollTop,
+        timestamp: Date.now(),
+      };
+      scrollPositionRef.current = newPosition;
+    };
+
+    saveInitialPosition();
+
+    // Create scroll handler that captures current debounceMs
+    const handleScroll = () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+
+      debounceTimeoutRef.current = setTimeout(() => {
+        const newPosition: ScrollPosition = {
+          x: element === window ? window.scrollX : (element as Element).scrollLeft,
+          y: element === window ? window.scrollY : (element as Element).scrollTop,
+          timestamp: Date.now(),
+        };
+        scrollPositionRef.current = newPosition;
+      }, debounceMs);
+    };
 
     // Add scroll listener
-    element.addEventListener('scroll', saveScrollPositionDebounced, { passive: true });
+    element.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
-      element.removeEventListener('scroll', saveScrollPositionDebounced);
+      element.removeEventListener('scroll', handleScroll);
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [enabled, elementId, saveScrollPositionDebounced, saveScrollPosition]);
+  }, [enabled, elementId, debounceMs]);
 
   return {
     saveScrollPosition,

@@ -27,7 +27,7 @@ import { useRole } from '../../context/RoleContext';
 import { useUmpireService } from '../../hooks/useUmpireService';
 import UmpireFormDialog from './UmpireFormDialog';
 import UmpireDeleteDialog from './UmpireDeleteDialog';
-import EditContactInfoDialog from '../profile/EditContactInfoDialog';
+import EditContactDialog from '../users/EditContactDialog';
 import UserAvatar from '../users/UserAvatar';
 import { EditIconButton, DeleteIconButton } from '../common/ActionIconButtons';
 import PageSectionHeader from '../common/PageSectionHeader';
@@ -174,11 +174,6 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
   const handleCloseEditContactDialog = () => {
     setEditContactOpen(false);
     setUmpireToEdit(null);
-  };
-
-  const handleEditContactSuccess = (_updated: BaseContactType) => {
-    setSuccessMessage('Contact information updated successfully');
-    void loadUmpires();
   };
 
   const formatPhoneNumbers = (umpire: UmpireType): string => {
@@ -358,12 +353,16 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
         onSuccess={(result) => handleDialogSuccess({ message: result.message })}
         onError={handleDialogError}
       />
-      <EditContactInfoDialog
+      <EditContactDialog
+        mode="edit"
         open={editContactOpen}
         contact={umpireToContact(umpireToEdit)}
         accountId={accountId}
         onClose={handleCloseEditContactDialog}
-        onSuccess={handleEditContactSuccess}
+        onSuccess={(result) => {
+          setSuccessMessage(result.message);
+          void loadUmpires();
+        }}
       />
 
       <Snackbar

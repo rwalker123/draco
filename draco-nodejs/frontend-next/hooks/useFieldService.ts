@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
 import {
   listAccountFields,
   createAccountField,
@@ -83,115 +82,103 @@ const sanitizePayload = (payload: UpsertFieldType): UpsertFieldType => {
 export function useFieldService(accountId: string): FieldService {
   const apiClient = useApiClient();
 
-  const listFields = useCallback<FieldService['listFields']>(
-    async (params: ListFieldParams = {}) => {
-      const { page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc', search } = params;
-      const trimmedSearch = search?.trim() || undefined;
-      try {
-        const result = await listAccountFields({
-          client: apiClient,
-          path: { accountId },
-          throwOnError: false,
-          query: {
-            page,
-            limit,
-            skip: (page - 1) * limit,
-            sortBy,
-            sortOrder,
-            search: trimmedSearch,
-          },
-        });
+  const listFields: FieldService['listFields'] = async (params: ListFieldParams = {}) => {
+    const { page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc', search } = params;
+    const trimmedSearch = search?.trim() || undefined;
+    try {
+      const result = await listAccountFields({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
+        query: {
+          page,
+          limit,
+          skip: (page - 1) * limit,
+          sortBy,
+          sortOrder,
+          search: trimmedSearch,
+        },
+      });
 
-        const fields = unwrapApiResult(result, 'Failed to load fields');
+      const fields = unwrapApiResult(result, 'Failed to load fields');
 
-        return {
-          success: true,
-          data: fields as FieldsType,
-          message: 'Fields loaded successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to load fields';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: fields as FieldsType,
+        message: 'Fields loaded successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load fields';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const createField = useCallback<FieldService['createField']>(
-    async (payload) => {
-      try {
-        const sanitizedPayload = sanitizePayload(payload);
-        const result = await createAccountField({
-          client: apiClient,
-          path: { accountId },
-          body: sanitizedPayload,
-          throwOnError: false,
-        });
+  const createField: FieldService['createField'] = async (payload) => {
+    try {
+      const sanitizedPayload = sanitizePayload(payload);
+      const result = await createAccountField({
+        client: apiClient,
+        path: { accountId },
+        body: sanitizedPayload,
+        throwOnError: false,
+      });
 
-        const field = unwrapApiResult(result, 'Failed to create field') as FieldType;
+      const field = unwrapApiResult(result, 'Failed to create field') as FieldType;
 
-        return {
-          success: true,
-          data: field,
-          message: 'Field created successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to create field';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: field,
+        message: 'Field created successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create field';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const updateField = useCallback<FieldService['updateField']>(
-    async (fieldId, payload) => {
-      try {
-        const sanitizedPayload = sanitizePayload(payload);
-        const result = await updateAccountField({
-          client: apiClient,
-          path: { accountId, fieldId },
-          body: sanitizedPayload,
-          throwOnError: false,
-        });
+  const updateField: FieldService['updateField'] = async (fieldId, payload) => {
+    try {
+      const sanitizedPayload = sanitizePayload(payload);
+      const result = await updateAccountField({
+        client: apiClient,
+        path: { accountId, fieldId },
+        body: sanitizedPayload,
+        throwOnError: false,
+      });
 
-        const field = unwrapApiResult(result, 'Failed to update field') as FieldType;
+      const field = unwrapApiResult(result, 'Failed to update field') as FieldType;
 
-        return {
-          success: true,
-          data: field,
-          message: 'Field updated successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to update field';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: field,
+        message: 'Field updated successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update field';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const deleteField = useCallback<FieldService['deleteField']>(
-    async (fieldId) => {
-      try {
-        const result = await deleteAccountField({
-          client: apiClient,
-          path: { accountId, fieldId },
-          throwOnError: false,
-        });
+  const deleteField: FieldService['deleteField'] = async (fieldId) => {
+    try {
+      const result = await deleteAccountField({
+        client: apiClient,
+        path: { accountId, fieldId },
+        throwOnError: false,
+      });
 
-        const field = unwrapApiResult(result, 'Failed to delete field') as FieldType;
+      const field = unwrapApiResult(result, 'Failed to delete field') as FieldType;
 
-        return {
-          success: true,
-          data: field,
-          message: 'Field deleted successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to delete field';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: field,
+        message: 'Field deleted successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete field';
+      return { success: false, error: message } as const;
+    }
+  };
 
   return {
     listFields,

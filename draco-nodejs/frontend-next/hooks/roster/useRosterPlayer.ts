@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import {
   BaseContactType,
   RosterMemberType,
@@ -64,127 +63,124 @@ const transformRosterPlayer = (player?: RosterPlayerType | null): RosterPlayerTy
 export const useRosterPlayer = ({ accountId, seasonId, teamSeasonId }: UseRosterPlayerOptions) => {
   const apiClient = useApiClient();
 
-  const searchAvailablePlayers = useCallback(
-    async (firstName?: string, lastName?: string): Promise<BaseContactType[]> => {
-      if (!accountId || !seasonId || !teamSeasonId) {
-        return [];
-      }
+  const searchAvailablePlayers = async (
+    firstName?: string,
+    lastName?: string,
+  ): Promise<BaseContactType[]> => {
+    if (!accountId || !seasonId || !teamSeasonId) {
+      return [];
+    }
 
-      try {
-        const result = await apiListAvailableRosterPlayers({
-          client: apiClient,
-          path: { accountId, seasonId, teamSeasonId },
-          query: {
-            firstName: firstName?.trim() || undefined,
-            lastName: lastName?.trim() || undefined,
-          },
-          throwOnError: false,
-        });
-
-        const contacts = unwrapApiResult(result, 'Failed to fetch available players') ?? [];
-        return (contacts as BaseContactType[]).map((contact) => transformContact(contact));
-      } catch (error) {
-        const message =
-          error instanceof ApiClientError
-            ? getApiErrorMessage(error.details ?? error, 'Failed to fetch available players')
-            : getApiErrorMessage(error, 'Failed to fetch available players');
-        throw new Error(message);
-      }
-    },
-    [accountId, seasonId, teamSeasonId, apiClient],
-  );
-
-  const loadContactRoster = useCallback(
-    async (contactId: string): Promise<RosterPlayerType | undefined> => {
-      if (!accountId || !contactId) {
-        return undefined;
-      }
-
-      try {
-        const result = await apiGetContactRoster({
-          path: { accountId, contactId },
-          client: apiClient,
-          throwOnError: false,
-        });
-
-        const rosterPlayer = unwrapApiResult(result, 'Failed to fetch contact roster') as
-          | RosterPlayerType
-          | undefined;
-        return transformRosterPlayer(rosterPlayer) ?? undefined;
-      } catch (error) {
-        const message = getApiErrorMessage(error, 'Failed to fetch contact roster');
-        throw new Error(message);
-      }
-    },
-    [accountId, apiClient],
-  );
-
-  const signRosterPlayer = useCallback(
-    async (contactId: string, rosterData: SignRosterMemberType): Promise<RosterMemberType> => {
-      if (!accountId || !seasonId || !teamSeasonId) {
-        throw new Error('Missing roster context for signing player');
-      }
-
-      const result = await apiSignPlayer({
+    try {
+      const result = await apiListAvailableRosterPlayers({
+        client: apiClient,
         path: { accountId, seasonId, teamSeasonId },
-        body: { ...rosterData, player: { ...rosterData.player, contact: { id: contactId } } },
+        query: {
+          firstName: firstName?.trim() || undefined,
+          lastName: lastName?.trim() || undefined,
+        },
+        throwOnError: false,
+      });
+
+      const contacts = unwrapApiResult(result, 'Failed to fetch available players') ?? [];
+      return (contacts as BaseContactType[]).map((contact) => transformContact(contact));
+    } catch (error) {
+      const message =
+        error instanceof ApiClientError
+          ? getApiErrorMessage(error.details ?? error, 'Failed to fetch available players')
+          : getApiErrorMessage(error, 'Failed to fetch available players');
+      throw new Error(message);
+    }
+  };
+
+  const loadContactRoster = async (contactId: string): Promise<RosterPlayerType | undefined> => {
+    if (!accountId || !contactId) {
+      return undefined;
+    }
+
+    try {
+      const result = await apiGetContactRoster({
+        path: { accountId, contactId },
         client: apiClient,
         throwOnError: false,
       });
 
-      const member = unwrapApiResult(result, 'Failed to sign player') as RosterMemberType;
-      return transformRosterMember(member);
-    },
-    [accountId, seasonId, teamSeasonId, apiClient],
-  );
+      const rosterPlayer = unwrapApiResult(result, 'Failed to fetch contact roster') as
+        | RosterPlayerType
+        | undefined;
+      return transformRosterPlayer(rosterPlayer) ?? undefined;
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Failed to fetch contact roster');
+      throw new Error(message);
+    }
+  };
 
-  const updateRosterPlayer = useCallback(
-    async (rosterMemberId: string, updates: UpdateRosterMemberType): Promise<RosterMemberType> => {
-      if (!accountId || !seasonId || !teamSeasonId) {
-        throw new Error('Missing roster context for roster update');
+  const signRosterPlayer = async (
+    contactId: string,
+    rosterData: SignRosterMemberType,
+  ): Promise<RosterMemberType> => {
+    if (!accountId || !seasonId || !teamSeasonId) {
+      throw new Error('Missing roster context for signing player');
+    }
+
+    const result = await apiSignPlayer({
+      path: { accountId, seasonId, teamSeasonId },
+      body: { ...rosterData, player: { ...rosterData.player, contact: { id: contactId } } },
+      client: apiClient,
+      throwOnError: false,
+    });
+
+    const member = unwrapApiResult(result, 'Failed to sign player') as RosterMemberType;
+    return transformRosterMember(member);
+  };
+
+  const updateRosterPlayer = async (
+    rosterMemberId: string,
+    updates: UpdateRosterMemberType,
+  ): Promise<RosterMemberType> => {
+    if (!accountId || !seasonId || !teamSeasonId) {
+      throw new Error('Missing roster context for roster update');
+    }
+
+    const sanitizedUpdates: UpdateRosterMemberType = {};
+
+    if (updates.playerNumber !== undefined) {
+      sanitizedUpdates.playerNumber = updates.playerNumber;
+    }
+
+    if (updates.submittedWaiver !== undefined) {
+      sanitizedUpdates.submittedWaiver = updates.submittedWaiver;
+    }
+
+    if (updates.player) {
+      const playerUpdates: NonNullable<UpdateRosterMemberType['player']> = {};
+
+      if (updates.player.submittedDriversLicense !== undefined) {
+        playerUpdates.submittedDriversLicense = updates.player.submittedDriversLicense;
       }
 
-      const sanitizedUpdates: UpdateRosterMemberType = {};
-
-      if (updates.playerNumber !== undefined) {
-        sanitizedUpdates.playerNumber = updates.playerNumber;
+      if (updates.player.firstYear !== undefined) {
+        playerUpdates.firstYear = updates.player.firstYear;
       }
 
-      if (updates.submittedWaiver !== undefined) {
-        sanitizedUpdates.submittedWaiver = updates.submittedWaiver;
+      if (Object.keys(playerUpdates).length > 0) {
+        sanitizedUpdates.player = playerUpdates;
       }
+    }
 
-      if (updates.player) {
-        const playerUpdates: NonNullable<UpdateRosterMemberType['player']> = {};
+    const result = await apiUpdateRosterMember({
+      path: { accountId, seasonId, teamSeasonId, rosterMemberId },
+      body: sanitizedUpdates,
+      client: apiClient,
+      throwOnError: false,
+    });
 
-        if (updates.player.submittedDriversLicense !== undefined) {
-          playerUpdates.submittedDriversLicense = updates.player.submittedDriversLicense;
-        }
-
-        if (updates.player.firstYear !== undefined) {
-          playerUpdates.firstYear = updates.player.firstYear;
-        }
-
-        if (Object.keys(playerUpdates).length > 0) {
-          sanitizedUpdates.player = playerUpdates;
-        }
-      }
-
-      const result = await apiUpdateRosterMember({
-        path: { accountId, seasonId, teamSeasonId, rosterMemberId },
-        body: sanitizedUpdates,
-        client: apiClient,
-        throwOnError: false,
-      });
-
-      const member = unwrapApiResult(
-        result,
-        'Failed to update roster information',
-      ) as RosterMemberType;
-      return transformRosterMember(member);
-    },
-    [accountId, seasonId, teamSeasonId, apiClient],
-  );
+    const member = unwrapApiResult(
+      result,
+      'Failed to update roster information',
+    ) as RosterMemberType;
+    return transformRosterMember(member);
+  };
 
   return {
     searchAvailablePlayers,
