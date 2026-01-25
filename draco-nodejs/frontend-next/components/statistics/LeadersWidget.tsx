@@ -7,10 +7,10 @@ import {
   Box,
   Button,
   CircularProgress,
-  LinearProgress,
   Tab,
   Tabs,
   Typography,
+  alpha,
   type Theme,
 } from '@mui/material';
 import LeaderCategoryPanel from './LeaderCategoryPanel';
@@ -545,8 +545,6 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
         maxWidth: '100%',
       }}
     >
-      {isUpdatingSelection && model ? <LinearProgress sx={{ borderRadius: 1 }} /> : null}
-
       {!model ? (
         <Box
           sx={{
@@ -671,7 +669,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
               <LeaderCategoryPanel
                 category={displayedCategory}
                 leaders={displayedLeaders}
-                loading={isUpdatingSelection}
+                loading={false}
                 emptyMessage={`No additional ${displayedCategory.label.toLowerCase()} data available`}
                 hideTeamInfo={!showTeamInfo}
                 hideHeaderWhenCard
@@ -686,6 +684,25 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
           </Box>
         </>
       )}
+
+      {isUpdatingSelection && model ? (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: (theme) =>
+              alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.7 : 0.5),
+            backdropFilter: 'blur(2px)',
+            borderRadius: 'inherit',
+            zIndex: 10,
+          }}
+        >
+          <CircularProgress size={40} />
+        </Box>
+      ) : null}
 
       {error && (
         <Alert severity="error" sx={{ mt: model ? 1 : 0 }}>
