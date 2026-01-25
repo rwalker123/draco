@@ -286,6 +286,11 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
                 againstfielddescpoints: true,
               },
             },
+            golfseasonconfig: {
+              select: {
+                teamsize: true,
+              },
+            },
           },
         },
       },
@@ -408,6 +413,15 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
               totalholespoints: leagueSeason.golfleaguesetup.totalholespoints,
               againstfieldpoints: leagueSeason.golfleaguesetup.againstfieldpoints,
               againstfielddescpoints: leagueSeason.golfleaguesetup.againstfielddescpoints,
+            },
+          });
+        }
+
+        if (isGolfAccount && leagueSeason.golfseasonconfig) {
+          await tx.golfseasonconfig.create({
+            data: {
+              leagueseasonid: createdLeagueSeason.id,
+              teamsize: leagueSeason.golfseasonconfig.teamsize,
             },
           });
         }

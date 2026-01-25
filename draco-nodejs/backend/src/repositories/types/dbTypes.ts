@@ -708,6 +708,11 @@ export type dbSeasonCopySource = Prisma.seasonGetPayload<{
             againstfielddescpoints: true;
           };
         };
+        golfseasonconfig: {
+          select: {
+            teamsize: true;
+          };
+        };
       };
     };
   };
