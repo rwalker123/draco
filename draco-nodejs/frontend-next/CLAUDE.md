@@ -11,6 +11,58 @@
 - After changes, run `npm run frontend:lint` and check for errors.
 - If you add a new route with metadata, use the helpers in `lib/metadataParams` for both `searchParams` and `params`.
 
+## React Compiler (Automatic Memoization)
+**Do not introduce `useMemo` or `useCallback`** — the React Compiler handles memoization automatically at build time. If you believe manual memoization is necessary, stop and ask for approval first.
+
+### Avoiding Infinite Loops
+
+When removing manual memoization, you may encounter "Maximum update depth exceeded" errors. Common causes and fixes:
+
+**Problem: Function from hook in useEffect dependencies**
+```typescript
+// ❌ BAD: fetchData is a new reference every render → infinite loop
+const { fetchData } = useSomeHook();
+useEffect(() => {
+  fetchData();
+}, [fetchData]);
+```
+
+**Solution: Inline API calls directly into useEffect**
+```typescript
+// ✅ GOOD: Inline the API call, use stable deps only
+useEffect(() => {
+  const loadData = async () => {
+    const result = await apiOperation({
+      client: apiClient,
+      path: { accountId },
+    });
+    setData(unwrapApiResult(result, 'Failed to load'));
+  };
+  loadData();
+}, [accountId, apiClient]); // apiClient is module-level cached, accountId is a prop
+```
+
+**Problem: Callback props causing parent re-renders**
+```typescript
+// ❌ BAD: Parent re-renders when callback fires, child re-renders, fires again
+<Widget onDataLoaded={(data) => setHasData(data.length > 0)} />
+```
+
+**Solution: Make components self-contained**
+```typescript
+// ✅ GOOD: Component handles its own visibility logic
+<Widget autoHide /> // Widget returns null internally if no data
+```
+
+**When refs are appropriate:**
+- Caching values across calls within a hook (e.g., season ID cache)
+- Deduplicating concurrent API requests (e.g., in-flight promise ref)
+- Tracking mounted state to avoid setState after unmount
+
+**When refs are NOT appropriate:**
+- As workarounds to exclude values from dependency arrays
+- To "skip" effects that ESLint says need dependencies
+
 ## Key Directories
 - `app` — Next.js App Router entries and nested layouts.
 - `components` — Reusable UI pieces following the dialog and service hook patterns.
@@ -198,7 +250,7 @@ const Dialog: React.FC<DialogProps> = ({ open, onClose, onSuccess, onError }) =>
   const [formField, setFormField] = useState('');
   const { performOperation, loading } = useOperationHook(accountId);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     const result = await performOperation({ field: formField });
     if (result.success) {
       onSuccess?.({ message: result.message, data: result.data });
@@ -206,7 +258,7 @@ const Dialog: React.FC<DialogProps> = ({ open, onClose, onSuccess, onError }) =>
     } else {
       onError?.(result.error);
     }
-  }, [formField, performOperation, onSuccess, onError, onClose]);
+  };
 
   return <Dialog open={open} onClose={onClose}>{/* Form */}</Dialog>;
 };
@@ -217,11 +269,11 @@ const Dialog: React.FC<DialogProps> = ({ open, onClose, onSuccess, onError }) =>
 const ParentComponent = () => {
   const dialogs = useDialogManager();
 
-  const handleSuccess = useCallback((result: { message: string; data: TypedResult }) => {
+  const handleSuccess = (result: { message: string; data: TypedResult }) => {
     setSuccess(result.message);
     updateStateIncrementally(result.data); // Use existing dispatch patterns
     dialogs.dialog.close();
-  }, [updateStateIncrementally, dialogs.dialog]);
+  };
 
   return (
     <Dialog
@@ -263,27 +315,30 @@ const onSubmit = handleSubmit(async (values) => {
 
 ### Service Hook Pattern
 
-Service hooks encapsulate API operations and provide consistent error handling:
+Service hooks encapsulate API operations and provide consistent error handling. Define operations as plain async functions — React Compiler optimizes automatically:
 
 ```typescript
 export function useServiceHook(accountId: string) {
   const [loading, setLoading] = useState(false);
-  const { token } = useAuth();
-  const service = token ? createService(token) : null;
+  const apiClient = useApiClient();
 
-  const performOperation = useCallback(async (data: OperationData): Promise<OperationResult> => {
-    if (!service) return { success: false, error: 'Service not available' };
-
+  const performOperation = async (data: OperationData): Promise<OperationResult> => {
     try {
       setLoading(true);
-      const result = await service.operation(accountId, data);
-      return { success: true, message: 'Operation successful', data: result };
+      const result = await apiOperation({
+        client: apiClient,
+        path: { accountId },
+        body: data,
+        throwOnError: false,
+      });
+      const operationData = unwrapApiResult(result, 'Operation failed');
+      return { success: true, message: 'Operation successful', data: operationData };
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : 'Operation failed' };
     } finally {
       setLoading(false);
     }
-  }, [service, accountId]);
+  };
 
   return { performOperation, loading };
 }
@@ -365,10 +420,10 @@ export async function generateMetadata({ params }: { params: Promise<Params> }) 
 
 ### State Management Pattern
 
-Use consistent state management patterns throughout:
+Use consistent state management patterns throughout. Define handlers as plain functions — React Compiler optimizes automatically:
 
 ```typescript
-const handleDataUpdated = useCallback((updatedData: TypedData) => {
+const handleDataUpdated = (updatedData: TypedData) => {
   // Only update state after receiving real API response
   const updatedItems = state.items.map(item =>
     item.id === updatedData.id ? { ...item, ...updatedData } : item
@@ -381,7 +436,7 @@ const handleDataUpdated = useCallback((updatedData: TypedData) => {
     hasPrev: state.hasPrev,
     page: state.page,
   });
-}, [state, dispatch]);
+};
 ```
 
 ## Component Categories
@@ -425,7 +480,7 @@ const { currentAccount } = useAccount();
 ### Component Design
 - **Single Responsibility** — Each component has one clear purpose
 - **Avoid Prop Drilling** — Use context for global state
-- **Event Handling** — Use useCallback for event handlers to prevent re-renders
+- **Event Handling** — Define handlers as plain functions; React Compiler optimizes automatically
 
 ### Component Architecture
 - **Server Components First** — Default for Next.js pages; add `'use client'` only when needed for hooks, events, or browser APIs
@@ -439,7 +494,7 @@ const { currentAccount } = useAccount();
 - **Wait for API** — Never update state before receiving API confirmation
 
 ### Performance
-- **Memoization** — Use useMemo and useCallback appropriately
+- **Automatic Memoization** — React Compiler handles memoization; do not add manual `useMemo`/`useCallback`
 - **Code Splitting** — Lazy load components and routes
 - **Bundle Optimization** — Import only needed dependencies
 
@@ -495,7 +550,7 @@ React's own documentation—[You Might Not Need an Effect](https://react.dev/lea
 Our codebase enforces this by:
 
 1. Treating API responses and props as the single source of truth.
-2. Computing view-specific data (like sorting, filtering, or display keys) via `useMemo`/plain functions during render.
+2. Computing view-specific data (like sorting, filtering, or display keys) via plain functions during render (React Compiler handles memoization).
 3. Reserving `useEffect` for true side effects (e.g., kicking off fetches, subscribing/unsubscribing).
 4. Never reading mutable refs inside render; refs are only touched in event handlers or effects.
 
