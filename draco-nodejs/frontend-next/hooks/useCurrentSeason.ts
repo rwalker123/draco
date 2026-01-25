@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { getCurrentSeason } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../utils/apiResult';
 import { useApiClient } from './useApiClient';
@@ -23,7 +23,7 @@ export const useCurrentSeason = (accountId: string): UseCurrentSeasonReturn => {
   const apiClient = useApiClient();
   const fetchPromiseRef = useRef<Promise<string> | null>(null);
 
-  const fetchCurrentSeason = useCallback(async (): Promise<string> => {
+  const fetchCurrentSeason = async (): Promise<string> => {
     if (currentSeasonId) {
       return currentSeasonId;
     }
@@ -63,7 +63,7 @@ export const useCurrentSeason = (accountId: string): UseCurrentSeasonReturn => {
 
     fetchPromiseRef.current = request;
     return request;
-  }, [accountId, apiClient, currentSeasonId]);
+  };
 
   return {
     currentSeasonId,

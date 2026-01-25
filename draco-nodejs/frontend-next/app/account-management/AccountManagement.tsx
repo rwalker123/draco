@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -40,15 +40,20 @@ import type {
   AccountTypeReference,
   AccountAffiliationType,
 } from '@draco/shared-schemas';
-import { useAccountManagementService } from '../../hooks/useAccountManagementService';
+import {
+  getManagedAccounts,
+  getAccountTypes,
+  getAccountAffiliations,
+} from '@draco/shared-api-client';
+import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
 import type { AccountLogoOperationSuccess } from '../../hooks/useAccountLogoOperations';
 
 const AccountManagement: React.FC = () => {
   const { token } = useAuth();
   const { hasRole } = useRole();
   const { setCurrentAccount } = useAccount();
-  const { fetchManagedAccounts, fetchAccountTypes, fetchAccountAffiliations } =
-    useAccountManagementService();
+  const apiClient = useApiClient();
 
   const [accounts, setAccounts] = useState<SharedAccountType[]>([]);
   const [accountTypes, setAccountTypes] = useState<AccountTypeReference[]>([]);
@@ -68,70 +73,79 @@ const AccountManagement: React.FC = () => {
 
   const isGlobalAdmin = hasRole('Administrator');
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const errors: string[] = [];
-    try {
-      const [accountsResult, typesResult, affiliationsResult] = await Promise.all([
-        fetchManagedAccounts(),
-        fetchAccountTypes(),
-        fetchAccountAffiliations(),
-      ]);
-
-      if (accountsResult.success) {
-        setAccounts(accountsResult.data);
-      } else {
-        setAccounts([]);
-        errors.push(accountsResult.error);
-      }
-
-      if (typesResult.success) {
-        setAccountTypes(typesResult.data);
-      } else {
-        setAccountTypes([]);
-        errors.push(typesResult.error);
-      }
-
-      if (affiliationsResult.success) {
-        setAffiliations(affiliationsResult.data);
-      } else {
-        setAffiliations([]);
-        errors.push(affiliationsResult.error);
-      }
-
-      setError(errors[0] ?? null);
-      if (errors.length > 0) {
-        setSuccess(null);
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load account data';
-      setError(message);
-      setAccounts([]);
-      setAccountTypes([]);
-      setAffiliations([]);
-      setSuccess(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchManagedAccounts, fetchAccountTypes, fetchAccountAffiliations]);
+  const loadDataRef = React.useRef<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const errors: string[] = [];
+      try {
+        const [accountsResult, typesResult, affiliationsResult] = await Promise.all([
+          getManagedAccounts({ client: apiClient, throwOnError: false }),
+          getAccountTypes({ client: apiClient, throwOnError: false }),
+          getAccountAffiliations({ client: apiClient, throwOnError: false }),
+        ]);
+
+        try {
+          const accountsData = unwrapApiResult(accountsResult, 'Failed to load accounts') as
+            | SharedAccountType[]
+            | undefined;
+          setAccounts(accountsData ?? []);
+        } catch (err) {
+          setAccounts([]);
+          errors.push(err instanceof Error ? err.message : 'Failed to load accounts');
+        }
+
+        try {
+          const types = unwrapApiResult(typesResult, 'Failed to load account types') as
+            | AccountTypeReference[]
+            | undefined;
+          setAccountTypes(types ?? []);
+        } catch (err) {
+          setAccountTypes([]);
+          errors.push(err instanceof Error ? err.message : 'Failed to load account types');
+        }
+
+        try {
+          const affils = unwrapApiResult(affiliationsResult, 'Failed to load affiliations') as
+            | AccountAffiliationType[]
+            | undefined;
+          setAffiliations(affils ?? []);
+        } catch (err) {
+          setAffiliations([]);
+          errors.push(err instanceof Error ? err.message : 'Failed to load affiliations');
+        }
+
+        setError(errors[0] ?? null);
+        if (errors.length > 0) {
+          setSuccess(null);
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load account data';
+        setError(message);
+        setAccounts([]);
+        setAccountTypes([]);
+        setAffiliations([]);
+        setSuccess(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDataRef.current = loadData;
+
     if (token) {
       void loadData();
     }
-  }, [token, loadData]);
+  }, [token, apiClient]);
 
-  const getAccountTypeName = useCallback(
-    (account: SharedAccountType) => account.configuration?.accountType?.name ?? 'Unknown',
-    [],
-  );
+  const getAccountTypeName = (account: SharedAccountType) =>
+    account.configuration?.accountType?.name ?? 'Unknown';
 
-  const getAffiliationName = useCallback(
-    (account: SharedAccountType) => account.configuration?.affiliation?.name ?? '—',
-    [],
-  );
+  const getAffiliationName = (account: SharedAccountType) =>
+    account.configuration?.affiliation?.name ?? '—';
 
-  const getOwnerDisplayName = useCallback((account: SharedAccountType) => {
+  const getOwnerDisplayName = (account: SharedAccountType) => {
     const contact = account.accountOwner?.contact;
     if (contact) {
       return `${contact.firstName} ${contact.lastName}`.trim();
@@ -141,100 +155,89 @@ const AccountManagement: React.FC = () => {
       return userEmail;
     }
     return 'Unknown Owner';
-  }, []);
+  };
 
-  const getTimezoneId = useCallback(
-    (account: SharedAccountType) => account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
-    [],
-  );
+  const getTimezoneId = (account: SharedAccountType) =>
+    account.configuration?.timeZone ?? DEFAULT_TIMEZONE;
 
-  const handleViewAccount = useCallback(
-    (account: SharedAccountType) => {
-      setCurrentAccount({
-        id: account.id,
-        name: account.name,
-        accountType: account.configuration?.accountType?.name || undefined,
-        timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
-        timeZoneSource: 'account',
-      });
-      window.location.href = `/account/${account.id}`;
-    },
-    [setCurrentAccount],
-  );
+  const handleViewAccount = (account: SharedAccountType) => {
+    setCurrentAccount({
+      id: account.id,
+      name: account.name,
+      accountType: account.configuration?.accountType?.name || undefined,
+      timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
+      timeZoneSource: 'account',
+    });
+    window.location.href = `/account/${account.id}`;
+  };
 
-  const handleCreateClick = useCallback(() => {
+  const handleCreateClick = () => {
     setCreateDialogOpen(true);
-  }, []);
+  };
 
-  const handleCreateDialogClose = useCallback(() => {
+  const handleCreateDialogClose = () => {
     setCreateDialogOpen(false);
-  }, []);
+  };
 
-  const handleEditDialogClose = useCallback(() => {
+  const handleEditDialogClose = () => {
     setEditDialogOpen(false);
     setSelectedAccount(null);
-  }, []);
+  };
 
-  const handleDeleteDialogClose = useCallback(() => {
+  const handleDeleteDialogClose = () => {
     setDeleteDialogOpen(false);
     setSelectedAccount(null);
-  }, []);
+  };
 
-  const openEditDialog = useCallback((account: SharedAccountType) => {
+  const openEditDialog = (account: SharedAccountType) => {
     setSelectedAccount(account);
     setEditDialogOpen(true);
-  }, []);
+  };
 
-  const openDeleteDialog = useCallback((account: SharedAccountType) => {
+  const openDeleteDialog = (account: SharedAccountType) => {
     setSelectedAccount(account);
     setDeleteDialogOpen(true);
-  }, []);
+  };
 
-  const handleDialogError = useCallback((message: string) => {
+  const handleDialogError = (message: string) => {
     setError(message);
     setSuccess(null);
-  }, []);
+  };
 
-  const handleCreateSuccess = useCallback(() => {
+  const handleCreateSuccess = () => {
     setError(null);
     setSuccess(null);
-    void loadData();
-  }, [loadData]);
+    void loadDataRef.current?.();
+  };
 
-  const handleEditSuccess = useCallback(() => {
+  const handleEditSuccess = () => {
     setError(null);
     setSuccess(null);
-    void loadData();
-  }, [loadData]);
+    void loadDataRef.current?.();
+  };
 
-  const handleDeleteSuccess = useCallback(() => {
+  const handleDeleteSuccess = () => {
     setError(null);
     setSuccess(null);
-    void loadData();
-  }, [loadData]);
+    void loadDataRef.current?.();
+  };
 
-  const handleLogoDialogClose = useCallback(() => {
+  const handleLogoDialogClose = () => {
     setLogoDialogOpen(false);
     setLogoDialogAccount(null);
-  }, []);
+  };
 
-  const handleLogoSuccess = useCallback(
-    (result: AccountLogoOperationSuccess) => {
-      setError(null);
-      setSuccess(result.message);
-      setLogoRefreshKey((k) => k + 1);
-      void loadData();
-    },
-    [loadData],
-  );
+  const handleLogoSuccess = (result: AccountLogoOperationSuccess) => {
+    setError(null);
+    setSuccess(result.message);
+    setLogoRefreshKey((k) => k + 1);
+    void loadDataRef.current?.();
+  };
 
-  const getAccountLogoUrl = useCallback(
-    (account: SharedAccountType | null) => {
-      if (!account) return null;
-      return account.accountLogoUrl ? `${account.accountLogoUrl}?k=${logoRefreshKey}` : null;
-    },
-    [logoRefreshKey],
-  );
+  const getAccountLogoUrl = (account: SharedAccountType | null) => {
+    if (!account) return null;
+    return account.accountLogoUrl ? `${account.accountLogoUrl}?k=${logoRefreshKey}` : null;
+  };
 
   if (loading) {
     return (

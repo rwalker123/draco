@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Fab } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { useRole } from '../../../../context/RoleContext';
@@ -38,11 +38,16 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const { currentAccount } = useAccount();
   const accountType = currentAccount?.accountType;
 
+  const fetchCurrentSeasonRef = useRef(fetchCurrentSeason);
+  useEffect(() => {
+    fetchCurrentSeasonRef.current = fetchCurrentSeason;
+  }, [fetchCurrentSeason]);
+
   useEffect(() => {
     if (accountId) {
-      fetchCurrentSeason().catch(console.error);
+      fetchCurrentSeasonRef.current().catch(console.error);
     }
-  }, [accountId, fetchCurrentSeason]);
+  }, [accountId]);
 
   const [filterType, setFilterType] = useState<FilterType>('month');
   const [filterDate, setFilterDate] = useState<Date>(new Date());

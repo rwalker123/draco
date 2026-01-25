@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -225,6 +225,12 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     error: serviceError,
     resetError,
   } = useTeamsWantedClassifieds(accountId);
+
+  const resetErrorRef = useRef(resetError);
+  useEffect(() => {
+    resetErrorRef.current = resetError;
+  }, [resetError]);
+
   const { config: classifiedsConfig } = useClassifiedsConfig(accountId);
   const { isMember, contact } = useAccountMembership(accountId);
 
@@ -387,9 +393,9 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     if (!isDirty) {
       reset(formDefaults);
       clearErrors();
-      resetError();
+      resetErrorRef.current();
     }
-  }, [open, formDefaults, reset, clearErrors, resetError, isDirty]);
+  }, [open, formDefaults, reset, clearErrors, isDirty]);
 
   const onSubmit = submitForm(async (values) => {
     setSubmitError(null);

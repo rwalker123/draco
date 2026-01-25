@@ -1,7 +1,6 @@
 'use client';
 
 import { useApiClient } from './useApiClient';
-import { useCallback } from 'react';
 import {
   listSocialFeed,
   listSocialVideos,
@@ -42,116 +41,102 @@ const buildQuery = <T extends Record<string, unknown>>(query?: Partial<T>) => {
 export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceConfig) => {
   const apiClient = useApiClient();
 
-  const ensureContext = useCallback(() => {
+  const ensureContext = () => {
     if (!accountId || !seasonId) {
       throw new Error('Account and season are required to load social content.');
     }
     return { accountId, seasonId };
-  }, [accountId, seasonId]);
+  };
 
-  const fetchFeed = useCallback(
-    async (query?: Partial<SocialFeedQueryType>): Promise<SocialFeedItemType[]> => {
-      const context = ensureContext();
-      const result = await listSocialFeed({
-        client: apiClient,
-        path: { accountId: context.accountId, seasonId: context.seasonId },
-        query: buildQuery(query),
-        throwOnError: false,
-      });
+  const fetchFeed = async (query?: Partial<SocialFeedQueryType>): Promise<SocialFeedItemType[]> => {
+    const context = ensureContext();
+    const result = await listSocialFeed({
+      client: apiClient,
+      path: { accountId: context.accountId, seasonId: context.seasonId },
+      query: buildQuery(query),
+      throwOnError: false,
+    });
 
-      const payload = unwrapApiResult(result, 'Failed to load social feed');
-      return payload.feed;
-    },
-    [apiClient, ensureContext],
-  );
+    const payload = unwrapApiResult(result, 'Failed to load social feed');
+    return payload.feed;
+  };
 
-  const deleteFeedItem = useCallback(
-    async (feedItemId: string): Promise<void> => {
-      const context = ensureContext();
-      const result = await deleteSocialFeedItem({
-        client: apiClient,
-        path: {
-          accountId: context.accountId,
-          seasonId: context.seasonId,
-          feedItemId,
-        },
-        throwOnError: false,
-      });
+  const deleteFeedItem = async (feedItemId: string): Promise<void> => {
+    const context = ensureContext();
+    const result = await deleteSocialFeedItem({
+      client: apiClient,
+      path: {
+        accountId: context.accountId,
+        seasonId: context.seasonId,
+        feedItemId,
+      },
+      throwOnError: false,
+    });
 
-      assertNoApiError(result, 'Failed to delete social post');
-    },
-    [apiClient, ensureContext],
-  );
+    assertNoApiError(result, 'Failed to delete social post');
+  };
 
-  const restoreFeedItem = useCallback(
-    async (feedItemId: string): Promise<void> => {
-      const context = ensureContext();
-      const result = await restoreSocialFeedItem({
-        client: apiClient,
-        path: {
-          accountId: context.accountId,
-          seasonId: context.seasonId,
-          feedItemId,
-        },
-        throwOnError: false,
-      });
+  const restoreFeedItem = async (feedItemId: string): Promise<void> => {
+    const context = ensureContext();
+    const result = await restoreSocialFeedItem({
+      client: apiClient,
+      path: {
+        accountId: context.accountId,
+        seasonId: context.seasonId,
+        feedItemId,
+      },
+      throwOnError: false,
+    });
 
-      assertNoApiError(result, 'Failed to restore social post');
-    },
-    [apiClient, ensureContext],
-  );
+    assertNoApiError(result, 'Failed to restore social post');
+  };
 
-  const fetchVideos = useCallback(
-    async (query?: Partial<SocialVideoQueryType>): Promise<SocialVideoType[]> => {
-      const context = ensureContext();
-      const result = await listSocialVideos({
-        client: apiClient,
-        path: { accountId: context.accountId, seasonId: context.seasonId },
-        query: buildQuery(query),
-        throwOnError: false,
-      });
+  const fetchVideos = async (query?: Partial<SocialVideoQueryType>): Promise<SocialVideoType[]> => {
+    const context = ensureContext();
+    const result = await listSocialVideos({
+      client: apiClient,
+      path: { accountId: context.accountId, seasonId: context.seasonId },
+      query: buildQuery(query),
+      throwOnError: false,
+    });
 
-      const payload = unwrapApiResult(result, 'Failed to load social videos');
-      return payload.videos;
-    },
-    [apiClient, ensureContext],
-  );
+    const payload = unwrapApiResult(result, 'Failed to load social videos');
+    return payload.videos;
+  };
 
-  const fetchCommunityMessages = useCallback(
-    async (query?: Partial<CommunityMessageQueryType>): Promise<CommunityMessagePreviewType[]> => {
-      const context = ensureContext();
-      const result = await listCommunityMessages({
-        client: apiClient,
-        path: { accountId: context.accountId, seasonId: context.seasonId },
-        query: buildQuery(query),
-        throwOnError: false,
-      });
+  const fetchCommunityMessages = async (
+    query?: Partial<CommunityMessageQueryType>,
+  ): Promise<CommunityMessagePreviewType[]> => {
+    const context = ensureContext();
+    const result = await listCommunityMessages({
+      client: apiClient,
+      path: { accountId: context.accountId, seasonId: context.seasonId },
+      query: buildQuery(query),
+      throwOnError: false,
+    });
 
-      const payload = unwrapApiResult(result, 'Failed to load community messages');
-      return payload.messages;
-    },
-    [apiClient, ensureContext],
-  );
+    const payload = unwrapApiResult(result, 'Failed to load community messages');
+    return payload.messages;
+  };
 
-  const fetchCommunityChannels = useCallback(
-    async (query?: Partial<CommunityChannelQueryType>): Promise<CommunityChannelType[]> => {
-      const context = ensureContext();
-      const queryParams =
-        query?.teamSeasonId && `${query.teamSeasonId}`.trim().length > 0
-          ? { teamSeasonId: query.teamSeasonId }
-          : undefined;
-      const result = await listSocialCommunityChannels({
-        client: apiClient,
-        path: { accountId: context.accountId, seasonId: context.seasonId },
-        ...(queryParams ? { query: queryParams } : {}),
-        throwOnError: false,
-      });
+  const fetchCommunityChannels = async (
+    query?: Partial<CommunityChannelQueryType>,
+  ): Promise<CommunityChannelType[]> => {
+    const context = ensureContext();
+    const queryParams =
+      query?.teamSeasonId && `${query.teamSeasonId}`.trim().length > 0
+        ? { teamSeasonId: query.teamSeasonId }
+        : undefined;
+    const result = await listSocialCommunityChannels({
+      client: apiClient,
+      path: { accountId: context.accountId, seasonId: context.seasonId },
+      ...(queryParams ? { query: queryParams } : {}),
+      throwOnError: false,
+    });
 
-      const payload = unwrapApiResult(result, 'Failed to load community channels');
-      return payload.channels;
-    },
-    [apiClient, ensureContext],
-  );
+    const payload = unwrapApiResult(result, 'Failed to load community channels');
+    return payload.channels;
+  };
 
   return {
     fetchFeed,

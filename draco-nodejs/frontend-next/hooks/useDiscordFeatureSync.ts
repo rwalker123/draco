@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
 import type {
   DiscordFeatureSyncFeatureType,
   DiscordFeatureSyncStatusType,
@@ -11,25 +10,19 @@ import { DiscordIntegrationService } from '@/services/discordIntegrationService'
 
 export const useDiscordFeatureSync = () => {
   const apiClient = useApiClient();
-  const service = useMemo(() => new DiscordIntegrationService(apiClient), [apiClient]);
+  const service = new DiscordIntegrationService(apiClient);
 
-  const fetchStatus = useCallback(
-    (
-      accountId: string,
-      feature: DiscordFeatureSyncFeatureType,
-    ): Promise<DiscordFeatureSyncStatusType> => service.getFeatureSyncStatus(accountId, feature),
-    [service],
-  );
+  const fetchStatus = (
+    accountId: string,
+    feature: DiscordFeatureSyncFeatureType,
+  ): Promise<DiscordFeatureSyncStatusType> => service.getFeatureSyncStatus(accountId, feature);
 
-  const updateStatus = useCallback(
-    (
-      accountId: string,
-      feature: DiscordFeatureSyncFeatureType,
-      payload: DiscordFeatureSyncUpdateType,
-    ): Promise<DiscordFeatureSyncStatusType> =>
-      service.updateFeatureSync(accountId, feature, payload),
-    [service],
-  );
+  const updateStatus = (
+    accountId: string,
+    feature: DiscordFeatureSyncFeatureType,
+    payload: DiscordFeatureSyncUpdateType,
+  ): Promise<DiscordFeatureSyncStatusType> =>
+    service.updateFeatureSync(accountId, feature, payload);
 
   return {
     fetchStatus,

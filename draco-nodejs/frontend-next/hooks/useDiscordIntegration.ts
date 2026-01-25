@@ -1,28 +1,21 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
 import type { DiscordLinkStatusType, DiscordOAuthStartResponseType } from '@draco/shared-schemas';
 import { useApiClient } from './useApiClient';
 import { DiscordIntegrationService } from '@/services/discordIntegrationService';
 
 export const useDiscordIntegration = () => {
   const apiClient = useApiClient();
-  const service = useMemo(() => new DiscordIntegrationService(apiClient), [apiClient]);
+  const service = new DiscordIntegrationService(apiClient);
 
-  const getLinkStatus = useCallback(
-    (accountId: string): Promise<DiscordLinkStatusType> => service.getLinkStatus(accountId),
-    [service],
-  );
+  const getLinkStatus = (accountId: string): Promise<DiscordLinkStatusType> =>
+    service.getLinkStatus(accountId);
 
-  const startLink = useCallback(
-    (accountId: string): Promise<DiscordOAuthStartResponseType> => service.startLink(accountId),
-    [service],
-  );
+  const startLink = (accountId: string): Promise<DiscordOAuthStartResponseType> =>
+    service.startLink(accountId);
 
-  const unlinkDiscord = useCallback(
-    (accountId: string): Promise<DiscordLinkStatusType> => service.unlinkAccount(accountId),
-    [service],
-  );
+  const unlinkDiscord = (accountId: string): Promise<DiscordLinkStatusType> =>
+    service.unlinkAccount(accountId);
 
   return {
     getLinkStatus,

@@ -1,16 +1,10 @@
 'use client';
-import { useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { createApiClient } from '../lib/apiClientFactory';
 
 export const useApiClient = () => {
   const { token } = useAuth();
 
-  const apiClient = useMemo(() => {
-    return createApiClient({
-      token: token || undefined,
-    });
-  }, [token]);
-
-  return apiClient;
+  // createApiClient caches by token, so this returns the same instance
+  return createApiClient({ token: token || undefined });
 };

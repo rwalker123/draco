@@ -24,7 +24,11 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
-import { getPublicTeamRosterMembers } from '@draco/shared-api-client';
+import {
+  getPublicTeamRosterMembers,
+  getTeamRosterMembers as apiGetTeamRosterMembers,
+  listTeamManagers as apiListTeamManagers,
+} from '@draco/shared-api-client';
 import WidgetShell from '@/components/ui/WidgetShell';
 import type {
   AccountSettingKey,
@@ -32,6 +36,8 @@ import type {
   ContactType,
   PublicRosterMemberType,
   PublicTeamRosterResponseType,
+  TeamManagerType,
+  TeamRosterMembersType,
 } from '@draco/shared-schemas';
 import PhotoDeleteDialog from '@/components/users/PhotoDeleteDialog';
 
@@ -50,15 +56,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   canViewSensitiveDetails = false,
   canEditPhotos = false,
 }) => {
-  const {
-    rosterData,
-    managers,
-    loading,
-    error,
-    fetchRosterData,
-    fetchManagers,
-    setError: setRosterError,
-  } = useRosterDataManager({
+  const { setError: setRosterError } = useRosterDataManager({
     accountId,
     seasonId,
     teamSeasonId,
@@ -75,14 +73,65 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   const [photoDialogOpen, setPhotoDialogOpen] = React.useState(false);
   const [selectedContact, setSelectedContact] = React.useState<BaseContactType | null>(null);
   const [deleteContactId, setDeleteContactId] = React.useState<string | null>(null);
+  const [privateRosterData, setPrivateRosterData] = React.useState<TeamRosterMembersType | null>(
+    null,
+  );
+  const [privateManagers, setPrivateManagers] = React.useState<TeamManagerType[]>([]);
+  const [privateLoading, setPrivateLoading] = React.useState(false);
+  const [privateError, setPrivateError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!hasPrivateAccess) {
+    if (!hasPrivateAccess || !token) {
       return;
     }
-    fetchRosterData();
-    fetchManagers();
-  }, [fetchManagers, fetchRosterData, hasPrivateAccess]);
+
+    let cancelled = false;
+
+    const loadPrivateRoster = async () => {
+      setPrivateLoading(true);
+      setPrivateError(null);
+      try {
+        const [rosterResult, managersResult] = await Promise.all([
+          apiGetTeamRosterMembers({
+            client: apiClient,
+            path: { accountId, seasonId, teamSeasonId },
+            throwOnError: false,
+          }),
+          apiListTeamManagers({
+            client: apiClient,
+            path: { accountId, seasonId, teamSeasonId },
+            throwOnError: false,
+          }),
+        ]);
+
+        if (cancelled) return;
+
+        const roster = unwrapApiResult(
+          rosterResult,
+          'Failed to fetch roster data',
+        ) as TeamRosterMembersType;
+        const managersData = (unwrapApiResult(managersResult, 'Failed to fetch managers') ??
+          []) as TeamManagerType[];
+
+        setPrivateRosterData(roster);
+        setPrivateManagers(managersData);
+      } catch (err) {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : 'Failed to load roster';
+        setPrivateError(message);
+      } finally {
+        if (!cancelled) {
+          setPrivateLoading(false);
+        }
+      }
+    };
+
+    loadPrivateRoster();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, seasonId, teamSeasonId, hasPrivateAccess, token, apiClient]);
 
   React.useEffect(() => {
     if (hasPrivateAccess) {
@@ -148,8 +197,12 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   const showGamesPlayed = getSettingValue('TrackGamesPlayed');
   const canShowContactInfo = canViewSensitiveDetails && showContactInfoOnRoster;
 
+  const effectiveRosterData = hasPrivateAccess ? privateRosterData : null;
+  const effectiveLoading = hasPrivateAccess ? privateLoading : publicLoading;
+  const effectiveError = hasPrivateAccess ? privateError : publicError;
+
   const activePlayers = React.useMemo(() => {
-    const members = rosterData?.rosterMembers ?? [];
+    const members = effectiveRosterData?.rosterMembers ?? [];
     return [...members]
       .filter((member) => !member.inactive)
       .sort((a, b) => {
@@ -167,7 +220,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
         const bMiddle = b.player.contact.middleName || '';
         return aMiddle.localeCompare(bMiddle);
       });
-  }, [rosterData?.rosterMembers]);
+  }, [effectiveRosterData?.rosterMembers]);
 
   const publicPlayers = React.useMemo(() => {
     const members: PublicRosterMemberType[] = publicRoster?.rosterMembers ?? [];
@@ -189,8 +242,9 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   }, [publicRoster?.rosterMembers]);
 
   const managerIds = React.useMemo(() => {
+    const managers = hasPrivateAccess ? privateManagers : [];
     return new Set(managers.map((manager) => manager.contact.id));
-  }, [managers]);
+  }, [hasPrivateAccess, privateManagers]);
 
   const openPhotoDialog = React.useCallback(
     (contact: BaseContactType) => {
@@ -208,35 +262,57 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
     setSelectedContact(null);
   }, []);
 
-  const handlePhotoUpdated = React.useCallback(
-    async (_updatedContact: ContactType) => {
-      await fetchRosterData();
-      await fetchManagers();
-      closePhotoDialog();
-    },
-    [closePhotoDialog, fetchManagers, fetchRosterData],
-  );
+  const refetchPrivateRoster = async () => {
+    try {
+      const [rosterResult, managersResult] = await Promise.all([
+        apiGetTeamRosterMembers({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          throwOnError: false,
+        }),
+        apiListTeamManagers({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          throwOnError: false,
+        }),
+      ]);
 
-  const openDeletePhotoDialog = React.useCallback(
-    (contact: BaseContactType) => {
-      if (!allowPhotoEdit) {
-        return;
-      }
-      setSelectedContact(contact);
-      setDeleteContactId(contact.id);
-    },
-    [allowPhotoEdit],
-  );
+      const roster = unwrapApiResult(
+        rosterResult,
+        'Failed to fetch roster data',
+      ) as TeamRosterMembersType;
+      const managersData = (unwrapApiResult(managersResult, 'Failed to fetch managers') ??
+        []) as TeamManagerType[];
 
-  const closeDeletePhotoDialog = React.useCallback(() => {
+      setPrivateRosterData(roster);
+      setPrivateManagers(managersData);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to reload roster';
+      setPrivateError(message);
+    }
+  };
+
+  const handlePhotoUpdated = async (_updatedContact: ContactType) => {
+    await refetchPrivateRoster();
+    closePhotoDialog();
+  };
+
+  const openDeletePhotoDialog = (contact: BaseContactType) => {
+    if (!allowPhotoEdit) {
+      return;
+    }
+    setSelectedContact(contact);
+    setDeleteContactId(contact.id);
+  };
+
+  const closeDeletePhotoDialog = () => {
     setDeleteContactId(null);
-  }, []);
+  };
 
-  const handlePhotoDeleted = React.useCallback(async () => {
-    await fetchRosterData();
-    await fetchManagers();
+  const handlePhotoDeleted = async () => {
+    await refetchPrivateRoster();
     closeDeletePhotoDialog();
-  }, [closeDeletePhotoDialog, fetchManagers, fetchRosterData]);
+  };
 
   const renderPrivateTable = () => (
     <TableContainer sx={{ width: 'fit-content', maxWidth: '100%' }}>
@@ -363,11 +439,9 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   );
 
   const renderContent = () => {
-    const isLoading = hasPrivateAccess ? loading : publicLoading;
-    const currentError = hasPrivateAccess ? error : publicError;
     const playerCount = hasPrivateAccess ? activePlayers.length : publicPlayers.length;
 
-    if (isLoading) {
+    if (effectiveLoading) {
       return (
         <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <CircularProgress size={24} />
@@ -375,10 +449,10 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
       );
     }
 
-    if (currentError) {
+    if (effectiveError) {
       return (
         <Alert severity="error" sx={{ m: 2 }}>
-          {currentError}
+          {effectiveError}
         </Alert>
       );
     }

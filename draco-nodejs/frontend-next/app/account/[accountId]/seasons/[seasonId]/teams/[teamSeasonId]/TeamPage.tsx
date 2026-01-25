@@ -14,7 +14,11 @@ import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import Container from '@mui/material/Container';
 import TeamAvatar from '../../../../../../../components/TeamAvatar';
-import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
+import {
+  getTeamSeasonDetails as apiGetTeamSeasonDetails,
+  getAccountDiscordLinkStatus as apiGetDiscordLinkStatus,
+} from '@draco/shared-api-client';
+import type { TeamSeasonRecordType } from '@draco/shared-schemas';
 import SponsorCard from '../../../../../../../components/sponsors/SponsorCard';
 import { SponsorService } from '../../../../../../../services/sponsorService';
 import {
@@ -54,7 +58,6 @@ import InformationWidget from '@/components/information/InformationWidget';
 import TeamForumWidget from '@/components/team/TeamForumWidget';
 import CommunityChatsWidget from '@/components/social/CommunityChatsWidget';
 import Link from '@mui/material/Link';
-import { useDiscordIntegration } from '../../../../../../../hooks/useDiscordIntegration';
 import type { DiscordLinkStatusType } from '@draco/shared-schemas';
 
 interface TeamPageProps {
@@ -114,7 +117,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     () => new AnnouncementService(token, apiClient),
     [token, apiClient],
   );
-  const { getLinkStatus: getDiscordLinkStatus } = useDiscordIntegration();
   const [discordLinkStatus, setDiscordLinkStatus] = React.useState<DiscordLinkStatusType | null>(
     null,
   );
@@ -122,6 +124,48 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   React.useEffect(() => {
     apiClientRef.current = apiClient;
   }, [apiClient]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const loadTeamData = async () => {
+      try {
+        const result = await apiGetTeamSeasonDetails({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          throwOnError: false,
+        });
+        if (cancelled) return;
+        const data = unwrapApiResult<TeamSeasonRecordType>(
+          result,
+          'Failed to fetch team information',
+        );
+        setTeamData({
+          teamName: data.name ?? 'Unknown Team',
+          leagueName: data.league?.name ?? '',
+          seasonName: data.season?.name ?? '',
+          accountName: '',
+          logoUrl: data.team.logoUrl ?? undefined,
+          record: {
+            wins: data.record.w,
+            losses: data.record.l,
+            ties: data.record.t,
+          },
+          teamId: data.team.id,
+          leagueId: data.league?.id ? String(data.league.id) : undefined,
+          youtubeUserId: data.team.youtubeUserId ?? null,
+        });
+      } catch {
+        // Team data is optional for page rendering
+      }
+    };
+
+    loadTeamData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, seasonId, teamSeasonId, apiClient]);
 
   React.useEffect(() => {
     if (!accountId || !seasonId || !teamSeasonId) {
@@ -251,10 +295,17 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
 
     const fetchDiscordStatus = async () => {
       try {
-        const status = await getDiscordLinkStatus(accountId);
-        if (!ignore) {
-          setDiscordLinkStatus(status);
-        }
+        const result = await apiGetDiscordLinkStatus({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+        });
+        if (ignore) return;
+        const status = unwrapApiResult<DiscordLinkStatusType>(
+          result,
+          'Failed to get Discord link status',
+        );
+        setDiscordLinkStatus(status);
       } catch {
         if (!ignore) {
           setDiscordLinkStatus(null);
@@ -267,7 +318,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     return () => {
       ignore = true;
     };
-  }, [token, accountId, canViewCommunityChats, getDiscordLinkStatus]);
+  }, [token, accountId, canViewCommunityChats, apiClient]);
 
   const showDiscordLinkAlert =
     token &&
@@ -653,16 +704,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         </Box>
       </AccountPageHeader>
       <AdPlacement />
-
-      {/* Hidden TeamInfoCard to load data */}
-      <div style={{ display: 'none' }}>
-        <TeamInfoCard
-          accountId={accountId}
-          seasonId={seasonId}
-          teamSeasonId={teamSeasonId}
-          onTeamDataLoaded={setTeamData}
-        />
-      </div>
 
       <Container maxWidth="xl" disableGutters sx={{ py: 4, px: { xs: 1, sm: 1.5 } }}>
         <Box

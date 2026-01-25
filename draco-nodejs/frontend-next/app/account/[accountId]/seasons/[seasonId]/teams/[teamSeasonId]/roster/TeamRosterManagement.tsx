@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -108,16 +108,52 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     teamSeasonId,
   });
 
+  // Refs for unstable functions from useRosterDataManager
+  const fetchRosterDataRef = useRef(fetchRosterData);
+  const fetchSeasonDataRef = useRef(fetchSeasonData);
+  const fetchLeagueDataRef = useRef(fetchLeagueData);
+  const fetchManagersRef = useRef(fetchManagers);
+  const clearErrorRef = useRef(clearError);
+  const clearSuccessMessageRef = useRef(clearSuccessMessage);
+  const setSuccessMessageRef = useRef(setSuccessMessage);
+  const setErrorRef = useRef(setError);
+  const signPlayerRef = useRef(signPlayer);
+  const deleteContactPhotoRef = useRef(deleteContactPhoto);
+  const setRosterDataRef = useRef(setRosterData);
+
+  useEffect(() => {
+    fetchRosterDataRef.current = fetchRosterData;
+    fetchSeasonDataRef.current = fetchSeasonData;
+    fetchLeagueDataRef.current = fetchLeagueData;
+    fetchManagersRef.current = fetchManagers;
+    clearErrorRef.current = clearError;
+    clearSuccessMessageRef.current = clearSuccessMessage;
+    setSuccessMessageRef.current = setSuccessMessage;
+    setErrorRef.current = setError;
+    signPlayerRef.current = signPlayer;
+    deleteContactPhotoRef.current = deleteContactPhoto;
+    setRosterDataRef.current = setRosterData;
+  }, [
+    fetchRosterData,
+    fetchSeasonData,
+    fetchLeagueData,
+    fetchManagers,
+    clearError,
+    clearSuccessMessage,
+    setSuccessMessage,
+    setError,
+    signPlayer,
+    deleteContactPhoto,
+    setRosterData,
+  ]);
+
   const { settings: accountSettings } = useAccountSettings(accountId);
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
 
-  const getSettingValue = useCallback(
-    (key: AccountSettingKey) => {
-      const state = accountSettings?.find((setting) => setting.definition.key === key);
-      return Boolean(state?.effectiveValue ?? state?.value);
-    },
-    [accountSettings],
-  );
+  const getSettingValue = (key: AccountSettingKey) => {
+    const state = accountSettings?.find((setting) => setting.definition.key === key);
+    return Boolean(state?.effectiveValue ?? state?.value);
+  };
 
   const trackWaiverEnabled = getSettingValue('TrackWaiver');
   const showWaiverStatus = getSettingValue('ShowWaiver');
@@ -171,13 +207,13 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const [autoSignToRoster, setAutoSignToRoster] = useState(false);
   const [editingContact, setEditingContact] = useState<BaseContactType | null>(null);
 
-  // Initialize data on mount
+  // Initialize data on mount and when IDs change
   useEffect(() => {
-    fetchRosterData();
-    fetchSeasonData();
-    fetchLeagueData();
-    fetchManagers();
-  }, [fetchRosterData, fetchSeasonData, fetchLeagueData, fetchManagers]);
+    fetchRosterDataRef.current();
+    fetchSeasonDataRef.current();
+    fetchLeagueDataRef.current();
+    fetchManagersRef.current();
+  }, [accountId, seasonId, teamSeasonId]);
 
   // Cleanup timeout on unmount or dialog close
   useEffect(() => {
@@ -187,21 +223,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       }
     };
   }, [signingTimeout]);
-
-  useEffect(() => {
-    fetchRosterData();
-    fetchSeasonData();
-    fetchLeagueData();
-    fetchManagers();
-  }, [
-    fetchRosterData,
-    fetchSeasonData,
-    fetchLeagueData,
-    fetchManagers,
-    accountId,
-    seasonId,
-    teamSeasonId,
-  ]);
 
   // Removed: Initial fetch of all available players - now using dynamic search
 
@@ -280,10 +301,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   };
 
   // Clear messages
-  const clearMessages = useCallback(() => {
-    clearError();
-    clearSuccessMessage();
-  }, [clearError, clearSuccessMessage]);
+  const clearMessages = () => {
+    clearErrorRef.current();
+    clearSuccessMessageRef.current();
+  };
 
   // Close sign player dialog
   const closeSignPlayerDialog = () => {
@@ -324,9 +345,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       setIsCreatingNewPlayer(false);
       setAutoSignToRoster(false);
       setEditingContact(null);
-      clearMessages();
+      clearErrorRef.current();
+      clearSuccessMessageRef.current();
     }
-  }, [editPlayerDialogOpen, clearMessages]);
+  }, [editPlayerDialogOpen]);
 
   // Open sign player dialog
   const openSignPlayerDialog = () => {
@@ -366,123 +388,117 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setSignPlayerDialogOpen(true);
   };
 
-  const handleRosterDialogSuccess = useCallback(
-    async (result: RosterPlayerMutationResult) => {
-      await fetchRosterData();
+  const handleRosterDialogSuccess = async (result: RosterPlayerMutationResult) => {
+    const contactName = getContactDisplayName(result.member.player.contact);
 
-      const contactName = getContactDisplayName(result.member.player.contact);
-      const message =
-        result.type === 'sign'
-          ? `Player "${contactName}" signed to roster successfully`
-          : `Roster information saved for "${contactName}"`;
-
-      clearError();
-      setSuccessMessage(message);
-    },
-    [fetchRosterData, clearError, setSuccessMessage],
-  );
+    if (result.type === 'sign') {
+      // For new signings, fetch full roster data since a new member was added
+      await fetchRosterDataRef.current();
+      clearErrorRef.current();
+      setSuccessMessageRef.current(`Player "${contactName}" signed to roster successfully`);
+    } else {
+      // For updates, only update the specific member in local state
+      const updatedRosterData: TeamRosterMembersType = {
+        ...rosterData,
+        rosterMembers: rosterData.rosterMembers.map((member) =>
+          member.id === result.member.id ? result.member : member,
+        ),
+      };
+      setRosterDataRef.current(updatedRosterData);
+      clearErrorRef.current();
+      setSuccessMessageRef.current(`Roster information saved for "${contactName}"`);
+    }
+  };
 
   // Enhanced contact success handler for new EditContactDialog
-  const handleEnhancedContactSuccess = useCallback(
-    async (result: { message: string; contact: ContactType; isCreate: boolean }) => {
-      saveScrollPosition();
+  const handleEnhancedContactSuccess = async (result: {
+    message: string;
+    contact: ContactType;
+    isCreate: boolean;
+  }) => {
+    saveScrollPosition();
 
-      try {
-        if (result.isCreate && autoSignToRoster) {
-          // Handle automatic roster signup for new players
-          // This implements the same logic as the original createContact function
-          const signRosterData: SignRosterMemberType = {
-            submittedWaiver: false,
-            player: {
-              submittedDriversLicense: false,
-              firstYear: new Date().getFullYear(),
-              contact: { id: result.contact.id },
-            },
+    try {
+      if (result.isCreate && autoSignToRoster) {
+        // Handle automatic roster signup for new players
+        // This implements the same logic as the original createContact function
+        const signRosterData: SignRosterMemberType = {
+          submittedWaiver: false,
+          player: {
+            submittedDriversLicense: false,
+            firstYear: new Date().getFullYear(),
+            contact: { id: result.contact.id },
+          },
+        };
+
+        try {
+          // Use the existing signPlayer function from useRosterDataManager
+          await signPlayerRef.current(result.contact.id, signRosterData);
+
+          setSuccessMessageRef.current(
+            `Player "${result.contact.firstName} ${result.contact.lastName}" created and signed to roster successfully`,
+          );
+        } catch (signError) {
+          // If roster signup fails, still show contact creation success
+          setSuccessMessageRef.current(
+            `Player "${result.contact.firstName} ${result.contact.lastName}" created successfully, but failed to sign to roster`,
+          );
+          console.error('Failed to sign player to roster:', signError);
+        }
+      } else {
+        // For edit operations or create without roster signup
+        if (result.isCreate) {
+          // Refresh roster data to show the new contact in available players
+          await fetchRosterDataRef.current();
+          setSuccessMessageRef.current(result.message);
+        } else {
+          // For edit operations, update the contact in the current roster data optimistically
+          // This implements the same logic as the original updateContact function
+          const updatedRosterData: TeamRosterMembersType = {
+            ...rosterData,
+            rosterMembers: rosterData.rosterMembers.map((member) =>
+              member.player.contact.id === result.contact.id
+                ? {
+                    ...member,
+                    player: {
+                      ...member.player,
+                      contact: {
+                        ...member.player.contact,
+                        firstName: result.contact.firstName,
+                        lastName: result.contact.lastName,
+                        middleName: result.contact.middleName,
+                        email: result.contact.email,
+                        photoUrl: result.contact.photoUrl,
+                        contactDetails: result.contact.contactDetails,
+                      },
+                    },
+                  }
+                : member,
+            ),
           };
 
-          try {
-            // Use the existing signPlayer function from useRosterDataManager
-            await signPlayer(result.contact.id, signRosterData);
-
-            setSuccessMessage(
-              `Player "${result.contact.firstName} ${result.contact.lastName}" created and signed to roster successfully`,
-            );
-          } catch (signError) {
-            // If roster signup fails, still show contact creation success
-            setSuccessMessage(
-              `Player "${result.contact.firstName} ${result.contact.lastName}" created successfully, but failed to sign to roster`,
-            );
-            console.error('Failed to sign player to roster:', signError);
-          }
-        } else {
-          // For edit operations or create without roster signup
-          if (result.isCreate) {
-            // Refresh roster data to show the new contact in available players
-            await fetchRosterData();
-            setSuccessMessage(result.message);
-          } else {
-            // For edit operations, update the contact in the current roster data optimistically
-            // This implements the same logic as the original updateContact function
-            const updatedRosterData: TeamRosterMembersType = {
-              ...rosterData,
-              rosterMembers: rosterData.rosterMembers.map((member) =>
-                member.player.contact.id === result.contact.id
-                  ? {
-                      ...member,
-                      player: {
-                        ...member.player,
-                        contact: {
-                          ...member.player.contact,
-                          firstName: result.contact.firstName,
-                          lastName: result.contact.lastName,
-                          middleName: result.contact.middleName,
-                          email: result.contact.email,
-                          photoUrl: result.contact.photoUrl,
-                          contactDetails: result.contact.contactDetails,
-                        },
-                      },
-                    }
-                  : member,
-              ),
-            };
-
-            // Update the roster data state (same pattern as original)
-            setRosterData(updatedRosterData);
-            setSuccessMessage(result.message);
-          }
+          // Update the roster data state (same pattern as original)
+          setRosterDataRef.current(updatedRosterData);
+          setSuccessMessageRef.current(result.message);
         }
-
-        // Dialog closes itself after calling onSuccess - no need to close here
-      } catch (error) {
-        setError(error instanceof Error ? error.message : 'Failed to update roster');
-      } finally {
-        restoreScrollPosition();
       }
-    },
-    [
-      autoSignToRoster,
-      saveScrollPosition,
-      restoreScrollPosition,
-      setSuccessMessage,
-      setError,
-      signPlayer,
-      fetchRosterData,
-      rosterData,
-      setRosterData,
-    ],
-  );
+
+      // Dialog closes itself after calling onSuccess - no need to close here
+    } catch (error) {
+      setErrorRef.current(error instanceof Error ? error.message : 'Failed to update roster');
+    } finally {
+      restoreScrollPosition();
+    }
+  };
 
   // format helpers moved to reusable formatter module
 
-  const handleManagerAssigned = useCallback(
-    (result: { message: string; managerId: string }) => {
-      setSuccessMessage(result.message);
-      setAddManagerDialogOpen(false);
-    },
-    [setSuccessMessage],
-  );
+  const handleManagerAssigned = (result: { message: string; managerId: string }) => {
+    setSuccessMessageRef.current(result.message);
+    setAddManagerDialogOpen(false);
+  };
 
-  const handleExportRoster = useCallback(async () => {
+  const handleExportRoster = async () => {
     try {
       setFormLoading(true);
       const result = await exportTeamRoster({
@@ -497,32 +513,26 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       const sanitizedName = teamName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
       downloadBlob(blob, `${sanitizedName}-roster.csv`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to export roster');
+      setErrorRef.current(err instanceof Error ? err.message : 'Failed to export roster');
     } finally {
       setFormLoading(false);
     }
-  }, [apiClient, accountId, seasonId, teamSeasonId, rosterData?.teamSeason?.name, setError]);
+  };
 
-  const handleDeleteSuccess = useCallback(
-    (result: { message: string; memberId: string }) => {
-      setSuccessMessage(result.message);
-      setDeleteDialogOpen(false);
-      setPlayerToDelete(null);
-    },
-    [setSuccessMessage],
-  );
+  const handleDeleteSuccess = (result: { message: string; memberId: string }) => {
+    setSuccessMessageRef.current(result.message);
+    setDeleteDialogOpen(false);
+    setPlayerToDelete(null);
+  };
 
-  // Memoized handlers to prevent UserAvatar re-renders
-  const handleEditDialog = useCallback((member: RosterMemberType) => {
+  // Handlers for UserAvatar
+  const handleEditDialog = (member: RosterMemberType) => {
     return () => openEditDialog(member);
-  }, []);
+  };
 
-  const handlePhotoDelete = useCallback(
-    (contactId: string) => {
-      return deleteContactPhoto(contactId);
-    },
-    [deleteContactPhoto],
-  );
+  const handlePhotoDelete = (contactId: string) => {
+    return deleteContactPhotoRef.current(contactId);
+  };
 
   // Memoized player avatar component to prevent unnecessary re-renders
   const PlayerAvatar = useMemo(() => {

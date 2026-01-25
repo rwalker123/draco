@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -91,22 +91,32 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
   const { searchAvailablePlayers, loadContactRoster, signRosterPlayer, updateRosterPlayer } =
     useRosterPlayer({ accountId, seasonId, teamSeasonId });
 
-  const getDefaultFormValues = useCallback(
-    (): SignRosterMemberType => ({
-      playerNumber: undefined,
-      submittedWaiver: false,
-      player: {
-        submittedDriversLicense: false,
-        firstYear: new Date().getFullYear(),
-        contact: {
-          id: '',
-        },
-      },
-    }),
-    [],
-  );
+  // Refs for unstable functions from useRosterPlayer
+  const searchAvailablePlayersRef = useRef(searchAvailablePlayers);
+  const loadContactRosterRef = useRef(loadContactRoster);
+  const signRosterPlayerRef = useRef(signRosterPlayer);
+  const updateRosterPlayerRef = useRef(updateRosterPlayer);
 
-  const defaultFormValues = useMemo(() => getDefaultFormValues(), [getDefaultFormValues]);
+  useEffect(() => {
+    searchAvailablePlayersRef.current = searchAvailablePlayers;
+    loadContactRosterRef.current = loadContactRoster;
+    signRosterPlayerRef.current = signRosterPlayer;
+    updateRosterPlayerRef.current = updateRosterPlayer;
+  }, [searchAvailablePlayers, loadContactRoster, signRosterPlayer, updateRosterPlayer]);
+
+  const getDefaultFormValues = (): SignRosterMemberType => ({
+    playerNumber: undefined,
+    submittedWaiver: false,
+    player: {
+      submittedDriversLicense: false,
+      firstYear: new Date().getFullYear(),
+      contact: {
+        id: '',
+      },
+    },
+  });
+
+  const defaultFormValues = useMemo(() => getDefaultFormValues(), []);
 
   const formResolver = useMemo(
     () =>
@@ -152,7 +162,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
       setSelectedPlayer(null);
       setValue('player.contact', { id: '' }, { shouldValidate: false, shouldDirty: false });
     }
-  }, [open, initialRosterData, initialPlayer, reset, getDefaultFormValues, setValue]);
+  }, [open, initialRosterData, initialPlayer, reset, setValue]);
 
   // Search execution with AbortController for proper cancellation
   useEffect(() => {
@@ -211,7 +221,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
         }
 
         // Execute the search
-        const players = await searchAvailablePlayers(firstName, lastName);
+        const players = await searchAvailablePlayersRef.current(firstName, lastName);
 
         // Only update state if this search wasn't cancelled
         if (!abortControllerRef.current?.signal.aborted) {
@@ -243,7 +253,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
         abortControllerRef.current.abort();
       }
     };
-  }, [debouncedSearchInput, open, isSigningNewPlayer, searchAvailablePlayers]);
+  }, [debouncedSearchInput, open, isSigningNewPlayer]);
 
   // Clear search state when dialog closes
   useEffect(() => {
@@ -264,166 +274,150 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-  }, [open, reset, getDefaultFormValues]);
+  }, [open, reset]);
 
   // Handle player selection
-  const handlePlayerSelect = useCallback(
-    async (newValue: BaseContactType | null) => {
-      if (newValue) {
-        setSelectedPlayer(newValue);
-        setLoadingPlayerRoster(true);
+  const handlePlayerSelect = async (newValue: BaseContactType | null) => {
+    if (newValue) {
+      setSelectedPlayer(newValue);
+      setLoadingPlayerRoster(true);
 
-        try {
-          const playerRosterData = await loadContactRoster(newValue.id);
-          setValue('player.contact', { id: newValue.id }, { shouldDirty: true, shouldTouch: true });
-          setValue('player.firstYear', playerRosterData?.firstYear ?? new Date().getFullYear(), {
-            shouldDirty: true,
-            shouldTouch: true,
-          });
-          setValue(
-            'player.submittedDriversLicense',
-            playerRosterData?.submittedDriversLicense ?? false,
-            { shouldDirty: true, shouldTouch: true },
-          );
-          setError(null);
-        } catch (error) {
-          // Fall back to defaults if fetch fails
-          console.warn('Failed to load player roster data:', error);
-          setError(
-            error instanceof Error
-              ? error.message
-              : 'Failed to load existing roster information for this player',
-          );
-          setValue('player.contact', { id: newValue.id }, { shouldDirty: true, shouldTouch: true });
-          setValue('player.firstYear', new Date().getFullYear(), {
-            shouldDirty: true,
-            shouldTouch: true,
-          });
-          setValue('player.submittedDriversLicense', false, {
-            shouldDirty: true,
-            shouldTouch: true,
-          });
-        } finally {
-          setLoadingPlayerRoster(false);
-        }
-      } else {
-        setSelectedPlayer(null);
+      try {
+        const playerRosterData = await loadContactRosterRef.current(newValue.id);
+        setValue('player.contact', { id: newValue.id }, { shouldDirty: true, shouldTouch: true });
+        setValue('player.firstYear', playerRosterData?.firstYear ?? new Date().getFullYear(), {
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+        setValue(
+          'player.submittedDriversLicense',
+          playerRosterData?.submittedDriversLicense ?? false,
+          { shouldDirty: true, shouldTouch: true },
+        );
+        setError(null);
+      } catch (error) {
+        // Fall back to defaults if fetch fails
+        console.warn('Failed to load player roster data:', error);
+        setError(
+          error instanceof Error
+            ? error.message
+            : 'Failed to load existing roster information for this player',
+        );
+        setValue('player.contact', { id: newValue.id }, { shouldDirty: true, shouldTouch: true });
+        setValue('player.firstYear', new Date().getFullYear(), {
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+        setValue('player.submittedDriversLicense', false, {
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+      } finally {
         setLoadingPlayerRoster(false);
-        reset(getDefaultFormValues());
       }
-    },
-    [getDefaultFormValues, loadContactRoster, reset, setValue],
-  );
+    } else {
+      setSelectedPlayer(null);
+      setLoadingPlayerRoster(false);
+      reset(getDefaultFormValues());
+    }
+  };
 
   // Reset form for next player (used in multiple sign mode)
-  const resetFormForNextPlayer = useCallback(() => {
+  const resetFormForNextPlayer = () => {
     setSelectedPlayer(null);
     setSearchInput('');
     setAvailablePlayers([]);
     setLoadingPlayerRoster(false);
     setError(null);
     reset(getDefaultFormValues());
-  }, [getDefaultFormValues, reset]);
+  };
 
   // Handle form submission
-  const onValidSubmit = useCallback(
-    async (values: SignRosterMemberType) => {
-      if (isSigningNewPlayer) {
-        if (!selectedPlayer) {
-          setError('Select a player before signing them to the roster');
-          return;
-        }
-
-        const formContactId = 'id' in values.player.contact ? values.player.contact.id : '';
-        const contactId =
-          'contact' in selectedPlayer
-            ? selectedPlayer.contact.id
-            : (selectedPlayer.id ?? formContactId);
-
-        if (!contactId) {
-          setError('Selected player is missing a contact identifier');
-          return;
-        }
-
-        try {
-          setError(null);
-          const payload: SignRosterMemberType = {
-            ...values,
-            player: {
-              ...values.player,
-              contact: { id: contactId },
-            },
-          };
-          const member = await signRosterPlayer(contactId, payload);
-          await onSuccess?.({ type: 'sign', member });
-
-          if (signMultiplePlayers) {
-            resetFormForNextPlayer();
-          } else {
-            onClose();
-          }
-        } catch (error) {
-          setError(error instanceof Error ? error.message : 'Failed to sign player');
-        }
+  const onValidSubmit = async (values: SignRosterMemberType) => {
+    if (isSigningNewPlayer) {
+      if (!selectedPlayer) {
+        setError('Select a player before signing them to the roster');
         return;
       }
 
-      if (!rosterMemberId) {
-        setError('Unable to update roster member: missing roster member identifier');
+      const formContactId = 'id' in values.player.contact ? values.player.contact.id : '';
+      const contactId =
+        'contact' in selectedPlayer
+          ? selectedPlayer.contact.id
+          : (selectedPlayer.id ?? formContactId);
+
+      if (!contactId) {
+        setError('Selected player is missing a contact identifier');
         return;
       }
 
       try {
-        if (!isRosterPlayer(selectedPlayer)) {
-          setError('Unable to update roster member: missing existing player details');
-          return;
-        }
-
         setError(null);
+        const payload: SignRosterMemberType = {
+          ...values,
+          player: {
+            ...values.player,
+            contact: { id: contactId },
+          },
+        };
+        const member = await signRosterPlayerRef.current(contactId, payload);
+        await onSuccess?.({ type: 'sign', member });
 
-        const rosterUpdate: UpdateRosterMemberType = {};
-
-        if (values.playerNumber !== undefined) {
-          rosterUpdate.playerNumber = values.playerNumber;
+        if (signMultiplePlayers) {
+          resetFormForNextPlayer();
+        } else {
+          onClose();
         }
-
-        if (values.submittedWaiver !== undefined) {
-          rosterUpdate.submittedWaiver = values.submittedWaiver;
-        }
-
-        const playerUpdates: NonNullable<UpdateRosterMemberType['player']> = {};
-
-        if (values.player?.submittedDriversLicense !== undefined) {
-          playerUpdates.submittedDriversLicense = values.player.submittedDriversLicense;
-        }
-
-        if (values.player?.firstYear !== undefined) {
-          playerUpdates.firstYear = values.player.firstYear;
-        }
-
-        if (Object.keys(playerUpdates).length > 0) {
-          rosterUpdate.player = playerUpdates;
-        }
-
-        const member = await updateRosterPlayer(rosterMemberId, rosterUpdate);
-        await onSuccess?.({ type: 'update', member });
-        onClose();
       } catch (error) {
-        setError(error instanceof Error ? error.message : 'Failed to update roster information');
+        setError(error instanceof Error ? error.message : 'Failed to sign player');
       }
-    },
-    [
-      isSigningNewPlayer,
-      onClose,
-      onSuccess,
-      resetFormForNextPlayer,
-      rosterMemberId,
-      selectedPlayer,
-      signMultiplePlayers,
-      signRosterPlayer,
-      updateRosterPlayer,
-    ],
-  );
+      return;
+    }
+
+    if (!rosterMemberId) {
+      setError('Unable to update roster member: missing roster member identifier');
+      return;
+    }
+
+    try {
+      if (!isRosterPlayer(selectedPlayer)) {
+        setError('Unable to update roster member: missing existing player details');
+        return;
+      }
+
+      setError(null);
+
+      const rosterUpdate: UpdateRosterMemberType = {};
+
+      if (values.playerNumber !== undefined) {
+        rosterUpdate.playerNumber = values.playerNumber;
+      }
+
+      if (values.submittedWaiver !== undefined) {
+        rosterUpdate.submittedWaiver = values.submittedWaiver;
+      }
+
+      const playerUpdates: NonNullable<UpdateRosterMemberType['player']> = {};
+
+      if (values.player?.submittedDriversLicense !== undefined) {
+        playerUpdates.submittedDriversLicense = values.player.submittedDriversLicense;
+      }
+
+      if (values.player?.firstYear !== undefined) {
+        playerUpdates.firstYear = values.player.firstYear;
+      }
+
+      if (Object.keys(playerUpdates).length > 0) {
+        rosterUpdate.player = playerUpdates;
+      }
+
+      const member = await updateRosterPlayerRef.current(rosterMemberId, rosterUpdate);
+      await onSuccess?.({ type: 'update', member });
+      onClose();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to update roster information');
+    }
+  };
 
   const handleDialogSubmit = submitForm(onValidSubmit);
 

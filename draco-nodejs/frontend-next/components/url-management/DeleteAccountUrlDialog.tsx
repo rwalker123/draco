@@ -24,18 +24,23 @@ const DeleteAccountUrlDialog: React.FC<DeleteAccountUrlDialogProps> = ({
   const { removeUrl, loading, error, clearError } = useAccountUrlsService(accountId);
   const [localError, setLocalError] = React.useState<string | null>(null);
 
+  const clearErrorRef = React.useRef(clearError);
+  React.useEffect(() => {
+    clearErrorRef.current = clearError;
+  }, [clearError]);
+
   React.useEffect(() => {
     if (!open) {
       setLocalError(null);
-      clearError();
+      clearErrorRef.current();
     }
-  }, [open, clearError]);
+  }, [open]);
 
-  const handleClose = React.useCallback(() => {
+  const handleClose = () => {
     onClose();
     setLocalError(null);
-    clearError();
-  }, [onClose, clearError]);
+    clearErrorRef.current();
+  };
 
   const handleDelete = async () => {
     if (!url) {

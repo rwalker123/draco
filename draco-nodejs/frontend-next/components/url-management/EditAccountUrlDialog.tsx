@@ -44,17 +44,22 @@ const EditAccountUrlDialog: React.FC<EditAccountUrlDialogProps> = ({
   const [domain, setDomain] = React.useState('');
   const [validationError, setValidationError] = React.useState<string | null>(null);
 
+  const clearErrorRef = React.useRef(clearError);
+  React.useEffect(() => {
+    clearErrorRef.current = clearError;
+  }, [clearError]);
+
   const urlPreview = React.useMemo(
     () => buildAccountUrlPreview(protocol, domain),
     [protocol, domain],
   );
 
-  const resetState = React.useCallback(() => {
+  const resetState = () => {
     setProtocol('https://');
     setDomain('');
     setValidationError(null);
-    clearError();
-  }, [clearError]);
+    clearErrorRef.current();
+  };
 
   React.useEffect(() => {
     if (!open) {
@@ -77,13 +82,13 @@ const EditAccountUrlDialog: React.FC<EditAccountUrlDialogProps> = ({
     }
 
     setValidationError(null);
-    clearError();
-  }, [open, url, resetState, clearError]);
+    clearErrorRef.current();
+  }, [open, url]);
 
-  const handleClose = React.useCallback(() => {
+  const handleClose = () => {
     onClose();
     resetState();
-  }, [onClose, resetState]);
+  };
 
   const handleSubmit = async () => {
     if (!url) {

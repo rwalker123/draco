@@ -21,6 +21,7 @@ import {
   getAccountById,
   getAccountUserTeams,
   listSeasonLeagueSeasons,
+  getActiveBaseballLiveScoringSessions,
 } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { useAccountMembership } from '../../../hooks/useAccountMembership';
@@ -50,7 +51,6 @@ import SpecialAnnouncementsWidget, {
 } from '@/components/announcements/SpecialAnnouncementsWidget';
 import InformationWidget from '@/components/information/InformationWidget';
 import AccountOptional from '@/components/account/AccountOptional';
-import { useBaseballLiveScoringOperations } from '@/hooks/useBaseballLiveScoringOperations';
 import BaseballLiveScoringDialog from '@/components/baseball/live-scoring/BaseballLiveScoringDialog';
 import BaseballLiveWatchDialog from '@/components/baseball/live-scoring/BaseballLiveWatchDialog';
 import type { Game } from '@/components/GameListDisplay';
@@ -70,7 +70,6 @@ const BaseballAccountHome: React.FC = () => {
   const [userTeams, setUserTeams] = useState<UserTeam[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showOrganizationsWidget, setShowOrganizationsWidget] = useState(false);
   const [accountSponsors, setAccountSponsors] = useState<SponsorType[]>([]);
   const [sponsorError, setSponsorError] = useState<string | null>(null);
   const [accountAnnouncements, setAccountAnnouncements] = useState<AnnouncementType[]>([]);
@@ -110,8 +109,6 @@ const BaseballAccountHome: React.FC = () => {
   const showSubmissionPanel = Boolean(isAccountMember);
   const shouldShowJoinLeagueNearSponsors = Boolean(user && hasAccountContact);
 
-  const { getActiveSessions: getActiveBaseballSessions } = useBaseballLiveScoringOperations();
-
   const canStartLiveScoringForGame = useCallback(
     (game: Game): boolean => {
       if (!user || !accountIdStr) return false;
@@ -145,18 +142,34 @@ const BaseballAccountHome: React.FC = () => {
   useEffect(() => {
     if (!accountIdStr) return;
 
+    let cancelled = false;
+
     const fetchActiveSessions = async () => {
-      const sessions = await getActiveBaseballSessions(accountIdStr);
-      if (sessions) {
-        const gameIds = new Set(sessions.map((s) => s.gameId));
-        setLiveSessionGameIds(gameIds);
+      try {
+        const result = await getActiveBaseballLiveScoringSessions({
+          client: apiClient,
+          path: { accountId: accountIdStr },
+        });
+        if (cancelled) return;
+        const sessions = unwrapApiResult(result, 'Failed to get active sessions') as
+          | { gameId: string; sessionId: string }[]
+          | null;
+        if (sessions) {
+          setLiveSessionGameIds(new Set(sessions.map((s) => s.gameId)));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Failed to get active sessions:', err);
+        }
       }
     };
 
     fetchActiveSessions();
-    const interval = setInterval(fetchActiveSessions, 30000);
-    return () => clearInterval(interval);
-  }, [accountIdStr, getActiveBaseballSessions]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountIdStr, apiClient]);
 
   const canModerateAccountPhotos = useMemo(() => {
     if (!accountIdStr) {
@@ -1066,18 +1079,14 @@ const BaseballAccountHome: React.FC = () => {
             ) : null}
 
             {user ? (
-              <Box sx={{ display: showOrganizationsWidget ? 'block' : 'none' }}>
-                <OrganizationsWidget
-                  title="Your Other Organizations"
-                  showSearch={false}
-                  maxDisplay={3}
-                  sx={{ mb: 0 }}
-                  excludeAccountId={accountIdStr}
-                  onOrganizationsLoaded={(organizations) => {
-                    setShowOrganizationsWidget(organizations.length > 0);
-                  }}
-                />
-              </Box>
+              <OrganizationsWidget
+                title="Your Other Organizations"
+                showSearch={false}
+                maxDisplay={3}
+                sx={{ mb: 0 }}
+                excludeAccountId={accountIdStr}
+                autoHide
+              />
             ) : null}
           </Box>
 

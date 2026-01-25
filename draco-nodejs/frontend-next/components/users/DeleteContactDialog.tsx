@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Typography,
   Box,
@@ -92,11 +92,16 @@ const DeleteContactDialogInner: React.FC<DeleteContactDialogInnerProps> = ({
   const { deleteContact, checkDependencies, loading, checkingDependencies } =
     useContactDeletion(accountId);
 
+  const checkDependenciesRef = React.useRef(checkDependencies);
+  useEffect(() => {
+    checkDependenciesRef.current = checkDependencies;
+  }, [checkDependencies]);
+
   useEffect(() => {
     let cancelled = false;
 
     const performCheck = async () => {
-      const result = await checkDependencies(contact.id);
+      const result = await checkDependenciesRef.current(contact.id);
       if (cancelled) {
         return;
       }
@@ -114,15 +119,19 @@ const DeleteContactDialogInner: React.FC<DeleteContactDialogInnerProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [checkDependencies, contact.id]);
+  }, [contact.id]);
 
-  const handleDelete = useCallback(async () => {
+  const deleteContactRef = React.useRef(deleteContact);
+  useEffect(() => {
+    deleteContactRef.current = deleteContact;
+  }, [deleteContact]);
+
+  const handleDelete = async () => {
     if (!contact) return;
 
-    // Clear any previous errors
     setError(null);
 
-    const result = await deleteContact(contact.id, forceDelete);
+    const result = await deleteContactRef.current(contact.id, forceDelete);
 
     if (result.success) {
       onSuccess?.({
@@ -131,19 +140,18 @@ const DeleteContactDialogInner: React.FC<DeleteContactDialogInnerProps> = ({
         dependenciesDeleted: result.dependenciesDeleted,
         wasForced: result.wasForced || false,
       });
-      onClose(); // Close dialog on success
+      onClose();
     } else {
-      // Handle error internally
       setError(result.error || 'Failed to delete contact');
     }
-  }, [contact, forceDelete, deleteContact, onSuccess, onClose]);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     if (loading) {
       return;
     }
     onClose();
-  }, [loading, onClose]);
+  };
 
   const canProceed = checkingDependencies ? false : dependencyResult?.canDelete || forceDelete;
 

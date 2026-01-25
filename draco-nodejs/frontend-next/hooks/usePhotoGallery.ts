@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApiClient } from './useApiClient';
 import { getAccountPhotoGallery } from '@draco/shared-api-client';
 import type {
@@ -19,7 +19,7 @@ interface UsePhotoGalleryState {
   albums: PhotoGalleryAlbumType[];
   loading: boolean;
   error: string | null;
-  refresh: () => Promise<void>;
+  refresh: () => void;
 }
 
 const normalizeId = (value?: string | null): string | null => {
@@ -42,17 +42,18 @@ export const usePhotoGallery = ({
   enabled = true,
 }: UsePhotoGalleryOptions): UsePhotoGalleryState => {
   const apiClient = useApiClient();
-  const normalizedAccountId = useMemo(() => normalizeId(accountId), [accountId]);
-  const normalizedTeamId = useMemo(() => normalizeId(teamId), [teamId]);
+  const normalizedAccountId = normalizeId(accountId);
+  const normalizedTeamId = normalizeId(teamId);
 
   const [photos, setPhotos] = useState<PhotoGalleryPhotoType[]>([]);
   const [albums, setAlbums] = useState<PhotoGalleryAlbumType[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const canQuery = Boolean(enabled && normalizedAccountId);
 
-  const fetchGallery = useCallback(async () => {
+  useEffect(() => {
     if (!canQuery || !normalizedAccountId) {
       setPhotos([]);
       setAlbums([]);
@@ -60,44 +61,52 @@ export const usePhotoGallery = ({
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    let cancelled = false;
 
-    try {
-      const result = await getAccountPhotoGallery({
-        client: apiClient,
-        path: { accountId: normalizedAccountId },
-        query: normalizedTeamId ? { teamId: normalizedTeamId } : undefined,
-        throwOnError: false,
-      });
+    const fetchGallery = async () => {
+      setLoading(true);
+      setError(null);
 
-      const data = unwrapApiResult(result, 'Failed to load photo gallery.');
-      setPhotos(Array.isArray(data.photos) ? data.photos : emptyState.photos);
-      setAlbums(Array.isArray(data.albums) ? data.albums : emptyState.albums);
-    } catch (err: unknown) {
-      const message = err instanceof ApiClientError ? err.message : 'Failed to load photo gallery.';
-      setError(message);
-      setPhotos([]);
-      setAlbums([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [apiClient, canQuery, normalizedAccountId, normalizedTeamId]);
+      try {
+        const result = await getAccountPhotoGallery({
+          client: apiClient,
+          path: { accountId: normalizedAccountId },
+          query: normalizedTeamId ? { teamId: normalizedTeamId } : undefined,
+          throwOnError: false,
+        });
 
-  useEffect(() => {
+        if (cancelled) return;
+
+        const data = unwrapApiResult(result, 'Failed to load photo gallery.');
+        setPhotos(Array.isArray(data.photos) ? data.photos : emptyState.photos);
+        setAlbums(Array.isArray(data.albums) ? data.albums : emptyState.albums);
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const message =
+          err instanceof ApiClientError ? err.message : 'Failed to load photo gallery.';
+        setError(message);
+        setPhotos([]);
+        setAlbums([]);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
     void fetchGallery();
-  }, [fetchGallery]);
 
-  const refresh = useCallback(async () => {
-    await fetchGallery();
-  }, [fetchGallery]);
+    return () => {
+      cancelled = true;
+    };
+  }, [canQuery, normalizedAccountId, normalizedTeamId, apiClient, refreshKey]);
 
   return {
     photos,
     albums,
     loading,
     error,
-    refresh,
+    refresh: () => setRefreshKey((prev) => prev + 1),
   };
 };
 

@@ -8,12 +8,23 @@ type CreateApiClientOptions = {
   frontendBaseUrl?: string;
 };
 
+type ApiClient = ReturnType<typeof createClient>;
+
+// Single-entry cache: stores the most recent client, automatically evicts on token change
+let cachedClient: { token: string | undefined; client: ApiClient } | null = null;
+
 export const createApiClient = ({
   token,
   baseUrl = '',
   transformHostHeader = false,
   frontendBaseUrl,
 }: CreateApiClientOptions = {}) => {
+  // Only use cache for default options (the common case from useApiClient)
+  const useCache = baseUrl === '' && !transformHostHeader && !frontendBaseUrl;
+
+  if (useCache && cachedClient !== null && cachedClient.token === token) {
+    return cachedClient.client;
+  }
   const configOverrides: Parameters<typeof createConfig>[0] = {
     baseUrl,
   };
@@ -52,6 +63,11 @@ export const createApiClient = ({
 
       return request;
     });
+  }
+
+  // Cache the client for reuse (replaces any previous cached client)
+  if (useCache) {
+    cachedClient = { token, client };
   }
 
   return client;

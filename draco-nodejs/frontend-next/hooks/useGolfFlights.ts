@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
 import {
   listGolfFlights,
   createGolfFlight,
@@ -38,111 +37,96 @@ export interface GolfFlightService {
 export function useGolfFlights(accountId: string): GolfFlightService {
   const apiClient = useApiClient();
 
-  const listFlights = useCallback<GolfFlightService['listFlights']>(
-    async (seasonId) => {
-      try {
-        const result = await listGolfFlights({
-          client: apiClient,
-          path: { accountId, seasonId },
-          throwOnError: false,
-        });
+  const listFlights: GolfFlightService['listFlights'] = async (seasonId) => {
+    try {
+      const result = await listGolfFlights({
+        client: apiClient,
+        path: { accountId, seasonId },
+        throwOnError: false,
+      });
 
-        const flights = unwrapApiResult(result, 'Failed to load flights');
+      const flights = unwrapApiResult(result, 'Failed to load flights');
 
-        return {
-          success: true,
-          data: flights as GolfFlightWithTeamCountType[],
-          message: 'Flights loaded successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to load flights';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: flights as GolfFlightWithTeamCountType[],
+        message: 'Flights loaded successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load flights';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const createFlight = useCallback<GolfFlightService['createFlight']>(
-    async (seasonId, payload) => {
-      try {
-        const result = await createGolfFlight({
-          client: apiClient,
-          path: { accountId, seasonId },
-          body: payload,
-          throwOnError: false,
-        });
+  const createFlight: GolfFlightService['createFlight'] = async (seasonId, payload) => {
+    try {
+      const result = await createGolfFlight({
+        client: apiClient,
+        path: { accountId, seasonId },
+        body: payload,
+        throwOnError: false,
+      });
 
-        const flight = unwrapApiResult(result, 'Failed to create flight') as GolfFlightType;
+      const flight = unwrapApiResult(result, 'Failed to create flight') as GolfFlightType;
 
-        return {
-          success: true,
-          data: flight,
-          message: 'Flight created successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to create flight';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: flight,
+        message: 'Flight created successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create flight';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const updateFlight = useCallback<GolfFlightService['updateFlight']>(
-    async (flightId, payload) => {
-      try {
-        const result = await updateGolfFlight({
-          client: apiClient,
-          path: { accountId, flightId },
-          body: payload,
-          throwOnError: false,
-        });
+  const updateFlight: GolfFlightService['updateFlight'] = async (flightId, payload) => {
+    try {
+      const result = await updateGolfFlight({
+        client: apiClient,
+        path: { accountId, flightId },
+        body: payload,
+        throwOnError: false,
+      });
 
-        const flight = unwrapApiResult(result, 'Failed to update flight') as GolfFlightType;
+      const flight = unwrapApiResult(result, 'Failed to update flight') as GolfFlightType;
 
-        return {
-          success: true,
-          data: flight,
-          message: 'Flight updated successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to update flight';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: flight,
+        message: 'Flight updated successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update flight';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const deleteFlight = useCallback<GolfFlightService['deleteFlight']>(
-    async (flightId) => {
-      try {
-        const result = await deleteGolfFlight({
-          client: apiClient,
-          path: { accountId, flightId },
-          throwOnError: false,
-        });
+  const deleteFlight: GolfFlightService['deleteFlight'] = async (flightId) => {
+    try {
+      const result = await deleteGolfFlight({
+        client: apiClient,
+        path: { accountId, flightId },
+        throwOnError: false,
+      });
 
-        unwrapApiResult(result, 'Failed to delete flight');
+      unwrapApiResult(result, 'Failed to delete flight');
 
-        return {
-          success: true,
-          data: undefined as void,
-          message: 'Flight deleted successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to delete flight';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: undefined as void,
+        message: 'Flight deleted successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete flight';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  return useMemo(
-    () => ({
-      listFlights,
-      createFlight,
-      updateFlight,
-      deleteFlight,
-    }),
-    [listFlights, createFlight, updateFlight, deleteFlight],
-  );
+  return {
+    listFlights,
+    createFlight,
+    updateFlight,
+    deleteFlight,
+  };
 }

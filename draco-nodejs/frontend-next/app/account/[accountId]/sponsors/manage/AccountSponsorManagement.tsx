@@ -59,23 +59,40 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
   const [sponsorToDelete, setSponsorToDelete] = React.useState<SponsorType | null>(null);
   const [dialogError, setDialogError] = React.useState<string | null>(null);
 
-  const refreshSponsors = React.useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await listSponsors();
-      setSponsors(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load sponsors';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
+  const listSponsorsRef = React.useRef(listSponsors);
+  React.useEffect(() => {
+    listSponsorsRef.current = listSponsors;
   }, [listSponsors]);
 
   React.useEffect(() => {
-    refreshSponsors();
-  }, [refreshSponsors]);
+    let cancelled = false;
+
+    const loadSponsors = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await listSponsorsRef.current();
+        if (!cancelled) {
+          setSponsors(data);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          const message = err instanceof Error ? err.message : 'Failed to load sponsors';
+          setError(message);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSponsors();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId]);
 
   const handleOpenCreate = () => {
     setDialogState({ open: true, mode: 'create', sponsor: null });

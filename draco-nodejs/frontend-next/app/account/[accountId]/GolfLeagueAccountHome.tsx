@@ -22,7 +22,6 @@ const GolfLeagueAccountHome: React.FC = () => {
   const [currentSeason, setCurrentSeason] = useState<AccountSeasonWithStatusType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showOrganizationsWidget, setShowOrganizationsWidget] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
@@ -246,18 +245,14 @@ const GolfLeagueAccountHome: React.FC = () => {
             ) : null}
 
             {user ? (
-              <Box sx={{ display: showOrganizationsWidget ? 'block' : 'none' }}>
-                <OrganizationsWidget
-                  title="Your Other Organizations"
-                  showSearch={false}
-                  maxDisplay={3}
-                  sx={{ mb: 0 }}
-                  excludeAccountId={accountIdStr}
-                  onOrganizationsLoaded={(organizations) => {
-                    setShowOrganizationsWidget(organizations.length > 0);
-                  }}
-                />
-              </Box>
+              <OrganizationsWidget
+                title="Your Other Organizations"
+                showSearch={false}
+                maxDisplay={3}
+                sx={{ mb: 0 }}
+                excludeAccountId={accountIdStr}
+                autoHide
+              />
             ) : null}
           </Box>
 

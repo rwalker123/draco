@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   getGolfLeagueSetup,
   updateGolfLeagueSetup,
@@ -35,8 +35,9 @@ export function useGolfLeagueSetup(
   });
 
   const canRequest = Boolean(accountId && seasonId && leagueSeasonId && token);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchSetup = useCallback(async (): Promise<void> => {
+  useEffect(() => {
     if (!canRequest) {
       setState((previous) => ({
         ...previous,
@@ -46,122 +47,118 @@ export function useGolfLeagueSetup(
       return;
     }
 
-    setState((previous) => ({ ...previous, loading: true, error: null }));
+    let cancelled = false;
 
-    try {
-      const result = await getGolfLeagueSetup({
-        client: apiClient,
-        path: {
-          accountId: accountId as string,
-          seasonId: seasonId as string,
-          leagueSeasonId: leagueSeasonId as string,
-        },
-        throwOnError: false,
-      });
-
-      if (result.response.status === 404) {
-        setState((previous) => ({
-          ...previous,
-          data: null,
-          error: null,
-          loading: false,
-          initialized: true,
-        }));
-        return;
-      }
-
-      const payload = unwrapApiResult(result, 'Failed to load golf league setup');
-
-      setState((previous) => ({
-        ...previous,
-        data: payload ?? null,
-        error: null,
-      }));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load golf league setup';
-      setState((previous) => ({
-        ...previous,
-        error: message,
-      }));
-    } finally {
-      setState((previous) => ({
-        ...previous,
-        loading: false,
-        initialized: true,
-      }));
-    }
-  }, [accountId, seasonId, leagueSeasonId, apiClient, canRequest]);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        await fetchSetup();
-      } catch {
-        // errors are handled inside fetchSetup
-      }
-    };
-
-    void load();
-  }, [fetchSetup]);
-
-  const updateSetup = useCallback(
-    async (updates: UpdateGolfLeagueSetup): Promise<void> => {
-      if (!canRequest) {
-        throw new Error('Authentication is required to update golf league setup.');
-      }
-
-      setState((previous) => ({
-        ...previous,
-        updating: true,
-        error: null,
-      }));
+    const fetchSetup = async (): Promise<void> => {
+      setState((previous) => ({ ...previous, loading: true, error: null }));
 
       try {
-        const result = await updateGolfLeagueSetup({
+        const result = await getGolfLeagueSetup({
           client: apiClient,
           path: {
             accountId: accountId as string,
             seasonId: seasonId as string,
             leagueSeasonId: leagueSeasonId as string,
           },
-          body: updates,
           throwOnError: false,
         });
 
-        unwrapApiResult(result, 'Failed to update golf league setup');
-        await fetchSetup();
+        if (cancelled) return;
+
+        if (result.response.status === 404) {
+          setState((previous) => ({
+            ...previous,
+            data: null,
+            error: null,
+            loading: false,
+            initialized: true,
+          }));
+          return;
+        }
+
+        const payload = unwrapApiResult(result, 'Failed to load golf league setup');
+
+        setState((previous) => ({
+          ...previous,
+          data: payload ?? null,
+          error: null,
+        }));
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to update golf league setup';
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : 'Failed to load golf league setup';
         setState((previous) => ({
           ...previous,
           error: message,
         }));
-        throw new Error(message);
       } finally {
-        setState((previous) => ({
-          ...previous,
-          updating: false,
-        }));
+        if (!cancelled) {
+          setState((previous) => ({
+            ...previous,
+            loading: false,
+            initialized: true,
+          }));
+        }
       }
-    },
-    [accountId, seasonId, leagueSeasonId, apiClient, canRequest, fetchSetup],
-  );
+    };
 
-  const clearError = useCallback(() => {
+    void fetchSetup();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, seasonId, leagueSeasonId, canRequest, apiClient, refreshKey]);
+
+  const updateSetup = async (updates: UpdateGolfLeagueSetup): Promise<void> => {
+    if (!canRequest) {
+      throw new Error('Authentication is required to update golf league setup.');
+    }
+
+    setState((previous) => ({
+      ...previous,
+      updating: true,
+      error: null,
+    }));
+
+    try {
+      const result = await updateGolfLeagueSetup({
+        client: apiClient,
+        path: {
+          accountId: accountId as string,
+          seasonId: seasonId as string,
+          leagueSeasonId: leagueSeasonId as string,
+        },
+        body: updates,
+        throwOnError: false,
+      });
+
+      unwrapApiResult(result, 'Failed to update golf league setup');
+      setRefreshKey((prev) => prev + 1);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update golf league setup';
+      setState((previous) => ({
+        ...previous,
+        error: message,
+      }));
+      throw new Error(message);
+    } finally {
+      setState((previous) => ({
+        ...previous,
+        updating: false,
+      }));
+    }
+  };
+
+  const clearError = () => {
     setState((previous) => ({ ...previous, error: null }));
-  }, []);
+  };
 
-  return useMemo(
-    () => ({
-      setup: state.data,
-      loading: state.loading && !state.initialized,
-      refreshing: state.loading && state.initialized,
-      updating: state.updating,
-      error: state.error,
-      updateSetup,
-      refetch: fetchSetup,
-      clearError,
-    }),
-    [clearError, fetchSetup, state, updateSetup],
-  );
+  return {
+    setup: state.data,
+    loading: state.loading && !state.initialized,
+    refreshing: state.loading && state.initialized,
+    updating: state.updating,
+    error: state.error,
+    updateSetup,
+    clearError,
+  };
 }

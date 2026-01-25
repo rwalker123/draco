@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Card,
@@ -43,40 +43,54 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const router = useRouter();
   const { token } = useAuth();
   const { listPlayersWanted } = usePlayersWantedClassifieds(accountId);
-
-  const loadPlayersWanted = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await listPlayersWanted();
-      if (response.success && response.data) {
-        const allTeams = response.data.data;
-        setTotalCount(response.data.total);
-
-        const shuffled = [...allTeams];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        setPlayersWanted(shuffled.slice(0, maxDisplay));
-      } else {
-        const message = response.error || 'Failed to load player opportunities';
-        setError(message);
-      }
-    } catch (err) {
-      console.error('Failed to fetch players wanted:', err);
-      setError('Failed to load player opportunities');
-    } finally {
-      setLoading(false);
-    }
-  }, [listPlayersWanted, maxDisplay]);
+  const listPlayersWantedRef = useRef(listPlayersWanted);
+  listPlayersWantedRef.current = listPlayersWanted;
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadPlayersWanted = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await listPlayersWantedRef.current();
+        if (cancelled) return;
+
+        if (response.success && response.data) {
+          const allTeams = response.data.data;
+          setTotalCount(response.data.total);
+
+          const shuffled = [...allTeams];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          setPlayersWanted(shuffled.slice(0, maxDisplay));
+        } else {
+          const message = response.error || 'Failed to load player opportunities';
+          setError(message);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Failed to fetch players wanted:', err);
+        setError('Failed to load player opportunities');
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
     loadPlayersWanted();
-  }, [accountId, loadPlayersWanted]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, maxDisplay, refreshTrigger]);
 
   const handleViewAll = () => {
     router.push(`/account/${accountId}/player-classifieds`);
@@ -105,19 +119,16 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
     setCreateDialogOpen(true);
   };
 
-  const handleCreateSuccess = useCallback(
-    async (_event: PlayersWantedDialogSuccessEvent) => {
-      setCreateDialogOpen(false);
-      setCreateError(null);
-      setSuccessMessage(_event.message);
-      await loadPlayersWanted();
-    },
-    [loadPlayersWanted],
-  );
+  const handleCreateSuccess = (_event: PlayersWantedDialogSuccessEvent) => {
+    setCreateDialogOpen(false);
+    setCreateError(null);
+    setSuccessMessage(_event.message);
+    setRefreshTrigger((prev) => prev + 1);
+  };
 
-  const handleCreateError = useCallback((message: string) => {
+  const handleCreateError = (message: string) => {
     setCreateError(message);
-  }, []);
+  };
 
   const handleCreateDialogClose = () => {
     setCreateDialogOpen(false);

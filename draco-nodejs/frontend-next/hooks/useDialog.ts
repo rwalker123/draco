@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState } from 'react';
 
 export interface Dialog<T> {
   isOpen: boolean;
@@ -11,23 +11,20 @@ export function useDialog<T>(): Dialog<T> {
   const [isOpen, setIsOpen] = useState(false);
   const [data, setData] = useState<T | undefined>(undefined);
 
-  const open = useCallback((dialogData?: T) => {
+  const open = (dialogData?: T) => {
     setData(dialogData);
     setIsOpen(true);
-  }, []);
+  };
 
-  const close = useCallback(() => {
+  const close = () => {
     setIsOpen(false);
     setData(undefined);
-  }, []);
+  };
 
-  return useMemo(
-    () => ({
-      isOpen,
-      data,
-      open,
-      close,
-    }),
-    [isOpen, data, open, close],
-  );
+  return {
+    isOpen,
+    data,
+    open,
+    close,
+  };
 }

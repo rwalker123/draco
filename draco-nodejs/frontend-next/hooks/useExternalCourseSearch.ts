@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { searchExternalCourses, getExternalCourseDetails } from '@draco/shared-api-client';
 import type {
   ExternalCourseSearchResultType,
@@ -30,61 +30,55 @@ export function useExternalCourseSearch(accountId: string): ExternalCourseSearch
   const apiClient = useApiClient();
   const [loading, setLoading] = useState(false);
 
-  const search = useCallback<ExternalCourseSearchService['search']>(
-    async (params) => {
-      setLoading(true);
-      try {
-        const result = await searchExternalCourses({
-          client: apiClient,
-          path: { accountId },
-          query: {
-            query: params.query,
-            excludeLeague: params.excludeLeague ? 'true' : undefined,
-          },
-          throwOnError: false,
-        });
+  const search: ExternalCourseSearchService['search'] = async (params) => {
+    setLoading(true);
+    try {
+      const result = await searchExternalCourses({
+        client: apiClient,
+        path: { accountId },
+        query: {
+          query: params.query,
+          excludeLeague: params.excludeLeague ? 'true' : undefined,
+        },
+        throwOnError: false,
+      });
 
-        const courses = unwrapApiResult(result, 'Failed to search courses');
+      const courses = unwrapApiResult(result, 'Failed to search courses');
 
-        return {
-          success: true,
-          data: courses as ExternalCourseSearchResultType[],
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Search failed';
-        return { success: false, error: message } as const;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: courses as ExternalCourseSearchResultType[],
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Search failed';
+      return { success: false, error: message } as const;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const getDetails = useCallback<ExternalCourseSearchService['getDetails']>(
-    async (externalId) => {
-      setLoading(true);
-      try {
-        const result = await getExternalCourseDetails({
-          client: apiClient,
-          path: { accountId, externalId },
-          throwOnError: false,
-        });
+  const getDetails: ExternalCourseSearchService['getDetails'] = async (externalId) => {
+    setLoading(true);
+    try {
+      const result = await getExternalCourseDetails({
+        client: apiClient,
+        path: { accountId, externalId },
+        throwOnError: false,
+      });
 
-        const course = unwrapApiResult(result, 'Failed to get course details');
+      const course = unwrapApiResult(result, 'Failed to get course details');
 
-        return {
-          success: true,
-          data: course as ExternalCourseDetailType,
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to get details';
-        return { success: false, error: message } as const;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: course as ExternalCourseDetailType,
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to get details';
+      return { success: false, error: message } as const;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return { search, getDetails, loading };
 }
