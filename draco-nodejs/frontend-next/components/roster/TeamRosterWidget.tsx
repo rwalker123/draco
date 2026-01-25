@@ -262,38 +262,31 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
     setSelectedContact(null);
   }, []);
 
-  const refetchPrivateRoster = async () => {
-    try {
-      const [rosterResult, managersResult] = await Promise.all([
-        apiGetTeamRosterMembers({
-          client: apiClient,
-          path: { accountId, seasonId, teamSeasonId },
-          throwOnError: false,
-        }),
-        apiListTeamManagers({
-          client: apiClient,
-          path: { accountId, seasonId, teamSeasonId },
-          throwOnError: false,
-        }),
-      ]);
-
-      const roster = unwrapApiResult(
-        rosterResult,
-        'Failed to fetch roster data',
-      ) as TeamRosterMembersType;
-      const managersData = (unwrapApiResult(managersResult, 'Failed to fetch managers') ??
-        []) as TeamManagerType[];
-
-      setPrivateRosterData(roster);
-      setPrivateManagers(managersData);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to reload roster';
-      setPrivateError(message);
-    }
-  };
-
-  const handlePhotoUpdated = async (_updatedContact: ContactType) => {
-    await refetchPrivateRoster();
+  const handlePhotoUpdated = (updatedContact: ContactType) => {
+    setPrivateRosterData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        rosterMembers: prev.rosterMembers.map((member) =>
+          member.player.contact.id === updatedContact.id
+            ? {
+                ...member,
+                player: {
+                  ...member.player,
+                  contact: { ...member.player.contact, photoUrl: updatedContact.photoUrl },
+                },
+              }
+            : member,
+        ),
+      };
+    });
+    setPrivateManagers((prev) =>
+      prev.map((manager) =>
+        manager.contact.id === updatedContact.id
+          ? { ...manager, contact: { ...manager.contact, photoUrl: updatedContact.photoUrl } }
+          : manager,
+      ),
+    );
     closePhotoDialog();
   };
 
@@ -309,8 +302,34 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
     setDeleteContactId(null);
   };
 
-  const handlePhotoDeleted = async () => {
-    await refetchPrivateRoster();
+  const handlePhotoDeleted = () => {
+    const contactId = deleteContactId;
+    if (!contactId) return;
+
+    setPrivateRosterData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        rosterMembers: prev.rosterMembers.map((member) =>
+          member.player.contact.id === contactId
+            ? {
+                ...member,
+                player: {
+                  ...member.player,
+                  contact: { ...member.player.contact, photoUrl: undefined },
+                },
+              }
+            : member,
+        ),
+      };
+    });
+    setPrivateManagers((prev) =>
+      prev.map((manager) =>
+        manager.contact.id === contactId
+          ? { ...manager, contact: { ...manager.contact, photoUrl: undefined } }
+          : manager,
+      ),
+    );
     closeDeletePhotoDialog();
   };
 
