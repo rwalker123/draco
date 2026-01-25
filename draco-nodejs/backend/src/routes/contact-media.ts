@@ -49,7 +49,7 @@ router.delete(
   '/:contactId/photo',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.contacts.manage'),
+  routeProtection.requirePermission('account.contacts.photos.manage'),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, contactId } = extractContactParams(req.params);
 

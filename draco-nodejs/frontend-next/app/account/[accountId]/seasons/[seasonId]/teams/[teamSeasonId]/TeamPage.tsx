@@ -97,7 +97,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     accountId,
     teamSeasonId,
   });
-  const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
+  const { hasRole, hasRoleInAccount, hasRoleInTeam, hasPermission } = useRole();
   const timeZone = useAccountTimezone();
   const { isMember } = useAccountMembership(accountId);
   const isAccountMember = isMember === true;
@@ -260,13 +260,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
 
   const canEditPlayerPhotos = React.useMemo(() => {
-    return (
-      hasRole('Administrator') ||
-      hasRoleInAccount('AccountAdmin', accountId) ||
-      hasRoleInAccount('AccountPhotoAdmin', accountId) ||
-      hasRoleInTeam('TeamPhotoAdmin', teamSeasonId)
-    );
-  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+    return hasPermission('account.contacts.photos.manage', { accountId });
+  }, [accountId, hasPermission]);
 
   const canViewRosterDetails = React.useMemo(() => {
     return (
