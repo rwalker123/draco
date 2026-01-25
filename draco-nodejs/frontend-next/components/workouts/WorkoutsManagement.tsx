@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Button, Fab, Snackbar, Alert } from '@mui/material';
 import { Add as AddIcon, Settings as SettingsIcon } from '@mui/icons-material';
 import AccountPageHeader from '../AccountPageHeader';
@@ -35,47 +35,47 @@ export const WorkoutsManagement: React.FC<WorkoutsManagementProps> = ({ accountI
     setFormOpen(true);
   };
 
-  const handleOpenSourcesDialog = useCallback(() => {
+  const handleOpenSourcesDialog = () => {
     setSourcesDialogOpen(true);
-  }, []);
+  };
 
-  const handleCloseSourcesDialog = useCallback(() => {
+  const handleCloseSourcesDialog = () => {
     setSourcesDialogOpen(false);
-  }, []);
+  };
 
-  const handleEditWorkout = useCallback((workoutId: string) => {
+  const handleEditWorkout = (workoutId: string) => {
     setFormMode('edit');
     setActiveWorkoutId(workoutId);
     setFormOpen(true);
-  }, []);
+  };
 
-  const handleCloseForm = useCallback(() => {
+  const handleCloseForm = () => {
     setFormOpen(false);
     setActiveWorkoutId(null);
-  }, []);
+  };
 
-  const handleDialogSuccess = useCallback((result: { workout: WorkoutType; message: string }) => {
+  const handleDialogSuccess = (result: { workout: WorkoutType; message: string }) => {
     setFormOpen(false);
     setActiveWorkoutId(null);
     setRefreshKey((value) => value + 1);
     setFeedback({ severity: 'success', message: result.message });
-  }, []);
+  };
 
-  const handleDialogError = useCallback((message: string) => {
+  const handleDialogError = (message: string) => {
     setFeedback({ severity: 'error', message });
-  }, []);
+  };
 
-  const handlePreviewWorkout = useCallback((workoutId: string) => {
+  const handlePreviewWorkout = (workoutId: string) => {
     setPreviewState({ open: true, workoutId });
-  }, []);
+  };
 
-  const handleClosePreview = useCallback(() => {
+  const handleClosePreview = () => {
     setPreviewState({ open: false, workoutId: null });
-  }, []);
+  };
 
-  const handleFeedbackClose = useCallback(() => {
+  const handleFeedbackClose = () => {
     setFeedback(null);
-  }, []);
+  };
 
   return (
     <main className="min-h-screen bg-background">

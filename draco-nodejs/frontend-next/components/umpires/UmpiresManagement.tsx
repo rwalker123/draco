@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -75,40 +75,43 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const loadUmpires = useCallback(async () => {
-    setLoading(true);
-    setFetchError(null);
-
-    try {
-      const result = await listUmpires({
-        page: page + 1,
-        limit: rowsPerPage,
-        sortBy,
-        sortOrder,
-      });
-
-      if (result.success) {
-        setUmpires(result.data.umpires);
-        setPagination(result.data.pagination ?? null);
-      } else {
-        setUmpires([]);
-        setPagination(null);
-        setFetchError(result.error);
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load umpires';
-      setUmpires([]);
-      setPagination(null);
-      setFetchError(message);
-    } finally {
-      setLoading(false);
-    }
-  }, [listUmpires, page, rowsPerPage, sortBy, sortOrder]);
+  const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
 
   useEffect(() => {
+    const loadUmpires = async () => {
+      setLoading(true);
+      setFetchError(null);
+
+      try {
+        const result = await listUmpires({
+          page: page + 1,
+          limit: rowsPerPage,
+          sortBy,
+          sortOrder,
+        });
+
+        if (result.success) {
+          setUmpires(result.data.umpires);
+          setPagination(result.data.pagination ?? null);
+        } else {
+          setUmpires([]);
+          setPagination(null);
+          setFetchError(result.error);
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to load umpires';
+        setUmpires([]);
+        setPagination(null);
+        setFetchError(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     void loadUmpires();
-  }, [loadUmpires]);
+  }, [listUmpires, page, rowsPerPage, sortBy, sortOrder, refreshTrigger]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -154,7 +157,7 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
   const handleDialogSuccess = (result: { message: string }) => {
     setSuccessMessage(result.message);
     setDialogError(null);
-    void loadUmpires();
+    triggerRefresh();
   };
 
   const handleDialogError = (message: string) => {
@@ -213,10 +216,7 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
     };
   };
 
-  const totalCount = useMemo(
-    () => pagination?.total ?? umpires.length,
-    [pagination?.total, umpires.length],
-  );
+  const totalCount = pagination?.total ?? umpires.length;
 
   return (
     <Box component="main" sx={{ pb: 6 }}>
@@ -361,7 +361,7 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
         onClose={handleCloseEditContactDialog}
         onSuccess={(result) => {
           setSuccessMessage(result.message);
-          void loadUmpires();
+          triggerRefresh();
         }}
       />
 

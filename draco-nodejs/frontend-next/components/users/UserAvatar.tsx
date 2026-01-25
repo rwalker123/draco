@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, memo, useMemo } from 'react';
+import React, { useState, memo } from 'react';
 import { Box, Typography, IconButton, Tooltip, SxProps, Theme } from '@mui/material';
 import { PhotoCamera as PhotoCameraIcon, Close as CloseIcon } from '@mui/icons-material';
 import Image from 'next/image';
@@ -36,12 +36,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   const [errorPhotoUrl, setErrorPhotoUrl] = useState<string | null>(null);
   const [isPhotoHovered, setIsPhotoHovered] = useState(false);
 
-  // Memoize the cache-busted URL to prevent unnecessary re-requests
-  // Only regenerate when the photoUrl actually changes
-  const cachedPhotoUrl = useMemo(() => {
-    if (!user.photoUrl) return null;
-    return addCacheBuster(user.photoUrl);
-  }, [user.photoUrl]);
+  const cachedPhotoUrl = user.photoUrl ? addCacheBuster(user.photoUrl) : null;
 
   // Generate user initials for fallback
   const initials = `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();

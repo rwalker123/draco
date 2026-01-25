@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, memo } from 'react';
+import React, { memo } from 'react';
 import UserTableContainer from './table/UserTableContainer';
 import { UserTableEnhancedProps, SelectionMode } from '../../types/userTable';
 
@@ -50,22 +50,11 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
   // All original UserTable props
   ...originalProps
 }) => {
-  // Memoize modern features detection to prevent unnecessary re-renders
-  const hasModernFeatures = useMemo(
-    () => enableViewSwitching || enableAdvancedFilters,
-    [enableViewSwitching, enableAdvancedFilters],
-  );
+  const hasModernFeatures = enableViewSwitching || enableAdvancedFilters;
 
-  // Memoize stable view configuration
-  const stableViewConfig = useMemo(
-    () => ({
-      enableViewSwitching,
-    }),
-    [enableViewSwitching],
-  );
+  const stableViewConfig = { enableViewSwitching };
 
-  // Selection mode is always 'none' since bulk operations are removed
-  const stableSelectionMode = useMemo((): SelectionMode => 'none', []);
+  const stableSelectionMode: SelectionMode = 'none';
 
   // Notify parent if modern features are being used
   React.useEffect(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import NextLink from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Box, Typography } from '@mui/material';
@@ -158,11 +158,8 @@ export default function LeaderCategoryPanel({
   accountId,
   playerLinkLabelPrefix,
 }: LeaderCategoryPanelProps) {
-  const leaderForCard = useMemo(() => getLeaderForCard(leaders), [leaders]);
-  const processedLeaders = useMemo(
-    () => processLeadersForTable(leaders, leaderForCard),
-    [leaders, leaderForCard],
-  );
+  const leaderForCard = getLeaderForCard(leaders);
+  const processedLeaders = processLeadersForTable(leaders, leaderForCard);
   const cardContainerRef = useRef<HTMLDivElement | null>(null);
   const [cardWidthStore] = useState(() => {
     let snapshot: number | undefined;
@@ -191,7 +188,7 @@ export default function LeaderCategoryPanel({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const currentLocation = useMemo(() => {
+  const currentLocation = (() => {
     if (!pathname) {
       return null;
     }
@@ -200,9 +197,9 @@ export default function LeaderCategoryPanel({
     }
     const query = searchParams.toString();
     return query.length > 0 ? `${pathname}?${query}` : pathname;
-  }, [pathname, searchParams]);
+  })();
 
-  const playerLinkLabel = useMemo(() => {
+  const playerLinkLabel = (() => {
     const prefix = playerLinkLabelPrefix?.trim() ?? '';
     const categoryLabel = category.label?.trim() ?? '';
 
@@ -215,44 +212,38 @@ export default function LeaderCategoryPanel({
     }
 
     return categoryLabel || 'Leaders';
-  }, [playerLinkLabelPrefix, category.label]);
+  })();
 
-  const buildPlayerHref = useMemo(() => {
-    if (!accountId) {
-      return undefined;
-    }
-
-    return (row: LeaderRow): string | null => {
-      if (row.isTie) {
-        return null;
-      }
-
-      const rawId = row.playerId ?? null;
-      if (rawId === null || rawId === undefined) {
-        return null;
-      }
-
-      const playerId = typeof rawId === 'string' ? rawId.trim() : String(rawId);
-      if (!playerId) {
-        return null;
-      }
-
-      const basePath = `/account/${accountId}/players/${playerId}/statistics`;
-      const query = new URLSearchParams();
-
-      if (currentLocation) {
-        query.set('returnTo', currentLocation);
-        if (playerLinkLabel) {
-          query.set('returnLabel', playerLinkLabel);
+  const buildPlayerHref: ((row: LeaderRow) => string | null) | undefined = accountId
+    ? (row: LeaderRow): string | null => {
+        if (row.isTie) {
+          return null;
         }
-      }
 
-      const queryString = query.toString();
-      return queryString.length > 0 ? `${basePath}?${queryString}` : basePath;
-    };
-  }, [accountId, currentLocation, playerLinkLabel]) as
-    | ((row: LeaderRow) => string | null)
-    | undefined;
+        const rawId = row.playerId ?? null;
+        if (rawId === null || rawId === undefined) {
+          return null;
+        }
+
+        const playerId = typeof rawId === 'string' ? rawId.trim() : String(rawId);
+        if (!playerId) {
+          return null;
+        }
+
+        const basePath = `/account/${accountId}/players/${playerId}/statistics`;
+        const query = new URLSearchParams();
+
+        if (currentLocation) {
+          query.set('returnTo', currentLocation);
+          if (playerLinkLabel) {
+            query.set('returnLabel', playerLinkLabel);
+          }
+        }
+
+        const queryString = query.toString();
+        return queryString.length > 0 ? `${basePath}?${queryString}` : basePath;
+      }
+    : undefined;
 
   const renderPlayerName: ColumnConfig<LeaderRow>['render'] = ({ row, formattedValue }) => {
     const text =

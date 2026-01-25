@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Box, Skeleton, Button } from '@mui/material';
 import type { SocialFeedItemType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
@@ -36,7 +36,7 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<SocialFeedItemType | null>(null);
 
-  const canFetch = useMemo(() => Boolean(accountId && seasonId), [accountId, seasonId]);
+  const canFetch = Boolean(accountId && seasonId);
   const requestKey = canFetch ? `${accountId}:${seasonId}:${limit}` : '';
   const isLoading = canFetch && state.completedKey !== requestKey;
   const hasData = state.items.length > 0;
