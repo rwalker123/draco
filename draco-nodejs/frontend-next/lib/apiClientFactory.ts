@@ -10,8 +10,8 @@ type CreateApiClientOptions = {
 
 type ApiClient = ReturnType<typeof createClient>;
 
-// Cache clients by token to avoid creating new instances on every render
-const clientCache = new Map<string | undefined, ApiClient>();
+// Single-entry cache: stores the most recent client, automatically evicts on token change
+let cachedClient: { token: string | undefined; client: ApiClient } | null = null;
 
 export const createApiClient = ({
   token,
@@ -22,11 +22,8 @@ export const createApiClient = ({
   // Only use cache for default options (the common case from useApiClient)
   const useCache = baseUrl === '' && !transformHostHeader && !frontendBaseUrl;
 
-  if (useCache) {
-    const cached = clientCache.get(token);
-    if (cached) {
-      return cached;
-    }
+  if (useCache && cachedClient !== null && cachedClient.token === token) {
+    return cachedClient.client;
   }
   const configOverrides: Parameters<typeof createConfig>[0] = {
     baseUrl,
@@ -68,9 +65,9 @@ export const createApiClient = ({
     });
   }
 
-  // Cache the client for reuse
+  // Cache the client for reuse (replaces any previous cached client)
   if (useCache) {
-    clientCache.set(token, client);
+    cachedClient = { token, client };
   }
 
   return client;
