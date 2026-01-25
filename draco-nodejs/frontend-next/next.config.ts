@@ -38,6 +38,11 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    localPatterns: [
+      {
+        pathname: '/uploads/**',
+      },
+    ],
     remotePatterns: [
       // R2 public bucket (production)
       ...(process.env.NEXT_PUBLIC_R2_DOMAIN
