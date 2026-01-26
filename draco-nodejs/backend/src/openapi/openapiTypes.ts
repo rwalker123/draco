@@ -216,6 +216,8 @@ import {
   AlertSchema,
   AnnouncementListSchema,
   AnnouncementSchema,
+  AnnouncementSummarySchema,
+  AnnouncementSummaryListSchema,
   UpsertAlertSchema,
   UpsertAnnouncementSchema,
   LeaderCategoriesSchema,
@@ -1036,22 +1038,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const UpsertAlertSchemaRef = registry.register('UpsertAlert', UpsertAlertSchema);
   const AnnouncementSchemaRef = registry.register('Announcement', AnnouncementSchema);
   const AnnouncementListSchemaRef = registry.register('AnnouncementList', AnnouncementListSchema);
-  const AnnouncementSummarySchema = AnnouncementSchema.omit({ body: true }).openapi({
-    title: 'AnnouncementSummary',
-    description: 'Announcement metadata without the body content.',
-  });
   const AnnouncementSummarySchemaRef = registry.register(
     'AnnouncementSummary',
     AnnouncementSummarySchema,
   );
-  const AnnouncementSummaryListSchema = z
-    .object({
-      announcements: AnnouncementSummarySchema.array(),
-    })
-    .openapi({
-      title: 'AnnouncementSummaryList',
-      description: 'Collection wrapper for announcement summary responses.',
-    });
   const AnnouncementSummaryListSchemaRef = registry.register(
     'AnnouncementSummaryList',
     AnnouncementSummaryListSchema,

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   AlertTitle,
@@ -40,8 +40,10 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../../context/AuthContext';
 import { useApiClient } from '../../../hooks/useApiClient';
-import { createEmailService } from '../../../services/emailService';
-import type { EmailListResponse, EmailRecord, EmailStatus } from '../../../types/emails/email';
+import { listAccountEmails } from '@draco/shared-api-client';
+import { EmailListPagedType } from '@draco/shared-schemas';
+import { unwrapApiResult } from '../../../utils/apiResult';
+import type { EmailRecord, EmailStatus } from '../../../types/emails/email';
 import { formatDateTime } from '../../../utils/dateUtils';
 import { MetricCard, StatusChip, formatRate } from './EmailHistoryShared';
 import EmailDetailDialog from '../../dialogs/EmailDetailDialog';
@@ -67,7 +69,6 @@ interface EmailHistoryPanelProps {
 const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHeader = true }) => {
   const { token } = useAuth();
   const apiClient = useApiClient();
-  const emailService = useMemo(() => createEmailService(token, apiClient), [token, apiClient]);
 
   const [emails, setEmails] = useState<EmailRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,40 +76,74 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
   const [actionError, setActionError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [paginationInfo, setPaginationInfo] = useState<EmailListResponse['pagination'] | null>(
-    null,
-  );
+  const [paginationInfo, setPaginationInfo] = useState<
+    (EmailListPagedType['pagination'] & { totalPages: number }) | null
+  >(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
   const [selectedEmail, setSelectedEmail] = useState<EmailRecord | null>(null);
   const [emailPendingDelete, setEmailPendingDelete] = useState<EmailRecord | null>(null);
-
-  const fetchEmails = useCallback(async () => {
-    if (!accountId) return;
-
-    try {
-      setLoading(true);
-      setLoadError(null);
-      setActionError(null);
-
-      const statusQuery = statusFilter === 'all' ? undefined : statusFilter;
-      const response = await emailService.listEmails(accountId, page, pageSize, statusQuery);
-
-      setEmails(response.emails);
-      setPaginationInfo(response.pagination);
-    } catch (err) {
-      console.error('Failed to load email history:', err);
-      setLoadError('Unable to load email history. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, emailService, page, pageSize, statusFilter]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!accountId || !token) return;
-    fetchEmails();
-  }, [accountId, token, fetchEmails]);
+
+    const loadEmails = async () => {
+      try {
+        setLoading(true);
+        setLoadError(null);
+        setActionError(null);
+
+        const statusQuery = statusFilter === 'all' ? undefined : statusFilter;
+        const result = await listAccountEmails({
+          client: apiClient,
+          path: { accountId },
+          query: {
+            page,
+            limit: pageSize,
+            status: statusQuery,
+          },
+          throwOnError: false,
+        });
+
+        const data = unwrapApiResult(result, 'Failed to load email history');
+
+        const transformedEmails: EmailRecord[] = data.emails.map((email) => ({
+          id: email.id,
+          accountId,
+          createdByUserId: email.createdBy ?? undefined,
+          subject: email.subject,
+          bodyHtml: '',
+          templateId: email.templateName ?? undefined,
+          status: email.status as EmailStatus,
+          createdAt: new Date(email.createdAt),
+          sentAt: email.sentAt ? new Date(email.sentAt) : undefined,
+          totalRecipients: email.totalRecipients,
+          successfulDeliveries: email.successfulDeliveries,
+          failedDeliveries: email.failedDeliveries,
+          bounceCount: 0,
+          openCount: email.openCount,
+          clickCount: email.clickCount,
+        }));
+
+        const paginationWithTotalPages = {
+          ...data.pagination,
+          totalPages: Math.ceil(data.pagination.total / data.pagination.limit),
+        };
+
+        setEmails(transformedEmails);
+        setPaginationInfo(paginationWithTotalPages);
+      } catch (err) {
+        console.error('Failed to load email history:', err);
+        setLoadError('Unable to load email history. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadEmails();
+  }, [accountId, token, apiClient, page, pageSize, statusFilter, refreshKey]);
 
   useEffect(() => {
     if (paginationInfo && page > paginationInfo.totalPages && paginationInfo.totalPages > 0) {
@@ -116,7 +151,7 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
     }
   }, [paginationInfo, page]);
 
-  const filteredEmails = useMemo(() => {
+  const filteredEmails = (() => {
     if (!searchTerm) {
       return emails;
     }
@@ -128,9 +163,9 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
       const createdByMatch = (email.createdByUserId ?? '').toLowerCase().includes(term);
       return subjectMatch || templateMatch || createdByMatch;
     });
-  }, [emails, searchTerm]);
+  })();
 
-  const analytics = useMemo(() => {
+  const analytics = (() => {
     let totalRecipients = 0;
     let successful = 0;
     let failed = 0;
@@ -149,9 +184,9 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
       failed,
       deliverability,
     };
-  }, [filteredEmails]);
+  })();
 
-  const queueSummary = useMemo(() => {
+  const queueSummary = (() => {
     const sending = filteredEmails.filter((email) => email.status === 'sending').length;
     const scheduled = filteredEmails.filter((email) => email.status === 'scheduled').length;
     const drafts = filteredEmails.filter((email) => email.status === 'draft').length;
@@ -161,7 +196,7 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
     const active = sending + scheduled;
 
     return { sending, scheduled, drafts, partial, failed, active };
-  }, [filteredEmails]);
+  })();
 
   const totalPages = paginationInfo?.totalPages ?? 1;
   const totalEmails = paginationInfo?.total ?? filteredEmails.length;
@@ -183,36 +218,33 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
   };
 
   const handleRefresh = () => {
-    fetchEmails();
+    setRefreshKey((k) => k + 1);
   };
 
-  const handleCloseDetail = useCallback(() => {
+  const handleCloseDetail = () => {
     setSelectedEmail(null);
-  }, []);
+  };
 
-  const handleOpenDetail = useCallback((email: EmailRecord) => {
+  const handleOpenDetail = (email: EmailRecord) => {
     setActionError(null);
     setSelectedEmail(email);
-  }, []);
+  };
 
-  const handleOpenDeleteDialog = useCallback((email: EmailRecord) => {
+  const handleOpenDeleteDialog = (email: EmailRecord) => {
     setActionError(null);
     setEmailPendingDelete(email);
-  }, []);
+  };
 
-  const handleCloseDeleteDialog = useCallback(() => {
+  const handleCloseDeleteDialog = () => {
     setEmailPendingDelete(null);
-  }, []);
+  };
 
-  const handleEmailDeleted = useCallback(
-    (emailId: string) => {
-      setEmails((prev) => prev.filter((item) => item.id !== emailId));
-      setSelectedEmail((current) => (current?.id === emailId ? null : current));
-      setActionError(null);
-      fetchEmails();
-    },
-    [fetchEmails],
-  );
+  const handleEmailDeleted = (emailId: string) => {
+    setEmails((prev) => prev.filter((item) => item.id !== emailId));
+    setSelectedEmail((current) => (current?.id === emailId ? null : current));
+    setActionError(null);
+    setRefreshKey((k) => k + 1);
+  };
 
   if (!accountId) {
     return null;

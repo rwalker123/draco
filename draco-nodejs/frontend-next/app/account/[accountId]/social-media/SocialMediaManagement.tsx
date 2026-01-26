@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Box, CircularProgress, Paper, Tab, Tabs, Typography, Stack } from '@mui/material';
 import { useParams } from 'next/navigation';
 import { getAccountById } from '@draco/shared-api-client';
@@ -70,142 +70,104 @@ const SocialMediaManagement: React.FC = () => {
   const canManageSocialMedia =
     isGlobalAdministrator || isAccountAdministrator(hasRole, accountIdStr);
 
-  const loadAccountData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      if (!accountIdStr) {
-        setError('Account ID not found');
-        setAccount(null);
-        return;
-      }
-
-      const result = await getAccountById({
-        client: apiClient,
-        path: { accountId: accountIdStr },
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult(result, 'Failed to load account data');
-      setAccount(data.account as AccountType);
-    } catch (err) {
-      console.error('Failed to load account data', err);
-      setAccount(null);
-      setError('Failed to load account data');
-    } finally {
-      setLoading(false);
-    }
-  }, [accountIdStr, apiClient]);
-
   useEffect(() => {
-    if (accountId && token) {
-      void loadAccountData();
+    if (!accountId || !token) {
+      return;
     }
-  }, [accountId, token, loadAccountData]);
 
-  const postResultsDiscordSetting = useMemo(
-    () =>
-      accountSettings.settings?.find(
-        (setting) => setting.definition.key === 'PostGameResultsToDiscord',
-      ),
-    [accountSettings.settings],
+    let cancelled = false;
+
+    const loadAccountData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (!accountIdStr) {
+          setError('Account ID not found');
+          setAccount(null);
+          return;
+        }
+
+        const result = await getAccountById({
+          client: apiClient,
+          path: { accountId: accountIdStr },
+          throwOnError: false,
+        });
+
+        if (cancelled) return;
+
+        const data = unwrapApiResult(result, 'Failed to load account data');
+        setAccount(data.account as AccountType);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Failed to load account data', err);
+        setAccount(null);
+        setError('Failed to load account data');
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadAccountData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, token, accountIdStr, apiClient]);
+
+  const postResultsDiscordSetting = accountSettings.settings?.find(
+    (setting) => setting.definition.key === 'PostGameResultsToDiscord',
   );
 
-  const postResultsTwitterSetting = useMemo(
-    () =>
-      accountSettings.settings?.find(
-        (setting) => setting.definition.key === 'PostGameResultsToTwitter',
-      ),
-    [accountSettings.settings],
+  const postResultsTwitterSetting = accountSettings.settings?.find(
+    (setting) => setting.definition.key === 'PostGameResultsToTwitter',
   );
 
-  const postResultsFacebookSetting = useMemo(
-    () =>
-      accountSettings.settings?.find(
-        (setting) => setting.definition.key === 'PostGameResultsToFacebook',
-      ),
-    [accountSettings.settings],
+  const postResultsFacebookSetting = accountSettings.settings?.find(
+    (setting) => setting.definition.key === 'PostGameResultsToFacebook',
   );
 
-  const postAnnouncementsTwitterSetting = useMemo(
-    () =>
-      accountSettings.settings?.find(
-        (setting) => setting.definition.key === 'PostAnnouncementsToTwitter',
-      ),
-    [accountSettings.settings],
+  const postAnnouncementsTwitterSetting = accountSettings.settings?.find(
+    (setting) => setting.definition.key === 'PostAnnouncementsToTwitter',
   );
 
-  const postAnnouncementsFacebookSetting = useMemo(
-    () =>
-      accountSettings.settings?.find(
-        (setting) => setting.definition.key === 'PostAnnouncementsToFacebook',
-      ),
-    [accountSettings.settings],
+  const postAnnouncementsFacebookSetting = accountSettings.settings?.find(
+    (setting) => setting.definition.key === 'PostAnnouncementsToFacebook',
   );
 
-  const postResultsBlueskySetting = useMemo(
-    () =>
-      accountSettings.settings?.find(
-        (setting) => setting.definition.key === 'PostGameResultsToBluesky',
-      ),
-    [accountSettings.settings],
+  const postResultsBlueskySetting = accountSettings.settings?.find(
+    (setting) => setting.definition.key === 'PostGameResultsToBluesky',
   );
 
-  const postWorkoutsDiscordSetting = useMemo(
-    () =>
-      accountSettings.settings?.find(
-        (setting) => setting.definition.key === 'PostWorkoutsToDiscord',
-      ),
-    [accountSettings.settings],
+  const postWorkoutsDiscordSetting = accountSettings.settings?.find(
+    (setting) => setting.definition.key === 'PostWorkoutsToDiscord',
   );
 
-  const postWorkoutsTwitterSetting = useMemo(
-    () =>
-      accountSettings.settings?.find(
-        (setting) => setting.definition.key === 'PostWorkoutsToTwitter',
-      ),
-    [accountSettings.settings],
+  const postWorkoutsTwitterSetting = accountSettings.settings?.find(
+    (setting) => setting.definition.key === 'PostWorkoutsToTwitter',
   );
 
-  const postWorkoutsFacebookSetting = useMemo(
-    () =>
-      accountSettings.settings?.find(
-        (setting) => setting.definition.key === 'PostWorkoutsToFacebook',
-      ),
-    [accountSettings.settings],
+  const postWorkoutsFacebookSetting = accountSettings.settings?.find(
+    (setting) => setting.definition.key === 'PostWorkoutsToFacebook',
   );
 
-  const postWorkoutsBlueskySetting = useMemo(
-    () =>
-      accountSettings.settings?.find(
-        (setting) => setting.definition.key === 'PostWorkoutsToBluesky',
-      ),
-    [accountSettings.settings],
+  const postWorkoutsBlueskySetting = accountSettings.settings?.find(
+    (setting) => setting.definition.key === 'PostWorkoutsToBluesky',
   );
 
-  const postAnnouncementsBlueskySetting = useMemo(
-    () =>
-      accountSettings.settings?.find(
-        (setting) => setting.definition.key === 'PostAnnouncementsToBluesky',
-      ),
-    [accountSettings.settings],
+  const postAnnouncementsBlueskySetting = accountSettings.settings?.find(
+    (setting) => setting.definition.key === 'PostAnnouncementsToBluesky',
   );
 
-  const syncInstagramToGallerySetting = useMemo(
-    () =>
-      accountSettings.settings?.find(
-        (setting) => setting.definition.key === 'SyncInstagramToGallery',
-      ),
-    [accountSettings.settings],
+  const syncInstagramToGallerySetting = accountSettings.settings?.find(
+    (setting) => setting.definition.key === 'SyncInstagramToGallery',
   );
 
-  const updatePostResultsSetting = useCallback(
-    async (settingKey: AccountSettingKey, value: boolean) => {
-      await accountSettings.updateSetting?.(settingKey, value);
-    },
-    [accountSettings],
-  );
+  const updatePostResultsSetting = async (settingKey: AccountSettingKey, value: boolean) => {
+    await accountSettings.updateSetting?.(settingKey, value);
+  };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -261,7 +261,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   } = umpireHook;
 
   // Extract hierarchical IDs from initialSelectedGroups for restoration
-  const initialHierarchicalIds = useMemo(() => {
+  const initialHierarchicalIds = ((): string[] => {
     if (!initialSelectedGroups) return [];
     const ids: string[] = [];
     (['season', 'league', 'division', 'team'] as const).forEach((groupType) => {
@@ -271,10 +271,10 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       });
     });
     return ids;
-  }, [initialSelectedGroups]);
+  })();
 
   // Extract managersOnly from initialSelectedGroups
-  const initialHierarchicalManagersOnly = useMemo(() => {
+  const initialHierarchicalManagersOnly = ((): boolean => {
     if (!initialSelectedGroups) return false;
     for (const groupType of ['season', 'league', 'division', 'team'] as const) {
       const groups = initialSelectedGroups.get(groupType);
@@ -283,7 +283,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       }
     }
     return false;
-  }, [initialSelectedGroups]);
+  })();
 
   // Hierarchical selection state - initialize empty, effect will apply selections
   const [hierarchicalSelectedIds, setHierarchicalSelectedIds] = useState<
@@ -328,48 +328,45 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   } = contactFetching;
 
   // Unified group system utilities
-  const addToGroup = useCallback(
-    (groupType: GroupType, contactId: string, _contact?: RecipientContact) => {
-      setSelectedGroups((prevGroups) => {
-        const newGroups = new Map(prevGroups);
-        const existingGroups = newGroups.get(groupType) || [];
+  const addToGroup = (groupType: GroupType, contactId: string, _contact?: RecipientContact) => {
+    setSelectedGroups((prevGroups) => {
+      const newGroups = new Map(prevGroups);
+      const existingGroups = newGroups.get(groupType) || [];
 
-        // Find existing group or create new one
-        let targetGroup = existingGroups.find((g) => g.groupType === groupType);
-        if (!targetGroup) {
-          const groupName =
-            {
-              individuals: 'Individual Selections',
-              team: 'Teams',
-              division: 'Divisions',
-              league: 'Leagues',
-              season: 'Season Participants',
-            }[groupType] || 'Unknown Group';
+      // Find existing group or create new one
+      let targetGroup = existingGroups.find((g) => g.groupType === groupType);
+      if (!targetGroup) {
+        const groupName =
+          {
+            individuals: 'Individual Selections',
+            team: 'Teams',
+            division: 'Divisions',
+            league: 'Leagues',
+            season: 'Season Participants',
+          }[groupType] || 'Unknown Group';
 
-          targetGroup = {
-            groupType,
-            groupName,
-            ids: new Set(),
-            managersOnly: false,
-            totalCount: 0,
-          };
-          existingGroups.push(targetGroup);
-        }
+        targetGroup = {
+          groupType,
+          groupName,
+          ids: new Set(),
+          managersOnly: false,
+          totalCount: 0,
+        };
+        existingGroups.push(targetGroup);
+      }
 
-        // Add contact to group (targetGroup is guaranteed to exist here)
-        if (targetGroup) {
-          targetGroup.ids.add(contactId);
-          targetGroup.totalCount = targetGroup.ids.size;
-        }
+      // Add contact to group (targetGroup is guaranteed to exist here)
+      if (targetGroup) {
+        targetGroup.ids.add(contactId);
+        targetGroup.totalCount = targetGroup.ids.size;
+      }
 
-        newGroups.set(groupType, existingGroups);
-        return newGroups;
-      });
-    },
-    [],
-  );
+      newGroups.set(groupType, existingGroups);
+      return newGroups;
+    });
+  };
 
-  const removeFromGroup = useCallback((groupType: GroupType, contactId: string) => {
+  const removeFromGroup = (groupType: GroupType, contactId: string) => {
     setSelectedGroups((prevGroups) => {
       const newGroups = new Map(prevGroups);
       const existingGroups = newGroups.get(groupType) || [];
@@ -395,18 +392,15 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
       return newGroups;
     });
-  }, []);
+  };
 
-  const isContactInGroup = useCallback(
-    (groupType: GroupType, contactId: string): boolean => {
-      const groups = selectedGroups.get(groupType);
-      if (!groups) return false;
-      return groups.some((group) => group.ids.has(contactId));
-    },
-    [selectedGroups],
-  );
+  const isContactInGroup = (groupType: GroupType, contactId: string): boolean => {
+    const groups = selectedGroups.get(groupType);
+    if (!groups) return false;
+    return groups.some((group) => group.ids.has(contactId));
+  };
 
-  const getTotalSelected = useCallback((): number => {
+  const getTotalSelected = (): number => {
     let total = 0;
 
     // Add counts from selectedGroups (individual/manual selections)
@@ -435,27 +429,19 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     total += umpireSelectionCount;
 
     return total;
-  }, [
-    selectedGroups,
-    hierarchicalSelectedIds,
-    hierarchicalManagersOnly,
-    seasonId,
-    workoutSelectionCount,
-    teamsWantedSelectionCount,
-    umpireSelectionCount,
-  ]);
+  };
 
   // Hierarchical selection change handler
-  const handleHierarchicalSelectionChange = useCallback(
-    (itemSelectedState: Map<string, HierarchicalSelectionItem>, managersOnly: boolean) => {
-      setHierarchicalSelectedIds(itemSelectedState);
-      setHierarchicalManagersOnly(managersOnly);
+  const handleHierarchicalSelectionChange = (
+    itemSelectedState: Map<string, HierarchicalSelectionItem>,
+    managersOnly: boolean,
+  ) => {
+    setHierarchicalSelectedIds(itemSelectedState);
+    setHierarchicalManagersOnly(managersOnly);
 
-      // TODO: Convert to ContactGroups when needed for unified system
-      // For now, we'll keep hierarchical selections separate from the main selectedGroups
-    },
-    [],
-  );
+    // TODO: Convert to ContactGroups when needed for unified system
+    // For now, we'll keep hierarchical selections separate from the main selectedGroups
+  };
 
   // Use hierarchical selection hook to get applyMultipleSelections for initial selection restoration
   const { applyMultipleSelections } = useHierarchicalSelection(
@@ -575,77 +561,58 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   // }, []);
 
   // Unified group actions
-  const unifiedActions = useMemo(
-    () => ({
-      toggleContact: (contactId: string) => {
-        const contact = getContactDetails(contactId);
-        if (!contact || !contact.hasValidEmail) {
-          return; // Don't allow selection of contacts without valid email
+  const unifiedActions = {
+    toggleContact: (contactId: string) => {
+      const contact = getContactDetails(contactId);
+      if (!contact || !contact.hasValidEmail) {
+        return; // Don't allow selection of contacts without valid email
+      }
+
+      if (isContactInGroup('individuals', contactId)) {
+        removeFromGroup('individuals', contactId);
+        uncacheSelectedContact(contactId);
+      } else {
+        addToGroup('individuals', contactId, contact);
+        cacheSelectedContact(contact);
+      }
+    },
+
+    clearAllRecipients: () => {
+      setSelectedGroups(new Map());
+      setHierarchicalSelectedIds(new Map()); // Clear hierarchical selections
+      setHierarchicalManagersOnly(false); // Reset managers-only toggle
+      setHierarchicalCleared(true); // Prevent re-applying initial IDs
+      clearWorkoutSelections();
+      clearTeamsWantedSelections();
+      clearUmpireSelections();
+      clearSelectedContactsCache();
+    },
+
+    isContactSelected: (contactId: string): boolean => {
+      // Check all group types, not just individuals
+      for (const [, groups] of selectedGroups) {
+        if (groups && groups.some((group) => group.ids.has(contactId))) {
+          return true;
         }
+      }
+      return false;
+    },
 
-        if (isContactInGroup('individuals', contactId)) {
-          removeFromGroup('individuals', contactId);
-          uncacheSelectedContact(contactId);
-        } else {
-          addToGroup('individuals', contactId, contact);
-          cacheSelectedContact(contact);
-        }
-      },
+    getTotalSelected,
+  };
 
-      clearAllRecipients: () => {
-        setSelectedGroups(new Map());
-        setHierarchicalSelectedIds(new Map()); // Clear hierarchical selections
-        setHierarchicalManagersOnly(false); // Reset managers-only toggle
-        setHierarchicalCleared(true); // Prevent re-applying initial IDs
-        clearWorkoutSelections();
-        clearTeamsWantedSelections();
-        clearUmpireSelections();
-        clearSelectedContactsCache();
-      },
-
-      isContactSelected: (contactId: string): boolean => {
-        // Check all group types, not just individuals
-        for (const [, groups] of selectedGroups) {
-          if (groups && groups.some((group) => group.ids.has(contactId))) {
-            return true;
-          }
-        }
-        return false;
-      },
-
-      getTotalSelected,
-    }),
-    [
-      getContactDetails,
-      isContactInGroup,
-      removeFromGroup,
-      addToGroup,
-      getTotalSelected,
-      selectedGroups,
-      clearWorkoutSelections,
-      clearTeamsWantedSelections,
-      clearUmpireSelections,
-      cacheSelectedContact,
-      uncacheSelectedContact,
-      clearSelectedContactsCache,
-    ],
-  );
-
-  const hasWorkouts = useMemo(() => allWorkouts.length > 0, [allWorkouts]);
+  const hasWorkouts = allWorkouts.length > 0;
   const hasAnyData = hasContacts || hasWorkouts || hasTeamsWanted || hasUmpires;
 
   // Compute individual selection count for the Contacts tab
-  const individualSelectionCount = useMemo(() => {
+  const individualSelectionCount = ((): number => {
     const individualsGroups = selectedGroups.get('individuals');
     if (!individualsGroups) return 0;
     return individualsGroups.reduce((sum, group) => sum + group.totalCount, 0);
-  }, [selectedGroups]);
+  })();
 
   // Get cached selected contacts for "Show Selected Only" mode
-  const selectedContactsFromCache = useMemo(
-    () => getSelectedContactsFromCache(),
-    [getSelectedContactsFromCache],
-  );
+  const selectedContactsFromCache = getSelectedContactsFromCache();
 
   // Determine overall loading state - include pagination loading
   const isGeneralLoading =
@@ -656,7 +623,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     Object.values(loadingState).some(Boolean);
 
   // Compute effective current tab - falls back when requested tab's data is unavailable
-  const currentTab = useMemo((): TabValue => {
+  const currentTab = ((): TabValue => {
     // Helper to get fallback tab when a tab's data isn't available
     const getFallbackTab = (): TabValue => {
       if (seasonId) return 'season';
@@ -680,15 +647,15 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       default:
         return 'contacts';
     }
-  }, [requestedTab, seasonId, hasWorkouts, hasTeamsWanted, hasUmpires]);
+  })();
 
   // Handle tab changes
-  const handleTabChange = useCallback((_event: React.SyntheticEvent, newValue: TabValue) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: TabValue) => {
     setRequestedTab(newValue);
-  }, []);
+  };
 
   // Cancel and close dialog
-  const handleCancel = useCallback(() => {
+  const handleCancel = () => {
     // No need to reset state since it's managed by EmailComposeProvider
     // The dialog just closes and the parent retains its current state
 
@@ -700,10 +667,10 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       general: null,
     });
     onClose();
-  }, [onClose]);
+  };
 
   // Retry functionality
-  const handleRetry = useCallback(() => {
+  const handleRetry = () => {
     if (retryCount >= maxRetries) {
       showNotification('Maximum retry attempts reached. Please refresh the page.', 'error');
       return;
@@ -726,26 +693,15 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     void loadOlderWorkoutsOptions();
 
     showNotification('Retrying...', 'info');
-  }, [
-    retryCount,
-    maxRetries,
-    onRetry,
-    showNotification,
-    loadActiveWorkouts,
-    loadRecentPastWorkouts,
-    loadOlderWorkoutsOptions,
-  ]);
+  };
 
   // Clear specific errors
-  const clearError = useCallback((errorType: keyof ErrorState) => {
+  const clearError = (errorType: keyof ErrorState) => {
     setErrorState((prev) => ({ ...prev, [errorType]: null }));
-  }, []);
+  };
 
   // Convert hierarchical selections to ContactGroups with priority logic
-  const convertHierarchicalSelectionsToContactGroups = useCallback((): Map<
-    GroupType,
-    ContactGroup[]
-  > => {
+  const convertHierarchicalSelectionsToContactGroups = (): Map<GroupType, ContactGroup[]> => {
     if (!hierarchicalData || hierarchicalSelectedIds.size === 0) {
       return new Map();
     }
@@ -826,10 +782,10 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
     // Use the existing utility function to convert to ContactGroups
     return convertHierarchicalToContactGroups(filteredState, hierarchicalData);
-  }, [hierarchicalData, hierarchicalSelectedIds, hierarchicalManagersOnly, hierarchyMaps]);
+  };
 
   // Handle apply selection - UNIFIED SYSTEM ONLY
-  const handleApply = useCallback(() => {
+  const handleApply = () => {
     const totalSelected = getTotalSelected();
 
     const workoutSelections: WorkoutRecipientSelection[] = [];
@@ -884,7 +840,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     const mergedContactGroups = new Map<GroupType, ContactGroup[]>();
 
     // Preserve manual groups from selectedGroups
-    selectedGroups.forEach((contactGroups, groupType) => {
+    selectedGroups.forEach((contactGroups: ContactGroup[], groupType: GroupType) => {
       if (manualGroupTypes.has(groupType)) {
         mergedContactGroups.set(groupType, contactGroups);
       }
@@ -892,7 +848,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     });
 
     // Add/replace hierarchical ContactGroups (replace old hierarchical groups)
-    hierarchicalContactGroups.forEach((contactGroups, groupType) => {
+    hierarchicalContactGroups.forEach((contactGroups: ContactGroup[], groupType: GroupType) => {
       if (contactGroups.length > 0 && hierarchicalGroupTypes.has(groupType)) {
         // Replace any existing hierarchical groups of this type
         mergedContactGroups.set(groupType, contactGroups);
@@ -966,25 +922,10 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     // No callbacks provided - just show notification
     showNotification(`Applied selection: ${totalSelected} recipients`, 'success');
     onClose();
-  }, [
-    onSelectionAccepted,
-    onApply,
-    selectedGroups,
-    convertHierarchicalSelectionsToContactGroups,
-    getTotalSelected,
-    getContactDetails,
-    showNotification,
-    onClose,
-    selectedWorkoutRegistrantIds,
-    allWorkouts,
-    visibleWorkouts,
-    workoutManagersOnly,
-    getTeamsWantedSelections,
-    getUmpireSelections,
-  ]);
+  };
 
   // Derive external error as EmailRecipientError (computed, not synced via effect)
-  const externalError = useMemo((): EmailRecipientError | null => {
+  const externalError = ((): EmailRecipientError | null => {
     if (!error) return null;
     return typeof error === 'string'
       ? createEmailRecipientError(EmailRecipientErrorCode.UNKNOWN_ERROR, error, {
@@ -999,16 +940,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           operation: 'external',
           additionalData: { component: 'AdvancedRecipientDialog', source: 'external' },
         });
-  }, [error]);
+  })();
 
   // Combine internal errorState with external error prop
-  const combinedErrorState = useMemo(
-    (): ErrorState => ({
-      ...errorState,
-      general: errorState.general || externalError,
-    }),
-    [errorState, externalError],
-  );
+  const combinedErrorState: ErrorState = {
+    ...errorState,
+    general: errorState.general || externalError,
+  };
 
   // Show loading dialog if completely loading
   if (isGeneralLoading && !hasAnyData) {

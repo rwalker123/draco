@@ -17,15 +17,12 @@ import TeamAvatar from '../../../../../../../components/TeamAvatar';
 import {
   getTeamSeasonDetails as apiGetTeamSeasonDetails,
   getAccountDiscordLinkStatus as apiGetDiscordLinkStatus,
+  listTeamSponsors as apiListTeamSponsors,
+  type SponsorList,
 } from '@draco/shared-api-client';
 import type { TeamSeasonRecordType } from '@draco/shared-schemas';
 import SponsorCard from '../../../../../../../components/sponsors/SponsorCard';
-import { SponsorService } from '../../../../../../../services/sponsorService';
-import {
-  AnnouncementType,
-  SponsorType,
-  UpsertPlayersWantedClassifiedType,
-} from '@draco/shared-schemas';
+import { SponsorType, UpsertPlayersWantedClassifiedType } from '@draco/shared-schemas';
 import { useRole } from '../../../../../../../context/RoleContext';
 import TeamAdminPanel from '../../../../../../../components/sponsors/TeamAdminPanel';
 import { useAccountMembership } from '../../../../../../../hooks/useAccountMembership';
@@ -46,10 +43,7 @@ import PhotoGallerySection from '@/components/photo-gallery/PhotoGallerySection'
 import { useGameRecapFlow } from '../../../../../../../hooks/useGameRecapFlow';
 import LeadersWidget from '../../../../../../../components/statistics/LeadersWidget';
 import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
-import { AnnouncementService } from '@/services/announcementService';
-import SpecialAnnouncementsWidget, {
-  type SpecialAnnouncementCard,
-} from '@/components/announcements/SpecialAnnouncementsWidget';
+import SpecialAnnouncementsWidget from '@/components/announcements/SpecialAnnouncementsWidget';
 import AccountOptional from '@/components/account/AccountOptional';
 import TeamRosterWidget from '@/components/roster/TeamRosterWidget';
 import TeamManagersWidget from '@/components/team/TeamManagersWidget';
@@ -84,9 +78,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   } | null>(null);
   const [teamSponsors, setTeamSponsors] = React.useState<SponsorType[]>([]);
   const [teamSponsorError, setTeamSponsorError] = React.useState<string | null>(null);
-  const [teamAnnouncements, setTeamAnnouncements] = React.useState<AnnouncementType[]>([]);
-  const [teamAnnouncementsLoading, setTeamAnnouncementsLoading] = React.useState(false);
-  const [teamAnnouncementsError, setTeamAnnouncementsError] = React.useState<string | null>(null);
   const [informationWidgetVisible, setInformationWidgetVisible] = React.useState(true);
   const [playersWantedDialogOpen, setPlayersWantedDialogOpen] = React.useState(false);
   const [playersWantedInitialData, setPlayersWantedInitialData] = React.useState<
@@ -109,14 +100,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   } = useTeamMembership(isAccountMember ? accountId : null, teamSeasonId, seasonId);
   const apiClient = useApiClient();
   const apiClientRef = React.useRef(apiClient);
-  const sponsorService = React.useMemo(
-    () => new SponsorService(token, apiClient),
-    [token, apiClient],
-  );
-  const announcementService = React.useMemo(
-    () => new AnnouncementService(token, apiClient),
-    [token, apiClient],
-  );
   const [discordLinkStatus, setDiscordLinkStatus] = React.useState<DiscordLinkStatusType | null>(
     null,
   );
@@ -177,11 +160,16 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     const loadTeamSponsors = async () => {
       try {
         setTeamSponsorError(null);
-        const sponsors = await sponsorService.listTeamSponsors(accountId, seasonId, teamSeasonId);
+        const result = await apiListTeamSponsors({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          throwOnError: false,
+        });
         if (!isMounted) {
           return;
         }
-        setTeamSponsors(sponsors);
+        const data = unwrapApiResult<SponsorList>(result, 'Failed to load team sponsors');
+        setTeamSponsors(data.sponsors ?? []);
       } catch (err) {
         if (!isMounted) {
           return;
@@ -198,87 +186,30 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     return () => {
       isMounted = false;
     };
-  }, [accountId, seasonId, teamSeasonId, sponsorService]);
-
-  React.useEffect(() => {
-    if (!accountId || !teamData?.teamId) {
-      setTeamAnnouncements([]);
-      setTeamAnnouncementsError(null);
-      setTeamAnnouncementsLoading(false);
-      return;
-    }
-
-    let ignore = false;
-
-    const fetchTeamAnnouncements = async () => {
-      setTeamAnnouncementsLoading(true);
-      setTeamAnnouncementsError(null);
-
-      try {
-        const data = await announcementService.listTeamAnnouncements({
-          accountId,
-          teamId: teamData.teamId!,
-        });
-
-        if (ignore) {
-          return;
-        }
-
-        setTeamAnnouncements(data);
-      } catch (err) {
-        if (ignore) {
-          return;
-        }
-        const message = err instanceof Error ? err.message : 'Failed to load team announcements';
-        setTeamAnnouncementsError(message);
-        setTeamAnnouncements([]);
-      } finally {
-        if (!ignore) {
-          setTeamAnnouncementsLoading(false);
-        }
-      }
-    };
-
-    void fetchTeamAnnouncements();
-
-    return () => {
-      ignore = true;
-    };
-  }, [accountId, teamData?.teamId, announcementService]);
+  }, [accountId, seasonId, teamSeasonId, apiClient]);
 
   const teamModerationTeamId = teamData?.teamId ?? null;
 
-  const canModerateTeamSubmissions = React.useMemo(() => {
-    return (
-      hasRole('Administrator') ||
-      hasRole('PhotoAdmin') ||
-      hasRoleInAccount('AccountAdmin', accountId) ||
-      hasRoleInAccount('AccountPhotoAdmin', accountId) ||
-      hasRoleInTeam('TeamAdmin', teamSeasonId) ||
-      hasRoleInTeam('TeamPhotoAdmin', teamSeasonId)
-    );
-  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+  const canModerateTeamSubmissions =
+    hasRole('Administrator') ||
+    hasRole('PhotoAdmin') ||
+    hasRoleInAccount('AccountAdmin', accountId) ||
+    hasRoleInAccount('AccountPhotoAdmin', accountId) ||
+    hasRoleInTeam('TeamAdmin', teamSeasonId) ||
+    hasRoleInTeam('TeamPhotoAdmin', teamSeasonId);
 
-  const canEditPlayerPhotos = React.useMemo(() => {
-    return hasPermission('account.contacts.photos.manage', { accountId });
-  }, [accountId, hasPermission]);
+  const canEditPlayerPhotos = hasPermission('account.contacts.photos.manage', { accountId });
 
-  const canViewRosterDetails = React.useMemo(() => {
-    return (
-      hasRole('Administrator') ||
-      hasRoleInAccount('AccountAdmin', accountId) ||
-      hasRoleInTeam('TeamAdmin', teamSeasonId)
-    );
-  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+  const canViewRosterDetails =
+    hasRole('Administrator') ||
+    hasRoleInAccount('AccountAdmin', accountId) ||
+    hasRoleInTeam('TeamAdmin', teamSeasonId);
 
-  const canViewCommunityChats = React.useMemo(() => {
-    return (
-      hasRole('Administrator') ||
-      hasRoleInAccount('AccountAdmin', accountId) ||
-      hasRoleInTeam('TeamAdmin', teamSeasonId) ||
-      isTeamMember
-    );
-  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, isTeamMember, teamSeasonId]);
+  const canViewCommunityChats =
+    hasRole('Administrator') ||
+    hasRoleInAccount('AccountAdmin', accountId) ||
+    hasRoleInTeam('TeamAdmin', teamSeasonId) ||
+    isTeamMember;
 
   React.useEffect(() => {
     if (!token || !accountId || !canViewCommunityChats) {
@@ -328,6 +259,10 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const resolvedTeamId = teamData?.teamId ?? teamSeason?.team?.id ?? null;
   const showInformationWidget = Boolean(accountId && teamSeasonId);
 
+  const teamAnnouncementIds = ((): string[] => {
+    return teamData?.teamId ? [teamData.teamId] : [];
+  })();
+
   const {
     submissions: teamPendingSubmissions,
     loading: teamPendingLoading,
@@ -356,7 +291,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     enabled: Boolean(teamData?.teamId),
   });
 
-  const teamPendingAlbumOptions = React.useMemo<PhotoAlbumOption[]>(() => {
+  const teamPendingAlbumOptions = ((): PhotoAlbumOption[] => {
     const options = new Map<string, PhotoAlbumOption>();
 
     teamGalleryAlbums.forEach((album) => {
@@ -381,45 +316,15 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     });
 
     return Array.from(options.values());
-  }, [teamData?.teamId, teamGalleryAlbums, teamPendingSubmissions]);
+  })();
 
-  const handleApproveTeamPhoto = React.useCallback(
-    async (submissionId: string, albumId: string | null) => {
-      const success = await approveTeamSubmission(submissionId, albumId);
-      if (success) {
-        await refreshTeamGallery();
-      }
-      return success;
-    },
-    [approveTeamSubmission, refreshTeamGallery],
-  );
-
-  const specialTeamAnnouncements = React.useMemo<SpecialAnnouncementCard[]>(() => {
-    if (teamAnnouncements.length === 0) {
-      return [];
+  const handleApproveTeamPhoto = async (submissionId: string, albumId: string | null) => {
+    const success = await approveTeamSubmission(submissionId, albumId);
+    if (success) {
+      await refreshTeamGallery();
     }
-
-    const teamName = teamData?.teamName;
-    const rawLeagueName = teamData?.leagueName;
-    const leagueName =
-      rawLeagueName && rawLeagueName !== 'Unknown League' ? rawLeagueName : undefined;
-    const heading = teamName ? (leagueName ? `${leagueName} ${teamName}` : teamName) : undefined;
-    const sourceLabel = teamName ? `${teamName} Announcement` : 'Team Announcement';
-
-    return teamAnnouncements
-      .filter((announcement) => announcement.isSpecial)
-      .map<SpecialAnnouncementCard>((announcement) => ({
-        id: announcement.id,
-        title: announcement.title,
-        publishedAt: announcement.publishedAt,
-        accountId: announcement.accountId,
-        teamId: announcement.teamId,
-        visibility: announcement.visibility,
-        body: announcement.body,
-        sourceLabel,
-        heading,
-      }));
-  }, [teamAnnouncements, teamData?.teamName, teamData?.leagueName]);
+    return success;
+  };
 
   React.useEffect(() => {
     let isMounted = true;
@@ -490,21 +395,18 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     };
   }, [accountId, seasonId, teamSeasonId]);
 
-  const fetchRecapForTeam = React.useCallback(
-    async (game: Game, targetTeamId: string) => {
-      const recap = await getGameSummary({
-        accountId,
-        seasonId,
-        gameId: game.id,
-        teamSeasonId: targetTeamId,
-        token: token ?? undefined,
-      });
-      return recap ?? null;
-    },
-    [accountId, seasonId, token],
-  );
+  const fetchRecapForTeam = async (game: Game, targetTeamId: string) => {
+    const recap = await getGameSummary({
+      accountId,
+      seasonId,
+      gameId: game.id,
+      teamSeasonId: targetTeamId,
+      token: token ?? undefined,
+    });
+    return recap ?? null;
+  };
 
-  const handleRecapSaved = React.useCallback((game: Game, targetTeamId: string, recap: string) => {
+  const handleRecapSaved = (game: Game, targetTeamId: string, recap: string) => {
     setCompletedGames((prev) =>
       prev.map((entry) =>
         entry.id === game.id
@@ -519,7 +421,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           : entry,
       ),
     );
-  }, []);
+  };
 
   const {
     openEditRecap,
@@ -534,99 +436,70 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     onRecapSaved: handleRecapSaved,
   });
 
-  const handleOpenEditRecap = React.useCallback(
-    (game: Game) => {
-      if (process.env.NODE_ENV !== 'production') {
-        console.debug('[TeamPage] openEditRecap click', {
-          gameId: game.id,
-          homeTeamId: game.homeTeamId,
-          visitorTeamId: game.visitorTeamId,
-          hasGameRecap: game.hasGameRecap,
-          availableRecaps: game.gameRecaps?.map((entry) => entry.teamId),
-        });
-      }
-      openEditRecap(game);
-    },
-    [openEditRecap],
-  );
+  const handleOpenEditRecap = (game: Game) => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[TeamPage] openEditRecap click', {
+        gameId: game.id,
+        homeTeamId: game.homeTeamId,
+        visitorTeamId: game.visitorTeamId,
+        hasGameRecap: game.hasGameRecap,
+        availableRecaps: game.gameRecaps?.map((entry) => entry.teamId),
+      });
+    }
+    openEditRecap(game);
+  };
 
-  const handleOpenViewRecap = React.useCallback(
-    (game: Game) => {
-      if (process.env.NODE_ENV !== 'production') {
-        console.debug('[TeamPage] openViewRecap click', {
-          gameId: game.id,
-          homeTeamId: game.homeTeamId,
-          visitorTeamId: game.visitorTeamId,
-          hasGameRecap: game.hasGameRecap,
-          availableRecaps: game.gameRecaps?.map((entry) => entry.teamId),
-        });
-      }
-      openViewRecap(game);
-    },
-    [openViewRecap],
-  );
+  const handleOpenViewRecap = (game: Game) => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[TeamPage] openViewRecap click', {
+        gameId: game.id,
+        homeTeamId: game.homeTeamId,
+        visitorTeamId: game.visitorTeamId,
+        hasGameRecap: game.hasGameRecap,
+        availableRecaps: game.gameRecaps?.map((entry) => entry.teamId),
+      });
+    }
+    openViewRecap(game);
+  };
 
   const shouldShowTeamSponsors = teamSponsors.length > 0 || Boolean(teamSponsorError);
 
-  const canManageTeamSponsors = React.useMemo(() => {
-    return (
-      hasRole('Administrator') ||
-      hasRoleInAccount('AccountAdmin', accountId) ||
-      hasRoleInTeam('TeamAdmin', teamSeasonId) ||
-      hasRoleInTeam('TeamManager', teamSeasonId)
-    );
-  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+  const canManageTeamSponsors =
+    hasRole('Administrator') ||
+    hasRoleInAccount('AccountAdmin', accountId) ||
+    hasRoleInTeam('TeamAdmin', teamSeasonId) ||
+    hasRoleInTeam('TeamManager', teamSeasonId);
 
-  const canEnterStatistics = React.useMemo(() => {
-    return (
-      hasRole('Administrator') ||
-      hasRoleInAccount('AccountAdmin', accountId) ||
-      hasRoleInTeam('TeamAdmin', teamSeasonId)
-    );
-  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+  const canEnterStatistics =
+    hasRole('Administrator') ||
+    hasRoleInAccount('AccountAdmin', accountId) ||
+    hasRoleInTeam('TeamAdmin', teamSeasonId);
 
-  const canManageTeamSocials = React.useMemo(() => {
-    return (
-      hasRole('Administrator') ||
-      hasRoleInAccount('AccountAdmin', accountId) ||
-      hasRoleInTeam('TeamAdmin', teamSeasonId)
-    );
-  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+  const canManageTeamSocials =
+    hasRole('Administrator') ||
+    hasRoleInAccount('AccountAdmin', accountId) ||
+    hasRoleInTeam('TeamAdmin', teamSeasonId);
 
-  const canManageInformationMessages = React.useMemo(() => {
-    return (
-      hasRole('Administrator') ||
-      hasRoleInAccount('AccountAdmin', accountId) ||
-      hasRoleInAccount('LeagueAdmin', accountId) ||
-      hasRoleInTeam('TeamAdmin', teamSeasonId)
-    );
-  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+  const canManageInformationMessages =
+    hasRole('Administrator') ||
+    hasRoleInAccount('AccountAdmin', accountId) ||
+    hasRoleInAccount('LeagueAdmin', accountId) ||
+    hasRoleInTeam('TeamAdmin', teamSeasonId);
 
-  const canViewManagerContacts = React.useMemo(() => {
-    return (
-      hasRole('Administrator') ||
-      hasRoleInAccount('AccountAdmin', accountId) ||
-      hasRole('TeamAdmin')
-    );
-  }, [accountId, hasRole, hasRoleInAccount]);
+  const canViewManagerContacts =
+    hasRole('Administrator') || hasRoleInAccount('AccountAdmin', accountId) || hasRole('TeamAdmin');
 
-  const upcomingSections = React.useMemo(
-    () => [{ title: 'Upcoming Games', games: upcomingGames }],
-    [upcomingGames],
-  );
+  const upcomingSections = [{ title: 'Upcoming Games', games: upcomingGames }];
   const hasUpcomingGames = upcomingGames.length > 0;
 
-  const completedSections = React.useMemo(
-    () => [{ title: 'Completed Games', games: completedGames }],
-    [completedGames],
-  );
+  const completedSections = [{ title: 'Completed Games', games: completedGames }];
 
   const youtubeManagementHref =
     canManageTeamSocials && teamData?.teamId
       ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/youtube/manage`
       : undefined;
 
-  const handleOpenPlayersWantedDialog = React.useCallback(() => {
+  const handleOpenPlayersWantedDialog = () => {
     const parts = [teamData?.leagueName, teamData?.teamName]
       .map((part) => part?.trim())
       .filter((part): part is string => Boolean(part && part.length > 0));
@@ -640,12 +513,12 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       notifyOptOut: false,
     });
     setPlayersWantedDialogOpen(true);
-  }, [teamData]);
+  };
 
-  const handleClosePlayersWantedDialog = React.useCallback(() => {
+  const handleClosePlayersWantedDialog = () => {
     setPlayersWantedDialogOpen(false);
     setPlayersWantedInitialData(undefined);
-  }, []);
+  };
 
   return (
     <main className="min-h-screen bg-background">
@@ -793,9 +666,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
 
             {teamData?.teamId ? (
               <SpecialAnnouncementsWidget
-                announcements={specialTeamAnnouncements}
-                loading={teamAnnouncementsLoading}
-                error={teamAnnouncementsError}
+                accountId={accountId}
+                teamIds={teamAnnouncementIds}
+                showAccountAnnouncements={false}
                 title="Team Announcements"
                 subtitle={
                   teamData?.teamName

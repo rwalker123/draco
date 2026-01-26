@@ -119,7 +119,7 @@ const AnnouncementFormDialog: React.FC<AnnouncementFormDialogProps> = ({
       setValue('publishedAt', Number.isNaN(publishedAt.getTime()) ? new Date() : publishedAt, {
         shouldDirty: false,
       });
-      setValue('isSpecial', initialAnnouncement.isSpecial ?? false, { shouldDirty: false });
+      setValue('isSpecial', initialAnnouncement.isSpecial, { shouldDirty: false });
       setEditorInitialValue(sanitizedBody);
       setPlainTextLength(computePlainTextLength(sanitizedBody));
       setEditorKey((key) => key + 1);

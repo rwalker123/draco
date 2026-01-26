@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   AlertColor,
@@ -101,7 +101,7 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
   >({});
   const NO_ALBUM_VALUE = '__none__';
 
-  const tileStyles = useMemo(() => {
+  const tileStyles = (() => {
     const baseColor = theme.palette.primary.main;
     const surface = theme.palette.widget.surface;
     const highlightStart = alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12);
@@ -121,55 +121,47 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
         theme.palette.mode === 'dark' ? 0.18 : 0.06,
       ),
     };
-  }, [theme]);
+  })();
 
-  const isProcessing = useCallback(
-    (submissionId: string) => (processingIds ? processingIds.has(submissionId) : false),
-    [processingIds],
-  );
+  const isProcessing = (submissionId: string) =>
+    processingIds ? processingIds.has(submissionId) : false;
 
-  const handleApprove = useCallback(
-    async (submissionId: string, albumId: string | null) => {
-      const result = await onApprove(submissionId, albumId);
-      if (result) {
-        setDialogSubmission((current) => (current?.id === submissionId ? null : current));
-      }
-    },
-    [onApprove],
-  );
+  const handleApprove = async (submissionId: string, albumId: string | null) => {
+    const result = await onApprove(submissionId, albumId);
+    if (result) {
+      setDialogSubmission((current) => (current?.id === submissionId ? null : current));
+    }
+  };
 
-  const handleOpenDeny = useCallback((submission: PhotoSubmissionDetailType) => {
+  const handleOpenDeny = (submission: PhotoSubmissionDetailType) => {
     setDialogSubmission(submission);
     setDialogOpen(true);
-  }, []);
+  };
 
-  const handleCloseDialog = useCallback(() => {
+  const handleCloseDialog = () => {
     if (!isProcessing(dialogSubmission?.id ?? '')) {
       setDialogOpen(false);
       setDialogSubmission(null);
     }
-  }, [dialogSubmission, isProcessing]);
+  };
 
-  const handleConfirmDeny = useCallback(
-    async (reason: string) => {
-      if (!dialogSubmission) {
-        return false;
-      }
+  const handleConfirmDeny = async (reason: string) => {
+    if (!dialogSubmission) {
+      return false;
+    }
 
-      const result = await onDeny(dialogSubmission.id, reason);
-      if (result) {
-        setDialogOpen(false);
-        setDialogSubmission(null);
-      }
+    const result = await onDeny(dialogSubmission.id, reason);
+    if (result) {
+      setDialogOpen(false);
+      setDialogSubmission(null);
+    }
 
-      return result;
-    },
-    [dialogSubmission, onDeny],
-  );
+    return result;
+  };
 
   const hasSubmissions = submissions.length > 0;
 
-  const resolvedAlbumOptions = useMemo<PhotoAlbumOption[]>(() => {
+  const resolvedAlbumOptions = ((): PhotoAlbumOption[] => {
     if (!albumOptions || albumOptions.length === 0) {
       return [];
     }
@@ -185,9 +177,9 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
     });
 
     return Array.from(entries.values());
-  }, [albumOptions]);
+  })();
 
-  const contextAlbumOptions = useMemo<PhotoAlbumOption[]>(() => {
+  const contextAlbumOptions = ((): PhotoAlbumOption[] => {
     if (resolvedAlbumOptions.length === 0) {
       return [];
     }
@@ -198,21 +190,18 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
     }
 
     return resolvedAlbumOptions.filter((option) => !option.teamId);
-  }, [resolvedAlbumOptions, isTeamContext]);
+  })();
 
-  const nullAlbumLabel = useMemo(() => {
+  const nullAlbumLabel = (() => {
     const option = contextAlbumOptions.find((item) => item.id === null);
     return option?.title ?? 'No Album (Main Gallery)';
-  }, [contextAlbumOptions]);
+  })();
 
   const fallbackAlbumId = contextAlbumOptions[0]?.id ?? null;
 
-  const allowedAlbumIds = useMemo(
-    () => new Set(contextAlbumOptions.map((option) => option.id ?? null)),
-    [contextAlbumOptions],
-  );
+  const allowedAlbumIds = new Set(contextAlbumOptions.map((option) => option.id ?? null));
 
-  const albumSelections = useMemo(() => {
+  const albumSelections = (() => {
     const next: Record<string, string | null> = {};
     submissions.forEach((submission) => {
       const override = albumSelectionOverrides[submission.id];
@@ -222,7 +211,7 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
         : (fallbackAlbumId ?? null);
     });
     return next;
-  }, [albumSelectionOverrides, submissions, allowedAlbumIds, fallbackAlbumId]);
+  })();
 
   const getSelectedAlbumId = (submission: PhotoSubmissionDetailType): string | null => {
     const selected = albumSelections[submission.id];
@@ -243,15 +232,9 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
     }));
   };
 
-  const alertSeverity: AlertColor = useMemo(() => {
-    if (error) {
-      return 'error';
-    }
+  const alertSeverity: AlertColor = error ? 'error' : 'success';
 
-    return 'success';
-  }, [error]);
-
-  const shouldHidePanel = useMemo(() => {
+  const shouldHidePanel = (() => {
     if (loading) {
       return false;
     }
@@ -265,7 +248,7 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
     }
 
     return isPermissionDeniedError(error);
-  }, [error, loading, submissions.length, successMessage]);
+  })();
 
   if (shouldHidePanel) {
     return null;

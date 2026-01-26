@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -234,7 +234,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   const { config: classifiedsConfig } = useClassifiedsConfig(accountId);
   const { isMember, contact } = useAccountMembership(accountId);
 
-  const turnstileEnabled = useMemo(() => Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY), []);
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
   const captchaRequired = turnstileEnabled && isMember !== true;
   const captchaAutoResetKey = (open ? 1 : 0) + (captchaRequired ? 2 : 0);
   const [captchaTokenState, setCaptchaTokenState] = useState<{
@@ -243,19 +243,16 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   }>({ token: null, contextKey: captchaAutoResetKey });
   const captchaToken =
     captchaTokenState.contextKey === captchaAutoResetKey ? captchaTokenState.token : null;
-  const setCaptchaToken = useCallback(
-    (token: string | null) => {
-      setCaptchaTokenState({ token, contextKey: captchaAutoResetKey });
-    },
-    [captchaAutoResetKey],
-  );
+  const setCaptchaToken = (token: string | null) => {
+    setCaptchaTokenState({ token, contextKey: captchaAutoResetKey });
+  };
   const [manualCaptchaResetCount, setManualCaptchaResetCount] = useState(0);
 
   const captchaResetKey = manualCaptchaResetCount * 10 + captchaAutoResetKey;
 
-  const incrementCaptchaResetKey = useCallback(() => {
+  const incrementCaptchaResetKey = () => {
     setManualCaptchaResetCount((count) => count + 1);
-  }, []);
+  };
 
   const [captchaErrorState, setCaptchaErrorState] = useState<{
     message: string | null;
@@ -267,24 +264,18 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   const captchaError =
     captchaErrorState.contextKey === captchaAutoResetKey ? captchaErrorState.message : null;
 
-  const setCaptchaError = useCallback(
-    (message: string | null) => {
-      setCaptchaErrorState({ message, contextKey: captchaAutoResetKey });
-    },
-    [captchaAutoResetKey],
-  );
+  const setCaptchaError = (message: string | null) => {
+    setCaptchaErrorState({ message, contextKey: captchaAutoResetKey });
+  };
 
-  const handleCaptchaTokenChange = useCallback(
-    (token: string | null) => {
-      setCaptchaToken(token);
-      if (token) {
-        setCaptchaError(null);
-      }
-    },
-    [setCaptchaError, setCaptchaToken],
-  );
+  const handleCaptchaTokenChange = (token: string | null) => {
+    setCaptchaToken(token);
+    if (token) {
+      setCaptchaError(null);
+    }
+  };
 
-  const contactPrefill = useMemo(() => {
+  const contactPrefill = (() => {
     if (!contact) {
       return null;
     }
@@ -309,9 +300,9 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
       phone: formattedPhone,
       birthDate: parseDateOnly(contact.contactDetails?.dateOfBirth),
     };
-  }, [contact]);
+  })();
 
-  const updateClassifiedId = useMemo(() => {
+  const updateClassifiedId = (() => {
     if (classifiedId && classifiedId.trim().length > 0) {
       return classifiedId;
     }
@@ -326,9 +317,9 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     }
 
     return String(initialData.id);
-  }, [classifiedId, initialData]);
+  })();
 
-  const formDefaults = useMemo<DefaultValues<TeamsWantedFormValues>>(() => {
+  const formDefaults: DefaultValues<TeamsWantedFormValues> = (() => {
     const positions =
       (initialData?.positionsPlayed ?? '')
         .split(',')
@@ -356,17 +347,13 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
       birthDate,
       notifyOptOut: initialData?.notifyOptOut ?? false,
     };
-  }, [initialData, editMode, contactPrefill]);
+  })();
 
-  const formResolver = useMemo(
-    () =>
-      zodResolver(TeamsWantedFormSchema) as Resolver<
-        TeamsWantedFormValues,
-        Record<string, never>,
-        TeamsWantedFormValues
-      >,
-    [],
-  );
+  const formResolver = zodResolver(TeamsWantedFormSchema) as Resolver<
+    TeamsWantedFormValues,
+    Record<string, never>,
+    TeamsWantedFormValues
+  >;
 
   const {
     control,

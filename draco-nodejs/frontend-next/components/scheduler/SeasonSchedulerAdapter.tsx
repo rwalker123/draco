@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import type { TeamSeasonType } from '@draco/shared-schemas';
 import type { Game, League } from '@/types/schedule';
@@ -53,22 +53,16 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
 
-  const schedulerFields = useMemo(() => {
-    return fields.map((field) => ({ id: field.id, name: field.name }));
-  }, [fields]);
+  const schedulerFields = fields.map((field) => ({ id: field.id, name: field.name }));
 
-  const schedulerUmpires = useMemo(() => {
-    return umpires.map((umpire) => ({
-      id: umpire.id,
-      name: umpire.displayName || `${umpire.firstName} ${umpire.lastName}`.trim() || 'Umpire',
-    }));
-  }, [umpires]);
+  const schedulerUmpires = umpires.map((umpire) => ({
+    id: umpire.id,
+    name: umpire.displayName || `${umpire.firstName} ${umpire.lastName}`.trim() || 'Umpire',
+  }));
 
-  const schedulerLeagues = useMemo(() => {
-    return leagues.map((league) => ({ id: league.id, name: league.name }));
-  }, [leagues]);
+  const schedulerLeagues = leagues.map((league) => ({ id: league.id, name: league.name }));
 
-  const teamNameById = useMemo(() => {
+  const teamNameById = (() => {
     const map = new Map<string, string>();
     teams.forEach((team) => {
       const id = team.id;
@@ -78,9 +72,9 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
       map.set(id, team.name ?? 'Unknown Team');
     });
     return map;
-  }, [teams]);
+  })();
 
-  const gameById = useMemo(() => {
+  const gameById = (() => {
     const map = new Map<string, Game>();
     games.forEach((game) => {
       if (game.id) {
@@ -88,21 +82,18 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
       }
     });
     return map;
-  }, [games]);
+  })();
 
-  const getSchedulerGameLabel = useCallback(
-    (gameId: string): string => {
-      const game = gameById.get(gameId);
-      if (!game) {
-        return `Game ${gameId}`;
-      }
+  const getSchedulerGameLabel = (gameId: string): string => {
+    const game = gameById.get(gameId);
+    if (!game) {
+      return `Game ${gameId}`;
+    }
 
-      const home = teamNameById.get(game.homeTeamId) ?? 'Unknown Team';
-      const visitor = teamNameById.get(game.visitorTeamId) ?? 'Unknown Team';
-      return `${home} vs ${visitor}`;
-    },
-    [gameById, teamNameById],
-  );
+    const home = teamNameById.get(game.homeTeamId) ?? 'Unknown Team';
+    const visitor = teamNameById.get(game.visitorTeamId) ?? 'Unknown Team';
+    return `${home} vs ${visitor}`;
+  };
 
   const isDevelopment = process.env.NODE_ENV === 'development';
 

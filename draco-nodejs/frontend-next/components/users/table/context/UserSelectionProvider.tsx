@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useMemo, useCallback, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   EnhancedUser,
   UserSelectionState,
@@ -41,10 +41,11 @@ const DISABLED_ACTIONS: UserSelectionActions = {
 };
 
 const DisabledSelectionProvider: React.FC<UserSelectionProviderProps> = ({ children, config }) => {
-  const contextValue = useMemo<UserSelectionContextValue>(
-    () => ({ state: DISABLED_STATE, actions: DISABLED_ACTIONS, config }),
-    [config],
-  );
+  const contextValue: UserSelectionContextValue = {
+    state: DISABLED_STATE,
+    actions: DISABLED_ACTIONS,
+    config,
+  };
 
   return (
     <UserSelectionContext.Provider value={contextValue}>{children}</UserSelectionContext.Provider>
@@ -59,13 +60,10 @@ const ActiveUserSelectionProvider: React.FC<UserSelectionProviderProps> = ({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastSelectedId, setLastSelectedId] = useState<string | undefined>();
 
-  const selectableUsers = useMemo(
-    () => users.filter((user) => !config.disabled?.(user)),
-    [users, config],
-  );
-  const selectableIds = useMemo(() => new Set(selectableUsers.map((u) => u.id)), [selectableUsers]);
+  const selectableUsers = users.filter((user) => !config.disabled?.(user));
+  const selectableIds = new Set(selectableUsers.map((u) => u.id));
 
-  const normalizedSelectedIds = useMemo(() => {
+  const normalizedSelectedIds = ((): Set<string> => {
     let differs = false;
     const next = new Set<string>();
     selectedIds.forEach((id) => {
@@ -76,9 +74,9 @@ const ActiveUserSelectionProvider: React.FC<UserSelectionProviderProps> = ({
       }
     });
     return differs ? next : selectedIds;
-  }, [selectedIds, selectableIds]);
+  })();
 
-  const baseState = useMemo<UserSelectionState>(() => {
+  const baseState = ((): UserSelectionState => {
     const validLastSelectedId =
       lastSelectedId && normalizedSelectedIds.has(lastSelectedId) ? lastSelectedId : undefined;
     const totalSelected = normalizedSelectedIds.size;
@@ -90,104 +88,82 @@ const ActiveUserSelectionProvider: React.FC<UserSelectionProviderProps> = ({
       totalSelected,
       lastSelectedId: validLastSelectedId,
     };
-  }, [normalizedSelectedIds, selectableUsers.length, lastSelectedId]);
+  })();
 
-  const selectedUsers = useMemo(
-    () => users.filter((user) => baseState.selectedIds.has(user.id)),
-    [users, baseState.selectedIds],
-  );
+  const selectedUsers = users.filter((user) => baseState.selectedIds.has(user.id));
 
-  const selectionIsValid = useMemo(() => {
+  const selectionIsValid = ((): boolean => {
     if (!config.validateSelection) {
       return true;
     }
     return config.validateSelection(selectedUsers);
-  }, [config, selectedUsers]);
+  })();
 
-  const state = useMemo<UserSelectionState>(() => {
-    if (selectionIsValid) {
-      return baseState;
+  const state: UserSelectionState = selectionIsValid ? baseState : DISABLED_STATE;
+
+  const effectiveSelectedUsers = selectionIsValid ? selectedUsers : [];
+
+  const applySelectionChange = (nextIds: Set<string>, nextLastId?: string) => {
+    const filteredNextIds = new Set<string>();
+    nextIds.forEach((id) => {
+      if (selectableIds.has(id)) {
+        filteredNextIds.add(id);
+      }
+    });
+
+    const nextSelectedUsers = users.filter((user) => filteredNextIds.has(user.id));
+    if (config.validateSelection && !config.validateSelection(nextSelectedUsers)) {
+      setSelectedIds(new Set());
+      setLastSelectedId(undefined);
+      return;
     }
-    return DISABLED_STATE;
-  }, [baseState, selectionIsValid]);
 
-  const effectiveSelectedUsers = useMemo(() => {
-    return selectionIsValid ? selectedUsers : [];
-  }, [selectionIsValid, selectedUsers]);
+    setSelectedIds(filteredNextIds);
+    setLastSelectedId(nextLastId);
+  };
 
-  const applySelectionChange = useCallback(
-    (nextIds: Set<string>, nextLastId?: string) => {
-      const filteredNextIds = new Set<string>();
-      nextIds.forEach((id) => {
-        if (selectableIds.has(id)) {
-          filteredNextIds.add(id);
-        }
-      });
+  const selectUser = (userId: string) => {
+    const user = users.find((u) => u.id === userId);
+    if (!user || config.disabled?.(user)) return;
 
-      const nextSelectedUsers = users.filter((user) => filteredNextIds.has(user.id));
-      if (config.validateSelection && !config.validateSelection(nextSelectedUsers)) {
-        setSelectedIds(new Set());
-        setLastSelectedId(undefined);
-        return;
-      }
+    if (config.mode === 'single') {
+      applySelectionChange(new Set([userId]), userId);
+      return;
+    }
 
-      setSelectedIds(filteredNextIds);
-      setLastSelectedId(nextLastId);
-    },
-    [users, config, selectableIds],
-  );
-
-  const selectUser = useCallback(
-    (userId: string) => {
-      const user = users.find((u) => u.id === userId);
-      if (!user || config.disabled?.(user)) return;
-
-      if (config.mode === 'single') {
-        applySelectionChange(new Set([userId]), userId);
-        return;
-      }
-
-      if (config.mode === 'multiple') {
-        const newSelection = new Set(state.selectedIds);
-        if (
-          config.maxSelection &&
-          newSelection.size >= config.maxSelection &&
-          !newSelection.has(userId)
-        ) {
-          return;
-        }
-        newSelection.add(userId);
-        applySelectionChange(newSelection, userId);
-      }
-    },
-    [users, config, state.selectedIds, applySelectionChange],
-  );
-
-  const deselectUser = useCallback(
-    (userId: string) => {
-      if (!state.selectedIds.has(userId)) {
-        return;
-      }
+    if (config.mode === 'multiple') {
       const newSelection = new Set(state.selectedIds);
-      newSelection.delete(userId);
-      const nextLastSelectedId = state.lastSelectedId === userId ? undefined : state.lastSelectedId;
-      applySelectionChange(newSelection, nextLastSelectedId);
-    },
-    [state.selectedIds, state.lastSelectedId, applySelectionChange],
-  );
-
-  const toggleUser = useCallback(
-    (userId: string) => {
-      if (state.selectedIds.has(userId)) {
-        deselectUser(userId);
-      } else {
-        selectUser(userId);
+      if (
+        config.maxSelection &&
+        newSelection.size >= config.maxSelection &&
+        !newSelection.has(userId)
+      ) {
+        return;
       }
-    },
-    [state.selectedIds, selectUser, deselectUser],
-  );
+      newSelection.add(userId);
+      applySelectionChange(newSelection, userId);
+    }
+  };
 
-  const selectAll = useCallback(() => {
+  const deselectUser = (userId: string) => {
+    if (!state.selectedIds.has(userId)) {
+      return;
+    }
+    const newSelection = new Set(state.selectedIds);
+    newSelection.delete(userId);
+    const nextLastSelectedId = state.lastSelectedId === userId ? undefined : state.lastSelectedId;
+    applySelectionChange(newSelection, nextLastSelectedId);
+  };
+
+  const toggleUser = (userId: string) => {
+    if (state.selectedIds.has(userId)) {
+      deselectUser(userId);
+    } else {
+      selectUser(userId);
+    }
+  };
+
+  const selectAll = () => {
     if (config.mode !== 'multiple') return;
 
     let usersToSelect = selectableUsers;
@@ -196,110 +172,85 @@ const ActiveUserSelectionProvider: React.FC<UserSelectionProviderProps> = ({
     }
 
     applySelectionChange(new Set(usersToSelect.map((u) => u.id)), undefined);
-  }, [config, selectableUsers, applySelectionChange]);
+  };
 
-  const deselectAll = useCallback(() => {
+  const deselectAll = () => {
     applySelectionChange(new Set(), undefined);
-  }, [applySelectionChange]);
+  };
 
-  const toggleSelectAll = useCallback(() => {
+  const toggleSelectAll = () => {
     if (state.selectAll || state.indeterminate) {
       deselectAll();
     } else {
       selectAll();
     }
-  }, [state.selectAll, state.indeterminate, selectAll, deselectAll]);
+  };
 
-  const selectRange = useCallback(
-    (fromId: string, toId: string) => {
-      if (config.mode !== 'multiple') return;
+  const selectRange = (fromId: string, toId: string) => {
+    if (config.mode !== 'multiple') return;
 
-      const fromIndex = users.findIndex((u) => u.id === fromId);
-      const toIndex = users.findIndex((u) => u.id === toId);
+    const fromIndex = users.findIndex((u) => u.id === fromId);
+    const toIndex = users.findIndex((u) => u.id === toId);
 
-      if (fromIndex === -1 || toIndex === -1) return;
+    if (fromIndex === -1 || toIndex === -1) return;
 
-      const startIndex = Math.min(fromIndex, toIndex);
-      const endIndex = Math.max(fromIndex, toIndex);
-      const rangeUsers = users
-        .slice(startIndex, endIndex + 1)
-        .filter((user) => !config.disabled?.(user));
+    const startIndex = Math.min(fromIndex, toIndex);
+    const endIndex = Math.max(fromIndex, toIndex);
+    const rangeUsers = users
+      .slice(startIndex, endIndex + 1)
+      .filter((user) => !config.disabled?.(user));
 
-      const newSelection = new Set(state.selectedIds);
-      rangeUsers.forEach((user) => {
-        if (!config.maxSelection || newSelection.size < config.maxSelection) {
-          newSelection.add(user.id);
-        }
-      });
-
-      applySelectionChange(newSelection, toId);
-    },
-    [users, config, state.selectedIds, applySelectionChange],
-  );
-
-  const isSelected = useCallback(
-    (userId: string) => state.selectedIds.has(userId),
-    [state.selectedIds],
-  );
-
-  const getSelectedUsers = useCallback(() => effectiveSelectedUsers, [effectiveSelectedUsers]);
-
-  const canSelectUser = useCallback(
-    (user: EnhancedUser) => {
-      if (config.mode === 'none') return false;
-      if (config.disabled?.(user)) return false;
-      if (config.mode === 'single') return true;
-      if (
-        config.maxSelection &&
-        state.selectedIds.size >= config.maxSelection &&
-        !state.selectedIds.has(user.id)
-      ) {
-        return false;
+    const newSelection = new Set(state.selectedIds);
+    rangeUsers.forEach((user) => {
+      if (!config.maxSelection || newSelection.size < config.maxSelection) {
+        newSelection.add(user.id);
       }
-      return true;
-    },
-    [config, state.selectedIds],
-  );
+    });
 
-  const actions = useMemo<UserSelectionActions>(
-    () => ({
-      selectUser,
-      deselectUser,
-      toggleUser,
-      selectAll,
-      deselectAll,
-      toggleSelectAll,
-      selectRange,
-      isSelected,
-      getSelectedUsers,
-      canSelectUser,
-    }),
-    [
-      selectUser,
-      deselectUser,
-      toggleUser,
-      selectAll,
-      deselectAll,
-      toggleSelectAll,
-      selectRange,
-      isSelected,
-      getSelectedUsers,
-      canSelectUser,
-    ],
-  );
+    applySelectionChange(newSelection, toId);
+  };
+
+  const isSelected = (userId: string) => state.selectedIds.has(userId);
+
+  const getSelectedUsers = () => effectiveSelectedUsers;
+
+  const canSelectUser = (user: EnhancedUser) => {
+    if (config.mode === 'none') return false;
+    if (config.disabled?.(user)) return false;
+    if (config.mode === 'single') return true;
+    if (
+      config.maxSelection &&
+      state.selectedIds.size >= config.maxSelection &&
+      !state.selectedIds.has(user.id)
+    ) {
+      return false;
+    }
+    return true;
+  };
+
+  const actions: UserSelectionActions = {
+    selectUser,
+    deselectUser,
+    toggleUser,
+    selectAll,
+    deselectAll,
+    toggleSelectAll,
+    selectRange,
+    isSelected,
+    getSelectedUsers,
+    canSelectUser,
+  };
 
   useEffect(() => {
-    config.onSelectionChange?.(state, effectiveSelectedUsers);
-  }, [config, state, effectiveSelectedUsers]);
+    const effectiveUsers = selectionIsValid ? selectedUsers : [];
+    config.onSelectionChange?.(state, effectiveUsers);
+  }, [config, state, selectionIsValid, selectedUsers]);
 
-  const contextValue = useMemo<UserSelectionContextValue>(
-    () => ({
-      state,
-      actions,
-      config,
-    }),
-    [state, actions, config],
-  );
+  const contextValue: UserSelectionContextValue = {
+    state,
+    actions,
+    config,
+  };
 
   return (
     <UserSelectionContext.Provider value={contextValue}>{children}</UserSelectionContext.Provider>

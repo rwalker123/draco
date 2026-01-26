@@ -36,7 +36,7 @@ export const UpsertAnnouncementSchema = z
         `Body must be ${ANNOUNCEMENT_BODY_MAX_LENGTH} characters or fewer`,
       ),
     publishedAt: isoDateTimeSchema,
-    isSpecial: z.boolean().default(false),
+    isSpecial: z.boolean(),
   })
   .openapi({
     title: 'UpsertAnnouncement',
@@ -62,6 +62,20 @@ export const AnnouncementListSchema = z
     description: 'Collection wrapper for announcement responses',
   });
 
+export const AnnouncementSummarySchema = AnnouncementSchema.omit({ body: true }).openapi({
+  title: 'AnnouncementSummary',
+  description: 'Announcement metadata without the body content.',
+});
+
+export const AnnouncementSummaryListSchema = z
+  .object({
+    announcements: AnnouncementSummarySchema.array(),
+  })
+  .openapi({
+    title: 'AnnouncementSummaryList',
+    description: 'Collection wrapper for announcement summary responses.',
+  });
+
 export const AnnouncementFiltersSchema = z
   .object({
     teamId: numericStringSchema.optional(),
@@ -75,4 +89,6 @@ export const AnnouncementFiltersSchema = z
 export type AnnouncementType = z.infer<typeof AnnouncementSchema>;
 export type UpsertAnnouncementType = z.infer<typeof UpsertAnnouncementSchema>;
 export type AnnouncementListType = z.infer<typeof AnnouncementListSchema>;
+export type AnnouncementSummaryType = z.infer<typeof AnnouncementSummarySchema>;
+export type AnnouncementSummaryListType = z.infer<typeof AnnouncementSummaryListSchema>;
 export type AnnouncementFiltersType = z.infer<typeof AnnouncementFiltersSchema>;

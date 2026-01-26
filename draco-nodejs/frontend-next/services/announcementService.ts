@@ -1,4 +1,10 @@
-import { AnnouncementType, UpsertAnnouncementType } from '@draco/shared-schemas';
+import {
+  AnnouncementType,
+  UpsertAnnouncementType,
+  AnnouncementListType,
+  AnnouncementSummaryType,
+  AnnouncementSummaryListType,
+} from '@draco/shared-schemas';
 import {
   listAccountAnnouncementSummaries as apiListAccountAnnouncementSummaries,
   listAccountAnnouncements as apiListAccountAnnouncements,
@@ -12,10 +18,6 @@ import {
   updateTeamAnnouncement as apiUpdateTeamAnnouncement,
   deleteTeamAnnouncement as apiDeleteTeamAnnouncement,
   getTeamAnnouncement as apiGetTeamAnnouncement,
-  type Announcement as ApiAnnouncement,
-  type AnnouncementList as ApiAnnouncementList,
-  type AnnouncementSummary as ApiAnnouncementSummary,
-  type AnnouncementSummaryList as ApiAnnouncementSummaryList,
 } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
 import { createApiClient } from '../lib/apiClientFactory';
@@ -25,10 +27,6 @@ interface TeamContext {
   accountId: string;
   teamId: string;
 }
-
-export type AnnouncementSummaryItem = Omit<ApiAnnouncementSummary, 'isSpecial'> & {
-  isSpecial: boolean;
-};
 
 interface AnnouncementSummaryOptions {
   limit?: number;
@@ -42,30 +40,6 @@ export class AnnouncementService {
     this.client = client ?? createApiClient({ token: token ?? undefined });
   }
 
-  private normalizeAnnouncement(announcement: ApiAnnouncement): AnnouncementType {
-    return {
-      ...announcement,
-      isSpecial: announcement.isSpecial ?? false,
-    };
-  }
-
-  private normalizeAnnouncementList(payload?: ApiAnnouncementList | null): AnnouncementType[] {
-    return (payload?.announcements ?? []).map((item) => this.normalizeAnnouncement(item));
-  }
-
-  private normalizeAnnouncementSummary(summary: ApiAnnouncementSummary): AnnouncementSummaryItem {
-    return {
-      ...summary,
-      isSpecial: summary.isSpecial ?? false,
-    };
-  }
-
-  private normalizeAnnouncementSummaryList(
-    payload?: ApiAnnouncementSummaryList | null,
-  ): AnnouncementSummaryItem[] {
-    return (payload?.announcements ?? []).map((item) => this.normalizeAnnouncementSummary(item));
-  }
-
   async listAccountAnnouncements(accountId: string): Promise<AnnouncementType[]> {
     const result = await apiListAccountAnnouncements({
       client: this.client,
@@ -73,17 +47,17 @@ export class AnnouncementService {
       throwOnError: false,
     });
 
-    const payload = unwrapApiResult<ApiAnnouncementList>(
+    const payload = unwrapApiResult<AnnouncementListType>(
       result,
       'Failed to load account announcements',
     );
-    return this.normalizeAnnouncementList(payload);
+    return payload.announcements;
   }
 
   async listAccountAnnouncementSummaries(
     accountId: string,
     options?: AnnouncementSummaryOptions,
-  ): Promise<AnnouncementSummaryItem[]> {
+  ): Promise<AnnouncementSummaryType[]> {
     const result = await apiListAccountAnnouncementSummaries({
       client: this.client,
       path: { accountId },
@@ -91,11 +65,11 @@ export class AnnouncementService {
       throwOnError: false,
     });
 
-    const payload = unwrapApiResult<ApiAnnouncementSummaryList>(
+    const payload = unwrapApiResult<AnnouncementSummaryListType>(
       result,
       'Failed to load account announcement summaries',
     );
-    return this.normalizeAnnouncementSummaryList(payload);
+    return payload.announcements;
   }
 
   async getAccountAnnouncement(
@@ -108,11 +82,7 @@ export class AnnouncementService {
       throwOnError: false,
     });
 
-    const announcement = unwrapApiResult<ApiAnnouncement>(
-      result,
-      'Failed to load announcement details',
-    );
-    return this.normalizeAnnouncement(announcement);
+    return unwrapApiResult<AnnouncementType>(result, 'Failed to load announcement details');
   }
 
   async createAccountAnnouncement(
@@ -126,8 +96,7 @@ export class AnnouncementService {
       throwOnError: false,
     });
 
-    const announcement = unwrapApiResult<ApiAnnouncement>(result, 'Failed to create announcement');
-    return this.normalizeAnnouncement(announcement);
+    return unwrapApiResult<AnnouncementType>(result, 'Failed to create announcement');
   }
 
   async updateAccountAnnouncement(
@@ -142,8 +111,7 @@ export class AnnouncementService {
       throwOnError: false,
     });
 
-    const announcement = unwrapApiResult<ApiAnnouncement>(result, 'Failed to update announcement');
-    return this.normalizeAnnouncement(announcement);
+    return unwrapApiResult<AnnouncementType>(result, 'Failed to update announcement');
   }
 
   async deleteAccountAnnouncement(accountId: string, announcementId: string): Promise<void> {
@@ -163,17 +131,17 @@ export class AnnouncementService {
       throwOnError: false,
     });
 
-    const payload = unwrapApiResult<ApiAnnouncementList>(
+    const payload = unwrapApiResult<AnnouncementListType>(
       result,
       'Failed to load team announcements',
     );
-    return this.normalizeAnnouncementList(payload);
+    return payload.announcements;
   }
 
   async listTeamAnnouncementSummaries(
     context: TeamContext,
     options?: AnnouncementSummaryOptions,
-  ): Promise<AnnouncementSummaryItem[]> {
+  ): Promise<AnnouncementSummaryType[]> {
     const result = await apiListTeamAnnouncementSummaries({
       client: this.client,
       path: { accountId: context.accountId, teamId: context.teamId },
@@ -181,11 +149,11 @@ export class AnnouncementService {
       throwOnError: false,
     });
 
-    const payload = unwrapApiResult<ApiAnnouncementSummaryList>(
+    const payload = unwrapApiResult<AnnouncementSummaryListType>(
       result,
       'Failed to load team announcement summaries',
     );
-    return this.normalizeAnnouncementSummaryList(payload);
+    return payload.announcements;
   }
 
   async getTeamAnnouncement(
@@ -202,11 +170,7 @@ export class AnnouncementService {
       throwOnError: false,
     });
 
-    const announcement = unwrapApiResult<ApiAnnouncement>(
-      result,
-      'Failed to load announcement details',
-    );
-    return this.normalizeAnnouncement(announcement);
+    return unwrapApiResult<AnnouncementType>(result, 'Failed to load announcement details');
   }
 
   async createTeamAnnouncement(
@@ -220,8 +184,7 @@ export class AnnouncementService {
       throwOnError: false,
     });
 
-    const announcement = unwrapApiResult<ApiAnnouncement>(result, 'Failed to create announcement');
-    return this.normalizeAnnouncement(announcement);
+    return unwrapApiResult<AnnouncementType>(result, 'Failed to create announcement');
   }
 
   async updateTeamAnnouncement(
@@ -236,8 +199,7 @@ export class AnnouncementService {
       throwOnError: false,
     });
 
-    const announcement = unwrapApiResult<ApiAnnouncement>(result, 'Failed to update announcement');
-    return this.normalizeAnnouncement(announcement);
+    return unwrapApiResult<AnnouncementType>(result, 'Failed to update announcement');
   }
 
   async deleteTeamAnnouncement(context: TeamContext, announcementId: string): Promise<void> {

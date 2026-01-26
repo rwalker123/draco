@@ -219,7 +219,7 @@ export class AnnouncementService {
       title,
       body,
       publishedAt,
-      isSpecial: payload.isSpecial ?? false,
+      isSpecial: payload.isSpecial,
     };
   }
 

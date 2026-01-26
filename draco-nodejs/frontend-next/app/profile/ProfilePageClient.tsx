@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -302,7 +302,7 @@ const ProfilePageClient: React.FC = () => {
     };
   }, [apiClient, organizations, token]);
 
-  const renderTeamsSection = useMemo(() => {
+  const renderTeamsSection = (() => {
     if (organizationsLoading) {
       return (
         <Paper sx={{ p: 4, borderRadius: 2 }}>
@@ -387,45 +387,38 @@ const ProfilePageClient: React.FC = () => {
         })}
       </Stack>
     );
-  }, [organizations, organizationsError, organizationsLoading, router, teamsByAccount]);
+  })();
 
-  const handleEditContact = useCallback(() => {
+  const handleEditContact = () => {
     setEditDialogOpen(true);
-  }, []);
+  };
 
-  const handleChangePassword = useCallback(() => {
+  const handleChangePassword = () => {
     setChangePasswordDialogOpen(true);
-  }, []);
+  };
 
-  const handleContactUpdated = useCallback((updated: BaseContactType) => {
+  const handleContactUpdated = (updated: BaseContactType) => {
     setContact(updated);
-  }, []);
+  };
 
-  const isGolfIndividualAccount = useMemo(() => {
-    return isGolfIndividualAccountType(currentAccount?.accountType);
-  }, [currentAccount?.accountType]);
+  const isGolfIndividualAccount = isGolfIndividualAccountType(currentAccount?.accountType);
 
-  const canDeleteUser = useMemo(() => {
-    return isGolfIndividualAccount && organizations.length === 1;
-  }, [isGolfIndividualAccount, organizations.length]);
+  const canDeleteUser = isGolfIndividualAccount && organizations.length === 1;
 
-  const handleDeleteAccount = useCallback(() => {
+  const handleDeleteAccount = () => {
     setDeleteDialogOpen(true);
-  }, []);
+  };
 
-  const handleDeleteSuccess = useCallback(
-    (result: { userDeleted: boolean }) => {
-      if (result.userDeleted) {
-        logout(false);
-        router.push('/');
-      } else {
-        router.push('/accounts');
-      }
-    },
-    [logout, router],
-  );
+  const handleDeleteSuccess = (result: { userDeleted: boolean }) => {
+    if (result.userDeleted) {
+      logout(false);
+      router.push('/');
+    } else {
+      router.push('/accounts');
+    }
+  };
 
-  const showContactInfoSetting = useMemo(() => {
+  const showContactInfoSetting = (() => {
     if (!currentAccountId) {
       return true;
     }
@@ -436,9 +429,9 @@ const ProfilePageClient: React.FC = () => {
     }
 
     return Boolean(state.effectiveValue ?? state.value);
-  }, [accountSettings, currentAccountId]);
+  })();
 
-  const editContactInfoSetting = useMemo(() => {
+  const editContactInfoSetting = (() => {
     if (!currentAccountId) {
       return true;
     }
@@ -449,7 +442,7 @@ const ProfilePageClient: React.FC = () => {
     }
 
     return Boolean(state.effectiveValue ?? state.value);
-  }, [accountSettings, currentAccountId]);
+  })();
 
   const contactSettingsPending = Boolean(currentAccountId) && accountSettingsLoading;
 
