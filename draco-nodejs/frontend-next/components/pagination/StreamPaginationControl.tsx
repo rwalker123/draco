@@ -4,7 +4,7 @@
 // Innovative pagination with progressive dot navigation and memory system
 // Single Responsibility: Manage pagination with context-aware navigation
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -83,81 +83,53 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
   const endItem = startItem + currentItems - 1;
   const currentRange = `${itemLabel} ${startItem}-${endItem}`;
 
-  // Memoized button styles for consistent theming
-  const prevButtonSx = useMemo(
-    () => ({
-      backgroundColor: hasPrev ? theme.palette.primary.main : 'transparent',
-      color: hasPrev ? 'white' : 'text.disabled',
-      transition: theme.transitions.create(['background-color'], {
-        duration: theme.transitions.duration.short,
-      }),
-      '&:hover': {
-        backgroundColor: hasPrev ? theme.palette.primary.dark : 'transparent',
-      },
+  // Button styles for consistent theming
+  const prevButtonSx = {
+    backgroundColor: hasPrev ? theme.palette.primary.main : 'transparent',
+    color: hasPrev ? 'white' : 'text.disabled',
+    transition: theme.transitions.create(['background-color'], {
+      duration: theme.transitions.duration.short,
     }),
-    [hasPrev, theme.palette.primary.main, theme.palette.primary.dark, theme.transitions],
-  );
+    '&:hover': {
+      backgroundColor: hasPrev ? theme.palette.primary.dark : 'transparent',
+    },
+  };
 
-  const nextButtonSx = useMemo(
-    () => ({
-      backgroundColor: hasNext ? theme.palette.primary.main : 'transparent',
-      color: hasNext ? 'white' : 'text.disabled',
-      transition: theme.transitions.create(['background-color'], {
-        duration: theme.transitions.duration.short,
-      }),
-      '&:hover': {
-        backgroundColor: hasNext ? theme.palette.primary.dark : 'transparent',
-      },
+  const nextButtonSx = {
+    backgroundColor: hasNext ? theme.palette.primary.main : 'transparent',
+    color: hasNext ? 'white' : 'text.disabled',
+    transition: theme.transitions.create(['background-color'], {
+      duration: theme.transitions.duration.short,
     }),
-    [hasNext, theme.palette.primary.main, theme.palette.primary.dark, theme.transitions],
-  );
+    '&:hover': {
+      backgroundColor: hasNext ? theme.palette.primary.dark : 'transparent',
+    },
+  };
 
   // Desktop button styles
-  const desktopPrevButtonSx = useMemo(
-    () => ({
-      minWidth: 100,
-      backgroundColor: hasPrev ? theme.palette.primary.main : theme.palette.action.hover,
-      color: hasPrev ? theme.palette.primary.contrastText : theme.palette.text.disabled,
-      transition: theme.transitions.create(['background-color', 'opacity'], {
-        duration: theme.transitions.duration.short,
-      }),
-      '&:hover': {
-        backgroundColor: hasPrev ? theme.palette.primary.dark : theme.palette.action.hover,
-      },
+  const desktopPrevButtonSx = {
+    minWidth: 100,
+    backgroundColor: hasPrev ? theme.palette.primary.main : theme.palette.action.hover,
+    color: hasPrev ? theme.palette.primary.contrastText : theme.palette.text.disabled,
+    transition: theme.transitions.create(['background-color', 'opacity'], {
+      duration: theme.transitions.duration.short,
     }),
-    [
-      hasPrev,
-      theme.palette.primary.main,
-      theme.palette.primary.dark,
-      theme.palette.primary.contrastText,
-      theme.palette.text.disabled,
-      theme.palette.action.hover,
-      theme.transitions,
-    ],
-  );
+    '&:hover': {
+      backgroundColor: hasPrev ? theme.palette.primary.dark : theme.palette.action.hover,
+    },
+  };
 
-  const desktopNextButtonSx = useMemo(
-    () => ({
-      minWidth: 100,
-      backgroundColor: hasNext ? theme.palette.primary.main : theme.palette.action.hover,
-      color: hasNext ? theme.palette.primary.contrastText : theme.palette.text.disabled,
-      transition: theme.transitions.create(['background-color', 'opacity'], {
-        duration: theme.transitions.duration.short,
-      }),
-      '&:hover': {
-        backgroundColor: hasNext ? theme.palette.primary.dark : theme.palette.action.hover,
-      },
+  const desktopNextButtonSx = {
+    minWidth: 100,
+    backgroundColor: hasNext ? theme.palette.primary.main : theme.palette.action.hover,
+    color: hasNext ? theme.palette.primary.contrastText : theme.palette.text.disabled,
+    transition: theme.transitions.create(['background-color', 'opacity'], {
+      duration: theme.transitions.duration.short,
     }),
-    [
-      hasNext,
-      theme.palette.primary.main,
-      theme.palette.primary.dark,
-      theme.palette.primary.contrastText,
-      theme.palette.text.disabled,
-      theme.palette.action.hover,
-      theme.transitions,
-    ],
-  );
+    '&:hover': {
+      backgroundColor: hasNext ? theme.palette.primary.dark : theme.palette.action.hover,
+    },
+  };
 
   // Track current page - use direct useEffect to avoid callback recreation
   React.useEffect(() => {
@@ -184,27 +156,21 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
   const pageSizeOptions = [10, 25, 50, 100];
 
   // Handle page size change
-  const handlePageSizeChange = useCallback(
-    (event: SelectChangeEvent<number>) => {
-      const newSize =
-        typeof event.target.value === 'string' ? parseInt(event.target.value) : event.target.value;
-      onRowsPerPageChange(newSize);
-    },
-    [onRowsPerPageChange],
-  );
+  const handlePageSizeChange = (event: SelectChangeEvent<number>) => {
+    const newSize =
+      typeof event.target.value === 'string' ? parseInt(event.target.value) : event.target.value;
+    onRowsPerPageChange(newSize);
+  };
 
   // Handle jump to visited page
-  const handleJumpToPage = useCallback(
-    (targetPage: number) => {
-      if (onJumpToPage) {
-        onJumpToPage(targetPage);
-      }
-    },
-    [onJumpToPage],
-  );
+  const handleJumpToPage = (targetPage: number) => {
+    if (onJumpToPage) {
+      onJumpToPage(targetPage);
+    }
+  };
 
   // Render visited pages dots
-  const renderVisitedPages = useMemo(() => {
+  const renderVisitedPages = (() => {
     if (visitedPages.length <= 1) return null;
 
     return (
@@ -273,7 +239,7 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
         )}
       </Box>
     );
-  }, [visitedPages, page, theme.palette, handleJumpToPage, onJumpToPage]);
+  })();
 
   // Mobile compact version
   if (variant === 'mobile' || (variant === 'default' && isMobile)) {

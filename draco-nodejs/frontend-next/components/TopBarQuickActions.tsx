@@ -25,10 +25,15 @@ import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import MenuIcon from '@mui/icons-material/Menu';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { DarkMode as DarkModeIcon, LightMode as LightModeIcon } from '@mui/icons-material';
-import { AnnouncementType, HandoutType, TeamSeasonType } from '@draco/shared-schemas';
+import {
+  AnnouncementType,
+  AnnouncementSummaryType,
+  HandoutType,
+  TeamSeasonType,
+} from '@draco/shared-schemas';
 import { getAccountUserTeams } from '@draco/shared-api-client';
 import { HandoutService } from '../services/handoutService';
-import { AnnouncementService, type AnnouncementSummaryItem } from '../services/announcementService';
+import { AnnouncementService } from '../services/announcementService';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { useIsIndividualGolfAccount } from '../context/AccountContext';
@@ -61,7 +66,7 @@ interface TeamAnnouncementSection {
   teamSeasonId: string;
   seasonId?: string | null;
   teamName: string;
-  announcements: AnnouncementSummaryItem[];
+  announcements: AnnouncementSummaryType[];
 }
 
 const ComposeEmailIcon: React.FC<{ size?: 'inherit' | 'small' | 'medium' | 'large' }> = ({
@@ -136,7 +141,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   const [teamHandoutsLoading, setTeamHandoutsLoading] = React.useState(false);
   const [teamHandoutsError, setTeamHandoutsError] = React.useState<string | null>(null);
 
-  const [accountAnnouncements, setAccountAnnouncements] = React.useState<AnnouncementSummaryItem[]>(
+  const [accountAnnouncements, setAccountAnnouncements] = React.useState<AnnouncementSummaryType[]>(
     [],
   );
   const [accountAnnouncementsLoading, setAccountAnnouncementsLoading] = React.useState(false);
@@ -613,7 +618,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   );
 
   const handleAnnouncementSelect = React.useCallback(
-    async (summary: AnnouncementSummaryItem, sourceLabel: string) => {
+    async (summary: AnnouncementSummaryType, sourceLabel: string) => {
       if (!accountId) {
         return;
       }
@@ -624,7 +629,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
       setAnnouncementSourceLabel(sourceLabel);
       setSelectedAnnouncementTitle(summary.title);
       setSelectedAnnouncementPublishedAt(summary.publishedAt);
-      setSelectedAnnouncementIsSpecial(summary.isSpecial ?? false);
+      setSelectedAnnouncementIsSpecial(summary.isSpecial);
       setAnnouncementDetailLoading(true);
 
       try {

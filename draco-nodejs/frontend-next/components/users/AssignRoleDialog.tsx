@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -61,26 +61,19 @@ const AssignRoleDialogContent: React.FC<AssignRoleDialogContentProps> = ({
   const isLeagueAdmin = selectedRole ? isLeagueBasedRole(selectedRole) : false;
   const isTeamAdmin = selectedRole ? isTeamBasedRole(selectedRole) : false;
 
-  // Handle role change
-  const handleRoleChange = useCallback((roleId: string) => {
+  const handleRoleChange = (roleId: string) => {
     setSelectedRole(roleId);
-    // Reset context selections when role changes
     setSelectedLeagueId('');
     setSelectedTeamId('');
-    // Clear error when user makes changes
     setError(null);
-  }, []);
+  };
 
-  // Handle user change
-  const handleUserChange = useCallback((contactId: string) => {
+  const handleUserChange = (contactId: string) => {
     setNewUserContactId(contactId);
-    // Clear error when user makes changes
     setError(null);
-  }, []);
+  };
 
-  // Handle assign with internal error handling
-  const handleAssign = useCallback(async () => {
-    // Clear any previous errors
+  const handleAssign = async () => {
     setError(null);
 
     const contactId = isUserReadonly && preselectedUser ? preselectedUser.id : newUserContactId;
@@ -97,23 +90,11 @@ const AssignRoleDialogContent: React.FC<AssignRoleDialogContentProps> = ({
         message: result.message || 'Role assigned successfully',
         assignedRole: result.assignedRole,
       });
-      onClose(); // Close dialog on success
+      onClose();
     } else {
-      // Handle error internally
       setError(result.error || 'Failed to assign role');
     }
-  }, [
-    selectedRole,
-    newUserContactId,
-    selectedLeagueId,
-    selectedTeamId,
-    isUserReadonly,
-    preselectedUser,
-    assignRole,
-    accountId,
-    onSuccess,
-    onClose,
-  ]);
+  };
 
   return (
     <>

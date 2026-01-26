@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useEffect, useCallback, ReactNode, useLayoutEffect } from 'react';
+import React, { useRef, useState, useEffect, ReactNode, useLayoutEffect } from 'react';
 import { Box, IconButton, Fade } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import {
@@ -44,13 +44,13 @@ export default function ScrollableTable({
     }
   }, [preserveScrollOnUpdate, storeKey, dataVersion]);
 
-  const checkScrollButtons = useCallback(() => {
+  const checkScrollButtons = () => {
     if (!scrollRef.current) return;
 
     const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
     setShowLeftScroll(scrollLeft > 10); // Small buffer to avoid flickering
     setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 10);
-  }, []);
+  };
 
   // Restore scroll position AFTER render but BEFORE paint
   useLayoutEffect(() => {
@@ -74,7 +74,7 @@ export default function ScrollableTable({
         });
       }
     }
-  }, [dataVersion, preserveScrollOnUpdate, checkScrollButtons, storeKey]);
+  }, [dataVersion, preserveScrollOnUpdate, storeKey]);
 
   useEffect(() => {
     const scrollElement = scrollRef.current;
@@ -150,7 +150,7 @@ export default function ScrollableTable({
       window.removeEventListener('resize', updatePositions);
       window.removeEventListener('scroll', updatePositions);
     };
-  }, [checkScrollButtons]);
+  }, []);
 
   const scrollLeft = () => {
     if (scrollRef.current) {

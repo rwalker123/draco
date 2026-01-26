@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   AlertTitle,
@@ -144,25 +144,25 @@ const AdminDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadSummary = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    const loadSummary = async () => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const data = await fetchAdminAnalyticsSummary(apiClient);
-      setSummary(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load administrator analytics.');
-    } finally {
-      setLoading(false);
-    }
+      try {
+        const data = await fetchAdminAnalyticsSummary(apiClient);
+        setSummary(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unable to load administrator analytics.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadSummary();
   }, [apiClient]);
 
-  useEffect(() => {
-    void loadSummary();
-  }, [loadSummary]);
-
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
     setError(null);
 
@@ -174,10 +174,10 @@ const AdminDashboard: React.FC = () => {
     } finally {
       setRefreshing(false);
     }
-  }, [apiClient]);
+  };
 
-  const topStorageAccounts = useMemo(() => summary?.accounts.topStorageAccounts ?? [], [summary]);
-  const emailAccounts = useMemo(() => summary?.email.perAccount ?? [], [summary]);
+  const topStorageAccounts = summary?.accounts.topStorageAccounts ?? [];
+  const emailAccounts = summary?.email.perAccount ?? [];
   const photoCounters = summary?.photos.counters ?? {
     submissionFailures: 0,
     quotaViolations: 0,
@@ -185,11 +185,8 @@ const AdminDashboard: React.FC = () => {
   };
   const totalPhotoIssues =
     photoCounters.submissionFailures + photoCounters.quotaViolations + photoCounters.emailErrors;
-  const photoEvents = useMemo(() => summary?.photos.recent ?? [], [summary]);
-  const slowQueries = useMemo(
-    () => summary?.monitoring.performance.slowQueries?.slice(0, 5) ?? [],
-    [summary],
-  );
+  const photoEvents = summary?.photos.recent ?? [];
+  const slowQueries = summary?.monitoring.performance.slowQueries?.slice(0, 5) ?? [];
 
   if (!hasRole('Administrator')) {
     return (

@@ -101,7 +101,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
     };
   }, [accountId, token, teamsWantedHref]);
 
-  const teamsWantedMessage = React.useMemo(() => {
+  const teamsWantedMessage = (() => {
     if (!teamsWantedHref) {
       return null;
     }
@@ -116,7 +116,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
     }
 
     return 'Players looking for teams';
-  }, [teamsWantedCount, teamsWantedHref, teamsWantedCountError]);
+  })();
 
   return (
     <WidgetShell

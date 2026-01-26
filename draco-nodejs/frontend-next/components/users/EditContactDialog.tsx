@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -111,7 +111,7 @@ const EditContactDialogInner: React.FC<EditContactDialogInnerProps> = ({
   onSuccess,
   onRosterSignup,
 }) => {
-  const initialValues = useMemo(() => buildInitialContactValues(mode, contact), [mode, contact]);
+  const initialValues = buildInitialContactValues(mode, contact);
 
   const {
     register,

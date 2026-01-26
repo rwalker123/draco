@@ -106,62 +106,59 @@ const YouTubeChannelAdminPanel: React.FC<YouTubeChannelAdminPanelProps> = (props
     }
   }, [dialogOpen, currentChannelId, clearError]);
 
-  const handleOpenDialog = React.useCallback(() => {
+  const handleOpenDialog = () => {
     setDialogOpen(true);
     setFormError(null);
     clearError();
-  }, [clearError]);
+  };
 
-  const handleCloseDialog = React.useCallback(() => {
+  const handleCloseDialog = () => {
     if (loading) {
       return;
     }
     setDialogOpen(false);
     setFormError(null);
     clearError();
-  }, [clearError, loading]);
+  };
 
-  const handleSubmit = React.useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-      const trimmedValue = inputValue.trim();
-      let normalized: string | null = null;
+    const trimmedValue = inputValue.trim();
+    let normalized: string | null = null;
 
-      if (trimmedValue) {
-        try {
-          normalized = extractChannelId(trimmedValue);
-        } catch (err) {
-          setFormError(err instanceof Error ? err.message : 'Invalid YouTube channel input.');
-          return;
-        }
-      }
-
+    if (trimmedValue) {
       try {
-        const result = await saveChannel(normalized);
-        if (result.context === 'account') {
-          if (props.context === 'account') {
-            props.onAccountUpdated?.(result.account);
-          }
-        } else if (props.context === 'team') {
-          props.onTeamSeasonUpdated?.(result.teamSeason);
-        }
-
-        setSuccessMessage(
-          normalized
-            ? 'YouTube channel saved. Social videos will start appearing shortly.'
-            : 'The YouTube channel has been disconnected.',
-        );
-        setDialogOpen(false);
-        setFormError(null);
+        normalized = extractChannelId(trimmedValue);
       } catch (err) {
-        setFormError(err instanceof Error ? err.message : 'Unable to save the YouTube channel.');
+        setFormError(err instanceof Error ? err.message : 'Invalid YouTube channel input.');
+        return;
       }
-    },
-    [inputValue, props, saveChannel],
-  );
+    }
 
-  const handleRemove = React.useCallback(async () => {
+    try {
+      const result = await saveChannel(normalized);
+      if (result.context === 'account') {
+        if (props.context === 'account') {
+          props.onAccountUpdated?.(result.account);
+        }
+      } else if (props.context === 'team') {
+        props.onTeamSeasonUpdated?.(result.teamSeason);
+      }
+
+      setSuccessMessage(
+        normalized
+          ? 'YouTube channel saved. Social videos will start appearing shortly.'
+          : 'The YouTube channel has been disconnected.',
+      );
+      setDialogOpen(false);
+      setFormError(null);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Unable to save the YouTube channel.');
+    }
+  };
+
+  const handleRemove = async () => {
     try {
       const result = await saveChannel(null);
       if (result.context === 'account') {
@@ -177,7 +174,7 @@ const YouTubeChannelAdminPanel: React.FC<YouTubeChannelAdminPanelProps> = (props
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Unable to remove the YouTube channel.');
     }
-  }, [props, saveChannel]);
+  };
 
   const channelLink =
     currentChannelId && isChannelId(currentChannelId)

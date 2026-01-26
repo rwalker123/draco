@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useCallback } from 'react';
+import React from 'react';
 import {
   Box,
   Stack,
@@ -68,7 +68,7 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
   };
 
   // Calculate summary data from selectedGroups Map
-  const summaryData = useMemo(() => {
+  const summaryData = (() => {
     const selectedGroups = state.recipientState?.selectedGroups;
     const selectedWorkouts = state.recipientState?.selectedWorkoutRecipients || [];
     const groupSummaries: Array<{
@@ -139,113 +139,97 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
       isManagersOnly,
       workoutManagersOnly: state.recipientState?.workoutManagersOnly ?? false,
     };
-  }, [state.recipientState]);
+  })();
 
   // Handle edit click
-  const handleEditClick = useCallback(
-    (group: ContactGroup, event: React.MouseEvent) => {
-      event.stopPropagation();
-      if (onEditGroup && isGroupEditable(group)) {
-        onEditGroup(group);
-      }
-    },
-    [onEditGroup],
-  );
+  const handleEditClick = (group: ContactGroup, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (onEditGroup && isGroupEditable(group)) {
+      onEditGroup(group);
+    }
+  };
 
   // Create group summary chips
-  const groupChips = useMemo(() => {
-    return summaryData.groupSummaries.map((group, index) => {
-      const IconComponent = group.icon;
-      const editable = isGroupEditable(group.contactGroup);
-      const editTooltip = getEditableTooltip(group.contactGroup);
-      const showEditButton = onEditGroup && group.groupType !== 'individuals';
+  const groupChips = summaryData.groupSummaries.map((group, index) => {
+    const IconComponent = group.icon;
+    const editable = isGroupEditable(group.contactGroup);
+    const editTooltip = getEditableTooltip(group.contactGroup);
+    const showEditButton = onEditGroup && group.groupType !== 'individuals';
 
-      return (
-        <Stack
-          key={`${group.groupType}-${index}`}
-          direction="row"
-          spacing={0.5}
-          alignItems="center"
-        >
-          <Chip
-            icon={<IconComponent />}
-            label={`${group.label} (${group.count})`}
-            size={compact ? 'small' : 'medium'}
-            variant="outlined"
-            color={group.color}
-            sx={{
-              '& .MuiChip-icon': {
-                color: `${group.color}.main`,
-              },
-            }}
-          />
-          {showEditButton && (
-            <Tooltip title={editTooltip || 'Edit recipients'}>
-              <span>
-                <IconButton
-                  size="small"
-                  onClick={(e) => handleEditClick(group.contactGroup, e)}
-                  disabled={!editable}
-                  sx={{
-                    p: 0.25,
-                    '& .MuiSvgIcon-root': {
-                      fontSize: compact ? '0.875rem' : '1rem',
-                    },
-                  }}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
-          )}
-        </Stack>
-      );
-    });
-  }, [summaryData.groupSummaries, compact, onEditGroup, handleEditClick]);
+    return (
+      <Stack key={`${group.groupType}-${index}`} direction="row" spacing={0.5} alignItems="center">
+        <Chip
+          icon={<IconComponent />}
+          label={`${group.label} (${group.count})`}
+          size={compact ? 'small' : 'medium'}
+          variant="outlined"
+          color={group.color}
+          sx={{
+            '& .MuiChip-icon': {
+              color: `${group.color}.main`,
+            },
+          }}
+        />
+        {showEditButton && (
+          <Tooltip title={editTooltip || 'Edit recipients'}>
+            <span>
+              <IconButton
+                size="small"
+                onClick={(e) => handleEditClick(group.contactGroup, e)}
+                disabled={!editable}
+                sx={{
+                  p: 0.25,
+                  '& .MuiSvgIcon-root': {
+                    fontSize: compact ? '0.875rem' : '1rem',
+                  },
+                }}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
+      </Stack>
+    );
+  });
 
-  const workoutChips = useMemo(() => {
-    return summaryData.workoutSummaries.map((workout) => (
-      <Chip
-        key={`workout-${workout.workoutId}`}
-        icon={<WorkoutIcon />}
-        label={`${workout.label} (${workout.count})`}
-        size={compact ? 'small' : 'medium'}
-        variant="outlined"
-        color="secondary"
-        sx={{
-          '& .MuiChip-icon': {
-            color: 'secondary.main',
-          },
-        }}
-      />
-    ));
-  }, [summaryData.workoutSummaries, compact]);
+  const workoutChips = summaryData.workoutSummaries.map((workout) => (
+    <Chip
+      key={`workout-${workout.workoutId}`}
+      icon={<WorkoutIcon />}
+      label={`${workout.label} (${workout.count})`}
+      size={compact ? 'small' : 'medium'}
+      variant="outlined"
+      color="secondary"
+      sx={{
+        '& .MuiChip-icon': {
+          color: 'secondary.main',
+        },
+      }}
+    />
+  ));
 
-  const teamsWantedChips = useMemo(() => {
-    return summaryData.teamsWantedSummaries.map((entry, index) => (
-      <Chip
-        key={`teamswanted-${index}`}
-        icon={<GroupIcon />}
-        label={`Teams Wanted (${entry.count})`}
-        size={compact ? 'small' : 'medium'}
-        variant="outlined"
-        color="default"
-      />
-    ));
-  }, [summaryData.teamsWantedSummaries, compact]);
+  const teamsWantedChips = summaryData.teamsWantedSummaries.map((entry, index) => (
+    <Chip
+      key={`teamswanted-${index}`}
+      icon={<GroupIcon />}
+      label={`Teams Wanted (${entry.count})`}
+      size={compact ? 'small' : 'medium'}
+      variant="outlined"
+      color="default"
+    />
+  ));
 
-  const umpireChips = useMemo(() => {
-    return summaryData.umpireSummaries.map((entry, index) => (
-      <Chip
-        key={`umpire-${index}`}
-        icon={<GavelIcon />}
-        label={`Umpires (${entry.count})`}
-        size={compact ? 'small' : 'medium'}
-        variant="outlined"
-        color="default"
-      />
-    ));
-  }, [summaryData.umpireSummaries, compact]);
+  const umpireChips = summaryData.umpireSummaries.map((entry, index) => (
+    <Chip
+      key={`umpire-${index}`}
+      icon={<GavelIcon />}
+      label={`Umpires (${entry.count})`}
+      size={compact ? 'small' : 'medium'}
+      variant="outlined"
+      color="default"
+    />
+  ));
 
   // Determine visible and hidden chips
   const allChips = [...groupChips, ...workoutChips, ...teamsWantedChips, ...umpireChips];

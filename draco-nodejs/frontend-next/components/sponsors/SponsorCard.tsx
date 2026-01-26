@@ -26,17 +26,15 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
   const theme = useTheme();
   const [failedLogos, setFailedLogos] = React.useState<Record<string, boolean>>({});
 
-  const handleImageError = React.useCallback((sponsorId: string) => {
+  const handleImageError = (sponsorId: string) => {
     setFailedLogos((prev) => ({ ...prev, [sponsorId]: true }));
-  }, []);
+  };
 
-  const tileStyles = React.useMemo(() => {
-    return {
-      backgroundColor: theme.palette.background.paper,
-      border: theme.palette.widget.border,
-      shadow: theme.shadows[theme.palette.mode === 'dark' ? 8 : 1],
-    };
-  }, [theme]);
+  const tileStyles = {
+    backgroundColor: theme.palette.background.paper,
+    border: theme.palette.widget.border,
+    shadow: theme.shadows[theme.palette.mode === 'dark' ? 8 : 1],
+  };
 
   if (sponsors.length === 0 && !emptyMessage) {
     return null;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -53,65 +53,69 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const apiClient = useApiClient();
 
-  const fetchWorkout = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getWorkout(accountId, workoutId, token);
-      setWorkout(data);
-      onWorkoutLoaded?.(data);
-    } catch (error) {
-      console.error('Failed to fetch workout:', error);
-      setError('Failed to load workout');
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, workoutId, token, onWorkoutLoaded]);
+  useEffect(() => {
+    const fetchWorkout = async () => {
+      try {
+        setLoading(true);
+        const data = await getWorkout(accountId, workoutId, token);
+        setWorkout(data);
+      } catch (error) {
+        console.error('Failed to fetch workout:', error);
+        setError('Failed to load workout');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchFields = useCallback(async () => {
-    try {
-      const result = await listAccountFields({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
+    const fetchFields = async () => {
+      try {
+        const result = await listAccountFields({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+        });
 
-      const data = unwrapApiResult(result, 'Failed to load fields');
-      const mappedFields: Record<string, FieldDetails> = {};
+        const data = unwrapApiResult(result, 'Failed to load fields');
+        const mappedFields: Record<string, FieldDetails> = {};
 
-      data.fields.forEach((field) => {
-        if (!field.id) {
-          return;
-        }
+        data.fields.forEach((field) => {
+          if (!field.id) {
+            return;
+          }
 
-        mappedFields[field.id] = {
-          id: field.id,
-          name: field.name ?? field.shortName ?? null,
-          shortName: field.shortName ?? null,
-          address: field.address ?? null,
-          city: field.city ?? null,
-          state: field.state ?? null,
-          zip: field.zip ?? null,
-          rainoutNumber: field.rainoutNumber ?? null,
-          comment: field.comment ?? null,
-          directions: field.directions ?? null,
-          latitude: (field.latitude as string | number | null | undefined) ?? null,
-          longitude: (field.longitude as string | number | null | undefined) ?? null,
-        };
-      });
+          mappedFields[field.id] = {
+            id: field.id,
+            name: field.name ?? field.shortName ?? null,
+            shortName: field.shortName ?? null,
+            address: field.address ?? null,
+            city: field.city ?? null,
+            state: field.state ?? null,
+            zip: field.zip ?? null,
+            rainoutNumber: field.rainoutNumber ?? null,
+            comment: field.comment ?? null,
+            directions: field.directions ?? null,
+            latitude: (field.latitude as string | number | null | undefined) ?? null,
+            longitude: (field.longitude as string | number | null | undefined) ?? null,
+          };
+        });
 
-      setFields(mappedFields);
-    } catch (err) {
-      console.error('Error fetching fields:', err);
-      // Don't set error for fields - it's not critical
-    }
-  }, [accountId, apiClient]);
+        setFields(mappedFields);
+      } catch (err) {
+        console.error('Error fetching fields:', err);
+      }
+    };
+
+    void fetchWorkout();
+    void fetchFields();
+  }, [accountId, workoutId, token, apiClient]);
 
   useEffect(() => {
-    fetchWorkout();
-    fetchFields();
-  }, [fetchWorkout, fetchFields]);
+    if (workout) {
+      onWorkoutLoaded?.(workout);
+    }
+  }, [workout, onWorkoutLoaded]);
 
-  const formatDateTime = useCallback((dateString: string) => {
+  const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     const formattedDate = date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -126,54 +130,45 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
     });
 
     return { formattedDate, formattedTime };
-  }, []);
+  };
 
-  const getFieldDetails = useCallback(
-    (fieldId: string | null | undefined): FieldDetails | null => {
-      if (!fieldId) {
-        return workout?.field ?? null;
-      }
+  const getFieldDetails = (fieldId: string | null | undefined): FieldDetails | null => {
+    if (!fieldId) {
+      return workout?.field ?? null;
+    }
 
-      return fields[fieldId] ?? workout?.field ?? null;
-    },
-    [fields, workout?.field],
-  );
+    return fields[fieldId] ?? workout?.field ?? null;
+  };
 
-  const getFieldName = useCallback(
-    (fieldId: string | null | undefined) => {
-      const details = getFieldDetails(fieldId);
-      return details?.name ?? details?.shortName ?? 'TBD';
-    },
-    [getFieldDetails],
-  );
+  const getFieldName = (fieldId: string | null | undefined) => {
+    const details = getFieldDetails(fieldId);
+    return details?.name ?? details?.shortName ?? 'TBD';
+  };
 
-  const handleOpenFieldDialog = useCallback(
-    (fieldId: string | null | undefined) => {
-      if (!fieldId && !workout?.field?.id) {
-        return;
-      }
+  const handleOpenFieldDialog = (fieldId: string | null | undefined) => {
+    if (!fieldId && !workout?.field?.id) {
+      return;
+    }
 
-      const targetId = fieldId ?? workout?.field?.id ?? null;
-      if (!targetId) {
-        return;
-      }
+    const targetId = fieldId ?? workout?.field?.id ?? null;
+    if (!targetId) {
+      return;
+    }
 
-      setSelectedFieldId(targetId);
-      setFieldDialogOpen(true);
-    },
-    [workout?.field?.id],
-  );
+    setSelectedFieldId(targetId);
+    setFieldDialogOpen(true);
+  };
 
-  const handleCloseFieldDialog = useCallback(() => {
+  const handleCloseFieldDialog = () => {
     setFieldDialogOpen(false);
-  }, []);
+  };
 
-  const selectedFieldDetails = useMemo(() => {
+  const selectedFieldDetails = (() => {
     if (!fieldDialogOpen) {
       return null;
     }
     return getFieldDetails(selectedFieldId ?? workout?.field?.id ?? null);
-  }, [fieldDialogOpen, getFieldDetails, selectedFieldId, workout?.field?.id]);
+  })();
 
   const handleAddToCalendar = () => {
     if (!workout) return;

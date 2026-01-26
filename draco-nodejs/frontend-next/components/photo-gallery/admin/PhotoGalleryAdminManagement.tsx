@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -110,6 +110,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
   const [albums, setAlbums] = useState<PhotoGalleryAdminAlbumType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [photoDialogState, setPhotoDialogState] = useState<{
     open: boolean;
@@ -123,117 +124,111 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
   const [selectedAccountAlbumId, setSelectedAccountAlbumId] = useState<string>('all-account');
   const [selectedTeamAlbumId, setSelectedTeamAlbumId] = useState<string>('');
 
-  const adjustAlbumPhotoCounts = useCallback(
-    (updates: Array<{ albumId: string | null; delta: number }>) => {
-      if (updates.length === 0) {
-        return;
+  const adjustAlbumPhotoCounts = (updates: Array<{ albumId: string | null; delta: number }>) => {
+    if (updates.length === 0) {
+      return;
+    }
+
+    const deltaMap = new Map<string, number>();
+    updates.forEach(({ albumId, delta }) => {
+      const key = albumId ?? '__null__';
+      deltaMap.set(key, (deltaMap.get(key) ?? 0) + delta);
+    });
+
+    setAlbums((previous) => {
+      if (previous.length === 0) {
+        return previous;
       }
 
-      const deltaMap = new Map<string, number>();
-      updates.forEach(({ albumId, delta }) => {
-        const key = albumId ?? '__null__';
-        deltaMap.set(key, (deltaMap.get(key) ?? 0) + delta);
-      });
+      let changed = false;
+      const nextAlbums = previous.map((album) => {
+        const key = album.id ?? null;
+        const mapKey = key ?? '__null__';
+        const delta = deltaMap.get(mapKey);
 
-      setAlbums((previous) => {
-        if (previous.length === 0) {
-          return previous;
+        if (!delta) {
+          return album;
         }
 
-        let changed = false;
-        const nextAlbums = previous.map((album) => {
-          const key = album.id ?? null;
-          const mapKey = key ?? '__null__';
-          const delta = deltaMap.get(mapKey);
-
-          if (!delta) {
-            return album;
-          }
-
-          changed = true;
-          const currentCount = album.photoCount ?? 0;
-          return {
-            ...album,
-            photoCount: Math.max(0, currentCount + delta),
-          };
-        });
-
-        return changed ? nextAlbums : previous;
+        changed = true;
+        const currentCount = album.photoCount ?? 0;
+        return {
+          ...album,
+          photoCount: Math.max(0, currentCount + delta),
+        };
       });
-    },
-    [],
-  );
 
-  const albumPhotoCounts = useMemo(() => {
+      return changed ? nextAlbums : previous;
+    });
+  };
+
+  const albumPhotoCounts = ((): Map<string, number> => {
     const counts = new Map<string, number>();
     photos.forEach((photo) => {
       const key = encodeAlbumId(photo.albumId ?? null);
       counts.set(key, (counts.get(key) ?? 0) + 1);
     });
     return counts;
-  }, [photos]);
+  })();
 
-  const defaultAlbumPhotoCount = useMemo(() => {
-    return photos.filter((photo) => {
-      const normalizedTeamId = normalizeEntityId(photo.teamId ?? null);
-      return !photo.albumId && normalizedTeamId === null;
-    }).length;
-  }, [photos]);
+  const defaultAlbumPhotoCount = photos.filter((photo) => {
+    const normalizedTeamId = normalizeEntityId(photo.teamId ?? null);
+    return !photo.albumId && normalizedTeamId === null;
+  }).length;
 
-  const accountAlbumOptions = useMemo(() => {
-    return albums
-      .filter((album) => {
-        const albumTeamId = normalizeEntityId(album.teamId ?? null);
-        const albumAccountId = album.accountId ?? null;
-        return albumTeamId === null && (albumAccountId === accountId || albumAccountId === '0');
-      })
-      .map((album) => {
-        const albumAccountId = album.accountId ?? '';
-        const isDefault = albumAccountId === '0';
-        const albumKey = isDefault ? '__null__' : encodeAlbumId(album.id ?? null);
-        const computedCount = isDefault
-          ? defaultAlbumPhotoCount
-          : (album.photoCount ?? albumPhotoCounts.get(albumKey) ?? 0);
-        return {
-          id: albumKey,
-          title: isDefault ? 'Default Album' : album.title?.trim() || 'Account Album',
-          photoCount: computedCount,
-          accountId: albumAccountId,
-          isDefault,
-        };
-      })
-      .sort((a, b) => {
-        if (a.isDefault && !b.isDefault) {
-          return -1;
-        }
-        if (!a.isDefault && b.isDefault) {
-          return 1;
-        }
-        return a.title.localeCompare(b.title);
-      });
-  }, [albums, accountId, albumPhotoCounts, defaultAlbumPhotoCount]);
+  const accountAlbumOptions = albums
+    .filter((album) => {
+      const albumTeamId = normalizeEntityId(album.teamId ?? null);
+      const albumAccountId = album.accountId ?? null;
+      return albumTeamId === null && (albumAccountId === accountId || albumAccountId === '0');
+    })
+    .map((album) => {
+      const albumAccountId = album.accountId ?? '';
+      const isDefault = albumAccountId === '0';
+      const albumKey = isDefault ? '__null__' : encodeAlbumId(album.id ?? null);
+      const computedCount = isDefault
+        ? defaultAlbumPhotoCount
+        : (album.photoCount ?? albumPhotoCounts.get(albumKey) ?? 0);
+      return {
+        id: albumKey,
+        title: isDefault ? 'Default Album' : album.title?.trim() || 'Account Album',
+        photoCount: computedCount,
+        accountId: albumAccountId,
+        isDefault,
+      };
+    })
+    .sort((a, b) => {
+      if (a.isDefault && !b.isDefault) {
+        return -1;
+      }
+      if (!a.isDefault && b.isDefault) {
+        return 1;
+      }
+      return a.title.localeCompare(b.title);
+    });
 
-  const teamAlbumOptions = useMemo(() => {
-    return albums
-      .filter((album) => {
-        const normalizedTeamId = normalizeEntityId(album.teamId ?? null);
-        const albumAccountId = album.accountId ?? null;
-        return normalizedTeamId !== null && albumAccountId === accountId;
-      })
-      .map((album) => {
-        const albumKey = encodeAlbumId(album.id ?? null);
-        return {
-          id: album.id ?? '',
-          title: album.title?.trim() || 'Team Album',
-          teamId: album.teamId ?? '',
-          photoCount: album.photoCount ?? albumPhotoCounts.get(albumKey) ?? 0,
-        };
-      })
-      .filter((album) => album.id !== '')
-      .sort((a, b) => a.title.localeCompare(b.title));
-  }, [albums, accountId, albumPhotoCounts]);
+  const teamAlbumOptions = albums
+    .filter((album) => {
+      const normalizedTeamId = normalizeEntityId(album.teamId ?? null);
+      const albumAccountId = album.accountId ?? null;
+      return normalizedTeamId !== null && albumAccountId === accountId;
+    })
+    .map((album) => {
+      const albumKey = encodeAlbumId(album.id ?? null);
+      return {
+        id: album.id ?? '',
+        title: album.title?.trim() || 'Team Album',
+        teamId: album.teamId ?? '',
+        photoCount: album.photoCount ?? albumPhotoCounts.get(albumKey) ?? 0,
+      };
+    })
+    .filter((album) => album.id !== '')
+    .sort((a, b) => a.title.localeCompare(b.title));
 
-  const { teamAlbumMenuHierarchy, teamAlbumMenuOptions } = useMemo(() => {
+  const { teamAlbumMenuHierarchy, teamAlbumMenuOptions } = ((): {
+    teamAlbumMenuHierarchy: TeamAlbumHierarchyGroup[];
+    teamAlbumMenuOptions: Array<{ label: string; albumId: string; photoCount: number }>;
+  } => {
     if (teamAlbumOptions.length === 0) {
       return { teamAlbumMenuHierarchy: [] as TeamAlbumHierarchyGroup[], teamAlbumMenuOptions: [] };
     }
@@ -269,9 +264,14 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     ];
 
     return { teamAlbumMenuHierarchy: hierarchy, teamAlbumMenuOptions: options };
-  }, [teamAlbumOptions]);
+  })();
 
-  const selectedTeamMenuEntry = useMemo(() => {
+  const selectedTeamMenuEntry = ((): {
+    teamId: string;
+    teamName: string;
+    albumId: string;
+    photoCount: number;
+  } | null => {
     if (selectedTeamAlbumId === '') {
       return null;
     }
@@ -292,7 +292,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     }
 
     return null;
-  }, [selectedTeamAlbumId, teamAlbumMenuHierarchy]);
+  })();
 
   useEffect(() => {
     if (selectedAccountAlbumId !== 'all-account') {
@@ -310,117 +310,127 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     }
   }, [accountAlbumOptions, teamAlbumOptions, selectedAccountAlbumId, selectedTeamAlbumId]);
 
-  const fetchData = useCallback(async () => {
+  useEffect(() => {
     if (!token) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    let cancelled = false;
 
-    try {
-      const [galleryData, albumData] = await Promise.all([
-        listGalleryPhotosAdmin(accountId, token),
-        listGalleryAlbumsAdmin(accountId, token),
-      ]);
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
 
-      setPhotos(Array.isArray(galleryData.photos) ? galleryData.photos : []);
-      setAlbums(Array.isArray(albumData.albums) ? albumData.albums : []);
-    } catch (err) {
-      const message =
-        err instanceof ApiClientError
-          ? err.message
-          : err instanceof Error
+      try {
+        const [galleryData, albumData] = await Promise.all([
+          listGalleryPhotosAdmin(accountId, token),
+          listGalleryAlbumsAdmin(accountId, token),
+        ]);
+
+        if (cancelled) return;
+
+        setPhotos(Array.isArray(galleryData.photos) ? galleryData.photos : []);
+        setAlbums(Array.isArray(albumData.albums) ? albumData.albums : []);
+      } catch (err) {
+        if (cancelled) return;
+
+        const message =
+          err instanceof ApiClientError
             ? err.message
-            : 'Failed to load gallery management data';
-      setError(message);
-      setPhotos([]);
-      setAlbums([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, token]);
-
-  useEffect(() => {
-    if (token) {
-      void fetchData();
-    }
-  }, [fetchData, token]);
-
-  const handleOpenCreateDialog = useCallback(() => {
-    setPhotoDialogState({ open: true, mode: 'create', photo: null });
-  }, []);
-
-  const handleOpenEditDialog = useCallback((photo: PhotoGalleryPhotoType) => {
-    setPhotoDialogState({ open: true, mode: 'edit', photo });
-  }, []);
-
-  const handleClosePhotoDialog = useCallback(() => {
-    setPhotoDialogState({ open: false, mode: 'create', photo: null });
-  }, []);
-
-  const handlePhotoDialogSuccess = useCallback(
-    ({ message, photo: updatedPhoto }: { message: string; photo: PhotoGalleryPhotoType }) => {
-      const previousPhoto = photoDialogState.photo;
-
-      setPhotos((previousPhotos) => {
-        const existingIndex = previousPhotos.findIndex((photo) => photo.id === updatedPhoto.id);
-
-        if (existingIndex === -1) {
-          return [updatedPhoto, ...previousPhotos];
+            : err instanceof Error
+              ? err.message
+              : 'Failed to load gallery management data';
+        setError(message);
+        setPhotos([]);
+        setAlbums([]);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
         }
+      }
+    };
 
-        const nextPhotos = [...previousPhotos];
-        nextPhotos[existingIndex] = updatedPhoto;
-        return nextPhotos;
-      });
+    void loadData();
 
-      const previousAlbumId = previousPhoto?.albumId ?? null;
-      const nextAlbumId = updatedPhoto.albumId ?? null;
-      const adjustments: Array<{ albumId: string | null; delta: number }> = [];
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, token, refreshKey]);
 
-      if (!previousPhoto) {
-        adjustments.push({ albumId: nextAlbumId, delta: 1 });
-      } else if (previousAlbumId !== nextAlbumId) {
-        adjustments.push({ albumId: previousAlbumId, delta: -1 });
-        adjustments.push({ albumId: nextAlbumId, delta: 1 });
+  const handleOpenCreateDialog = () => {
+    setPhotoDialogState({ open: true, mode: 'create', photo: null });
+  };
+
+  const handleOpenEditDialog = (photo: PhotoGalleryPhotoType) => {
+    setPhotoDialogState({ open: true, mode: 'edit', photo });
+  };
+
+  const handleClosePhotoDialog = () => {
+    setPhotoDialogState({ open: false, mode: 'create', photo: null });
+  };
+
+  const handlePhotoDialogSuccess = ({
+    message,
+    photo: updatedPhoto,
+  }: {
+    message: string;
+    photo: PhotoGalleryPhotoType;
+  }) => {
+    const previousPhoto = photoDialogState.photo;
+
+    setPhotos((previousPhotos) => {
+      const existingIndex = previousPhotos.findIndex((photo) => photo.id === updatedPhoto.id);
+
+      if (existingIndex === -1) {
+        return [updatedPhoto, ...previousPhotos];
       }
 
-      adjustAlbumPhotoCounts(adjustments);
-      setFeedback({ severity: 'success', message });
-    },
-    [adjustAlbumPhotoCounts, photoDialogState.photo],
-  );
+      const nextPhotos = [...previousPhotos];
+      nextPhotos[existingIndex] = updatedPhoto;
+      return nextPhotos;
+    });
 
-  const handlePhotoDialogError = useCallback((message: string) => {
+    const previousAlbumId = previousPhoto?.albumId ?? null;
+    const nextAlbumId = updatedPhoto.albumId ?? null;
+    const adjustments: Array<{ albumId: string | null; delta: number }> = [];
+
+    if (!previousPhoto) {
+      adjustments.push({ albumId: nextAlbumId, delta: 1 });
+    } else if (previousAlbumId !== nextAlbumId) {
+      adjustments.push({ albumId: previousAlbumId, delta: -1 });
+      adjustments.push({ albumId: nextAlbumId, delta: 1 });
+    }
+
+    adjustAlbumPhotoCounts(adjustments);
+    setFeedback({ severity: 'success', message });
+  };
+
+  const handlePhotoDialogError = (message: string) => {
     setFeedback({ severity: 'error', message });
-  }, []);
+  };
 
-  const handleOpenAlbumDialog = useCallback(() => {
+  const handleOpenAlbumDialog = () => {
     setAlbumDialogOpen(true);
-  }, []);
+  };
 
-  const handleAlbumDialogClose = useCallback(() => {
+  const handleAlbumDialogClose = () => {
     setAlbumDialogOpen(false);
-  }, []);
+  };
 
-  const handleAlbumDialogSuccess = useCallback(
-    (payload: { message: string }) => {
-      setFeedback({ severity: 'success', message: payload.message });
-      void fetchData();
-    },
-    [fetchData],
-  );
+  const handleAlbumDialogSuccess = (payload: { message: string }) => {
+    setFeedback({ severity: 'success', message: payload.message });
+    setRefreshKey((k) => k + 1);
+  };
 
-  const handleAlbumDialogError = useCallback((message: string) => {
+  const handleAlbumDialogError = (message: string) => {
     setFeedback({ severity: 'error', message });
-  }, []);
+  };
 
-  const handleConfirmDelete = useCallback((photo: PhotoGalleryPhotoType) => {
+  const handleConfirmDelete = (photo: PhotoGalleryPhotoType) => {
     setDeleteConfirmation(photo);
-  }, []);
+  };
 
-  const handleDeletePhoto = useCallback(async () => {
+  const handleDeletePhoto = async () => {
     if (!deleteConfirmation) {
       return;
     }
@@ -442,24 +452,25 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
             : 'Failed to delete photo';
       setFeedback({ severity: 'error', message });
     }
-  }, [accountId, adjustAlbumPhotoCounts, deleteConfirmation, token]);
+  };
 
-  const handleFeedbackClose = useCallback(() => {
+  const handleFeedbackClose = () => {
     setFeedback(null);
-  }, []);
-  const handleSelectAccountAlbum = useCallback((albumId: string) => {
+  };
+
+  const handleSelectAccountAlbum = (albumId: string) => {
     setSelectedAccountAlbumId(albumId);
     setSelectedTeamAlbumId('');
-  }, []);
+  };
 
-  const handleTeamAlbumChange = useCallback((albumId: string) => {
+  const handleTeamAlbumChange = (albumId: string) => {
     setSelectedTeamAlbumId(albumId);
     if (!albumId) {
       setSelectedAccountAlbumId('all-account');
     }
-  }, []);
+  };
 
-  const filteredPhotos = useMemo(() => {
+  const filteredPhotos = ((): PhotoGalleryPhotoType[] => {
     if (selectedTeamAlbumId) {
       return photos.filter((photo) => photo.albumId === selectedTeamAlbumId);
     }
@@ -483,15 +494,13 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     }
 
     return photos.filter((photo) => photo.albumId === targetAlbumId);
-  }, [photos, selectedTeamAlbumId, selectedAccountAlbumId, accountId]);
+  })();
 
-  const allAccountPhotosCount = useMemo(() => {
-    return photos.filter((photo) => {
-      const normalizedTeamId = normalizeEntityId(photo.teamId ?? null);
-      const photoAccountId = photo.accountId ?? null;
-      return normalizedTeamId === null && (photoAccountId === accountId || photoAccountId === '0');
-    }).length;
-  }, [photos, accountId]);
+  const allAccountPhotosCount = photos.filter((photo) => {
+    const normalizedTeamId = normalizeEntityId(photo.teamId ?? null);
+    const photoAccountId = photo.accountId ?? null;
+    return normalizedTeamId === null && (photoAccountId === accountId || photoAccountId === '0');
+  }).length;
 
   const hasAnyPhotos = photos.length > 0;
   const hasSelectionPhotos = filteredPhotos.length > 0;

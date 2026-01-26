@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import NextLink from 'next/link';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import {
@@ -657,7 +657,7 @@ const StatisticsTable = <T extends StatsRowBase>({
         ? rawAccountId[0]
         : undefined;
 
-  const currentLocation = useMemo(() => {
+  const currentLocation = (() => {
     if (!pathname) {
       return null;
     }
@@ -666,52 +666,48 @@ const StatisticsTable = <T extends StatsRowBase>({
     }
     const query = searchParams.toString();
     return query.length > 0 ? `${pathname}?${query}` : pathname;
-  }, [pathname, searchParams]);
+  })();
 
-  const defaultBuildPlayerHref = useMemo(() => {
-    if (!accountId) {
-      return undefined;
-    }
-
-    return (row: T): string | null => {
-      if (row.isTotals) {
-        return null;
-      }
-
-      const candidate = row.playerId ?? row.contactId;
-      if (candidate === null || candidate === undefined) {
-        return null;
-      }
-
-      let identifier: string | null = null;
-      if (typeof candidate === 'string') {
-        identifier = candidate.trim();
-      } else if (typeof candidate === 'number') {
-        identifier = String(candidate);
-      }
-
-      if (!identifier || identifier.length === 0) {
-        return null;
-      }
-
-      const basePath = `/account/${accountId}/players/${identifier}/statistics`;
-      const query = new URLSearchParams();
-      if (currentLocation) {
-        query.set('returnTo', currentLocation);
-        if (playerLinkLabel && playerLinkLabel.trim().length > 0) {
-          query.set('returnLabel', playerLinkLabel.trim());
+  const defaultBuildPlayerHref: ((row: T) => string | null) | undefined = accountId
+    ? (row: T): string | null => {
+        if (row.isTotals) {
+          return null;
         }
-      }
 
-      const queryString = query.toString();
-      return queryString.length > 0 ? `${basePath}?${queryString}` : basePath;
-    };
-  }, [accountId, currentLocation, playerLinkLabel]) as ((row: T) => string | null) | undefined;
+        const candidate = row.playerId ?? row.contactId;
+        if (candidate === null || candidate === undefined) {
+          return null;
+        }
+
+        let identifier: string | null = null;
+        if (typeof candidate === 'string') {
+          identifier = candidate.trim();
+        } else if (typeof candidate === 'number') {
+          identifier = String(candidate);
+        }
+
+        if (!identifier || identifier.length === 0) {
+          return null;
+        }
+
+        const basePath = `/account/${accountId}/players/${identifier}/statistics`;
+        const query = new URLSearchParams();
+        if (currentLocation) {
+          query.set('returnTo', currentLocation);
+          if (playerLinkLabel && playerLinkLabel.trim().length > 0) {
+            query.set('returnLabel', playerLinkLabel.trim());
+          }
+        }
+
+        const queryString = query.toString();
+        return queryString.length > 0 ? `${basePath}?${queryString}` : basePath;
+      }
+    : undefined;
 
   const resolvedBuildPlayerHref = buildPlayerHref ?? defaultBuildPlayerHref;
 
-  const omitSet = useMemo(() => new Set(omitFields ?? []), [omitFields]);
-  const columns = useMemo(() => {
+  const omitSet = new Set(omitFields ?? []);
+  const columns = (() => {
     const baseColumns = buildColumns<T>(
       variant,
       extendedStats,
@@ -723,14 +719,11 @@ const StatisticsTable = <T extends StatsRowBase>({
       return baseColumns;
     }
     return [...prependColumns, ...baseColumns];
-  }, [variant, extendedStats, data, prependColumns, omitSet, resolvedBuildPlayerHref]);
+  })();
 
-  const handleInternalSort = useCallback(
-    (field: string) => {
-      onSort?.(field);
-    },
-    [onSort],
-  );
+  const handleInternalSort = (field: string) => {
+    onSort?.(field);
+  };
 
   return (
     <StatisticsTableBase

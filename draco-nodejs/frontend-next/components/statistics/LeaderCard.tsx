@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import NextLink from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Box, Typography, Card, CardContent, Avatar, Chip, useTheme, alpha } from '@mui/material';
@@ -40,7 +40,7 @@ export default function LeaderCard({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const currentLocation = useMemo(() => {
+  const currentLocation = (() => {
     if (!pathname) {
       return null;
     }
@@ -49,9 +49,9 @@ export default function LeaderCard({
     }
     const query = searchParams.toString();
     return query.length > 0 ? `${pathname}?${query}` : pathname;
-  }, [pathname, searchParams]);
+  })();
 
-  const playerHref = useMemo(() => {
+  const playerHref = (() => {
     if (!accountId) {
       return null;
     }
@@ -77,14 +77,14 @@ export default function LeaderCard({
     }
     const queryString = query.toString();
     return queryString.length > 0 ? `${basePath}?${queryString}` : basePath;
-  }, [accountId, leader.isTie, leader.playerId, currentLocation, playerLinkLabel]);
+  })();
 
   const getPlayerInitials = (name: string) => {
     const parts = name.split(' ');
     return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : name.substring(0, 2);
   };
 
-  const displayPlayerName = useMemo(() => {
+  const displayPlayerName = (() => {
     if (leader.isTie) {
       const label = leader.playerName?.trim();
       if (label) {
@@ -101,13 +101,13 @@ export default function LeaderCard({
       return leader.playerName;
     }
     return trimmed;
-  }, [leader.isTie, leader.playerName, leader.tieCount]);
+  })();
 
   const isLongName = displayPlayerName.length > 15;
 
   const isTie = leader.isTie;
 
-  const tieBadgeLabel = useMemo(() => {
+  const tieBadgeLabel = (() => {
     if (!isTie) {
       return null;
     }
@@ -119,7 +119,7 @@ export default function LeaderCard({
       return String(numericPrefix);
     }
     return '#';
-  }, [isTie, leader.tieCount, leader.playerName]);
+  })();
 
   const primaryColor = theme.palette.primary.main;
   const primaryLight = theme.palette.primary.light;

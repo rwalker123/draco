@@ -31,13 +31,13 @@ const MessagePreview: React.FC<{
   message: CommunityMessagePreviewType;
   onOpen?: (permalink?: string) => void;
 }> = ({ message, onOpen }) => {
-  const postedAt = React.useMemo(() => {
+  const postedAt = (() => {
     try {
       return new Date(message.postedAt).toLocaleString();
     } catch {
       return message.postedAt;
     }
-  }, [message.postedAt]);
+  })();
 
   const canOpen = Boolean(onOpen && message.permalink);
 
@@ -98,61 +98,62 @@ const TeamForumWidget: React.FC<TeamForumWidgetProps> = ({
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const loadData = React.useCallback(async () => {
-    if (!teamSeasonId) {
-      setChannel(null);
-      setMessages([]);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const [channels] = await Promise.all([fetchCommunityChannels({ teamSeasonId })]);
-      const forumChannel = channels[0] ?? null;
-      setChannel(forumChannel ?? null);
-
-      if (!forumChannel) {
-        setMessages([]);
-        return;
-      }
-
-      const fetchedMessages = await fetchCommunityMessages({
-        teamSeasonId,
-        limit: 5,
-      });
-      setMessages(fetchedMessages);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to load team forum.';
-      setError(message);
-      setChannel(null);
-      setMessages([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchCommunityChannels, fetchCommunityMessages, teamSeasonId]);
-
   React.useEffect(() => {
     if (membershipLoading) {
       return;
     }
-    void loadData();
-  }, [membershipLoading, loadData]);
 
-  const handleOpenDiscord = React.useCallback(() => {
+    const loadData = async () => {
+      if (!teamSeasonId) {
+        setChannel(null);
+        setMessages([]);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const [channels] = await Promise.all([fetchCommunityChannels({ teamSeasonId })]);
+        const forumChannel = channels[0] ?? null;
+        setChannel(forumChannel ?? null);
+
+        if (!forumChannel) {
+          setMessages([]);
+          return;
+        }
+
+        const fetchedMessages = await fetchCommunityMessages({
+          teamSeasonId,
+          limit: 5,
+        });
+        setMessages(fetchedMessages);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unable to load team forum.';
+        setError(message);
+        setChannel(null);
+        setMessages([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadData();
+  }, [membershipLoading, fetchCommunityChannels, fetchCommunityMessages, teamSeasonId]);
+
+  const handleOpenDiscord = () => {
     if (!channel?.url) {
       return;
     }
     window.open(channel.url, '_blank', 'noopener,noreferrer');
-  }, [channel?.url]);
+  };
 
-  const handleOpenMessage = React.useCallback((permalink?: string) => {
+  const handleOpenMessage = (permalink?: string) => {
     if (!permalink) {
       return;
     }
     window.open(permalink, '_blank', 'noopener,noreferrer');
-  }, []);
+  };
 
   return (
     <WidgetShell

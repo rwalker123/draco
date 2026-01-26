@@ -1,14 +1,6 @@
 'use client';
 
-import React, {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   Autocomplete,
   Box,
@@ -322,15 +314,17 @@ const PitchingStatsEditableGrid = forwardRef<
     },
     ref,
   ) => {
-    const rows = useMemo(() => stats?.stats.map(buildRow) ?? [], [stats]);
     const apiRef = useGridApiRef();
     const originalRowsRef = useRef<Map<string, PitchingRow>>(new Map());
 
-    const [rowsState, setRowsState] = useState<PitchingRow[]>(rows);
+    const [rowsState, setRowsState] = useState<PitchingRow[]>(
+      () => stats?.stats.map(buildRow) ?? [],
+    );
     const [dirtyRowId, setDirtyRowId] = useState<string | null>(null);
     const [dirtyFields, setDirtyFields] = useState<EditablePitchingField[]>([]);
 
     useEffect(() => {
+      const rows = stats?.stats.map(buildRow) ?? [];
       const map = new Map<string, PitchingRow>();
       rows.forEach((row) => map.set(row.id, row));
       originalRowsRef.current = map;
@@ -348,13 +342,13 @@ const PitchingStatsEditableGrid = forwardRef<
         setDirtyRowId(null);
         setDirtyFields([]);
       }
-    }, [rows, dirtyRowId]);
+    }, [stats?.stats, dirtyRowId]);
 
     useEffect(() => {
       onDirtyStateChange?.(Boolean(dirtyRowId));
     }, [dirtyRowId, onDirtyStateChange]);
 
-    const computeDirtyFields = useCallback((row: PitchingRow): EditablePitchingField[] => {
+    const computeDirtyFields = (row: PitchingRow): EditablePitchingField[] => {
       const original = originalRowsRef.current.get(row.id);
       if (!original) {
         return [];
@@ -369,16 +363,16 @@ const PitchingStatsEditableGrid = forwardRef<
         }
       });
       return changed;
-    }, []);
+    };
 
-    const applyRowUpdate = useCallback((updatedRow: PitchingRow) => {
+    const applyRowUpdate = (updatedRow: PitchingRow) => {
       setRowsState((prev) => prev.map((row) => (row.id === updatedRow.id ? updatedRow : row)));
-    }, []);
+    };
 
-    const clearDirtyState = useCallback(() => {
+    const clearDirtyState = () => {
       setDirtyRowId(null);
       setDirtyFields([]);
-    }, []);
+    };
 
     const focusEditor = () => {
       window.requestAnimationFrame(() => {
@@ -391,7 +385,7 @@ const PitchingStatsEditableGrid = forwardRef<
 
     const [newRow, setNewRow] = useState<CreateGamePitchingStatType>(emptyPitchingNewRow);
 
-    const handleAddRow = useCallback(async (): Promise<boolean> => {
+    const handleAddRow = async (): Promise<boolean> => {
       try {
         if (!newRow.rosterSeasonId) {
           throw new Error('Select a player to add.');
@@ -428,24 +422,12 @@ const PitchingStatsEditableGrid = forwardRef<
         onProcessError(error instanceof Error ? error : new Error('Unable to add stat line.'));
         return false;
       }
-    }, [
-      apiRef,
-      availablePlayers,
-      clearDirtyState,
-      gameOutcome,
-      newRow,
-      onCreateStat,
-      onProcessError,
-      rowsState,
-    ]);
+    };
 
-    const selectedNewRowPlayer = useMemo(
-      () =>
-        availablePlayers.find((player) => player.rosterSeasonId === newRow.rosterSeasonId) ?? null,
-      [availablePlayers, newRow.rosterSeasonId],
-    );
+    const selectedNewRowPlayer =
+      availablePlayers.find((player) => player.rosterSeasonId === newRow.rosterSeasonId) ?? null;
 
-    const newRowDisplay = useMemo<PitchingNewRow>(() => {
+    const newRowDisplay = ((): PitchingNewRow => {
       const base: PitchingNewRow = {
         id: NEW_ROW_ID,
         isNew: true,
@@ -476,9 +458,9 @@ const PitchingStatsEditableGrid = forwardRef<
       });
 
       return base;
-    }, [newRow, selectedNewRowPlayer]);
+    })();
 
-    const totalsRow = useMemo<PitchingTotalsRow | null>(() => {
+    const totalsRow = ((): PitchingTotalsRow | null => {
       if (!totals) {
         return null;
       }
@@ -494,7 +476,6 @@ const PitchingStatsEditableGrid = forwardRef<
         playerName: 'Totals',
         playerNumber: null,
         ...stats,
-        ip: Number(totals.ip ?? 0),
         era: Number(totals.era ?? 0),
         whip: Number(totals.whip ?? 0),
         k9: Number(totals.k9 ?? 0),
@@ -502,15 +483,15 @@ const PitchingStatsEditableGrid = forwardRef<
         oba: Number(totals.oba ?? 0),
         slg: Number(totals.slg ?? 0),
       };
-    }, [totals]);
+    })();
 
-    const gridRows = useMemo<PitchingGridRow[]>(() => {
+    const gridRows = ((): PitchingGridRow[] => {
       const combined: PitchingGridRow[] = [newRowDisplay, ...rowsState];
       if (totalsRow) {
         combined.push(totalsRow);
       }
       return combined;
-    }, [newRowDisplay, rowsState, totalsRow]);
+    })();
 
     useEffect(() => {
       const changedFields = editableFields.filter(
@@ -528,40 +509,38 @@ const PitchingStatsEditableGrid = forwardRef<
           setDirtyFields(dirtyFieldList);
         }
       } else if (dirtyRowId === NEW_ROW_ID) {
-        clearDirtyState();
+        setDirtyRowId(null);
+        setDirtyFields([]);
       }
-    }, [clearDirtyState, dirtyRowId, newRow]);
+    }, [dirtyRowId, newRow]);
 
-    const markDirty = useCallback(
-      (row: PitchingGridRow) => {
-        if ('isTotals' in row && row.isTotals) {
-          return;
-        }
+    const markDirty = (row: PitchingGridRow) => {
+      if ('isTotals' in row && row.isTotals) {
+        return;
+      }
 
-        if ('isNew' in row && row.isNew) {
-          const hasStats = editableFields.some((field) => Number(row[field] ?? 0) !== 0);
-          const hasPlayer = Boolean(row.rosterSeasonId);
-          if (hasStats || hasPlayer) {
-            setDirtyRowId(NEW_ROW_ID);
-            setDirtyFields(Array.from(editableFields) as EditablePitchingField[]);
-          } else if (dirtyRowId === NEW_ROW_ID) {
-            clearDirtyState();
-          }
-          return;
-        }
-
-        const changed = computeDirtyFields(row as PitchingRow);
-        if (changed.length > 0) {
-          setDirtyRowId(row.id);
-          setDirtyFields(changed);
-        } else if (dirtyRowId === row.id) {
+      if ('isNew' in row && row.isNew) {
+        const hasStats = editableFields.some((field) => Number(row[field] ?? 0) !== 0);
+        const hasPlayer = Boolean(row.rosterSeasonId);
+        if (hasStats || hasPlayer) {
+          setDirtyRowId(NEW_ROW_ID);
+          setDirtyFields(Array.from(editableFields) as EditablePitchingField[]);
+        } else if (dirtyRowId === NEW_ROW_ID) {
           clearDirtyState();
         }
-      },
-      [clearDirtyState, computeDirtyFields, dirtyRowId],
-    );
+        return;
+      }
 
-    const handleDiscardDirtyRow = useCallback(() => {
+      const changed = computeDirtyFields(row as PitchingRow);
+      if (changed.length > 0) {
+        setDirtyRowId(row.id);
+        setDirtyFields(changed);
+      } else if (dirtyRowId === row.id) {
+        clearDirtyState();
+      }
+    };
+
+    const handleDiscardDirtyRow = () => {
       if (!dirtyRowId) {
         return;
       }
@@ -591,9 +570,9 @@ const PitchingStatsEditableGrid = forwardRef<
       if (api?.getCellMode?.(dirtyRowId, editableFields[0]) === 'edit') {
         api.stopCellEditMode?.({ id: dirtyRowId, field: editableFields[0] });
       }
-    }, [apiRef, applyRowUpdate, clearDirtyState, dirtyRowId]);
+    };
 
-    const handleSaveDirtyRow = useCallback(async () => {
+    const handleSaveDirtyRow = async () => {
       if (!dirtyRowId) {
         return true;
       }
@@ -636,16 +615,7 @@ const PitchingStatsEditableGrid = forwardRef<
         onProcessError(error instanceof Error ? error : new Error('Unable to update stat line.'));
         return false;
       }
-    }, [
-      apiRef,
-      clearDirtyState,
-      dirtyRowId,
-      handleAddRow,
-      onProcessError,
-      onUpdateStat,
-      gameOutcome,
-      rowsState,
-    ]);
+    };
 
     const resolveDirtyRow = async (
       reason: UnsavedChangesReason,
@@ -713,327 +683,315 @@ const PitchingStatsEditableGrid = forwardRef<
       return false;
     };
 
-    const columns = useMemo<GridColDef<PitchingGridRow>[]>(
-      () => [
-        {
-          field: 'rowControls',
-          headerName: '',
-          sortable: false,
-          filterable: false,
-          width: 90,
-          align: 'center',
-          headerAlign: 'center',
-          renderCell: (params: GridRenderCellParams<PitchingGridRow>) => {
-            if (params.id === NEW_ROW_ID) {
-              const isDirty = dirtyRowId === NEW_ROW_ID;
-              if (isDirty) {
-                return (
-                  <Stack direction="row" spacing={0.5} alignItems="center">
-                    <Tooltip title="Save changes">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void handleSaveDirtyRow();
-                        }}
-                        aria-label="Save new pitching stat line"
-                      >
-                        <Check fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Discard changes">
-                      <IconButton
-                        size="small"
-                        color="inherit"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleDiscardDirtyRow();
-                        }}
-                        aria-label="Discard new pitching stat line"
-                      >
-                        <Close fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                );
-              }
-
-              const canAdd = Boolean(newRow.rosterSeasonId);
+    const columns: GridColDef<PitchingGridRow>[] = [
+      {
+        field: 'rowControls',
+        headerName: '',
+        sortable: false,
+        filterable: false,
+        width: 90,
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: (params: GridRenderCellParams<PitchingGridRow>) => {
+          if (params.id === NEW_ROW_ID) {
+            const isDirty = dirtyRowId === NEW_ROW_ID;
+            if (isDirty) {
               return (
-                <Tooltip title={canAdd ? 'Add stat line' : 'Select a player first'}>
-                  <span>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Tooltip title="Save changes">
                     <IconButton
                       size="small"
                       color="primary"
-                      disabled={!canAdd}
                       onClick={(event) => {
                         event.stopPropagation();
-                        void handleAddRow();
+                        void handleSaveDirtyRow();
                       }}
-                      aria-label="Add pitching stat line"
+                      aria-label="Save new pitching stat line"
                     >
-                      <Add fontSize="small" />
+                      <Check fontSize="small" />
                     </IconButton>
-                  </span>
-                </Tooltip>
+                  </Tooltip>
+                  <Tooltip title="Discard changes">
+                    <IconButton
+                      size="small"
+                      color="inherit"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDiscardDirtyRow();
+                      }}
+                      aria-label="Discard new pitching stat line"
+                    >
+                      <Close fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
               );
             }
 
-            if (params.id === TOTALS_ROW_ID) {
-              return null;
-            }
-
-            const pitchingRow = params.row as PitchingRow;
-            const isDirty = dirtyRowId === params.row.id;
+            const canAdd = Boolean(newRow.rosterSeasonId);
             return (
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                {isDirty && (
-                  <>
-                    <Tooltip title="Save changes">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void handleSaveDirtyRow();
-                        }}
-                        aria-label={`Save pitching changes for ${pitchingRow.playerName}`}
-                      >
-                        <Check fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Discard changes">
-                      <IconButton
-                        size="small"
-                        color="inherit"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleDiscardDirtyRow();
-                        }}
-                        aria-label={`Discard pitching changes for ${pitchingRow.playerName}`}
-                      >
-                        <Close fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </>
-                )}
-                <Tooltip title="Delete stat line">
+              <Tooltip title={canAdd ? 'Add stat line' : 'Select a player first'}>
+                <span>
                   <IconButton
                     size="small"
-                    color="error"
+                    color="primary"
+                    disabled={!canAdd}
                     onClick={(event) => {
                       event.stopPropagation();
-                      onDeleteStat(pitchingRow);
+                      void handleAddRow();
                     }}
-                    aria-label={`Delete ${pitchingRow.playerName} pitching line`}
-                    sx={{ ml: isDirty ? 0 : 0.5 }}
+                    aria-label="Add pitching stat line"
                   >
-                    <Delete fontSize="small" />
+                    <Add fontSize="small" />
                   </IconButton>
-                </Tooltip>
-              </Stack>
+                </span>
+              </Tooltip>
             );
-          },
-        },
-        {
-          field: 'playerNumber',
-          headerName: PITCHING_FIELD_LABELS.playerNumber,
-          renderHeader: renderHeaderWithTooltip('playerNumber'),
-          width: 70,
-          align: 'center',
-          headerAlign: 'center',
-          sortable: false,
-          filterable: false,
-          renderCell: (params: GridRenderCellParams<PitchingGridRow>) => {
-            if (params.id === TOTALS_ROW_ID) {
-              return null;
-            }
+          }
 
-            const value =
-              params.id === NEW_ROW_ID
-                ? (selectedNewRowPlayer?.playerNumber ?? null)
-                : (params.row as PitchingRow).playerNumber;
+          if (params.id === TOTALS_ROW_ID) {
+            return null;
+          }
 
-            if (value === null || value === undefined) {
-              return null;
-            }
-
-            return (
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {value}
-              </Typography>
-            );
-          },
-        },
-        {
-          field: 'playerName',
-          headerName: PITCHING_FIELD_LABELS.playerName,
-          renderHeader: renderHeaderWithTooltip('playerName'),
-          flex: 1.2,
-          minWidth: 180,
-          sortable: false,
-          renderCell: (params: GridRenderCellParams<PitchingGridRow>) => {
-            if (params.id === NEW_ROW_ID) {
-              return (
-                <Box
-                  sx={{ width: '100%' }}
+          const pitchingRow = params.row as PitchingRow;
+          const isDirty = dirtyRowId === params.row.id;
+          return (
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              {isDirty && (
+                <>
+                  <Tooltip title="Save changes">
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleSaveDirtyRow();
+                      }}
+                      aria-label={`Save pitching changes for ${pitchingRow.playerName}`}
+                    >
+                      <Check fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Discard changes">
+                    <IconButton
+                      size="small"
+                      color="inherit"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDiscardDirtyRow();
+                      }}
+                      aria-label={`Discard pitching changes for ${pitchingRow.playerName}`}
+                    >
+                      <Close fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </>
+              )}
+              <Tooltip title="Delete stat line">
+                <IconButton
+                  size="small"
+                  color="error"
                   onClick={(event) => {
                     event.stopPropagation();
+                    onDeleteStat(pitchingRow);
                   }}
+                  aria-label={`Delete ${pitchingRow.playerName} pitching line`}
+                  sx={{ ml: isDirty ? 0 : 0.5 }}
                 >
-                  <Autocomplete
-                    options={availablePlayers}
-                    getOptionLabel={(option) => option.playerName}
-                    value={selectedNewRowPlayer}
-                    onChange={(_event, option) =>
-                      setNewRow((prev) => ({
-                        ...prev,
-                        rosterSeasonId: option?.rosterSeasonId ?? '',
-                      }))
-                    }
-                    renderInput={(inputParams) => (
-                      <TextField {...inputParams} variant="standard" placeholder="Select player" />
-                    )}
-                    size="small"
-                    fullWidth
-                  />
-                </Box>
-              );
-            }
+                  <Delete fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          );
+        },
+      },
+      {
+        field: 'playerNumber',
+        headerName: PITCHING_FIELD_LABELS.playerNumber,
+        renderHeader: renderHeaderWithTooltip('playerNumber'),
+        width: 70,
+        align: 'center',
+        headerAlign: 'center',
+        sortable: false,
+        filterable: false,
+        renderCell: (params: GridRenderCellParams<PitchingGridRow>) => {
+          if (params.id === TOTALS_ROW_ID) {
+            return null;
+          }
 
-            if (params.id === TOTALS_ROW_ID) {
-              return (
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  Totals
-                </Typography>
-              );
-            }
+          const value =
+            params.id === NEW_ROW_ID
+              ? (selectedNewRowPlayer?.playerNumber ?? null)
+              : (params.row as PitchingRow).playerNumber;
 
-            const pitchingRow = params.row as PitchingRow;
+          if (value === null || value === undefined) {
+            return null;
+          }
+
+          return (
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {value}
+            </Typography>
+          );
+        },
+      },
+      {
+        field: 'playerName',
+        headerName: PITCHING_FIELD_LABELS.playerName,
+        renderHeader: renderHeaderWithTooltip('playerName'),
+        flex: 1.2,
+        minWidth: 180,
+        sortable: false,
+        renderCell: (params: GridRenderCellParams<PitchingGridRow>) => {
+          if (params.id === NEW_ROW_ID) {
+            return (
+              <Box
+                sx={{ width: '100%' }}
+                onClick={(event) => {
+                  event.stopPropagation();
+                }}
+              >
+                <Autocomplete
+                  options={availablePlayers}
+                  getOptionLabel={(option) => option.playerName}
+                  value={selectedNewRowPlayer}
+                  onChange={(_event, option) =>
+                    setNewRow((prev) => ({
+                      ...prev,
+                      rosterSeasonId: option?.rosterSeasonId ?? '',
+                    }))
+                  }
+                  renderInput={(inputParams) => (
+                    <TextField {...inputParams} variant="standard" placeholder="Select player" />
+                  )}
+                  size="small"
+                  fullWidth
+                />
+              </Box>
+            );
+          }
+
+          if (params.id === TOTALS_ROW_ID) {
             return (
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {pitchingRow.playerName}
+                Totals
               </Typography>
             );
-          },
-        },
-        ...editableFields.map<GridColDef<PitchingGridRow>>((field) => ({
-          field,
-          headerName: PITCHING_FIELD_LABELS[field],
-          renderHeader: renderHeaderWithTooltip(field),
-          type: 'number',
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          editable: true,
-          sortable: false,
-          preProcessEditCellProps: buildNonNegativePreProcessor(field === 'ipDecimal'),
-          renderCell: (params) => {
-            const numeric = getNumericPitchingFieldValue(
-              params.row as PitchingGridRow | undefined,
-              field,
-            );
-            if (numeric === null) {
-              return '-';
-            }
+          }
 
-            if (field === 'ipDecimal') {
-              return formatInnings(numeric);
-            }
+          const pitchingRow = params.row as PitchingRow;
+          return (
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {pitchingRow.playerName}
+            </Typography>
+          );
+        },
+      },
+      ...editableFields.map<GridColDef<PitchingGridRow>>((field) => ({
+        field,
+        headerName: PITCHING_FIELD_LABELS[field],
+        renderHeader: renderHeaderWithTooltip(field),
+        type: 'number',
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        editable: true,
+        sortable: false,
+        preProcessEditCellProps: buildNonNegativePreProcessor(field === 'ipDecimal'),
+        renderCell: (params) => {
+          const numeric = getNumericPitchingFieldValue(
+            params.row as PitchingGridRow | undefined,
+            field,
+          );
+          if (numeric === null) {
+            return '-';
+          }
 
-            return formatStatDecimal(numeric, 0);
-          },
-        })),
-        {
-          field: 'era',
-          headerName: PITCHING_FIELD_LABELS.era,
-          renderHeader: renderHeaderWithTooltip('era'),
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          sortable: false,
-          renderCell: (params) =>
-            params.id === NEW_ROW_ID
-              ? '-'
-              : formatStatDecimal(params.value as number | string | null | undefined, 2),
+          if (field === 'ipDecimal') {
+            return formatInnings(numeric);
+          }
+
+          return formatStatDecimal(numeric, 0);
         },
-        {
-          field: 'whip',
-          headerName: PITCHING_FIELD_LABELS.whip,
-          renderHeader: renderHeaderWithTooltip('whip'),
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          sortable: false,
-          renderCell: (params) =>
-            params.id === NEW_ROW_ID
-              ? '-'
-              : formatStatDecimal(params.value as number | string | null | undefined, 2),
-        },
-        {
-          field: 'k9',
-          headerName: PITCHING_FIELD_LABELS.k9,
-          renderHeader: renderHeaderWithTooltip('k9'),
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          sortable: false,
-          renderCell: (params) =>
-            params.id === NEW_ROW_ID
-              ? '-'
-              : formatStatDecimal(params.value as number | string | null | undefined, 2),
-        },
-        {
-          field: 'bb9',
-          headerName: PITCHING_FIELD_LABELS.bb9,
-          renderHeader: renderHeaderWithTooltip('bb9'),
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          sortable: false,
-          renderCell: (params) =>
-            params.id === NEW_ROW_ID
-              ? '-'
-              : formatStatDecimal(params.value as number | string | null | undefined, 2),
-        },
-        {
-          field: 'oba',
-          headerName: PITCHING_FIELD_LABELS.oba,
-          renderHeader: renderHeaderWithTooltip('oba'),
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          sortable: false,
-          renderCell: (params) =>
-            params.id === NEW_ROW_ID
-              ? '-'
-              : formatStatDecimal(params.value as number | string | null | undefined, 3),
-        },
-        {
-          field: 'slg',
-          headerName: PITCHING_FIELD_LABELS.slg,
-          renderHeader: renderHeaderWithTooltip('slg'),
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          renderCell: (params) =>
-            params.id === NEW_ROW_ID
-              ? '-'
-              : formatStatDecimal(params.value as number | string | null | undefined, 3),
-        },
-      ],
-      [
-        availablePlayers,
-        dirtyRowId,
-        handleAddRow,
-        handleDiscardDirtyRow,
-        handleSaveDirtyRow,
-        newRow,
-        onDeleteStat,
-        selectedNewRowPlayer,
-      ],
-    );
+      })),
+      {
+        field: 'era',
+        headerName: PITCHING_FIELD_LABELS.era,
+        renderHeader: renderHeaderWithTooltip('era'),
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        sortable: false,
+        renderCell: (params) =>
+          params.id === NEW_ROW_ID
+            ? '-'
+            : formatStatDecimal(params.value as number | string | null | undefined, 2),
+      },
+      {
+        field: 'whip',
+        headerName: PITCHING_FIELD_LABELS.whip,
+        renderHeader: renderHeaderWithTooltip('whip'),
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        sortable: false,
+        renderCell: (params) =>
+          params.id === NEW_ROW_ID
+            ? '-'
+            : formatStatDecimal(params.value as number | string | null | undefined, 2),
+      },
+      {
+        field: 'k9',
+        headerName: PITCHING_FIELD_LABELS.k9,
+        renderHeader: renderHeaderWithTooltip('k9'),
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        sortable: false,
+        renderCell: (params) =>
+          params.id === NEW_ROW_ID
+            ? '-'
+            : formatStatDecimal(params.value as number | string | null | undefined, 2),
+      },
+      {
+        field: 'bb9',
+        headerName: PITCHING_FIELD_LABELS.bb9,
+        renderHeader: renderHeaderWithTooltip('bb9'),
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        sortable: false,
+        renderCell: (params) =>
+          params.id === NEW_ROW_ID
+            ? '-'
+            : formatStatDecimal(params.value as number | string | null | undefined, 2),
+      },
+      {
+        field: 'oba',
+        headerName: PITCHING_FIELD_LABELS.oba,
+        renderHeader: renderHeaderWithTooltip('oba'),
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        sortable: false,
+        renderCell: (params) =>
+          params.id === NEW_ROW_ID
+            ? '-'
+            : formatStatDecimal(params.value as number | string | null | undefined, 3),
+      },
+      {
+        field: 'slg',
+        headerName: PITCHING_FIELD_LABELS.slg,
+        renderHeader: renderHeaderWithTooltip('slg'),
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        renderCell: (params) =>
+          params.id === NEW_ROW_ID
+            ? '-'
+            : formatStatDecimal(params.value as number | string | null | undefined, 3),
+      },
+    ];
 
     const processRowUpdate = async (candidateRow: PitchingGridRow) => {
       if ('isTotals' in candidateRow && candidateRow.isTotals) {

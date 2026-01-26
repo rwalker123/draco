@@ -1,14 +1,6 @@
 'use client';
 
-import React, {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   Autocomplete,
   Box,
@@ -165,15 +157,17 @@ const BattingStatsEditableGrid = forwardRef<
     },
     ref,
   ) => {
-    const rows = useMemo(() => stats?.stats.map(buildRow) ?? [], [stats]);
     const apiRef = useGridApiRef();
     const originalRowsRef = useRef<Map<string, BattingRow>>(new Map());
 
-    const [rowsState, setRowsState] = useState<BattingRow[]>(rows);
+    const [rowsState, setRowsState] = useState<BattingRow[]>(
+      () => stats?.stats.map(buildRow) ?? [],
+    );
     const [dirtyRowId, setDirtyRowId] = useState<string | null>(null);
     const [dirtyFields, setDirtyFields] = useState<EditableBattingField[]>([]);
 
     useEffect(() => {
+      const rows = stats?.stats.map(buildRow) ?? [];
       const map = new Map<string, BattingRow>();
       rows.forEach((row) => map.set(row.id, row));
       originalRowsRef.current = map;
@@ -191,13 +185,13 @@ const BattingStatsEditableGrid = forwardRef<
         setDirtyRowId(null);
         setDirtyFields([]);
       }
-    }, [rows, dirtyRowId]);
+    }, [stats?.stats, dirtyRowId]);
 
     useEffect(() => {
       onDirtyStateChange?.(Boolean(dirtyRowId));
     }, [dirtyRowId, onDirtyStateChange]);
 
-    const computeDirtyFields = useCallback((row: BattingRow): EditableBattingField[] => {
+    const computeDirtyFields = (row: BattingRow): EditableBattingField[] => {
       const original = originalRowsRef.current.get(row.id);
       if (!original) {
         return [];
@@ -212,16 +206,16 @@ const BattingStatsEditableGrid = forwardRef<
         }
       });
       return changed;
-    }, []);
+    };
 
-    const applyRowUpdate = useCallback((updatedRow: BattingRow) => {
+    const applyRowUpdate = (updatedRow: BattingRow) => {
       setRowsState((prev) => prev.map((row) => (row.id === updatedRow.id ? updatedRow : row)));
-    }, []);
+    };
 
-    const clearDirtyState = useCallback(() => {
+    const clearDirtyState = () => {
       setDirtyRowId(null);
       setDirtyFields([]);
-    }, []);
+    };
 
     const focusEditor = () => {
       window.requestAnimationFrame(() => {
@@ -234,7 +228,7 @@ const BattingStatsEditableGrid = forwardRef<
 
     const [newRow, setNewRow] = useState<CreateGameBattingStatType>(emptyBattingNewRow);
 
-    const handleAddRow = useCallback(async (): Promise<boolean> => {
+    const handleAddRow = async (): Promise<boolean> => {
       try {
         if (!newRow.rosterSeasonId) {
           throw new Error('Select a player to add.');
@@ -254,15 +248,12 @@ const BattingStatsEditableGrid = forwardRef<
         onProcessError(error instanceof Error ? error : new Error('Unable to add stat line.'));
         return false;
       }
-    }, [apiRef, clearDirtyState, newRow, onCreateStat, onProcessError]);
+    };
 
-    const selectedNewRowPlayer = useMemo(
-      () =>
-        availablePlayers.find((player) => player.rosterSeasonId === newRow.rosterSeasonId) ?? null,
-      [availablePlayers, newRow.rosterSeasonId],
-    );
+    const selectedNewRowPlayer =
+      availablePlayers.find((player) => player.rosterSeasonId === newRow.rosterSeasonId) ?? null;
 
-    const newRowDisplay = useMemo<BattingNewRow>(() => {
+    const newRowDisplay = ((): BattingNewRow => {
       const base: BattingNewRow = {
         id: NEW_ROW_ID,
         isNew: true,
@@ -293,9 +284,9 @@ const BattingStatsEditableGrid = forwardRef<
       });
 
       return base;
-    }, [newRow, selectedNewRowPlayer]);
+    })();
 
-    const totalsRow = useMemo<BattingTotalsRow | null>(() => {
+    const totalsRow = ((): BattingTotalsRow | null => {
       if (!totals) {
         return null;
       }
@@ -318,15 +309,15 @@ const BattingStatsEditableGrid = forwardRef<
         slg: Number(totals.slg ?? 0),
         ops: Number(totals.ops ?? 0),
       };
-    }, [totals]);
+    })();
 
-    const gridRows = useMemo<BattingGridRow[]>(() => {
+    const gridRows = ((): BattingGridRow[] => {
       const combined: BattingGridRow[] = [newRowDisplay, ...rowsState];
       if (totalsRow) {
         combined.push(totalsRow);
       }
       return combined;
-    }, [newRowDisplay, rowsState, totalsRow]);
+    })();
 
     useEffect(() => {
       const changedFields = editableFields.filter(
@@ -344,40 +335,38 @@ const BattingStatsEditableGrid = forwardRef<
           setDirtyFields(dirtyFieldList);
         }
       } else if (dirtyRowId === NEW_ROW_ID) {
-        clearDirtyState();
+        setDirtyRowId(null);
+        setDirtyFields([]);
       }
-    }, [clearDirtyState, dirtyRowId, newRow]);
+    }, [dirtyRowId, newRow]);
 
-    const markDirty = useCallback(
-      (row: BattingGridRow) => {
-        if ('isTotals' in row && row.isTotals) {
-          return;
-        }
+    const markDirty = (row: BattingGridRow) => {
+      if ('isTotals' in row && row.isTotals) {
+        return;
+      }
 
-        if ('isNew' in row && row.isNew) {
-          const hasStats = editableFields.some((field) => Number(row[field] ?? 0) !== 0);
-          const hasPlayer = Boolean(row.rosterSeasonId);
-          if (hasStats || hasPlayer) {
-            setDirtyRowId(NEW_ROW_ID);
-            setDirtyFields(Array.from(editableFields) as EditableBattingField[]);
-          } else if (dirtyRowId === NEW_ROW_ID) {
-            clearDirtyState();
-          }
-          return;
-        }
-
-        const changed = computeDirtyFields(row as BattingRow);
-        if (changed.length > 0) {
-          setDirtyRowId(row.id);
-          setDirtyFields(changed);
-        } else if (dirtyRowId === row.id) {
+      if ('isNew' in row && row.isNew) {
+        const hasStats = editableFields.some((field) => Number(row[field] ?? 0) !== 0);
+        const hasPlayer = Boolean(row.rosterSeasonId);
+        if (hasStats || hasPlayer) {
+          setDirtyRowId(NEW_ROW_ID);
+          setDirtyFields(Array.from(editableFields) as EditableBattingField[]);
+        } else if (dirtyRowId === NEW_ROW_ID) {
           clearDirtyState();
         }
-      },
-      [clearDirtyState, computeDirtyFields, dirtyRowId],
-    );
+        return;
+      }
 
-    const handleDiscardDirtyRow = useCallback(() => {
+      const changed = computeDirtyFields(row as BattingRow);
+      if (changed.length > 0) {
+        setDirtyRowId(row.id);
+        setDirtyFields(changed);
+      } else if (dirtyRowId === row.id) {
+        clearDirtyState();
+      }
+    };
+
+    const handleDiscardDirtyRow = () => {
       if (!dirtyRowId) {
         return;
       }
@@ -403,9 +392,9 @@ const BattingStatsEditableGrid = forwardRef<
       if (api?.getCellMode?.(dirtyRowId, editableFields[0]) === 'edit') {
         api.stopCellEditMode?.({ id: dirtyRowId, field: editableFields[0] });
       }
-    }, [apiRef, applyRowUpdate, clearDirtyState, dirtyRowId]);
+    };
 
-    const handleSaveDirtyRow = useCallback(async () => {
+    const handleSaveDirtyRow = async () => {
       if (!dirtyRowId) {
         return true;
       }
@@ -446,15 +435,7 @@ const BattingStatsEditableGrid = forwardRef<
         onProcessError(error instanceof Error ? error : new Error('Unable to update stat line.'));
         return false;
       }
-    }, [
-      apiRef,
-      clearDirtyState,
-      dirtyRowId,
-      handleAddRow,
-      onProcessError,
-      onUpdateStat,
-      rowsState,
-    ]);
+    };
 
     const resolveDirtyRow = async (
       reason: UnsavedChangesReason,
@@ -522,315 +503,303 @@ const BattingStatsEditableGrid = forwardRef<
       return false;
     };
 
-    const columns = useMemo<GridColDef<BattingGridRow>[]>(
-      () => [
-        {
-          field: 'rowControls',
-          headerName: '',
-          sortable: false,
-          filterable: false,
-          width: 90,
-          align: 'center',
-          headerAlign: 'center',
-          renderCell: (params: GridRenderCellParams<BattingGridRow>) => {
-            if (params.id === NEW_ROW_ID) {
-              const isDirty = dirtyRowId === NEW_ROW_ID;
-              if (isDirty) {
-                return (
-                  <Stack direction="row" spacing={0.5} alignItems="center">
-                    <Tooltip title="Save changes">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void handleSaveDirtyRow();
-                        }}
-                        aria-label="Save new batting stat line"
-                      >
-                        <Check fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Discard changes">
-                      <IconButton
-                        size="small"
-                        color="inherit"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleDiscardDirtyRow();
-                        }}
-                        aria-label="Discard new batting stat line"
-                      >
-                        <Close fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                );
-              }
-
-              const canAdd = Boolean(newRow.rosterSeasonId);
+    const columns: GridColDef<BattingGridRow>[] = [
+      {
+        field: 'rowControls',
+        headerName: '',
+        sortable: false,
+        filterable: false,
+        width: 90,
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: (params: GridRenderCellParams<BattingGridRow>) => {
+          if (params.id === NEW_ROW_ID) {
+            const isDirty = dirtyRowId === NEW_ROW_ID;
+            if (isDirty) {
               return (
-                <Tooltip title={canAdd ? 'Add stat line' : 'Select a player first'}>
-                  <span>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Tooltip title="Save changes">
                     <IconButton
                       size="small"
                       color="primary"
-                      disabled={!canAdd}
                       onClick={(event) => {
                         event.stopPropagation();
-                        void handleAddRow();
+                        void handleSaveDirtyRow();
                       }}
-                      aria-label="Add batting stat line"
+                      aria-label="Save new batting stat line"
                     >
-                      <Add fontSize="small" />
+                      <Check fontSize="small" />
                     </IconButton>
-                  </span>
-                </Tooltip>
+                  </Tooltip>
+                  <Tooltip title="Discard changes">
+                    <IconButton
+                      size="small"
+                      color="inherit"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDiscardDirtyRow();
+                      }}
+                      aria-label="Discard new batting stat line"
+                    >
+                      <Close fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
               );
             }
 
-            if (params.id === TOTALS_ROW_ID) {
-              return null;
-            }
-
-            const battingRow = params.row as BattingRow;
-            const isDirty = dirtyRowId === params.row.id;
+            const canAdd = Boolean(newRow.rosterSeasonId);
             return (
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                {isDirty && (
-                  <>
-                    <Tooltip title="Save changes">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void handleSaveDirtyRow();
-                        }}
-                        aria-label={`Save batting changes for ${battingRow.playerName}`}
-                      >
-                        <Check fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Discard changes">
-                      <IconButton
-                        size="small"
-                        color="inherit"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleDiscardDirtyRow();
-                        }}
-                        aria-label={`Discard batting changes for ${battingRow.playerName}`}
-                      >
-                        <Close fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </>
-                )}
-                <Tooltip title="Delete stat line">
+              <Tooltip title={canAdd ? 'Add stat line' : 'Select a player first'}>
+                <span>
                   <IconButton
                     size="small"
-                    color="error"
+                    color="primary"
+                    disabled={!canAdd}
                     onClick={(event) => {
                       event.stopPropagation();
-                      onDeleteStat(battingRow);
+                      void handleAddRow();
                     }}
-                    aria-label={`Delete ${battingRow.playerName} batting line`}
-                    sx={{ ml: isDirty ? 0 : 0.5 }}
+                    aria-label="Add batting stat line"
                   >
-                    <Delete fontSize="small" />
+                    <Add fontSize="small" />
                   </IconButton>
-                </Tooltip>
-              </Stack>
+                </span>
+              </Tooltip>
             );
-          },
-        },
-        {
-          field: 'playerNumber',
-          headerName: BATTING_FIELD_LABELS.playerNumber,
-          renderHeader: renderHeaderWithTooltip('playerNumber'),
-          width: 70,
-          align: 'center',
-          headerAlign: 'center',
-          sortable: false,
-          filterable: false,
-          renderCell: (params: GridRenderCellParams<BattingGridRow>) => {
-            if (params.id === TOTALS_ROW_ID) {
-              return null;
-            }
+          }
 
-            const value =
-              params.id === NEW_ROW_ID
-                ? (selectedNewRowPlayer?.playerNumber ?? null)
-                : (params.row as BattingRow).playerNumber;
+          if (params.id === TOTALS_ROW_ID) {
+            return null;
+          }
 
-            if (value === null || value === undefined) {
-              return null;
-            }
-
-            return (
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {value}
-              </Typography>
-            );
-          },
-        },
-        {
-          field: 'playerName',
-          headerName: BATTING_FIELD_LABELS.playerName,
-          renderHeader: renderHeaderWithTooltip('playerName'),
-          flex: 1.2,
-          minWidth: 180,
-          sortable: false,
-          renderCell: (params) => {
-            if (params.id === NEW_ROW_ID) {
-              return (
-                <Box
-                  sx={{ width: '100%' }}
+          const battingRow = params.row as BattingRow;
+          const isDirty = dirtyRowId === params.row.id;
+          return (
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              {isDirty && (
+                <>
+                  <Tooltip title="Save changes">
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleSaveDirtyRow();
+                      }}
+                      aria-label={`Save batting changes for ${battingRow.playerName}`}
+                    >
+                      <Check fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Discard changes">
+                    <IconButton
+                      size="small"
+                      color="inherit"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDiscardDirtyRow();
+                      }}
+                      aria-label={`Discard batting changes for ${battingRow.playerName}`}
+                    >
+                      <Close fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </>
+              )}
+              <Tooltip title="Delete stat line">
+                <IconButton
+                  size="small"
+                  color="error"
                   onClick={(event) => {
                     event.stopPropagation();
+                    onDeleteStat(battingRow);
                   }}
+                  aria-label={`Delete ${battingRow.playerName} batting line`}
+                  sx={{ ml: isDirty ? 0 : 0.5 }}
                 >
-                  <Autocomplete
-                    options={availablePlayers}
-                    getOptionLabel={(option) => option.playerName}
-                    value={selectedNewRowPlayer}
-                    onChange={(_event, option) =>
-                      setNewRow((prev) => ({
-                        ...prev,
-                        rosterSeasonId: option?.rosterSeasonId ?? '',
-                      }))
-                    }
-                    renderInput={(inputParams) => (
-                      <TextField {...inputParams} variant="standard" placeholder="Select player" />
-                    )}
-                    size="small"
-                    fullWidth
-                  />
-                </Box>
-              );
-            }
+                  <Delete fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          );
+        },
+      },
+      {
+        field: 'playerNumber',
+        headerName: BATTING_FIELD_LABELS.playerNumber,
+        renderHeader: renderHeaderWithTooltip('playerNumber'),
+        width: 70,
+        align: 'center',
+        headerAlign: 'center',
+        sortable: false,
+        filterable: false,
+        renderCell: (params: GridRenderCellParams<BattingGridRow>) => {
+          if (params.id === TOTALS_ROW_ID) {
+            return null;
+          }
 
-            if (params.id === TOTALS_ROW_ID) {
-              return (
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  Totals
-                </Typography>
-              );
-            }
+          const value =
+            params.id === NEW_ROW_ID
+              ? (selectedNewRowPlayer?.playerNumber ?? null)
+              : (params.row as BattingRow).playerNumber;
 
-            const battingRow = params.row as BattingRow;
+          if (value === null || value === undefined) {
+            return null;
+          }
+
+          return (
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {value}
+            </Typography>
+          );
+        },
+      },
+      {
+        field: 'playerName',
+        headerName: BATTING_FIELD_LABELS.playerName,
+        renderHeader: renderHeaderWithTooltip('playerName'),
+        flex: 1.2,
+        minWidth: 180,
+        sortable: false,
+        renderCell: (params) => {
+          if (params.id === NEW_ROW_ID) {
+            return (
+              <Box
+                sx={{ width: '100%' }}
+                onClick={(event) => {
+                  event.stopPropagation();
+                }}
+              >
+                <Autocomplete
+                  options={availablePlayers}
+                  getOptionLabel={(option) => option.playerName}
+                  value={selectedNewRowPlayer}
+                  onChange={(_event, option) =>
+                    setNewRow((prev) => ({
+                      ...prev,
+                      rosterSeasonId: option?.rosterSeasonId ?? '',
+                    }))
+                  }
+                  renderInput={(inputParams) => (
+                    <TextField {...inputParams} variant="standard" placeholder="Select player" />
+                  )}
+                  size="small"
+                  fullWidth
+                />
+              </Box>
+            );
+          }
+
+          if (params.id === TOTALS_ROW_ID) {
             return (
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {battingRow.playerName}
+                Totals
               </Typography>
             );
-          },
+          }
+
+          const battingRow = params.row as BattingRow;
+          return (
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {battingRow.playerName}
+            </Typography>
+          );
         },
-        ...editableFields.map<GridColDef<BattingGridRow>>((field) => ({
-          field,
-          headerName: BATTING_FIELD_LABELS[field],
-          renderHeader: renderHeaderWithTooltip(field),
-          type: 'number',
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          editable: true,
-          sortable: false,
-          preProcessEditCellProps: buildNonNegativeIntegerPreProcessor(),
-        })),
-        {
-          field: 'tb',
-          headerName: BATTING_FIELD_LABELS.tb,
-          renderHeader: renderHeaderWithTooltip('tb'),
-          type: 'number',
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          sortable: false,
-          renderCell: (params) =>
-            params.id === NEW_ROW_ID
-              ? '-'
-              : formatStatDecimal(params.value as number | string | null | undefined, 0),
-        },
-        {
-          field: 'pa',
-          headerName: BATTING_FIELD_LABELS.pa,
-          renderHeader: renderHeaderWithTooltip('pa'),
-          type: 'number',
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          sortable: false,
-          renderCell: (params) =>
-            params.id === NEW_ROW_ID
-              ? '-'
-              : formatStatDecimal(params.value as number | string | null | undefined, 0),
-        },
-        {
-          field: 'avg',
-          headerName: BATTING_FIELD_LABELS.avg,
-          renderHeader: renderHeaderWithTooltip('avg'),
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          sortable: false,
-          renderCell: (params) =>
-            params.id === NEW_ROW_ID
-              ? '-'
-              : formatStatDecimal(params.value as number | string | null | undefined, 3),
-        },
-        {
-          field: 'obp',
-          headerName: BATTING_FIELD_LABELS.obp,
-          renderHeader: renderHeaderWithTooltip('obp'),
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          sortable: false,
-          renderCell: (params) =>
-            params.id === NEW_ROW_ID
-              ? '-'
-              : formatStatDecimal(params.value as number | string | null | undefined, 3),
-        },
-        {
-          field: 'slg',
-          headerName: BATTING_FIELD_LABELS.slg,
-          renderHeader: renderHeaderWithTooltip('slg'),
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          sortable: false,
-          renderCell: (params) =>
-            params.id === NEW_ROW_ID
-              ? '-'
-              : formatStatDecimal(params.value as number | string | null | undefined, 3),
-        },
-        {
-          field: 'ops',
-          headerName: BATTING_FIELD_LABELS.ops,
-          renderHeader: renderHeaderWithTooltip('ops'),
-          align: 'center',
-          headerAlign: 'center',
-          width: 90,
-          sortable: false,
-          renderCell: (params) =>
-            params.id === NEW_ROW_ID
-              ? '-'
-              : formatStatDecimal(params.value as number | string | null | undefined, 3),
-        },
-      ],
-      [
-        availablePlayers,
-        dirtyRowId,
-        handleAddRow,
-        handleDiscardDirtyRow,
-        handleSaveDirtyRow,
-        newRow,
-        onDeleteStat,
-        selectedNewRowPlayer,
-      ],
-    );
+      },
+      ...editableFields.map<GridColDef<BattingGridRow>>((field) => ({
+        field,
+        headerName: BATTING_FIELD_LABELS[field],
+        renderHeader: renderHeaderWithTooltip(field),
+        type: 'number',
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        editable: true,
+        sortable: false,
+        preProcessEditCellProps: buildNonNegativeIntegerPreProcessor(),
+      })),
+      {
+        field: 'tb',
+        headerName: BATTING_FIELD_LABELS.tb,
+        renderHeader: renderHeaderWithTooltip('tb'),
+        type: 'number',
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        sortable: false,
+        renderCell: (params) =>
+          params.id === NEW_ROW_ID
+            ? '-'
+            : formatStatDecimal(params.value as number | string | null | undefined, 0),
+      },
+      {
+        field: 'pa',
+        headerName: BATTING_FIELD_LABELS.pa,
+        renderHeader: renderHeaderWithTooltip('pa'),
+        type: 'number',
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        sortable: false,
+        renderCell: (params) =>
+          params.id === NEW_ROW_ID
+            ? '-'
+            : formatStatDecimal(params.value as number | string | null | undefined, 0),
+      },
+      {
+        field: 'avg',
+        headerName: BATTING_FIELD_LABELS.avg,
+        renderHeader: renderHeaderWithTooltip('avg'),
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        sortable: false,
+        renderCell: (params) =>
+          params.id === NEW_ROW_ID
+            ? '-'
+            : formatStatDecimal(params.value as number | string | null | undefined, 3),
+      },
+      {
+        field: 'obp',
+        headerName: BATTING_FIELD_LABELS.obp,
+        renderHeader: renderHeaderWithTooltip('obp'),
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        sortable: false,
+        renderCell: (params) =>
+          params.id === NEW_ROW_ID
+            ? '-'
+            : formatStatDecimal(params.value as number | string | null | undefined, 3),
+      },
+      {
+        field: 'slg',
+        headerName: BATTING_FIELD_LABELS.slg,
+        renderHeader: renderHeaderWithTooltip('slg'),
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        sortable: false,
+        renderCell: (params) =>
+          params.id === NEW_ROW_ID
+            ? '-'
+            : formatStatDecimal(params.value as number | string | null | undefined, 3),
+      },
+      {
+        field: 'ops',
+        headerName: BATTING_FIELD_LABELS.ops,
+        renderHeader: renderHeaderWithTooltip('ops'),
+        align: 'center',
+        headerAlign: 'center',
+        width: 90,
+        sortable: false,
+        renderCell: (params) =>
+          params.id === NEW_ROW_ID
+            ? '-'
+            : formatStatDecimal(params.value as number | string | null | undefined, 3),
+      },
+    ];
 
     const processRowUpdate = async (candidateRow: BattingGridRow) => {
       if ('isTotals' in candidateRow && candidateRow.isTotals) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -51,7 +51,7 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
-  const viewerContact = useMemo<ContactOption | null>(() => {
+  const viewerContact: ContactOption | null = (() => {
     if (!user?.contact?.id) {
       return null;
     }
@@ -62,12 +62,7 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
       lastName: user.contact.lastName ?? '',
       photoUrl: user.contact.photoUrl ?? undefined,
     };
-  }, [
-    user?.contact?.firstName,
-    user?.contact?.id,
-    user?.contact?.lastName,
-    user?.contact?.photoUrl,
-  ]);
+  })();
 
   const isAccountAdmin = Boolean(user && hasRole('AccountAdmin', { accountId: String(accountId) }));
   const { isMember } = useAccountMembership(accountId);
@@ -167,7 +162,7 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
     viewerDetailError && viewerDetailError.toLowerCase().includes('not available'),
   );
 
-  const viewerSurveyForEdit = useMemo(() => {
+  const viewerSurveyForEdit: PlayerSurveyDetailType | null = (() => {
     if (!viewerPlayerId || !viewerContact) {
       return null;
     }
@@ -183,7 +178,7 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
       },
       answers: [],
     } as PlayerSurveyDetailType;
-  }, [viewerContact, viewerDetail, viewerPlayerId]);
+  })();
 
   useEffect(() => {
     if (!viewerAccordionExpanded) {
@@ -206,7 +201,7 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
     fetchPlayerDetail,
   ]);
 
-  const listSummaries = useMemo(() => {
+  const listSummaries = (() => {
     if (selectedContact) {
       return playerSummaries;
     }
@@ -214,155 +209,142 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
       return playerSummaries.filter((summary) => summary.player.id !== viewerPlayerId);
     }
     return playerSummaries;
-  }, [canEditOwnSurvey, playerSummaries, selectedContact, viewerPlayerId]);
+  })();
 
-  const totalPages = useMemo(() => {
+  const totalPages = (() => {
     if (!pagination) {
       return 1;
     }
     return Math.max(1, Math.ceil(pagination.total / pagination.limit));
-  }, [pagination]);
+  })();
 
-  const summaryItems = useMemo(
-    () =>
-      listSummaries.map((summary) => {
-        const playerId = summary.player.id;
-        const detail = playerDetails[playerId];
-        const detailIsLoading = playerDetailLoading[playerId];
-        const detailError = playerDetailErrors[playerId];
-        const isExpanded = expandedPlayerIds.includes(playerId);
+  const summaryItems = listSummaries.map((summary) => {
+    const playerId = summary.player.id;
+    const detail = playerDetails[playerId];
+    const detailIsLoading = playerDetailLoading[playerId];
+    const detailError = playerDetailErrors[playerId];
+    const isExpanded = expandedPlayerIds.includes(playerId);
 
-        return (
-          <Accordion
-            key={playerId}
-            disableGutters
-            expanded={isExpanded}
-            onChange={handleAccordionToggle(playerId)}
-          >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <Avatar
-                  src={summary.player.photoUrl}
-                  alt={`${summary.player.firstName} ${summary.player.lastName}`}
-                  sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}
-                >
-                  {summary.player.firstName?.[0]}
-                </Avatar>
-                <Stack spacing={0.5}>
-                  <Typography sx={{ fontWeight: 600 }}>
-                    {summary.player.firstName} {summary.player.lastName}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {summary.hasResponses
-                      ? `${summary.answeredQuestionCount} ${
-                          summary.answeredQuestionCount === 1 ? 'response' : 'responses'
-                        }`
-                      : 'No responses yet'}
-                  </Typography>
-                </Stack>
-              </Stack>
-            </AccordionSummary>
-            <AccordionDetails>
-              {detailIsLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                  <CircularProgress size={24} />
-                </Box>
-              ) : categoriesLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                  <CircularProgress size={24} />
-                </Box>
-              ) : detailError ? (
-                <Alert severity="error">{detailError}</Alert>
-              ) : !detail ? (
+    return (
+      <Accordion
+        key={playerId}
+        disableGutters
+        expanded={isExpanded}
+        onChange={handleAccordionToggle(playerId)}
+      >
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Avatar
+              src={summary.player.photoUrl}
+              alt={`${summary.player.firstName} ${summary.player.lastName}`}
+              sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}
+            >
+              {summary.player.firstName?.[0]}
+            </Avatar>
+            <Stack spacing={0.5}>
+              <Typography sx={{ fontWeight: 600 }}>
+                {summary.player.firstName} {summary.player.lastName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {summary.hasResponses
+                  ? `${summary.answeredQuestionCount} ${
+                      summary.answeredQuestionCount === 1 ? 'response' : 'responses'
+                    }`
+                  : 'No responses yet'}
+              </Typography>
+            </Stack>
+          </Stack>
+        </AccordionSummary>
+        <AccordionDetails>
+          {detailIsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : categoriesLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : detailError ? (
+            <Alert severity="error">{detailError}</Alert>
+          ) : !detail ? (
+            <Typography variant="body2" color="text.secondary">
+              Expand to load the player survey.
+            </Typography>
+          ) : categories.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No survey structure defined yet.
+            </Typography>
+          ) : (
+            <Stack spacing={2}>
+              {detail.answers.length === 0 && (
                 <Typography variant="body2" color="text.secondary">
-                  Expand to load the player survey.
+                  This player has not submitted survey answers yet.
                 </Typography>
-              ) : categories.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No survey structure defined yet.
-                </Typography>
-              ) : (
-                <Stack spacing={2}>
-                  {detail.answers.length === 0 && (
-                    <Typography variant="body2" color="text.secondary">
-                      This player has not submitted survey answers yet.
-                    </Typography>
-                  )}
-                  {categories.map((category) => {
-                    const answersByQuestion = new Map(
-                      detail.answers.map((answer) => [answer.questionId, answer]),
-                    );
-
-                    const answeredQuestions = category.questions.filter((question) => {
-                      const answer = answersByQuestion.get(question.id);
-                      return Boolean(answer?.answer?.trim());
-                    });
-
-                    if (answeredQuestions.length === 0) {
-                      return null;
-                    }
-
-                    return (
-                      <Box key={`${playerId}-${category.id}`}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                          {category.categoryName}
-                        </Typography>
-                        <Stack spacing={1.5}>
-                          {answeredQuestions.map((question) => {
-                            const answer = answersByQuestion.get(question.id);
-                            const answerText = answer?.answer?.trim() ?? '';
-
-                            return (
-                              <Paper key={question.id} variant="outlined" sx={{ p: 1.5 }}>
-                                <Stack spacing={1}>
-                                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                    {question.question}
-                                  </Typography>
-                                  <Box
-                                    sx={(theme) => ({
-                                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                                      borderLeft: `4px solid ${theme.palette.primary.main}`,
-                                      borderRadius: 1,
-                                      px: 1.5,
-                                      py: 1,
-                                      color: theme.palette.text.primary,
-                                    })}
-                                  >
-                                    <Typography
-                                      variant="body1"
-                                      sx={{
-                                        fontWeight: 500,
-                                        whiteSpace: 'pre-wrap',
-                                      }}
-                                    >
-                                      {answerText}
-                                    </Typography>
-                                  </Box>
-                                </Stack>
-                              </Paper>
-                            );
-                          })}
-                        </Stack>
-                      </Box>
-                    );
-                  })}
-                </Stack>
               )}
-            </AccordionDetails>
-          </Accordion>
-        );
-      }),
-    [
-      categories,
-      categoriesLoading,
-      expandedPlayerIds,
-      handleAccordionToggle,
-      playerDetailErrors,
-      playerDetailLoading,
-      playerDetails,
-      listSummaries,
-    ],
-  );
+              {categories.map((category) => {
+                const answersByQuestion = new Map(
+                  detail.answers.map((answer) => [answer.questionId, answer]),
+                );
+
+                const answeredQuestions = category.questions.filter((question) => {
+                  const answer = answersByQuestion.get(question.id);
+                  return Boolean(answer?.answer?.trim());
+                });
+
+                if (answeredQuestions.length === 0) {
+                  return null;
+                }
+
+                return (
+                  <Box key={`${playerId}-${category.id}`}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                      {category.categoryName}
+                    </Typography>
+                    <Stack spacing={1.5}>
+                      {answeredQuestions.map((question) => {
+                        const answer = answersByQuestion.get(question.id);
+                        const answerText = answer?.answer?.trim() ?? '';
+
+                        return (
+                          <Paper key={question.id} variant="outlined" sx={{ p: 1.5 }}>
+                            <Stack spacing={1}>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                {question.question}
+                              </Typography>
+                              <Box
+                                sx={(theme) => ({
+                                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                                  borderLeft: `4px solid ${theme.palette.primary.main}`,
+                                  borderRadius: 1,
+                                  px: 1.5,
+                                  py: 1,
+                                  color: theme.palette.text.primary,
+                                })}
+                              >
+                                <Typography
+                                  variant="body1"
+                                  sx={{
+                                    fontWeight: 500,
+                                    whiteSpace: 'pre-wrap',
+                                  }}
+                                >
+                                  {answerText}
+                                </Typography>
+                              </Box>
+                            </Stack>
+                          </Paper>
+                        );
+                      })}
+                    </Stack>
+                  </Box>
+                );
+              })}
+            </Stack>
+          )}
+        </AccordionDetails>
+      </Accordion>
+    );
+  });
 
   return (
     <main className="min-h-screen bg-background">

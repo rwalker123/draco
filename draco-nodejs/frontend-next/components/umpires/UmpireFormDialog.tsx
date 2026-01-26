@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Autocomplete,
@@ -57,15 +57,11 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const formResolver = useMemo(
-    () =>
-      zodResolver(CreateUmpireSchema) as Resolver<
-        CreateUmpireType,
-        Record<string, never>,
-        CreateUmpireType
-      >,
-    [],
-  );
+  const formResolver = zodResolver(CreateUmpireSchema) as Resolver<
+    CreateUmpireType,
+    Record<string, never>,
+    CreateUmpireType
+  >;
 
   const {
     control,
@@ -90,9 +86,17 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
     setSubmitError(null);
   }, [open, reset]);
 
-  const runSearch = useCallback(
-    async (query: string) => {
-      const trimmed = query.trim();
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    const runSearch = async () => {
+      const trimmed = searchInput.trim();
 
       if (!trimmed) {
         setContactOptions([]);
@@ -122,21 +126,10 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
       } finally {
         setSearching(false);
       }
-    },
-    [accountId, apiClient],
-  );
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
+    };
 
     searchTimeoutRef.current = setTimeout(() => {
-      runSearch(searchInput);
+      void runSearch();
     }, 300);
 
     return () => {
@@ -144,7 +137,7 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [open, runSearch, searchInput]);
+  }, [open, searchInput, accountId, apiClient]);
 
   const handleSelectContact = (contact: BaseContactType | null) => {
     setSelectedContact(contact);

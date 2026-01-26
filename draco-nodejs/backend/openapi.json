@@ -17481,8 +17481,7 @@
             "description": "ISO 8601 timestamp string with timezone offset."
           },
           "isSpecial": {
-            "type": "boolean",
-            "default": false
+            "type": "boolean"
           },
           "id": {
             "type": "string",
@@ -17512,6 +17511,7 @@
           "title",
           "body",
           "publishedAt",
+          "isSpecial",
           "id",
           "accountId",
           "visibility"
@@ -17544,8 +17544,7 @@
                   "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "isSpecial": {
-                  "type": "boolean",
-                  "default": false
+                  "type": "boolean"
                 },
                 "id": {
                   "type": "string",
@@ -17575,6 +17574,7 @@
                 "title",
                 "body",
                 "publishedAt",
+                "isSpecial",
                 "id",
                 "accountId",
                 "visibility"
@@ -17605,8 +17605,7 @@
             "description": "ISO 8601 timestamp string with timezone offset."
           },
           "isSpecial": {
-            "type": "boolean",
-            "default": false
+            "type": "boolean"
           },
           "id": {
             "type": "string",
@@ -17635,6 +17634,7 @@
         "required": [
           "title",
           "publishedAt",
+          "isSpecial",
           "id",
           "accountId",
           "visibility"
@@ -17662,8 +17662,7 @@
                   "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "isSpecial": {
-                  "type": "boolean",
-                  "default": false
+                  "type": "boolean"
                 },
                 "id": {
                   "type": "string",
@@ -17692,6 +17691,7 @@
               "required": [
                 "title",
                 "publishedAt",
+                "isSpecial",
                 "id",
                 "accountId",
                 "visibility"
@@ -17727,14 +17727,14 @@
             "description": "ISO 8601 timestamp string with timezone offset."
           },
           "isSpecial": {
-            "type": "boolean",
-            "default": false
+            "type": "boolean"
           }
         },
         "required": [
           "title",
           "body",
-          "publishedAt"
+          "publishedAt",
+          "isSpecial"
         ],
         "title": "UpsertAnnouncement",
         "description": "Payload to create or update an announcement for an account or team"

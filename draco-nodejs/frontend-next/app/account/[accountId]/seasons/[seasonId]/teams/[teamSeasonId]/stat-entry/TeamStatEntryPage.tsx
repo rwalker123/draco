@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Box, Breadcrumbs, Link as MuiLink, Snackbar, Typography } from '@mui/material';
 import NextLink from 'next/link';
 import {
@@ -274,26 +274,18 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   const apiClient = useApiClient();
   const { settings: accountSettings } = useAccountSettings(accountId);
 
-  const statsService = useMemo(
-    () => new TeamStatsEntryService(token, apiClient),
-    [apiClient, token],
-  );
+  const canManageStats =
+    hasRole('Administrator') ||
+    hasRoleInAccount('AccountAdmin', accountId) ||
+    hasRoleInTeam('TeamAdmin', teamSeasonId);
 
-  const canManageStats = useMemo(
-    () =>
-      hasRole('Administrator') ||
-      hasRoleInAccount('AccountAdmin', accountId) ||
-      hasRoleInTeam('TeamAdmin', teamSeasonId),
-    [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId],
-  );
-
-  const trackGamesPlayedEnabled = useMemo(() => {
+  const trackGamesPlayedEnabled = ((): boolean => {
     if (!accountSettings) {
       return true;
     }
     const state = accountSettings.find((setting) => setting.definition.key === 'TrackGamesPlayed');
     return Boolean(state?.effectiveValue ?? state?.value);
-  }, [accountSettings]);
+  })();
 
   const [teamHeaderData, setTeamHeaderData] = useState<{
     teamName: string;
@@ -353,35 +345,33 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     cachedGameStatsRef.current.clear();
   }, [accountId, seasonId, teamSeasonId]);
 
-  const applyCachedGameStats = useCallback(
-    (cached: CachedGameStats) => {
-      setBattingStats(cached.batting);
-      setPitchingStats(cached.pitching);
+  const applyCachedGameStats = (cached: CachedGameStats) => {
+    setBattingStats(cached.batting);
+    setPitchingStats(cached.pitching);
 
-      setAttendance(canManageStats ? (cached.attendance ?? emptyAttendance) : emptyAttendance);
-      setAttendanceSelection(cached.attendanceSelection);
-      setRecapContent(cached.recap);
-    },
-    [canManageStats],
-  );
+    setAttendance(canManageStats ? (cached.attendance ?? emptyAttendance) : emptyAttendance);
+    setAttendanceSelection(cached.attendanceSelection);
+    setRecapContent(cached.recap);
+  };
 
-  const updateCachedAttendance = useCallback(
-    (gameId: string, attendanceValue: GameAttendanceType | null, selection: string[]) => {
-      const existing = cachedGameStatsRef.current.get(gameId);
-      if (!existing) {
-        return;
-      }
+  const updateCachedAttendance = (
+    gameId: string,
+    attendanceValue: GameAttendanceType | null,
+    selection: string[],
+  ) => {
+    const existing = cachedGameStatsRef.current.get(gameId);
+    if (!existing) {
+      return;
+    }
 
-      cachedGameStatsRef.current.set(gameId, {
-        ...existing,
-        attendance: attendanceValue,
-        attendanceSelection: selection,
-      });
-    },
-    [],
-  );
+    cachedGameStatsRef.current.set(gameId, {
+      ...existing,
+      attendance: attendanceValue,
+      attendanceSelection: selection,
+    });
+  };
 
-  const sortedGames = useMemo(() => {
+  const sortedGames = ((): TeamCompletedGameType[] => {
     const next = [...games];
     next.sort((a, b) => {
       const dateA = new Date(a.gameDate).getTime();
@@ -389,24 +379,24 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
     return next;
-  }, [games, sortOrder]);
+  })();
 
-  const selectedGame = useMemo(
-    () => (selectedGameId ? (games.find((game) => game.gameId === selectedGameId) ?? null) : null),
-    [games, selectedGameId],
-  );
+  const selectedGame = selectedGameId
+    ? (games.find((game) => game.gameId === selectedGameId) ?? null)
+    : null;
 
-  const gameOutcome = useMemo(() => determineGameOutcome(selectedGame), [selectedGame]);
+  const gameOutcome = determineGameOutcome(selectedGame);
 
   useEffect(() => {
     let active = true;
+    const service = new TeamStatsEntryService(token, apiClient);
 
     const loadGames = async () => {
       setGamesLoading(true);
       setGamesError(null);
 
       try {
-        const data = await statsService.listCompletedGames(accountId, seasonId, teamSeasonId);
+        const data = await service.listCompletedGames(accountId, seasonId, teamSeasonId);
         if (!active) return;
 
         setGames(data);
@@ -427,20 +417,12 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     return () => {
       active = false;
     };
-  }, [accountId, seasonId, teamSeasonId, statsService]);
+  }, [accountId, seasonId, teamSeasonId, token, apiClient]);
 
-  const fetchSeasonStats = useCallback(async () => {
-    const [batting, pitching] = await Promise.all([
-      statsService.getSeasonBattingStats(accountId, seasonId, teamSeasonId),
-      statsService.getSeasonPitchingStats(accountId, seasonId, teamSeasonId),
-    ]);
-
-    return { batting, pitching };
-  }, [accountId, seasonId, teamSeasonId, statsService]);
-
-  const refreshSeasonBattingStats = useCallback(async () => {
+  const refreshSeasonBattingStats = async () => {
+    const service = new TeamStatsEntryService(token, apiClient);
     try {
-      const batting = await statsService.getSeasonBattingStats(accountId, seasonId, teamSeasonId);
+      const batting = await service.getSeasonBattingStats(accountId, seasonId, teamSeasonId);
       setSeasonBattingStats(batting);
       setSeasonStatsError(null);
     } catch (err) {
@@ -448,11 +430,12 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
         err instanceof Error ? err.message : 'Unable to refresh season batting statistics.';
       setSeasonStatsError(message);
     }
-  }, [accountId, seasonId, teamSeasonId, statsService]);
+  };
 
-  const refreshSeasonPitchingStats = useCallback(async () => {
+  const refreshSeasonPitchingStats = async () => {
+    const service = new TeamStatsEntryService(token, apiClient);
     try {
-      const pitching = await statsService.getSeasonPitchingStats(accountId, seasonId, teamSeasonId);
+      const pitching = await service.getSeasonPitchingStats(accountId, seasonId, teamSeasonId);
       setSeasonPitchingStats(pitching);
       setSeasonStatsError(null);
     } catch (err) {
@@ -460,16 +443,20 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
         err instanceof Error ? err.message : 'Unable to refresh season pitching statistics.';
       setSeasonStatsError(message);
     }
-  }, [accountId, seasonId, teamSeasonId, statsService]);
+  };
 
   useEffect(() => {
     let active = true;
+    const service = new TeamStatsEntryService(token, apiClient);
     setSeasonStatsLoading(true);
     setSeasonStatsError(null);
 
     const load = async () => {
       try {
-        const { batting, pitching } = await fetchSeasonStats();
+        const [batting, pitching] = await Promise.all([
+          service.getSeasonBattingStats(accountId, seasonId, teamSeasonId),
+          service.getSeasonPitchingStats(accountId, seasonId, teamSeasonId),
+        ]);
         if (!active) {
           return;
         }
@@ -496,7 +483,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     return () => {
       active = false;
     };
-  }, [fetchSeasonStats]);
+  }, [accountId, seasonId, teamSeasonId, token, apiClient]);
 
   useEffect(() => {
     if (!sortedGames.length) {
@@ -509,154 +496,139 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     }
   }, [sortedGames, selectedGameId]);
 
-  const showSnackbar = useCallback((message: string, severity: 'success' | 'error' = 'success') => {
+  const showSnackbar = (message: string, severity: 'success' | 'error' = 'success') => {
     setSnackbar({ message, severity });
-  }, []);
+  };
 
-  const loadAndActivateGame = useCallback(
-    async (gameId: string, options?: { forceRefresh?: boolean }) => {
-      if (!gameId) {
-        return;
-      }
+  const loadAndActivateGame = async (gameId: string, options?: { forceRefresh?: boolean }) => {
+    if (!gameId) {
+      return;
+    }
 
-      const { forceRefresh = false } = options ?? {};
-      const shouldLoadAttendance = trackGamesPlayedEnabled && canManageStats;
-      const cached = cachedGameStatsRef.current.get(gameId);
+    const { forceRefresh = false } = options ?? {};
+    const shouldLoadAttendance = trackGamesPlayedEnabled && canManageStats;
+    const cached = cachedGameStatsRef.current.get(gameId);
 
-      if (!forceRefresh && cached && selectedGameId === gameId) {
-        return;
-      }
+    if (!forceRefresh && cached && selectedGameId === gameId) {
+      return;
+    }
 
-      if (!forceRefresh && cached) {
-        setSelectedGameId(gameId);
-        applyCachedGameStats(cached);
-        setStatsError(null);
-        setAttendanceError(null);
-        setRecapError(null);
-        if (!shouldLoadAttendance) {
-          setAttendanceLoading(false);
-        }
-        return;
-      }
-
-      setStatsLoading(true);
+    if (!forceRefresh && cached) {
+      setSelectedGameId(gameId);
+      applyCachedGameStats(cached);
       setStatsError(null);
-      setRecapLoading(true);
+      setAttendanceError(null);
       setRecapError(null);
+      if (!shouldLoadAttendance) {
+        setAttendanceLoading(false);
+      }
+      return;
+    }
+
+    const service = new TeamStatsEntryService(token, apiClient);
+
+    setStatsLoading(true);
+    setStatsError(null);
+    setRecapLoading(true);
+    setRecapError(null);
+
+    if (shouldLoadAttendance) {
+      setAttendanceLoading(true);
+      setAttendanceError(null);
+    } else {
+      setAttendanceLoading(false);
+      setAttendanceError(null);
+    }
+
+    try {
+      const [batting, pitching] = await Promise.all([
+        service.getGameBattingStats(accountId, seasonId, teamSeasonId, gameId),
+        service.getGamePitchingStats(accountId, seasonId, teamSeasonId, gameId),
+      ]);
+
+      const lockedRosterIdsForGame = new Set<string>();
+      batting.stats.forEach((stat) => {
+        if (stat.rosterSeasonId) {
+          lockedRosterIdsForGame.add(stat.rosterSeasonId);
+        }
+      });
+      pitching.stats.forEach((stat) => {
+        if (stat.rosterSeasonId) {
+          lockedRosterIdsForGame.add(stat.rosterSeasonId);
+        }
+      });
+
+      let attendanceData: GameAttendanceType | null = null;
+      let attendanceSelectionData = Array.from(lockedRosterIdsForGame);
 
       if (shouldLoadAttendance) {
-        setAttendanceLoading(true);
-        setAttendanceError(null);
+        try {
+          const attendanceResponse = await service.getGameAttendance(
+            accountId,
+            seasonId,
+            teamSeasonId,
+            gameId,
+          );
+          attendanceData = attendanceResponse;
+          attendanceSelectionData = Array.from(
+            new Set([...attendanceResponse.playerIds, ...lockedRosterIdsForGame]),
+          );
+          setAttendanceError(null);
+        } catch (attendanceErr) {
+          const message =
+            attendanceErr instanceof Error ? attendanceErr.message : 'Unable to load attendance.';
+          setAttendanceError(message);
+          attendanceSelectionData = Array.from(lockedRosterIdsForGame);
+        } finally {
+          setAttendanceLoading(false);
+        }
       } else {
         setAttendanceLoading(false);
-        setAttendanceError(null);
       }
 
+      let recapData: string | null = null;
       try {
-        const [batting, pitching] = await Promise.all([
-          statsService.getGameBattingStats(accountId, seasonId, teamSeasonId, gameId),
-          statsService.getGamePitchingStats(accountId, seasonId, teamSeasonId, gameId),
-        ]);
-
-        const lockedRosterIdsForGame = new Set<string>();
-        batting.stats.forEach((stat) => {
-          if (stat.rosterSeasonId) {
-            lockedRosterIdsForGame.add(stat.rosterSeasonId);
-          }
+        const recapResult = await getGameRecap({
+          client: apiClient,
+          path: { accountId, seasonId, gameId, teamSeasonId },
+          throwOnError: false,
         });
-        pitching.stats.forEach((stat) => {
-          if (stat.rosterSeasonId) {
-            lockedRosterIdsForGame.add(stat.rosterSeasonId);
-          }
-        });
-
-        let attendanceData: GameAttendanceType | null = null;
-        let attendanceSelectionData = Array.from(lockedRosterIdsForGame);
-
-        if (shouldLoadAttendance) {
-          try {
-            const attendanceResponse = await statsService.getGameAttendance(
-              accountId,
-              seasonId,
-              teamSeasonId,
-              gameId,
-            );
-            attendanceData = attendanceResponse;
-            attendanceSelectionData = Array.from(
-              new Set([...attendanceResponse.playerIds, ...lockedRosterIdsForGame]),
-            );
-            setAttendanceError(null);
-          } catch (attendanceErr) {
-            const message =
-              attendanceErr instanceof Error ? attendanceErr.message : 'Unable to load attendance.';
-            setAttendanceError(message);
-            attendanceSelectionData = Array.from(lockedRosterIdsForGame);
-          } finally {
-            setAttendanceLoading(false);
-          }
-        } else {
-          setAttendanceLoading(false);
+        if (recapResult.data) {
+          recapData = recapResult.data ?? null;
         }
-
-        let recapData: string | null = null;
-        try {
-          const recapResult = await getGameRecap({
-            client: apiClient,
-            path: { accountId, seasonId, gameId, teamSeasonId },
-            throwOnError: false,
-          });
-          if (recapResult.data) {
-            recapData = recapResult.data ?? null;
-          }
-        } catch (recapErr) {
-          console.warn('Failed to fetch game recap:', recapErr);
-          const message =
-            recapErr instanceof Error ? recapErr.message : 'Failed to load game recap.';
-          setRecapError(message);
-        } finally {
-          setRecapLoading(false);
-        }
-
-        const nextCache: CachedGameStats = {
-          batting,
-          pitching,
-          attendance: attendanceData,
-          attendanceSelection: attendanceSelectionData,
-          recap: recapData,
-        };
-
-        cachedGameStatsRef.current.set(gameId, nextCache);
-        setSelectedGameId(gameId);
-        applyCachedGameStats(nextCache);
-        setStatsError(null);
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : 'Unable to load statistics for the selected game.';
-        showSnackbar(message, 'error');
+      } catch (recapErr) {
+        console.warn('Failed to fetch game recap:', recapErr);
+        const message = recapErr instanceof Error ? recapErr.message : 'Failed to load game recap.';
+        setRecapError(message);
       } finally {
-        setStatsLoading(false);
-        if (!shouldLoadAttendance) {
-          setAttendanceLoading(false);
-        }
+        setRecapLoading(false);
       }
-    },
-    [
-      accountId,
-      apiClient,
-      applyCachedGameStats,
-      canManageStats,
-      seasonId,
-      selectedGameId,
-      showSnackbar,
-      statsService,
-      teamSeasonId,
-      trackGamesPlayedEnabled,
-    ],
-  );
 
-  const playerSummaryMap = useMemo(() => {
+      const nextCache: CachedGameStats = {
+        batting,
+        pitching,
+        attendance: attendanceData,
+        attendanceSelection: attendanceSelectionData,
+        recap: recapData,
+      };
+
+      cachedGameStatsRef.current.set(gameId, nextCache);
+      setSelectedGameId(gameId);
+      applyCachedGameStats(nextCache);
+      setStatsError(null);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unable to load statistics for the selected game.';
+      showSnackbar(message, 'error');
+    } finally {
+      setStatsLoading(false);
+      if (!shouldLoadAttendance) {
+        setAttendanceLoading(false);
+      }
+    }
+  };
+
+  const playerSummaryMap = ((): Map<string, TeamStatsPlayerSummaryType> => {
     const map = new Map<string, TeamStatsPlayerSummaryType>();
 
     const addSummary = (summary: TeamStatsPlayerSummaryType) => {
@@ -695,13 +667,13 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     }
 
     return map;
-  }, [battingStats, pitchingStats]);
+  })();
 
-  const attendanceOptions = useMemo(() => {
+  const attendanceOptions = ((): TeamStatsPlayerSummaryType[] => {
     const summaries = Array.from(playerSummaryMap.values());
     summaries.sort((a, b) => a.playerName.localeCompare(b.playerName));
     return summaries;
-  }, [playerSummaryMap]);
+  })();
 
   const availableBattingPlayers = battingStats?.availablePlayers ?? [];
   const availablePitchingPlayers = pitchingStats?.availablePlayers ?? [];
@@ -710,24 +682,21 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     setSortOrder(order);
   };
 
-  const attemptGameSelect = useCallback(
-    async (gameId: string) => {
-      if (!gameId || selectedGameId === gameId || statsLoading) {
+  const attemptGameSelect = async (gameId: string) => {
+    if (!gameId || selectedGameId === gameId || statsLoading) {
+      return;
+    }
+
+    const cardHandle = statsTabsCardRef.current;
+    if (cardHandle?.hasPendingEdits()) {
+      const resolved = await cardHandle.resolvePendingEdits('game-change');
+      if (!resolved) {
         return;
       }
+    }
 
-      const cardHandle = statsTabsCardRef.current;
-      if (cardHandle?.hasPendingEdits()) {
-        const resolved = await cardHandle.resolvePendingEdits('game-change');
-        if (!resolved) {
-          return;
-        }
-      }
-
-      await loadAndActivateGame(gameId);
-    },
-    [loadAndActivateGame, selectedGameId, statsLoading],
-  );
+    await loadAndActivateGame(gameId);
+  };
 
   const handleGameSelect = (gameId: string) => {
     void attemptGameSelect(gameId);
@@ -744,204 +713,176 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     setTabValue(nextTab);
   };
 
-  const handleGridError = useCallback(
-    (error: Error) => {
-      showSnackbar(error.message, 'error');
-    },
-    [showSnackbar],
-  );
+  const handleGridError = (error: Error) => {
+    showSnackbar(error.message, 'error');
+  };
 
-  const handleCreateBattingStat = useCallback(
-    async (payload: CreateGameBattingStatType) => {
-      if (!selectedGameId || !battingStats) {
-        throw new Error('Batting stats are not available for editing.');
-      }
+  const handleCreateBattingStat = async (payload: CreateGameBattingStatType) => {
+    if (!selectedGameId || !battingStats) {
+      throw new Error('Batting stats are not available for editing.');
+    }
 
-      try {
-        const created = await statsService.createGameBattingStat(
-          accountId,
-          seasonId,
-          teamSeasonId,
-          selectedGameId,
-          payload,
-        );
+    const service = new TeamStatsEntryService(token, apiClient);
 
-        let nextLockedIds: string[] = [];
-        setBattingStats((previous) => {
-          if (!previous) {
-            return previous;
-          }
+    try {
+      const created = await service.createGameBattingStat(
+        accountId,
+        seasonId,
+        teamSeasonId,
+        selectedGameId,
+        payload,
+      );
 
-          const nextStats = [...previous.stats, created];
-          const nextTotals = calculateBattingTotals(nextStats);
-          const nextAvailable = previous.availablePlayers.filter(
-            (player) => player.rosterSeasonId !== created.rosterSeasonId,
-          );
-
-          const nextBatting: GameBattingStatsType = {
-            ...previous,
-            stats: nextStats,
-            totals: nextTotals,
-            availablePlayers: nextAvailable,
-          };
-
-          const cachedEntry = cachedGameStatsRef.current.get(selectedGameId) ?? {
-            batting: nextBatting,
-            pitching: pitchingStats ?? {
-              gameId: selectedGameId,
-              teamSeasonId,
-              stats: [],
-              totals: calculatePitchingTotals([]),
-              availablePlayers: [],
-            },
-            attendance: emptyAttendance,
-            attendanceSelection,
-            recap: recapContent,
-          };
-
-          cachedGameStatsRef.current.set(selectedGameId, {
-            ...cachedEntry,
-            batting: nextBatting,
-          });
-
-          nextLockedIds = getLockedRosterIds(nextBatting, cachedEntry.pitching ?? pitchingStats);
-
-          return nextBatting;
-        });
-
-        if (nextLockedIds.length) {
-          const nextSelection = mergeAttendanceSelection(attendanceSelection, nextLockedIds);
-          setAttendanceSelection(nextSelection);
-
-          const cachedEntry = cachedGameStatsRef.current.get(selectedGameId);
-          if (cachedEntry) {
-            cachedGameStatsRef.current.set(selectedGameId, {
-              ...cachedEntry,
-              attendanceSelection: nextSelection,
-            });
-          }
+      let nextLockedIds: string[] = [];
+      setBattingStats((previous) => {
+        if (!previous) {
+          return previous;
         }
 
-        showSnackbar('Batting stat added.');
-        void refreshSeasonBattingStats();
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error('Unable to add batting stat.');
-        showSnackbar(err.message, 'error');
-        throw err;
-      }
-    },
-    [
-      accountId,
-      attendanceSelection,
-      battingStats,
-      pitchingStats,
-      recapContent,
-      seasonId,
-      selectedGameId,
-      showSnackbar,
-      refreshSeasonBattingStats,
-      statsService,
-      teamSeasonId,
-    ],
-  );
-
-  const handleUpdateBattingStat = useCallback(
-    async (statId: string, payload: UpdateGameBattingStatType) => {
-      if (!selectedGameId || !battingStats) {
-        throw new Error('Batting stats are not available for editing.');
-      }
-
-      try {
-        const updated = await statsService.updateGameBattingStat(
-          accountId,
-          seasonId,
-          teamSeasonId,
-          selectedGameId,
-          statId,
-          payload,
+        const nextStats = [...previous.stats, created];
+        const nextTotals = calculateBattingTotals(nextStats);
+        const nextAvailable = previous.availablePlayers.filter(
+          (player) => player.rosterSeasonId !== created.rosterSeasonId,
         );
 
-        let nextLockedIds: string[] = [];
-        setBattingStats((previous) => {
-          if (!previous) {
-            return previous;
-          }
+        const nextBatting: GameBattingStatsType = {
+          ...previous,
+          stats: nextStats,
+          totals: nextTotals,
+          availablePlayers: nextAvailable,
+        };
 
-          const nextStats = previous.stats.map((line) =>
-            line.statId === updated.statId ? updated : line,
-          );
-          const nextTotals = calculateBattingTotals(nextStats);
+        const cachedEntry = cachedGameStatsRef.current.get(selectedGameId) ?? {
+          batting: nextBatting,
+          pitching: pitchingStats ?? {
+            gameId: selectedGameId,
+            teamSeasonId,
+            stats: [],
+            totals: calculatePitchingTotals([]),
+            availablePlayers: [],
+          },
+          attendance: emptyAttendance,
+          attendanceSelection,
+          recap: recapContent,
+        };
 
-          const nextBatting: GameBattingStatsType = {
-            ...previous,
-            stats: nextStats,
-            totals: nextTotals,
-          };
-
-          const cachedEntry = cachedGameStatsRef.current.get(selectedGameId) ?? {
-            batting: nextBatting,
-            pitching: pitchingStats ?? {
-              gameId: selectedGameId,
-              teamSeasonId,
-              stats: [],
-              totals: calculatePitchingTotals([]),
-              availablePlayers: [],
-            },
-            attendance: emptyAttendance,
-            attendanceSelection,
-            recap: recapContent,
-          };
-
-          cachedGameStatsRef.current.set(selectedGameId, {
-            ...cachedEntry,
-            batting: nextBatting,
-          });
-
-          nextLockedIds = getLockedRosterIds(nextBatting, cachedEntry.pitching ?? pitchingStats);
-
-          return nextBatting;
+        cachedGameStatsRef.current.set(selectedGameId, {
+          ...cachedEntry,
+          batting: nextBatting,
         });
 
-        if (nextLockedIds.length) {
-          const nextSelection = mergeAttendanceSelection(attendanceSelection, nextLockedIds);
-          setAttendanceSelection(nextSelection);
+        nextLockedIds = getLockedRosterIds(nextBatting, cachedEntry.pitching ?? pitchingStats);
 
-          const cachedEntry = cachedGameStatsRef.current.get(selectedGameId);
-          if (cachedEntry) {
-            cachedGameStatsRef.current.set(selectedGameId, {
-              ...cachedEntry,
-              attendanceSelection: nextSelection,
-            });
-          }
+        return nextBatting;
+      });
+
+      if (nextLockedIds.length) {
+        const nextSelection = mergeAttendanceSelection(attendanceSelection, nextLockedIds);
+        setAttendanceSelection(nextSelection);
+
+        const cachedEntry = cachedGameStatsRef.current.get(selectedGameId);
+        if (cachedEntry) {
+          cachedGameStatsRef.current.set(selectedGameId, {
+            ...cachedEntry,
+            attendanceSelection: nextSelection,
+          });
+        }
+      }
+
+      showSnackbar('Batting stat added.');
+      void refreshSeasonBattingStats();
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Unable to add batting stat.');
+      showSnackbar(err.message, 'error');
+      throw err;
+    }
+  };
+
+  const handleUpdateBattingStat = async (statId: string, payload: UpdateGameBattingStatType) => {
+    if (!selectedGameId || !battingStats) {
+      throw new Error('Batting stats are not available for editing.');
+    }
+
+    const service = new TeamStatsEntryService(token, apiClient);
+
+    try {
+      const updated = await service.updateGameBattingStat(
+        accountId,
+        seasonId,
+        teamSeasonId,
+        selectedGameId,
+        statId,
+        payload,
+      );
+
+      let nextLockedIds: string[] = [];
+      setBattingStats((previous) => {
+        if (!previous) {
+          return previous;
         }
 
-        showSnackbar('Batting stat updated.');
-        void refreshSeasonBattingStats();
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error('Unable to update batting stat.');
-        showSnackbar(err.message, 'error');
-        throw err;
+        const nextStats = previous.stats.map((line) =>
+          line.statId === updated.statId ? updated : line,
+        );
+        const nextTotals = calculateBattingTotals(nextStats);
+
+        const nextBatting: GameBattingStatsType = {
+          ...previous,
+          stats: nextStats,
+          totals: nextTotals,
+        };
+
+        const cachedEntry = cachedGameStatsRef.current.get(selectedGameId) ?? {
+          batting: nextBatting,
+          pitching: pitchingStats ?? {
+            gameId: selectedGameId,
+            teamSeasonId,
+            stats: [],
+            totals: calculatePitchingTotals([]),
+            availablePlayers: [],
+          },
+          attendance: emptyAttendance,
+          attendanceSelection,
+          recap: recapContent,
+        };
+
+        cachedGameStatsRef.current.set(selectedGameId, {
+          ...cachedEntry,
+          batting: nextBatting,
+        });
+
+        nextLockedIds = getLockedRosterIds(nextBatting, cachedEntry.pitching ?? pitchingStats);
+
+        return nextBatting;
+      });
+
+      if (nextLockedIds.length) {
+        const nextSelection = mergeAttendanceSelection(attendanceSelection, nextLockedIds);
+        setAttendanceSelection(nextSelection);
+
+        const cachedEntry = cachedGameStatsRef.current.get(selectedGameId);
+        if (cachedEntry) {
+          cachedGameStatsRef.current.set(selectedGameId, {
+            ...cachedEntry,
+            attendanceSelection: nextSelection,
+          });
+        }
       }
-    },
-    [
-      accountId,
-      attendanceSelection,
-      battingStats,
-      pitchingStats,
-      recapContent,
-      seasonId,
-      selectedGameId,
-      showSnackbar,
-      refreshSeasonBattingStats,
-      statsService,
-      teamSeasonId,
-    ],
-  );
+
+      showSnackbar('Batting stat updated.');
+      void refreshSeasonBattingStats();
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Unable to update batting stat.');
+      showSnackbar(err.message, 'error');
+      throw err;
+    }
+  };
 
   const handleDeleteBatting = async (stat: GameBattingStatLineType | null) => {
     if (!selectedGameId || !stat) return;
+    const service = new TeamStatsEntryService(token, apiClient);
     try {
-      await statsService.deleteGameBattingStat(
+      await service.deleteGameBattingStat(
         accountId,
         seasonId,
         teamSeasonId,
@@ -1011,191 +952,166 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     }
   };
 
-  const handleCreatePitchingStat = useCallback(
-    async (payload: CreateGamePitchingStatType) => {
-      if (!selectedGameId || !pitchingStats) {
-        throw new Error('Pitching stats are not available for editing.');
-      }
+  const handleCreatePitchingStat = async (payload: CreateGamePitchingStatType) => {
+    if (!selectedGameId || !pitchingStats) {
+      throw new Error('Pitching stats are not available for editing.');
+    }
 
-      try {
-        const created = await statsService.createGamePitchingStat(
-          accountId,
-          seasonId,
-          teamSeasonId,
-          selectedGameId,
-          payload,
-        );
+    const service = new TeamStatsEntryService(token, apiClient);
 
-        let nextLockedIds: string[] = [];
-        setPitchingStats((previous) => {
-          if (!previous) {
-            return previous;
-          }
+    try {
+      const created = await service.createGamePitchingStat(
+        accountId,
+        seasonId,
+        teamSeasonId,
+        selectedGameId,
+        payload,
+      );
 
-          const nextStats = [...previous.stats, created];
-          const nextTotals = calculatePitchingTotals(nextStats);
-          const nextAvailable = previous.availablePlayers.filter(
-            (player) => player.rosterSeasonId !== created.rosterSeasonId,
-          );
-
-          const nextPitching: GamePitchingStatsType = {
-            ...previous,
-            stats: nextStats,
-            totals: nextTotals,
-            availablePlayers: nextAvailable,
-          };
-
-          const cachedEntry = cachedGameStatsRef.current.get(selectedGameId) ?? {
-            batting: battingStats ?? {
-              gameId: selectedGameId,
-              teamSeasonId,
-              stats: [],
-              totals: calculateBattingTotals([]),
-              availablePlayers: [],
-            },
-            pitching: nextPitching,
-            attendance: emptyAttendance,
-            attendanceSelection,
-            recap: recapContent,
-          };
-
-          cachedGameStatsRef.current.set(selectedGameId, {
-            ...cachedEntry,
-            pitching: nextPitching,
-          });
-
-          nextLockedIds = getLockedRosterIds(cachedEntry.batting ?? battingStats, nextPitching);
-
-          return nextPitching;
-        });
-
-        const nextSelection = mergeAttendanceSelection(attendanceSelection, nextLockedIds);
-        setAttendanceSelection(nextSelection);
-        const cachedEntry = cachedGameStatsRef.current.get(selectedGameId);
-        if (cachedEntry) {
-          cachedGameStatsRef.current.set(selectedGameId, {
-            ...cachedEntry,
-            attendanceSelection: nextSelection,
-          });
+      let nextLockedIds: string[] = [];
+      setPitchingStats((previous) => {
+        if (!previous) {
+          return previous;
         }
 
-        showSnackbar('Pitching stat added.');
-        void refreshSeasonPitchingStats();
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error('Unable to add pitching stat.');
-        showSnackbar(err.message, 'error');
-        throw err;
-      }
-    },
-    [
-      accountId,
-      attendanceSelection,
-      battingStats,
-      pitchingStats,
-      recapContent,
-      seasonId,
-      selectedGameId,
-      showSnackbar,
-      refreshSeasonPitchingStats,
-      statsService,
-      teamSeasonId,
-    ],
-  );
-
-  const handleUpdatePitchingStat = useCallback(
-    async (statId: string, payload: UpdateGamePitchingStatType) => {
-      if (!selectedGameId || !pitchingStats) {
-        throw new Error('Pitching stats are not available for editing.');
-      }
-
-      try {
-        const updated = await statsService.updateGamePitchingStat(
-          accountId,
-          seasonId,
-          teamSeasonId,
-          selectedGameId,
-          statId,
-          payload,
+        const nextStats = [...previous.stats, created];
+        const nextTotals = calculatePitchingTotals(nextStats);
+        const nextAvailable = previous.availablePlayers.filter(
+          (player) => player.rosterSeasonId !== created.rosterSeasonId,
         );
 
-        let nextLockedIds: string[] = [];
-        setPitchingStats((previous) => {
-          if (!previous) {
-            return previous;
-          }
+        const nextPitching: GamePitchingStatsType = {
+          ...previous,
+          stats: nextStats,
+          totals: nextTotals,
+          availablePlayers: nextAvailable,
+        };
 
-          const nextStats = previous.stats.map((line) =>
-            line.statId === updated.statId ? updated : line,
-          );
-          const nextTotals = calculatePitchingTotals(nextStats);
+        const cachedEntry = cachedGameStatsRef.current.get(selectedGameId) ?? {
+          batting: battingStats ?? {
+            gameId: selectedGameId,
+            teamSeasonId,
+            stats: [],
+            totals: calculateBattingTotals([]),
+            availablePlayers: [],
+          },
+          pitching: nextPitching,
+          attendance: emptyAttendance,
+          attendanceSelection,
+          recap: recapContent,
+        };
 
-          const nextPitching: GamePitchingStatsType = {
-            ...previous,
-            stats: nextStats,
-            totals: nextTotals,
-          };
-
-          const cachedEntry = cachedGameStatsRef.current.get(selectedGameId) ?? {
-            batting: battingStats ?? {
-              gameId: selectedGameId,
-              teamSeasonId,
-              stats: [],
-              totals: calculateBattingTotals([]),
-              availablePlayers: [],
-            },
-            pitching: nextPitching,
-            attendance: emptyAttendance,
-            attendanceSelection,
-            recap: recapContent,
-          };
-
-          cachedGameStatsRef.current.set(selectedGameId, {
-            ...cachedEntry,
-            pitching: nextPitching,
-          });
-
-          nextLockedIds = getLockedRosterIds(cachedEntry.batting ?? battingStats, nextPitching);
-
-          return nextPitching;
+        cachedGameStatsRef.current.set(selectedGameId, {
+          ...cachedEntry,
+          pitching: nextPitching,
         });
 
-        const nextSelection = mergeAttendanceSelection(attendanceSelection, nextLockedIds);
-        setAttendanceSelection(nextSelection);
-        const cachedEntry = cachedGameStatsRef.current.get(selectedGameId);
-        if (cachedEntry) {
-          cachedGameStatsRef.current.set(selectedGameId, {
-            ...cachedEntry,
-            attendanceSelection: nextSelection,
-          });
+        nextLockedIds = getLockedRosterIds(cachedEntry.batting ?? battingStats, nextPitching);
+
+        return nextPitching;
+      });
+
+      const nextSelection = mergeAttendanceSelection(attendanceSelection, nextLockedIds);
+      setAttendanceSelection(nextSelection);
+      const cachedEntry = cachedGameStatsRef.current.get(selectedGameId);
+      if (cachedEntry) {
+        cachedGameStatsRef.current.set(selectedGameId, {
+          ...cachedEntry,
+          attendanceSelection: nextSelection,
+        });
+      }
+
+      showSnackbar('Pitching stat added.');
+      void refreshSeasonPitchingStats();
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Unable to add pitching stat.');
+      showSnackbar(err.message, 'error');
+      throw err;
+    }
+  };
+
+  const handleUpdatePitchingStat = async (statId: string, payload: UpdateGamePitchingStatType) => {
+    if (!selectedGameId || !pitchingStats) {
+      throw new Error('Pitching stats are not available for editing.');
+    }
+
+    const service = new TeamStatsEntryService(token, apiClient);
+
+    try {
+      const updated = await service.updateGamePitchingStat(
+        accountId,
+        seasonId,
+        teamSeasonId,
+        selectedGameId,
+        statId,
+        payload,
+      );
+
+      let nextLockedIds: string[] = [];
+      setPitchingStats((previous) => {
+        if (!previous) {
+          return previous;
         }
 
-        showSnackbar('Pitching stat updated.');
-        void refreshSeasonPitchingStats();
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error('Unable to update pitching stat.');
-        showSnackbar(err.message, 'error');
-        throw err;
+        const nextStats = previous.stats.map((line) =>
+          line.statId === updated.statId ? updated : line,
+        );
+        const nextTotals = calculatePitchingTotals(nextStats);
+
+        const nextPitching: GamePitchingStatsType = {
+          ...previous,
+          stats: nextStats,
+          totals: nextTotals,
+        };
+
+        const cachedEntry = cachedGameStatsRef.current.get(selectedGameId) ?? {
+          batting: battingStats ?? {
+            gameId: selectedGameId,
+            teamSeasonId,
+            stats: [],
+            totals: calculateBattingTotals([]),
+            availablePlayers: [],
+          },
+          pitching: nextPitching,
+          attendance: emptyAttendance,
+          attendanceSelection,
+          recap: recapContent,
+        };
+
+        cachedGameStatsRef.current.set(selectedGameId, {
+          ...cachedEntry,
+          pitching: nextPitching,
+        });
+
+        nextLockedIds = getLockedRosterIds(cachedEntry.batting ?? battingStats, nextPitching);
+
+        return nextPitching;
+      });
+
+      const nextSelection = mergeAttendanceSelection(attendanceSelection, nextLockedIds);
+      setAttendanceSelection(nextSelection);
+      const cachedEntry = cachedGameStatsRef.current.get(selectedGameId);
+      if (cachedEntry) {
+        cachedGameStatsRef.current.set(selectedGameId, {
+          ...cachedEntry,
+          attendanceSelection: nextSelection,
+        });
       }
-    },
-    [
-      accountId,
-      attendanceSelection,
-      battingStats,
-      pitchingStats,
-      recapContent,
-      seasonId,
-      selectedGameId,
-      showSnackbar,
-      refreshSeasonPitchingStats,
-      statsService,
-      teamSeasonId,
-    ],
-  );
+
+      showSnackbar('Pitching stat updated.');
+      void refreshSeasonPitchingStats();
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Unable to update pitching stat.');
+      showSnackbar(err.message, 'error');
+      throw err;
+    }
+  };
 
   const handleDeletePitching = async (stat: GamePitchingStatLineType | null) => {
     if (!selectedGameId || !stat) return;
+    const service = new TeamStatsEntryService(token, apiClient);
     try {
-      await statsService.deleteGamePitchingStat(
+      await service.deleteGamePitchingStat(
         accountId,
         seasonId,
         teamSeasonId,
@@ -1266,7 +1182,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     }
   };
 
-  const lockedAttendanceRosterIds = useMemo(() => {
+  const lockedAttendanceRosterIds = ((): string[] => {
     const ids = new Set<string>();
     battingStats?.stats.forEach((stat) => {
       if (stat.rosterSeasonId) {
@@ -1279,60 +1195,47 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       }
     });
     return Array.from(ids);
-  }, [battingStats, pitchingStats]);
-  const handleAttendanceToggle = useCallback(
-    async (rosterSeasonId: string, present: boolean) => {
-      if (
-        !selectedGameId ||
-        !canManageStats ||
-        pendingAttendanceRosterId ||
-        !trackGamesPlayedEnabled
-      ) {
-        return;
-      }
+  })();
+  const handleAttendanceToggle = async (rosterSeasonId: string, present: boolean) => {
+    if (
+      !selectedGameId ||
+      !canManageStats ||
+      pendingAttendanceRosterId ||
+      !trackGamesPlayedEnabled
+    ) {
+      return;
+    }
 
-      try {
-        setPendingAttendanceRosterId(rosterSeasonId);
-        setAttendanceError(null);
+    const service = new TeamStatsEntryService(token, apiClient);
 
-        const updated = await statsService.updateGameAttendance(
-          accountId,
-          seasonId,
-          teamSeasonId,
-          selectedGameId,
-          {
-            rosterSeasonId,
-            present,
-          },
-        );
+    try {
+      setPendingAttendanceRosterId(rosterSeasonId);
+      setAttendanceError(null);
 
-        setAttendance(updated);
-        const combined = Array.from(new Set([...updated.playerIds, ...lockedAttendanceRosterIds]));
-        setAttendanceSelection(combined);
-        updateCachedAttendance(selectedGameId, updated, combined);
-        showSnackbar('Attendance updated successfully.');
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unable to update attendance.';
-        setAttendanceError(message);
-        showSnackbar(message, 'error');
-      } finally {
-        setPendingAttendanceRosterId(null);
-      }
-    },
-    [
-      accountId,
-      canManageStats,
-      pendingAttendanceRosterId,
-      lockedAttendanceRosterIds,
-      seasonId,
-      selectedGameId,
-      showSnackbar,
-      statsService,
-      teamSeasonId,
-      updateCachedAttendance,
-      trackGamesPlayedEnabled,
-    ],
-  );
+      const updated = await service.updateGameAttendance(
+        accountId,
+        seasonId,
+        teamSeasonId,
+        selectedGameId,
+        {
+          rosterSeasonId,
+          present,
+        },
+      );
+
+      setAttendance(updated);
+      const combined = Array.from(new Set([...updated.playerIds, ...lockedAttendanceRosterIds]));
+      setAttendanceSelection(combined);
+      updateCachedAttendance(selectedGameId, updated, combined);
+      showSnackbar('Attendance updated successfully.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to update attendance.';
+      setAttendanceError(message);
+      showSnackbar(message, 'error');
+    } finally {
+      setPendingAttendanceRosterId(null);
+    }
+  };
 
   const battingTotals = battingStats?.totals ?? null;
   const pitchingTotals = pitchingStats?.totals ?? null;
@@ -1344,31 +1247,28 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     teamSeasonId,
   });
 
-  const handleRecapSave = useCallback(
-    async (content: string) => {
-      const gameId = selectedGameId;
-      if (!gameId) {
-        throw new Error('No game selected');
-      }
+  const handleRecapSave = async (content: string) => {
+    const gameId = selectedGameId;
+    if (!gameId) {
+      throw new Error('No game selected');
+    }
 
-      const result = await saveRecap({ recap: content });
-      if (!result.success) {
-        throw new Error(result.error);
-      }
+    const result = await saveRecap({ recap: content });
+    if (!result.success) {
+      throw new Error(result.error);
+    }
 
-      setRecapContent(content);
-      const cached = cachedGameStatsRef.current.get(gameId);
-      if (cached) {
-        cachedGameStatsRef.current.set(gameId, {
-          ...cached,
-          recap: content,
-        });
-      }
+    setRecapContent(content);
+    const cached = cachedGameStatsRef.current.get(gameId);
+    if (cached) {
+      cachedGameStatsRef.current.set(gameId, {
+        ...cached,
+        recap: content,
+      });
+    }
 
-      showSnackbar('Game recap saved.');
-    },
-    [selectedGameId, saveRecap, showSnackbar],
-  );
+    showSnackbar('Game recap saved.');
+  };
 
   useEffect(() => {
     if (!trackGamesPlayedEnabled) {
@@ -1412,60 +1312,57 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     }
   }, [selectedGameId]);
 
-  const handleTeamDataLoaded = useCallback(
-    (data: {
-      teamName: string;
-      leagueName: string;
-      seasonName: string;
-      accountName: string;
-      logoUrl?: string;
-      record?: { wins: number; losses: number; ties: number };
-      teamId?: string;
-      leagueId?: string;
-    }) => {
-      setTeamHeaderData((previous) => {
-        const recordsMatch = (() => {
-          if (!previous?.record && !data.record) {
-            return true;
-          }
-          if (!previous?.record || !data.record) {
-            return false;
-          }
-          return (
-            previous.record.wins === data.record.wins &&
-            previous.record.losses === data.record.losses &&
-            previous.record.ties === data.record.ties
-          );
-        })();
-
-        if (
-          previous &&
-          previous.teamName === data.teamName &&
-          previous.leagueName === data.leagueName &&
-          previous.seasonName === data.seasonName &&
-          previous.accountName === data.accountName &&
-          previous.logoUrl === data.logoUrl &&
-          recordsMatch &&
-          previous.teamId === data.teamId &&
-          previous.leagueId === data.leagueId
-        ) {
-          return previous;
+  const handleTeamDataLoaded = (data: {
+    teamName: string;
+    leagueName: string;
+    seasonName: string;
+    accountName: string;
+    logoUrl?: string;
+    record?: { wins: number; losses: number; ties: number };
+    teamId?: string;
+    leagueId?: string;
+  }) => {
+    setTeamHeaderData((previous) => {
+      const recordsMatch = (() => {
+        if (!previous?.record && !data.record) {
+          return true;
         }
+        if (!previous?.record || !data.record) {
+          return false;
+        }
+        return (
+          previous.record.wins === data.record.wins &&
+          previous.record.losses === data.record.losses &&
+          previous.record.ties === data.record.ties
+        );
+      })();
 
-        return {
-          teamName: data.teamName,
-          leagueName: data.leagueName,
-          seasonName: data.seasonName,
-          accountName: data.accountName,
-          logoUrl: data.logoUrl,
-          record: data.record,
-          teamId: data.teamId,
-          leagueId: data.leagueId,
-        };
-      });
-    },
-    [],
-  );
+      if (
+        previous &&
+        previous.teamName === data.teamName &&
+        previous.leagueName === data.leagueName &&
+        previous.seasonName === data.seasonName &&
+        previous.accountName === data.accountName &&
+        previous.logoUrl === data.logoUrl &&
+        recordsMatch &&
+        previous.teamId === data.teamId &&
+        previous.leagueId === data.leagueId
+      ) {
+        return previous;
+      }
+
+      return {
+        teamName: data.teamName,
+        leagueName: data.leagueName,
+        seasonName: data.seasonName,
+        accountName: data.accountName,
+        logoUrl: data.logoUrl,
+        record: data.record,
+        teamId: data.teamId,
+        leagueId: data.leagueId,
+      };
+    });
+  };
 
   return (
     <main className="min-h-screen bg-background">

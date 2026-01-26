@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -31,11 +31,9 @@ const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
   const [error, setError] = useState<string | null>(null);
   const { removeRole, loading } = useRoleRemoval(accountId);
 
-  // Handle role removal with internal error handling
-  const handleRemoveRole = useCallback(async () => {
+  const handleRemoveRole = async () => {
     if (!selectedUser || !selectedRoleToRemove) return;
 
-    // Clear any previous errors
     setError(null);
 
     const result = await removeRole({
@@ -48,12 +46,11 @@ const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
         message: result.message || 'Role removed successfully',
         removedRole: result.removedRole!,
       });
-      onClose(); // Close dialog on success
+      onClose();
     } else {
-      // Handle error internally
       setError(result.error || 'Failed to remove role');
     }
-  }, [selectedUser, selectedRoleToRemove, removeRole, onSuccess, onClose]);
+  };
 
   // Clear error when dialog opens
   React.useEffect(() => {

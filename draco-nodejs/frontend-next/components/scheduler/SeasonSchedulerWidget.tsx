@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -262,25 +262,25 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
 
   const assignments = proposal?.assignments ?? [];
 
-  const fieldNameById = useMemo(() => {
+  const fieldNameById = ((): Map<string, string> => {
     const map = new Map<string, string>();
     fields.forEach((field) => map.set(field.id, field.name));
     return map;
-  }, [fields]);
+  })();
 
-  const teamNameById = useMemo(() => {
+  const teamNameById = ((): Map<string, string> => {
     const map = new Map<string, string>();
     teams.forEach((team) => map.set(team.id, team.name));
     return map;
-  }, [teams]);
+  })();
 
-  const umpireNameById = useMemo(() => {
+  const umpireNameById = ((): Map<string, string> => {
     const map = new Map<string, string>();
     umpires.forEach((umpire) => map.set(umpire.id, umpire.name));
     return map;
-  }, [umpires]);
+  })();
 
-  const schedulerUmpireNameById = useMemo(() => {
+  const schedulerUmpireNameById = ((): Map<string, string> => {
     const map = new Map<string, string>();
     (specPreview?.umpires ?? []).forEach((umpire) => {
       if (umpire.name) {
@@ -288,17 +288,17 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       }
     });
     return map;
-  }, [specPreview]);
+  })();
 
-  const leagueNameById = useMemo(() => {
+  const leagueNameById = ((): Map<string, string> => {
     const map = new Map<string, string>();
     leagues.forEach((league) => map.set(league.id, league.name));
     return map;
-  }, [leagues]);
+  })();
 
-  const allLeagueSeasonIds = useMemo(() => leagues.map((league) => league.id), [leagues]);
+  const allLeagueSeasonIds = leagues.map((league) => league.id);
 
-  const selectedLeagueSeasonIds = useMemo(() => {
+  const selectedLeagueSeasonIds = ((): string[] => {
     const leagueIdSet = new Set(allLeagueSeasonIds);
     const normalizedManual = leagueSeasonSelection?.filter((id) => leagueIdSet.has(id)) ?? null;
 
@@ -311,9 +311,9 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     }
 
     return allLeagueSeasonIds;
-  }, [allLeagueSeasonIds, leagueSeasonIdFilter, leagueSeasonSelection]);
+  })();
 
-  const gameRequestById = useMemo(() => {
+  const gameRequestById = ((): Map<string, SchedulerProblemSpecPreview['games'][number]> => {
     const map = new Map<string, SchedulerProblemSpecPreview['games'][number]>();
     if (!specPreview) {
       return map;
@@ -322,173 +322,191 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       map.set(game.id, game);
     });
     return map;
-  }, [specPreview]);
+  })();
 
-  const formatLocalTimeRange = useCallback(
-    (startIso: string, endIso: string): string => {
-      const start = new Date(startIso);
-      const end = new Date(endIso);
-      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-        return `${startIso}–${endIso}`;
-      }
-
-      try {
-        const dateLabel = new Intl.DateTimeFormat('en-US', {
-          timeZone,
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-        }).format(start);
-
-        const startTime = new Intl.DateTimeFormat('en-US', {
-          timeZone,
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true,
-        }).format(start);
-
-        const endTime = new Intl.DateTimeFormat('en-US', {
-          timeZone,
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true,
-        }).format(end);
-
-        const tzLabel = new Intl.DateTimeFormat('en-US', {
-          timeZone,
-          timeZoneName: 'short',
-        })
-          .formatToParts(start)
-          .find((part) => part.type === 'timeZoneName')?.value;
-
-        return `${dateLabel} • ${startTime} – ${endTime}${tzLabel ? ` (${tzLabel})` : ''}`;
-      } catch {
-        return `${start.toISOString()}–${end.toISOString()}`;
-      }
-    },
-    [timeZone],
-  );
-
-  const selectedMode: SchedulerSeasonApplyRequest['mode'] = useMemo(() => {
-    if (!proposal) {
-      return 'all';
+  const formatLocalTimeRange = (startIso: string, endIso: string): string => {
+    const start = new Date(startIso);
+    const end = new Date(endIso);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return `${startIso}–${endIso}`;
     }
-    if (selectedGameIds.size === assignments.length) {
-      return 'all';
+
+    try {
+      const dateLabel = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      }).format(start);
+
+      const startTime = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }).format(start);
+
+      const endTime = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }).format(end);
+
+      const tzLabel = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        timeZoneName: 'short',
+      })
+        .formatToParts(start)
+        .find((part) => part.type === 'timeZoneName')?.value;
+
+      return `${dateLabel} • ${startTime} – ${endTime}${tzLabel ? ` (${tzLabel})` : ''}`;
+    } catch {
+      return `${start.toISOString()}–${end.toISOString()}`;
     }
-    return 'subset';
-  }, [assignments.length, proposal, selectedGameIds.size]);
+  };
 
-  const selectedIdsArray = useMemo(
-    () => Array.from(selectedGameIds.values()).sort(),
-    [selectedGameIds],
-  );
+  const selectedMode: SchedulerSeasonApplyRequest['mode'] =
+    ((): SchedulerSeasonApplyRequest['mode'] => {
+      if (!proposal) {
+        return 'all';
+      }
+      if (selectedGameIds.size === assignments.length) {
+        return 'all';
+      }
+      return 'subset';
+    })();
 
-  const loadRules = useCallback(async () => {
+  const selectedIdsArray = Array.from(selectedGameIds.values()).sort();
+
+  const loadRules = async () => {
     if (!seasonId) {
       return;
     }
     const nextRules = await listFieldAvailabilityRulesRef.current();
     setRules(nextRules);
-  }, [seasonId]);
+  };
 
-  const loadExclusions = useCallback(async () => {
+  const loadExclusions = async () => {
     if (!seasonId) {
       return;
     }
     const nextExclusions = await listFieldExclusionDatesRef.current();
     setExclusions(nextExclusions);
-  }, [seasonId]);
+  };
 
-  const loadSeasonWindow = useCallback(async () => {
-    if (!seasonId) {
-      return;
-    }
-    const config = await getSeasonWindowConfigRef.current();
-    setSeasonWindowConfig(config);
-    if (config) {
-      setSeasonStartDate(config.startDate);
-      setSeasonEndDate(config.endDate);
-      if (
-        config.umpiresPerGame &&
-        (config.umpiresPerGame === 1 ||
-          config.umpiresPerGame === 2 ||
-          config.umpiresPerGame === 3 ||
-          config.umpiresPerGame === 4)
-      ) {
-        setUmpiresPerGame(config.umpiresPerGame);
-      } else {
-        setUmpiresPerGame(2);
-      }
-
-      const maxGames = config.maxGamesPerUmpirePerDay;
-      setMaxGamesPerUmpirePerDayInput(
-        typeof maxGames === 'number' && Number.isFinite(maxGames) ? String(maxGames) : '',
-      );
-
-      if (config.leagueSeasonIds && config.leagueSeasonIds.length > 0) {
-        setLeagueSeasonSelection(config.leagueSeasonIds);
-      }
-    }
-  }, [seasonId]);
-
-  const loadSeasonExclusions = useCallback(async () => {
+  const loadSeasonExclusions = async () => {
     if (!seasonId) {
       return;
     }
     const next = await listSeasonExclusionsRef.current();
     setSeasonExclusions(next);
-  }, [seasonId]);
+  };
 
-  const loadTeamExclusions = useCallback(async () => {
+  const loadTeamExclusions = async () => {
     if (!seasonId) {
       return;
     }
     const next = await listTeamExclusionsRef.current();
     setTeamExclusions(next);
-  }, [seasonId]);
+  };
 
-  const loadUmpireExclusions = useCallback(async () => {
+  const loadUmpireExclusions = async () => {
     if (!seasonId) {
       return;
     }
     const next = await listUmpireExclusionsRef.current();
     setUmpireExclusions(next);
-  }, [seasonId]);
+  };
 
   useEffect(() => {
     if (!canEdit || !seasonId) {
       return;
     }
-    loadRules().catch((err) =>
-      setError(err instanceof Error ? err.message : 'Failed to load rules'),
-    );
-    loadExclusions().catch((err) =>
-      setError(err instanceof Error ? err.message : 'Failed to load exclusions'),
-    );
-    loadSeasonWindow().catch((err) =>
-      setError(err instanceof Error ? err.message : 'Failed to load season window'),
-    );
-    loadSeasonExclusions().catch((err) =>
-      setError(err instanceof Error ? err.message : 'Failed to load season exclusions'),
-    );
-    loadTeamExclusions().catch((err) =>
-      setError(err instanceof Error ? err.message : 'Failed to load team exclusions'),
-    );
-    loadUmpireExclusions().catch((err) =>
-      setError(err instanceof Error ? err.message : 'Failed to load umpire exclusions'),
-    );
-  }, [
-    canEdit,
-    loadExclusions,
-    loadRules,
-    loadSeasonExclusions,
-    loadSeasonWindow,
-    loadTeamExclusions,
-    loadUmpireExclusions,
-    seasonId,
-    setError,
-  ]);
+
+    let cancelled = false;
+
+    const doLoadRules = async () => {
+      const nextRules = await listFieldAvailabilityRulesRef.current();
+      if (!cancelled) setRules(nextRules);
+    };
+
+    const doLoadExclusions = async () => {
+      const nextExclusions = await listFieldExclusionDatesRef.current();
+      if (!cancelled) setExclusions(nextExclusions);
+    };
+
+    const doLoadSeasonWindow = async () => {
+      const config = await getSeasonWindowConfigRef.current();
+      if (cancelled) return;
+      setSeasonWindowConfig(config);
+      if (config) {
+        setSeasonStartDate(config.startDate);
+        setSeasonEndDate(config.endDate);
+        if (
+          config.umpiresPerGame &&
+          (config.umpiresPerGame === 1 ||
+            config.umpiresPerGame === 2 ||
+            config.umpiresPerGame === 3 ||
+            config.umpiresPerGame === 4)
+        ) {
+          setUmpiresPerGame(config.umpiresPerGame);
+        } else {
+          setUmpiresPerGame(2);
+        }
+
+        const maxGames = config.maxGamesPerUmpirePerDay;
+        setMaxGamesPerUmpirePerDayInput(
+          typeof maxGames === 'number' && Number.isFinite(maxGames) ? String(maxGames) : '',
+        );
+
+        if (config.leagueSeasonIds && config.leagueSeasonIds.length > 0) {
+          setLeagueSeasonSelection(config.leagueSeasonIds);
+        }
+      }
+    };
+
+    const doLoadSeasonExclusions = async () => {
+      const next = await listSeasonExclusionsRef.current();
+      if (!cancelled) setSeasonExclusions(next);
+    };
+
+    const doLoadTeamExclusions = async () => {
+      const next = await listTeamExclusionsRef.current();
+      if (!cancelled) setTeamExclusions(next);
+    };
+
+    const doLoadUmpireExclusions = async () => {
+      const next = await listUmpireExclusionsRef.current();
+      if (!cancelled) setUmpireExclusions(next);
+    };
+
+    doLoadRules().catch((err: unknown) => {
+      if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load rules');
+    });
+    doLoadExclusions().catch((err: unknown) => {
+      if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load exclusions');
+    });
+    doLoadSeasonWindow().catch((err: unknown) => {
+      if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load season window');
+    });
+    doLoadSeasonExclusions().catch((err: unknown) => {
+      if (!cancelled)
+        setError(err instanceof Error ? err.message : 'Failed to load season exclusions');
+    });
+    doLoadTeamExclusions().catch((err: unknown) => {
+      if (!cancelled)
+        setError(err instanceof Error ? err.message : 'Failed to load team exclusions');
+    });
+    doLoadUmpireExclusions().catch((err: unknown) => {
+      if (!cancelled)
+        setError(err instanceof Error ? err.message : 'Failed to load umpire exclusions');
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canEdit, seasonId, setError]);
 
   const handleSaveSeasonWindow = async () => {
     if (!seasonId) {
@@ -759,24 +777,21 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     }
   };
 
-  const filterProblemSpecGames = useCallback(
-    (preview: SchedulerProblemSpecPreview): string[] => {
-      let filtered = preview.games;
-      if (leagues.length > 0 && selectedLeagueSeasonIds.length !== leagues.length) {
-        const leagueSet = new Set(selectedLeagueSeasonIds);
-        filtered = filtered.filter((game) => leagueSet.has(game.leagueSeasonId));
-      }
-      if (teamSeasonIdFilter) {
-        filtered = filtered.filter(
-          (game) =>
-            game.homeTeamSeasonId === teamSeasonIdFilter ||
-            game.visitorTeamSeasonId === teamSeasonIdFilter,
-        );
-      }
-      return filtered.map((game) => game.id);
-    },
-    [leagues.length, selectedLeagueSeasonIds, teamSeasonIdFilter],
-  );
+  const filterProblemSpecGames = (preview: SchedulerProblemSpecPreview): string[] => {
+    let filtered = preview.games;
+    if (leagues.length > 0 && selectedLeagueSeasonIds.length !== leagues.length) {
+      const leagueSet = new Set(selectedLeagueSeasonIds);
+      filtered = filtered.filter((game) => leagueSet.has(game.leagueSeasonId));
+    }
+    if (teamSeasonIdFilter) {
+      filtered = filtered.filter(
+        (game) =>
+          game.homeTeamSeasonId === teamSeasonIdFilter ||
+          game.visitorTeamSeasonId === teamSeasonIdFilter,
+      );
+    }
+    return filtered.map((game) => game.id);
+  };
 
   const handlePreviewProblemSpec = async () => {
     try {
@@ -931,7 +946,11 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     });
   };
 
-  const groupedAssignments = useMemo(() => {
+  const groupedAssignments = ((): Array<{
+    dateKey: string;
+    dateLabel: string;
+    assignments: typeof assignments;
+  }> => {
     if (!proposal) {
       return [];
     }
@@ -958,7 +977,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       );
       return { dateKey, dateLabel: group.dateLabel, assignments: sortedGroup };
     });
-  }, [proposal, timeZone]);
+  })();
 
   if (!canEdit) {
     return null;

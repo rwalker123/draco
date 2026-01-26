@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Alert, Box, Button, CircularProgress, Container, Chip, Typography } from '@mui/material';
 import { Group as GroupIcon, LocationOn as LocationIcon } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
@@ -16,7 +16,6 @@ import AccountPollsCard from '../../../components/polls/AccountPollsCard';
 import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
 import LeadersWidget from '../../../components/statistics/LeadersWidget';
-import { AnnouncementService } from '../../../services/announcementService';
 import {
   getAccountById,
   getAccountUserTeams,
@@ -31,7 +30,6 @@ import {
   AccountType,
   SponsorType,
   LeagueSeasonWithDivisionTeamsAndUnassignedType,
-  AnnouncementType,
 } from '@draco/shared-schemas';
 import TodaysBirthdaysCard from '@/components/birthdays/TodaysBirthdaysCard';
 import PendingPhotoSubmissionsPanel from '@/components/photo-submissions/PendingPhotoSubmissionsPanel';
@@ -46,23 +44,12 @@ import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
 import HofNominationWidget from '@/components/hall-of-fame/HofNominationWidget';
 import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
-import SpecialAnnouncementsWidget, {
-  type SpecialAnnouncementCard,
-} from '@/components/announcements/SpecialAnnouncementsWidget';
+import SpecialAnnouncementsWidget from '@/components/announcements/SpecialAnnouncementsWidget';
 import InformationWidget from '@/components/information/InformationWidget';
 import AccountOptional from '@/components/account/AccountOptional';
 import BaseballLiveScoringDialog from '@/components/baseball/live-scoring/BaseballLiveScoringDialog';
 import BaseballLiveWatchDialog from '@/components/baseball/live-scoring/BaseballLiveWatchDialog';
 import type { Game } from '@/components/GameListDisplay';
-
-interface TeamAnnouncementSection {
-  teamId: string;
-  teamSeasonId?: string | null;
-  seasonId?: string | null;
-  leagueName?: string;
-  teamName: string;
-  announcements: AnnouncementType[];
-}
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -72,12 +59,6 @@ const BaseballAccountHome: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [accountSponsors, setAccountSponsors] = useState<SponsorType[]>([]);
   const [sponsorError, setSponsorError] = useState<string | null>(null);
-  const [accountAnnouncements, setAccountAnnouncements] = useState<AnnouncementType[]>([]);
-  const [accountAnnouncementsLoading, setAccountAnnouncementsLoading] = useState(false);
-  const [accountAnnouncementsError, setAccountAnnouncementsError] = useState<string | null>(null);
-  const [teamAnnouncements, setTeamAnnouncements] = useState<TeamAnnouncementSection[]>([]);
-  const [teamAnnouncementsLoading, setTeamAnnouncementsLoading] = useState(false);
-  const [teamAnnouncementsError, setTeamAnnouncementsError] = useState<string | null>(null);
   const [liveSessionGameIds, setLiveSessionGameIds] = useState<Set<string>>(new Set());
   const [scoreboardRefreshTrigger, setScoreboardRefreshTrigger] = useState(0);
   const [liveScoringDialog, setLiveScoringDialog] = useState<{
@@ -94,10 +75,6 @@ const BaseballAccountHome: React.FC = () => {
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
-  const announcementService = useMemo(
-    () => new AnnouncementService(token, apiClient),
-    [token, apiClient],
-  );
   const {
     isMember,
     loading: membershipLoading,
@@ -109,35 +86,32 @@ const BaseballAccountHome: React.FC = () => {
   const showSubmissionPanel = Boolean(isAccountMember);
   const shouldShowJoinLeagueNearSponsors = Boolean(user && hasAccountContact);
 
-  const canStartLiveScoringForGame = useCallback(
-    (game: Game): boolean => {
-      if (!user || !accountIdStr) return false;
-      const isAdmin = hasRole('Administrator') || hasRoleInAccount('AccountAdmin', accountIdStr);
-      if (isAdmin) return true;
-      const canEditHome = hasRoleInTeam('TeamAdmin', game.homeTeamId);
-      const canEditVisitor = hasRoleInTeam('TeamAdmin', game.visitorTeamId);
-      return canEditHome || canEditVisitor;
-    },
-    [user, accountIdStr, hasRole, hasRoleInAccount, hasRoleInTeam],
-  );
+  const canStartLiveScoringForGame = (game: Game): boolean => {
+    if (!user || !accountIdStr) return false;
+    const isAdmin = hasRole('Administrator') || hasRoleInAccount('AccountAdmin', accountIdStr);
+    if (isAdmin) return true;
+    const canEditHome = hasRoleInTeam('TeamAdmin', game.homeTeamId);
+    const canEditVisitor = hasRoleInTeam('TeamAdmin', game.visitorTeamId);
+    return canEditHome || canEditVisitor;
+  };
 
-  const handleStartLiveScoring = useCallback((game: Game) => {
+  const handleStartLiveScoring = (game: Game) => {
     setLiveScoringDialog({ open: true, game });
-  }, []);
+  };
 
-  const handleWatchLiveScoring = useCallback((game: Game) => {
+  const handleWatchLiveScoring = (game: Game) => {
     setLiveWatchDialog({ open: true, game });
-  }, []);
+  };
 
-  const handleCloseLiveScoringDialog = useCallback(() => {
+  const handleCloseLiveScoringDialog = () => {
     setLiveScoringDialog({ open: false, game: null });
     setScoreboardRefreshTrigger((prev) => prev + 1);
-  }, []);
+  };
 
-  const handleCloseLiveWatchDialog = useCallback(() => {
+  const handleCloseLiveWatchDialog = () => {
     setLiveWatchDialog({ open: false, game: null });
     setScoreboardRefreshTrigger((prev) => prev + 1);
-  }, []);
+  };
 
   useEffect(() => {
     if (!accountIdStr) return;
@@ -171,7 +145,7 @@ const BaseballAccountHome: React.FC = () => {
     };
   }, [accountIdStr, apiClient]);
 
-  const canModerateAccountPhotos = useMemo(() => {
+  const canModerateAccountPhotos = ((): boolean => {
     if (!accountIdStr) {
       return false;
     }
@@ -182,47 +156,24 @@ const BaseballAccountHome: React.FC = () => {
       hasRoleInAccount('AccountAdmin', accountIdStr) ||
       hasRoleInAccount('AccountPhotoAdmin', accountIdStr)
     );
-  }, [accountIdStr, hasRole, hasRoleInAccount]);
+  })();
 
-  const specialAnnouncements = useMemo<SpecialAnnouncementCard[]>(() => {
-    const accountLabel = account?.name ? `${account.name} Announcement` : 'Account Announcement';
-    const accountSpecial = accountAnnouncements
-      .filter((item) => item.isSpecial)
-      .map<SpecialAnnouncementCard>((item) => ({
-        id: item.id,
-        title: item.title,
-        publishedAt: item.publishedAt,
-        body: item.body,
-        accountId: item.accountId,
-        teamId: item.teamId,
-        visibility: item.visibility,
-        sourceLabel: accountLabel,
-      }));
+  const userTeamIds = ((): string[] => {
+    return userTeams.map((team) => team.teamId).filter((id): id is string => id !== undefined);
+  })();
 
-    const teamSpecial = teamAnnouncements.flatMap((section) => {
-      const leagueHeading =
-        section.leagueName && section.leagueName !== 'Unknown League' ? section.leagueName : null;
-      const heading = leagueHeading ? `${leagueHeading} ${section.teamName}` : section.teamName;
-
-      return section.announcements
-        .filter((item) => item.isSpecial)
-        .map<SpecialAnnouncementCard>((item) => ({
-          id: item.id,
-          title: item.title,
-          publishedAt: item.publishedAt,
-          body: item.body,
-          accountId: item.accountId,
-          teamId: item.teamId,
-          visibility: item.visibility,
-          sourceLabel: `${section.teamName} Announcement`,
-          heading,
-        }));
+  const teamMetadata = ((): Record<string, { name: string; leagueName?: string }> => {
+    const metadata: Record<string, { name: string; leagueName?: string }> = {};
+    userTeams.forEach((team) => {
+      if (team.teamId) {
+        metadata[team.teamId] = {
+          name: team.name,
+          leagueName: team.leagueName,
+        };
+      }
     });
-
-    return [...accountSpecial, ...teamSpecial].sort(
-      (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-    );
-  }, [accountAnnouncements, teamAnnouncements, account]);
+    return metadata;
+  })();
 
   const shouldShowPendingPanel = Boolean(token && canModerateAccountPhotos && accountIdStr);
 
@@ -250,7 +201,7 @@ const BaseballAccountHome: React.FC = () => {
     refresh: refreshGallery,
   } = usePhotoGallery({ accountId: accountIdStr ?? null });
 
-  const submissionAlbumOptions: PhotoAlbumOption[] = useMemo(() => {
+  const submissionAlbumOptions: PhotoAlbumOption[] = ((): PhotoAlbumOption[] => {
     const options = new Map<string, PhotoAlbumOption>();
     options.set('__default__', {
       id: null,
@@ -280,7 +231,7 @@ const BaseballAccountHome: React.FC = () => {
     });
 
     return Array.from(options.values());
-  }, [galleryAlbums, pendingSubmissions]);
+  })();
 
   const [selectedAlbumKey, setSelectedAlbumKey] = useState<string>('all');
   const [seasonTeamIds, setSeasonTeamIds] = useState<string[] | null>(null);
@@ -288,7 +239,7 @@ const BaseballAccountHome: React.FC = () => {
     LeagueSeasonWithDivisionTeamsAndUnassignedType[]
   >([]);
 
-  const seasonFilteredPhotos = useMemo(() => {
+  const seasonFilteredPhotos = ((): typeof galleryPhotos => {
     if (seasonTeamIds === null || seasonTeamIds.length === 0) {
       return galleryPhotos;
     }
@@ -300,9 +251,9 @@ const BaseballAccountHome: React.FC = () => {
       }
       return allowedTeamIds.has(photo.teamId);
     });
-  }, [galleryPhotos, seasonTeamIds]);
+  })();
 
-  const seasonFilteredAlbums = useMemo(() => {
+  const seasonFilteredAlbums = ((): typeof galleryAlbums => {
     if (seasonTeamIds === null || seasonTeamIds.length === 0) {
       return galleryAlbums;
     }
@@ -341,9 +292,12 @@ const BaseballAccountHome: React.FC = () => {
         return { ...album, photoCount };
       })
       .filter((album) => album.photoCount > 0 || album.id === null);
-  }, [galleryAlbums, seasonFilteredPhotos, seasonTeamIds]);
+  })();
 
-  const teamAlbumsByTeamId = useMemo(() => {
+  const teamAlbumsByTeamId = ((): Map<
+    string,
+    { albumId: string; photoCount: number; albumTitle: string | null }
+  > => {
     const map = new Map<
       string,
       { albumId: string; photoCount: number; albumTitle: string | null }
@@ -360,9 +314,9 @@ const BaseballAccountHome: React.FC = () => {
     });
 
     return map;
-  }, [seasonFilteredAlbums]);
+  })();
 
-  const teamAlbumHierarchy = useMemo<TeamAlbumHierarchyGroup[]>(() => {
+  const teamAlbumHierarchy: TeamAlbumHierarchyGroup[] = ((): TeamAlbumHierarchyGroup[] => {
     if (seasonLeagueHierarchy.length === 0 || teamAlbumsByTeamId.size === 0) {
       return [];
     }
@@ -439,16 +393,11 @@ const BaseballAccountHome: React.FC = () => {
     });
 
     return groups;
-  }, [seasonLeagueHierarchy, teamAlbumsByTeamId]);
+  })();
 
-  const currentSeasonId = useMemo(() => {
-    if (!currentSeason?.id) {
-      return null;
-    }
-    return String(currentSeason.id);
-  }, [currentSeason]);
+  const currentSeasonId = currentSeason?.id ? String(currentSeason.id) : null;
 
-  const leaderLeagues = useMemo(() => {
+  const leaderLeagues = ((): { id: string; name: string }[] => {
     if (seasonLeagueHierarchy.length === 0) {
       return [];
     }
@@ -462,7 +411,7 @@ const BaseballAccountHome: React.FC = () => {
       .filter(
         (league): league is { id: string; name: string } => league !== null && league.id.length > 0,
       );
-  }, [seasonLeagueHierarchy]);
+  })();
 
   useEffect(() => {
     if (selectedAlbumKey === 'all') {
@@ -477,7 +426,7 @@ const BaseballAccountHome: React.FC = () => {
     }
   }, [seasonFilteredAlbums, selectedAlbumKey]);
 
-  const filteredGalleryPhotos = useMemo(() => {
+  const filteredGalleryPhotos = ((): typeof seasonFilteredPhotos => {
     if (selectedAlbumKey === 'all') {
       return seasonFilteredPhotos;
     }
@@ -487,22 +436,19 @@ const BaseballAccountHome: React.FC = () => {
     }
 
     return seasonFilteredPhotos.filter((photo) => photo.albumId === selectedAlbumKey);
-  }, [seasonFilteredPhotos, selectedAlbumKey]);
+  })();
 
-  const handleAlbumTabChange = useCallback((value: string) => {
+  const handleAlbumTabChange = (value: string) => {
     setSelectedAlbumKey(value);
-  }, []);
+  };
 
-  const handleApprovePendingSubmission = useCallback(
-    async (submissionId: string, albumId: string | null) => {
-      const success = await approvePendingSubmission(submissionId, albumId);
-      if (success) {
-        await refreshGallery();
-      }
-      return success;
-    },
-    [approvePendingSubmission, refreshGallery],
-  );
+  const handleApprovePendingSubmission = async (submissionId: string, albumId: string | null) => {
+    const success = await approvePendingSubmission(submissionId, albumId);
+    if (success) {
+      await refreshGallery();
+    }
+    return success;
+  };
 
   const accountDisplayName = account?.name ?? 'this organization';
 
@@ -567,50 +513,6 @@ const BaseballAccountHome: React.FC = () => {
       isMounted = false;
     };
   }, [accountIdStr, apiClient]);
-
-  useEffect(() => {
-    if (!accountIdStr || !isAccountMember) {
-      setAccountAnnouncements([]);
-      setAccountAnnouncementsError(null);
-      setAccountAnnouncementsLoading(false);
-      return;
-    }
-
-    let ignore = false;
-
-    const fetchAnnouncements = async () => {
-      setAccountAnnouncementsLoading(true);
-      setAccountAnnouncementsError(null);
-
-      try {
-        const data = await announcementService.listAccountAnnouncements(accountIdStr);
-
-        if (ignore) {
-          return;
-        }
-
-        setAccountAnnouncements(data);
-      } catch (err) {
-        if (ignore) {
-          return;
-        }
-
-        const message = err instanceof Error ? err.message : 'Failed to load account announcements';
-        setAccountAnnouncementsError(message);
-        setAccountAnnouncements([]);
-      } finally {
-        if (!ignore) {
-          setAccountAnnouncementsLoading(false);
-        }
-      }
-    };
-
-    void fetchAnnouncements();
-
-    return () => {
-      ignore = true;
-    };
-  }, [accountIdStr, announcementService, isAccountMember]);
 
   useEffect(() => {
     if (!accountIdStr || !currentSeason?.id) {
@@ -721,100 +623,6 @@ const BaseballAccountHome: React.FC = () => {
       ignore = true;
     };
   }, [accountIdStr, user, token, apiClient]);
-
-  useEffect(() => {
-    if (!accountIdStr || !isAccountMember) {
-      setTeamAnnouncements([]);
-      setTeamAnnouncementsError(null);
-      setTeamAnnouncementsLoading(false);
-      return;
-    }
-
-    if (userTeams.length === 0) {
-      setTeamAnnouncements([]);
-      setTeamAnnouncementsError(null);
-      setTeamAnnouncementsLoading(false);
-      return;
-    }
-
-    let ignore = false;
-
-    const fetchTeamAnnouncements = async () => {
-      setTeamAnnouncementsLoading(true);
-      setTeamAnnouncementsError(null);
-
-      try {
-        const errors: string[] = [];
-
-        const sections = await Promise.all(
-          userTeams
-            .filter((team) => team.teamId)
-            .map(async (team) => {
-              try {
-                const data = await announcementService.listTeamAnnouncements({
-                  accountId: accountIdStr,
-                  teamId: team.teamId!,
-                });
-
-                return {
-                  teamId: team.teamId!,
-                  teamSeasonId: team.id,
-                  seasonId: null,
-                  leagueName: team.leagueName,
-                  teamName: team.name,
-                  announcements: data,
-                } as TeamAnnouncementSection;
-              } catch (error) {
-                console.warn(
-                  `Failed to load announcements for team ${team.name} (${team.teamId}) in account ${accountIdStr}:`,
-                  error,
-                );
-                errors.push(team.name);
-                return {
-                  teamId: team.teamId ?? team.id,
-                  teamSeasonId: team.id,
-                  seasonId: null,
-                  leagueName: team.leagueName,
-                  teamName: team.name,
-                  announcements: [],
-                } as TeamAnnouncementSection;
-              }
-            }),
-        );
-
-        if (ignore) {
-          return;
-        }
-
-        setTeamAnnouncements(sections);
-        if (errors.length > 0) {
-          setTeamAnnouncementsError(
-            `Failed to load announcements for ${errors.join(', ')}. Please try again.`,
-          );
-        } else {
-          setTeamAnnouncementsError(null);
-        }
-      } catch (err) {
-        if (ignore) {
-          return;
-        }
-
-        const message = err instanceof Error ? err.message : 'Failed to load team announcements';
-        setTeamAnnouncementsError(message);
-        setTeamAnnouncements([]);
-      } finally {
-        if (!ignore) {
-          setTeamAnnouncementsLoading(false);
-        }
-      }
-    };
-
-    void fetchTeamAnnouncements();
-
-    return () => {
-      ignore = true;
-    };
-  }, [accountIdStr, announcementService, isAccountMember, userTeams]);
 
   useEffect(() => {
     if (!accountIdStr) return;
@@ -1005,9 +813,9 @@ const BaseballAccountHome: React.FC = () => {
 
             {isAccountMember ? (
               <SpecialAnnouncementsWidget
-                announcements={specialAnnouncements}
-                loading={accountAnnouncementsLoading || teamAnnouncementsLoading}
-                error={accountAnnouncementsError ?? teamAnnouncementsError}
+                accountId={accountIdStr}
+                teamIds={userTeamIds}
+                teamMetadata={teamMetadata}
                 viewAllHref={`/account/${accountIdStr}/announcements`}
                 showSourceLabels={false}
               />

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Avatar,
@@ -108,25 +108,13 @@ const PlayerCareerStatisticsCard: React.FC<PlayerCareerStatisticsCardProps> = ({
     setTab(value === 0 ? 'batting' : 'pitching');
   };
 
-  const battingRows = useMemo<PlayerCareerBattingRowType[]>(
-    () => stats?.batting.rows ?? [],
-    [stats],
-  );
+  const battingRows: PlayerCareerBattingRowType[] = stats?.batting.rows ?? [];
 
-  const pitchingRows = useMemo<PlayerCareerPitchingRowType[]>(
-    () => stats?.pitching.rows ?? [],
-    [stats],
-  );
+  const pitchingRows: PlayerCareerPitchingRowType[] = stats?.pitching.rows ?? [];
 
-  const battingPrependColumns = useMemo(
-    () => buildCareerPrependColumns<PlayerCareerBattingRowType>(),
-    [],
-  );
+  const battingPrependColumns = buildCareerPrependColumns<PlayerCareerBattingRowType>();
 
-  const pitchingPrependColumns = useMemo(
-    () => buildCareerPrependColumns<PlayerCareerPitchingRowType>(),
-    [],
-  );
+  const pitchingPrependColumns = buildCareerPrependColumns<PlayerCareerPitchingRowType>();
 
   if (loading) {
     return (

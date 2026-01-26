@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Box,
@@ -208,34 +208,23 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
   const defaultSchemaStatus =
     mode === 'edit' && selectedGame ? selectedGame.gameStatus : GameStatus.Scheduled;
 
-  const validationSchema = useMemo(
-    () => createGameDialogSchema(defaultSchemaStatus, timeZone),
-    [defaultSchemaStatus, timeZone],
-  );
+  const validationSchema = createGameDialogSchema(defaultSchemaStatus, timeZone);
 
   const { createGame, updateGame, loading } = useGameOperations({ accountId, timeZone });
 
-  const formResolver = useMemo(
-    () =>
-      zodResolver(validationSchema) as Resolver<
-        GameDialogFormValues,
-        Record<string, never>,
-        GameDialogFormValues
-      >,
-    [validationSchema],
-  );
+  const formResolver = zodResolver(validationSchema) as Resolver<
+    GameDialogFormValues,
+    Record<string, never>,
+    GameDialogFormValues
+  >;
 
-  const initialFormValues = useMemo(
-    () =>
-      buildInitialFormValues(
-        mode,
-        selectedGame,
-        timeZone,
-        leagues,
-        defaultLeagueSeasonId,
-        defaultGameDate,
-      ),
-    [mode, selectedGame, timeZone, leagues, defaultLeagueSeasonId, defaultGameDate],
+  const initialFormValues = buildInitialFormValues(
+    mode,
+    selectedGame,
+    timeZone,
+    leagues,
+    defaultLeagueSeasonId,
+    defaultGameDate,
   );
 
   const formMethods = useForm<GameDialogFormValues>({
@@ -250,14 +239,9 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
     name: 'leagueSeasonId',
   });
 
-  const dialogTeams = useMemo(() => {
-    if (leagueSeasonId) {
-      return leagueTeamsCache.get(leagueSeasonId) ?? [];
-    }
-    return [];
-  }, [leagueSeasonId, leagueTeamsCache]);
+  const dialogTeams = leagueSeasonId ? (leagueTeamsCache.get(leagueSeasonId) ?? []) : [];
 
-  const hasUnassignedTeams = useMemo((): boolean => {
+  const hasUnassignedTeams = ((): boolean => {
     if (mode !== 'edit' || !selectedGame) return false;
 
     const teamIds = new Set(dialogTeams.map((t) => t.id));
@@ -269,46 +253,37 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
     );
 
     return homeTeamMissing || visitorTeamMissing;
-  }, [mode, selectedGame, dialogTeams]);
+  })();
 
-  const getAvailableUmpires = useCallback(
-    (currentPosition: string, currentValue: string) => {
-      const formValues = getValues();
-      const selected = ['umpire1', 'umpire2', 'umpire3', 'umpire4']
-        .filter((position) => position !== currentPosition)
-        .map((position) => formValues[position as keyof GameDialogFormValues])
-        .filter(
-          (value): value is string =>
-            typeof value === 'string' && value.length > 0 && value !== currentValue,
-        );
+  const getAvailableUmpires = (currentPosition: string, currentValue: string) => {
+    const formValues = getValues();
+    const selected = ['umpire1', 'umpire2', 'umpire3', 'umpire4']
+      .filter((position) => position !== currentPosition)
+      .map((position) => formValues[position as keyof GameDialogFormValues])
+      .filter(
+        (value): value is string =>
+          typeof value === 'string' && value.length > 0 && value !== currentValue,
+      );
 
-      return officials.filter((official) => !selected.includes(official.id));
-    },
-    [getValues, officials],
-  );
+    return officials.filter((official) => !selected.includes(official.id));
+  };
 
   const selectedLeague = leagues.find((league) => league.id === leagueSeasonId);
   const dialogTitle =
     mode === 'create' ? 'Add Game' : canEditSchedule ? 'Edit Game' : 'Game Details';
 
-  const getTeamName = useCallback(
-    (teamId: string) => {
-      const team = dialogTeams.find((t) => t.id === teamId);
-      return team?.name ?? 'Unknown Team';
-    },
-    [dialogTeams],
-  );
+  const getTeamName = (teamId: string) => {
+    const team = dialogTeams.find((t) => t.id === teamId);
+    return team?.name ?? 'Unknown Team';
+  };
 
-  const getFieldName = useCallback(
-    (fieldId?: string) => {
-      if (!fieldId) return 'No Field';
-      const field = locations.find((f) => f.id === fieldId);
-      return field?.name ?? 'Unknown Field';
-    },
-    [locations],
-  );
+  const getFieldName = (fieldId?: string) => {
+    if (!fieldId) return 'No Field';
+    const field = locations.find((f) => f.id === fieldId);
+    return field?.name ?? 'Unknown Field';
+  };
 
-  const getGameTypeText = useCallback((gameType: number | string) => {
+  const getGameTypeText = (gameType: number | string) => {
     const typeNum = typeof gameType === 'string' ? parseInt(gameType, 10) : gameType;
     switch (typeNum) {
       case GameType.RegularSeason:
@@ -320,7 +295,7 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
       default:
         return 'Unknown';
     }
-  }, []);
+  };
 
   const sanitizeFormValues = (values: GameDialogFormValues): GameFormValues => ({
     leagueSeasonId: values.leagueSeasonId,

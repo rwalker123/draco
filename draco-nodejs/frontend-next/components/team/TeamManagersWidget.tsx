@@ -45,9 +45,14 @@ const TeamManagersWidget: React.FC<TeamManagersWidgetProps> = ({
     null,
   );
   const [deleteContactId, setDeleteContactId] = React.useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = React.useState(0);
 
-  const loadManagers = React.useCallback(
-    async (signal?: AbortSignal) => {
+  const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
+
+  React.useEffect(() => {
+    const controller = new AbortController();
+
+    const loadManagers = async (signal?: AbortSignal) => {
       setLoading(true);
       setError(null);
 
@@ -99,60 +104,49 @@ const TeamManagersWidget: React.FC<TeamManagersWidgetProps> = ({
           setLoading(false);
         }
       }
-    },
-    [accountId, apiClient, seasonId, teamSeasonId, token],
-  );
-
-  const openPhotoDialog = React.useCallback(
-    (contact: TeamManagerType['contact']) => {
-      if (!canEditPhotos || !token) {
-        return;
-      }
-      setSelectedContact(contact);
-      setPhotoDialogOpen(true);
-    },
-    [canEditPhotos, token],
-  );
-
-  const closePhotoDialog = React.useCallback(() => {
-    setSelectedContact(null);
-    setPhotoDialogOpen(false);
-  }, []);
-
-  const handlePhotoUpdated = React.useCallback(async () => {
-    await loadManagers();
-    closePhotoDialog();
-  }, [closePhotoDialog, loadManagers]);
-
-  const openDeletePhotoDialog = React.useCallback(
-    (contact: TeamManagerType['contact']) => {
-      if (!canEditPhotos || !token) {
-        return;
-      }
-      setSelectedContact(contact);
-      setDeleteContactId(contact.id);
-    },
-    [canEditPhotos, token],
-  );
-
-  const closeDeletePhotoDialog = React.useCallback(() => {
-    setDeleteContactId(null);
-  }, []);
-
-  const handlePhotoDeleted = React.useCallback(async () => {
-    await loadManagers();
-    closeDeletePhotoDialog();
-  }, [closeDeletePhotoDialog, loadManagers]);
-
-  React.useEffect(() => {
-    const controller = new AbortController();
+    };
 
     void loadManagers(controller.signal);
 
     return () => {
       controller.abort();
     };
-  }, [loadManagers]);
+  }, [accountId, apiClient, seasonId, teamSeasonId, token, refreshTrigger]);
+
+  const openPhotoDialog = (contact: TeamManagerType['contact']) => {
+    if (!canEditPhotos || !token) {
+      return;
+    }
+    setSelectedContact(contact);
+    setPhotoDialogOpen(true);
+  };
+
+  const closePhotoDialog = () => {
+    setSelectedContact(null);
+    setPhotoDialogOpen(false);
+  };
+
+  const handlePhotoUpdated = () => {
+    triggerRefresh();
+    closePhotoDialog();
+  };
+
+  const openDeletePhotoDialog = (contact: TeamManagerType['contact']) => {
+    if (!canEditPhotos || !token) {
+      return;
+    }
+    setSelectedContact(contact);
+    setDeleteContactId(contact.id);
+  };
+
+  const closeDeletePhotoDialog = () => {
+    setDeleteContactId(null);
+  };
+
+  const handlePhotoDeleted = () => {
+    triggerRefresh();
+    closeDeletePhotoDialog();
+  };
 
   const buildPhoneEntries = (manager: TeamManagerType) => {
     const contactDetails = manager.contact.contactDetails;
