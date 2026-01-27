@@ -66,82 +66,72 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
     setEditGameDialog({ open: true, game });
   };
 
-  const determineEditableTeams = React.useCallback(
-    (game: Game): string[] => {
-      if (game.gameStatus !== GameStatus.Completed) {
-        return [];
-      }
+  const determineEditableTeams = (game: Game): string[] => {
+    if (game.gameStatus !== GameStatus.Completed) {
+      return [];
+    }
 
-      const editableTeamIds: string[] = [];
-      const isAdministrator =
-        hasRole('Administrator') || hasRoleInAccount('AccountAdmin', accountId);
+    const editableTeamIds: string[] = [];
+    const isAdministrator = hasRole('Administrator') || hasRoleInAccount('AccountAdmin', accountId);
 
-      const canEditHome =
-        isAdministrator ||
-        hasRoleInTeam('TeamAdmin', game.homeTeamId) ||
-        hasRoleInTeam('TeamManager', game.homeTeamId);
-      const canEditVisitor =
-        isAdministrator ||
-        hasRoleInTeam('TeamAdmin', game.visitorTeamId) ||
-        hasRoleInTeam('TeamManager', game.visitorTeamId);
+    const canEditHome =
+      isAdministrator ||
+      hasRoleInTeam('TeamAdmin', game.homeTeamId) ||
+      hasRoleInTeam('TeamManager', game.homeTeamId);
+    const canEditVisitor =
+      isAdministrator ||
+      hasRoleInTeam('TeamAdmin', game.visitorTeamId) ||
+      hasRoleInTeam('TeamManager', game.visitorTeamId);
 
-      if (canEditHome) {
-        editableTeamIds.push(game.homeTeamId);
-      }
+    if (canEditHome) {
+      editableTeamIds.push(game.homeTeamId);
+    }
 
-      if (canEditVisitor && !editableTeamIds.includes(game.visitorTeamId)) {
-        editableTeamIds.push(game.visitorTeamId);
-      }
+    if (canEditVisitor && !editableTeamIds.includes(game.visitorTeamId)) {
+      editableTeamIds.push(game.visitorTeamId);
+    }
 
-      return editableTeamIds;
-    },
-    [accountId, hasRole, hasRoleInAccount, hasRoleInTeam],
-  );
+    return editableTeamIds;
+  };
 
-  const fetchRecapForTeam = React.useCallback(
-    async (game: Game, teamSeasonId: string): Promise<string | null> => {
-      try {
-        const recap = await getGameSummary({
-          accountId,
-          seasonId: currentSeasonId,
-          gameId: game.id,
-          teamSeasonId,
-          token: token ?? undefined,
-        });
-        return recap ?? null;
-      } catch (err) {
-        throw err;
-      }
-    },
-    [accountId, currentSeasonId, token],
-  );
-
-  const handleRecapSaved = React.useCallback(
-    (game: Game, teamSeasonId: string, recap: string) => {
-      setGames((previous) => {
-        const updated = previous.map((entry) => {
-          if (entry.id !== game.id) {
-            return entry;
-          }
-
-          const updatedRecaps = [
-            ...(entry.gameRecaps?.filter((existing) => existing.teamId !== teamSeasonId) ?? []),
-            { teamId: teamSeasonId, recap },
-          ];
-
-          return {
-            ...entry,
-            hasGameRecap: updatedRecaps.length > 0,
-            gameRecaps: updatedRecaps,
-          };
-        });
-
-        onGamesLoaded?.(updated);
-        return updated;
+  const fetchRecapForTeam = async (game: Game, teamSeasonId: string): Promise<string | null> => {
+    try {
+      const recap = await getGameSummary({
+        accountId,
+        seasonId: currentSeasonId,
+        gameId: game.id,
+        teamSeasonId,
+        token: token ?? undefined,
       });
-    },
-    [onGamesLoaded],
-  );
+      return recap ?? null;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleRecapSaved = (game: Game, teamSeasonId: string, recap: string) => {
+    setGames((previous) => {
+      const updated = previous.map((entry) => {
+        if (entry.id !== game.id) {
+          return entry;
+        }
+
+        const updatedRecaps = [
+          ...(entry.gameRecaps?.filter((existing) => existing.teamId !== teamSeasonId) ?? []),
+          { teamId: teamSeasonId, recap },
+        ];
+
+        return {
+          ...entry,
+          hasGameRecap: updatedRecaps.length > 0,
+          gameRecaps: updatedRecaps,
+        };
+      });
+
+      onGamesLoaded?.(updated);
+      return updated;
+    });
+  };
 
   const {
     openEditRecap,
@@ -160,37 +150,31 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
     onRecapSaved: handleRecapSaved,
   });
 
-  const handleOpenEditRecap = React.useCallback(
-    (game: Game) => {
-      if (process.env.NODE_ENV !== 'production') {
-        console.debug('[ScoreboardBase] openEditRecap click', {
-          gameId: game.id,
-          homeTeamId: game.homeTeamId,
-          visitorTeamId: game.visitorTeamId,
-          hasGameRecap: game.hasGameRecap,
-          availableRecaps: game.gameRecaps?.map((entry) => entry.teamId),
-        });
-      }
-      openEditRecap(game);
-    },
-    [openEditRecap],
-  );
+  const handleOpenEditRecap = (game: Game) => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[ScoreboardBase] openEditRecap click', {
+        gameId: game.id,
+        homeTeamId: game.homeTeamId,
+        visitorTeamId: game.visitorTeamId,
+        hasGameRecap: game.hasGameRecap,
+        availableRecaps: game.gameRecaps?.map((entry) => entry.teamId),
+      });
+    }
+    openEditRecap(game);
+  };
 
-  const handleOpenViewRecap = React.useCallback(
-    (game: Game) => {
-      if (process.env.NODE_ENV !== 'production') {
-        console.debug('[ScoreboardBase] openViewRecap click', {
-          gameId: game.id,
-          homeTeamId: game.homeTeamId,
-          visitorTeamId: game.visitorTeamId,
-          hasGameRecap: game.hasGameRecap,
-          availableRecaps: game.gameRecaps?.map((entry) => entry.teamId),
-        });
-      }
-      openViewRecap(game);
-    },
-    [openViewRecap],
-  );
+  const handleOpenViewRecap = (game: Game) => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[ScoreboardBase] openViewRecap click', {
+        gameId: game.id,
+        homeTeamId: game.homeTeamId,
+        visitorTeamId: game.visitorTeamId,
+        hasGameRecap: game.hasGameRecap,
+        availableRecaps: game.gameRecaps?.map((entry) => entry.teamId),
+      });
+    }
+    openViewRecap(game);
+  };
 
   const mapGameToDialogGame = (gameData: Game): EnterGameResultsDialogGame => ({
     id: gameData.id,
@@ -259,7 +243,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
       });
   }, [accountId, teamId, currentSeasonId, loadGames, onGamesLoaded, refreshTrigger]);
 
-  const sections = React.useMemo<GameListSection[]>(() => [{ title, games }], [title, games]);
+  const sections: GameListSection[] = [{ title, games }];
 
   const applyWrapper =
     renderWrapper ??

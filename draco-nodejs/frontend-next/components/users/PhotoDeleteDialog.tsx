@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Typography, CircularProgress, Alert, Stack, Box } from '@mui/material';
 import { Delete as DeleteIcon, Photo as PhotoIcon } from '@mui/icons-material';
 import { usePhotoOperations } from '../../hooks/usePhotoOperations';
@@ -33,7 +33,7 @@ const PhotoDeleteDialog: React.FC<PhotoDeleteDialogProps> = ({
   const { deletePhoto, loading } = usePhotoOperations(accountId);
 
   // Handle photo deletion with internal error handling
-  const handleDeletePhoto = useCallback(async () => {
+  const handleDeletePhoto = async () => {
     if (!contactId) return;
 
     // Clear any previous errors
@@ -51,7 +51,7 @@ const PhotoDeleteDialog: React.FC<PhotoDeleteDialogProps> = ({
       // Handle error internally
       setError(result.error || 'Failed to delete photo');
     }
-  }, [contactId, deletePhoto, onSuccess, onClose]);
+  };
 
   // Clear error when dialog opens
   React.useEffect(() => {

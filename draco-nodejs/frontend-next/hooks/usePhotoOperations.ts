@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { createUserManagementService } from '../services/userManagementService';
 
@@ -20,31 +20,28 @@ export function usePhotoOperations(accountId: string) {
   const { token } = useAuth();
   const userService = token ? createUserManagementService(token) : null;
 
-  const deletePhoto = useCallback(
-    async (contactId: string): Promise<PhotoDeletionResult> => {
-      if (!userService) {
-        return { success: false, error: 'User service not available' };
-      }
+  const deletePhoto = async (contactId: string): Promise<PhotoDeletionResult> => {
+    if (!userService) {
+      return { success: false, error: 'User service not available' };
+    }
 
-      try {
-        setLoading(true);
+    try {
+      setLoading(true);
 
-        await userService.deleteContactPhoto(accountId, contactId);
+      await userService.deleteContactPhoto(accountId, contactId);
 
-        return {
-          success: true,
-          message: 'Contact photo deleted successfully',
-          contactId,
-        };
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to delete photo';
-        return { success: false, error: errorMessage };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [userService, accountId],
-  );
+      return {
+        success: true,
+        message: 'Contact photo deleted successfully',
+        contactId,
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete photo';
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
     deletePhoto,

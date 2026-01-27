@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import type { PlayerCareerStatisticsType } from '@draco/shared-schemas';
 import { useApiClient } from './useApiClient';
 import {
@@ -44,78 +44,74 @@ export const usePlayerCareerStatistics = ({
   const [playerLoading, setPlayerLoading] = useState(false);
   const [playerError, setPlayerError] = useState<string | null>(null);
 
-  const searchPlayers = useCallback(
-    async (params: PublicContactSearchParams): Promise<PlayerCareerSearchResult[]> => {
-      const trimmedQuery = params.query.trim();
-      if (trimmedQuery.length === 0) {
-        setSearchResults([]);
-        setSearchError(null);
-        return [];
-      }
-
-      setSearchLoading(true);
+  const searchPlayers = async (
+    params: PublicContactSearchParams,
+  ): Promise<PlayerCareerSearchResult[]> => {
+    const trimmedQuery = params.query.trim();
+    if (trimmedQuery.length === 0) {
+      setSearchResults([]);
       setSearchError(null);
+      return [];
+    }
 
-      try {
-        const response = await searchPublicContacts(
-          accountId,
-          { ...params, query: trimmedQuery },
-          { client: apiClient },
-        );
+    setSearchLoading(true);
+    setSearchError(null);
 
-        const results: PlayerCareerSearchResult[] =
-          response.results?.map((contact) => ({
-            playerId: contact.id,
-            firstName: contact.firstName,
-            lastName: contact.lastName,
-            photoUrl: contact.photoUrl ?? undefined,
-          })) ?? [];
+    try {
+      const response = await searchPublicContacts(
+        accountId,
+        { ...params, query: trimmedQuery },
+        { client: apiClient },
+      );
 
-        setSearchResults(results);
-        return results;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to search players';
-        setSearchError(message);
-        setSearchResults([]);
-        return [];
-      } finally {
-        setSearchLoading(false);
-      }
-    },
-    [accountId, apiClient],
-  );
+      const results: PlayerCareerSearchResult[] =
+        response.results?.map((contact) => ({
+          playerId: contact.id,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          photoUrl: contact.photoUrl ?? undefined,
+        })) ?? [];
 
-  const loadPlayer = useCallback(
-    async (playerId: string): Promise<PlayerCareerStatisticsType | null> => {
-      if (!playerId) {
-        setPlayerStats(null);
-        return null;
-      }
+      setSearchResults(results);
+      return results;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to search players';
+      setSearchError(message);
+      setSearchResults([]);
+      return [];
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
-      setPlayerLoading(true);
-      setPlayerError(null);
+  const loadPlayer = async (playerId: string): Promise<PlayerCareerStatisticsType | null> => {
+    if (!playerId) {
+      setPlayerStats(null);
+      return null;
+    }
 
-      try {
-        const stats = await fetchPlayerCareerStatistics(accountId, playerId, { client: apiClient });
-        setPlayerStats(stats);
-        return stats;
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to load player career statistics';
-        setPlayerError(message);
-        setPlayerStats(null);
-        return null;
-      } finally {
-        setPlayerLoading(false);
-      }
-    },
-    [accountId, apiClient],
-  );
+    setPlayerLoading(true);
+    setPlayerError(null);
 
-  const resetPlayer = useCallback(() => {
+    try {
+      const stats = await fetchPlayerCareerStatistics(accountId, playerId, { client: apiClient });
+      setPlayerStats(stats);
+      return stats;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to load player career statistics';
+      setPlayerError(message);
+      setPlayerStats(null);
+      return null;
+    } finally {
+      setPlayerLoading(false);
+    }
+  };
+
+  const resetPlayer = () => {
     setPlayerStats(null);
     setPlayerError(null);
-  }, []);
+  };
 
   return {
     searchResults,

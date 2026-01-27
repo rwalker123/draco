@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -61,35 +61,35 @@ export default function Standings({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadStandings = useCallback(async () => {
-    if (!seasonId || seasonId === '0') return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await getSeasonStandings({
-        client: apiClient,
-        throwOnError: false,
-        path: { accountId, seasonId },
-        query: { grouped: true },
-      });
-
-      const data = unwrapApiResult<SeasonStandingsResponse>(result, 'Failed to load standings');
-
-      setGroupedStandings((data as StandingsLeagueType[]) ?? []);
-    } catch (error) {
-      console.error('Error loading standings:', error);
-      setError('Failed to load standings');
-      setGroupedStandings(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, apiClient, seasonId]);
-
   useEffect(() => {
+    const loadStandings = async () => {
+      if (!seasonId || seasonId === '0') return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await getSeasonStandings({
+          client: apiClient,
+          throwOnError: false,
+          path: { accountId, seasonId },
+          query: { grouped: true },
+        });
+
+        const data = unwrapApiResult<SeasonStandingsResponse>(result, 'Failed to load standings');
+
+        setGroupedStandings((data as StandingsLeagueType[]) ?? []);
+      } catch (error) {
+        console.error('Error loading standings:', error);
+        setError('Failed to load standings');
+        setGroupedStandings(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadStandings();
-  }, [loadStandings]);
+  }, [accountId, apiClient, seasonId]);
 
   const sortTeams = (teams: StandingsTeamType[]): StandingsTeamType[] => {
     return [...teams].sort((a, b) => {

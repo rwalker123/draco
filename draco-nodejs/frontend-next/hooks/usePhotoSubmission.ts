@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useApiClient } from './useApiClient';
 import {
   createAccountPhotoSubmission,
@@ -42,85 +42,82 @@ export const usePhotoSubmission = ({
   teamId,
 }: UsePhotoSubmissionOptions): UsePhotoSubmissionState => {
   const apiClient = useApiClient();
-  const normalizedAccountId = useMemo(() => normalizeId(accountId), [accountId]);
-  const normalizedTeamId = useMemo(() => normalizeId(teamId), [teamId]);
+  const normalizedAccountId = normalizeId(accountId);
+  const normalizedTeamId = normalizeId(teamId);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const submitPhoto = useCallback(
-    async ({
-      title,
-      caption,
-      albumId,
-      photo,
-    }: SubmitPhotoInput): Promise<PhotoSubmissionRecordType | null> => {
-      if (!normalizedAccountId) {
-        setError('Account information is required to submit photos.');
-        return null;
-      }
+  const submitPhoto = async ({
+    title,
+    caption,
+    albumId,
+    photo,
+  }: SubmitPhotoInput): Promise<PhotoSubmissionRecordType | null> => {
+    if (!normalizedAccountId) {
+      setError('Account information is required to submit photos.');
+      return null;
+    }
 
-      setSubmitting(true);
-      setError(null);
-
-      const submissionBody: CreatePhotoSubmissionForm = {
-        title: title.trim(),
-        photo,
-      };
-
-      const trimmedCaption = caption?.trim();
-      if (trimmedCaption) {
-        submissionBody.caption = trimmedCaption;
-      }
-
-      const trimmedAlbumId = albumId?.trim();
-      if (trimmedAlbumId) {
-        submissionBody.albumId = trimmedAlbumId;
-      }
-
-      try {
-        const result = normalizedTeamId
-          ? await createTeamPhotoSubmission({
-              client: apiClient,
-              path: { accountId: normalizedAccountId, teamId: normalizedTeamId },
-              body: submissionBody,
-              throwOnError: false,
-            })
-          : await createAccountPhotoSubmission({
-              client: apiClient,
-              path: { accountId: normalizedAccountId },
-              body: submissionBody,
-              throwOnError: false,
-            });
-
-        const submission = unwrapApiResult<PhotoSubmissionRecordType>(
-          result,
-          'Failed to submit photo for review',
-        );
-
-        const warning = getPhotoEmailWarningMessage(
-          result.response?.headers.get('x-photo-email-warning') ?? null,
-        );
-        if (warning) {
-          setError(warning);
-        }
-
-        return submission;
-      } catch (err: unknown) {
-        const message =
-          err instanceof ApiClientError ? err.message : 'Failed to submit photo for review';
-        setError(message);
-        return null;
-      } finally {
-        setSubmitting(false);
-      }
-    },
-    [apiClient, normalizedAccountId, normalizedTeamId],
-  );
-
-  const clearError = useCallback(() => {
+    setSubmitting(true);
     setError(null);
-  }, []);
+
+    const submissionBody: CreatePhotoSubmissionForm = {
+      title: title.trim(),
+      photo,
+    };
+
+    const trimmedCaption = caption?.trim();
+    if (trimmedCaption) {
+      submissionBody.caption = trimmedCaption;
+    }
+
+    const trimmedAlbumId = albumId?.trim();
+    if (trimmedAlbumId) {
+      submissionBody.albumId = trimmedAlbumId;
+    }
+
+    try {
+      const result = normalizedTeamId
+        ? await createTeamPhotoSubmission({
+            client: apiClient,
+            path: { accountId: normalizedAccountId, teamId: normalizedTeamId },
+            body: submissionBody,
+            throwOnError: false,
+          })
+        : await createAccountPhotoSubmission({
+            client: apiClient,
+            path: { accountId: normalizedAccountId },
+            body: submissionBody,
+            throwOnError: false,
+          });
+
+      const submission = unwrapApiResult<PhotoSubmissionRecordType>(
+        result,
+        'Failed to submit photo for review',
+      );
+
+      const warning = getPhotoEmailWarningMessage(
+        result.response?.headers.get('x-photo-email-warning') ?? null,
+      );
+      if (warning) {
+        setError(warning);
+      }
+
+      return submission;
+    } catch (err: unknown) {
+      const message =
+        err instanceof ApiClientError ? err.message : 'Failed to submit photo for review';
+      setError(message);
+      return null;
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const clearError = () => {
+    setError(null);
+  };
 
   return { submitPhoto, submitting, error, clearError };
 };

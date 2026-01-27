@@ -2,7 +2,7 @@ import {
   PlayersWantedClassifiedType,
   UpsertPlayersWantedClassifiedType,
 } from '@draco/shared-schemas';
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 
 interface UsePlayersWantedDialogsReturn {
   // Dialog state
@@ -47,44 +47,44 @@ export const usePlayersWantedDialogs = (): UsePlayersWantedDialogsReturn => {
   const [localError, setLocalError] = useState<string | null>(null);
 
   // Dialog handlers
-  const openCreateDialog = useCallback(() => {
+  const openCreateDialog = () => {
     setCreateDialogOpen(true);
-  }, []);
+  };
 
-  const closeCreateDialog = useCallback(() => {
+  const closeCreateDialog = () => {
     setCreateDialogOpen(false);
-  }, []);
+  };
 
-  const openEditDialog = useCallback((classified: UpsertPlayersWantedClassifiedType) => {
+  const openEditDialog = (classified: UpsertPlayersWantedClassifiedType) => {
     setEditingClassified(classified);
     setEditDialogOpen(true);
-  }, []);
+  };
 
-  const closeEditDialog = useCallback(() => {
+  const closeEditDialog = () => {
     setEditDialogOpen(false);
     setEditingClassified(null);
-  }, []);
+  };
 
-  const openDeleteDialog = useCallback((classified: PlayersWantedClassifiedType) => {
+  const openDeleteDialog = (classified: PlayersWantedClassifiedType) => {
     setDeletingClassified(classified);
     setDeleteDialogOpen(true);
-  }, []);
+  };
 
-  const closeDeleteDialog = useCallback(() => {
+  const closeDeleteDialog = () => {
     setDeleteDialogOpen(false);
     setDeletingClassified(null);
-  }, []);
+  };
 
   // Success/error handlers
-  const showSuccessMessage = useCallback((message: string, duration: number = 5000) => {
+  const showSuccessMessage = (message: string, duration: number = 5000) => {
     setSuccess(message);
     setLocalError(null);
     setTimeout(() => setSuccess(null), duration);
-  }, []);
+  };
 
-  const clearSuccess = useCallback(() => {
+  const clearSuccess = () => {
     setSuccess(null);
-  }, []);
+  };
 
   return {
     // Dialog state
