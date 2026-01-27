@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { AccountPollType, CreatePollType, UpdatePollType } from '@draco/shared-schemas';
 import { createAccountPoll, updateAccountPoll, deleteAccountPoll } from '@draco/shared-api-client';
 import { useApiClient } from './useApiClient';
@@ -25,96 +25,90 @@ export function usePollsService(accountId: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createPoll = useCallback(
-    async (payload: CreatePollPayload): Promise<PollMutationResult> => {
-      setLoading(true);
-      setError(null);
+  const createPoll = async (payload: CreatePollPayload): Promise<PollMutationResult> => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        const result = await createAccountPoll({
-          client: apiClient,
-          path: { accountId },
-          body: payload,
-          throwOnError: false,
-        });
+    try {
+      const result = await createAccountPoll({
+        client: apiClient,
+        path: { accountId },
+        body: payload,
+        throwOnError: false,
+      });
 
-        const poll = unwrapApiResult(result, 'Failed to create poll');
+      const poll = unwrapApiResult(result, 'Failed to create poll');
 
-        return {
-          message: 'Poll created successfully.',
-          poll,
-        };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to create poll.';
-        setError(message);
-        throw err instanceof Error ? err : new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        message: 'Poll created successfully.',
+        poll,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create poll.';
+      setError(message);
+      throw err instanceof Error ? err : new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const updatePoll = useCallback(
-    async (pollId: string, payload: UpdatePollPayload): Promise<PollMutationResult> => {
-      setLoading(true);
-      setError(null);
+  const updatePoll = async (
+    pollId: string,
+    payload: UpdatePollPayload,
+  ): Promise<PollMutationResult> => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        const result = await updateAccountPoll({
-          client: apiClient,
-          path: { accountId, pollId },
-          body: payload,
-          throwOnError: false,
-        });
+    try {
+      const result = await updateAccountPoll({
+        client: apiClient,
+        path: { accountId, pollId },
+        body: payload,
+        throwOnError: false,
+      });
 
-        const poll = unwrapApiResult(result, 'Failed to update poll');
+      const poll = unwrapApiResult(result, 'Failed to update poll');
 
-        return {
-          message: 'Poll updated successfully.',
-          poll,
-        };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to update poll.';
-        setError(message);
-        throw err instanceof Error ? err : new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        message: 'Poll updated successfully.',
+        poll,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update poll.';
+      setError(message);
+      throw err instanceof Error ? err : new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const deletePoll = useCallback(
-    async (pollId: string): Promise<PollDeletionResult> => {
-      setLoading(true);
-      setError(null);
+  const deletePoll = async (pollId: string): Promise<PollDeletionResult> => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        const result = await deleteAccountPoll({
-          client: apiClient,
-          path: { accountId, pollId },
-          throwOnError: false,
-        });
+    try {
+      const result = await deleteAccountPoll({
+        client: apiClient,
+        path: { accountId, pollId },
+        throwOnError: false,
+      });
 
-        assertNoApiError(result, 'Failed to delete poll');
+      assertNoApiError(result, 'Failed to delete poll');
 
-        return {
-          message: 'Poll deleted successfully.',
-          pollId,
-        };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to delete poll.';
-        setError(message);
-        throw err instanceof Error ? err : new Error(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        message: 'Poll deleted successfully.',
+        pollId,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete poll.';
+      setError(message);
+      throw err instanceof Error ? err : new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const resetError = useCallback(() => setError(null), []);
+  const resetError = () => setError(null);
 
   return {
     createPoll,

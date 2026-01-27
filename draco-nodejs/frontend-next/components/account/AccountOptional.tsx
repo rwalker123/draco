@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { notFound } from 'next/navigation';
 import { useAccountSettings } from '../../hooks/useAccountSettings';
 import { getComponentGate } from '../../lib/accountSettings/componentGates';
@@ -22,7 +22,7 @@ export const AccountOptional: React.FC<AccountOptionalProps> = ({
   const effectiveAccountId = gate ? accountId : null;
   const { settings, loading } = useAccountSettings(effectiveAccountId);
 
-  const allowed = useMemo(() => {
+  const allowed = (() => {
     if (!gate) {
       return true;
     }
@@ -34,7 +34,7 @@ export const AccountOptional: React.FC<AccountOptionalProps> = ({
     const state = settings.find((item) => item.definition.key === gate.settingKey);
     const value = state?.effectiveValue ?? state?.value;
     return value === gate.expectedValue;
-  }, [gate, settings]);
+  })();
 
   if (!gate) {
     return <>{children}</>;

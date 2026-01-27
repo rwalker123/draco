@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Tooltip } from '@mui/material';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import { getRoleColors, getRoleIcon, getRoleTooltipText } from '../../utils/roleIcons';
@@ -67,17 +67,13 @@ const RoleIcon: React.FC<RoleIconProps> = ({
   const iconSize = size === 'small' ? 20 : size === 'medium' ? 24 : 32;
 
   const iconColor = finalColors?.primary || '#1976d2';
-  const iconElement = useMemo(
-    () =>
-      renderRoleIconElement(role.roleId, {
-        fontSize: size,
-        style: {
-          color: iconColor,
-          fill: iconColor,
-        },
-      }),
-    [role.roleId, size, iconColor],
-  );
+  const iconElement = renderRoleIconElement(role.roleId, {
+    fontSize: size,
+    style: {
+      color: iconColor,
+      fill: iconColor,
+    },
+  });
 
   if (!iconElement) {
     return (

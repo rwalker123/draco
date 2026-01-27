@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useEffect, useMemo } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Box, CircularProgress } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
@@ -22,21 +22,21 @@ const AccountTypeGuardContent: React.FC<AccountTypeGuardProps> = ({
   const params = useParams();
   const { currentAccount, loading: accountLoading, initialized: accountInitialized } = useAccount();
 
-  const accountId = useMemo(() => {
+  const accountId = (() => {
     const id = params?.accountId;
     return Array.isArray(id) ? id[0] : id;
-  }, [params?.accountId]);
+  })();
 
-  const requiredTypes = useMemo(() => {
-    return Array.isArray(requiredAccountType) ? requiredAccountType : [requiredAccountType];
-  }, [requiredAccountType]);
+  const requiredTypes = Array.isArray(requiredAccountType)
+    ? requiredAccountType
+    : [requiredAccountType];
 
   type Evaluation =
     | { status: 'pending' }
     | { status: 'redirect'; url: string }
     | { status: 'authorized' };
 
-  const evaluation: Evaluation = useMemo(() => {
+  const evaluation: Evaluation = (() => {
     if (!accountInitialized || accountLoading) {
       return { status: 'pending' };
     }
@@ -56,7 +56,7 @@ const AccountTypeGuardContent: React.FC<AccountTypeGuardProps> = ({
     }
 
     return { status: 'authorized' };
-  }, [accountInitialized, accountLoading, currentAccount, requiredTypes, accountId, redirectUrl]);
+  })();
 
   useEffect(() => {
     if (evaluation.status === 'redirect') {

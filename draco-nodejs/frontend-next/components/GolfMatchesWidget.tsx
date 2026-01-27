@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -66,153 +66,159 @@ export default function GolfMatchesWidget({
   const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set());
   const [liveSessionChoiceOpen, setLiveSessionChoiceOpen] = useState(false);
   const [choiceMatchId, setChoiceMatchId] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const currentContactId = user?.contact?.id;
 
   const { getActiveSessions } = useLiveScoringOperations();
 
-  const isMatchToday = useCallback(
-    (matchDate: string): boolean => {
-      const matchDay = formatDateInTimezone(matchDate, timeZone, {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      });
-      const today = formatDateInTimezone(new Date().toISOString(), timeZone, {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      });
-      return matchDay === today;
-    },
-    [timeZone],
-  );
-
-  const loadActiveSessions = useCallback(async () => {
-    const sessions = await getActiveSessions(accountId);
-    if (sessions) {
-      setActiveSessions(new Set(sessions.map((s) => s.matchId)));
-    }
-  }, [getActiveSessions, accountId]);
-
-  const loadMatches = useCallback(async () => {
-    if (!seasonId || seasonId === '0') return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const today = new Date();
-      const startDate = new Date(today);
-      startDate.setDate(startDate.getDate() - 7);
-      startDate.setHours(0, 0, 0, 0);
-
-      const endDate = new Date(today);
-      endDate.setDate(endDate.getDate() + 7);
-      endDate.setHours(23, 59, 59, 999);
-
-      const matchesResult = await listGolfMatchesForSeason({
-        client: apiClient,
-        path: { accountId, seasonId },
-        query: {
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-        },
-        throwOnError: false,
-      });
-
-      const matches = unwrapApiResult<GolfMatch[]>(matchesResult, 'Failed to load matches');
-
-      const uniqueTeamIds = new Set<string>();
-      matches.forEach((match) => {
-        uniqueTeamIds.add(match.team1.id);
-        uniqueTeamIds.add(match.team2.id);
-      });
-
-      const teamPromises = Array.from(uniqueTeamIds).map((teamSeasonId) =>
-        getGolfTeamWithRoster({
-          client: apiClient,
-          path: { accountId, seasonId, teamSeasonId },
-          throwOnError: false,
-        }),
-      );
-
-      const teamResults = await Promise.all(teamPromises);
-      const teamsMap = new Map<string, GolfTeamWithRoster>();
-      teamResults.forEach((result) => {
-        if (result.data) {
-          teamsMap.set(result.data.id, result.data);
-        }
-      });
-      setTeams(teamsMap);
-
-      const handicapsMap = new Map<string, number>();
-      const matchesWithTees = matches.filter((m) => m.tee?.id);
-
-      for (const match of matchesWithTees) {
-        if (!match.tee?.id) continue;
-
-        const team1 = teamsMap.get(match.team1.id);
-        const team2 = teamsMap.get(match.team2.id);
-
-        const golferIds: string[] = [];
-        if (team1?.playerCount === 1 && team1.roster[0]) {
-          golferIds.push(team1.roster[0].golferId);
-        }
-        if (team2?.playerCount === 1 && team2.roster[0]) {
-          golferIds.push(team2.roster[0].golferId);
-        }
-
-        if (golferIds.length > 0) {
-          const handicapResult = await calculateBatchCourseHandicaps({
-            client: apiClient,
-            path: { accountId },
-            body: {
-              golferIds,
-              teeId: match.tee.id,
-              holesPlayed: 18,
-            },
-            throwOnError: false,
-          });
-
-          if (handicapResult.data) {
-            const response = handicapResult.data as BatchCourseHandicapResponse;
-            response.players.forEach((player) => {
-              if (player.courseHandicap !== null) {
-                const key = `${match.id}-${player.golferId}`;
-                handicapsMap.set(key, player.courseHandicap);
-              }
-            });
-          }
-        }
-      }
-      setCourseHandicaps(handicapsMap);
-
-      const now = new Date();
-      const MATCH_STATUS_COMPLETED = 1;
-
-      const recent = matches
-        .filter((m) => m.matchStatus === MATCH_STATUS_COMPLETED || new Date(m.matchDateTime) < now)
-        .sort((a, b) => new Date(b.matchDateTime).getTime() - new Date(a.matchDateTime).getTime());
-
-      const upcoming = matches
-        .filter((m) => m.matchStatus !== MATCH_STATUS_COMPLETED && new Date(m.matchDateTime) >= now)
-        .sort((a, b) => new Date(a.matchDateTime).getTime() - new Date(b.matchDateTime).getTime());
-
-      setRecentMatches(recent.slice(0, 25));
-      setUpcomingMatches(upcoming.slice(0, 25));
-    } catch (err) {
-      console.error('Error loading golf matches:', err);
-      setError('Failed to load matches');
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, apiClient, seasonId]);
+  const isMatchToday = (matchDate: string): boolean => {
+    const matchDay = formatDateInTimezone(matchDate, timeZone, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const today = formatDateInTimezone(new Date().toISOString(), timeZone, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    return matchDay === today;
+  };
 
   useEffect(() => {
+    const loadActiveSessions = async () => {
+      const sessions = await getActiveSessions(accountId);
+      if (sessions) {
+        setActiveSessions(new Set(sessions.map((s) => s.matchId)));
+      }
+    };
+
+    const loadMatches = async () => {
+      if (!seasonId || seasonId === '0') return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 7);
+        startDate.setHours(0, 0, 0, 0);
+
+        const endDate = new Date(today);
+        endDate.setDate(endDate.getDate() + 7);
+        endDate.setHours(23, 59, 59, 999);
+
+        const matchesResult = await listGolfMatchesForSeason({
+          client: apiClient,
+          path: { accountId, seasonId },
+          query: {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+          throwOnError: false,
+        });
+
+        const matches = unwrapApiResult<GolfMatch[]>(matchesResult, 'Failed to load matches');
+
+        const uniqueTeamIds = new Set<string>();
+        matches.forEach((match) => {
+          uniqueTeamIds.add(match.team1.id);
+          uniqueTeamIds.add(match.team2.id);
+        });
+
+        const teamPromises = Array.from(uniqueTeamIds).map((teamSeasonId) =>
+          getGolfTeamWithRoster({
+            client: apiClient,
+            path: { accountId, seasonId, teamSeasonId },
+            throwOnError: false,
+          }),
+        );
+
+        const teamResults = await Promise.all(teamPromises);
+        const teamsMap = new Map<string, GolfTeamWithRoster>();
+        teamResults.forEach((result) => {
+          if (result.data) {
+            teamsMap.set(result.data.id, result.data);
+          }
+        });
+        setTeams(teamsMap);
+
+        const handicapsMap = new Map<string, number>();
+        const matchesWithTees = matches.filter((m) => m.tee?.id);
+
+        for (const match of matchesWithTees) {
+          if (!match.tee?.id) continue;
+
+          const team1 = teamsMap.get(match.team1.id);
+          const team2 = teamsMap.get(match.team2.id);
+
+          const golferIds: string[] = [];
+          if (team1?.playerCount === 1 && team1.roster[0]) {
+            golferIds.push(team1.roster[0].golferId);
+          }
+          if (team2?.playerCount === 1 && team2.roster[0]) {
+            golferIds.push(team2.roster[0].golferId);
+          }
+
+          if (golferIds.length > 0) {
+            const handicapResult = await calculateBatchCourseHandicaps({
+              client: apiClient,
+              path: { accountId },
+              body: {
+                golferIds,
+                teeId: match.tee.id,
+                holesPlayed: 18,
+              },
+              throwOnError: false,
+            });
+
+            if (handicapResult.data) {
+              const response = handicapResult.data as BatchCourseHandicapResponse;
+              response.players.forEach((player) => {
+                if (player.courseHandicap !== null) {
+                  const key = `${match.id}-${player.golferId}`;
+                  handicapsMap.set(key, player.courseHandicap);
+                }
+              });
+            }
+          }
+        }
+        setCourseHandicaps(handicapsMap);
+
+        const now = new Date();
+        const MATCH_STATUS_COMPLETED = 1;
+
+        const recent = matches
+          .filter(
+            (m) => m.matchStatus === MATCH_STATUS_COMPLETED || new Date(m.matchDateTime) < now,
+          )
+          .sort(
+            (a, b) => new Date(b.matchDateTime).getTime() - new Date(a.matchDateTime).getTime(),
+          );
+
+        const upcoming = matches
+          .filter(
+            (m) => m.matchStatus !== MATCH_STATUS_COMPLETED && new Date(m.matchDateTime) >= now,
+          )
+          .sort(
+            (a, b) => new Date(a.matchDateTime).getTime() - new Date(b.matchDateTime).getTime(),
+          );
+
+        setRecentMatches(recent.slice(0, 25));
+        setUpcomingMatches(upcoming.slice(0, 25));
+      } catch (err) {
+        console.error('Error loading golf matches:', err);
+        setError('Failed to load matches');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadMatches();
     loadActiveSessions();
-  }, [loadMatches, loadActiveSessions]);
+  }, [accountId, apiClient, seasonId, getActiveSessions, refreshTrigger]);
 
   const getTeamName = (teamId: string, teamName: string | undefined): string => {
     const team = teams.get(teamId);
@@ -262,8 +268,7 @@ export default function GolfMatchesWidget({
 
   const handleLiveScoringClose = () => {
     setLiveScoringMatchId(null);
-    loadActiveSessions();
-    loadMatches();
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   const handleWatchClick = (matchId: string) => {
@@ -272,20 +277,16 @@ export default function GolfMatchesWidget({
 
   const handleWatchClose = () => {
     setWatchingMatchId(null);
-    loadActiveSessions();
-    loadMatches();
+    setRefreshTrigger((prev) => prev + 1);
   };
 
-  const isUserParticipant = useCallback(
-    (match: GolfMatch): boolean => {
-      if (!currentContactId) return false;
-      const team1 = teams.get(match.team1.id);
-      const team2 = teams.get(match.team2.id);
-      const allRoster = [...(team1?.roster || []), ...(team2?.roster || [])];
-      return allRoster.some((entry) => entry.player.id === currentContactId);
-    },
-    [currentContactId, teams],
-  );
+  const isUserParticipant = (match: GolfMatch): boolean => {
+    if (!currentContactId) return false;
+    const team1 = teams.get(match.team1.id);
+    const team2 = teams.get(match.team2.id);
+    const allRoster = [...(team1?.roster || []), ...(team2?.roster || [])];
+    return allRoster.some((entry) => entry.player.id === currentContactId);
+  };
 
   const getWatchingMatch = (): GolfMatch | undefined => {
     if (!watchingMatchId) return undefined;

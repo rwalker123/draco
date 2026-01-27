@@ -40,17 +40,12 @@ const MyTeams: React.FC<MyTeamsProps> = ({
   const theme = useTheme();
   const hasTeams = Boolean(userTeams && userTeams.length > 0);
 
-  const tileStyles = React.useMemo(() => {
-    return {
-      backgroundColor: theme.palette.background.paper,
-      border: theme.palette.widget.border,
-      shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
-      detailBackdrop: alpha(
-        theme.palette.text.primary,
-        theme.palette.mode === 'dark' ? 0.18 : 0.06,
-      ),
-    };
-  }, [theme]);
+  const tileStyles = {
+    backgroundColor: theme.palette.background.paper,
+    border: theme.palette.widget.border,
+    shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
+    detailBackdrop: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.18 : 0.06),
+  };
 
   const widgetTitle = (
     <Box display="flex" alignItems="center" gap={1}>

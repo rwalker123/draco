@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 
 export interface NotificationState {
   message: string;
@@ -18,16 +18,13 @@ export interface UseNotificationsReturn {
 export const useNotifications = (): UseNotificationsReturn => {
   const [notification, setNotification] = useState<NotificationState | null>(null);
 
-  const showNotification = useCallback(
-    (message: string, severity: NotificationState['severity']) => {
-      setNotification({ message, severity });
-    },
-    [],
-  );
+  const showNotification = (message: string, severity: NotificationState['severity']) => {
+    setNotification({ message, severity });
+  };
 
-  const hideNotification = useCallback(() => {
+  const hideNotification = () => {
     setNotification(null);
-  }, []);
+  };
 
   return {
     notification,

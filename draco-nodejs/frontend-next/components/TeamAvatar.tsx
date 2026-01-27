@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Avatar, Typography } from '@mui/material';
 import Image from 'next/image';
 import { addCacheBuster } from '../config/teams';
@@ -20,13 +20,7 @@ const getInitials = (name: string) => {
 const TeamAvatar: React.FC<TeamAvatarProps> = ({ name, logoUrl, size = 48, alt }) => {
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
   const initials = getInitials(name);
-  // Cache-bust once per logo change to avoid endless reload attempts
-  const cacheBustedLogoUrl = useMemo(() => {
-    if (!logoUrl) {
-      return undefined;
-    }
-    return addCacheBuster(logoUrl) ?? undefined;
-  }, [logoUrl]);
+  const cacheBustedLogoUrl = logoUrl ? (addCacheBuster(logoUrl) ?? undefined) : undefined;
   const imageError = failedLogo === cacheBustedLogoUrl;
 
   return (

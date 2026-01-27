@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -125,7 +125,7 @@ const GameCard: React.FC<GameCardProps> = ({
   const { user } = useAuth();
   const isAuthenticated = !!user;
 
-  const leagueLabel = useMemo(() => {
+  const leagueLabel = (() => {
     const original = game.leagueName?.trim() ?? '';
     if (original.length === 0) {
       return '';
@@ -148,7 +148,7 @@ const GameCard: React.FC<GameCardProps> = ({
     }
 
     return original.slice(0, 3).toUpperCase();
-  }, [game.leagueName]);
+  })();
 
   const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
   const [liveSessionChoiceOpen, setLiveSessionChoiceOpen] = useState(false);
@@ -172,7 +172,7 @@ const GameCard: React.FC<GameCardProps> = ({
         ? ({ recapMode: 'view' as const, onViewRecap } as const)
         : ({ recapMode: 'none' as const } as const);
 
-  const mergedFieldDetails = useMemo<FieldDetails | null>(() => {
+  const mergedFieldDetails: FieldDetails | null = (() => {
     const baseDetails = game.fieldDetails ?? null;
     const name = baseDetails?.name ?? game.fieldName ?? game.fieldShortName ?? null;
     const shortName = baseDetails?.shortName ?? game.fieldShortName ?? game.fieldName ?? null;
@@ -197,7 +197,7 @@ const GameCard: React.FC<GameCardProps> = ({
       latitude: baseDetails?.latitude ?? null,
       longitude: baseDetails?.longitude ?? null,
     };
-  }, [game.fieldDetails, game.fieldId, game.fieldName, game.fieldShortName]);
+  })();
 
   const handleCardClick = (event: React.MouseEvent) => {
     const now = performance.now();

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -43,33 +43,33 @@ export default function GolfStandings({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadStandings = useCallback(async () => {
-    if (!seasonId || seasonId === '0') return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await getGolfSeasonStandings({
-        client: apiClient,
-        throwOnError: false,
-        path: { accountId, seasonId },
-      });
-
-      const data = unwrapApiResult<GolfLeagueStandings>(result, 'Failed to load standings');
-      setStandings(data);
-    } catch (err) {
-      console.error('Error loading golf standings:', err);
-      setError('Failed to load standings');
-      setStandings(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, apiClient, seasonId]);
-
   useEffect(() => {
+    const loadStandings = async () => {
+      if (!seasonId || seasonId === '0') return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await getGolfSeasonStandings({
+          client: apiClient,
+          throwOnError: false,
+          path: { accountId, seasonId },
+        });
+
+        const data = unwrapApiResult<GolfLeagueStandings>(result, 'Failed to load standings');
+        setStandings(data);
+      } catch (err) {
+        console.error('Error loading golf standings:', err);
+        setError('Failed to load standings');
+        setStandings(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadStandings();
-  }, [loadStandings]);
+  }, [accountId, apiClient, seasonId]);
 
   const sortTeams = (teams: GolfTeamStanding[]): GolfTeamStanding[] => {
     return [...teams].sort((a, b) => {
