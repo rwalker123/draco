@@ -4,6 +4,7 @@ import { AuthProvider } from '../context/AuthContext';
 import { RoleProvider } from '../context/RoleContext';
 import { AccountProvider } from '../context/AccountContext';
 import ThemeClientProvider from '../components/ThemeClientProvider';
+import { MemoryTracker } from '../components/MemoryTracker';
 import React from 'react';
 import Script from 'next/script';
 import { cookies } from 'next/headers';
@@ -75,6 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           />
         ) : null}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <MemoryTracker />
         <AuthProvider>
           <RoleProvider>
             <AccountProvider>

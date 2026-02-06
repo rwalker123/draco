@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Alert, CircularProgress, Link } from '@mui/material';
 import { getLogoSize } from '../../../../../../config/teams';
 import AccountPageHeader from '../../../../../../components/AccountPageHeader';
@@ -31,37 +31,53 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   // Logo configuration
   const LOGO_SIZE = getLogoSize();
 
-  // Load teams data
-  const loadTeamsData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError('');
-
-      const leagueResult = await listSeasonLeagueSeasons({
-        client: apiClient,
-        path: { accountId, seasonId },
-        query: {
-          includeTeams: true,
-          includeUnassignedTeams: true,
-        },
-        throwOnError: false,
-      });
-
-      const leagueData = unwrapApiResult(leagueResult, 'Failed to load teams data');
-      const mapped = mapLeagueSetup(leagueData);
-      mapped.season = mapped.season ?? { id: seasonId, name: '', accountId };
-
-      setTeamsData(mapped);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load teams data');
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, apiClient, seasonId]);
-
   useEffect(() => {
+    const abortController = new AbortController();
+    let isMounted = true;
+
+    const loadTeamsData = async () => {
+      try {
+        setLoading(true);
+        setError('');
+
+        const leagueResult = await listSeasonLeagueSeasons({
+          client: apiClient,
+          path: { accountId, seasonId },
+          query: {
+            includeTeams: true,
+            includeUnassignedTeams: true,
+          },
+          throwOnError: false,
+        });
+
+        if (!isMounted || abortController.signal.aborted) return;
+
+        const leagueData = unwrapApiResult(leagueResult, 'Failed to load teams data');
+        const mapped = mapLeagueSetup(leagueData);
+        mapped.season = mapped.season ?? { id: seasonId, name: '', accountId };
+
+        if (isMounted) {
+          setTeamsData(mapped);
+        }
+      } catch (err) {
+        if (isMounted && !abortController.signal.aborted) {
+          setError(err instanceof Error ? err.message : 'Failed to load teams data');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     loadTeamsData();
-  }, [loadTeamsData]);
+
+    return () => {
+      isMounted = false;
+      abortController.abort();
+      setTeamsData(null);
+    };
+  }, [accountId, seasonId, apiClient]);
 
   const renderTeamCard = (teamSeason: TeamSeasonType) => {
     return (
