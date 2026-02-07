@@ -7,12 +7,17 @@ import {
   login as loginApi,
   getAuthenticatedUser,
   logout as logoutApi,
+  refreshToken as refreshTokenApi,
 } from '@draco/shared-api-client';
 import { createApiClient, setOnUnauthorizedCallback } from '../lib/apiClientFactory';
 import { unwrapApiResult } from '../utils/apiResult';
+import { getTokenTimeRemaining, getTokenRememberMe } from '../utils/authHelpers';
 
 const LOGIN_ERROR_MESSAGE =
   'Invalid username or password. If you forgot your password, click the "Forgot your password?" link to reset it.';
+
+const TOKEN_REFRESH_CHECK_INTERVAL = 5 * 60 * 1000;
+const TOKEN_REFRESH_THRESHOLD = 60 * 60 * 1000;
 
 export interface AuthContextType {
   user: RegisteredUserType | null;
@@ -243,6 +248,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(newToken);
     localStorage.setItem('jwtToken', newToken);
   };
+
+  useEffect(() => {
+    if (!token) return;
+
+    const checkAndRefresh = async () => {
+      if (!token) return;
+
+      const rememberMe = getTokenRememberMe(token);
+      if (!rememberMe) return;
+
+      const timeRemaining = getTokenTimeRemaining(token);
+      if (timeRemaining <= 0 || timeRemaining > TOKEN_REFRESH_THRESHOLD) return;
+
+      try {
+        const client = createApiClient({ token });
+        const result = await refreshTokenApi({ client, throwOnError: false });
+        const payload = unwrapApiResult(result, 'Token refresh failed');
+        const newToken = (payload as RegisteredUserType).token;
+        if (newToken) {
+          setToken(newToken);
+          localStorage.setItem('jwtToken', newToken);
+        }
+      } catch {
+        // Refresh failed; the existing 401 handling will log the user out when the token expires
+      }
+    };
+
+    const intervalId = setInterval(checkAndRefresh, TOKEN_REFRESH_CHECK_INTERVAL);
+    checkAndRefresh();
+
+    return () => clearInterval(intervalId);
+  }, [token]);
 
   useEffect(() => {
     setOnUnauthorizedCallback(() => {

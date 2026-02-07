@@ -11,6 +11,7 @@ export interface JWTPayload {
   userId: string;
   username: string;
   securityStamp?: string;
+  rememberMe?: boolean;
   iat: number;
   exp: number;
 }
@@ -24,7 +25,7 @@ export class AuthService {
     return secret;
   })();
   private readonly JWT_EXPIRES_IN = '24h';
-  private readonly JWT_EXTENDED_EXPIRES_IN = '365d';
+  private readonly JWT_EXTENDED_EXPIRES_IN = '30d';
   private readonly MAX_FAILED_LOGIN_ATTEMPTS = 5;
   private readonly LOCKOUT_DURATION_MINUTES = 15;
 
@@ -112,8 +113,10 @@ export class AuthService {
       await this.userRepository.updateUser(user.id, { securitystamp: securityStamp });
     }
 
-    const expiresIn = credentials.rememberMe ? this.JWT_EXTENDED_EXPIRES_IN : undefined;
-    const token = this.generateToken(user.id, user.username || '', securityStamp, expiresIn);
+    const token = this.generateToken(user.id, user.username || '', securityStamp, {
+      expiresIn: credentials.rememberMe ? this.JWT_EXTENDED_EXPIRES_IN : undefined,
+      rememberMe: credentials.rememberMe,
+    });
 
     const registeredUser: RegisteredUserType = {
       token,
@@ -171,7 +174,7 @@ export class AuthService {
       accessfailedcount: 0,
     });
 
-    const token = this.generateToken(newUser.id, newUser.username || '', securityStamp);
+    const token = this.generateToken(newUser.id, newUser.username || '', securityStamp, {});
 
     const welcomeEmailRecipient = newUser.username || userName;
     if (options?.sendWelcomeEmail !== false) {
@@ -234,7 +237,7 @@ export class AuthService {
       securitystamp: newSecurityStamp,
     });
 
-    const token = this.generateToken(userId, user.username || '', newSecurityStamp);
+    const token = this.generateToken(userId, user.username || '', newSecurityStamp, {});
 
     return {
       token,
@@ -246,7 +249,7 @@ export class AuthService {
   /**
    * Refresh JWT token
    */
-  async refreshToken(userId: string): Promise<RegisteredUserType> {
+  async refreshToken(userId: string, rememberMe?: boolean): Promise<RegisteredUserType> {
     const user = await this.userRepository.findByUserId(userId);
 
     if (!user) {
@@ -263,7 +266,10 @@ export class AuthService {
       await this.userRepository.updateUser(user.id, { securitystamp: securityStamp });
     }
 
-    const token = this.generateToken(user.id, user.username || '', securityStamp);
+    const token = this.generateToken(user.id, user.username || '', securityStamp, {
+      expiresIn: rememberMe ? this.JWT_EXTENDED_EXPIRES_IN : undefined,
+      rememberMe,
+    });
 
     return {
       userId: user.id,
@@ -286,10 +292,23 @@ export class AuthService {
     userId: string,
     username: string,
     securityStamp: string,
-    expiresIn?: jwt.SignOptions['expiresIn'],
+    options?: { expiresIn?: jwt.SignOptions['expiresIn']; rememberMe?: boolean },
   ): string {
-    return jwt.sign({ userId, username, securityStamp }, this.JWT_SECRET, {
-      expiresIn: expiresIn ?? this.JWT_EXPIRES_IN,
+    const payload: {
+      userId: string;
+      username: string;
+      securityStamp: string;
+      rememberMe?: boolean;
+    } = {
+      userId,
+      username,
+      securityStamp,
+    };
+    if (options?.rememberMe) {
+      payload.rememberMe = true;
+    }
+    return jwt.sign(payload, this.JWT_SECRET, {
+      expiresIn: options?.expiresIn ?? this.JWT_EXPIRES_IN,
     });
   }
 
@@ -334,7 +353,7 @@ export class AuthService {
    * Generate a JWT token for a user (for use after transaction-based user creation).
    */
   generateTokenForUser(userId: string, username: string, securityStamp: string): string {
-    return this.generateToken(userId, username, securityStamp);
+    return this.generateToken(userId, username, securityStamp, {});
   }
 
   /**

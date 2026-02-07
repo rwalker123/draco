@@ -144,7 +144,19 @@ router.post(
       throw new AuthenticationError('User not authenticated');
     }
 
-    const result = await authService.refreshToken(req.user.id);
+    let rememberMe = false;
+    const authHeader = req.headers['authorization'];
+    const bearerToken = authHeader?.split(' ')[1];
+    if (bearerToken) {
+      try {
+        const payload = JSON.parse(Buffer.from(bearerToken.split('.')[1], 'base64').toString());
+        rememberMe = payload.rememberMe === true;
+      } catch {
+        // default to non-remember-me
+      }
+    }
+
+    const result = await authService.refreshToken(req.user.id, rememberMe);
     res.json(result);
   }),
 );

@@ -55,6 +55,32 @@ export function isTokenExpired(token: string): boolean {
   }
 }
 
+export function getTokenTimeRemaining(token: string): number {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return 0;
+
+    const payload = JSON.parse(atob(parts[1]));
+    if (!payload.exp || typeof payload.exp !== 'number') return 0;
+
+    return Math.max(0, payload.exp * 1000 - Date.now());
+  } catch {
+    return 0;
+  }
+}
+
+export function getTokenRememberMe(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+
+    const payload = JSON.parse(atob(parts[1]));
+    return payload.rememberMe === true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Get the appropriate fallback route for a user based on their context
  * @param hasAccount Whether the user has an account context
