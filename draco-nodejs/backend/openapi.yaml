@@ -7099,6 +7099,27 @@ components:
         - id
         - team
         - record
+    AllTimeTeamSummary:
+      type: object
+      properties:
+        teamId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        names:
+          type: array
+          items:
+            type: string
+        seasonCount:
+          type: integer
+        logoUrl:
+          type: string
+          nullable: true
+      required:
+        - teamId
+        - names
+        - seasonCount
+        - logoUrl
     ContactPlayersWantedCreator:
       type: object
       properties:
@@ -46671,6 +46692,138 @@ paths:
                 $ref: "#/components/schemas/ValidationError"
         "404":
           description: Team season not found for the provided account and season
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/statistics/all-time/teams:
+    get:
+      operationId: listAllTimeTeams
+      summary: List all-time teams
+      description: Retrieve all unique teams across all seasons for an account,
+        grouped by master team ID with name history and season count.
+      tags:
+        - Statistics
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: All-time teams retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AllTimeTeamSummary"
+        "400":
+          description: Invalid parameters provided
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/statistics/all-time/teams/{teamId}/batting-stats:
+    get:
+      operationId: listAllTimeTeamBattingStats
+      summary: List all-time team batting statistics
+      description: Retrieve accumulated batting statistics for all players on a team
+        across all seasons.
+      tags:
+        - Statistics
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: All-time team batting statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlayerBattingStats"
+        "400":
+          description: Invalid parameters provided
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Team not found for the provided account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/statistics/all-time/teams/{teamId}/pitching-stats:
+    get:
+      operationId: listAllTimeTeamPitchingStats
+      summary: List all-time team pitching statistics
+      description: Retrieve accumulated pitching statistics for all players on a team
+        across all seasons.
+      tags:
+        - Statistics
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: All-time team pitching statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlayerPitchingStats"
+        "400":
+          description: Invalid parameters provided
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Team not found for the provided account
           content:
             application/json:
               schema:

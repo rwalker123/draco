@@ -2271,6 +2271,12 @@ export type dbTeamSeasonRecord = {
   ties: number;
 };
 
+export type dbAllTimeTeamRow = {
+  teamid: bigint;
+  names: string[];
+  seasoncount: number;
+};
+
 export type dbAdminAccountStorageUsage = {
   accountId: bigint;
   accountName: string;

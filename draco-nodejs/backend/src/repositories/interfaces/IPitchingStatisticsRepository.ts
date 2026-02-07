@@ -20,6 +20,13 @@ export interface PitchingStatisticsQueryOptions {
 
 export interface IPitchingStatisticsRepository {
   findPitchingStatistics(query: PitchingStatisticsQueryOptions): Promise<dbPitchingStatisticsRow[]>;
+  findAllTimeTeamPitchingStatistics(
+    masterTeamId: bigint,
+    sortField: string,
+    sortOrder: 'asc' | 'desc',
+    pageSize: number,
+    minInningsPitched: number,
+  ): Promise<dbPitchingStatisticsRow[]>;
   findTeamsForPlayers(
     playerIds: bigint[],
     query: PlayerTeamsQueryOptions,

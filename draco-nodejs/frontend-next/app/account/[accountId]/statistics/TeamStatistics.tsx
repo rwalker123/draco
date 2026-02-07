@@ -24,8 +24,15 @@ import {
   listSeasonTeams as apiListSeasonTeams,
   listTeamSeasonBattingStats as apiListTeamSeasonBattingStats,
   listTeamSeasonPitchingStats as apiListTeamSeasonPitchingStats,
+  listAllTimeTeams as apiListAllTimeTeams,
+  listAllTimeTeamBattingStats as apiListAllTimeTeamBattingStats,
+  listAllTimeTeamPitchingStats as apiListAllTimeTeamPitchingStats,
 } from '@draco/shared-api-client';
-import type { PlayerBattingStatsType, PlayerPitchingStatsType } from '@draco/shared-schemas';
+import type {
+  AllTimeTeamSummaryType,
+  PlayerBattingStatsType,
+  PlayerPitchingStatsType,
+} from '@draco/shared-schemas';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -72,6 +79,8 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
   const [pitchingSortOrder, setPitchingSortOrder] = useState<'asc' | 'desc'>('asc');
   const apiClient = useApiClient();
 
+  const isAllTime = seasonId === '0';
+
   useEffect(() => {
     setSelectedTeamId('');
     setTeams([]);
@@ -79,7 +88,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     setPitchingStats([]);
     setError(null);
 
-    if (!seasonId || seasonId === '0') return;
+    if (!seasonId) return;
 
     let ignore = false;
 
@@ -87,31 +96,63 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
 
     const loadTeams = async () => {
       try {
-        const result = await apiListSeasonTeams({
-          client: apiClient,
-          path: { accountId, seasonId },
-          throwOnError: false,
-        });
+        let teamsData: Team[];
 
-        if (ignore) return;
+        if (isAllTime) {
+          const result = await apiListAllTimeTeams({
+            client: apiClient,
+            path: { accountId },
+            throwOnError: false,
+          });
 
-        const teamSeasons = unwrapApiResult(result, 'Failed to load teams');
-        const teamsData = (teamSeasons ?? []).map((teamSeason) => {
-          const displayName = teamSeason.name ?? teamSeason.team?.webAddress ?? 'Unknown Team';
-          return {
-            id: teamSeason.id,
-            teamId: teamSeason.id,
-            name: displayName,
-            teamName: displayName,
-            logoUrl: teamSeason.team?.logoUrl ?? undefined,
-            leagueName: teamSeason.league?.name ?? 'Unknown League',
-            divisionName: teamSeason.division?.name ?? 'No Division',
-          } satisfies Team;
-        });
+          if (ignore) return;
+
+          const allTimeTeams = unwrapApiResult<AllTimeTeamSummaryType[]>(
+            result,
+            'Failed to load teams',
+          );
+          teamsData = (allTimeTeams ?? []).map((team) => {
+            const displayNames =
+              team.names.length <= 3
+                ? team.names.join(', ')
+                : team.names.slice(0, 3).join(', ') + ', ...';
+            return {
+              id: team.teamId,
+              teamId: team.teamId,
+              name: displayNames,
+              teamName: displayNames,
+              logoUrl: team.logoUrl ?? undefined,
+              leagueName: 'All-Time',
+              divisionName: `${team.seasonCount} Season${team.seasonCount !== 1 ? 's' : ''}`,
+            } satisfies Team;
+          });
+        } else {
+          const result = await apiListSeasonTeams({
+            client: apiClient,
+            path: { accountId, seasonId },
+            throwOnError: false,
+          });
+
+          if (ignore) return;
+
+          const teamSeasons = unwrapApiResult(result, 'Failed to load teams');
+          teamsData = (teamSeasons ?? []).map((teamSeason) => {
+            const displayName = teamSeason.name ?? teamSeason.team?.webAddress ?? 'Unknown Team';
+            return {
+              id: teamSeason.id,
+              teamId: teamSeason.id,
+              name: displayName,
+              teamName: displayName,
+              logoUrl: teamSeason.team?.logoUrl ?? undefined,
+              leagueName: teamSeason.league?.name ?? 'Unknown League',
+              divisionName: teamSeason.division?.name ?? 'No Division',
+            } satisfies Team;
+          });
+        }
 
         setTeams(teamsData);
 
-        if (teamsData.length > 0) {
+        if (teamsData.length > 0 && teamsData[0].teamId) {
           setSelectedTeamId(teamsData[0].teamId);
         }
       } catch (err) {
@@ -130,10 +171,10 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     return () => {
       ignore = true;
     };
-  }, [accountId, seasonId, apiClient]);
+  }, [accountId, seasonId, isAllTime, apiClient]);
 
   useEffect(() => {
-    if (!selectedTeamId || !seasonId || seasonId === '0') return;
+    if (!selectedTeamId || !seasonId) return;
 
     let ignore = false;
 
@@ -141,18 +182,35 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
 
     const loadStats = async () => {
       try {
-        const [battingResult, pitchingResult] = await Promise.all([
-          apiListTeamSeasonBattingStats({
-            client: apiClient,
-            path: { accountId, seasonId, teamSeasonId: selectedTeamId },
-            throwOnError: false,
-          }),
-          apiListTeamSeasonPitchingStats({
-            client: apiClient,
-            path: { accountId, seasonId, teamSeasonId: selectedTeamId },
-            throwOnError: false,
-          }),
-        ]);
+        let battingResult, pitchingResult;
+
+        if (isAllTime) {
+          [battingResult, pitchingResult] = await Promise.all([
+            apiListAllTimeTeamBattingStats({
+              client: apiClient,
+              path: { accountId, teamId: selectedTeamId },
+              throwOnError: false,
+            }),
+            apiListAllTimeTeamPitchingStats({
+              client: apiClient,
+              path: { accountId, teamId: selectedTeamId },
+              throwOnError: false,
+            }),
+          ]);
+        } else {
+          [battingResult, pitchingResult] = await Promise.all([
+            apiListTeamSeasonBattingStats({
+              client: apiClient,
+              path: { accountId, seasonId, teamSeasonId: selectedTeamId },
+              throwOnError: false,
+            }),
+            apiListTeamSeasonPitchingStats({
+              client: apiClient,
+              path: { accountId, seasonId, teamSeasonId: selectedTeamId },
+              throwOnError: false,
+            }),
+          ]);
+        }
 
         if (ignore) return;
 
@@ -183,7 +241,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     return () => {
       ignore = true;
     };
-  }, [accountId, seasonId, selectedTeamId, apiClient]);
+  }, [accountId, seasonId, isAllTime, selectedTeamId, apiClient]);
 
   const handleTeamChange = (event: SelectChangeEvent) => {
     const teamId = event.target.value;
@@ -299,7 +357,9 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
               {Array.isArray(teams)
                 ? teams.map((team) => (
                     <MenuItem key={team.teamId} value={team.teamId}>
-                      {team.teamName} ({team.leagueName} - {team.divisionName})
+                      {isAllTime
+                        ? `${team.teamName} (Seasons: ${team.divisionName?.replace(/ Seasons?/, '')})`
+                        : `${team.teamName} (${team.leagueName} - ${team.divisionName})`}
                     </MenuItem>
                   ))
                 : null}

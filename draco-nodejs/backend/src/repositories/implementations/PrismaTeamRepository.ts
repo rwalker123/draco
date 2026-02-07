@@ -16,6 +16,7 @@ import {
   dbTeamSeasonValidationResult,
   dbTeam,
   dbTeamSeasonAccount,
+  dbAllTimeTeamRow,
 } from '../types/dbTypes.js';
 import { ConflictError, NotFoundError } from '../../utils/customErrors.js';
 import { BatchQueryHelper } from './batchQueries.js';
@@ -317,6 +318,21 @@ export class PrismaTeamRepository implements ITeamRepository {
         },
       },
     });
+  }
+
+  async findAllTimeTeams(accountId: bigint): Promise<dbAllTimeTeamRow[]> {
+    const result = await this.prisma.$queryRaw<dbAllTimeTeamRow[]>`
+      SELECT
+        t.id as "teamid",
+        ARRAY_AGG(DISTINCT ts.name ORDER BY ts.name) as "names",
+        COUNT(DISTINCT ts.id)::int as "seasoncount"
+      FROM teams t
+      JOIN teamsseason ts ON ts.teamid = t.id
+      WHERE t.accountid = ${accountId}
+      GROUP BY t.id
+      ORDER BY "seasoncount" DESC
+    `;
+    return result;
   }
 
   async findTeamSeasonSummary(
