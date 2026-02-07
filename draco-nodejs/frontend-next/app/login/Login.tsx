@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import {
   Box,
   TextField,
@@ -25,13 +25,20 @@ import {
 } from '../../utils/authHelpers';
 import { REMEMBER_ME_KEY } from '../../constants/storageKeys';
 
+const subscribeRememberMe = () => () => {};
+const getRememberMeSnapshot = () => localStorage.getItem(REMEMBER_ME_KEY) === 'true';
+const getRememberMeServerSnapshot = () => false;
+
 const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, next }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem(REMEMBER_ME_KEY) === 'true';
-  });
+  const storedRememberMe = useSyncExternalStore(
+    subscribeRememberMe,
+    getRememberMeSnapshot,
+    getRememberMeServerSnapshot,
+  );
+  const [rememberMeOverride, setRememberMeOverride] = useState<boolean | null>(null);
+  const rememberMe = rememberMeOverride ?? storedRememberMe;
   const router = useRouter();
   const { login, loading, error, user } = useAuth();
   const { userRoles, loading: roleLoading } = useRole();
@@ -124,7 +131,10 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
           />
           <FormControlLabel
             control={
-              <Switch checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+              <Switch
+                checked={rememberMe}
+                onChange={(e) => setRememberMeOverride(e.target.checked)}
+              />
             }
             label="Remember Me"
             sx={{ mt: 1 }}

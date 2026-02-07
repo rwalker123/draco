@@ -142,11 +142,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (token) {
       const effectiveAccountId = resolveAccountId(undefined, accountIdFromPath);
 
-      if (lastFetchedAccountIdRef.current !== effectiveAccountId) {
-        fetchUser(undefined, effectiveAccountId);
-      } else {
-        fetchUser();
-      }
+      const loadUser = async () => {
+        setLoading(true);
+        try {
+          const client = createApiClient({ token });
+          const result = await getAuthenticatedUser({
+            client,
+            query: {
+              accountId: effectiveAccountId || undefined,
+            },
+            throwOnError: false,
+          });
+          const payload = unwrapApiResult(result, 'Failed to load current user');
+          setUser(payload as RegisteredUserType);
+          lastFetchedAccountIdRef.current = effectiveAccountId ?? null;
+        } catch {
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem('jwtToken');
+          lastFetchedAccountIdRef.current = null;
+        } finally {
+          setLoading(false);
+          setInitialized(true);
+        }
+      };
+      loadUser();
     } else {
       setUser(null);
       setInitialized(true);

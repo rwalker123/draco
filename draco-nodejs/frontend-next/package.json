@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env.local -- sh -c 'HOST_VALUE=\"${HOST:-0.0.0.0}\"; if command -v mkcert >/dev/null 2>&1; then export NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\"; else unset NODE_EXTRA_CA_CERTS; fi; next dev --hostname \"$HOST_VALUE\" --turbopack'",
-    "build": "next build",
+    "build": "eslint . && next build",
     "start": "dotenv -e .env.local -- sh -c 'HOST_VALUE=\"${HOST:-0.0.0.0}\"; if command -v mkcert >/dev/null 2>&1; then export NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\"; else unset NODE_EXTRA_CA_CERTS; fi; next start --hostname \"$HOST_VALUE\"'",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
