@@ -24,6 +24,8 @@ export class AuthService {
   })();
   private readonly JWT_EXPIRES_IN = '24h';
   private readonly JWT_EXTENDED_EXPIRES_IN = '365d';
+  private readonly MAX_FAILED_LOGIN_ATTEMPTS = 5;
+  private readonly LOCKOUT_DURATION_MINUTES = 15;
 
   private readonly userRepository: IUserRepository;
   private readonly contactService: ContactService;
@@ -330,8 +332,22 @@ export class AuthService {
    * Increment failed login count
    */
   private async incrementFailedLoginCount(userId: string): Promise<void> {
-    await this.userRepository.updateUser(userId, {
-      accessfailedcount: 1,
-    });
+    const user = await this.userRepository.findByUserId(userId);
+    if (!user) return;
+
+    const newCount = (user.accessfailedcount || 0) + 1;
+
+    if (user.lockoutenabled && newCount >= this.MAX_FAILED_LOGIN_ATTEMPTS) {
+      const lockoutEnd = new Date();
+      lockoutEnd.setMinutes(lockoutEnd.getMinutes() + this.LOCKOUT_DURATION_MINUTES);
+      await this.userRepository.updateUser(userId, {
+        accessfailedcount: 0,
+        lockoutenddateutc: lockoutEnd,
+      });
+    } else {
+      await this.userRepository.updateUser(userId, {
+        accessfailedcount: newCount,
+      });
+    }
   }
 }
