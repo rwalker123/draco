@@ -26,9 +26,15 @@ interface WindowWithMemoryData extends Window {
   __memorySnapshots?: MemorySnapshot[];
 }
 
+function sortedMedian(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
 class MemoryMonitor {
   private maxSnapshots = 100;
-  private baselineMap = new Map<string, number>();
   private storageKey = '__draco_memory_snapshots';
   private cachedLeaks: DetectedLeak[] | null = null;
   private lastSnapshotCount = 0;
@@ -133,16 +139,30 @@ class MemoryMonitor {
     });
 
     routeSnapshots.forEach((snaps, route) => {
-      if (snaps.length < 3) return;
+      if (snaps.length < 4) return;
 
-      const first = snaps[0].usedHeapMB;
-      const last = snaps[snaps.length - 1].usedHeapMB;
-      const growth = last - first;
+      let consecutiveGrowth = 0;
+      let maxConsecutive = 0;
+      for (let i = 1; i < snaps.length; i++) {
+        if (snaps[i].usedHeapMB > snaps[i - 1].usedHeapMB) {
+          consecutiveGrowth++;
+          maxConsecutive = Math.max(maxConsecutive, consecutiveGrowth);
+        } else {
+          consecutiveGrowth = 0;
+        }
+      }
 
-      if (growth > 50) {
+      const mid = Math.floor(snaps.length / 2);
+      const firstHalf = snaps.slice(0, mid).map((s) => s.usedHeapMB);
+      const secondHalf = snaps.slice(mid).map((s) => s.usedHeapMB);
+      const firstMedian = sortedMedian(firstHalf);
+      const secondMedian = sortedMedian(secondHalf);
+      const medianGrowth = secondMedian - firstMedian;
+
+      if (maxConsecutive >= 3 && medianGrowth > 30) {
         leaks.push({
           route,
-          growthMB: growth,
+          growthMB: medianGrowth,
           snapshotCount: snaps.length,
           detected: Date.now(),
         });
@@ -177,7 +197,6 @@ class MemoryMonitor {
         console.warn('[MemoryMonitor] Failed to clear localStorage:', error);
       }
     }
-    this.baselineMap.clear();
     this.cachedLeaks = null;
     this.lastSnapshotCount = 0;
   }

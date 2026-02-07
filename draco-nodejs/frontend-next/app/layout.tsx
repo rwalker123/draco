@@ -76,7 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           />
         ) : null}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-        <MemoryTracker />
+        {process.env.NODE_ENV === 'development' && <MemoryTracker />}
         <AuthProvider>
           <RoleProvider>
             <AccountProvider>
