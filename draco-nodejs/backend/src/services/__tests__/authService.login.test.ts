@@ -166,9 +166,9 @@ describe('AuthService.login', () => {
     await authService.login({ userName: 'test@example.com', password: 'secret', rememberMe: true }); // pragma: allowlist secret
 
     expect(signMock).toHaveBeenCalledWith(
-      { userId: user.id, username: user.username, securityStamp: 'test-stamp' },
+      { userId: user.id, username: user.username, securityStamp: 'test-stamp', rememberMe: true },
       expect.any(String),
-      { expiresIn: '365d' },
+      { expiresIn: '30d' },
     );
   });
 
