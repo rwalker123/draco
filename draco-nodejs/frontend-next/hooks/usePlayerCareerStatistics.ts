@@ -1,11 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { PlayerCareerStatisticsType } from '@draco/shared-schemas';
 import { useApiClient } from './useApiClient';
-import {
-  fetchPlayerCareerStatistics,
-  searchPublicContacts,
-  type PublicContactSearchParams,
-} from '../services/statisticsService';
+import { fetchPlayerCareerStatistics, searchPublicContacts } from '../services/statisticsService';
 
 export interface PlayerCareerSearchResult {
   playerId: string;
@@ -17,23 +13,25 @@ export interface PlayerCareerSearchResult {
 interface UsePlayerCareerStatisticsOptions {
   accountId: string;
   initialResults?: PlayerCareerSearchResult[];
+  playerId?: string;
+  searchQuery?: string;
 }
 
 interface UsePlayerCareerStatisticsResult {
   searchResults: PlayerCareerSearchResult[];
   searchLoading: boolean;
   searchError: string | null;
-  searchPlayers: (params: PublicContactSearchParams) => Promise<PlayerCareerSearchResult[]>;
   playerStats: PlayerCareerStatisticsType | null;
   playerLoading: boolean;
   playerError: string | null;
-  loadPlayer: (playerId: string) => Promise<PlayerCareerStatisticsType | null>;
   resetPlayer: () => void;
 }
 
 export const usePlayerCareerStatistics = ({
   accountId,
   initialResults = [],
+  playerId,
+  searchQuery,
 }: UsePlayerCareerStatisticsOptions): UsePlayerCareerStatisticsResult => {
   const apiClient = useApiClient();
   const [searchResults, setSearchResults] = useState<PlayerCareerSearchResult[]>(initialResults);
@@ -44,69 +42,83 @@ export const usePlayerCareerStatistics = ({
   const [playerLoading, setPlayerLoading] = useState(false);
   const [playerError, setPlayerError] = useState<string | null>(null);
 
-  const searchPlayers = async (
-    params: PublicContactSearchParams,
-  ): Promise<PlayerCareerSearchResult[]> => {
-    const trimmedQuery = params.query.trim();
-    if (trimmedQuery.length === 0) {
-      setSearchResults([]);
+  const hasActiveSearch = searchQuery !== undefined && searchQuery.trim().length > 0;
+  const hasActivePlayer = playerId !== undefined && playerId.length > 0;
+
+  useEffect(() => {
+    if (!hasActiveSearch) return;
+
+    let cancelled = false;
+
+    const performSearch = async () => {
+      const trimmedQuery = searchQuery.trim();
+      setSearchLoading(true);
       setSearchError(null);
-      return [];
-    }
 
-    setSearchLoading(true);
-    setSearchError(null);
+      try {
+        const response = await searchPublicContacts(
+          accountId,
+          { query: trimmedQuery },
+          { client: apiClient },
+        );
+        if (cancelled) return;
+        const results: PlayerCareerSearchResult[] =
+          response.results?.map((contact) => ({
+            playerId: contact.id,
+            firstName: contact.firstName,
+            lastName: contact.lastName,
+            photoUrl: contact.photoUrl ?? undefined,
+          })) ?? [];
+        setSearchResults(results);
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : 'Failed to search players';
+        setSearchError(message);
+        setSearchResults([]);
+      } finally {
+        if (!cancelled) setSearchLoading(false);
+      }
+    };
 
-    try {
-      const response = await searchPublicContacts(
-        accountId,
-        { ...params, query: trimmedQuery },
-        { client: apiClient },
-      );
+    void performSearch();
 
-      const results: PlayerCareerSearchResult[] =
-        response.results?.map((contact) => ({
-          playerId: contact.id,
-          firstName: contact.firstName,
-          lastName: contact.lastName,
-          photoUrl: contact.photoUrl ?? undefined,
-        })) ?? [];
+    return () => {
+      cancelled = true;
+    };
+  }, [hasActiveSearch, searchQuery, accountId, apiClient]);
 
-      setSearchResults(results);
-      return results;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to search players';
-      setSearchError(message);
-      setSearchResults([]);
-      return [];
-    } finally {
-      setSearchLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (!hasActivePlayer) return;
 
-  const loadPlayer = async (playerId: string): Promise<PlayerCareerStatisticsType | null> => {
-    if (!playerId) {
-      setPlayerStats(null);
-      return null;
-    }
+    let cancelled = false;
 
-    setPlayerLoading(true);
-    setPlayerError(null);
+    const loadPlayerStats = async () => {
+      setPlayerLoading(true);
+      setPlayerError(null);
 
-    try {
-      const stats = await fetchPlayerCareerStatistics(accountId, playerId, { client: apiClient });
-      setPlayerStats(stats);
-      return stats;
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to load player career statistics';
-      setPlayerError(message);
-      setPlayerStats(null);
-      return null;
-    } finally {
-      setPlayerLoading(false);
-    }
-  };
+      try {
+        const stats = await fetchPlayerCareerStatistics(accountId, playerId, {
+          client: apiClient,
+        });
+        if (cancelled) return;
+        setPlayerStats(stats);
+      } catch (error) {
+        if (cancelled) return;
+        const message =
+          error instanceof Error ? error.message : 'Failed to load player career statistics';
+        setPlayerError(message);
+        setPlayerStats(null);
+      } finally {
+        if (!cancelled) setPlayerLoading(false);
+      }
+    };
+
+    void loadPlayerStats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasActivePlayer, playerId, accountId, apiClient]);
 
   const resetPlayer = () => {
     setPlayerStats(null);
@@ -114,14 +126,12 @@ export const usePlayerCareerStatistics = ({
   };
 
   return {
-    searchResults,
-    searchLoading,
-    searchError,
-    searchPlayers,
-    playerStats,
-    playerLoading,
-    playerError,
-    loadPlayer,
+    searchResults: hasActiveSearch ? searchResults : [],
+    searchLoading: hasActiveSearch && searchLoading,
+    searchError: hasActiveSearch ? searchError : null,
+    playerStats: hasActivePlayer ? playerStats : null,
+    playerLoading: hasActivePlayer && playerLoading,
+    playerError: hasActivePlayer ? playerError : null,
     resetPlayer,
   };
 };

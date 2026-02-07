@@ -16,10 +16,12 @@ export const setOnUnauthorizedCallback = (callback: (() => void) | null) => {
   onUnauthorizedCallback = callback;
 };
 
+type InterceptorRef = { type: 'request' | 'response'; id: number };
+
 let cachedClient: {
   token: string | undefined;
   client: ApiClient;
-  interceptorIds: number[];
+  interceptorIds: InterceptorRef[];
 } | null = null;
 
 export const createApiClient = ({
@@ -36,8 +38,8 @@ export const createApiClient = ({
   }
 
   if (useCache && cachedClient !== null) {
-    cachedClient.interceptorIds.forEach((id) => {
-      cachedClient!.client.interceptors.request.eject(id);
+    cachedClient.interceptorIds.forEach(({ type, id }) => {
+      cachedClient!.client.interceptors[type].eject(id);
     });
   }
   const configOverrides: Parameters<typeof createConfig>[0] = {
@@ -49,7 +51,7 @@ export const createApiClient = ({
   }
 
   const client = createClient(createConfig(configOverrides));
-  const interceptorIds: number[] = [];
+  const interceptorIds: InterceptorRef[] = [];
 
   const resolvedFrontendBaseUrl =
     normalizeOrigin(frontendBaseUrl) ||
@@ -65,7 +67,7 @@ export const createApiClient = ({
 
       return request;
     });
-    interceptorIds.push(interceptorId);
+    interceptorIds.push({ type: 'request', id: interceptorId });
   }
 
   if (transformHostHeader) {
@@ -80,17 +82,18 @@ export const createApiClient = ({
 
       return request;
     });
-    interceptorIds.push(interceptorId);
+    interceptorIds.push({ type: 'request', id: interceptorId });
   }
 
   let unauthorizedFired = false;
-  client.interceptors.response.use((response) => {
+  const responseInterceptorId = client.interceptors.response.use((response) => {
     if (response.status === 401 && onUnauthorizedCallback && !unauthorizedFired) {
       unauthorizedFired = true;
       onUnauthorizedCallback();
     }
     return response;
   });
+  interceptorIds.push({ type: 'response', id: responseInterceptorId });
 
   if (useCache) {
     cachedClient = { token, client, interceptorIds };
