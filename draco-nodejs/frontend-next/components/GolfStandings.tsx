@@ -15,6 +15,7 @@ import {
   Chip,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import Link from 'next/link';
 import { getGolfSeasonStandings } from '@draco/shared-api-client';
 import type {
   GolfLeagueStandings,
@@ -142,9 +143,24 @@ export default function GolfStandings({
                 },
               }}
             >
-              <TableCell sx={{ color: 'text.primary' }}>
+              <TableCell
+                sx={{
+                  '& a': {
+                    color: 'primary.main',
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  },
+                }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {team.teamName ?? 'Unnamed Team'}
+                  <Link
+                    href={`/account/${accountId}/seasons/${seasonId}/golf/teams/${team.teamSeasonId}`}
+                  >
+                    {team.teamName ?? 'Unnamed Team'}
+                  </Link>
                   {index === 0 && (
                     <Chip
                       label="1st"

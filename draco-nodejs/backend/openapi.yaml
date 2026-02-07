@@ -983,6 +983,8 @@ components:
           maxLength: 100
         accountId:
           type: string
+        rememberMe:
+          type: boolean
       required:
         - firstName
         - lastName
@@ -1226,6 +1228,8 @@ components:
           maxLength: 100
         accountId:
           type: string
+        rememberMe:
+          type: boolean
       required:
         - userName
         - password

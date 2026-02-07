@@ -15,6 +15,7 @@ import {
   Chip,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import Link from 'next/link';
 import { getSeasonStandings } from '@draco/shared-api-client';
 import type { SeasonStandingsResponse } from '@draco/shared-api-client';
 import { StandingsLeagueType, StandingsTeamType } from '@draco/shared-schemas';
@@ -169,9 +170,22 @@ export default function Standings({
                 borderBottom: (theme) => `1px solid ${theme.palette.widget.border}`,
               }}
             >
-              <TableCell sx={{ color: 'text.primary' }}>
+              <TableCell
+                sx={{
+                  '& a': {
+                    color: 'primary.main',
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  },
+                }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  {team.team.name ?? 'Unnamed Team'}
+                  <Link href={`/account/${accountId}/seasons/${seasonId}/teams/${team.team.id}`}>
+                    {team.team.name ?? 'Unnamed Team'}
+                  </Link>
                   {index === 0 && (
                     <Chip
                       label="1st"

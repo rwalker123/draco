@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   TextField,
@@ -10,6 +10,8 @@ import {
   Alert,
   CircularProgress,
   Link,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
@@ -21,53 +23,22 @@ import {
   logSecurityEvent,
   extractAccountIdFromPath,
 } from '../../utils/authHelpers';
+import { REMEMBER_ME_KEY } from '../../constants/storageKeys';
 
 const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, next }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(REMEMBER_ME_KEY) === 'true';
+  });
   const router = useRouter();
   const { login, loading, error, user } = useAuth();
   const { userRoles, loading: roleLoading } = useRole();
 
-  const validateAndRedirect = useCallback(() => {
-    if (!user || roleLoading || !userRoles) return;
-
-    let redirectPath = '/accounts'; // Default fallback
-
-    if (next) {
-      // Check if user has access to the requested route
-      const roles = [
-        ...userRoles.globalRoles,
-        ...userRoles.contactRoles.map((role) => role.roleName || role.roleData),
-      ];
-      const hasAccess = hasRouteAccess(next, roles);
-
-      if (hasAccess) {
-        // User has permission, redirect to requested page
-        redirectPath = next;
-      } else {
-        // User lacks permission, log security event and use fallback
-        logSecurityEvent({
-          type: 'unauthorized_access',
-          route: next,
-          userId: user.userId,
-          requiredRole: 'unknown',
-        });
-
-        // Extract accountId from the next parameter or use component prop as fallback
-        const nextAccountId = extractAccountIdFromPath(next) || accountId;
-        redirectPath = getFallbackRoute(!!nextAccountId, nextAccountId);
-      }
-    } else {
-      // No specific route requested, use component accountId prop fallback
-      redirectPath = getFallbackRoute(!!accountId, accountId);
-    }
-
-    router.replace(redirectPath);
-  }, [user, roleLoading, userRoles, next, accountId, router]);
-
   const handleLogin = async () => {
-    await login({ userName: email, password: password });
+    localStorage.setItem(REMEMBER_ME_KEY, String(rememberMe));
+    await login({ userName: email, password: password, rememberMe });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,12 +46,37 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
     await handleLogin();
   };
 
-  // Handle redirect after successful login when contexts are loaded
   useEffect(() => {
-    if (user && !roleLoading && userRoles) {
-      validateAndRedirect();
+    if (!user || roleLoading || !userRoles) return;
+
+    let redirectPath = '/accounts';
+
+    if (next) {
+      const roles = [
+        ...userRoles.globalRoles,
+        ...userRoles.contactRoles.map((role) => role.roleName || role.roleData),
+      ];
+      const hasAccess = hasRouteAccess(next, roles);
+
+      if (hasAccess) {
+        redirectPath = next;
+      } else {
+        logSecurityEvent({
+          type: 'unauthorized_access',
+          route: next,
+          userId: user.userId,
+          requiredRole: 'unknown',
+        });
+
+        const nextAccountId = extractAccountIdFromPath(next) || accountId;
+        redirectPath = getFallbackRoute(!!nextAccountId, nextAccountId);
+      }
+    } else {
+      redirectPath = getFallbackRoute(!!accountId, accountId);
     }
-  }, [user, roleLoading, userRoles, validateAndRedirect]);
+
+    router.replace(redirectPath);
+  }, [user, roleLoading, userRoles, next, accountId, router]);
 
   return (
     <main className="min-h-screen bg-background">
@@ -125,6 +121,13 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
             margin="normal"
             required
             autoComplete="current-password"
+          />
+          <FormControlLabel
+            control={
+              <Switch checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+            }
+            label="Remember Me"
+            sx={{ mt: 1 }}
           />
           <Button
             fullWidth

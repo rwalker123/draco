@@ -23,6 +23,7 @@ export class AuthService {
     return secret;
   })();
   private readonly JWT_EXPIRES_IN = '24h';
+  private readonly JWT_EXTENDED_EXPIRES_IN = '365d';
 
   private readonly userRepository: IUserRepository;
   private readonly contactService: ContactService;
@@ -102,8 +103,8 @@ export class AuthService {
       });
     }
 
-    // Generate JWT token
-    const token = this.generateToken(user.id, user.username || '');
+    const expiresIn = credentials.rememberMe ? this.JWT_EXTENDED_EXPIRES_IN : undefined;
+    const token = this.generateToken(user.id, user.username || '', expiresIn);
 
     const registeredUser: RegisteredUserType = {
       token,
@@ -271,8 +272,14 @@ export class AuthService {
   /**
    * Generate JWT token
    */
-  private generateToken(userId: string, username: string): string {
-    return jwt.sign({ userId, username }, this.JWT_SECRET, { expiresIn: this.JWT_EXPIRES_IN });
+  private generateToken(
+    userId: string,
+    username: string,
+    expiresIn?: jwt.SignOptions['expiresIn'],
+  ): string {
+    return jwt.sign({ userId, username }, this.JWT_SECRET, {
+      expiresIn: expiresIn ?? this.JWT_EXPIRES_IN,
+    });
   }
 
   /**

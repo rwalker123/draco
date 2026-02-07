@@ -32,6 +32,7 @@ interface TeamAdminPanelProps {
   canManageInformationMessages?: boolean;
   youtubeHref?: string;
   teamsWantedHref?: string;
+  isHistoricalSeason?: boolean;
 }
 
 const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
@@ -50,6 +51,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   canManageInformationMessages = false,
   youtubeHref,
   teamsWantedHref,
+  isHistoricalSeason = false,
 }) => {
   const shouldShowClassifiedsLink =
     showPlayerClassifiedsLink && (!!playerClassifiedsHref || !!onPostPlayersWanted);
@@ -127,143 +129,151 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
         mb: 4,
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          justifyContent: 'space-between',
-          gap: 2,
-        }}
-      >
-        <Stack
-          direction="row"
-          spacing={1}
-          useFlexGap
-          sx={{ width: { xs: '100%', sm: 'auto' }, flexWrap: 'wrap' }}
-        >
-          {canManageSponsors && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<HandshakeIcon />}
-              component={Link}
-              href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/sponsors/manage`}
+      {isHistoricalSeason ? (
+        <Typography variant="body2" color="text.secondary">
+          Team management is only available for the current season.
+        </Typography>
+      ) : (
+        <>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Stack
+              direction="row"
+              spacing={1}
+              useFlexGap
+              sx={{ width: { xs: '100%', sm: 'auto' }, flexWrap: 'wrap' }}
             >
-              Sponsors
-            </Button>
-          )}
-          {shouldShowStatEntryLink && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<BarChartIcon />}
-              component={Link}
-              href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/stat-entry`}
-            >
-              Statistics
-            </Button>
-          )}
-          {shouldShowAnnouncementsLink && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<CampaignIcon />}
-              component={Link}
-              href={announcementsHref!}
-            >
-              Announcements
-            </Button>
-          )}
-          {shouldShowInformationMessagesLink && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<InfoOutlinedIcon />}
-              component={Link}
-              href={informationMessagesHref!}
-            >
-              Information
-            </Button>
-          )}
-          {shouldShowYouTubeLink && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<YouTubeIcon />}
-              component={Link}
-              href={youtubeHref!}
-            >
-              YouTube
-            </Button>
-          )}
-          {shouldShowHandoutsLink && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<DescriptionIcon />}
-              component={Link}
-              href={handoutsHref!}
-            >
-              Handouts
-            </Button>
-          )}
-          <AccountOptional accountId={accountId} componentId="team.printableRosterCard">
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<PrintIcon />}
-              component={Link}
-              href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster-card`}
-            >
-              Printable Roster Card
-            </Button>
-          </AccountOptional>
-        </Stack>
-      </Box>
-      {shouldShowClassifiedsLink && (
-        <Stack direction="column" spacing={2} useFlexGap sx={{ width: '100%', mt: 3 }}>
-          <AccountOptional accountId={accountId} componentId="team.playerClassified.cta">
-            <Typography variant="body2" color="text.secondary">
-              Need reinforcements? Easily post a Players Wanted ad to recruit new talent.
-            </Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="flex-start">
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<PersonSearchIcon />}
-                {...(onPostPlayersWanted
-                  ? { onClick: onPostPlayersWanted }
-                  : { component: Link, href: playerClassifiedsHref! })}
-              >
-                Post Players Wanted Ad
-              </Button>
-              {playerClassifiedsHref && (
+              {canManageSponsors && (
                 <Button
-                  variant="text"
+                  variant="contained"
                   color="primary"
+                  startIcon={<HandshakeIcon />}
                   component={Link}
-                  href={playerClassifiedsHref}
+                  href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/sponsors/manage`}
                 >
-                  View Players Wanted
+                  Sponsors
                 </Button>
               )}
+              {shouldShowStatEntryLink && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<BarChartIcon />}
+                  component={Link}
+                  href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/stat-entry`}
+                >
+                  Statistics
+                </Button>
+              )}
+              {shouldShowAnnouncementsLink && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<CampaignIcon />}
+                  component={Link}
+                  href={announcementsHref!}
+                >
+                  Announcements
+                </Button>
+              )}
+              {shouldShowInformationMessagesLink && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<InfoOutlinedIcon />}
+                  component={Link}
+                  href={informationMessagesHref!}
+                >
+                  Information
+                </Button>
+              )}
+              {shouldShowYouTubeLink && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<YouTubeIcon />}
+                  component={Link}
+                  href={youtubeHref!}
+                >
+                  YouTube
+                </Button>
+              )}
+              {shouldShowHandoutsLink && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<DescriptionIcon />}
+                  component={Link}
+                  href={handoutsHref!}
+                >
+                  Handouts
+                </Button>
+              )}
+              <AccountOptional accountId={accountId} componentId="team.printableRosterCard">
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<PrintIcon />}
+                  component={Link}
+                  href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster-card`}
+                >
+                  Printable Roster Card
+                </Button>
+              </AccountOptional>
             </Stack>
-          </AccountOptional>
-          {teamsWantedHref && teamsWantedMessage && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle2" color="text.primary" sx={{ fontWeight: 600 }}>
-                Players Looking for Teams
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {teamsWantedMessage},{' '}
-                <MuiLink component={Link} href={teamsWantedHref} sx={{ fontWeight: 600 }}>
-                  view them now
-                </MuiLink>
-              </Typography>
-            </Box>
+          </Box>
+          {shouldShowClassifiedsLink && (
+            <Stack direction="column" spacing={2} useFlexGap sx={{ width: '100%', mt: 3 }}>
+              <AccountOptional accountId={accountId} componentId="team.playerClassified.cta">
+                <Typography variant="body2" color="text.secondary">
+                  Need reinforcements? Easily post a Players Wanted ad to recruit new talent.
+                </Typography>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="flex-start">
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<PersonSearchIcon />}
+                    {...(onPostPlayersWanted
+                      ? { onClick: onPostPlayersWanted }
+                      : { component: Link, href: playerClassifiedsHref! })}
+                  >
+                    Post Players Wanted Ad
+                  </Button>
+                  {playerClassifiedsHref && (
+                    <Button
+                      variant="text"
+                      color="primary"
+                      component={Link}
+                      href={playerClassifiedsHref}
+                    >
+                      View Players Wanted
+                    </Button>
+                  )}
+                </Stack>
+              </AccountOptional>
+              {teamsWantedHref && teamsWantedMessage && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" color="text.primary" sx={{ fontWeight: 600 }}>
+                    Players Looking for Teams
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {teamsWantedMessage},{' '}
+                    <MuiLink component={Link} href={teamsWantedHref} sx={{ fontWeight: 600 }}>
+                      view them now
+                    </MuiLink>
+                  </Typography>
+                </Box>
+              )}
+            </Stack>
           )}
-        </Stack>
+        </>
       )}
     </WidgetShell>
   );

@@ -53,6 +53,7 @@ import TeamForumWidget from '@/components/team/TeamForumWidget';
 import CommunityChatsWidget from '@/components/social/CommunityChatsWidget';
 import Link from '@mui/material/Link';
 import type { DiscordLinkStatusType } from '@draco/shared-schemas';
+import { useCurrentSeason } from '../../../../../../../hooks/useCurrentSeason';
 
 interface TeamPageProps {
   accountId: string;
@@ -100,6 +101,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   } = useTeamMembership(isAccountMember ? accountId : null, teamSeasonId, seasonId);
   const apiClient = useApiClient();
   const apiClientRef = React.useRef(apiClient);
+  const {
+    currentSeasonId,
+    loading: currentSeasonLoading,
+    fetchCurrentSeason,
+  } = useCurrentSeason(accountId);
   const [discordLinkStatus, setDiscordLinkStatus] = React.useState<DiscordLinkStatusType | null>(
     null,
   );
@@ -107,6 +113,14 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   React.useEffect(() => {
     apiClientRef.current = apiClient;
   }, [apiClient]);
+
+  React.useEffect(() => {
+    if (accountId) {
+      void fetchCurrentSeason();
+    }
+  }, [accountId, fetchCurrentSeason]);
+
+  const isCurrentSeason = Boolean(currentSeasonId && currentSeasonId === seasonId);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -253,9 +267,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     discordLinkStatus?.linked === false;
 
   const shouldShowTeamPendingPanel = Boolean(
-    token && canModerateTeamSubmissions && teamModerationTeamId,
+    token && canModerateTeamSubmissions && teamModerationTeamId && isCurrentSeason,
   );
-  const showTeamSubmissionPanel = Boolean(teamData?.teamId);
+  const showTeamSubmissionPanel = Boolean(teamData?.teamId && isCurrentSeason);
   const resolvedTeamId = teamData?.teamId ?? teamSeason?.team?.id ?? null;
   const showInformationWidget = Boolean(accountId && teamSeasonId);
 
@@ -588,6 +602,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 accountId={accountId}
                 seasonId={seasonId}
                 teamSeasonId={teamSeasonId}
+                isHistoricalSeason={!isCurrentSeason && !currentSeasonLoading}
                 canManageSponsors={canManageTeamSponsors}
                 canManageAnnouncements={Boolean(teamData?.teamId)}
                 showPlayerClassifiedsLink={isAccountMember}

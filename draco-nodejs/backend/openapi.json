@@ -1315,6 +1315,9 @@
           },
           "accountId": {
             "type": "string"
+          },
+          "rememberMe": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -1634,6 +1637,9 @@
           },
           "accountId": {
             "type": "string"
+          },
+          "rememberMe": {
+            "type": "boolean"
           }
         },
         "required": [

@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import NextLink from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Box, Breadcrumbs, Container, Link as MuiLink, Typography } from '@mui/material';
+import type { PlayerCareerStatisticsType } from '@draco/shared-schemas';
 import AccountPageHeader from '../../../../../../components/AccountPageHeader';
 import PlayerCareerStatisticsCard from '../../../../../../components/statistics/PlayerCareerStatisticsCard';
-import { usePlayerCareerStatistics } from '../../../../../../hooks/usePlayerCareerStatistics';
+import { useApiClient } from '../../../../../../hooks/useApiClient';
+import { fetchPlayerCareerStatistics } from '../../../../../../services/statisticsService';
 
 export default function PlayerStatisticsClientWrapper() {
   const params = useParams();
@@ -34,17 +36,37 @@ export default function PlayerStatisticsClientWrapper() {
     return trimmed.length > 0 ? trimmed : 'Back';
   }, [returnDestination, searchParams]);
 
-  const { playerStats, playerLoading, playerError, loadPlayer, resetPlayer } =
-    usePlayerCareerStatistics({ accountId });
+  const apiClient = useApiClient();
+  const [playerStats, setPlayerStats] = useState<PlayerCareerStatisticsType | null>(null);
+  const [playerLoading, setPlayerLoading] = useState(false);
+  const [playerError, setPlayerError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!playerId) {
-      resetPlayer();
+      setPlayerStats(null);
+      setPlayerError(null);
       return;
     }
 
-    void loadPlayer(playerId);
-  }, [playerId, loadPlayer, resetPlayer]);
+    const loadPlayerStats = async () => {
+      setPlayerLoading(true);
+      setPlayerError(null);
+
+      try {
+        const stats = await fetchPlayerCareerStatistics(accountId, playerId, { client: apiClient });
+        setPlayerStats(stats);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to load player career statistics';
+        setPlayerError(message);
+        setPlayerStats(null);
+      } finally {
+        setPlayerLoading(false);
+      }
+    };
+
+    void loadPlayerStats();
+  }, [playerId, accountId, apiClient]);
 
   return (
     <main className="min-h-screen bg-background">

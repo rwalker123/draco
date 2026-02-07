@@ -119,4 +119,80 @@ describe('AuthService.login', () => {
 
     expect(mockUserRepository.findByUsername).toHaveBeenCalledWith('test@example.com');
   });
+
+  it('generates token with 24h expiry by default', async () => {
+    const authService = new AuthService();
+
+    const user = {
+      id: '263e58de-f34b-411a-97b4-a8656bc46b01',
+      username: 'test@example.com',
+      passwordhash: 'hashed-password', // pragma: allowlist secret
+      accessfailedcount: 0,
+      lockoutenabled: false,
+      lockoutenddateutc: null,
+    };
+
+    mockUserRepository.findByUsername.mockResolvedValue(user);
+    compareMock.mockResolvedValue(true);
+
+    await authService.login({ userName: 'test@example.com', password: 'secret' }); // pragma: allowlist secret
+
+    expect(signMock).toHaveBeenCalledWith(
+      { userId: user.id, username: user.username },
+      expect.any(String),
+      { expiresIn: '24h' },
+    );
+  });
+
+  it('generates token with 365d expiry when rememberMe is true', async () => {
+    const authService = new AuthService();
+
+    const user = {
+      id: '263e58de-f34b-411a-97b4-a8656bc46b01',
+      username: 'test@example.com',
+      passwordhash: 'hashed-password', // pragma: allowlist secret
+      accessfailedcount: 0,
+      lockoutenabled: false,
+      lockoutenddateutc: null,
+    };
+
+    mockUserRepository.findByUsername.mockResolvedValue(user);
+    compareMock.mockResolvedValue(true);
+
+    await authService.login({ userName: 'test@example.com', password: 'secret', rememberMe: true }); // pragma: allowlist secret
+
+    expect(signMock).toHaveBeenCalledWith(
+      { userId: user.id, username: user.username },
+      expect.any(String),
+      { expiresIn: '365d' },
+    );
+  });
+
+  it('generates token with 24h expiry when rememberMe is false', async () => {
+    const authService = new AuthService();
+
+    const user = {
+      id: '263e58de-f34b-411a-97b4-a8656bc46b01',
+      username: 'test@example.com',
+      passwordhash: 'hashed-password', // pragma: allowlist secret
+      accessfailedcount: 0,
+      lockoutenabled: false,
+      lockoutenddateutc: null,
+    };
+
+    mockUserRepository.findByUsername.mockResolvedValue(user);
+    compareMock.mockResolvedValue(true);
+
+    await authService.login({
+      userName: 'test@example.com',
+      password: 'secret',
+      rememberMe: false,
+    }); // pragma: allowlist secret
+
+    expect(signMock).toHaveBeenCalledWith(
+      { userId: user.id, username: user.username },
+      expect.any(String),
+      { expiresIn: '24h' },
+    );
+  });
 });
