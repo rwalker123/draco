@@ -90,7 +90,14 @@ export class UserService {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, PASSWORD_SALT_ROUNDS);
-    await this.userRepository.updatePassword(tokenRecord.userid, hashedPassword);
+    const authService = ServiceFactory.getAuthService();
+    const newSecurityStamp = authService.generateSecurityStamp();
+
+    await this.userRepository.updateUser(tokenRecord.userid, {
+      passwordhash: hashedPassword,
+      securitystamp: newSecurityStamp,
+    });
+
     await this.passwordResetTokenRepository.markTokenAsUsed(tokenRecord.id);
 
     return true;

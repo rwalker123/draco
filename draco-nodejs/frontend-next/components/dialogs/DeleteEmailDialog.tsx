@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, CircularProgress } from '@mui/material';
 import { deleteAccountEmail } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
@@ -36,7 +36,7 @@ const DeleteEmailDialog: React.FC<DeleteEmailDialogProps> = ({
     }
   }, [open]);
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     if (!email) {
       return;
     }
@@ -61,14 +61,14 @@ const DeleteEmailDialog: React.FC<DeleteEmailDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [accountId, apiClient, email, onClose, onDeleted, onError]);
+  };
 
-  const handleCancel = useCallback(() => {
+  const handleCancel = () => {
     if (loading) {
       return;
     }
     onClose();
-  }, [loading, onClose]);
+  };
 
   return (
     <ConfirmDeleteDialog

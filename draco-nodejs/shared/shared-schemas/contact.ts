@@ -209,6 +209,7 @@ export const SignInCredentialsSchema = z.object({
   userName: SignInUserNameSchema,
   password: z.string().trim().min(6).max(100),
   accountId: z.string().trim().optional(),
+  rememberMe: z.boolean().optional(),
 });
 
 export const ContactValidationWithSignInSchema = ContactValidationSchema.safeExtend(

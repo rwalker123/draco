@@ -9,7 +9,12 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
 import { SignInCredentialsSchema } from '@draco/shared-schemas';
+import { z } from 'zod';
 import { getStringParam } from '../utils/paramExtraction.js';
+
+const LoginCredentialsSchema = SignInCredentialsSchema.extend({
+  password: z.string().trim().min(1),
+});
 
 const router = Router();
 const authService = ServiceFactory.getAuthService();
@@ -24,7 +29,7 @@ router.post(
   '/login',
   authRateLimit,
   asyncHandler(async (req: Request, res: Response) => {
-    const loginCredentials = SignInCredentialsSchema.parse(req.body);
+    const loginCredentials = LoginCredentialsSchema.parse(req.body);
     const result = await authService.login(loginCredentials);
     res.json(result);
   }),
@@ -139,7 +144,19 @@ router.post(
       throw new AuthenticationError('User not authenticated');
     }
 
-    const result = await authService.refreshToken(req.user.id);
+    let rememberMe = false;
+    const authHeader = req.headers['authorization'];
+    const bearerToken = authHeader?.split(' ')[1];
+    if (bearerToken) {
+      try {
+        const payload = JSON.parse(Buffer.from(bearerToken.split('.')[1], 'base64').toString());
+        rememberMe = payload.rememberMe === true;
+      } catch {
+        // default to non-remember-me
+      }
+    }
+
+    const result = await authService.refreshToken(req.user.id, rememberMe);
     res.json(result);
   }),
 );

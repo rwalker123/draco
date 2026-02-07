@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useId, useImperativeHandle, useRef } from 'react';
+import React, { useId, useImperativeHandle, useRef } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import type { BaseContactType, ContactType } from '@draco/shared-schemas';
 import UserAvatar from './UserAvatar';
@@ -57,23 +57,24 @@ const EditableContactAvatar = React.forwardRef<
     const firstName = contact.firstName?.trim() || 'User';
     const lastName = contact.lastName?.trim() || 'Member';
 
-    const openFilePicker = useCallback(() => {
+    useImperativeHandle(
+      ref,
+      () => ({
+        openFilePicker: () => {
+          if (!canEdit || loading) {
+            return;
+          }
+          fileInputRef.current?.click();
+        },
+      }),
+      [canEdit, loading],
+    );
+
+    const handleAvatarClick = () => {
       if (!canEdit || loading) {
         return;
       }
       fileInputRef.current?.click();
-    }, [canEdit, loading]);
-
-    useImperativeHandle(
-      ref,
-      () => ({
-        openFilePicker,
-      }),
-      [openFilePicker],
-    );
-
-    const handleAvatarClick = () => {
-      openFilePicker();
     };
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {

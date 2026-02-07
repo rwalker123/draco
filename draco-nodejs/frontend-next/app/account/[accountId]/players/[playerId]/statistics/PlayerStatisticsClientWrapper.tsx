@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import NextLink from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Box, Breadcrumbs, Container, Link as MuiLink, Typography } from '@mui/material';
@@ -34,17 +34,10 @@ export default function PlayerStatisticsClientWrapper() {
     return trimmed.length > 0 ? trimmed : 'Back';
   }, [returnDestination, searchParams]);
 
-  const { playerStats, playerLoading, playerError, loadPlayer, resetPlayer } =
-    usePlayerCareerStatistics({ accountId });
-
-  useEffect(() => {
-    if (!playerId) {
-      resetPlayer();
-      return;
-    }
-
-    void loadPlayer(playerId);
-  }, [playerId, loadPlayer, resetPlayer]);
+  const { playerStats, playerLoading, playerError } = usePlayerCareerStatistics({
+    accountId,
+    playerId,
+  });
 
   return (
     <main className="min-h-screen bg-background">

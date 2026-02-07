@@ -1,13 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../lib/prisma.js';
-
-export interface JWTPayload {
-  userId: string;
-  username: string;
-  iat: number;
-  exp: number;
-}
+import { JWTPayload } from '../services/authService.js';
 
 /**
  * Middleware to verify JWT token and attach user to request
@@ -62,7 +56,14 @@ export const authenticateToken = async (
       return;
     }
 
-    // Attach user to request
+    if (!decoded.securityStamp || decoded.securityStamp !== user.securitystamp) {
+      res.status(401).json({
+        success: false,
+        message: 'Token invalidated',
+      });
+      return;
+    }
+
     req.user = {
       id: user.id,
       username: user.username || '',
@@ -119,7 +120,9 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
 
     if (
       user &&
-      (!user.lockoutenabled || !user.lockoutenddateutc || user.lockoutenddateutc <= new Date())
+      (!user.lockoutenabled || !user.lockoutenddateutc || user.lockoutenddateutc <= new Date()) &&
+      decoded.securityStamp &&
+      decoded.securityStamp === user.securitystamp
     ) {
       req.user = {
         id: user.id,

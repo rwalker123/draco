@@ -10,8 +10,19 @@ type CreateApiClientOptions = {
 
 type ApiClient = ReturnType<typeof createClient>;
 
-// Single-entry cache: stores the most recent client, automatically evicts on token change
-let cachedClient: { token: string | undefined; client: ApiClient } | null = null;
+let onUnauthorizedCallback: (() => void) | null = null;
+
+export const setOnUnauthorizedCallback = (callback: (() => void) | null) => {
+  onUnauthorizedCallback = callback;
+};
+
+type InterceptorRef = { type: 'request' | 'response'; id: number };
+
+let cachedClient: {
+  token: string | undefined;
+  client: ApiClient;
+  interceptorIds: InterceptorRef[];
+} | null = null;
 
 export const createApiClient = ({
   token,
@@ -25,6 +36,12 @@ export const createApiClient = ({
   if (useCache && cachedClient !== null && cachedClient.token === token) {
     return cachedClient.client;
   }
+
+  if (useCache && cachedClient !== null) {
+    cachedClient.interceptorIds.forEach(({ type, id }) => {
+      cachedClient!.client.interceptors[type].eject(id);
+    });
+  }
   const configOverrides: Parameters<typeof createConfig>[0] = {
     baseUrl,
   };
@@ -34,13 +51,14 @@ export const createApiClient = ({
   }
 
   const client = createClient(createConfig(configOverrides));
+  const interceptorIds: InterceptorRef[] = [];
 
   const resolvedFrontendBaseUrl =
     normalizeOrigin(frontendBaseUrl) ||
     (typeof window !== 'undefined' ? normalizeOrigin(window.location.origin) : undefined);
 
   if (resolvedFrontendBaseUrl) {
-    client.interceptors.request.use(async (request) => {
+    const interceptorId = client.interceptors.request.use(async (request) => {
       const headers = request.headers;
 
       if (!headers.get('x-frontend-base-url')) {
@@ -49,10 +67,11 @@ export const createApiClient = ({
 
       return request;
     });
+    interceptorIds.push({ type: 'request', id: interceptorId });
   }
 
   if (transformHostHeader) {
-    client.interceptors.request.use(async (request) => {
+    const interceptorId = client.interceptors.request.use(async (request) => {
       const headers = request.headers;
 
       const hostHeader = headers.get('host');
@@ -63,11 +82,21 @@ export const createApiClient = ({
 
       return request;
     });
+    interceptorIds.push({ type: 'request', id: interceptorId });
   }
 
-  // Cache the client for reuse (replaces any previous cached client)
+  let unauthorizedFired = false;
+  const responseInterceptorId = client.interceptors.response.use((response) => {
+    if (response.status === 401 && onUnauthorizedCallback && !unauthorizedFired) {
+      unauthorizedFired = true;
+      onUnauthorizedCallback();
+    }
+    return response;
+  });
+  interceptorIds.push({ type: 'response', id: responseInterceptorId });
+
   if (useCache) {
-    cachedClient = { token, client };
+    cachedClient = { token, client, interceptorIds };
   }
 
   return client;

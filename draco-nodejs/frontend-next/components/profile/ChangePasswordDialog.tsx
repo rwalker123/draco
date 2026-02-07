@@ -20,7 +20,7 @@ import { useApiClient } from '@/hooks/useApiClient';
 interface ChangePasswordDialogProps {
   open: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (newToken: string) => void;
 }
 
 const ChangePasswordFormSchema = z
@@ -89,7 +89,10 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
       }
 
       reset();
-      onSuccess?.();
+      const newToken = result.data?.token;
+      if (newToken) {
+        onSuccess?.(newToken);
+      }
       onClose();
     } catch (error) {
       const message =

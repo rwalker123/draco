@@ -424,11 +424,11 @@ export class AccountsService {
         payload.homeCourseId ? BigInt(payload.homeCourseId) : undefined,
       );
 
-      return { userId: newUser.id, accountId: accountRecord.id };
+      return { userId: newUser.id, accountId: accountRecord.id, securityStamp };
     });
 
     const authService = ServiceFactory.getAuthService();
-    const token = authService.generateTokenForUser(result.userId, payload.email);
+    const token = authService.generateTokenForUser(result.userId, payload.email, result.securityStamp);
 
     void ServiceFactory.getEmailService().sendGeneralWelcomeEmail(payload.email);
 

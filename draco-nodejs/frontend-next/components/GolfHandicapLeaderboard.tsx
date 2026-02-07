@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -49,66 +49,66 @@ export default function GolfHandicapLeaderboard({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadHandicaps = useCallback(async () => {
-    if (!seasonId || seasonId === '0') return;
+  useEffect(() => {
+    const loadHandicaps = async () => {
+      if (!seasonId || seasonId === '0') return;
 
-    setLoading(true);
-    setError(null);
+      setLoading(true);
+      setError(null);
 
-    try {
-      const standingsResult = await getGolfSeasonStandings({
-        client: apiClient,
-        throwOnError: false,
-        path: { accountId, seasonId },
-      });
-
-      const standings = unwrapApiResult<GolfLeagueStandings>(
-        standingsResult,
-        'Failed to load standings',
-      );
-
-      if (!standings?.flights || standings.flights.length === 0) {
-        setFlightHandicaps([]);
-        return;
-      }
-
-      const handicapPromises = standings.flights.map(async (flight: GolfFlightStandings) => {
-        const result = await getFlightHandicaps({
+      try {
+        const standingsResult = await getGolfSeasonStandings({
           client: apiClient,
           throwOnError: false,
-          path: { accountId, flightId: flight.flightId },
+          path: { accountId, seasonId },
         });
 
-        const handicapData = unwrapApiResult<LeagueHandicaps>(
-          result,
-          `Failed to load handicaps for ${flight.flightName}`,
+        const standings = unwrapApiResult<GolfLeagueStandings>(
+          standingsResult,
+          'Failed to load standings',
         );
 
-        return {
-          flightId: flight.flightId,
-          flightName: flight.flightName,
-          players: handicapData.players,
-        };
-      });
+        if (!standings?.flights || standings.flights.length === 0) {
+          setFlightHandicaps([]);
+          return;
+        }
 
-      const allHandicaps = await Promise.all(handicapPromises);
-      setFlightHandicaps(allHandicaps);
-    } catch (err) {
-      console.error('Error loading golf handicaps:', err);
-      if (err instanceof ApiClientError && err.status === 401) {
-        setError('Please log in to view handicap data.');
-      } else {
-        setError('Failed to load handicap data');
+        const handicapPromises = standings.flights.map(async (flight: GolfFlightStandings) => {
+          const result = await getFlightHandicaps({
+            client: apiClient,
+            throwOnError: false,
+            path: { accountId, flightId: flight.flightId },
+          });
+
+          const handicapData = unwrapApiResult<LeagueHandicaps>(
+            result,
+            `Failed to load handicaps for ${flight.flightName}`,
+          );
+
+          return {
+            flightId: flight.flightId,
+            flightName: flight.flightName,
+            players: handicapData.players,
+          };
+        });
+
+        const allHandicaps = await Promise.all(handicapPromises);
+        setFlightHandicaps(allHandicaps);
+      } catch (err) {
+        console.error('Error loading golf handicaps:', err);
+        if (err instanceof ApiClientError && err.status === 401) {
+          setError('Please log in to view handicap data.');
+        } else {
+          setError('Failed to load handicap data');
+        }
+        setFlightHandicaps([]);
+      } finally {
+        setLoading(false);
       }
-      setFlightHandicaps([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, apiClient, seasonId]);
+    };
 
-  useEffect(() => {
     loadHandicaps();
-  }, [loadHandicaps]);
+  }, [accountId, apiClient, seasonId]);
 
   const formatHandicap = (handicapIndex: number | null): string => {
     if (handicapIndex === null) return 'N/A';

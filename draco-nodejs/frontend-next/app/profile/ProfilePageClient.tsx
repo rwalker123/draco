@@ -59,7 +59,7 @@ const ORGANIZATIONS_ERROR_MESSAGE =
 const ProfilePageClient: React.FC = () => {
   const apiClient = useApiClient();
   const router = useRouter();
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, setAuthToken } = useAuth();
   const { currentAccount } = useAccount();
   const currentAccountId = currentAccount?.id ? String(currentAccount.id) : null;
 
@@ -587,6 +587,7 @@ const ProfilePageClient: React.FC = () => {
       <ChangePasswordDialog
         open={isChangePasswordDialogOpen}
         onClose={() => setChangePasswordDialogOpen(false)}
+        onSuccess={(newToken: string) => setAuthToken(newToken)}
       />
     </Box>
   );

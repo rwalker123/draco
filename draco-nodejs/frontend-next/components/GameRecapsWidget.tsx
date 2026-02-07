@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Typography,
   Box,
@@ -184,7 +184,7 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
     void fetchRecaps();
   }, [accountId, apiClient, seasonId, teamSeasonId, maxRecaps]);
 
-  const sanitizedRecapHtml = useMemo(() => {
+  const sanitizedRecapHtml = (() => {
     if (!recapList.length) {
       return '<span style="color:#888;">(No recap provided)</span>';
     }
@@ -200,9 +200,9 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
       return '<span style="color:#888;">(No recap provided)</span>';
     }
     return sanitized;
-  }, [currentIndex, recapList]);
+  })();
 
-  const tileStyles = useMemo(() => {
+  const tileStyles = (() => {
     const baseColor = theme.palette.primary.main;
     const surface = theme.palette.widget.surface;
     const highlightStart = alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12);
@@ -218,7 +218,7 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
       border: theme.palette.widget.border,
       shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
     };
-  }, [theme]);
+  })();
 
   const renderRecapContent = () => {
     if (!recapList.length) {

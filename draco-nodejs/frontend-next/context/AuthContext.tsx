@@ -1,13 +1,5 @@
 'use client';
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  ReactNode,
-} from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { useParams } from 'next/navigation';
 import { ACCOUNT_STORAGE_KEY } from '../constants/storageKeys';
 import { RegisteredUserType, SignInCredentialsType } from '@draco/shared-schemas';
@@ -15,12 +7,17 @@ import {
   login as loginApi,
   getAuthenticatedUser,
   logout as logoutApi,
+  refreshToken as refreshTokenApi,
 } from '@draco/shared-api-client';
-import { createApiClient } from '../lib/apiClientFactory';
+import { createApiClient, setOnUnauthorizedCallback } from '../lib/apiClientFactory';
 import { unwrapApiResult } from '../utils/apiResult';
+import { getTokenTimeRemaining, getTokenRememberMe } from '../utils/authHelpers';
 
 const LOGIN_ERROR_MESSAGE =
   'Invalid username or password. If you forgot your password, click the "Forgot your password?" link to reset it.';
+
+const TOKEN_REFRESH_CHECK_INTERVAL = 5 * 60 * 1000;
+const TOKEN_REFRESH_THRESHOLD = 60 * 60 * 1000;
 
 export interface AuthContextType {
   user: RegisteredUserType | null;
@@ -35,6 +32,39 @@ export interface AuthContextType {
   clearAllContexts: () => void;
   accountIdFromPath: string | null;
 }
+
+const resolvePersistedAccountId = (): string | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(ACCOUNT_STORAGE_KEY);
+    if (!stored) {
+      return null;
+    }
+
+    const parsed = JSON.parse(stored) as { id?: string | null } | null;
+    return parsed && typeof parsed.id === 'string' ? parsed.id : null;
+  } catch {
+    return null;
+  }
+};
+
+const resolveAccountId = (
+  accountIdOverride: string | null | undefined,
+  accountIdFromPath: string | null,
+) => {
+  if (accountIdOverride !== undefined) {
+    return accountIdOverride;
+  }
+
+  if (accountIdFromPath) {
+    return accountIdFromPath;
+  }
+
+  return resolvePersistedAccountId();
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -69,102 +99,85 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const resolvePersistedAccountId = useCallback((): string | null => {
-    if (typeof window === 'undefined') {
-      return null;
+  const fetchUser = async (
+    overrideToken?: string,
+    accountIdOverride?: string | null,
+  ): Promise<void> => {
+    const authToken = overrideToken || token;
+    if (!authToken) {
+      setUser(null);
+      setLoading(false);
+      setInitialized(true);
+      lastFetchedAccountIdRef.current = null;
+      return;
     }
+
+    if (!overrideToken) {
+      setLoading(true);
+    }
+
+    const effectiveAccountId = resolveAccountId(accountIdOverride, accountIdFromPath);
 
     try {
-      const stored = window.localStorage.getItem(ACCOUNT_STORAGE_KEY);
-      if (!stored) {
-        return null;
-      }
+      const client = createApiClient({ token: authToken });
+      const result = await getAuthenticatedUser({
+        client,
+        query: {
+          accountId: effectiveAccountId || undefined,
+        },
+        throwOnError: false,
+      });
 
-      const parsed = JSON.parse(stored) as { id?: string | null } | null;
-      return parsed && typeof parsed.id === 'string' ? parsed.id : null;
+      const payload = unwrapApiResult(result, 'Failed to load current user');
+
+      setUser(payload as RegisteredUserType);
+      lastFetchedAccountIdRef.current = effectiveAccountId ?? null;
     } catch {
-      return null;
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('jwtToken');
+      lastFetchedAccountIdRef.current = null;
+    } finally {
+      setLoading(false);
+      setInitialized(true);
     }
-  }, []);
-
-  const resolveAccountId = useCallback(
-    (accountIdOverride?: string | null) => {
-      if (accountIdOverride !== undefined) {
-        return accountIdOverride;
-      }
-
-      if (accountIdFromPath) {
-        return accountIdFromPath;
-      }
-
-      return resolvePersistedAccountId();
-    },
-    [accountIdFromPath, resolvePersistedAccountId],
-  );
-
-  const fetchUser = useCallback(
-    async (overrideToken?: string, accountIdOverride?: string | null): Promise<void> => {
-      const authToken = overrideToken || token;
-      if (!authToken) {
-        setUser(null);
-        setLoading(false);
-        setInitialized(true);
-        lastFetchedAccountIdRef.current = null;
-        return;
-      }
-
-      // Set loading true when fetching user data
-      if (!overrideToken) {
-        setLoading(true);
-      }
-
-      const effectiveAccountId = resolveAccountId(accountIdOverride);
-
-      try {
-        const client = createApiClient({ token: authToken });
-        const result = await getAuthenticatedUser({
-          client,
-          query: {
-            accountId: effectiveAccountId || undefined,
-          },
-          throwOnError: false,
-        });
-
-        const payload = unwrapApiResult(result, 'Failed to load current user');
-
-        setUser(payload as RegisteredUserType);
-        lastFetchedAccountIdRef.current = effectiveAccountId ?? null;
-      } catch {
-        //const message = getApiErrorMessage(err, 'Failed to load current user');
-        //console.error('Failed to fetch authenticated user:', err);
-        //setError(message);
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('jwtToken');
-        lastFetchedAccountIdRef.current = null;
-      } finally {
-        setLoading(false);
-        setInitialized(true);
-      }
-    },
-    [token, resolveAccountId],
-  );
+  };
 
   useEffect(() => {
     if (token) {
-      const effectiveAccountId = resolveAccountId();
+      const effectiveAccountId = resolveAccountId(undefined, accountIdFromPath);
 
-      if (lastFetchedAccountIdRef.current !== effectiveAccountId) {
-        fetchUser(undefined, effectiveAccountId);
-      } else {
-        fetchUser();
-      }
+      const loadUser = async () => {
+        setLoading(true);
+        try {
+          const client = createApiClient({ token });
+          const result = await getAuthenticatedUser({
+            client,
+            query: {
+              accountId: effectiveAccountId || undefined,
+            },
+            throwOnError: false,
+          });
+          const payload = unwrapApiResult(result, 'Failed to load current user');
+          setUser(payload as RegisteredUserType);
+          lastFetchedAccountIdRef.current = effectiveAccountId ?? null;
+        } catch {
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem('jwtToken');
+          lastFetchedAccountIdRef.current = null;
+        } finally {
+          setLoading(false);
+          setInitialized(true);
+        }
+      };
+      loadUser();
     } else {
       setUser(null);
       setInitialized(true);
       lastFetchedAccountIdRef.current = null;
     }
-  }, [token, accountIdFromPath, resolveAccountId, fetchUser]);
+  }, [token, accountIdFromPath]);
 
   const login = async (creds: SignInCredentialsType) => {
     setLoading(true);
@@ -177,6 +190,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           userName: creds.userName,
           password: creds.password,
           ...(accountIdFromPath ? { accountId: accountIdFromPath } : {}),
+          ...(creds.rememberMe ? { rememberMe: true } : {}),
         },
         throwOnError: false,
       });
@@ -234,6 +248,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(newToken);
     localStorage.setItem('jwtToken', newToken);
   };
+
+  useEffect(() => {
+    if (!token) return;
+
+    const checkAndRefresh = async () => {
+      if (!token) return;
+
+      const rememberMe = getTokenRememberMe(token);
+      if (!rememberMe) return;
+
+      const timeRemaining = getTokenTimeRemaining(token);
+      if (timeRemaining <= 0 || timeRemaining > TOKEN_REFRESH_THRESHOLD) return;
+
+      try {
+        const client = createApiClient({ token });
+        const result = await refreshTokenApi({ client, throwOnError: false });
+        const payload = unwrapApiResult(result, 'Token refresh failed');
+        const newToken = (payload as RegisteredUserType).token;
+        if (newToken) {
+          setToken(newToken);
+          localStorage.setItem('jwtToken', newToken);
+        }
+      } catch {
+        // Refresh failed; the existing 401 handling will log the user out when the token expires
+      }
+    };
+
+    const intervalId = setInterval(checkAndRefresh, TOKEN_REFRESH_CHECK_INTERVAL);
+    checkAndRefresh();
+
+    return () => clearInterval(intervalId);
+  }, [token]);
+
+  useEffect(() => {
+    setOnUnauthorizedCallback(() => {
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem('jwtToken');
+      setInitialized(true);
+    });
+    return () => {
+      setOnUnauthorizedCallback(null);
+    };
+  }, []);
 
   return (
     <AuthContext.Provider

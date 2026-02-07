@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Alert, Autocomplete, Box, CircularProgress, TextField, Typography } from '@mui/material';
 import PlayerCareerStatisticsCard from '../../../../components/statistics/PlayerCareerStatisticsCard';
 import {
@@ -13,36 +13,16 @@ interface PlayerCareerSearchTabProps {
 }
 
 const PlayerCareerSearchTab: React.FC<PlayerCareerSearchTabProps> = ({ accountId }) => {
-  const {
-    searchResults,
-    searchLoading,
-    searchError,
-    searchPlayers,
-    playerStats,
-    playerLoading,
-    playerError,
-    loadPlayer,
-    resetPlayer,
-  } = usePlayerCareerStatistics({ accountId });
-
   const [inputValue, setInputValue] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerCareerSearchResult | null>(null);
   const debouncedSearch = useDebouncedValue(inputValue, 350);
 
-  useEffect(() => {
-    const trimmed = debouncedSearch.trim();
-    void searchPlayers({ query: trimmed });
-  }, [debouncedSearch, searchPlayers]);
-
-  useEffect(() => {
-    if (selectedPlayer) {
-      void loadPlayer(selectedPlayer.playerId);
-    } else {
-      resetPlayer();
-    }
-  }, [selectedPlayer, loadPlayer, resetPlayer]);
-
-  const options = useMemo(() => searchResults ?? [], [searchResults]);
+  const { searchResults, searchLoading, searchError, playerStats, playerLoading, playerError } =
+    usePlayerCareerStatistics({
+      accountId,
+      searchQuery: debouncedSearch,
+      playerId: selectedPlayer?.playerId ?? '',
+    });
 
   return (
     <Box p={3}>
@@ -54,7 +34,7 @@ const PlayerCareerSearchTab: React.FC<PlayerCareerSearchTabProps> = ({ accountId
 
       <Box maxWidth={420} mb={3}>
         <Autocomplete<PlayerCareerSearchResult, false, false, false>
-          options={options}
+          options={searchResults}
           loading={searchLoading}
           value={selectedPlayer}
           onChange={(_event, value) => setSelectedPlayer(value)}
