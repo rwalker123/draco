@@ -8,7 +8,7 @@ import {
   getAuthenticatedUser,
   logout as logoutApi,
 } from '@draco/shared-api-client';
-import { createApiClient } from '../lib/apiClientFactory';
+import { createApiClient, setOnUnauthorizedCallback } from '../lib/apiClientFactory';
 import { unwrapApiResult } from '../utils/apiResult';
 
 const LOGIN_ERROR_MESSAGE =
@@ -243,6 +243,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(newToken);
     localStorage.setItem('jwtToken', newToken);
   };
+
+  useEffect(() => {
+    setOnUnauthorizedCallback(() => {
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem('jwtToken');
+      setInitialized(true);
+    });
+    return () => {
+      setOnUnauthorizedCallback(null);
+    };
+  }, []);
 
   return (
     <AuthContext.Provider

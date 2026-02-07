@@ -10,7 +10,12 @@ type CreateApiClientOptions = {
 
 type ApiClient = ReturnType<typeof createClient>;
 
-// Single-entry cache: stores the most recent client, automatically evicts on token change
+let onUnauthorizedCallback: (() => void) | null = null;
+
+export const setOnUnauthorizedCallback = (callback: (() => void) | null) => {
+  onUnauthorizedCallback = callback;
+};
+
 let cachedClient: {
   token: string | undefined;
   client: ApiClient;
@@ -78,7 +83,15 @@ export const createApiClient = ({
     interceptorIds.push(interceptorId);
   }
 
-  // Cache the client for reuse (replaces any previous cached client)
+  let unauthorizedFired = false;
+  client.interceptors.response.use((response) => {
+    if (response.status === 401 && onUnauthorizedCallback && !unauthorizedFired) {
+      unauthorizedFired = true;
+      onUnauthorizedCallback();
+    }
+    return response;
+  });
+
   if (useCache) {
     cachedClient = { token, client, interceptorIds };
   }

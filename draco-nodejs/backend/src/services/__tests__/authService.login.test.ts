@@ -87,6 +87,7 @@ describe('AuthService.login', () => {
       accessfailedcount: 2,
       lockoutenabled: false,
       lockoutenddateutc: null,
+      securitystamp: 'test-stamp',
     };
 
     mockUserRepository.findByUsername.mockResolvedValue(user);
@@ -110,6 +111,7 @@ describe('AuthService.login', () => {
       accessfailedcount: 0,
       lockoutenabled: false,
       lockoutenddateutc: null,
+      securitystamp: 'test-stamp',
     };
 
     mockUserRepository.findByUsername.mockResolvedValue(user);
@@ -130,6 +132,7 @@ describe('AuthService.login', () => {
       accessfailedcount: 0,
       lockoutenabled: false,
       lockoutenddateutc: null,
+      securitystamp: 'test-stamp',
     };
 
     mockUserRepository.findByUsername.mockResolvedValue(user);
@@ -138,7 +141,7 @@ describe('AuthService.login', () => {
     await authService.login({ userName: 'test@example.com', password: 'secret' }); // pragma: allowlist secret
 
     expect(signMock).toHaveBeenCalledWith(
-      { userId: user.id, username: user.username },
+      { userId: user.id, username: user.username, securityStamp: 'test-stamp' },
       expect.any(String),
       { expiresIn: '24h' },
     );
@@ -154,6 +157,7 @@ describe('AuthService.login', () => {
       accessfailedcount: 0,
       lockoutenabled: false,
       lockoutenddateutc: null,
+      securitystamp: 'test-stamp',
     };
 
     mockUserRepository.findByUsername.mockResolvedValue(user);
@@ -162,7 +166,7 @@ describe('AuthService.login', () => {
     await authService.login({ userName: 'test@example.com', password: 'secret', rememberMe: true }); // pragma: allowlist secret
 
     expect(signMock).toHaveBeenCalledWith(
-      { userId: user.id, username: user.username },
+      { userId: user.id, username: user.username, securityStamp: 'test-stamp' },
       expect.any(String),
       { expiresIn: '365d' },
     );
@@ -178,6 +182,7 @@ describe('AuthService.login', () => {
       accessfailedcount: 0,
       lockoutenabled: false,
       lockoutenddateutc: null,
+      securitystamp: 'test-stamp',
     };
 
     mockUserRepository.findByUsername.mockResolvedValue(user);
@@ -190,7 +195,7 @@ describe('AuthService.login', () => {
     }); // pragma: allowlist secret
 
     expect(signMock).toHaveBeenCalledWith(
-      { userId: user.id, username: user.username },
+      { userId: user.id, username: user.username, securityStamp: 'test-stamp' },
       expect.any(String),
       { expiresIn: '24h' },
     );

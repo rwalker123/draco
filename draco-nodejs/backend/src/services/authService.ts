@@ -10,6 +10,7 @@ import type { EmailService } from './emailService.js';
 export interface JWTPayload {
   userId: string;
   username: string;
+  securityStamp?: string;
   iat: number;
   exp: number;
 }
@@ -105,8 +106,14 @@ export class AuthService {
       });
     }
 
+    let securityStamp = user.securitystamp;
+    if (!securityStamp) {
+      securityStamp = this.generateSecurityStamp();
+      await this.userRepository.updateUser(user.id, { securitystamp: securityStamp });
+    }
+
     const expiresIn = credentials.rememberMe ? this.JWT_EXTENDED_EXPIRES_IN : undefined;
-    const token = this.generateToken(user.id, user.username || '', expiresIn);
+    const token = this.generateToken(user.id, user.username || '', securityStamp, expiresIn);
 
     const registeredUser: RegisteredUserType = {
       token,
@@ -141,35 +148,30 @@ export class AuthService {
     const { userName, password } = credentials;
     const normalizedUsername = userName.toLowerCase().trim();
 
-    // Check if username already exists
     const existingUser = await this.userRepository.findByUsername(normalizedUsername);
 
     if (existingUser) {
       throw new ValidationError('Username already exists');
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Generate user ID (GUID format)
     const userId = this.generateUserId();
+    const securityStamp = this.generateSecurityStamp();
 
-    // Create user
     const newUser = await this.userRepository.create({
       id: userId,
       username: normalizedUsername,
       email: '',
       emailconfirmed: false,
       passwordhash: hashedPassword,
-      securitystamp: this.generateSecurityStamp(),
+      securitystamp: securityStamp,
       phonenumberconfirmed: false,
       twofactorenabled: false,
       lockoutenabled: true,
       accessfailedcount: 0,
     });
 
-    // Generate JWT token
-    const token = this.generateToken(newUser.id, newUser.username || '');
+    const token = this.generateToken(newUser.id, newUser.username || '', securityStamp);
 
     const welcomeEmailRecipient = newUser.username || userName;
     if (options?.sendWelcomeEmail !== false) {
@@ -209,14 +211,12 @@ export class AuthService {
     currentPassword: string,
     newPassword: string,
   ): Promise<RegisteredUserType> {
-    // Find user
     const user = await this.userRepository.findByUserId(userId);
 
     if (!user) {
       throw new AuthenticationError('User not found');
     }
 
-    // Verify current password
     if (!user.passwordhash) {
       throw new AuthenticationError('User has no password set');
     }
@@ -226,13 +226,18 @@ export class AuthService {
       throw new AuthenticationError('Current password is incorrect');
     }
 
-    // Hash new password
     const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+    const newSecurityStamp = this.generateSecurityStamp();
 
-    // Update password
-    await this.userRepository.updatePassword(userId, hashedNewPassword);
+    await this.userRepository.updateUser(userId, {
+      passwordhash: hashedNewPassword,
+      securitystamp: newSecurityStamp,
+    });
+
+    const token = this.generateToken(userId, user.username || '', newSecurityStamp);
 
     return {
+      token,
       userId: user.id,
       userName: user.username || '',
     };
@@ -242,20 +247,23 @@ export class AuthService {
    * Refresh JWT token
    */
   async refreshToken(userId: string): Promise<RegisteredUserType> {
-    // Find user
     const user = await this.userRepository.findByUserId(userId);
 
     if (!user) {
       throw new AuthenticationError('User not found');
     }
 
-    // Check if user is locked out
     if (user.lockoutenabled && user.lockoutenddateutc && user.lockoutenddateutc > new Date()) {
       throw new AuthenticationError('Account is temporarily locked');
     }
 
-    // Generate new token
-    const token = this.generateToken(user.id, user.username || '');
+    let securityStamp = user.securitystamp;
+    if (!securityStamp) {
+      securityStamp = this.generateSecurityStamp();
+      await this.userRepository.updateUser(user.id, { securitystamp: securityStamp });
+    }
+
+    const token = this.generateToken(user.id, user.username || '', securityStamp);
 
     return {
       userId: user.id,
@@ -277,9 +285,10 @@ export class AuthService {
   private generateToken(
     userId: string,
     username: string,
+    securityStamp: string,
     expiresIn?: jwt.SignOptions['expiresIn'],
   ): string {
-    return jwt.sign({ userId, username }, this.JWT_SECRET, {
+    return jwt.sign({ userId, username, securityStamp }, this.JWT_SECRET, {
       expiresIn: expiresIn ?? this.JWT_EXPIRES_IN,
     });
   }
@@ -298,7 +307,7 @@ export class AuthService {
   /**
    * Generate security stamp
    */
-  private generateSecurityStamp(): string {
+  generateSecurityStamp(): string {
     return (
       Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     );
@@ -324,8 +333,8 @@ export class AuthService {
   /**
    * Generate a JWT token for a user (for use after transaction-based user creation).
    */
-  generateTokenForUser(userId: string, username: string): string {
-    return this.generateToken(userId, username);
+  generateTokenForUser(userId: string, username: string, securityStamp: string): string {
+    return this.generateToken(userId, username, securityStamp);
   }
 
   /**
