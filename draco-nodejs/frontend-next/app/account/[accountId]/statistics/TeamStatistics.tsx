@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -72,112 +72,123 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
   const [pitchingSortOrder, setPitchingSortOrder] = useState<'asc' | 'desc'>('asc');
   const apiClient = useApiClient();
 
-  const loadTeams = useCallback(async () => {
-    if (!seasonId || seasonId === '0') return;
-
-    setLoading((prev) => ({ ...prev, teams: true }));
+  useEffect(() => {
+    setSelectedTeamId('');
+    setTeams([]);
+    setBattingStats([]);
+    setPitchingStats([]);
     setError(null);
 
-    try {
-      const result = await apiListSeasonTeams({
-        client: apiClient,
-        path: { accountId, seasonId },
-        throwOnError: false,
-      });
+    if (!seasonId || seasonId === '0') return;
 
-      const teamSeasons = unwrapApiResult(result, 'Failed to load teams');
-      const teamsData = (teamSeasons ?? []).map((teamSeason) => {
-        const displayName = teamSeason.name ?? teamSeason.team?.webAddress ?? 'Unknown Team';
-        return {
-          id: teamSeason.id,
-          teamId: teamSeason.id,
-          name: displayName,
-          teamName: displayName,
-          logoUrl: teamSeason.team?.logoUrl ?? undefined,
-          leagueName: teamSeason.league?.name ?? 'Unknown League',
-          divisionName: teamSeason.division?.name ?? 'No Division',
-        } satisfies Team;
-      });
+    let ignore = false;
 
-      setTeams(teamsData);
+    setLoading((prev) => ({ ...prev, teams: true }));
 
-      if (teamsData.length > 0 && !selectedTeamId) {
-        setSelectedTeamId(teamsData[0].teamId);
+    const loadTeams = async () => {
+      try {
+        const result = await apiListSeasonTeams({
+          client: apiClient,
+          path: { accountId, seasonId },
+          throwOnError: false,
+        });
+
+        if (ignore) return;
+
+        const teamSeasons = unwrapApiResult(result, 'Failed to load teams');
+        const teamsData = (teamSeasons ?? []).map((teamSeason) => {
+          const displayName = teamSeason.name ?? teamSeason.team?.webAddress ?? 'Unknown Team';
+          return {
+            id: teamSeason.id,
+            teamId: teamSeason.id,
+            name: displayName,
+            teamName: displayName,
+            logoUrl: teamSeason.team?.logoUrl ?? undefined,
+            leagueName: teamSeason.league?.name ?? 'Unknown League',
+            divisionName: teamSeason.division?.name ?? 'No Division',
+          } satisfies Team;
+        });
+
+        setTeams(teamsData);
+
+        if (teamsData.length > 0) {
+          setSelectedTeamId(teamsData[0].teamId);
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error loading teams:', err);
+          setError('Failed to load teams');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading((prev) => ({ ...prev, teams: false }));
+        }
       }
-    } catch (error) {
-      console.error('Error loading teams:', error);
-      setError('Failed to load teams');
-    } finally {
-      setLoading((prev) => ({ ...prev, teams: false }));
-    }
-  }, [accountId, seasonId, selectedTeamId, apiClient]);
+    };
 
-  const loadBattingStats = useCallback(async () => {
-    if (!selectedTeamId || !seasonId) return;
-
-    setLoading((prev) => ({ ...prev, batting: true }));
-
-    try {
-      const result = await apiListTeamSeasonBattingStats({
-        client: apiClient,
-        path: { accountId, seasonId, teamSeasonId: selectedTeamId },
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult<PlayerBattingStatsType[]>(
-        result,
-        'Failed to load batting stats',
-      );
-
-      setBattingStats(data.map((stat) => ({ ...stat })));
-    } catch (fetchError) {
-      console.error('Error loading batting stats:', fetchError);
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load batting stats');
-    } finally {
-      setLoading((prev) => ({ ...prev, batting: false }));
-    }
-  }, [accountId, apiClient, seasonId, selectedTeamId]);
-
-  const loadPitchingStats = useCallback(async () => {
-    if (!selectedTeamId || !seasonId) return;
-
-    setLoading((prev) => ({ ...prev, pitching: true }));
-
-    try {
-      const result = await apiListTeamSeasonPitchingStats({
-        client: apiClient,
-        path: { accountId, seasonId, teamSeasonId: selectedTeamId },
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult<PlayerPitchingStatsType[]>(
-        result,
-        'Failed to load pitching stats',
-      );
-
-      setPitchingStats(data.map((stat) => ({ ...stat })));
-    } catch (fetchError) {
-      console.error('Error loading pitching stats:', fetchError);
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load pitching stats');
-    } finally {
-      setLoading((prev) => ({ ...prev, pitching: false }));
-    }
-  }, [accountId, apiClient, seasonId, selectedTeamId]);
-
-  useEffect(() => {
     loadTeams();
-  }, [loadTeams]);
+    return () => {
+      ignore = true;
+    };
+  }, [accountId, seasonId, apiClient]);
 
   useEffect(() => {
-    if (selectedTeamId) {
-      loadBattingStats();
-      loadPitchingStats();
-    }
-  }, [selectedTeamId, loadBattingStats, loadPitchingStats]);
+    if (!selectedTeamId || !seasonId || seasonId === '0') return;
+
+    let ignore = false;
+
+    setLoading((prev) => ({ ...prev, batting: true, pitching: true }));
+
+    const loadStats = async () => {
+      try {
+        const [battingResult, pitchingResult] = await Promise.all([
+          apiListTeamSeasonBattingStats({
+            client: apiClient,
+            path: { accountId, seasonId, teamSeasonId: selectedTeamId },
+            throwOnError: false,
+          }),
+          apiListTeamSeasonPitchingStats({
+            client: apiClient,
+            path: { accountId, seasonId, teamSeasonId: selectedTeamId },
+            throwOnError: false,
+          }),
+        ]);
+
+        if (ignore) return;
+
+        const battingData = unwrapApiResult<PlayerBattingStatsType[]>(
+          battingResult,
+          'Failed to load batting stats',
+        );
+        setBattingStats(battingData.map((stat) => ({ ...stat })));
+
+        const pitchingData = unwrapApiResult<PlayerPitchingStatsType[]>(
+          pitchingResult,
+          'Failed to load pitching stats',
+        );
+        setPitchingStats(pitchingData.map((stat) => ({ ...stat })));
+      } catch (fetchError) {
+        if (!ignore) {
+          console.error('Error loading stats:', fetchError);
+          setError(fetchError instanceof Error ? fetchError.message : 'Failed to load stats');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading((prev) => ({ ...prev, batting: false, pitching: false }));
+        }
+      }
+    };
+
+    loadStats();
+    return () => {
+      ignore = true;
+    };
+  }, [accountId, seasonId, selectedTeamId, apiClient]);
 
   const handleTeamChange = (event: SelectChangeEvent) => {
     const teamId = event.target.value;
     setSelectedTeamId(teamId);
+    setError(null);
     setBattingStats([]);
     setPitchingStats([]);
   };
