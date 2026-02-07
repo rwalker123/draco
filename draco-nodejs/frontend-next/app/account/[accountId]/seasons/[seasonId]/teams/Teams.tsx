@@ -75,7 +75,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     return () => {
       isMounted = false;
       abortController.abort();
-      setTeamsData(null);
     };
   }, [accountId, seasonId, apiClient]);
 
