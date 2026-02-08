@@ -28,6 +28,7 @@ import {
   Settings as SettingsIcon,
   PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
 import { useAccount } from '../../context/AccountContext';
@@ -55,6 +56,7 @@ import type { AccountLogoOperationSuccess } from '../../hooks/useAccountLogoOper
 const AccountManagement: React.FC = () => {
   const { token } = useAuth();
   const { hasRole } = useRole();
+  const router = useRouter();
   const { currentAccount, setCurrentAccount } = useAccount();
   const apiClient = useApiClient();
 
@@ -171,7 +173,7 @@ const AccountManagement: React.FC = () => {
       timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
       timeZoneSource: 'account',
     });
-    window.location.href = `/account/${account.id}`;
+    router.push(`/account/${account.id}`);
   };
 
   const handleCreateClick = () => {
@@ -360,9 +362,7 @@ const AccountManagement: React.FC = () => {
                         <Tooltip title="Account Settings">
                           <IconButton
                             size="small"
-                            onClick={() =>
-                              (window.location.href = `/account/${account.id}/settings`)
-                            }
+                            onClick={() => router.push(`/account/${account.id}/settings`)}
                           >
                             <SettingsIcon />
                           </IconButton>
