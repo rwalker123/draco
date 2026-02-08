@@ -151,10 +151,6 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
     pageSize: number,
     minInningsPitched: number,
   ): Promise<dbPitchingStatisticsRow[]> {
-    const havingClause =
-      minInningsPitched > 0
-        ? `HAVING (SUM(ps.ip) + SUM(ps.ip2) / 3.0) >= ${minInningsPitched}`
-        : '';
     const orderDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
     const sortFieldMap: Record<string, string> = {
       playerid: '"playerId"',
@@ -183,6 +179,13 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
     };
     const normalizedSortField = sortField ? sortField.toLowerCase() : 'playername';
     const sortFieldSql = sortFieldMap[normalizedSortField] ?? '"playerName"';
+
+    const params: (bigint | number)[] = [masterTeamId];
+    const havingClause =
+      minInningsPitched > 0
+        ? `HAVING (SUM(ps.ip) + SUM(ps.ip2) / 3.0) >= $${params.push(minInningsPitched)}`
+        : '';
+    const limitClause = `LIMIT $${params.push(pageSize)}`;
 
     const queryText = `
       SELECT
@@ -222,20 +225,20 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
         END as slg,
         (SUM(ps.ip) + SUM(ps.ip2) / 3.0)::float as "ipDecimal"
       FROM pitchstatsum ps
-      LEFT JOIN teamsseason ts ON ps.teamid = ts.id
-      LEFT JOIN rosterseason rs ON ps.playerid = rs.id
-      LEFT JOIN roster r ON rs.playerid = r.id
-      LEFT JOIN contacts c ON r.contactid = c.id
-      LEFT JOIN leagueschedule lg ON ps.gameid = lg.id
+      JOIN teamsseason ts ON ps.teamid = ts.id
+      JOIN rosterseason rs ON ps.playerid = rs.id
+      JOIN roster r ON rs.playerid = r.id
+      JOIN contacts c ON r.contactid = c.id
+      JOIN leagueschedule lg ON ps.gameid = lg.id
       WHERE lg.gametype IN (${GameType.RegularSeason}, ${GameType.Playoff})
         AND ts.teamid = $1
       GROUP BY c.id, c.firstname, c.lastname
       ${havingClause}
       ORDER BY ${sortFieldSql} ${orderDirection}
-      LIMIT ${pageSize}
+      ${limitClause}
     `;
 
-    const result = await this.prisma.$queryRawUnsafe(queryText, masterTeamId);
+    const result = await this.prisma.$queryRawUnsafe(queryText, ...params);
     return result as dbPitchingStatisticsRow[];
   }
 

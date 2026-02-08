@@ -141,7 +141,6 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
     pageSize: number,
     minAtBats: number,
   ): Promise<dbBattingStatisticsRow[]> {
-    const havingClause = minAtBats > 0 ? `HAVING SUM(bs.ab) >= ${minAtBats}` : '';
     const orderDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
     const sortFieldMap: Record<string, string> = {
       playerid: '"playerId"',
@@ -168,6 +167,10 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
     };
     const normalizedSortField = sortField ? sortField.toLowerCase() : 'playername';
     const sortFieldSql = sortFieldMap[normalizedSortField] ?? '"playerName"';
+
+    const params: (bigint | number)[] = [masterTeamId];
+    const havingClause = minAtBats > 0 ? `HAVING SUM(bs.ab) >= $${params.push(minAtBats)}` : '';
+    const limitClause = `LIMIT $${params.push(pageSize)}`;
 
     const queryText = `
       SELECT
@@ -202,20 +205,20 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
         (SUM(bs.d) * 2 + SUM(bs.t) * 3 + SUM(bs.hr) * 4 + (SUM(bs.h) - SUM(bs.d) - SUM(bs.t) - SUM(bs.hr)))::int as tb,
         (SUM(bs.ab) + SUM(bs.bb) + SUM(bs.hbp) + SUM(bs.sf) + SUM(bs.sh))::int as pa
       FROM batstatsum bs
-      LEFT JOIN teamsseason ts ON bs.teamid = ts.id
-      LEFT JOIN rosterseason rs ON bs.playerid = rs.id
-      LEFT JOIN roster r ON rs.playerid = r.id
-      LEFT JOIN contacts c ON r.contactid = c.id
-      LEFT JOIN leagueschedule lg ON bs.gameid = lg.id
+      JOIN teamsseason ts ON bs.teamid = ts.id
+      JOIN rosterseason rs ON bs.playerid = rs.id
+      JOIN roster r ON rs.playerid = r.id
+      JOIN contacts c ON r.contactid = c.id
+      JOIN leagueschedule lg ON bs.gameid = lg.id
       WHERE lg.gametype IN (${GameType.RegularSeason}, ${GameType.Playoff})
         AND ts.teamid = $1
       GROUP BY c.id, c.firstname, c.lastname
       ${havingClause}
       ORDER BY ${sortFieldSql} ${orderDirection}
-      LIMIT ${pageSize}
+      ${limitClause}
     `;
 
-    const result = await this.prisma.$queryRawUnsafe(queryText, masterTeamId);
+    const result = await this.prisma.$queryRawUnsafe(queryText, ...params);
     return result as dbBattingStatisticsRow[];
   }
 
