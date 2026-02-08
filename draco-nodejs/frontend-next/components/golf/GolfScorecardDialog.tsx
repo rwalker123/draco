@@ -451,9 +451,15 @@ function GolfScorecardDialogContent({
         );
       }
       return (
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-          No scores recorded for this match.
-        </Typography>
+        <ScorecardTable
+          pars={courseData.mensPar}
+          handicaps={courseData.mensHandicap}
+          distances={distances}
+          playerScores={[]}
+          holesPlayed={holesPlayed}
+          startIndex={firstScore?.startIndex || 0}
+          emptyMessage="No scores recorded for this match."
+        />
       );
     }
 
@@ -634,6 +640,13 @@ function GolfScorecardDialogContent({
           <>
             {renderHeader()}
             {renderScorecard()}
+            {matchData.matchStatus !== 1 && matchData.comment && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {matchData.comment}
+                </Typography>
+              </Box>
+            )}
             {renderTeamSummary()}
           </>
         )}
