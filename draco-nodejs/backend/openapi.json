@@ -9680,6 +9680,18 @@
               "type": "string"
             }
           },
+          "leagueNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "seasonNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "seasonCount": {
             "type": "integer"
           },
@@ -9691,6 +9703,8 @@
         "required": [
           "teamId",
           "names",
+          "leagueNames",
+          "seasonNames",
           "seasonCount",
           "logoUrl"
         ]

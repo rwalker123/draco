@@ -269,7 +269,7 @@ function IndividualLiveScoringDialogContent({
             >
               <IconButton
                 onClick={() => handleAdvanceHole('prev')}
-                disabled={currentHole <= 1 || isSessionFinalized || isLoading}
+                disabled={!isConnected || currentHole <= 1 || isSessionFinalized || isLoading}
                 size="large"
               >
                 <ChevronLeftIcon fontSize="large" />
@@ -285,7 +285,10 @@ function IndividualLiveScoringDialogContent({
               <IconButton
                 onClick={() => handleAdvanceHole('next')}
                 disabled={
-                  currentHole >= sessionState.holesPlayed || isSessionFinalized || isLoading
+                  !isConnected ||
+                  currentHole >= sessionState.holesPlayed ||
+                  isSessionFinalized ||
+                  isLoading
                 }
                 size="large"
               >
@@ -303,7 +306,7 @@ function IndividualLiveScoringDialogContent({
                     <Button
                       variant={selectedScore === score ? 'contained' : 'outlined'}
                       onClick={() => handleScoreSelect(score)}
-                      disabled={isSessionFinalized || submitting}
+                      disabled={!isConnected || isSessionFinalized || submitting}
                       fullWidth
                       sx={{
                         minHeight: 50,
@@ -346,31 +349,21 @@ function IndividualLiveScoringDialogContent({
 
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
-        {(isConnecting || (hasActiveSession && !sessionState && !connectionError)) && (
-          <Button
-            variant="outlined"
-            color="error"
-            onClick={() => {
-              disconnect();
-              onClose();
-            }}
-          >
-            Cancel
-          </Button>
-        )}
-        {isSessionActive && (
+        {(isSessionActive || (hasActiveSession && !isSessionFinalized)) && (
           <>
             <Button variant="outlined" color="error" onClick={handleStop} disabled={isLoading}>
               Stop Round
             </Button>
-            <Button
-              variant="contained"
-              color="warning"
-              onClick={handleFinalize}
-              disabled={isLoading}
-            >
-              Save Round
-            </Button>
+            {isSessionActive && (
+              <Button
+                variant="contained"
+                color="warning"
+                onClick={handleFinalize}
+                disabled={!isConnected || isLoading}
+              >
+                Save Round
+              </Button>
+            )}
           </>
         )}
       </DialogActions>

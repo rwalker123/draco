@@ -436,6 +436,8 @@ export type UpdateGameAttendanceType = z.infer<typeof UpdateGameAttendanceSchema
 export const AllTimeTeamSummarySchema = z.object({
   teamId: bigintToStringSchema,
   names: z.array(z.string()),
+  leagueNames: z.array(z.string()),
+  seasonNames: z.array(z.string()),
   seasonCount: z.number().int(),
   logoUrl: z.string().nullable(),
 });

@@ -2274,6 +2274,8 @@ export type dbTeamSeasonRecord = {
 export type dbAllTimeTeamRow = {
   teamid: bigint;
   names: string[];
+  leaguenames: string[];
+  seasonnames: string[];
   seasoncount: number;
 };
 

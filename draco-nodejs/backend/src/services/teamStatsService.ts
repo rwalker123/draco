@@ -142,6 +142,8 @@ export class TeamStatsService {
     return dbTeams.map((team) => ({
       teamId: team.teamid.toString(),
       names: team.names,
+      leagueNames: team.leaguenames,
+      seasonNames: team.seasonnames,
       seasonCount: team.seasoncount,
       logoUrl: getLogoUrl(accountId.toString(), team.teamid.toString()),
     }));

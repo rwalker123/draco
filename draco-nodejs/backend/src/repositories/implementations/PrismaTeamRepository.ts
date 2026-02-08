@@ -324,10 +324,15 @@ export class PrismaTeamRepository implements ITeamRepository {
     const result = await this.prisma.$queryRaw<dbAllTimeTeamRow[]>`
       SELECT
         t.id as "teamid",
-        ARRAY_AGG(DISTINCT ts.name ORDER BY ts.name) as "names",
+        ARRAY_AGG(DISTINCT TRIM(ts.name) ORDER BY TRIM(ts.name)) as "names",
+        ARRAY_AGG(DISTINCT l.name ORDER BY l.name) as "leaguenames",
+        ARRAY_AGG(DISTINCT s.name ORDER BY s.name DESC) as "seasonnames",
         COUNT(DISTINCT ts.id)::int as "seasoncount"
       FROM teams t
       JOIN teamsseason ts ON ts.teamid = t.id
+      JOIN leagueseason ls ON ts.leagueseasonid = ls.id
+      JOIN league l ON ls.leagueid = l.id
+      JOIN season s ON ls.seasonid = s.id
       WHERE t.accountid = ${accountId}
       GROUP BY t.id
       ORDER BY "seasoncount" DESC

@@ -111,21 +111,33 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
             result,
             'Failed to load teams',
           );
-          teamsData = (allTimeTeams ?? []).map((team) => {
-            const displayNames =
-              team.names.length <= 3
-                ? team.names.join(', ')
-                : team.names.slice(0, 3).join(', ') + ', ...';
-            return {
-              id: team.teamId,
-              teamId: team.teamId,
-              name: displayNames,
-              teamName: displayNames,
-              logoUrl: team.logoUrl ?? undefined,
-              leagueName: 'All-Time',
-              divisionName: `${team.seasonCount} Season${team.seasonCount !== 1 ? 's' : ''}`,
-            } satisfies Team;
-          });
+          teamsData = (allTimeTeams ?? [])
+            .map((team) => {
+              const displayNames =
+                team.names.length <= 3
+                  ? team.names.join(', ')
+                  : team.names.slice(0, 3).join(', ') + ', ...';
+              const leagueLabel = team.leagueNames.join(', ');
+              const remaining = team.seasonNames.length - 3;
+              const seasonLabel =
+                team.seasonNames.length <= 3
+                  ? team.seasonNames.join(', ')
+                  : team.seasonNames.slice(0, 3).join(', ') + `, ${remaining} more...`;
+              return {
+                id: team.teamId,
+                teamId: team.teamId,
+                name: displayNames,
+                teamName: displayNames,
+                logoUrl: team.logoUrl ?? undefined,
+                leagueName: leagueLabel,
+                divisionName: seasonLabel,
+              } satisfies Team;
+            })
+            .sort((a, b) => {
+              const leagueCmp = (a.leagueName ?? '').localeCompare(b.leagueName ?? '');
+              if (leagueCmp !== 0) return leagueCmp;
+              return (a.teamName ?? '').localeCompare(b.teamName ?? '');
+            });
         } else {
           const result = await apiListSeasonTeams({
             client: apiClient,
@@ -358,7 +370,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
                 ? teams.map((team) => (
                     <MenuItem key={team.teamId} value={team.teamId}>
                       {isAllTime
-                        ? `${team.teamName} (Seasons: ${team.divisionName?.replace(/ Seasons?/, '')})`
+                        ? `${team.leagueName} [${team.teamName}] [${team.divisionName}]`
                         : `${team.teamName} (${team.leagueName} - ${team.divisionName})`}
                     </MenuItem>
                   ))
@@ -370,7 +382,9 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
             <Box sx={{ mt: 2 }}>
               <Typography variant="h6">{selectedTeam.teamName}</Typography>
               <Typography variant="body2" color="text.secondary">
-                {selectedTeam.leagueName} League • {selectedTeam.divisionName} Division
+                {isAllTime
+                  ? `${selectedTeam.leagueName} • Seasons: ${selectedTeam.divisionName}`
+                  : `${selectedTeam.leagueName} League • ${selectedTeam.divisionName} Division`}
               </Typography>
             </Box>
           )}
@@ -400,6 +414,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
                 sortOrder={battingSortOrder}
                 onSort={(field) => handleBattingSort(field as keyof PlayerBattingStatsType)}
                 playerLinkLabel="Team Batting Stats"
+                omitFields={['teamName']}
               />
             </TabPanel>
 
@@ -415,6 +430,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
                 sortOrder={pitchingSortOrder}
                 onSort={(field) => handlePitchingSort(field as keyof PlayerPitchingStatsType)}
                 playerLinkLabel="Team Pitching Stats"
+                omitFields={['teamName']}
               />
             </TabPanel>
           </Paper>
