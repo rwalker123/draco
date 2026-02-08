@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
   Container,
   Typography,
@@ -10,8 +10,6 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
-  Breadcrumbs,
-  Link as MuiLink,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -19,12 +17,12 @@ import {
   DialogActions,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { UpdateGolfLeagueSetupSchema } from '@draco/shared-schemas';
 import { UpdateGolfLeagueSetup, getAccountSeason } from '@draco/shared-api-client';
 import AccountPageHeader from '../../AccountPageHeader';
+import { AdminBreadcrumbs } from '../../admin';
 import { useGolfLeagueSetup } from '../../../hooks/useGolfLeagueSetup';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../utils/apiResult';
@@ -41,7 +39,6 @@ interface FormData extends UpdateGolfLeagueSetup {
 
 export function GolfLeagueSetupPage() {
   const params = useParams();
-  const router = useRouter();
   const apiClient = useApiClient();
   const accountIdParam = params?.accountId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
@@ -65,7 +62,6 @@ export function GolfLeagueSetupPage() {
   const [officersExpanded, setOfficersExpanded] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const isDirtyRef = useRef(false);
 
   useEffect(() => {
@@ -143,7 +139,6 @@ export function GolfLeagueSetupPage() {
         // Push state again to prevent navigation
         window.history.pushState(null, '', window.location.href);
         // Store the fact that user tried to navigate back and show dialog
-        setPendingNavigation('back');
         setShowUnsavedChangesDialog(true);
       }
     };
@@ -192,31 +187,15 @@ export function GolfLeagueSetupPage() {
     }
   };
 
-  const handleNavigateBack = useCallback(() => {
-    if (isDirty) {
-      setPendingNavigation('breadcrumb');
-      setShowUnsavedChangesDialog(true);
-      return;
-    }
-    router.push(`/account/${accountId}/seasons/${seasonId}/golf/admin`);
-  }, [isDirty, router, accountId, seasonId]);
-
   const handleConfirmLeave = useCallback(() => {
     setShowUnsavedChangesDialog(false);
-    if (pendingNavigation === 'back') {
-      // For browser back button, go back 2 entries:
-      // -1 for the entry we pushed on mount, -1 for the entry we pushed when blocking
-      window.history.go(-2);
-    } else {
-      // For breadcrumb navigation, push to the admin page
-      router.push(`/account/${accountId}/seasons/${seasonId}/golf/admin`);
-    }
-    setPendingNavigation(null);
-  }, [pendingNavigation, router, accountId, seasonId]);
+    // For browser back button, go back 2 entries:
+    // -1 for the entry we pushed on mount, -1 for the entry we pushed when blocking
+    window.history.go(-2);
+  }, []);
 
   const handleCancelLeave = useCallback(() => {
     setShowUnsavedChangesDialog(false);
-    setPendingNavigation(null);
   }, []);
 
   if (!accountId || !seasonId || !leagueSeasonId) {
@@ -243,35 +222,25 @@ export function GolfLeagueSetupPage() {
         >
           {leagueName ? `${leagueName} Setup` : 'League Setup'}
         </Typography>
-        {seasonName && (
-          <Typography
-            variant="body1"
-            sx={{ mt: 0.5, textAlign: 'center', color: 'text.secondary' }}
-          >
-            {seasonName}
-          </Typography>
-        )}
-        <Typography variant="body2" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
-          Configure league day, tee times, and scoring
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          {seasonName
+            ? `Configure league day, tee times, and scoring for ${seasonName}`
+            : 'Configure league day, tee times, and scoring'}
         </Typography>
       </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ mb: 3 }}>
-          <MuiLink
-            component="button"
-            type="button"
-            onClick={handleNavigateBack}
-            underline="hover"
-            color="inherit"
-            sx={{ cursor: 'pointer' }}
-          >
-            Golf Admin
-          </MuiLink>
-          <Typography color="text.primary">
-            {leagueName ? `${leagueName} Setup` : 'League Setup'}
-          </Typography>
-        </Breadcrumbs>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          links={[
+            { name: 'Season', href: `/account/${accountId}/admin/season` },
+            { name: 'Season Management', href: `/account/${accountId}/seasons` },
+            ...(seasonName
+              ? [{ name: seasonName, href: `/account/${accountId}/seasons/${seasonId}/golf/admin` }]
+              : []),
+          ]}
+          currentPage={leagueName ? `${leagueName} Setup` : 'League Setup'}
+        />
 
         <FormProvider {...methods}>
           <form onSubmit={handleSubmit(onSubmit)}>

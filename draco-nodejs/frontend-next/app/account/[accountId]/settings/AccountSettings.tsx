@@ -1,12 +1,22 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Paper, Tabs, Tab, Alert, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Container,
+  Typography,
+  Paper,
+  Tabs,
+  Tab,
+  Alert,
+  CircularProgress,
+} from '@mui/material';
 import { useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
 import { isAccountAdministrator } from '../../../../utils/permissionUtils';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../components/admin';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
@@ -154,23 +164,25 @@ const AccountSettings: React.FC = () => {
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountIdStr || ''} showSeasonInfo={false}>
-        <Box textAlign="center">
-          <Typography
-            variant="h4"
-            component="h1"
-            color="text.primary"
-            sx={{ fontWeight: 'bold', mb: 1 }}
-          >
-            Account Settings
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.8 }}>
-            {"Manage your organization's configuration and settings."}
-          </Typography>
-        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          Account Settings
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          {"Manage your organization's configuration and settings."}
+        </Typography>
       </AccountPageHeader>
 
-      <Box sx={{ p: 3 }}>
-        {/* Settings Tabs */}
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountIdStr || ''}
+          category={{ name: 'Account', href: `/account/${accountIdStr}/admin/account` }}
+          currentPage="Account Settings"
+        />
+
         <Paper sx={{ width: '100%' }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
@@ -209,7 +221,7 @@ const AccountSettings: React.FC = () => {
             />
           </TabPanel>
         </Paper>
-      </Box>
+      </Container>
     </main>
   );
 };

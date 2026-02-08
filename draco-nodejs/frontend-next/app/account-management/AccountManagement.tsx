@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
+  Container,
   Typography,
   Paper,
   Table,
@@ -30,6 +31,8 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
 import { useAccount } from '../../context/AccountContext';
+import { AdminBreadcrumbs } from '../../components/admin';
+import AccountPageHeader from '../../components/AccountPageHeader';
 import { getTimezoneLabel, DEFAULT_TIMEZONE } from '../../utils/timezones';
 import EditAccountLogoDialog from '../../components/EditAccountLogoDialog';
 import CreateAccountDialog from '../../components/account-management/dialogs/CreateAccountDialog';
@@ -52,7 +55,7 @@ import type { AccountLogoOperationSuccess } from '../../hooks/useAccountLogoOper
 const AccountManagement: React.FC = () => {
   const { token } = useAuth();
   const { hasRole } = useRole();
-  const { setCurrentAccount } = useAccount();
+  const { currentAccount, setCurrentAccount } = useAccount();
   const apiClient = useApiClient();
 
   const [accounts, setAccounts] = useState<SharedAccountType[]>([]);
@@ -249,121 +252,141 @@ const AccountManagement: React.FC = () => {
 
   return (
     <main className="min-h-screen bg-background">
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          Account Management
-        </Typography>
-        {isGlobalAdmin && (
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateClick}>
-            Create Account
-          </Button>
+      {currentAccount && (
+        <AccountPageHeader accountId={currentAccount.id}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+          >
+            Account Management
+          </Typography>
+          <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+            View and manage all accounts you own or administer.
+          </Typography>
+        </AccountPageHeader>
+      )}
+
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        {currentAccount && (
+          <AdminBreadcrumbs
+            accountId={currentAccount.id}
+            category={{ name: 'Account', href: `/account/${currentAccount.id}/admin/account` }}
+            currentPage="My Accounts"
+          />
         )}
-      </Stack>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {success}
+          </Alert>
+        )}
 
-      <Typography variant="body2" color="text.secondary">
-        You can use &quot;Account Management&quot; to update your organization details.
-      </Typography>
+        {isGlobalAdmin && (
+          <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateClick}>
+              Create Account
+            </Button>
+          </Stack>
+        )}
 
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <TableContainer>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Affiliation</TableCell>
-                <TableCell>First Year</TableCell>
-                <TableCell>Owner</TableCell>
-                <TableCell>Timezone</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {accounts.map((account) => (
-                <TableRow key={account.id} hover>
-                  <TableCell>
-                    <Typography variant="subtitle2" fontWeight="bold">
-                      {account.name}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={getAccountTypeName(account)}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>{getAffiliationName(account)}</TableCell>
-                  <TableCell>{account.configuration?.firstYear ?? '—'}</TableCell>
-                  <TableCell>{getOwnerDisplayName(account)}</TableCell>
-                  <TableCell>{getTimezoneLabel(getTimezoneId(account))}</TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={1}>
-                      <Tooltip title="View Account">
-                        <IconButton size="small" onClick={() => handleViewAccount(account)}>
-                          <ViewIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Edit Account">
-                        <IconButton
-                          size="small"
-                          onClick={() => openEditDialog(account)}
-                          color="primary"
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Edit Account Logo">
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            setLogoDialogAccount(account);
-                            setLogoDialogOpen(true);
-                          }}
-                        >
-                          <PhotoCameraIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Account Settings">
-                        <IconButton
-                          size="small"
-                          onClick={() => (window.location.href = `/account/${account.id}/settings`)}
-                        >
-                          <SettingsIcon />
-                        </IconButton>
-                      </Tooltip>
-                      {isGlobalAdmin && (
-                        <Tooltip title="Delete Account">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => openDeleteDialog(account)}
-                          >
-                            <DeleteIcon />
+        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+          <TableContainer>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Affiliation</TableCell>
+                  <TableCell>First Year</TableCell>
+                  <TableCell>Owner</TableCell>
+                  <TableCell>Timezone</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {accounts.map((account) => (
+                  <TableRow key={account.id} hover>
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        {account.name}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getAccountTypeName(account)}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell>{getAffiliationName(account)}</TableCell>
+                    <TableCell>{account.configuration?.firstYear ?? '—'}</TableCell>
+                    <TableCell>{getOwnerDisplayName(account)}</TableCell>
+                    <TableCell>{getTimezoneLabel(getTimezoneId(account))}</TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1}>
+                        <Tooltip title="View Account">
+                          <IconButton size="small" onClick={() => handleViewAccount(account)}>
+                            <ViewIcon />
                           </IconButton>
                         </Tooltip>
-                      )}
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+                        <Tooltip title="Edit Account">
+                          <IconButton
+                            size="small"
+                            onClick={() => openEditDialog(account)}
+                            color="primary"
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Edit Account Logo">
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setLogoDialogAccount(account);
+                              setLogoDialogOpen(true);
+                            }}
+                          >
+                            <PhotoCameraIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Account Settings">
+                          <IconButton
+                            size="small"
+                            onClick={() =>
+                              (window.location.href = `/account/${account.id}/settings`)
+                            }
+                          >
+                            <SettingsIcon />
+                          </IconButton>
+                        </Tooltip>
+                        {isGlobalAdmin && (
+                          <Tooltip title="Delete Account">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => openDeleteDialog(account)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      </Container>
 
       <CreateAccountDialog
         open={createDialogOpen}

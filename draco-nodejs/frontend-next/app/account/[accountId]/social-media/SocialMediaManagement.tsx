@@ -1,11 +1,22 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, CircularProgress, Paper, Tab, Tabs, Typography, Stack } from '@mui/material';
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  Container,
+  Paper,
+  Tab,
+  Tabs,
+  Typography,
+  Stack,
+} from '@mui/material';
 import { useParams } from 'next/navigation';
 import { getAccountById } from '@draco/shared-api-client';
 import type { AccountSettingKey, AccountType } from '@draco/shared-schemas';
 import AccountPageHeader from '@/components/AccountPageHeader';
+import { AdminBreadcrumbs } from '@/components/admin';
 import { DiscordIntegrationAdminWidget } from '@/components/account/settings/DiscordIntegrationAdminWidget';
 import { SocialMediaWidget } from '@/components/account/settings/SocialMediaWidget';
 import { BlueskyIntegrationAdminWidget } from '@/components/account/settings/BlueskyIntegrationAdminWidget';
@@ -214,23 +225,21 @@ const SocialMediaManagement: React.FC = () => {
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountIdStr || ''} showSeasonInfo={false}>
-        <Box textAlign="center">
-          <Typography
-            variant="h4"
-            component="h1"
-            color="text.primary"
-            sx={{ fontWeight: 'bold', mb: 1 }}
-          >
-            Social Media Management
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.8 }}>
-            Configure YouTube, Discord, Bluesky, Twitter, and Facebook/Instagram integrations for
-            your organization.
-          </Typography>
-        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          Social Media Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Configure YouTube, Discord, Bluesky, Twitter, and Facebook/Instagram integrations for your
+          organization.
+        </Typography>
       </AccountPageHeader>
 
-      <Box sx={{ p: 3 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs accountId={accountIdStr || ''} currentPage="Social Media Management" />
         <Paper sx={{ width: '100%' }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
@@ -369,7 +378,7 @@ const SocialMediaManagement: React.FC = () => {
             </Stack>
           </TabPanel>
         </Paper>
-      </Box>
+      </Container>
     </main>
   );
 };

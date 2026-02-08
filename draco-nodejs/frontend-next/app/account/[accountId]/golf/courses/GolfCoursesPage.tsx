@@ -6,6 +6,7 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
 import type { GolfLeagueCourseType } from '@draco/shared-schemas';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../../components/admin';
 import { CourseList, CourseSearchDialog } from '../../../../../components/golf/courses';
 import { useGolfCourses } from '../../../../../hooks/useGolfCourses';
 import { useRole } from '../../../../../context/RoleContext';
@@ -128,22 +129,20 @@ const GolfCoursesPage: React.FC = () => {
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box textAlign="center">
-          <Typography
-            variant="h4"
-            component="h1"
-            color="text.primary"
-            sx={{ fontWeight: 'bold', mb: 1 }}
-          >
-            Golf Courses
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.85 }}>
-            Manage the golf courses available for your league.
-          </Typography>
-        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          Golf Courses
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Manage the golf courses available for your league.
+        </Typography>
       </AccountPageHeader>
 
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs accountId={accountId} currentPage="Golf Courses" />
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress />

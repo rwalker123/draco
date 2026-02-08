@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
-  Box,
   CircularProgress,
   Container,
   Fab,
@@ -31,6 +30,7 @@ import EditContactDialog from '../users/EditContactDialog';
 import UserAvatar from '../users/UserAvatar';
 import { EditIconButton, DeleteIconButton } from '../common/ActionIconButtons';
 import PageSectionHeader from '../common/PageSectionHeader';
+import { AdminBreadcrumbs } from '../admin';
 
 interface UmpiresManagementProps {
   accountId: string;
@@ -219,25 +219,26 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
   const totalCount = pagination?.total ?? umpires.length;
 
   return (
-    <Box component="main" sx={{ pb: 6 }}>
+    <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Stack alignItems="center" justifyContent="center" spacing={2} textAlign="center">
-          <Box>
-            <Typography
-              variant="h4"
-              color="text.primary"
-              sx={{ fontWeight: 700, textAlign: 'center' }}
-            >
-              Umpires
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center' }}>
-              Manage the officials available for scheduling and assignments.
-            </Typography>
-          </Box>
-        </Stack>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          Umpires
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Manage the officials available for scheduling and assignments.
+        </Typography>
       </AccountPageHeader>
 
-      <Container maxWidth="lg" sx={{ mt: 4, px: { xs: 2, md: 3 } }}>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Season', href: `/account/${accountId}/admin/season` }}
+          currentPage="Umpires"
+        />
         <Paper elevation={3} sx={{ overflow: 'hidden' }}>
           <PageSectionHeader title="Umpire Directory" showDivider />
 
@@ -396,7 +397,7 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
           <AddIcon />
         </Fab>
       ) : null}
-    </Box>
+    </main>
   );
 };
 

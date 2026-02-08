@@ -7,6 +7,7 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { getAccountSeason } from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../../../../components/admin';
 import AdminSubItemCard from '../../../../../../../components/admin/AdminSubItemCard';
 import { useApiClient } from '../../../../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../../../../utils/apiResult';
@@ -79,6 +80,17 @@ const GolfFlightsAdminPage: React.FC<GolfFlightsAdminPageProps> = ({ accountId, 
       </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          links={[
+            { name: 'Season', href: `/account/${accountId}/admin/season` },
+            { name: 'Season Management', href: `/account/${accountId}/seasons` },
+            ...(seasonName
+              ? [{ name: seasonName, href: `/account/${accountId}/seasons/${seasonId}/golf/admin` }]
+              : []),
+          ]}
+          currentPage="Flights Administration"
+        />
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
             <AdminSubItemCard

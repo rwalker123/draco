@@ -19,14 +19,11 @@ import {
   Switch,
   FormControlLabel,
 } from '@mui/material';
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Business as BusinessIcon,
-} from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { listMemberBusinesses } from '@draco/shared-api-client';
 import type { MemberBusinessType } from '@draco/shared-schemas';
 import AccountPageHeader from '@/components/AccountPageHeader';
+import { AdminBreadcrumbs } from '@/components/admin';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
 import MemberBusinessFormDialog, {
@@ -162,15 +159,25 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
     <>
       <main className="min-h-screen bg-background">
         <AccountPageHeader accountId={accountId}>
-          <Box display="flex" alignItems="center" gap={1} justifyContent="center">
-            <BusinessIcon sx={{ color: 'text.secondary' }} />
-            <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
-              Member Business Management
-            </Typography>
-          </Box>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+          >
+            Member Business Management
+          </Typography>
+          <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+            Showcase businesses owned or operated by your members.
+          </Typography>
         </AccountPageHeader>
 
         <Container maxWidth="lg" sx={{ py: 4 }}>
+          <AdminBreadcrumbs
+            accountId={accountId}
+            category={{ name: 'Account', href: `/account/${accountId}/admin/account` }}
+            currentPage="Member Businesses"
+          />
+
           <Stack spacing={3}>
             <WidgetShell
               title="Directory Availability"
@@ -263,22 +270,24 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
                             {business.website || '—'}
                           </TableCell>
                           <TableCell align="right">
-                            <IconButton
-                              aria-label="edit"
-                              size="small"
-                              onClick={() => handleEdit(business)}
-                              color="primary"
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              aria-label="delete"
-                              size="small"
-                              onClick={() => handleDelete(business)}
-                              color="error"
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
+                            <Stack direction="row" spacing={1} justifyContent="flex-end">
+                              <IconButton
+                                aria-label="edit"
+                                size="small"
+                                onClick={() => handleEdit(business)}
+                                color="primary"
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                aria-label="delete"
+                                size="small"
+                                onClick={() => handleDelete(business)}
+                                color="error"
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Stack>
                           </TableCell>
                         </TableRow>
                       ))}

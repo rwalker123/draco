@@ -16,7 +16,6 @@ import {
   Grid,
   IconButton,
   Paper,
-  Stack,
   Table,
   TableBody,
   TableCell,
@@ -40,6 +39,7 @@ import PageSectionHeader from '../common/PageSectionHeader';
 export interface FieldsViewProps {
   accountId: string;
   renderRowActions?: (field: FieldType) => React.ReactNode;
+  breadcrumbs?: React.ReactNode;
 }
 
 export interface FieldsViewRef {
@@ -62,7 +62,7 @@ const COLUMNS: ColumnDefinition[] = [
 ];
 
 export const FieldsView = forwardRef<FieldsViewRef, FieldsViewProps>(
-  ({ accountId, renderRowActions }, ref) => {
+  ({ accountId, renderRowActions, breadcrumbs }, ref) => {
     const { listFields } = useFieldService(accountId);
     const hasActionsColumn = Boolean(renderRowActions);
 
@@ -164,25 +164,22 @@ export const FieldsView = forwardRef<FieldsViewRef, FieldsViewProps>(
     );
 
     return (
-      <Box component="main" sx={{ pb: 6 }}>
+      <main className="min-h-screen bg-background">
         <AccountPageHeader accountId={accountId}>
-          <Stack alignItems="center" justifyContent="center" spacing={2} textAlign="center">
-            <Box>
-              <Typography
-                variant="h4"
-                color="text.primary"
-                sx={{ fontWeight: 700, textAlign: 'center' }}
-              >
-                Fields
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center' }}>
-                Review locations and publish updates so teams always know where to play.
-              </Typography>
-            </Box>
-          </Stack>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+          >
+            Fields
+          </Typography>
+          <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+            Review locations and publish updates so teams always know where to play.
+          </Typography>
         </AccountPageHeader>
 
-        <Container maxWidth="xl" sx={{ mt: 4, px: { xs: 2, md: 3 } }}>
+        <Container maxWidth="xl" sx={{ py: 4 }}>
+          {breadcrumbs}
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 8 }} sx={{ minWidth: 0 }}>
               <Paper elevation={3} sx={{ overflow: 'visible' }}>
@@ -371,7 +368,7 @@ export const FieldsView = forwardRef<FieldsViewRef, FieldsViewProps>(
             </Grid>
           </Grid>
         </Container>
-      </Box>
+      </main>
     );
   },
 );

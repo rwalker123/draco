@@ -10,6 +10,7 @@ import FieldFormDialog from './FieldFormDialog';
 import FieldDeleteDialog from './FieldDeleteDialog';
 import { FieldsView, type FieldsViewRef } from './FieldsView';
 import { EditIconButton, DeleteIconButton } from '../common/ActionIconButtons';
+import { AdminBreadcrumbs } from '../admin';
 
 interface FieldsManagementProps {
   accountId: string;
@@ -44,6 +45,13 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
       <FieldsView
         ref={viewRef}
         accountId={accountId}
+        breadcrumbs={
+          <AdminBreadcrumbs
+            accountId={accountId}
+            category={{ name: 'Season', href: `/account/${accountId}/admin/season` }}
+            currentPage="Field Management"
+          />
+        }
         renderRowActions={
           canManage
             ? (field) => (

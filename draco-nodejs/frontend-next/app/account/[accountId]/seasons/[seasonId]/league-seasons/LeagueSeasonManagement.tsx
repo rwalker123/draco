@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
-  Breadcrumbs,
   Card,
   CardContent,
+  Container,
   Typography,
   Button,
   IconButton,
@@ -18,7 +18,6 @@ import {
   Select,
   MenuItem,
   FormControl,
-  Link as MuiLink,
   Fab,
   Snackbar,
   Menu,
@@ -31,7 +30,6 @@ import {
   Remove as RemoveIcon,
   Sports as SportsIcon,
   People as PeopleIcon,
-  NavigateNext as NavigateNextIcon,
   FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
@@ -59,6 +57,7 @@ import { mapLeagueSetup } from '../../../../../../utils/leagueSeasonMapper';
 import { downloadBlob } from '../../../../../../utils/downloadUtils';
 import { useAuth } from '../../../../../../context/AuthContext';
 import AccountPageHeader from '../../../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../../../components/admin';
 import {
   AddDivisionDialog,
   CreateLeagueDialog,
@@ -81,14 +80,9 @@ import type { UpdateTeamMetadataResult } from '../../../../../../hooks/useTeamMa
 interface LeagueSeasonManagementProps {
   accountId: string;
   seasonId: string;
-  onClose: () => void;
 }
 
-const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
-  accountId,
-  seasonId,
-  onClose,
-}) => {
+const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ accountId, seasonId }) => {
   const [leagueSeasons, setLeagueSeasons] = useState<
     LeagueSeasonWithDivisionTeamsAndUnassignedType[]
   >([]);
@@ -776,32 +770,25 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId} seasonName={seasonName} showSeasonInfo={true}>
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-            League Season Management
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage leagues, divisions, and team assignments for this season
-          </Typography>
-        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          League Season Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Manage leagues, divisions, and team assignments for this season.
+        </Typography>
       </AccountPageHeader>
 
-      <Box sx={{ maxWidth: 1200, mx: 'auto', px: 3, mt: 2 }}>
-        <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ mb: 2 }}>
-          <MuiLink
-            component="button"
-            variant="body2"
-            onClick={onClose}
-            underline="hover"
-            color="inherit"
-            sx={{ cursor: 'pointer' }}
-          >
-            Season Management
-          </MuiLink>
-          <Typography variant="body2" color="text.primary">
-            {seasonName}
-          </Typography>
-        </Breadcrumbs>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Season', href: `/account/${accountId}/admin/season` }}
+          subcategory={{ name: 'Season Management', href: `/account/${accountId}/seasons` }}
+          currentPage="League Seasons"
+        />
 
         {/* League Seasons */}
         {leagueSeasons.length === 0 ? (
@@ -1266,7 +1253,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             setFeedback({ severity: 'success', message });
           }}
         />
-      </Box>
+      </Container>
 
       {/* FAB for creating new league */}
       <Fab

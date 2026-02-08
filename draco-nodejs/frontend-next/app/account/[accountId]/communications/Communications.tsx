@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { Box, Typography, Card, CardContent, Fab, Tooltip } from '@mui/material';
+import { Box, Container, Typography, Card, CardContent, Fab, Tooltip } from '@mui/material';
 import { Add as AddIcon, Description as TemplateIcon } from '@mui/icons-material';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useRole } from '../../../../context/RoleContext';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../components/admin';
 import EmailHistoryPanel from '../../../../components/emails/history/EmailHistoryPanel';
 
 interface QuickAction {
@@ -46,22 +47,24 @@ export default function Communications() {
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountIdStr}>
-        <Box textAlign="center">
-          <Typography
-            variant="h4"
-            component="h1"
-            color="text.primary"
-            sx={{ fontWeight: 'bold', mb: 1 }}
-          >
-            Communications
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.85 }}>
-            Send messages, manage templates, and review delivery history for your organization.
-          </Typography>
-        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          Communications
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Send messages, manage templates, and review delivery history for your organization.
+        </Typography>
       </AccountPageHeader>
 
-      <Box sx={{ p: 3 }}>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountIdStr}
+          category={{ name: 'Account', href: `/account/${accountIdStr}/admin/account` }}
+          currentPage="Communications"
+        />
         {visibleQuickActions.length > 0 && (
           <Box
             sx={{
@@ -124,7 +127,7 @@ export default function Communications() {
         )}
 
         <EmailHistoryPanel accountId={accountIdStr} />
-      </Box>
+      </Container>
 
       {accountIdStr && (
         <Tooltip title="Compose email">

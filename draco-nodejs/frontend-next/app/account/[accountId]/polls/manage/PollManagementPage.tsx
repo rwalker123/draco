@@ -5,6 +5,7 @@ import {
   Alert,
   Box,
   CircularProgress,
+  Container,
   Fab,
   IconButton,
   Paper,
@@ -21,11 +22,13 @@ import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/ico
 import { AccountPollType } from '@draco/shared-schemas';
 import { listAccountPolls } from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../../components/admin';
 import PollEditorDialog from '../../../../../components/polls/PollEditorDialog';
 import PollDeleteDialog from '../../../../../components/polls/PollDeleteDialog';
 import { useApiClient } from '../../../../../hooks/useApiClient';
 import { useAuth } from '../../../../../context/AuthContext';
 import { unwrapApiResult } from '@/utils/apiResult';
+import { alpha } from '@mui/material/styles';
 
 interface PollManagementPageProps {
   accountId: string;
@@ -140,15 +143,15 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
         <AccountPageHeader accountId={accountId}>
           <Typography
             variant="h4"
-            color="text.primary"
-            sx={{ fontWeight: 'bold', textAlign: 'center' }}
+            component="h1"
+            sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
           >
             Poll Management
           </Typography>
         </AccountPageHeader>
-        <Box sx={{ p: 3 }}>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
           <Alert severity="warning">You must be signed in to manage polls.</Alert>
-        </Box>
+        </Container>
       </main>
     );
   }
@@ -156,128 +159,143 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h3" color="text.primary" sx={{ fontWeight: 'bold' }}>
-            Poll Management
-          </Typography>
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            sx={{ mt: 1, maxWidth: 520, mx: 'auto' }}
-          >
-            Create, edit, and retire polls that keep your members engaged. Results update instantly
-            as votes come in.
-          </Typography>
-        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          Poll Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Create, edit, and retire polls that keep your members engaged. Results update instantly as
+          votes come in.
+        </Typography>
       </AccountPageHeader>
 
-      <Box
-        sx={{
-          position: 'relative',
-          p: 3,
-          pb: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 3,
-        }}
-      >
-        {error && <Alert severity="error">{error}</Alert>}
-        {success && <Alert severity="success">{success}</Alert>}
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Community', href: `/account/${accountId}/admin/community` }}
+          currentPage="Poll Management"
+        />
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {success}
+          </Alert>
+        )}
 
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress size={40} />
           </Box>
         ) : (
-          <TableContainer component={Paper}>
-            <Table sx={{ tableLayout: 'auto' }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Question</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Results</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {polls.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} align="center">
-                      <Typography color="text.secondary">No polls found.</Typography>
-                    </TableCell>
+          <Paper elevation={3} sx={{ overflow: 'hidden' }}>
+            <TableContainer>
+              <Table sx={{ tableLayout: 'auto' }}>
+                <TableHead>
+                  <TableRow
+                    sx={{
+                      backgroundColor: (theme) =>
+                        alpha(
+                          theme.palette.primary.main,
+                          theme.palette.mode === 'dark' ? 0.2 : 0.08,
+                        ),
+                      '& .MuiTableCell-root': {
+                        fontWeight: 600,
+                      },
+                    }}
+                  >
+                    <TableCell>Question</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Results</TableCell>
+                    <TableCell align="right">Actions</TableCell>
                   </TableRow>
-                ) : (
-                  polls
-                    .slice()
-                    .sort((a, b) => Number(b.active) - Number(a.active))
-                    .map((poll) => (
-                      <TableRow key={poll.id} hover>
-                        <TableCell sx={{ whiteSpace: 'normal' }}>{poll.question}</TableCell>
-                        <TableCell>{poll.active ? 'Active' : 'Inactive'}</TableCell>
-                        <TableCell>
-                          {poll.options && poll.options.length > 0 ? (
-                            <Table
-                              size="small"
-                              sx={{
-                                width: 'auto',
-                                border: (theme) => `1px solid ${theme.palette.divider}`,
-                                borderRadius: 1,
-                                overflow: 'hidden',
-                                '& td:first-of-type': { pr: 3 },
-                                '& td:last-of-type': { pl: 1.5 },
-                                '& td:not(:last-of-type)': {
-                                  borderRight: (theme) => `1px solid ${theme.palette.divider}`,
-                                },
-                                '& td': {
-                                  borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-                                  py: 0.5,
-                                },
-                                '& tbody tr:last-of-type td': { borderBottom: 'none' },
-                              }}
-                            >
-                              <TableBody>
-                                {poll.options.map((option) => (
-                                  <TableRow key={option.id}>
-                                    <TableCell sx={{ pr: 2 }}>
-                                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                        {option.optionText}
-                                      </Typography>
-                                    </TableCell>
-                                    <TableCell sx={{ pl: 0 }}>
-                                      <Typography variant="body2" color="text.secondary">
-                                        {option.voteCount ?? 0} votes
-                                      </Typography>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          ) : (
-                            <Typography variant="body2" color="text.secondary">
-                              No options configured.
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell align="right">
-                          <Tooltip title="Edit poll">
-                            <IconButton color="primary" onClick={() => handleOpenEdit(poll)}>
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete poll">
-                            <IconButton color="error" onClick={() => handleConfirmDelete(poll)}>
-                              <DeleteIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {polls.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        <Typography color="text.secondary">No polls found.</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    polls
+                      .slice()
+                      .sort((a, b) => Number(b.active) - Number(a.active))
+                      .map((poll) => (
+                        <TableRow key={poll.id} hover>
+                          <TableCell sx={{ whiteSpace: 'normal' }}>{poll.question}</TableCell>
+                          <TableCell>{poll.active ? 'Active' : 'Inactive'}</TableCell>
+                          <TableCell>
+                            {poll.options && poll.options.length > 0 ? (
+                              <Table
+                                size="small"
+                                sx={{
+                                  width: 'auto',
+                                  border: (theme) => `1px solid ${theme.palette.divider}`,
+                                  borderRadius: 1,
+                                  overflow: 'hidden',
+                                  '& td:first-of-type': { pr: 3 },
+                                  '& td:last-of-type': { pl: 1.5 },
+                                  '& td:not(:last-of-type)': {
+                                    borderRight: (theme) => `1px solid ${theme.palette.divider}`,
+                                  },
+                                  '& td': {
+                                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                                    py: 0.5,
+                                  },
+                                  '& tbody tr:last-of-type td': { borderBottom: 'none' },
+                                }}
+                              >
+                                <TableBody>
+                                  {poll.options.map((option) => (
+                                    <TableRow key={option.id}>
+                                      <TableCell sx={{ pr: 2 }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                          {option.optionText}
+                                        </Typography>
+                                      </TableCell>
+                                      <TableCell sx={{ pl: 0 }}>
+                                        <Typography variant="body2" color="text.secondary">
+                                          {option.voteCount ?? 0} votes
+                                        </Typography>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                No options configured.
+                              </Typography>
+                            )}
+                          </TableCell>
+                          <TableCell align="right">
+                            <Tooltip title="Edit poll">
+                              <IconButton color="primary" onClick={() => handleOpenEdit(poll)}>
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete poll">
+                              <IconButton color="error" onClick={() => handleConfirmDelete(poll)}>
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
         )}
-      </Box>
+      </Container>
 
       <Fab
         color="primary"

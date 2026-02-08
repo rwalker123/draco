@@ -23,6 +23,7 @@ import {
   GameStatus,
 } from '../../../../components/schedule';
 import { SeasonSchedulerAdapter } from '../../../../components/scheduler/SeasonSchedulerAdapter';
+import { AdminBreadcrumbs } from '../../../../components/admin';
 
 interface ScheduleManagementProps {
   accountId: string;
@@ -301,6 +302,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     <ScheduleLayout
       accountId={accountId}
       title="Schedule Management"
+      subtitle="Create, edit, and manage game schedules for your organization."
+      breadcrumbs={
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Season', href: `/account/${accountId}/admin/season` }}
+          currentPage="Schedule Management"
+        />
+      }
       seasonName={currentSeasonName}
       filteredGames={filteredGames}
       teams={teams}

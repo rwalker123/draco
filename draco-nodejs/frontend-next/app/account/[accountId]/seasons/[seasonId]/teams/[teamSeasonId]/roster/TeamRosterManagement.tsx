@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
+  Container,
   Typography,
   Paper,
   Button,
@@ -14,8 +15,6 @@ import {
   TableRow,
   Alert,
   CircularProgress,
-  Breadcrumbs,
-  Link,
   Card,
   CardContent,
   IconButton,
@@ -31,7 +30,6 @@ import {
   SupervisorAccount as ManagerIcon,
   FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
-import { useRouter } from 'next/navigation';
 import EditContactDialog from '../../../../../../../../components/users/EditContactDialog';
 import UserAvatar from '../../../../../../../../components/users/UserAvatar';
 import SignPlayerDialog from '../../../../../../../../components/roster/SignPlayerDialog';
@@ -39,6 +37,7 @@ import DeleteRosterMemberDialog from '../../../../../../../../components/roster/
 import AssignTeamManagerDialog from '../../../../../../../../components/roster/AssignTeamManagerDialog';
 import PageSectionHeader from '../../../../../../../../components/common/PageSectionHeader';
 import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../../../../../components/admin';
 import {
   formatRosterContactInfo,
   formatRosterVerificationInfo,
@@ -73,7 +72,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   seasonId,
   teamSeasonId,
 }) => {
-  const router = useRouter();
   const apiClient = useApiClient();
   const [formLoading, setFormLoading] = useState(false);
 
@@ -616,302 +614,160 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Account Header */}
       <AccountPageHeader accountId={accountId} seasonName={season?.name} showSeasonInfo={true}>
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-            {league?.name
-              ? `${league.name} – ${rosterData?.teamSeason?.name} Roster`
-              : `${rosterData?.teamSeason?.name} Roster`}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage team roster, players, and managers
-          </Typography>
-        </Box>
-      </AccountPageHeader>
-
-      {/* Breadcrumbs */}
-      <Breadcrumbs sx={{ mb: 3, mt: 2 }}>
-        <Link
-          color="inherit"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            router.push(`/account/${accountId}/seasons`);
-          }}
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
         >
-          Seasons
-        </Link>
-        <Link
-          color="inherit"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            router.push(`/account/${accountId}/seasons/${seasonId}/league-seasons`);
-          }}
-        >
-          {season?.name || 'Season'}
-        </Link>
-        <Typography color="text.primary">
           {league?.name
             ? `${league.name} – ${rosterData?.teamSeason?.name} Roster`
             : `${rosterData?.teamSeason?.name} Roster`}
         </Typography>
-      </Breadcrumbs>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Manage team roster, players, and managers
+        </Typography>
+      </AccountPageHeader>
 
-      {/* Action Buttons */}
-      <Box
-        sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3, gap: 2 }}
-      >
-        <Button
-          variant="outlined"
-          startIcon={<FileDownloadIcon />}
-          onClick={handleExportRoster}
-          disabled={formLoading}
-        >
-          Export Roster
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<PersonAddIcon />}
-          onClick={openCreatePlayerDialog}
-          disabled={formLoading}
-        >
-          Create Player
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<PersonAddIcon />}
-          onClick={openSignPlayerDialog}
-          disabled={formLoading}
-        >
-          Sign Player
-        </Button>
-      </Box>
-
-      {/* Roster Statistics */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" color="primary">
-                Total Players
-              </Typography>
-              <Typography variant="h4">{rosterData.rosterMembers.length}</Typography>
-            </CardContent>
-          </Card>
-        </Box>
-        <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" color="success.main">
-                Active Players
-              </Typography>
-              <Typography variant="h4">{activePlayers.length}</Typography>
-            </CardContent>
-          </Card>
-        </Box>
-        <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" color="warning.main">
-                Released Players
-              </Typography>
-              <Typography variant="h4">{inactivePlayers.length}</Typography>
-            </CardContent>
-          </Card>
-        </Box>
-      </Box>
-
-      {/* Managers Section */}
-      <Box sx={{ mb: 3, textAlign: 'center' }}>
-        <PageSectionHeader
-          title="Team Managers"
-          actions={
-            <Button
-              variant="outlined"
-              startIcon={<ManagerIcon />}
-              onClick={() => setAddManagerDialogOpen(true)}
-              size="small"
-            >
-              Assign Manager
-            </Button>
-          }
-          sx={{ mb: 2 }}
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          links={[
+            { name: 'Season', href: `/account/${accountId}/admin/season` },
+            { name: 'Season Management', href: `/account/${accountId}/seasons` },
+            {
+              name: 'League Seasons',
+              href: `/account/${accountId}/seasons/${seasonId}/league-seasons`,
+            },
+          ]}
+          currentPage={`${rosterData?.teamSeason?.name} Roster`}
         />
-        {managers.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            No managers assigned to this team.
-          </Typography>
-        ) : (
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {managers.map((manager) => (
-              <Card
-                key={manager.id}
-                sx={{ minWidth: 220, display: 'flex', alignItems: 'center', p: 1 }}
-              >
-                <ManagerIcon color="primary" sx={{ mr: 1 }} />
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="subtitle1" fontWeight="bold">
-                    {manager.contact.lastName}, {manager.contact.firstName}{' '}
-                    {manager.contact.middleName}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {manager.contact.email}
-                  </Typography>
-                </Box>
-                <IconButton
-                  color="error"
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    try {
-                      await removeManager(manager.id);
-                    } catch {
-                      // Error is handled by the data manager
-                    }
-                  }}
-                  aria-label="Remove Manager"
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Card>
-            ))}
-          </Box>
-        )}
-      </Box>
 
-      {/* Active Players Table */}
-      <Paper sx={{ mb: 3 }}>
-        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <PageSectionHeader title={`Active Players (${activePlayers.length})`} />
+        {/* Action Buttons */}
+        <Box
+          sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3, gap: 2 }}
+        >
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportRoster}
+            disabled={formLoading}
+          >
+            Export Roster
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<PersonAddIcon />}
+            onClick={openCreatePlayerDialog}
+            disabled={formLoading}
+          >
+            Create Player
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<PersonAddIcon />}
+            onClick={openSignPlayerDialog}
+            disabled={formLoading}
+          >
+            Sign Player
+          </Button>
         </Box>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>#</TableCell>
-                <TableCell>Name</TableCell>
-                {canShowRosterContactInfo && <TableCell>Contact Info</TableCell>}
-                {canViewSensitiveRosterDetails && <TableCell>Verification</TableCell>}
-                <TableCell sx={{ width: '280px', maxWidth: '280px' }}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {activePlayers.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell>{member.playerNumber || '-'}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <PlayerAvatar
-                        member={member}
-                        onEdit={handleEditDialog(member)}
-                        onPhotoDelete={handlePhotoDelete}
-                      />
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                          {getContactDisplayName(member.player.contact)}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          First Year: {member.player.firstYear || 'Not set'}
-                        </Typography>
-                      </Box>
-                      {/* Manager badge/icon */}
-                      {managers.some((m) => m.contact.id === member.player.contact.id) && (
-                        <ManagerIcon color="primary" fontSize="small" titleAccess="Manager" />
-                      )}
-                    </Box>
-                  </TableCell>
-                  {canShowRosterContactInfo && (
-                    <TableCell>{formatRosterContactInfo(member.player.contact)}</TableCell>
-                  )}
-                  {canViewSensitiveRosterDetails && (
-                    <TableCell>
-                      {formatRosterVerificationInfo(member, {
-                        showWaiverStatus,
-                        showIdentificationStatus,
-                      })}
-                    </TableCell>
-                  )}
-                  <TableCell sx={{ width: '280px', maxWidth: '280px' }}>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<EditIcon />}
-                        onClick={() => openEditDialog(member)}
-                        sx={{ minWidth: 'auto' }}
-                      >
-                        Edit Info
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<SportsIcon />}
-                        onClick={() => openRosterDialog(member)}
-                        sx={{ minWidth: 'auto' }}
-                      >
-                        Edit Roster
-                      </Button>
-                      {!member.inactive && (
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="warning"
-                          startIcon={<BlockIcon />}
-                          onClick={() => handleReleasePlayer(member)}
-                          sx={{ minWidth: 'auto' }}
-                        >
-                          Release
-                        </Button>
-                      )}
-                      {member.inactive && (
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="success"
-                          startIcon={<CheckCircleIcon />}
-                          onClick={() => handleActivatePlayer(member)}
-                          sx={{ minWidth: 'auto' }}
-                        >
-                          Activate
-                        </Button>
-                      )}
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="error"
-                        startIcon={<DeleteIcon />}
-                        onClick={() => openDeleteDialog(member)}
-                        sx={{ minWidth: 'auto' }}
-                      >
-                        Delete
-                      </Button>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {activePlayers.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={canViewSensitiveRosterDetails ? (canShowRosterContactInfo ? 5 : 4) : 3}
-                    align="center"
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      No active players
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
 
-      {/* Released Players Table */}
-      {inactivePlayers.length > 0 && (
-        <Paper>
+        {/* Roster Statistics */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+          <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" color="primary">
+                  Total Players
+                </Typography>
+                <Typography variant="h4">{rosterData.rosterMembers.length}</Typography>
+              </CardContent>
+            </Card>
+          </Box>
+          <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" color="success.main">
+                  Active Players
+                </Typography>
+                <Typography variant="h4">{activePlayers.length}</Typography>
+              </CardContent>
+            </Card>
+          </Box>
+          <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" color="warning.main">
+                  Released Players
+                </Typography>
+                <Typography variant="h4">{inactivePlayers.length}</Typography>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
+
+        {/* Managers Section */}
+        <Box sx={{ mb: 3, textAlign: 'center' }}>
+          <PageSectionHeader
+            title="Team Managers"
+            actions={
+              <Button
+                variant="outlined"
+                startIcon={<ManagerIcon />}
+                onClick={() => setAddManagerDialogOpen(true)}
+                size="small"
+              >
+                Assign Manager
+              </Button>
+            }
+            sx={{ mb: 2 }}
+          />
+          {managers.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No managers assigned to this team.
+            </Typography>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {managers.map((manager) => (
+                <Card
+                  key={manager.id}
+                  sx={{ minWidth: 220, display: 'flex', alignItems: 'center', p: 1 }}
+                >
+                  <ManagerIcon color="primary" sx={{ mr: 1 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle1" fontWeight="bold">
+                      {manager.contact.lastName}, {manager.contact.firstName}{' '}
+                      {manager.contact.middleName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {manager.contact.email}
+                    </Typography>
+                  </Box>
+                  <IconButton
+                    color="error"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        await removeManager(manager.id);
+                      } catch {
+                        // Error is handled by the data manager
+                      }
+                    }}
+                    aria-label="Remove Manager"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Card>
+              ))}
+            </Box>
+          )}
+        </Box>
+
+        {/* Active Players Table */}
+        <Paper sx={{ mb: 3 }}>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <PageSectionHeader title={`Released Players (${inactivePlayers.length})`} />
+            <PageSectionHeader title={`Active Players (${activePlayers.length})`} />
           </Box>
           <TableContainer>
             <Table>
@@ -925,7 +781,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {inactivePlayers.map((member) => (
+                {activePlayers.map((member) => (
                   <TableRow key={member.id}>
                     <TableCell>{member.playerNumber || '-'}</TableCell>
                     <TableCell>
@@ -936,16 +792,17 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                           onPhotoDelete={handlePhotoDelete}
                         />
                         <Box sx={{ flex: 1 }}>
-                          <Typography
-                            variant="body1"
-                            sx={{ fontWeight: 'medium', textDecoration: 'line-through' }}
-                          >
+                          <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
                             {getContactDisplayName(member.player.contact)}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             First Year: {member.player.firstYear || 'Not set'}
                           </Typography>
                         </Box>
+                        {/* Manager badge/icon */}
+                        {managers.some((m) => m.contact.id === member.player.contact.id) && (
+                          <ManagerIcon color="primary" fontSize="small" titleAccess="Manager" />
+                        )}
                       </Box>
                     </TableCell>
                     {canShowRosterContactInfo && (
@@ -1017,11 +874,141 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                     </TableCell>
                   </TableRow>
                 ))}
+                {activePlayers.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={
+                        canViewSensitiveRosterDetails ? (canShowRosterContactInfo ? 5 : 4) : 3
+                      }
+                      align="center"
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        No active players
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </TableContainer>
         </Paper>
-      )}
+
+        {/* Released Players Table */}
+        {inactivePlayers.length > 0 && (
+          <Paper>
+            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+              <PageSectionHeader title={`Released Players (${inactivePlayers.length})`} />
+            </Box>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>#</TableCell>
+                    <TableCell>Name</TableCell>
+                    {canShowRosterContactInfo && <TableCell>Contact Info</TableCell>}
+                    {canViewSensitiveRosterDetails && <TableCell>Verification</TableCell>}
+                    <TableCell sx={{ width: '280px', maxWidth: '280px' }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {inactivePlayers.map((member) => (
+                    <TableRow key={member.id}>
+                      <TableCell>{member.playerNumber || '-'}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <PlayerAvatar
+                            member={member}
+                            onEdit={handleEditDialog(member)}
+                            onPhotoDelete={handlePhotoDelete}
+                          />
+                          <Box sx={{ flex: 1 }}>
+                            <Typography
+                              variant="body1"
+                              sx={{ fontWeight: 'medium', textDecoration: 'line-through' }}
+                            >
+                              {getContactDisplayName(member.player.contact)}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              First Year: {member.player.firstYear || 'Not set'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      {canShowRosterContactInfo && (
+                        <TableCell>{formatRosterContactInfo(member.player.contact)}</TableCell>
+                      )}
+                      {canViewSensitiveRosterDetails && (
+                        <TableCell>
+                          {formatRosterVerificationInfo(member, {
+                            showWaiverStatus,
+                            showIdentificationStatus,
+                          })}
+                        </TableCell>
+                      )}
+                      <TableCell sx={{ width: '280px', maxWidth: '280px' }}>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<EditIcon />}
+                            onClick={() => openEditDialog(member)}
+                            sx={{ minWidth: 'auto' }}
+                          >
+                            Edit Info
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<SportsIcon />}
+                            onClick={() => openRosterDialog(member)}
+                            sx={{ minWidth: 'auto' }}
+                          >
+                            Edit Roster
+                          </Button>
+                          {!member.inactive && (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="warning"
+                              startIcon={<BlockIcon />}
+                              onClick={() => handleReleasePlayer(member)}
+                              sx={{ minWidth: 'auto' }}
+                            >
+                              Release
+                            </Button>
+                          )}
+                          {member.inactive && (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="success"
+                              startIcon={<CheckCircleIcon />}
+                              onClick={() => handleActivatePlayer(member)}
+                              sx={{ minWidth: 'auto' }}
+                            >
+                              Activate
+                            </Button>
+                          )}
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            startIcon={<DeleteIcon />}
+                            onClick={() => openDeleteDialog(member)}
+                            sx={{ minWidth: 'auto' }}
+                          >
+                            Delete
+                          </Button>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        )}
+      </Container>
 
       {/* Sign Player Dialog */}
       <SignPlayerDialog

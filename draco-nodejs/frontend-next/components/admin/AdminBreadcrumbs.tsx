@@ -6,18 +6,24 @@ import { Breadcrumbs, Link, Typography, useTheme } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
+interface BreadcrumbLink {
+  name: string;
+  href: string;
+}
+
 interface AdminBreadcrumbsProps {
   accountId: string;
-  category?: {
-    name: string;
-    href: string;
-  };
+  category?: BreadcrumbLink;
+  subcategory?: BreadcrumbLink;
+  links?: BreadcrumbLink[];
   currentPage?: string;
 }
 
 const AdminBreadcrumbs: React.FC<AdminBreadcrumbsProps> = ({
   accountId,
   category,
+  subcategory,
+  links,
   currentPage,
 }) => {
   const router = useRouter();
@@ -27,6 +33,11 @@ const AdminBreadcrumbs: React.FC<AdminBreadcrumbsProps> = ({
     e.preventDefault();
     router.push(href);
   };
+
+  const intermediateLinks: BreadcrumbLink[] = links ?? [
+    ...(category ? [category] : []),
+    ...(subcategory ? [subcategory] : []),
+  ];
 
   return (
     <Breadcrumbs
@@ -52,21 +63,22 @@ const AdminBreadcrumbs: React.FC<AdminBreadcrumbsProps> = ({
         Admin
       </Link>
 
-      {category && (
+      {intermediateLinks.map((link) => (
         <Link
-          href={category.href}
-          onClick={handleNavigation(category.href)}
+          key={link.href}
+          href={link.href}
+          onClick={handleNavigation(link.href)}
           underline="hover"
           sx={{
-            color: currentPage ? theme.palette.text.secondary : theme.palette.text.primary,
+            color: theme.palette.text.secondary,
             '&:hover': {
               color: theme.palette.primary.main,
             },
           }}
         >
-          {category.name}
+          {link.name}
         </Link>
-      )}
+      ))}
 
       {currentPage && (
         <Typography color="text.primary" aria-current="page">
