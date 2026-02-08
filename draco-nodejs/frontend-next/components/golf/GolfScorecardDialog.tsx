@@ -330,7 +330,11 @@ function GolfScorecardDialogContent({
   const renderHeader = () => {
     if (!matchData) return null;
 
-    const tee = matchData.team1Scores?.[0]?.tee || matchData.team2Scores?.[0]?.tee;
+    const scoreTee = matchData.team1Scores?.[0]?.tee || matchData.team2Scores?.[0]?.tee;
+    const matchTee = matchData.tee;
+    const fullMatchTee = matchTee ? courseData?.tees?.find((t) => t.id === matchTee.id) : undefined;
+    const teeWithRatings = scoreTee || fullMatchTee;
+    const tee = teeWithRatings || matchTee;
     const formattedDate = formatDateTimeInTimezone(matchData.matchDateTime, timeZone);
 
     return (
@@ -401,9 +405,11 @@ function GolfScorecardDialogContent({
                 {tee.teeName}
               </Typography>
             </Box>
-            <Typography variant="body2" color="text.secondary">
-              Rating: {tee.mensRating} / Slope: {tee.mensSlope}
-            </Typography>
+            {teeWithRatings && (
+              <Typography variant="body2" color="text.secondary">
+                Rating: {teeWithRatings.mensRating} / Slope: {teeWithRatings.mensSlope}
+              </Typography>
+            )}
           </Box>
         )}
       </Box>
