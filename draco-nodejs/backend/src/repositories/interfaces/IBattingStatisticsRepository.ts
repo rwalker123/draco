@@ -26,6 +26,13 @@ export interface PlayerTeamsQueryOptions {
 
 export interface IBattingStatisticsRepository {
   findBattingStatistics(query: BattingStatisticsQueryOptions): Promise<dbBattingStatisticsRow[]>;
+  findAllTimeTeamBattingStatistics(
+    masterTeamId: bigint,
+    sortField: string,
+    sortOrder: 'asc' | 'desc',
+    pageSize: number,
+    minAtBats: number,
+  ): Promise<dbBattingStatisticsRow[]>;
   findTeamsForPlayers(
     playerIds: bigint[],
     query: PlayerTeamsQueryOptions,

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -83,6 +83,7 @@ function LiveScoringDialogContent({
   const [scoreInputs, setScoreInputs] = useState<Record<string, string>>({});
   const [submittingGolferId, setSubmittingGolferId] = useState<string | null>(null);
   const [startingSession, setStartingSession] = useState(false);
+  const startingSessionRef = useRef(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     title: string;
@@ -164,16 +165,35 @@ function LiveScoringDialogContent({
   useEffect(() => {
     if (isConnected && sessionState) {
       setStartingSession(false);
+      startingSessionRef.current = false;
     }
   }, [isConnected, sessionState]);
 
+  useEffect(() => {
+    if (startingSession && connectionError && !isConnecting && !isConnected) {
+      stopSession(matchId);
+      setStartingSession(false);
+      startingSessionRef.current = false;
+    }
+  }, [startingSession, connectionError, isConnecting, isConnected, stopSession, matchId]);
+
+  useEffect(() => {
+    return () => {
+      if (startingSessionRef.current) {
+        stopSession(matchId);
+      }
+    };
+  }, [matchId, stopSession]);
+
   const handleStartSession = useCallback(async () => {
     setStartingSession(true);
+    startingSessionRef.current = true;
     const result = await startSession(matchId, { startingHole: 1 });
     if (result) {
       connect(matchId, 'scorer');
     } else {
       setStartingSession(false);
+      startingSessionRef.current = false;
     }
   }, [matchId, startSession, connect]);
 
@@ -406,7 +426,7 @@ function LiveScoringDialogContent({
             >
               <IconButton
                 onClick={() => handleAdvanceHole('prev')}
-                disabled={currentHole <= 1 || isSessionFinalized}
+                disabled={!isConnected || currentHole <= 1 || isSessionFinalized}
               >
                 <ChevronLeftIcon />
               </IconButton>
@@ -425,7 +445,7 @@ function LiveScoringDialogContent({
               </Typography>
               <IconButton
                 onClick={() => handleAdvanceHole('next')}
-                disabled={currentHole >= 18 || isSessionFinalized}
+                disabled={!isConnected || currentHole >= 18 || isSessionFinalized}
               >
                 <ChevronRightIcon />
               </IconButton>
@@ -515,7 +535,7 @@ function LiveScoringDialogContent({
                             }
                             onChange={(e) => handleScoreChange(golfer.golferId, e.target.value)}
                             onBlur={() => handleScoreBlur(golfer.golferId)}
-                            disabled={isSessionFinalized || isSubmitting}
+                            disabled={!isConnected || isSessionFinalized || isSubmitting}
                             inputProps={{
                               min: 1,
                               max: 20,
@@ -555,33 +575,21 @@ function LiveScoringDialogContent({
 
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
-        {(isConnecting ||
-          startingSession ||
-          (hasActiveSession && !sessionState && !connectionError)) && (
-          <Button
-            variant="outlined"
-            color="error"
-            onClick={() => {
-              disconnect();
-              onClose();
-            }}
-          >
-            Cancel
-          </Button>
-        )}
-        {isSessionActive && (
+        {(isSessionActive || (hasActiveSession && !isSessionFinalized)) && (
           <>
             <Button variant="outlined" color="error" onClick={handleStop} disabled={isLoading}>
               Stop Session
             </Button>
-            <Button
-              variant="contained"
-              color="warning"
-              onClick={handleFinalize}
-              disabled={isLoading}
-            >
-              Finalize Scores
-            </Button>
+            {isSessionActive && (
+              <Button
+                variant="contained"
+                color="warning"
+                onClick={handleFinalize}
+                disabled={!isConnected || isLoading}
+              >
+                Finalize Scores
+              </Button>
+            )}
           </>
         )}
       </DialogActions>

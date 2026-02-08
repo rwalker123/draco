@@ -134,6 +134,94 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
     return result as dbBattingStatisticsRow[];
   }
 
+  async findAllTimeTeamBattingStatistics(
+    masterTeamId: bigint,
+    sortField: string,
+    sortOrder: 'asc' | 'desc',
+    pageSize: number,
+    minAtBats: number,
+  ): Promise<dbBattingStatisticsRow[]> {
+    const orderDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
+    const sortFieldMap: Record<string, string> = {
+      playerid: '"playerId"',
+      playername: '"playerName"',
+      ab: 'ab',
+      h: 'h',
+      r: 'r',
+      d: 'd',
+      t: 't',
+      hr: 'hr',
+      rbi: 'rbi',
+      bb: 'bb',
+      so: 'so',
+      hbp: 'hbp',
+      sb: 'sb',
+      sf: 'sf',
+      sh: 'sh',
+      avg: 'avg',
+      obp: 'obp',
+      slg: 'slg',
+      ops: 'ops',
+      tb: 'tb',
+      pa: 'pa',
+    };
+    const normalizedSortField = sortField ? sortField.toLowerCase() : 'playername';
+    const sortFieldSql = sortFieldMap[normalizedSortField] ?? '"playerName"';
+
+    const params: (bigint | number)[] = [masterTeamId];
+    const havingClause = minAtBats > 0 ? `HAVING SUM(bs.ab) >= $${params.push(minAtBats)}` : '';
+    const limitClause = `LIMIT $${params.push(pageSize)}`;
+
+    const queryText = `
+      SELECT
+        c.id as "playerId",
+        CONCAT(c.lastname, ', ', c.firstname) as "playerName",
+        SUM(bs.ab)::int as ab,
+        SUM(bs.h)::int as h,
+        SUM(bs.r)::int as r,
+        SUM(bs.d)::int as d,
+        SUM(bs.t)::int as t,
+        SUM(bs.hr)::int as hr,
+        SUM(bs.rbi)::int as rbi,
+        SUM(bs.bb)::int as bb,
+        SUM(bs.so)::int as so,
+        SUM(bs.hbp)::int as hbp,
+        SUM(bs.sb)::int as sb,
+        SUM(bs.sf)::int as sf,
+        SUM(bs.sh)::int as sh,
+        CASE WHEN SUM(bs.ab) = 0 THEN 0 ELSE (SUM(bs.h)::float / SUM(bs.ab)) END as avg,
+        CASE WHEN (SUM(bs.ab) + SUM(bs.bb) + SUM(bs.hbp)) = 0 THEN 0
+             ELSE ((SUM(bs.h) + SUM(bs.bb) + SUM(bs.hbp))::float / (SUM(bs.ab) + SUM(bs.bb) + SUM(bs.hbp)))
+        END as obp,
+        CASE WHEN SUM(bs.ab) = 0 THEN 0
+             ELSE ((SUM(bs.d) * 2 + SUM(bs.t) * 3 + SUM(bs.hr) * 4 + (SUM(bs.h) - SUM(bs.d) - SUM(bs.t) - SUM(bs.hr)))::float / SUM(bs.ab))
+        END as slg,
+        (CASE WHEN SUM(bs.ab) = 0 THEN 0
+              ELSE ((SUM(bs.d) * 2 + SUM(bs.t) * 3 + SUM(bs.hr) * 4 + (SUM(bs.h) - SUM(bs.d) - SUM(bs.t) - SUM(bs.hr)))::float / SUM(bs.ab))
+         END +
+         CASE WHEN (SUM(bs.ab) + SUM(bs.bb) + SUM(bs.hbp)) = 0 THEN 0
+              ELSE ((SUM(bs.h) + SUM(bs.bb) + SUM(bs.hbp))::float / (SUM(bs.ab) + SUM(bs.bb) + SUM(bs.hbp)))
+         END) as ops,
+        (SUM(bs.d) * 2 + SUM(bs.t) * 3 + SUM(bs.hr) * 4 + (SUM(bs.h) - SUM(bs.d) - SUM(bs.t) - SUM(bs.hr)))::int as tb,
+        (SUM(bs.ab) + SUM(bs.bb) + SUM(bs.hbp) + SUM(bs.sf) + SUM(bs.sh))::int as pa
+      FROM batstatsum bs
+      JOIN teamsseason ts ON bs.teamid = ts.id
+      JOIN rosterseason rs ON bs.playerid = rs.id
+      JOIN roster r ON rs.playerid = r.id
+      JOIN contacts c ON r.contactid = c.id
+      JOIN leagueschedule lg ON bs.gameid = lg.id
+      WHERE lg.gametype IN (${GameType.RegularSeason}, ${GameType.Playoff})
+        AND ts.teamid = $1
+      GROUP BY c.id, c.firstname, c.lastname
+      ${havingClause}
+      ORDER BY ${sortFieldSql} ${orderDirection}
+      ${limitClause}
+    `;
+
+    const result = await this.prisma.$queryRawUnsafe(queryText, ...params);
+    return result as dbBattingStatisticsRow[];
+  }
+
   async findTeamsForPlayers(
     playerIds: bigint[],
     query: PlayerTeamsQueryOptions,

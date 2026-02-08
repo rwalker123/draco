@@ -1,6 +1,7 @@
 import { StatisticsService } from './statisticsService.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import {
+  AllTimeTeamSummaryType,
   BattingStatisticsFiltersSchema,
   PitchingStatisticsFiltersSchema,
   PlayerBattingStatsType,
@@ -10,22 +11,29 @@ import {
 } from '@draco/shared-schemas';
 import {
   RepositoryFactory,
+  IBattingStatisticsRepository,
+  IPitchingStatisticsRepository,
   ITeamRepository,
   IScheduleRepository,
   dbGameInfo,
 } from '../repositories/index.js';
 import { StatsResponseFormatter } from '../responseFormatters/index.js';
 import { ServiceFactory } from './serviceFactory.js';
+import { getLogoUrl } from '../config/logo.js';
 
 export class TeamStatsService {
   private readonly statisticsService: StatisticsService;
   private readonly teamRepository: ITeamRepository;
   private readonly scheduleRepository: IScheduleRepository;
+  private readonly battingStatisticsRepository: IBattingStatisticsRepository;
+  private readonly pitchingStatisticsRepository: IPitchingStatisticsRepository;
 
   constructor() {
     this.statisticsService = ServiceFactory.getStatisticsService();
     this.teamRepository = RepositoryFactory.getTeamRepository();
     this.scheduleRepository = RepositoryFactory.getScheduleRepository();
+    this.battingStatisticsRepository = RepositoryFactory.getBattingStatisticsRepository();
+    this.pitchingStatisticsRepository = RepositoryFactory.getPitchingStatisticsRepository();
   }
 
   async getTeamRecord(teamSeasonId: bigint): Promise<TeamRecordType> {
@@ -127,5 +135,57 @@ export class TeamStatsService {
     const pitchingStats = await this.statisticsService.getPitchingStats(accountId, filters);
 
     return pitchingStats;
+  }
+
+  async getAllTimeTeams(accountId: bigint): Promise<AllTimeTeamSummaryType[]> {
+    const dbTeams = await this.teamRepository.findAllTimeTeams(accountId);
+    return dbTeams.map((team) => ({
+      teamId: team.teamid.toString(),
+      names: team.names,
+      leagueNames: team.leaguenames,
+      seasonNames: team.seasonnames,
+      seasonCount: team.seasoncount,
+      logoUrl: getLogoUrl(accountId.toString(), team.teamid.toString()),
+    }));
+  }
+
+  async getAllTimeTeamBattingStats(
+    masterTeamId: bigint,
+    accountId: bigint,
+  ): Promise<PlayerBattingStatsType[]> {
+    const teamDef = await this.teamRepository.findTeamDefinition(masterTeamId);
+    if (!teamDef || teamDef.accountid !== accountId) {
+      throw new NotFoundError('Team not found');
+    }
+
+    const stats = await this.battingStatisticsRepository.findAllTimeTeamBattingStatistics(
+      masterTeamId,
+      'avg',
+      'desc',
+      1000,
+      0,
+    );
+
+    return StatsResponseFormatter.formatPlayerBattingStats(stats);
+  }
+
+  async getAllTimeTeamPitchingStats(
+    masterTeamId: bigint,
+    accountId: bigint,
+  ): Promise<PlayerPitchingStatsType[]> {
+    const teamDef = await this.teamRepository.findTeamDefinition(masterTeamId);
+    if (!teamDef || teamDef.accountid !== accountId) {
+      throw new NotFoundError('Team not found');
+    }
+
+    const stats = await this.pitchingStatisticsRepository.findAllTimeTeamPitchingStatistics(
+      masterTeamId,
+      'era',
+      'asc',
+      1000,
+      0,
+    );
+
+    return StatsResponseFormatter.formatPlayerPitchingStats(stats);
   }
 }

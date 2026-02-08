@@ -144,6 +144,104 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
     return result as dbPitchingStatisticsRow[];
   }
 
+  async findAllTimeTeamPitchingStatistics(
+    masterTeamId: bigint,
+    sortField: string,
+    sortOrder: 'asc' | 'desc',
+    pageSize: number,
+    minInningsPitched: number,
+  ): Promise<dbPitchingStatisticsRow[]> {
+    const orderDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
+    const sortFieldMap: Record<string, string> = {
+      playerid: '"playerId"',
+      playername: '"playerName"',
+      ip: '"ipDecimal"',
+      ip2: 'ip2',
+      w: 'w',
+      l: 'l',
+      s: 's',
+      h: 'h',
+      r: 'r',
+      er: 'er',
+      bb: 'bb',
+      so: 'so',
+      hr: 'hr',
+      bf: 'bf',
+      wp: 'wp',
+      hbp: 'hbp',
+      era: 'era',
+      whip: 'whip',
+      k9: 'k9',
+      bb9: 'bb9',
+      oba: 'oba',
+      slg: 'slg',
+      ipdecimal: '"ipDecimal"',
+    };
+    const normalizedSortField = sortField ? sortField.toLowerCase() : 'playername';
+    const sortFieldSql = sortFieldMap[normalizedSortField] ?? '"playerName"';
+
+    const params: (bigint | number)[] = [masterTeamId];
+    const havingClause =
+      minInningsPitched > 0
+        ? `HAVING (SUM(ps.ip) + SUM(ps.ip2) / 3.0) >= $${params.push(minInningsPitched)}`
+        : '';
+    const limitClause = `LIMIT $${params.push(pageSize)}`;
+
+    const queryText = `
+      SELECT
+        c.id as "playerId",
+        CONCAT(c.lastname, ', ', c.firstname) as "playerName",
+        SUM(ps.ip)::int as ip,
+        SUM(ps.ip2)::int as ip2,
+        SUM(ps.w)::int as w,
+        SUM(ps.l)::int as l,
+        SUM(ps.s)::int as s,
+        SUM(ps.h)::int as h,
+        SUM(ps.r)::int as r,
+        SUM(ps.er)::int as er,
+        SUM(ps.bb)::int as bb,
+        SUM(ps.so)::int as so,
+        SUM(ps.hr)::int as hr,
+        SUM(ps.bf)::int as bf,
+        SUM(ps.wp)::int as wp,
+        SUM(ps.hbp)::int as hbp,
+        CASE WHEN (SUM(ps.ip) + SUM(ps.ip2) / 3.0) = 0 THEN 0
+             ELSE (SUM(ps.er) * 9.0)::float / (SUM(ps.ip) + SUM(ps.ip2) / 3.0)
+        END as era,
+        CASE WHEN (SUM(ps.ip) + SUM(ps.ip2) / 3.0) = 0 THEN 0
+             ELSE (SUM(ps.bb) + SUM(ps.h))::float / (SUM(ps.ip) + SUM(ps.ip2) / 3.0)
+        END as whip,
+        CASE WHEN (SUM(ps.ip) + SUM(ps.ip2) / 3.0) = 0 THEN 0
+             ELSE (SUM(ps.so)::float / (SUM(ps.ip) + SUM(ps.ip2) / 3.0)) * 9.0
+        END as k9,
+        CASE WHEN (SUM(ps.ip) + SUM(ps.ip2) / 3.0) = 0 THEN 0
+             ELSE (SUM(ps.bb)::float / (SUM(ps.ip) + SUM(ps.ip2) / 3.0)) * 9.0
+        END as bb9,
+        CASE WHEN (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp)) = 0 THEN 0
+             ELSE SUM(ps.h)::float / (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp))
+        END as oba,
+        CASE WHEN (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp)) = 0 THEN 0
+             ELSE (SUM(ps.d) * 2 + SUM(ps.t) * 3 + SUM(ps.hr) * 4 + (SUM(ps.h) - SUM(ps.d) - SUM(ps.t) - SUM(ps.hr)))::float / (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp))
+        END as slg,
+        (SUM(ps.ip) + SUM(ps.ip2) / 3.0)::float as "ipDecimal"
+      FROM pitchstatsum ps
+      JOIN teamsseason ts ON ps.teamid = ts.id
+      JOIN rosterseason rs ON ps.playerid = rs.id
+      JOIN roster r ON rs.playerid = r.id
+      JOIN contacts c ON r.contactid = c.id
+      JOIN leagueschedule lg ON ps.gameid = lg.id
+      WHERE lg.gametype IN (${GameType.RegularSeason}, ${GameType.Playoff})
+        AND ts.teamid = $1
+      GROUP BY c.id, c.firstname, c.lastname
+      ${havingClause}
+      ORDER BY ${sortFieldSql} ${orderDirection}
+      ${limitClause}
+    `;
+
+    const result = await this.prisma.$queryRawUnsafe(queryText, ...params);
+    return result as dbPitchingStatisticsRow[];
+  }
+
   async findTeamsForPlayers(
     playerIds: bigint[],
     query: PlayerTeamsQueryOptions,

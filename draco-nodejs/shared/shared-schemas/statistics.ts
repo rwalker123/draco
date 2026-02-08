@@ -432,3 +432,13 @@ export type UpdateGameBattingStatType = z.infer<typeof UpdateGameBattingStatSche
 export type CreateGamePitchingStatType = z.infer<typeof CreateGamePitchingStatSchema>;
 export type UpdateGamePitchingStatType = z.infer<typeof UpdateGamePitchingStatSchema>;
 export type UpdateGameAttendanceType = z.infer<typeof UpdateGameAttendanceSchema>;
+
+export const AllTimeTeamSummarySchema = z.object({
+  teamId: bigintToStringSchema,
+  names: z.array(z.string()),
+  leagueNames: z.array(z.string()),
+  seasonNames: z.array(z.string()),
+  seasonCount: z.number().int(),
+  logoUrl: z.string().nullable(),
+});
+export type AllTimeTeamSummaryType = z.infer<typeof AllTimeTeamSummarySchema>;

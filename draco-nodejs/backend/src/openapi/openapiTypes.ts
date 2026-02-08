@@ -391,6 +391,7 @@ import {
   StopBaseballLiveScoringSchema,
   IndividualSseTicketResponseSchema,
   GetBaseballLiveScoringTicketSchema,
+  AllTimeTeamSummarySchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -745,6 +746,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const StandingsLeagueSchemaRef = registry.register('StandingsLeague', StandingsLeagueSchema);
   const StandingsTeamSchemaRef = registry.register('StandingsTeam', StandingsTeamSchema);
   const TeamSeasonRecordSchemaRef = registry.register('TeamSeasonRecord', TeamSeasonRecordSchema);
+  const AllTimeTeamSummarySchemaRef = registry.register(
+    'AllTimeTeamSummary',
+    AllTimeTeamSummarySchema,
+  );
   const SeasonStandingsResponseSchemaRef = registry.registerComponent(
     'schemas',
     'SeasonStandingsResponse',
@@ -1797,6 +1802,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     LeaderStatisticsFiltersSchemaRef,
     LeaderRowSchemaRef,
     LeaderCategoriesSchemaRef,
+    AllTimeTeamSummarySchemaRef,
     RecentGamesQuerySchemaRef,
     RoleWithContactSchemaRef,
     VerifyTokenRequestSchemaRef,

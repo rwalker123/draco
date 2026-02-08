@@ -2,6 +2,7 @@ import { RegisterContext } from '../../openapiTypes.js';
 
 export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterContext) => {
   const {
+    AllTimeTeamSummarySchemaRef,
     InternalServerErrorSchemaRef,
     BattingStatisticsFiltersSchemaRef,
     LeaderCategoriesSchemaRef,
@@ -598,6 +599,183 @@ export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterCo
       },
       404: {
         description: 'Team season not found for the provided account and season',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+  // GET /api/accounts/{accountId}/statistics/all-time/teams
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/statistics/all-time/teams',
+    operationId: 'listAllTimeTeams',
+    summary: 'List all-time teams',
+    description:
+      'Retrieve all unique teams across all seasons for an account, grouped by master team ID with name history and season count.',
+    tags: ['Statistics'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'All-time teams retrieved',
+        content: {
+          'application/json': {
+            schema: AllTimeTeamSummarySchemaRef.array(),
+          },
+        },
+      },
+      400: {
+        description: 'Invalid parameters provided',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/statistics/all-time/teams/{teamId}/batting-stats
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/statistics/all-time/teams/{teamId}/batting-stats',
+    operationId: 'listAllTimeTeamBattingStats',
+    summary: 'List all-time team batting statistics',
+    description:
+      'Retrieve accumulated batting statistics for all players on a team across all seasons.',
+    tags: ['Statistics'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'teamId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'All-time team batting statistics retrieved',
+        content: {
+          'application/json': {
+            schema: PlayerBattingStatsSchemaRef.array(),
+          },
+        },
+      },
+      400: {
+        description: 'Invalid parameters provided',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Team not found for the provided account',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/statistics/all-time/teams/{teamId}/pitching-stats
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/statistics/all-time/teams/{teamId}/pitching-stats',
+    operationId: 'listAllTimeTeamPitchingStats',
+    summary: 'List all-time team pitching statistics',
+    description:
+      'Retrieve accumulated pitching statistics for all players on a team across all seasons.',
+    tags: ['Statistics'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'teamId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'All-time team pitching statistics retrieved',
+        content: {
+          'application/json': {
+            schema: PlayerPitchingStatsSchemaRef.array(),
+          },
+        },
+      },
+      400: {
+        description: 'Invalid parameters provided',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Team not found for the provided account',
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,
