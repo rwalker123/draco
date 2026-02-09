@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
 import {
   Box,
@@ -93,7 +93,7 @@ export const FieldDetailsCard: React.FC<FieldDetailsCardProps> = ({
     : field?.zipCode?.trim().length
       ? field?.zipCode
       : null;
-  const directionsUrl = useMemo(() => {
+  const directionsUrl = (() => {
     if (!field) {
       return null;
     }
@@ -111,7 +111,7 @@ export const FieldDetailsCard: React.FC<FieldDetailsCardProps> = ({
     }
 
     return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addressParts.join(', '))}`;
-  }, [field, latitude, longitude, zip]);
+  })();
 
   return (
     <Card

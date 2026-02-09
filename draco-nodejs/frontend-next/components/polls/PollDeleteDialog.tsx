@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { AccountPollType } from '@draco/shared-schemas';
 import { usePollsService } from '@/hooks/usePollsService';
 import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
@@ -28,7 +28,7 @@ const PollDeleteDialog: React.FC<PollDeleteDialogProps> = ({
     resetError();
   }, [open, resetError]);
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     if (!poll) {
       return;
     }
@@ -43,7 +43,7 @@ const PollDeleteDialog: React.FC<PollDeleteDialogProps> = ({
       const message = err instanceof Error ? err.message : 'Failed to delete poll.';
       onError?.(message);
     }
-  }, [deletePoll, onClose, onError, onSuccess, poll]);
+  };
 
   return (
     <ConfirmDeleteDialog

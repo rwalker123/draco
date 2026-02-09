@@ -27,14 +27,12 @@ export interface HofMemberCardProps {
 const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx }) => {
   const theme = useTheme();
   const { contact, biographyHtml, yearInducted } = member;
-  const sanitizedBio = React.useMemo(() => {
-    if (!biographyHtml) {
-      return null;
-    }
-
-    const sanitized = sanitizeRichContent(biographyHtml);
-    return sanitized.length > 0 ? sanitized : null;
-  }, [biographyHtml]);
+  const sanitizedBio = biographyHtml
+    ? (() => {
+        const sanitized = sanitizeRichContent(biographyHtml);
+        return sanitized.length > 0 ? sanitized : null;
+      })()
+    : null;
 
   const displayName = contact.displayName ?? `${contact.firstName} ${contact.lastName}`.trim();
   const baseColor = theme.palette.primary.main;

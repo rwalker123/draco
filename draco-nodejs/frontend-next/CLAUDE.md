@@ -57,11 +57,66 @@ useEffect(() => {
 **When refs are appropriate:**
 - Caching values across calls within a hook (e.g., season ID cache)
 - Deduplicating concurrent API requests (e.g., in-flight promise ref)
-- Tracking mounted state to avoid setState after unmount
 
 **When refs are NOT appropriate:**
 - As workarounds to exclude values from dependency arrays
 - To "skip" effects that ESLint says need dependencies
+- Tracking mounted state to avoid setState after unmount — use AbortController instead (see below)
+
+### AbortController for Effect Cleanup
+
+Every `useEffect` that makes API calls **must** use `AbortController` to cancel in-flight requests on unmount or dependency change. Boolean guard patterns (`let cancelled = false`, `let ignore = false`, `let isMounted = true`) only prevent state updates — they do **not** cancel the underlying HTTP request, which causes memory leaks during rapid navigation.
+
+```typescript
+useEffect(() => {
+  if (!accountId) return;
+
+  const controller = new AbortController();
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await apiOperation({
+        client: apiClient,
+        path: { accountId },
+        signal: controller.signal,
+        throwOnError: false,
+      });
+
+      if (controller.signal.aborted) return;
+      const data = unwrapApiResult(result, 'Failed to load data');
+      setData(data);
+    } catch (err: unknown) {
+      if (controller.signal.aborted) return;
+      setError(err instanceof Error ? err.message : 'Failed to load data');
+    } finally {
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
+    }
+  };
+
+  void loadData();
+
+  return () => {
+    controller.abort();
+  };
+}, [accountId, apiClient]);
+```
+
+**Rules:**
+- Create `AbortController` at the top of the effect
+- Pass `controller.signal` to every API call in the effect
+- Check `controller.signal.aborted` after every `await` before calling `setState`
+- Guard `setLoading(false)` in `finally` with `!controller.signal.aborted`
+- Return `() => { controller.abort(); }` as the cleanup function
+- When a service or hook function wraps an API call, accept an optional `signal?: AbortSignal` parameter and thread it through
+
+**Do not use** boolean guard patterns (`let cancelled`, `let ignore`, `let isMounted`) for new code. Existing instances should be migrated to AbortController when the file is touched.
+
+**Reference implementations:** `hooks/usePendingPhotoSubmissions.ts`, `hooks/usePhotoGallery.ts`, `components/team/TeamManagersWidget.tsx`
 
 ## Key Directories
 - `app` — Next.js App Router entries and nested layouts.

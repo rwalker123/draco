@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -40,7 +40,7 @@ const DeleteRosterMemberDialog: React.FC<DeleteRosterMemberDialogProps> = ({
     }
   }, [open]);
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     if (!member) return;
 
     setLoading(true);
@@ -55,7 +55,7 @@ const DeleteRosterMemberDialog: React.FC<DeleteRosterMemberDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [member, deletePlayer, onSuccess]);
+  };
 
   const playerName = member ? getContactDisplayName(member.player.contact) : '';
 

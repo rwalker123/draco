@@ -103,7 +103,7 @@ const RichTextContent: React.FC<RichTextContentProps> = ({
   sx,
   ...boxProps
 }) => {
-  const rendered = React.useMemo(() => {
+  const rendered = (() => {
     if (!html) {
       return '';
     }
@@ -117,7 +117,7 @@ const RichTextContent: React.FC<RichTextContentProps> = ({
     } catch {
       return '';
     }
-  }, [html, sanitize, sanitizer]);
+  })();
 
   if (!rendered) {
     return emptyFallback ? <>{emptyFallback}</> : null;

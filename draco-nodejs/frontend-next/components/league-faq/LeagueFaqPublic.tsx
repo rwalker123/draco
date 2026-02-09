@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Box, CircularProgress } from '@mui/material';
 import type { LeagueFaqType } from '@draco/shared-schemas';
 import { useLeagueFaqService } from '../../hooks/useLeagueFaqService';
@@ -49,25 +49,20 @@ export const LeagueFaqPublic: React.FC<LeagueFaqPublicProps> = ({ accountId }) =
     };
   }, [listFaqs]);
 
-  const content = useMemo(() => {
-    if (loading) {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress />
-        </Box>
-      );
-    }
-
-    if (error) {
-      return <Alert severity="error">{error}</Alert>;
-    }
-
-    if (faqs.length === 0) {
-      return <Alert severity="info">No FAQs have been published yet.</Alert>;
-    }
-
-    return <LeagueFaqList faqs={faqs} />;
-  }, [error, faqs, loading]);
+  let content: React.ReactNode;
+  if (loading) {
+    content = (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+        <CircularProgress />
+      </Box>
+    );
+  } else if (error) {
+    content = <Alert severity="error">{error}</Alert>;
+  } else if (faqs.length === 0) {
+    content = <Alert severity="info">No FAQs have been published yet.</Alert>;
+  } else {
+    content = <LeagueFaqList faqs={faqs} />;
+  }
 
   return <Box sx={{ px: { xs: 2, md: 4 }, pb: 6 }}>{content}</Box>;
 };

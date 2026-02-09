@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Alert, Box, Chip, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import {
@@ -42,7 +42,7 @@ const DeleteTeamsWantedDialog: React.FC<DeleteTeamsWantedDialogProps> = ({
   } = useTeamsWantedClassifieds(accountId);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const combinedError = useMemo(() => localError ?? serviceError, [localError, serviceError]);
+  const combinedError = localError ?? serviceError;
 
   if (!classified) return null;
 

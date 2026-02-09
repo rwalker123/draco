@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Typography, Box, Chip, Alert } from '@mui/material';
 import { format } from 'date-fns';
 import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
@@ -37,7 +37,7 @@ const DeletePlayersWantedDialog: React.FC<DeletePlayersWantedDialogProps> = ({
   } = usePlayersWantedClassifieds(accountId);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const combinedError = useMemo(() => localError ?? serviceError, [localError, serviceError]);
+  const combinedError = localError ?? serviceError;
 
   if (!classified) return null;
 

@@ -56,12 +56,8 @@ const HandoutList: React.FC<HandoutListProps> = ({
   variant = 'panel',
   actionsDisabled = false,
 }) => {
-  const displayedHandouts = React.useMemo(() => {
-    if (typeof maxItems === 'number' && maxItems >= 0) {
-      return handouts.slice(0, maxItems);
-    }
-    return handouts;
-  }, [handouts, maxItems]);
+  const displayedHandouts =
+    typeof maxItems === 'number' && maxItems >= 0 ? handouts.slice(0, maxItems) : handouts;
 
   if (loading) {
     return (
