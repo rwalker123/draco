@@ -130,7 +130,7 @@ export const usePendingPhotoSubmissions = ({
     };
   }, [canQuery, normalizedAccountId, normalizedTeamId, apiClient]);
 
-  const reloadSubmissions = async () => {
+  const reloadSubmissions = async (signal?: AbortSignal) => {
     if (!canQuery || !normalizedAccountId) return;
 
     setLoading(true);
@@ -141,23 +141,29 @@ export const usePendingPhotoSubmissions = ({
         ? await listPendingTeamPhotoSubmissions({
             client: apiClient,
             path: { accountId: normalizedAccountId, teamId: normalizedTeamId },
+            signal,
             throwOnError: false,
           })
         : await listPendingAccountPhotoSubmissions({
             client: apiClient,
             path: { accountId: normalizedAccountId },
+            signal,
             throwOnError: false,
           });
 
+      if (signal?.aborted) return;
       const data = unwrapApiResult(result, 'Failed to load pending photo submissions');
       setSubmissions(data.submissions ?? []);
     } catch (err: unknown) {
+      if (signal?.aborted) return;
       const message =
         err instanceof ApiClientError ? err.message : 'Failed to load pending photo submissions';
       setError(message);
       setSubmissions([]);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 
@@ -225,10 +231,7 @@ export const usePendingPhotoSubmissions = ({
         setError(warningMessage);
         setSuccessMessage(null);
       } else if (albumAssignmentError) {
-        setError(
-          albumAssignmentError ??
-            'Approved submission, but failed to assign it to the selected album.',
-        );
+        setError(albumAssignmentError);
         setSuccessMessage(null);
       } else if (submission) {
         setSuccessMessage(`Approved "${submission.title}".`);

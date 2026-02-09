@@ -48,12 +48,16 @@ export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceCon
     return { accountId, seasonId };
   };
 
-  const fetchFeed = async (query?: Partial<SocialFeedQueryType>): Promise<SocialFeedItemType[]> => {
+  const fetchFeed = async (
+    query?: Partial<SocialFeedQueryType>,
+    signal?: AbortSignal,
+  ): Promise<SocialFeedItemType[]> => {
     const context = ensureContext();
     const result = await listSocialFeed({
       client: apiClient,
       path: { accountId: context.accountId, seasonId: context.seasonId },
       query: buildQuery(query),
+      signal,
       throwOnError: false,
     });
 
@@ -91,12 +95,16 @@ export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceCon
     assertNoApiError(result, 'Failed to restore social post');
   };
 
-  const fetchVideos = async (query?: Partial<SocialVideoQueryType>): Promise<SocialVideoType[]> => {
+  const fetchVideos = async (
+    query?: Partial<SocialVideoQueryType>,
+    signal?: AbortSignal,
+  ): Promise<SocialVideoType[]> => {
     const context = ensureContext();
     const result = await listSocialVideos({
       client: apiClient,
       path: { accountId: context.accountId, seasonId: context.seasonId },
       query: buildQuery(query),
+      signal,
       throwOnError: false,
     });
 
@@ -106,12 +114,14 @@ export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceCon
 
   const fetchCommunityMessages = async (
     query?: Partial<CommunityMessageQueryType>,
+    signal?: AbortSignal,
   ): Promise<CommunityMessagePreviewType[]> => {
     const context = ensureContext();
     const result = await listCommunityMessages({
       client: apiClient,
       path: { accountId: context.accountId, seasonId: context.seasonId },
       query: buildQuery(query),
+      signal,
       throwOnError: false,
     });
 
@@ -121,6 +131,7 @@ export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceCon
 
   const fetchCommunityChannels = async (
     query?: Partial<CommunityChannelQueryType>,
+    signal?: AbortSignal,
   ): Promise<CommunityChannelType[]> => {
     const context = ensureContext();
     const queryParams =
@@ -131,6 +142,7 @@ export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceCon
       client: apiClient,
       path: { accountId: context.accountId, seasonId: context.seasonId },
       ...(queryParams ? { query: queryParams } : {}),
+      signal,
       throwOnError: false,
     });
 

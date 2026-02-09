@@ -91,12 +91,12 @@ const InformationWidget: React.FC<InformationWidgetProps> = ({
 
       try {
         const accountPromise = showAccountMessages
-          ? service.listAccountMessages(accountId)
+          ? service.listAccountMessages(accountId, controller.signal)
           : Promise.resolve<WelcomeMessageType[]>([]);
 
         const teamPromise =
           showTeamMessages && teamSeasonId
-            ? service.listTeamMessages(accountId, { teamSeasonId })
+            ? service.listTeamMessages(accountId, { teamSeasonId }, controller.signal)
             : Promise.resolve<WelcomeMessageType[]>([]);
 
         const [accountMessages, teamMessages] = await Promise.all([accountPromise, teamPromise]);

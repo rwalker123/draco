@@ -65,7 +65,7 @@ const TeamFeaturedVideosWidget: React.FC<TeamFeaturedVideosWidgetProps> = ({
 
     const controller = new AbortController();
 
-    fetchVideos({ limit: 4, teamId })
+    fetchVideos({ limit: 4, teamId }, controller.signal)
       .then((items) => {
         if (controller.signal.aborted) return;
         setVideoState({ items, loading: false, error: null });

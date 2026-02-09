@@ -42,10 +42,14 @@ export class WelcomeMessageService {
     return (list?.welcomeMessages ?? []).map((item) => this.normalize(item));
   }
 
-  async listAccountMessages(accountId: string): Promise<WelcomeMessageType[]> {
+  async listAccountMessages(
+    accountId: string,
+    signal?: AbortSignal,
+  ): Promise<WelcomeMessageType[]> {
     const result = await apiListAccountWelcomeMessages({
       client: this.client,
       path: { accountId },
+      signal,
       throwOnError: false,
     });
 
@@ -117,10 +121,15 @@ export class WelcomeMessageService {
     assertNoApiError(result, 'Failed to delete information message');
   }
 
-  async listTeamMessages(accountId: string, scope: TeamScope): Promise<WelcomeMessageType[]> {
+  async listTeamMessages(
+    accountId: string,
+    scope: TeamScope,
+    signal?: AbortSignal,
+  ): Promise<WelcomeMessageType[]> {
     const result = await apiListTeamWelcomeMessages({
       client: this.client,
       path: { accountId, teamSeasonId: scope.teamSeasonId },
+      signal,
       throwOnError: false,
     });
 
