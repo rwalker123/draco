@@ -131,23 +131,23 @@ export function GolfLeagueSetupPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
+  const backHref = `/account/${accountId}/seasons/${seasonId}/golf/admin`;
+
   // Handle browser back/forward button navigation
   useEffect(() => {
-    // Push a new history entry so we can intercept back navigation
     window.history.pushState(null, '', window.location.href);
 
     const handlePopState = () => {
       if (isDirtyRef.current) {
-        // Push state again to prevent navigation
         window.history.pushState(null, '', window.location.href);
-        // Store the fact that user tried to navigate back and show dialog
+        pendingNavigationRef.current = backHref;
         setShowUnsavedChangesDialog(true);
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [backHref]);
 
   useEffect(() => {
     if (setup) {
@@ -203,16 +203,10 @@ export function GolfLeagueSetupPage() {
 
   const handleConfirmLeave = useCallback(() => {
     setShowUnsavedChangesDialog(false);
-    const pendingHref = pendingNavigationRef.current;
+    const href = pendingNavigationRef.current ?? backHref;
     pendingNavigationRef.current = null;
-    if (pendingHref) {
-      router.push(pendingHref);
-    } else {
-      // For browser back button, go back 2 entries:
-      // -1 for the entry we pushed on mount, -1 for the entry we pushed when blocking
-      window.history.go(-2);
-    }
-  }, [router]);
+    router.push(href);
+  }, [router, backHref]);
 
   const handleCancelLeave = useCallback(() => {
     pendingNavigationRef.current = null;
