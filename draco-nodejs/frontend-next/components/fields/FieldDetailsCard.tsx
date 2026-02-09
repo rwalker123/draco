@@ -93,25 +93,19 @@ export const FieldDetailsCard: React.FC<FieldDetailsCardProps> = ({
     : field?.zipCode?.trim().length
       ? field?.zipCode
       : null;
-  const directionsUrl = (() => {
-    if (!field) {
-      return null;
-    }
+  const addressParts = field
+    ? [field.address, field.city, field.state, zip]
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .filter((value) => value.length > 0)
+    : [];
 
-    if (latitude !== null && longitude !== null) {
-      return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
-    }
-
-    const addressParts = [field.address, field.city, field.state, zip]
-      .map((value) => (typeof value === 'string' ? value.trim() : ''))
-      .filter((value) => value.length > 0);
-
-    if (addressParts.length === 0) {
-      return null;
-    }
-
-    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addressParts.join(', '))}`;
-  })();
+  const directionsUrl = !field
+    ? null
+    : latitude !== null && longitude !== null
+      ? `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
+      : addressParts.length > 0
+        ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addressParts.join(', '))}`
+        : null;
 
   return (
     <Card
