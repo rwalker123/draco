@@ -17,6 +17,7 @@ interface AdminBreadcrumbsProps {
   subcategory?: BreadcrumbLink;
   links?: BreadcrumbLink[];
   currentPage?: string;
+  onNavigate?: (href: string) => void;
 }
 
 const AdminBreadcrumbs: React.FC<AdminBreadcrumbsProps> = ({
@@ -25,13 +26,18 @@ const AdminBreadcrumbs: React.FC<AdminBreadcrumbsProps> = ({
   subcategory,
   links,
   currentPage,
+  onNavigate,
 }) => {
   const router = useRouter();
   const theme = useTheme();
 
   const handleNavigation = (href: string) => (e: React.MouseEvent) => {
     e.preventDefault();
-    router.push(href);
+    if (onNavigate) {
+      onNavigate(href);
+    } else {
+      router.push(href);
+    }
   };
 
   const intermediateLinks: BreadcrumbLink[] = links ?? [

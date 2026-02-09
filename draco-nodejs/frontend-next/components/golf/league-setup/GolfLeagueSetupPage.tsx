@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   Container,
   Typography,
@@ -39,6 +39,7 @@ interface FormData extends UpdateGolfLeagueSetup {
 
 export function GolfLeagueSetupPage() {
   const params = useParams();
+  const router = useRouter();
   const apiClient = useApiClient();
   const accountIdParam = params?.accountId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
@@ -63,6 +64,7 @@ export function GolfLeagueSetupPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const isDirtyRef = useRef(false);
+  const pendingNavigationRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!accountId || !seasonId || !leagueSeasonId) return;
@@ -187,14 +189,33 @@ export function GolfLeagueSetupPage() {
     }
   };
 
+  const handleBreadcrumbNavigate = useCallback(
+    (href: string) => {
+      if (isDirtyRef.current) {
+        pendingNavigationRef.current = href;
+        setShowUnsavedChangesDialog(true);
+      } else {
+        router.push(href);
+      }
+    },
+    [router],
+  );
+
   const handleConfirmLeave = useCallback(() => {
     setShowUnsavedChangesDialog(false);
-    // For browser back button, go back 2 entries:
-    // -1 for the entry we pushed on mount, -1 for the entry we pushed when blocking
-    window.history.go(-2);
-  }, []);
+    const pendingHref = pendingNavigationRef.current;
+    pendingNavigationRef.current = null;
+    if (pendingHref) {
+      router.push(pendingHref);
+    } else {
+      // For browser back button, go back 2 entries:
+      // -1 for the entry we pushed on mount, -1 for the entry we pushed when blocking
+      window.history.go(-2);
+    }
+  }, [router]);
 
   const handleCancelLeave = useCallback(() => {
+    pendingNavigationRef.current = null;
     setShowUnsavedChangesDialog(false);
   }, []);
 
@@ -240,6 +261,7 @@ export function GolfLeagueSetupPage() {
               : []),
           ]}
           currentPage={leagueName ? `${leagueName} Setup` : 'League Setup'}
+          onNavigate={handleBreadcrumbNavigate}
         />
 
         <FormProvider {...methods}>
