@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Box, Container, Stack, Typography } from '@mui/material';
+import { Container, Stack, Typography } from '@mui/material';
 import { useParams } from 'next/navigation';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../../components/admin';
 import AnnouncementsManager from '../../../../../components/announcements/AnnouncementsManager';
 
 const AccountAnnouncementsManagementPage: React.FC = () => {
@@ -18,26 +19,24 @@ const AccountAnnouncementsManagementPage: React.FC = () => {
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box
-          textAlign="center"
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          gap={2}
-          sx={{ color: 'text.primary' }}
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
         >
-          <Box>
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', mb: 1 }}>
-              Announcement Management
-            </Typography>
-            <Typography variant="body1" sx={{ color: (theme) => theme.palette.text.secondary }}>
-              Publish updates to keep your organization informed and aligned.
-            </Typography>
-          </Box>
-        </Box>
+          Announcement Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Publish updates to keep your organization informed and aligned.
+        </Typography>
       </AccountPageHeader>
 
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Community', href: `/account/${accountId}/admin/community` }}
+          currentPage="Announcement Management"
+        />
         <Stack spacing={3}>
           <AnnouncementsManager
             scope={{ type: 'account', accountId }}

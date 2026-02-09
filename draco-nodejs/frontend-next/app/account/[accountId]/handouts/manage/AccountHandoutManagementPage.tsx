@@ -1,10 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Box, Container, Fab, Typography } from '@mui/material';
+import { Container, Fab, Typography } from '@mui/material';
 import { useParams } from 'next/navigation';
 import AddIcon from '@mui/icons-material/Add';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../../components/admin';
 import HandoutSection from '@/components/handouts/HandoutSection';
 
 const AccountHandoutManagementPage: React.FC = () => {
@@ -19,21 +20,23 @@ const AccountHandoutManagementPage: React.FC = () => {
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box textAlign="center">
-          <Typography
-            variant="h4"
-            component="h1"
-            color="text.primary"
-            sx={{ fontWeight: 'bold', mb: 1 }}
-          >
-            Handout Management
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.85 }}>
-            Upload, update, and remove the handouts available to your members.
-          </Typography>
-        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          Handout Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Upload, update, and remove the handouts available to your members.
+        </Typography>
       </AccountPageHeader>
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Content', href: `/account/${accountId}/admin/content` }}
+          currentPage="Handout Management"
+        />
         <HandoutSection
           scope={{ type: 'account', accountId }}
           title="Manage Handouts"

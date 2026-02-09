@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
-  Breadcrumbs,
+  Container,
   Typography,
   Button,
   IconButton,
@@ -26,10 +26,10 @@ import {
   Edit as EditIcon,
   ExpandMore as ExpandMoreIcon,
   People as PeopleIcon,
-  NavigateNext as NavigateNextIcon,
   GolfCourse as GolfCourseIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
+import { AdminBreadcrumbs } from '../../../../../../../components/admin';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getAccountSeason } from '@draco/shared-api-client';
@@ -470,7 +470,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
         <Typography
           variant="h4"
@@ -479,31 +479,21 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
         >
           Golf Flight Management
         </Typography>
-        {seasonName && (
-          <Typography
-            variant="body1"
-            sx={{ mt: 0.5, textAlign: 'center', color: 'text.secondary' }}
-          >
-            {seasonName}
-          </Typography>
-        )}
-        <Typography variant="body2" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
-          Manage flights and teams
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          {season ? `Manage flights and teams for ${seasonName}` : 'Manage flights and teams'}
         </Typography>
       </AccountPageHeader>
 
-      <Box sx={{ maxWidth: 'lg', mx: 'auto', px: 3, py: 4 }}>
-        <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ mb: 3 }}>
-          <MuiLink
-            component={Link}
-            href={`/account/${accountId}/seasons/${seasonId}/golf/admin`}
-            underline="hover"
-            color="inherit"
-          >
-            Golf Admin
-          </MuiLink>
-          <Typography color="text.primary">Flights</Typography>
-        </Breadcrumbs>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          links={[
+            { name: 'Season', href: `/account/${accountId}/admin/season` },
+            { name: 'Season Management', href: `/account/${accountId}/seasons` },
+            { name: seasonName, href: `/account/${accountId}/seasons/${seasonId}/golf/admin` },
+          ]}
+          currentPage="Flights & Teams"
+        />
 
         {leagueSetup && (
           <Box
@@ -539,23 +529,6 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           </Box>
         )}
 
-        {feedback && (
-          <Snackbar
-            open={!!feedback}
-            autoHideDuration={6000}
-            onClose={handleFeedbackClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          >
-            <Alert
-              severity={feedback.severity}
-              onClose={handleFeedbackClose}
-              sx={{ width: '100%' }}
-            >
-              {feedback.message}
-            </Alert>
-          </Snackbar>
-        )}
-
         {flights.length === 0 && !loading ? (
           <Card sx={{ mb: 3 }}>
             <CardContent sx={{ textAlign: 'center', py: 6 }}>
@@ -574,87 +547,100 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
         ) : (
           flights.map(renderFlightAccordion)
         )}
+      </Container>
 
-        <Fab
-          color="primary"
-          aria-label="create flight"
-          onClick={handleCreateFlight}
-          sx={{ position: 'fixed', bottom: 24, right: 24 }}
+      <Fab
+        color="primary"
+        aria-label="create flight"
+        onClick={handleCreateFlight}
+        sx={{ position: 'fixed', bottom: 24, right: 24 }}
+      >
+        <AddIcon />
+      </Fab>
+
+      <CreateFlightDialog
+        open={createFlightDialogOpen}
+        onClose={() => setCreateFlightDialogOpen(false)}
+        accountId={accountId}
+        seasonId={seasonId}
+        onSuccess={handleFlightCreated}
+      />
+
+      <EditFlightDialog
+        open={editFlightDialogOpen}
+        onClose={() => {
+          setEditFlightDialogOpen(false);
+          setSelectedFlight(null);
+        }}
+        accountId={accountId}
+        flight={selectedFlight}
+        onSuccess={handleFlightUpdated}
+      />
+
+      <DeleteFlightDialog
+        open={deleteFlightDialogOpen}
+        onClose={() => {
+          setDeleteFlightDialogOpen(false);
+          setSelectedFlight(null);
+        }}
+        accountId={accountId}
+        flight={selectedFlight}
+        onSuccess={handleFlightDeleted}
+      />
+
+      {teamTargetFlight && (
+        <CreateGolfTeamDialog
+          open={createTeamDialogOpen}
+          onClose={() => {
+            setCreateTeamDialogOpen(false);
+            setTeamTargetFlight(null);
+          }}
+          accountId={accountId}
+          flightId={teamTargetFlight.id}
+          flightName={teamTargetFlight.name}
+          onSuccess={handleTeamCreated}
+        />
+      )}
+
+      <EditGolfTeamDialog
+        open={editTeamDialogOpen}
+        onClose={() => {
+          setEditTeamDialogOpen(false);
+          setSelectedTeam(null);
+          setTeamTargetFlight(null);
+        }}
+        accountId={accountId}
+        seasonId={seasonId}
+        team={selectedTeam}
+        onSuccess={handleTeamUpdated}
+      />
+
+      <DeleteGolfTeamDialog
+        open={deleteTeamDialogOpen}
+        onClose={() => {
+          setDeleteTeamDialogOpen(false);
+          setSelectedTeam(null);
+          setTeamTargetFlight(null);
+        }}
+        accountId={accountId}
+        seasonId={seasonId}
+        team={selectedTeam}
+        onSuccess={handleTeamDeleted}
+      />
+
+      {feedback && (
+        <Snackbar
+          open={!!feedback}
+          autoHideDuration={6000}
+          onClose={handleFeedbackClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          <AddIcon />
-        </Fab>
-
-        <CreateFlightDialog
-          open={createFlightDialogOpen}
-          onClose={() => setCreateFlightDialogOpen(false)}
-          accountId={accountId}
-          seasonId={seasonId}
-          onSuccess={handleFlightCreated}
-        />
-
-        <EditFlightDialog
-          open={editFlightDialogOpen}
-          onClose={() => {
-            setEditFlightDialogOpen(false);
-            setSelectedFlight(null);
-          }}
-          accountId={accountId}
-          flight={selectedFlight}
-          onSuccess={handleFlightUpdated}
-        />
-
-        <DeleteFlightDialog
-          open={deleteFlightDialogOpen}
-          onClose={() => {
-            setDeleteFlightDialogOpen(false);
-            setSelectedFlight(null);
-          }}
-          accountId={accountId}
-          flight={selectedFlight}
-          onSuccess={handleFlightDeleted}
-        />
-
-        {teamTargetFlight && (
-          <CreateGolfTeamDialog
-            open={createTeamDialogOpen}
-            onClose={() => {
-              setCreateTeamDialogOpen(false);
-              setTeamTargetFlight(null);
-            }}
-            accountId={accountId}
-            flightId={teamTargetFlight.id}
-            flightName={teamTargetFlight.name}
-            onSuccess={handleTeamCreated}
-          />
-        )}
-
-        <EditGolfTeamDialog
-          open={editTeamDialogOpen}
-          onClose={() => {
-            setEditTeamDialogOpen(false);
-            setSelectedTeam(null);
-            setTeamTargetFlight(null);
-          }}
-          accountId={accountId}
-          seasonId={seasonId}
-          team={selectedTeam}
-          onSuccess={handleTeamUpdated}
-        />
-
-        <DeleteGolfTeamDialog
-          open={deleteTeamDialogOpen}
-          onClose={() => {
-            setDeleteTeamDialogOpen(false);
-            setSelectedTeam(null);
-            setTeamTargetFlight(null);
-          }}
-          accountId={accountId}
-          seasonId={seasonId}
-          team={selectedTeam}
-          onSuccess={handleTeamDeleted}
-        />
-      </Box>
-    </Box>
+          <Alert severity={feedback.severity} onClose={handleFeedbackClose} sx={{ width: '100%' }}>
+            {feedback.message}
+          </Alert>
+        </Snackbar>
+      )}
+    </main>
   );
 };
 

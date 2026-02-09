@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, Typography, Button, Fab, Snackbar, Alert } from '@mui/material';
+import { Box, Container, Typography, Button, Fab, Snackbar, Alert } from '@mui/material';
 import { Add as AddIcon, Settings as SettingsIcon } from '@mui/icons-material';
 import AccountPageHeader from '../AccountPageHeader';
+import { AdminBreadcrumbs } from '../admin';
 import { WorkoutRegistrationsAccordion } from './WorkoutRegistrationsAccordion';
 import { WorkoutFormDialog } from './dialogs/WorkoutFormDialog';
 import { WorkoutPreviewDialog } from './dialogs/WorkoutPreviewDialog';
@@ -80,27 +81,39 @@ export const WorkoutsManagement: React.FC<WorkoutsManagementProps> = ({ accountI
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
-            Workouts Management
-          </Typography>
-        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          Workouts Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Create and manage workout sessions, registrations, and attendance.
+        </Typography>
       </AccountPageHeader>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: { xs: 2, md: 4 }, py: 2 }}>
-        <Button variant="outlined" startIcon={<SettingsIcon />} onClick={handleOpenSourcesDialog}>
-          Manage Where Heard
-        </Button>
-      </Box>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Season', href: `/account/${accountId}/admin/season` }}
+          currentPage="Workouts Management"
+        />
 
-      {/* Use the new accordion component */}
-      <WorkoutRegistrationsAccordion
-        accountId={accountId}
-        onCreateWorkout={handleCreateWorkout}
-        onEditWorkout={handleEditWorkout}
-        onPreviewWorkout={handlePreviewWorkout}
-        refreshKey={refreshKey}
-      />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <Button variant="outlined" startIcon={<SettingsIcon />} onClick={handleOpenSourcesDialog}>
+            Manage Where Heard
+          </Button>
+        </Box>
+
+        <WorkoutRegistrationsAccordion
+          accountId={accountId}
+          onCreateWorkout={handleCreateWorkout}
+          onEditWorkout={handleEditWorkout}
+          onPreviewWorkout={handlePreviewWorkout}
+          refreshKey={refreshKey}
+        />
+      </Container>
 
       <Fab
         color="primary"

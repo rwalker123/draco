@@ -7,6 +7,7 @@ import { getAccountById } from '@draco/shared-api-client';
 import { type TeamSeasonWithPlayerCountType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../../../../utils/apiResult';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../../components/admin';
 import { useApiClient } from '../../../../../hooks/useApiClient';
 import { useAuth } from '../../../../../context/AuthContext';
 import InformationMessagesManager from '../../../../../components/information/InformationMessagesManager';
@@ -149,7 +150,12 @@ const InformationMessagesManagementPage: React.FC = () => {
         </Typography>
       </AccountPageHeader>
 
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Content', href: `/account/${accountId}/admin/content` }}
+          currentPage="Information Messages"
+        />
         <InformationMessagesManager
           scope={{
             type: 'account',

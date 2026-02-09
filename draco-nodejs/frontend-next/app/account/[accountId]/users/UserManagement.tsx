@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { Alert, Box, Typography, Fab, Snackbar } from '@mui/material';
+import { Alert, Box, Container, Typography, Fab, Snackbar } from '@mui/material';
 import { useUserManagement } from '../../../../hooks/useUserManagement';
 import { useUserDialogs } from '../../../../hooks/useUserDialogs';
 import {
@@ -18,6 +18,7 @@ import {
   AccountOwnerDisplay,
 } from '../../../../components/users/automatic-roles';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../components/admin';
 import { ContactType, ContactRoleType, RoleWithContactType } from '@draco/shared-schemas';
 import { exportContacts } from '@draco/shared-api-client';
 import AddIcon from '@mui/icons-material/Add';
@@ -312,87 +313,88 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Account Header */}
       <AccountPageHeader accountId={accountId}>
-        <Box textAlign="center" sx={{ position: 'relative' }}>
-          <Typography
-            variant="h4"
-            component="h1"
-            color="text.primary"
-            sx={{ fontWeight: 'bold', mb: 1 }}
-          >
-            User Management
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.9 }}>
-            Manage account users, roles, and permissions.
-          </Typography>
-          {accountOwner && (
-            <Box mt={2} display="flex" justifyContent="center">
-              <AccountOwnerDisplay accountOwner={accountOwner} variant="header" />
-            </Box>
-          )}
-        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          User Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Manage account users, roles, and permissions.
+        </Typography>
+        {accountOwner && (
+          <Box mt={2} display="flex" justifyContent="center">
+            <AccountOwnerDisplay accountOwner={accountOwner} variant="header" />
+          </Box>
+        )}
       </AccountPageHeader>
 
-      {/* Automatic Role Holders Section */}
-      <AutomaticRolesSection accountOwner={accountOwner} teamManagers={teamManagers} />
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Account', href: `/account/${accountId}/admin/account` }}
+          currentPage="User Management"
+        />
 
-      {/* Enhanced User Table with Modern Features */}
-      <UserTableEnhanced
-        users={users}
-        loading={loading}
-        isInitialLoad={isInitialLoad}
-        onAssignRole={handleAssignRoleWrapper}
-        onRemoveRole={handleRemoveRoleWrapper}
-        onEditContact={handleEditContactWrapper}
-        onDeleteContact={handleDeleteContactWrapper}
-        canManageUsers={canManageUsers}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        hasNext={hasNext}
-        hasPrev={hasPrev}
-        onNextPage={handleNextPage}
-        onPrevPage={handlePrevPage}
-        onRowsPerPageChange={handleRowsPerPageChange}
-        getRoleDisplayName={getRoleDisplayName}
-        // Enhanced features
-        enableViewSwitching={true}
-        enableAdvancedFilters={true}
-        initialViewMode="table"
-        onModernFeaturesChange={(_enabled) => {
-          // Modern features notification
-        }}
-        // Enhanced props
-        accountId={accountId}
-        // Search props
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onSearch={handleSearch}
-        onClearSearch={handleClearSearch}
-        isShowingSearchResults={isShowingSearchResults}
-        searchLoading={searchLoading}
-        onDeleteContactPhoto={handleDeleteContactPhotoWithConfirm}
-        onRevokeRegistration={handleRevokeWithConfirm}
-        onAutoRegister={handleAutoRegisterWrapper}
-        // Filter props
-        onlyWithRoles={onlyWithRoles}
-        onOnlyWithRolesChange={handleFilterToggle}
-        // Export functionality
-        onExport={handleExportUsers}
-        // Advanced filter props
-        filter={filter}
-        onFilterChange={handleFilterChange}
-        onApplyFilter={handleApplyFilter}
-        onClearFilter={handleClearFilter}
-        hasActiveFilter={hasActiveFilter}
-        // Sort props
-        sort={sort}
-        onAdvancedSortChange={handleSortChange}
-        // Disable the title header above the search bar
-        title={null}
-      />
+        <AutomaticRolesSection accountOwner={accountOwner} teamManagers={teamManagers} />
 
-      {/* Dialog Sections */}
+        <UserTableEnhanced
+          users={users}
+          loading={loading}
+          isInitialLoad={isInitialLoad}
+          onAssignRole={handleAssignRoleWrapper}
+          onRemoveRole={handleRemoveRoleWrapper}
+          onEditContact={handleEditContactWrapper}
+          onDeleteContact={handleDeleteContactWrapper}
+          canManageUsers={canManageUsers}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          hasNext={hasNext}
+          hasPrev={hasPrev}
+          onNextPage={handleNextPage}
+          onPrevPage={handlePrevPage}
+          onRowsPerPageChange={handleRowsPerPageChange}
+          getRoleDisplayName={getRoleDisplayName}
+          // Enhanced features
+          enableViewSwitching={true}
+          enableAdvancedFilters={true}
+          initialViewMode="table"
+          onModernFeaturesChange={(_enabled) => {
+            // Modern features notification
+          }}
+          // Enhanced props
+          accountId={accountId}
+          // Search props
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onSearch={handleSearch}
+          onClearSearch={handleClearSearch}
+          isShowingSearchResults={isShowingSearchResults}
+          searchLoading={searchLoading}
+          onDeleteContactPhoto={handleDeleteContactPhotoWithConfirm}
+          onRevokeRegistration={handleRevokeWithConfirm}
+          onAutoRegister={handleAutoRegisterWrapper}
+          // Filter props
+          onlyWithRoles={onlyWithRoles}
+          onOnlyWithRolesChange={handleFilterToggle}
+          // Export functionality
+          onExport={handleExportUsers}
+          // Advanced filter props
+          filter={filter}
+          onFilterChange={handleFilterChange}
+          onApplyFilter={handleApplyFilter}
+          onClearFilter={handleClearFilter}
+          hasActiveFilter={hasActiveFilter}
+          // Sort props
+          sort={sort}
+          onAdvancedSortChange={handleSortChange}
+          // Disable the title header above the search bar
+          title={null}
+        />
+      </Container>
+
       <AssignRoleDialog
         open={dialogs.assignRoleDialog.isOpen}
         onClose={dialogs.assignRoleDialog.close}

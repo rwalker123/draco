@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   CircularProgress,
+  Container,
   Fab,
   Snackbar,
   Stack,
@@ -23,6 +24,7 @@ import { Add as AddIcon } from '@mui/icons-material';
 import { useAuth } from '../../../context/AuthContext';
 import type { PhotoGalleryAdminAlbumType, PhotoGalleryPhotoType } from '@draco/shared-schemas';
 import AccountPageHeader from '../../AccountPageHeader';
+import { AdminBreadcrumbs } from '../../admin';
 import ConfirmationDialog from '../../common/ConfirmationDialog';
 import {
   deleteGalleryPhotoAdmin,
@@ -79,7 +81,7 @@ const AlbumPillButton = styled(ButtonBase, {
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: -12,
+    bottom: -4,
     height: 2,
     borderRadius: 9999,
     backgroundColor: selected ? theme.palette.primary.main : 'transparent',
@@ -508,173 +510,185 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
-            Photo Gallery Management
-          </Typography>
-        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          Photo Gallery Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Upload photos, organize albums, and curate your gallery for members and visitors.
+        </Typography>
       </AccountPageHeader>
 
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          px: { xs: 2, md: 4 },
-          py: 2,
-          flexWrap: 'wrap',
-          gap: 2,
-        }}
-      >
-        <Stack direction="row" spacing={3} flexWrap="wrap" alignItems="center" sx={{ flex: 1 }}>
-          <AlbumPillButton
-            selected={selectedTeamAlbumId === '' && selectedAccountAlbumId === 'all-account'}
-            onClick={() => handleSelectAccountAlbum('all-account')}
-          >
-            <Typography variant="body1">All Photos</Typography>
-            <AlbumCountChip>{allAccountPhotosCount}</AlbumCountChip>
-          </AlbumPillButton>
-
-          {accountAlbumOptions.map((album) => {
-            const isSelected = selectedTeamAlbumId === '' && selectedAccountAlbumId === album.id;
-            return (
-              <AlbumPillButton
-                key={album.id}
-                selected={isSelected}
-                onClick={() => handleSelectAccountAlbum(album.id)}
-              >
-                <Typography variant="body1">{album.title}</Typography>
-                <AlbumCountChip>{album.photoCount}</AlbumCountChip>
-              </AlbumPillButton>
-            );
-          })}
-        </Stack>
-
-        <Stack direction="row" spacing={1} alignItems="center">
-          {teamAlbumMenuHierarchy.length > 0 ? (
-            <TeamAlbumMenu
-              teamAlbumHierarchy={teamAlbumMenuHierarchy}
-              selectedAlbumKey={selectedTeamAlbumId}
-              onSelect={handleTeamAlbumChange}
-              selectedTeam={selectedTeamMenuEntry}
-              buttonLabel="Team Albums"
-              additionalOptions={teamAlbumMenuOptions}
-            />
-          ) : null}
-          {teamAlbumOptions.length > 0 && (
-            <Button
-              variant="outlined"
-              startIcon={<CollectionsBookmarkIcon />}
-              onClick={handleOpenAlbumDialog}
-              sx={{
-                borderRadius: 9999,
-                px: 2,
-                fontWeight: 600,
-              }}
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Community', href: `/account/${accountId}/admin/community` }}
+          currentPage="Photo Gallery Management"
+        />
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            py: 2,
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
+          <Stack direction="row" spacing={3} flexWrap="wrap" alignItems="center" sx={{ flex: 1 }}>
+            <AlbumPillButton
+              selected={selectedTeamAlbumId === '' && selectedAccountAlbumId === 'all-account'}
+              onClick={() => handleSelectAccountAlbum('all-account')}
             >
-              Manage Albums
-            </Button>
-          )}
-        </Stack>
-      </Box>
+              <Typography variant="body1">All Photos</Typography>
+              <AlbumCountChip>{allAccountPhotosCount}</AlbumCountChip>
+            </AlbumPillButton>
 
-      <Box sx={{ px: { xs: 2, md: 4 }, pb: 8 }}>
-        {loading ? (
-          <Stack alignItems="center" justifyContent="center" sx={{ py: 8 }}>
-            <CircularProgress />
+            {accountAlbumOptions.map((album) => {
+              const isSelected = selectedTeamAlbumId === '' && selectedAccountAlbumId === album.id;
+              return (
+                <AlbumPillButton
+                  key={album.id}
+                  selected={isSelected}
+                  onClick={() => handleSelectAccountAlbum(album.id)}
+                >
+                  <Typography variant="body1">{album.title}</Typography>
+                  <AlbumCountChip>{album.photoCount}</AlbumCountChip>
+                </AlbumPillButton>
+              );
+            })}
           </Stack>
-        ) : error ? (
-          <Alert severity="error">{error}</Alert>
-        ) : !hasAnyPhotos ? (
-          <Alert severity="info">
-            No photos have been published yet. Use the button below to add your first gallery photo.
-          </Alert>
-        ) : !hasSelectionPhotos ? (
-          <Alert severity="info">No photos match the selected album.</Alert>
-        ) : (
-          <TableContainer component={Paper} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ width: 220 }}>Photo</TableCell>
-                  <TableCell>Details</TableCell>
-                  <TableCell align="right" sx={{ width: 160 }}>
-                    Actions
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredPhotos.map((photo) => {
-                  const submittedOn = formatDisplayDate(photo.submittedAt);
-                  const thumbnailSrc = getPhotoThumbnailSrc(photo);
 
-                  return (
-                    <TableRow key={photo.id} hover>
-                      <TableCell>
-                        <Box
-                          component="img"
-                          src={thumbnailSrc}
-                          alt={photo.title}
-                          loading="lazy"
-                          sx={{
-                            width: PHOTO_GALLERY_THUMBNAIL_DIMENSIONS.width,
-                            height: PHOTO_GALLERY_THUMBNAIL_DIMENSIONS.height,
-                            borderRadius: 2,
-                            objectFit: 'cover',
-                            display: 'block',
-                            boxShadow: '0 10px 20px rgba(15, 23, 42, 0.18)',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Stack spacing={0.75}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                            {photo.title}
-                          </Typography>
-                          {photo.caption ? (
-                            <Typography variant="body2" color="text.secondary">
-                              {photo.caption}
+          <Stack direction="row" spacing={1} alignItems="center">
+            {teamAlbumMenuHierarchy.length > 0 ? (
+              <TeamAlbumMenu
+                teamAlbumHierarchy={teamAlbumMenuHierarchy}
+                selectedAlbumKey={selectedTeamAlbumId}
+                onSelect={handleTeamAlbumChange}
+                selectedTeam={selectedTeamMenuEntry}
+                buttonLabel="Team Albums"
+                additionalOptions={teamAlbumMenuOptions}
+              />
+            ) : null}
+            {teamAlbumOptions.length > 0 && (
+              <Button
+                variant="outlined"
+                startIcon={<CollectionsBookmarkIcon />}
+                onClick={handleOpenAlbumDialog}
+                sx={{
+                  borderRadius: 9999,
+                  px: 2,
+                  fontWeight: 600,
+                }}
+              >
+                Manage Albums
+              </Button>
+            )}
+          </Stack>
+        </Box>
+
+        <Box sx={{ pb: 4 }}>
+          {loading ? (
+            <Stack alignItems="center" justifyContent="center" sx={{ py: 8 }}>
+              <CircularProgress />
+            </Stack>
+          ) : error ? (
+            <Alert severity="error">{error}</Alert>
+          ) : !hasAnyPhotos ? (
+            <Alert severity="info">
+              No photos have been published yet. Use the button below to add your first gallery
+              photo.
+            </Alert>
+          ) : !hasSelectionPhotos ? (
+            <Alert severity="info">No photos match the selected album.</Alert>
+          ) : (
+            <TableContainer component={Paper} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ width: 220 }}>Photo</TableCell>
+                    <TableCell>Details</TableCell>
+                    <TableCell align="right" sx={{ width: 160 }}>
+                      Actions
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredPhotos.map((photo) => {
+                    const submittedOn = formatDisplayDate(photo.submittedAt);
+                    const thumbnailSrc = getPhotoThumbnailSrc(photo);
+
+                    return (
+                      <TableRow key={photo.id} hover>
+                        <TableCell>
+                          <Box
+                            component="img"
+                            src={thumbnailSrc}
+                            alt={photo.title}
+                            loading="lazy"
+                            sx={{
+                              width: PHOTO_GALLERY_THUMBNAIL_DIMENSIONS.width,
+                              height: PHOTO_GALLERY_THUMBNAIL_DIMENSIONS.height,
+                              borderRadius: 2,
+                              objectFit: 'cover',
+                              display: 'block',
+                              boxShadow: '0 10px 20px rgba(15, 23, 42, 0.18)',
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Stack spacing={0.75}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                              {photo.title}
                             </Typography>
-                          ) : null}
-                          <Stack
-                            direction="row"
-                            spacing={2}
-                            alignItems="center"
-                            sx={{ color: 'text.secondary', flexWrap: 'wrap' }}
-                          >
-                            {photo.albumTitle ? (
-                              <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                                Album: {photo.albumTitle}
+                            {photo.caption ? (
+                              <Typography variant="body2" color="text.secondary">
+                                {photo.caption}
                               </Typography>
                             ) : null}
-                            {submittedOn ? (
-                              <Typography variant="caption">Published {submittedOn}</Typography>
-                            ) : null}
+                            <Stack
+                              direction="row"
+                              spacing={2}
+                              alignItems="center"
+                              sx={{ color: 'text.secondary', flexWrap: 'wrap' }}
+                            >
+                              {photo.albumTitle ? (
+                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                  Album: {photo.albumTitle}
+                                </Typography>
+                              ) : null}
+                              {submittedOn ? (
+                                <Typography variant="caption">Published {submittedOn}</Typography>
+                              ) : null}
+                            </Stack>
                           </Stack>
-                        </Stack>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <EditIconButton
-                            tooltipTitle="Edit photo"
-                            aria-label="Edit photo"
-                            onClick={() => handleOpenEditDialog(photo)}
-                          />
-                          <DeleteIconButton
-                            tooltipTitle="Delete photo"
-                            aria-label="Delete photo"
-                            onClick={() => handleConfirmDelete(photo)}
-                          />
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Box>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            <EditIconButton
+                              tooltipTitle="Edit photo"
+                              aria-label="Edit photo"
+                              onClick={() => handleOpenEditDialog(photo)}
+                            />
+                            <DeleteIconButton
+                              tooltipTitle="Delete photo"
+                              aria-label="Delete photo"
+                              onClick={() => handleConfirmDelete(photo)}
+                            />
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
+      </Container>
 
       <Fab
         color="primary"

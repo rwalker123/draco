@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Box, CircularProgress, Fab, Snackbar, Stack, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Container, Fab, Snackbar, Typography } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import type { LeagueFaqType } from '@draco/shared-schemas';
 import AccountPageHeader from '../AccountPageHeader';
+import { AdminBreadcrumbs } from '../admin';
 import { useLeagueFaqService } from '../../hooks/useLeagueFaqService';
 import { LeagueFaqFormDialog } from './dialogs/LeagueFaqFormDialog';
 import { DeleteLeagueFaqDialog } from './dialogs/DeleteLeagueFaqDialog';
@@ -142,23 +143,24 @@ export const LeagueFaqManagement: React.FC<LeagueFaqManagementProps> = ({ accoun
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Stack spacing={1} alignItems="center" textAlign="center">
-          <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
-            League FAQ Management
-          </Typography>
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            sx={{
-              opacity: (theme) => (theme.palette.mode === 'dark' ? 0.85 : 0.65),
-            }}
-          >
-            {headerDescription}
-          </Typography>
-        </Stack>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          League FAQ Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          {headerDescription}
+        </Typography>
       </AccountPageHeader>
 
-      <Box sx={{ px: { xs: 2, md: 4 }, pb: 6 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Content', href: `/account/${accountId}/admin/content` }}
+          currentPage="FAQ Management"
+        />
         {initialLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress />
@@ -170,7 +172,7 @@ export const LeagueFaqManagement: React.FC<LeagueFaqManagementProps> = ({ accoun
         ) : (
           <LeagueFaqList faqs={faqs} onEdit={openEditDialog} onDelete={openDeleteDialog} />
         )}
-      </Box>
+      </Container>
 
       <Fab
         color="primary"

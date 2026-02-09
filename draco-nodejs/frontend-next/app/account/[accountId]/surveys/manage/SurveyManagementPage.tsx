@@ -5,6 +5,7 @@ import {
   Alert,
   Box,
   CircularProgress,
+  Container,
   FormControlLabel,
   Stack,
   Switch,
@@ -15,6 +16,7 @@ import {
 import type { PlayerSurveyCategoryType } from '@draco/shared-schemas';
 import { listPlayerSurveyCategories } from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../../components/admin';
 import { useApiClient } from '../../../../../hooks/useApiClient';
 import WidgetShell from '@/components/ui/WidgetShell';
 import { useAccountSettings } from '@/hooks/useAccountSettings';
@@ -128,22 +130,25 @@ const SurveyManagementPage: React.FC<SurveyManagementPageProps> = ({ accountId }
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h3" color="text.primary" sx={{ fontWeight: 'bold' }}>
-            Player Survey Management
-          </Typography>
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            sx={{ mt: 1, maxWidth: 620, mx: 'auto' }}
-          >
-            Create categories and questions for your player surveys, and review or edit player
-            responses from one workspace.
-          </Typography>
-        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          Player Survey Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Create categories and questions for your player surveys, and review or edit player
+          responses from one workspace.
+        </Typography>
       </AccountPageHeader>
 
-      <Box sx={{ p: 3 }}>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Community', href: `/account/${accountId}/admin/community` }}
+          currentPage="Player Survey Management"
+        />
         <Stack spacing={2}>
           {globalError && <Alert severity="error">{globalError}</Alert>}
           {globalSuccess && <Alert severity="success">{globalSuccess}</Alert>}
@@ -252,7 +257,7 @@ const SurveyManagementPage: React.FC<SurveyManagementPageProps> = ({ accountId }
               ))}
           </Box>
         </Stack>
-      </Box>
+      </Container>
     </main>
   );
 };

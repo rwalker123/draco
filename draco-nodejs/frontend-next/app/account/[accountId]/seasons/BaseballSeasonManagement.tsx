@@ -5,6 +5,7 @@ import {
   Box,
   Card,
   CardContent,
+  Container,
   Typography,
   Button,
   Dialog,
@@ -26,6 +27,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
 import { isAccountAdministrator } from '../../../../utils/permissionUtils';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../components/admin';
 import {
   listAccountSeasons,
   createAccountSeason,
@@ -412,17 +414,24 @@ const BaseballSeasonManagement: React.FC = () => {
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountIdStr || ''}>
-        <Box textAlign="center">
-          <Typography variant="h4" component="h1" color="text.primary" sx={{ fontWeight: 'bold' }}>
-            Season Management
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary" sx={{ opacity: 0.8 }}>
-            Manage seasons, leagues, and current season settings for your organization.
-          </Typography>
-        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          Season Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Manage seasons, leagues, and current season settings for your organization.
+        </Typography>
       </AccountPageHeader>
 
-      <Box sx={{ p: 3 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountIdStr || ''}
+          category={{ name: 'Season', href: `/account/${accountIdStr}/admin/season` }}
+          currentPage="Season Management"
+        />
         {/* Loading State */}
         {loading ? (
           <Box display="flex" justifyContent="center" p={4}>
@@ -475,7 +484,7 @@ const BaseballSeasonManagement: React.FC = () => {
             )}
           </Box>
         )}
-      </Box>
+      </Container>
 
       {/* Create Season Dialog */}
       <Dialog open={createDialogOpen} onClose={closeDialogs} maxWidth="sm" fullWidth>

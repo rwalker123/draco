@@ -10,8 +10,6 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
-  Breadcrumbs,
-  Link as MuiLink,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -19,12 +17,12 @@ import {
   DialogActions,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { UpdateGolfLeagueSetupSchema } from '@draco/shared-schemas';
 import { UpdateGolfLeagueSetup, getAccountSeason } from '@draco/shared-api-client';
 import AccountPageHeader from '../../AccountPageHeader';
+import { AdminBreadcrumbs } from '../../admin';
 import { useGolfLeagueSetup } from '../../../hooks/useGolfLeagueSetup';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../utils/apiResult';
@@ -65,8 +63,8 @@ export function GolfLeagueSetupPage() {
   const [officersExpanded, setOfficersExpanded] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const isDirtyRef = useRef(false);
+  const pendingNavigationRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!accountId || !seasonId || !leagueSeasonId) return;
@@ -133,24 +131,23 @@ export function GolfLeagueSetupPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
+  const backHref = `/account/${accountId}/seasons/${seasonId}/golf/admin`;
+
   // Handle browser back/forward button navigation
   useEffect(() => {
-    // Push a new history entry so we can intercept back navigation
     window.history.pushState(null, '', window.location.href);
 
     const handlePopState = () => {
       if (isDirtyRef.current) {
-        // Push state again to prevent navigation
         window.history.pushState(null, '', window.location.href);
-        // Store the fact that user tried to navigate back and show dialog
-        setPendingNavigation('back');
+        pendingNavigationRef.current = backHref;
         setShowUnsavedChangesDialog(true);
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [backHref]);
 
   useEffect(() => {
     if (setup) {
@@ -192,31 +189,28 @@ export function GolfLeagueSetupPage() {
     }
   };
 
-  const handleNavigateBack = useCallback(() => {
-    if (isDirty) {
-      setPendingNavigation('breadcrumb');
-      setShowUnsavedChangesDialog(true);
-      return;
-    }
-    router.push(`/account/${accountId}/seasons/${seasonId}/golf/admin`);
-  }, [isDirty, router, accountId, seasonId]);
+  const handleBreadcrumbNavigate = useCallback(
+    (href: string) => {
+      if (isDirtyRef.current) {
+        pendingNavigationRef.current = href;
+        setShowUnsavedChangesDialog(true);
+      } else {
+        router.push(href);
+      }
+    },
+    [router],
+  );
 
   const handleConfirmLeave = useCallback(() => {
     setShowUnsavedChangesDialog(false);
-    if (pendingNavigation === 'back') {
-      // For browser back button, go back 2 entries:
-      // -1 for the entry we pushed on mount, -1 for the entry we pushed when blocking
-      window.history.go(-2);
-    } else {
-      // For breadcrumb navigation, push to the admin page
-      router.push(`/account/${accountId}/seasons/${seasonId}/golf/admin`);
-    }
-    setPendingNavigation(null);
-  }, [pendingNavigation, router, accountId, seasonId]);
+    const href = pendingNavigationRef.current ?? backHref;
+    pendingNavigationRef.current = null;
+    router.push(href);
+  }, [router, backHref]);
 
   const handleCancelLeave = useCallback(() => {
+    pendingNavigationRef.current = null;
     setShowUnsavedChangesDialog(false);
-    setPendingNavigation(null);
   }, []);
 
   if (!accountId || !seasonId || !leagueSeasonId) {
@@ -243,35 +237,26 @@ export function GolfLeagueSetupPage() {
         >
           {leagueName ? `${leagueName} Setup` : 'League Setup'}
         </Typography>
-        {seasonName && (
-          <Typography
-            variant="body1"
-            sx={{ mt: 0.5, textAlign: 'center', color: 'text.secondary' }}
-          >
-            {seasonName}
-          </Typography>
-        )}
-        <Typography variant="body2" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
-          Configure league day, tee times, and scoring
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          {seasonName
+            ? `Configure league day, tee times, and scoring for ${seasonName}`
+            : 'Configure league day, tee times, and scoring'}
         </Typography>
       </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ mb: 3 }}>
-          <MuiLink
-            component="button"
-            type="button"
-            onClick={handleNavigateBack}
-            underline="hover"
-            color="inherit"
-            sx={{ cursor: 'pointer' }}
-          >
-            Golf Admin
-          </MuiLink>
-          <Typography color="text.primary">
-            {leagueName ? `${leagueName} Setup` : 'League Setup'}
-          </Typography>
-        </Breadcrumbs>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          links={[
+            { name: 'Season', href: `/account/${accountId}/admin/season` },
+            { name: 'Season Management', href: `/account/${accountId}/seasons` },
+            ...(seasonName
+              ? [{ name: seasonName, href: `/account/${accountId}/seasons/${seasonId}/golf/admin` }]
+              : []),
+          ]}
+          currentPage={leagueName ? `${leagueName} Setup` : 'League Setup'}
+          onNavigate={handleBreadcrumbNavigate}
+        />
 
         <FormProvider {...methods}>
           <form onSubmit={handleSubmit(onSubmit)}>

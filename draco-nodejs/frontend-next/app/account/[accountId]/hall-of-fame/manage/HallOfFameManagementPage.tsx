@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../../components/admin';
 import MembersWidget from './MembersWidget';
 import NominationsWidget from './NominationsWidget';
 import SettingsWidget from './SettingsWidget';
@@ -80,37 +81,25 @@ const HallOfFameManagementPage: React.FC<HallOfFameManagementPageProps> = ({ acc
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{ position: 'relative' }}
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
         >
-          <Box sx={{ flex: 1, textAlign: 'center' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                <Typography
-                  variant="h4"
-                  color="text.primary"
-                  sx={{ fontWeight: 'bold', textAlign: 'center' }}
-                >
-                  Hall of Fame Management
-                </Typography>
-              </Box>
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{ mt: 1, opacity: 0.85, maxWidth: 600, mx: 'auto' }}
-              >
-                Manage inductees, review nominations, and control the public nomination experience
-                for your organization.
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
+          Hall of Fame Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Manage inductees, review nominations, and control the public nomination experience for
+          your organization.
+        </Typography>
       </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Community', href: `/account/${accountId}/admin/community` }}
+          currentPage="Hall of Fame Management"
+        />
         <Stack spacing={3}>
           <WidgetShell
             title="Hall of Fame Availability"

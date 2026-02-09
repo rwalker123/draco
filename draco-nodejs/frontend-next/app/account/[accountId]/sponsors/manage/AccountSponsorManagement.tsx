@@ -22,13 +22,13 @@ import {
 import { Add } from '@mui/icons-material';
 import { SponsorType } from '@draco/shared-schemas';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
+import { AdminBreadcrumbs } from '../../../../../components/admin';
 import SponsorFormDialog from '../../../../../components/sponsors/SponsorFormDialog';
 import SponsorDeleteDialog from '../../../../../components/sponsors/SponsorDeleteDialog';
 import {
   EditIconButton,
   DeleteIconButton,
 } from '../../../../../components/common/ActionIconButtons';
-import PageSectionHeader from '../../../../../components/common/PageSectionHeader';
 import { useSponsorOperations } from '../../../../../hooks/useSponsorOperations';
 
 interface AccountSponsorManagementProps {
@@ -149,23 +149,26 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Stack alignItems="center" justifyContent="center" spacing={2} textAlign="center">
-          <Box>
-            <Typography
-              variant="h4"
-              color="text.primary"
-              sx={{ fontWeight: 700, textAlign: 'center' }}
-            >
-              Sponsor Management
-            </Typography>
-          </Box>
-        </Stack>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
+        >
+          Sponsor Management
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          Manage sponsor relationships and display sponsor information.
+        </Typography>
       </AccountPageHeader>
 
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Stack spacing={3} sx={{ pb: 8 }}>
-          <PageSectionHeader title="Account Sponsors" variant="h5" component="h1" />
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AdminBreadcrumbs
+          accountId={accountId}
+          category={{ name: 'Account', href: `/account/${accountId}/admin/account` }}
+          currentPage="Account Sponsors"
+        />
 
+        <Stack spacing={3} sx={{ pb: 8 }}>
           {error && (
             <Alert severity="error" onClose={() => setError(null)}>
               {error}
