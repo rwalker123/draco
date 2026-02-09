@@ -100,7 +100,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     teamSeason,
   } = useTeamMembership(isAccountMember ? accountId : null, teamSeasonId, seasonId);
   const apiClient = useApiClient();
-  const apiClientRef = React.useRef(apiClient);
   const {
     currentSeasonId,
     loading: currentSeasonLoading,
@@ -111,10 +110,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   );
 
   React.useEffect(() => {
-    apiClientRef.current = apiClient;
-  }, [apiClient]);
-
-  React.useEffect(() => {
     if (accountId) {
       void fetchCurrentSeason();
     }
@@ -123,16 +118,17 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const isCurrentSeason = Boolean(currentSeasonId && currentSeasonId === seasonId);
 
   React.useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     const loadTeamData = async () => {
       try {
         const result = await apiGetTeamSeasonDetails({
           client: apiClient,
           path: { accountId, seasonId, teamSeasonId },
+          signal: controller.signal,
           throwOnError: false,
         });
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const data = unwrapApiResult<TeamSeasonRecordType>(
           result,
           'Failed to fetch team information',
@@ -160,7 +156,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     loadTeamData();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, seasonId, teamSeasonId, apiClient]);
 
@@ -169,7 +165,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       return;
     }
 
-    let isMounted = true;
+    const controller = new AbortController();
 
     const loadTeamSponsors = async () => {
       try {
@@ -177,17 +173,14 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         const result = await apiListTeamSponsors({
           client: apiClient,
           path: { accountId, seasonId, teamSeasonId },
+          signal: controller.signal,
           throwOnError: false,
         });
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
         const data = unwrapApiResult<SponsorList>(result, 'Failed to load team sponsors');
         setTeamSponsors(data.sponsors ?? []);
       } catch (err) {
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
         const message =
           err instanceof Error ? err.message : 'Unable to load team sponsors at this time.';
         setTeamSponsorError(message);
@@ -198,7 +191,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     void loadTeamSponsors();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountId, seasonId, teamSeasonId, apiClient]);
 
@@ -231,23 +224,24 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       return;
     }
 
-    let ignore = false;
+    const controller = new AbortController();
 
     const fetchDiscordStatus = async () => {
       try {
         const result = await apiGetDiscordLinkStatus({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
-        if (ignore) return;
+        if (controller.signal.aborted) return;
         const status = unwrapApiResult<DiscordLinkStatusType>(
           result,
           'Failed to get Discord link status',
         );
         setDiscordLinkStatus(status);
       } catch {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setDiscordLinkStatus(null);
         }
       }
@@ -256,7 +250,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     void fetchDiscordStatus();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [token, accountId, canViewCommunityChats, apiClient]);
 
@@ -341,7 +335,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   };
 
   React.useEffect(() => {
-    let isMounted = true;
+    const controller = new AbortController();
 
     type ApiGame = RecentGames['recent'][number];
 
@@ -370,19 +364,17 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       setLoading(true);
       setError(null);
       try {
-        const client = apiClientRef.current;
         const result = await apiListTeamSeasonGames({
-          client,
+          client: apiClient,
           path: { accountId, seasonId, teamSeasonId },
           query: { upcoming: true, recent: true, limit: 5 },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        const data = unwrapApiResult(result, 'Failed to load games');
+        if (controller.signal.aborted) return;
 
-        if (!isMounted) {
-          return;
-        }
+        const data = unwrapApiResult(result, 'Failed to load games');
 
         const upcomingMapped = data.upcoming.map(transformGame);
         const recentMapped = data.recent.map(transformGame);
@@ -390,13 +382,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         setUpcomingGames(upcomingMapped);
         setCompletedGames(recentMapped);
       } catch (err: unknown) {
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Error loading games';
         setError(message);
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -405,9 +395,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     fetchGames();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
-  }, [accountId, seasonId, teamSeasonId]);
+  }, [accountId, seasonId, teamSeasonId, apiClient]);
 
   const fetchRecapForTeam = async (game: Game, targetTeamId: string) => {
     const recap = await getGameSummary({

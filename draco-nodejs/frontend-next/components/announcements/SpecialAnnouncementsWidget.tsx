@@ -62,7 +62,7 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
   useEffect(() => {
     if (!accountId) return;
 
-    let ignore = false;
+    const controller = new AbortController();
 
     const fetchAnnouncements = async () => {
       try {
@@ -75,10 +75,11 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
           const accountResult = await listAccountAnnouncements({
             client: apiClient,
             path: { accountId },
+            signal: controller.signal,
             throwOnError: false,
           });
 
-          if (ignore) return;
+          if (controller.signal.aborted) return;
 
           const accountData = unwrapApiResult(
             accountResult,
@@ -97,6 +98,7 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
           const result = await listTeamAnnouncements({
             client: apiClient,
             path: { accountId, teamId },
+            signal: controller.signal,
             throwOnError: false,
           });
 
@@ -119,6 +121,7 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
         });
 
         const teamAnnouncementsArrays = await Promise.all(teamAnnouncementPromises);
+        if (controller.signal.aborted) return;
         const teamAnnouncementsFlattened = teamAnnouncementsArrays.flat();
 
         const allAnnouncements = [
@@ -126,15 +129,12 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
           ...teamAnnouncementsFlattened,
         ].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
-        if (!ignore) {
-          setAnnouncements(allAnnouncements);
-        }
+        setAnnouncements(allAnnouncements);
       } catch (err) {
-        if (!ignore) {
-          setError(err instanceof Error ? err.message : 'Failed to load announcements');
-        }
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : 'Failed to load announcements');
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -143,7 +143,7 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
     void fetchAnnouncements();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountId, resolvedTeamIds, resolvedTeamMetadata, showAccountAnnouncements, apiClient]);
 
