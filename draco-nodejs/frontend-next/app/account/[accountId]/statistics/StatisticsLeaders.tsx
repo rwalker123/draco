@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import LeaderCategoryPanel from '../../../../components/statistics/LeaderCategoryPanel';
 import type { LeaderRowType } from '@draco/shared-schemas';
@@ -37,80 +37,93 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
   const isLoading = categoryLoading || leadersLoading;
   const error = leadersError ?? categoryError;
 
-  const loadLeaders = useCallback(async () => {
-    if (!filters.leagueId) {
-      setBattingLeaders({});
-      setPitchingLeaders({});
+  useEffect(() => {
+    if (
+      !filters.leagueId ||
+      filters.leagueId === '' ||
+      (battingCategories.length === 0 && pitchingCategories.length === 0)
+    ) {
       return;
     }
 
-    setLeadersLoading(true);
-    setLeadersError(null);
+    const controller = new AbortController();
 
-    try {
-      // Load batting leaders
-      const battingPromises = battingCategories.map(async (category) => {
-        const leaders = await fetchStatisticalLeaders(
-          accountId,
-          filters.leagueId,
-          category.key,
-          {
-            divisionId: filters.divisionId,
-            isHistorical: filters.isHistorical,
+    const loadLeaders = async () => {
+      setLeadersLoading(true);
+      setLeadersError(null);
+
+      try {
+        const battingPromises = battingCategories.map(async (category) => {
+          const leaders = await fetchStatisticalLeaders(
+            accountId,
+            filters.leagueId,
+            category.key,
+            {
+              divisionId: filters.divisionId,
+              isHistorical: filters.isHistorical,
+            },
+            { client: apiClient },
+          );
+
+          return { category: category.key, leaders };
+        });
+
+        const pitchingPromises = pitchingCategories.map(async (category) => {
+          const leaders = await fetchStatisticalLeaders(
+            accountId,
+            filters.leagueId,
+            category.key,
+            {
+              divisionId: filters.divisionId,
+              isHistorical: filters.isHistorical,
+            },
+            { client: apiClient },
+          );
+
+          return { category: category.key, leaders };
+        });
+
+        const [battingResults, pitchingResults] = await Promise.all([
+          Promise.all(battingPromises),
+          Promise.all(pitchingPromises),
+        ]);
+
+        if (controller.signal.aborted) return;
+
+        const battingLeadersObj = battingResults.reduce(
+          (acc, result) => {
+            acc[result.category] = result.leaders;
+            return acc;
           },
-          { client: apiClient },
+          {} as { [key: string]: LeaderRow[] },
         );
 
-        return { category: category.key, leaders };
-      });
-
-      // Load pitching leaders
-      const pitchingPromises = pitchingCategories.map(async (category) => {
-        const leaders = await fetchStatisticalLeaders(
-          accountId,
-          filters.leagueId,
-          category.key,
-          {
-            divisionId: filters.divisionId,
-            isHistorical: filters.isHistorical,
+        const pitchingLeadersObj = pitchingResults.reduce(
+          (acc, result) => {
+            acc[result.category] = result.leaders;
+            return acc;
           },
-          { client: apiClient },
+          {} as { [key: string]: LeaderRow[] },
         );
 
-        return { category: category.key, leaders };
-      });
+        setBattingLeaders(battingLeadersObj);
+        setPitchingLeaders(pitchingLeadersObj);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load statistical leaders';
+        setLeadersError(message);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLeadersLoading(false);
+        }
+      }
+    };
 
-      const [battingResults, pitchingResults] = await Promise.all([
-        Promise.all(battingPromises),
-        Promise.all(pitchingPromises),
-      ]);
+    void loadLeaders();
 
-      // Convert results to objects
-      const battingLeadersObj = battingResults.reduce(
-        (acc, result) => {
-          acc[result.category] = result.leaders;
-          return acc;
-        },
-        {} as { [key: string]: LeaderRow[] },
-      );
-
-      const pitchingLeadersObj = pitchingResults.reduce(
-        (acc, result) => {
-          acc[result.category] = result.leaders;
-          return acc;
-        },
-        {} as { [key: string]: LeaderRow[] },
-      );
-
-      setBattingLeaders(battingLeadersObj);
-      setPitchingLeaders(pitchingLeadersObj);
-    } catch (error) {
-      console.error('Error loading leaders:', error);
-      const message = error instanceof Error ? error.message : 'Failed to load statistical leaders';
-      setLeadersError(message);
-    } finally {
-      setLeadersLoading(false);
-    }
+    return () => {
+      controller.abort();
+    };
   }, [
     accountId,
     apiClient,
@@ -120,17 +133,6 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
     filters.leagueId,
     pitchingCategories,
   ]);
-
-  // Load leaders when filters change and categories are available
-  useEffect(() => {
-    if (
-      filters.leagueId &&
-      filters.leagueId !== '' &&
-      (battingCategories.length > 0 || pitchingCategories.length > 0)
-    ) {
-      loadLeaders();
-    }
-  }, [filters.leagueId, battingCategories, pitchingCategories, loadLeaders]);
 
   if (!filters.leagueId) {
     return (

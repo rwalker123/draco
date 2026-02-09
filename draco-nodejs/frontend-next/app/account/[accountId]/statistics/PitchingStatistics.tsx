@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -47,59 +47,70 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
   const [totalPages, setTotalPages] = useState(1);
   const statsRef = useRef<PitchingStatsRow[]>([]);
 
-  const loadPitchingStats = useCallback(async () => {
-    if (!filters.leagueId) {
+  useEffect(() => {
+    if (!filters.leagueId || filters.leagueId === '') {
       setStats([]);
       statsRef.current = [];
-      setPreviousStats([]);
       return;
     }
 
-    // Store current stats as previous before loading
-    if (statsRef.current.length > 0) {
-      setPreviousStats(statsRef.current);
-    }
+    const controller = new AbortController();
 
-    setLoading(true);
-    setError(null);
+    const loadPitchingStats = async () => {
+      if (statsRef.current.length > 0) {
+        setPreviousStats(statsRef.current);
+      }
 
-    try {
-      // Map frontend field names to backend expected field names
-      const sortFieldMap: Record<string, string> = {
-        ipDecimal: 'ip', // Backend expects 'ip' and maps it to 'ipDecimal' in SQL
-      };
-      const backendSortField = sortFieldMap[String(sortField)] || String(sortField);
+      setLoading(true);
+      setError(null);
 
-      const statsData = await fetchPitchingStatistics(
-        accountId,
-        filters.leagueId,
-        {
-          divisionId: filters.divisionId,
-          isHistorical: filters.isHistorical,
-          page,
-          pageSize,
-          sortField: backendSortField,
-          sortOrder,
-        },
-        { client: apiClient },
-      );
+      try {
+        const sortFieldMap: Record<string, string> = {
+          ipDecimal: 'ip',
+        };
+        const backendSortField = sortFieldMap[String(sortField)] || String(sortField);
 
-      // Atomic swap - new data replaces everything instantly
-      setStats(statsData);
-      statsRef.current = statsData;
-      setPreviousStats([]); // Clear previous data after successful load
+        const statsData = await fetchPitchingStatistics(
+          accountId,
+          filters.leagueId,
+          {
+            divisionId: filters.divisionId,
+            isHistorical: filters.isHistorical,
+            page,
+            pageSize,
+            sortField: backendSortField,
+            sortOrder,
+          },
+          { client: apiClient },
+        );
 
-      // Calculate total pages (this would ideally come from the API)
-      // For now, assume there might be more data if we get a full page
-      const hasMore = statsData.length === pageSize;
-      setTotalPages(hasMore ? page + 1 : page);
-    } catch (error) {
-      console.error('Error loading pitching statistics:', error);
-      const message = error instanceof Error ? error.message : 'Failed to load pitching statistics';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
+        if (controller.signal.aborted) return;
+
+        setStats(statsData);
+        statsRef.current = statsData;
+        setPreviousStats([]);
+
+        const hasMore = statsData.length === pageSize;
+        setTotalPages(hasMore ? page + 1 : page);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load pitching statistics';
+        setError(message);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      void loadPitchingStats();
+    }, 50);
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [
     accountId,
     apiClient,
@@ -111,20 +122,6 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
     sortField,
     sortOrder,
   ]);
-
-  useEffect(() => {
-    if (!filters.leagueId || filters.leagueId === '') {
-      setStats([]);
-      statsRef.current = [];
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      loadPitchingStats();
-    }, 50);
-
-    return () => clearTimeout(timeoutId);
-  }, [filters.leagueId, loadPitchingStats]);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {

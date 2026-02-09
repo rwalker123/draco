@@ -57,32 +57,38 @@ const TeamVideosPage: React.FC = () => {
     }
   }, [teamHeader?.youtubeUserId]);
 
-  const loadVideos = React.useCallback(
-    async (limitValue: number, teamId?: string | null) => {
-      if (!accountId || !teamId) {
-        return;
-      }
+  React.useEffect(() => {
+    if (!accountId || !teamHeader?.teamId) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadVideos = async () => {
       setLoading(true);
       setError(null);
       try {
-        const result = await fetchVideos({ limit: limitValue, teamId });
+        const result = await fetchVideos({ limit, teamId: teamHeader.teamId });
+        if (controller.signal.aborted) return;
         setVideos(result);
-        setHasMore(result.length === limitValue);
+        setHasMore(result.length === limit);
       } catch (err) {
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Unable to load team videos.';
         setError(message);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-    },
-    [accountId, fetchVideos],
-  );
+    };
 
-  React.useEffect(() => {
-    if (teamHeader?.teamId) {
-      void loadVideos(limit, teamHeader.teamId);
-    }
-  }, [limit, loadVideos, teamHeader?.teamId]);
+    void loadVideos();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, fetchVideos, limit, teamHeader?.teamId]);
 
   if (!accountId || !seasonId || !teamSeasonId) {
     return null;

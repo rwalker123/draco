@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   TextField,
@@ -40,12 +40,12 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
     }
   }, [requireCaptcha]);
 
-  const handleCaptchaTokenChange = useCallback((token: string | null) => {
+  const handleCaptchaTokenChange = (token: string | null) => {
     setCaptchaToken(token);
     if (token) {
       setCaptchaError(null);
     }
-  }, []);
+  };
 
   const handleInputChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({

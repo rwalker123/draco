@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Alert,
@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Snackbar,
 } from '@mui/material';
 import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
 import { validateAccessCode } from '../../../../../../../utils/accessCodeValidation';
@@ -58,17 +59,18 @@ export default function VerifyWorkoutRegistration({
     accessCode: null,
     success: false,
   });
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{
+    severity: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const validatedAccessCode = useMemo(() => {
-    if (!accessCode) return null;
-    const validation = validateAccessCode(accessCode);
-    return validation.isValid ? validation.sanitizedValue : null;
-  }, [accessCode]);
+  const accessCodeValidation = accessCode ? validateAccessCode(accessCode) : null;
+  const validatedAccessCode = accessCodeValidation?.isValid
+    ? accessCodeValidation.sanitizedValue
+    : null;
   const formId = 'verify-registration-form';
 
   useEffect(() => {
@@ -145,13 +147,15 @@ export default function VerifyWorkoutRegistration({
 
   const handleUpdate = async (data: UpsertWorkoutRegistrationType) => {
     if (!state.accessCode) {
-      setSaveError('Access code missing. Please reopen your verification link.');
+      setFeedback({
+        severity: 'error',
+        message: 'Access code missing. Please reopen your verification link.',
+      });
       return;
     }
 
     setSaving(true);
-    setSaveError(null);
-    setSaveSuccess(null);
+    setFeedback(null);
 
     try {
       const updated = await updateWorkoutRegistration(
@@ -167,9 +171,9 @@ export default function VerifyWorkoutRegistration({
         ...prev,
         registration: updated,
       }));
-      setSaveSuccess('Registration updated successfully.');
+      setFeedback({ severity: 'success', message: 'Registration updated successfully.' });
     } catch (error) {
-      setSaveError(getApiErrorMessage(error, 'Update failed.'));
+      setFeedback({ severity: 'error', message: getApiErrorMessage(error, 'Update failed.') });
     } finally {
       setSaving(false);
     }
@@ -181,11 +185,14 @@ export default function VerifyWorkoutRegistration({
 
   const handleDelete = async () => {
     if (!state.accessCode) {
-      setSaveError('Access code missing. Please reopen your verification link.');
+      setFeedback({
+        severity: 'error',
+        message: 'Access code missing. Please reopen your verification link.',
+      });
       return;
     }
     setDeleting(true);
-    setSaveError(null);
+    setFeedback(null);
     try {
       await deleteWorkoutRegistrationByAccessCode(
         accountId,
@@ -196,7 +203,10 @@ export default function VerifyWorkoutRegistration({
 
       router.push(`/account/${accountId}`);
     } catch (error) {
-      setSaveError(getApiErrorMessage(error, 'Failed to remove registration.'));
+      setFeedback({
+        severity: 'error',
+        message: getApiErrorMessage(error, 'Failed to remove registration.'),
+      });
     } finally {
       setDeleting(false);
       setDeleteDialogOpen(false);
@@ -242,16 +252,6 @@ export default function VerifyWorkoutRegistration({
                 <Alert severity="success">
                   Access verified. You can update your registration details below.
                 </Alert>
-                {saveError && (
-                  <Alert severity="error" onClose={() => setSaveError(null)}>
-                    {saveError}
-                  </Alert>
-                )}
-                {saveSuccess && (
-                  <Alert severity="success" onClose={() => setSaveSuccess(null)}>
-                    {saveSuccess}
-                  </Alert>
-                )}
                 <Typography variant="h6">Registration Details</Typography>
                 <WorkoutRegistrationForm
                   accountId={accountId}
@@ -291,6 +291,24 @@ export default function VerifyWorkoutRegistration({
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={Boolean(feedback)}
+        autoHideDuration={6000}
+        onClose={() => setFeedback(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {feedback ? (
+          <Alert
+            onClose={() => setFeedback(null)}
+            severity={feedback.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {feedback.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </main>
   );
 }

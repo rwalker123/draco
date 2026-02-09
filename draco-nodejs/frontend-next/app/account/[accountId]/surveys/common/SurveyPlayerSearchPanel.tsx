@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Autocomplete, Box, CircularProgress, TextField } from '@mui/material';
 import { searchPublicContacts } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
@@ -31,25 +31,24 @@ const SurveyPlayerSearchPanel: React.FC<SurveyPlayerSearchPanelProps> = React.me
         return;
       }
 
-      let isActive = true;
+      const controller = new AbortController();
       setLoading(true);
       setError(null);
 
-      (async () => {
+      const searchContacts = async () => {
         try {
           const response = await searchPublicContacts({
             client: apiClient,
             path: { accountId },
             query: { query: trimmed, limit: '15' },
+            signal: controller.signal,
             throwOnError: false,
           });
 
-          if (!isActive) {
-            return;
-          }
+          if (controller.signal.aborted) return;
 
           const data = unwrapApiResult(response, 'Failed to search players');
-          const options: ContactOption[] =
+          const results: ContactOption[] =
             data.results?.map((contact) => ({
               id: contact.id,
               firstName: contact.firstName,
@@ -57,28 +56,27 @@ const SurveyPlayerSearchPanel: React.FC<SurveyPlayerSearchPanelProps> = React.me
               photoUrl: contact.photoUrl ?? undefined,
             })) ?? [];
 
-          setSearchResults(options);
+          setSearchResults(results);
         } catch (err) {
-          if (!isActive) {
-            return;
-          }
-          console.error('Failed to search contacts', err);
+          if (controller.signal.aborted) return;
           const message = err instanceof Error ? err.message : 'Failed to search players.';
           setError(message);
           setSearchResults([]);
         } finally {
-          if (isActive) {
+          if (!controller.signal.aborted) {
             setLoading(false);
           }
         }
-      })();
+      };
+
+      void searchContacts();
 
       return () => {
-        isActive = false;
+        controller.abort();
       };
     }, [accountId, apiClient, debouncedInput]);
 
-    const options = useMemo(() => searchResults, [searchResults]);
+    const options = searchResults;
 
     return (
       <Box maxWidth={420} sx={{ mb: 2 }}>

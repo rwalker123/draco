@@ -60,48 +60,77 @@ const AccountSocialPostsPage: React.FC = () => {
     void fetchCurrentSeason();
   }, [accountId, fetchCurrentSeason]);
 
-  const loadPosts = React.useCallback(
-    async (options?: { reset?: boolean }) => {
-      if (!accountId || !currentSeasonId) {
-        return;
-      }
+  React.useEffect(() => {
+    if (!accountId || !currentSeasonId) {
+      return;
+    }
 
-      const reset = options?.reset ?? false;
-      const cursor = reset ? undefined : beforeCursorRef.current;
+    const controller = new AbortController();
 
+    const loadInitialPosts = async () => {
+      beforeCursorRef.current = undefined;
       setLoading(true);
       setError(null);
-      if (reset) {
-        beforeCursorRef.current = undefined;
-      }
 
       try {
         const result = await fetchFeed({
           sources: [...SOURCES],
           limit: PAGE_SIZE,
           includeDeleted: canManage,
-          ...(cursor ? { before: cursor } : {}),
         });
 
-        setPosts((prev) => (reset ? result : [...prev, ...result]));
+        if (controller.signal.aborted) return;
+
+        setPosts(result);
         const nextCursor = result.length ? result[result.length - 1].postedAt : undefined;
         beforeCursorRef.current = nextCursor;
         setHasMore(result.length === PAGE_SIZE);
       } catch (err) {
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Unable to load social posts.';
         setError(message);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-    },
-    [accountId, currentSeasonId, fetchFeed, canManage],
-  );
+    };
 
-  React.useEffect(() => {
-    if (currentSeasonId) {
-      void loadPosts({ reset: true });
+    void loadInitialPosts();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, currentSeasonId, fetchFeed, canManage]);
+
+  const loadMorePosts = async () => {
+    if (!accountId || !currentSeasonId) {
+      return;
     }
-  }, [currentSeasonId, loadPosts]);
+
+    const cursor = beforeCursorRef.current;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await fetchFeed({
+        sources: [...SOURCES],
+        limit: PAGE_SIZE,
+        includeDeleted: canManage,
+        ...(cursor ? { before: cursor } : {}),
+      });
+
+      setPosts((prev) => [...prev, ...result]);
+      const nextCursor = result.length ? result[result.length - 1].postedAt : undefined;
+      beforeCursorRef.current = nextCursor;
+      setHasMore(result.length === PAGE_SIZE);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to load social posts.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!accountId) {
     return null;
@@ -198,7 +227,7 @@ const AccountSocialPostsPage: React.FC = () => {
         </Box>
         {hasMore ? (
           <Box display="flex" justifyContent="center">
-            <Button onClick={() => loadPosts()} disabled={loading} variant="outlined">
+            <Button onClick={() => loadMorePosts()} disabled={loading} variant="outlined">
               Load more messages
             </Button>
           </Box>

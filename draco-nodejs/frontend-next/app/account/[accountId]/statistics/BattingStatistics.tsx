@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -47,53 +47,65 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
   const [totalPages, setTotalPages] = useState(1);
   const statsRef = useRef<BattingStatsRow[]>([]);
 
-  const loadBattingStats = useCallback(async () => {
-    if (!filters.leagueId) {
+  useEffect(() => {
+    if (!filters.leagueId || filters.leagueId === '') {
       setStats([]);
       statsRef.current = [];
-      setPreviousStats([]);
       return;
     }
 
-    // Store current stats as previous before loading
-    if (statsRef.current.length > 0) {
-      setPreviousStats(statsRef.current);
-    }
+    const controller = new AbortController();
 
-    setLoading(true);
-    setError(null);
+    const loadBattingStats = async () => {
+      if (statsRef.current.length > 0) {
+        setPreviousStats(statsRef.current);
+      }
 
-    try {
-      const statsData = await fetchBattingStatistics(
-        accountId,
-        filters.leagueId,
-        {
-          divisionId: filters.divisionId,
-          isHistorical: filters.isHistorical,
-          page,
-          pageSize,
-          sortField: String(sortField),
-          sortOrder,
-        },
-        { client: apiClient },
-      );
+      setLoading(true);
+      setError(null);
 
-      // Atomic swap - new data replaces everything instantly
-      setStats(statsData);
-      statsRef.current = statsData;
-      setPreviousStats([]); // Clear previous data after successful load
+      try {
+        const statsData = await fetchBattingStatistics(
+          accountId,
+          filters.leagueId,
+          {
+            divisionId: filters.divisionId,
+            isHistorical: filters.isHistorical,
+            page,
+            pageSize,
+            sortField: String(sortField),
+            sortOrder,
+          },
+          { client: apiClient },
+        );
 
-      // Calculate total pages (this would ideally come from the API)
-      // For now, assume there might be more data if we get a full page
-      const hasMore = statsData.length === pageSize;
-      setTotalPages(hasMore ? page + 1 : page);
-    } catch (error) {
-      console.error('Error loading batting statistics:', error);
-      const message = error instanceof Error ? error.message : 'Failed to load batting statistics';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
+        if (controller.signal.aborted) return;
+
+        setStats(statsData);
+        statsRef.current = statsData;
+        setPreviousStats([]);
+
+        const hasMore = statsData.length === pageSize;
+        setTotalPages(hasMore ? page + 1 : page);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load batting statistics';
+        setError(message);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      void loadBattingStats();
+    }, 50);
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [
     accountId,
     apiClient,
@@ -105,20 +117,6 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
     sortField,
     sortOrder,
   ]);
-
-  useEffect(() => {
-    if (!filters.leagueId || filters.leagueId === '') {
-      setStats([]);
-      statsRef.current = [];
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      loadBattingStats();
-    }, 50);
-
-    return () => clearTimeout(timeoutId);
-  }, [filters.leagueId, loadBattingStats]);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {

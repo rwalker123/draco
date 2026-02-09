@@ -31,7 +31,7 @@ const HofNominationWidget: React.FC<HofNominationWidgetProps> = ({ accountId }) 
       return;
     }
 
-    let isMounted = true;
+    const controller = new AbortController();
 
     const loadNominationSetup = async () => {
       setLoading(true);
@@ -39,43 +39,38 @@ const HofNominationWidget: React.FC<HofNominationWidgetProps> = ({ accountId }) 
         const setupResult = await getAccountHallOfFameNominationSetup({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
+
+        if (controller.signal.aborted) return;
 
         const setup = unwrapApiResult(
           setupResult,
           'Unable to load Hall of Fame nomination settings.',
         );
 
-        if (isMounted) {
-          setNominationSetup(setup);
-        }
+        setNominationSetup(setup);
       } catch {
-        if (isMounted) {
-          setNominationSetup(null);
-        }
+        if (controller.signal.aborted) return;
+        setNominationSetup(null);
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
     };
 
-    loadNominationSetup();
+    void loadNominationSetup();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountId, apiClient]);
 
-  const sanitizedCriteria = React.useMemo(() => {
-    if (!nominationSetup?.criteriaText) {
-      return null;
-    }
-
-    const sanitized = sanitizeRichContent(nominationSetup.criteriaText);
-    return sanitized.length > 0 ? sanitized : null;
-  }, [nominationSetup]);
+  const sanitizedCriteria = nominationSetup?.criteriaText
+    ? sanitizeRichContent(nominationSetup.criteriaText) || null
+    : null;
 
   if (!loading && (!nominationSetup || !nominationSetup.enableNomination)) {
     return null;
