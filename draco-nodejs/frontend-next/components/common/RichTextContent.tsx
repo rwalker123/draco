@@ -88,6 +88,14 @@ const baseStyles: SxProps<Theme> = {
     },
 };
 
+const safeRender = (sanitizer: (value: string) => string, html: string): string => {
+  try {
+    return sanitizer(html);
+  } catch {
+    return '';
+  }
+};
+
 export interface RichTextContentProps extends Omit<BoxProps, 'dangerouslySetInnerHTML'> {
   html?: string | null;
   sanitize?: boolean;
@@ -103,21 +111,7 @@ const RichTextContent: React.FC<RichTextContentProps> = ({
   sx,
   ...boxProps
 }) => {
-  const rendered = React.useMemo(() => {
-    if (!html) {
-      return '';
-    }
-
-    if (!sanitize) {
-      return html;
-    }
-
-    try {
-      return sanitizer(html);
-    } catch {
-      return '';
-    }
-  }, [html, sanitize, sanitizer]);
+  const rendered = !html ? '' : !sanitize ? html : safeRender(sanitizer, html);
 
   if (!rendered) {
     return emptyFallback ? <>{emptyFallback}</> : null;

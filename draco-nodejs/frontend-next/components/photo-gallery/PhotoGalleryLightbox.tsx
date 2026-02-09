@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Dialog,
@@ -39,8 +39,8 @@ const PhotoGalleryLightbox: React.FC<PhotoGalleryLightboxProps> = ({
   const imageSrc = photo?.originalUrl ?? photo?.primaryUrl ?? photo?.thumbnailUrl ?? null;
   const imageAlt = photo?.title ?? 'Selected gallery photo';
 
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (!open) {
         return;
       }
@@ -54,16 +54,13 @@ const PhotoGalleryLightbox: React.FC<PhotoGalleryLightboxProps> = ({
         event.preventDefault();
         onPrev();
       }
-    },
-    [onClose, onNext, onPrev, open],
-  );
+    };
 
-  useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleKeyDown]);
+  }, [open, onClose, onNext, onPrev]);
 
   const submittedOn = photo?.submittedAt ? formatDisplayDate(photo.submittedAt) : null;
 
