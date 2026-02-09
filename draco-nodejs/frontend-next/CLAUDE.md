@@ -14,6 +14,8 @@
 ## React Compiler (Automatic Memoization)
 **Do not introduce `useMemo` or `useCallback`** — the React Compiler handles memoization automatically at build time. If you believe manual memoization is necessary, stop and ask for approval first.
 
+**When replacing `useMemo`/`useCallback`**, use simple inline expressions or extract a module-level helper function. Do not use IIFEs (immediately-invoked function expressions) — they create a new function on every render and may interfere with React Compiler optimization.
+
 ### Avoiding Infinite Loops
 
 When removing manual memoization, you may encounter "Maximum update depth exceeded" errors. Common causes and fixes:
