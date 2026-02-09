@@ -114,7 +114,7 @@ const AccountSocialPostsPage: React.FC = () => {
   }, [accountId, currentSeasonId, fetchFeed, canManage]);
 
   const loadMorePosts = async () => {
-    if (!accountId || !currentSeasonId) {
+    if (!accountId || !currentSeasonId || loading) {
       return;
     }
 
