@@ -62,7 +62,7 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
               divisionId: filters.divisionId,
               isHistorical: filters.isHistorical,
             },
-            { client: apiClient },
+            { client: apiClient, signal: controller.signal },
           );
 
           return { category: category.key, leaders };
@@ -77,7 +77,7 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
               divisionId: filters.divisionId,
               isHistorical: filters.isHistorical,
             },
-            { client: apiClient },
+            { client: apiClient, signal: controller.signal },
           );
 
           return { category: category.key, leaders };

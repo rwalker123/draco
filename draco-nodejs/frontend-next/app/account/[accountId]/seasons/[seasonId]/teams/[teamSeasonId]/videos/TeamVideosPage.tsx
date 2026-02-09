@@ -68,7 +68,7 @@ const TeamVideosPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const result = await fetchVideos({ limit, teamId: teamHeader.teamId });
+        const result = await fetchVideos({ limit, teamId: teamHeader.teamId }, controller.signal);
         if (controller.signal.aborted) return;
         setVideos(result);
         setHasMore(result.length === limit);

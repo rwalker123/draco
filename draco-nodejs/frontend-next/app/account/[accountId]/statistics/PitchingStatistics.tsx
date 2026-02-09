@@ -81,7 +81,7 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
             sortField: backendSortField,
             sortOrder,
           },
-          { client: apiClient },
+          { client: apiClient, signal: controller.signal },
         );
 
         if (controller.signal.aborted) return;

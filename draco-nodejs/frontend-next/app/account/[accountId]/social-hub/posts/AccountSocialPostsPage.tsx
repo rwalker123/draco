@@ -52,6 +52,13 @@ const AccountSocialPostsPage: React.FC = () => {
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [restoringId, setRestoringId] = React.useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = React.useState<SocialFeedItemType | null>(null);
+  const loadMoreControllerRef = React.useRef<AbortController | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      loadMoreControllerRef.current?.abort();
+    };
+  }, []);
 
   React.useEffect(() => {
     if (!accountId) {
@@ -73,11 +80,14 @@ const AccountSocialPostsPage: React.FC = () => {
       setError(null);
 
       try {
-        const result = await fetchFeed({
-          sources: [...SOURCES],
-          limit: PAGE_SIZE,
-          includeDeleted: canManage,
-        });
+        const result = await fetchFeed(
+          {
+            sources: [...SOURCES],
+            limit: PAGE_SIZE,
+            includeDeleted: canManage,
+          },
+          controller.signal,
+        );
 
         if (controller.signal.aborted) return;
 
@@ -108,27 +118,39 @@ const AccountSocialPostsPage: React.FC = () => {
       return;
     }
 
+    loadMoreControllerRef.current?.abort();
+    const controller = new AbortController();
+    loadMoreControllerRef.current = controller;
+
     const cursor = beforeCursorRef.current;
     setLoading(true);
     setError(null);
 
     try {
-      const result = await fetchFeed({
-        sources: [...SOURCES],
-        limit: PAGE_SIZE,
-        includeDeleted: canManage,
-        ...(cursor ? { before: cursor } : {}),
-      });
+      const result = await fetchFeed(
+        {
+          sources: [...SOURCES],
+          limit: PAGE_SIZE,
+          includeDeleted: canManage,
+          ...(cursor ? { before: cursor } : {}),
+        },
+        controller.signal,
+      );
+
+      if (controller.signal.aborted) return;
 
       setPosts((prev) => [...prev, ...result]);
       const nextCursor = result.length ? result[result.length - 1].postedAt : undefined;
       beforeCursorRef.current = nextCursor;
       setHasMore(result.length === PAGE_SIZE);
     } catch (err) {
+      if (controller.signal.aborted) return;
       const message = err instanceof Error ? err.message : 'Unable to load social posts.';
       setError(message);
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 

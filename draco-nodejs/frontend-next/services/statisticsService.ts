@@ -22,6 +22,7 @@ import { unwrapApiResult } from '../utils/apiResult';
 interface ClientOptions {
   client?: Client;
   token?: string | null;
+  signal?: AbortSignal;
 }
 
 const resolveClient = ({ client, token }: ClientOptions = {}): Client => {
@@ -56,6 +57,7 @@ export async function fetchLeaderCategories(
   const result = await getLeaderCategories({
     client,
     path: { accountId },
+    signal: options?.signal,
     throwOnError: false,
   });
 
@@ -107,6 +109,7 @@ export async function fetchBattingStatistics(
       sortField,
       sortOrder,
     },
+    signal: options?.signal,
     throwOnError: false,
   });
 
@@ -158,6 +161,7 @@ export async function fetchPitchingStatistics(
       sortField,
       sortOrder,
     },
+    signal: options?.signal,
     throwOnError: false,
   });
 
@@ -211,6 +215,7 @@ export async function fetchStatisticalLeaders(
       minIP: toStringIfDefined(minIP),
       limit: toStringIfDefined(limit),
     },
+    signal: options?.signal,
     throwOnError: false,
   });
 
@@ -237,6 +242,7 @@ export async function searchPublicContacts(
       query,
       limit: toStringIfDefined(limit),
     },
+    signal: options?.signal,
     throwOnError: false,
   });
 
@@ -253,6 +259,7 @@ export async function fetchPlayerCareerStatistics(
   const result = await getPlayerCareerStatistics({
     client,
     path: { accountId, playerId },
+    signal: options?.signal,
     throwOnError: false,
   });
 

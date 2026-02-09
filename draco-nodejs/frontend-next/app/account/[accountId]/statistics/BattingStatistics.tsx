@@ -76,7 +76,7 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
             sortField: String(sortField),
             sortOrder,
           },
-          { client: apiClient },
+          { client: apiClient, signal: controller.signal },
         );
 
         if (controller.signal.aborted) return;

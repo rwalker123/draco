@@ -28,7 +28,7 @@ const AlertsTicker: React.FC = () => {
 
     const loadAlerts = async () => {
       try {
-        const activeAlerts = await fetchActiveAlerts(apiClient);
+        const activeAlerts = await fetchActiveAlerts(apiClient, controller.signal);
         if (controller.signal.aborted) return;
         setAlerts(activeAlerts);
       } catch (err) {
