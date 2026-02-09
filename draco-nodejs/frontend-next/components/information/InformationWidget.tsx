@@ -81,47 +81,53 @@ const InformationWidget: React.FC<InformationWidgetProps> = ({
   const [error, setError] = React.useState<string | null>(null);
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
-  const serviceRef = React.useRef(new WelcomeMessageService(token, apiClient));
-
   React.useEffect(() => {
-    serviceRef.current = new WelcomeMessageService(token, apiClient);
-  }, [token, apiClient]);
+    const controller = new AbortController();
+    const service = new WelcomeMessageService(token, apiClient);
 
-  const fetchMessages = React.useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    const fetchMessages = async () => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const accountPromise = showAccountMessages
-        ? serviceRef.current.listAccountMessages(accountId)
-        : Promise.resolve<WelcomeMessageType[]>([]);
-
-      const teamPromise =
-        showTeamMessages && teamSeasonId
-          ? serviceRef.current.listTeamMessages(accountId, { teamSeasonId })
+      try {
+        const accountPromise = showAccountMessages
+          ? service.listAccountMessages(accountId)
           : Promise.resolve<WelcomeMessageType[]>([]);
 
-      const [accountMessages, teamMessages] = await Promise.all([accountPromise, teamPromise]);
+        const teamPromise =
+          showTeamMessages && teamSeasonId
+            ? service.listTeamMessages(accountId, { teamSeasonId })
+            : Promise.resolve<WelcomeMessageType[]>([]);
 
-      const combined = sortMessages([
-        ...accountMessages.map(buildDisplayMessage),
-        ...teamMessages.map(buildDisplayMessage),
-      ]);
+        const [accountMessages, teamMessages] = await Promise.all([accountPromise, teamPromise]);
 
-      setMessages(combined);
-      setExpandedId((current) => current ?? combined[0]?.id ?? null);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load information messages';
-      setError(message);
-      setMessages([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, showAccountMessages, showTeamMessages, teamSeasonId]);
+        if (controller.signal.aborted) return;
 
-  React.useEffect(() => {
+        const combined = sortMessages([
+          ...accountMessages.map(buildDisplayMessage),
+          ...teamMessages.map(buildDisplayMessage),
+        ]);
+
+        setMessages(combined);
+        setExpandedId((current) => current ?? combined[0]?.id ?? null);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load information messages';
+        setError(message);
+        setMessages([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
     void fetchMessages();
-  }, [fetchMessages]);
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, showAccountMessages, showTeamMessages, teamSeasonId, token, apiClient]);
 
   const hasMessages = messages.length > 0;
 

@@ -61,7 +61,7 @@ export const usePhotoGallery = ({
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchGallery = async () => {
       setLoading(true);
@@ -72,23 +72,24 @@ export const usePhotoGallery = ({
           client: apiClient,
           path: { accountId: normalizedAccountId },
           query: normalizedTeamId ? { teamId: normalizedTeamId } : undefined,
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         const data = unwrapApiResult(result, 'Failed to load photo gallery.');
         setPhotos(Array.isArray(data.photos) ? data.photos : emptyState.photos);
         setAlbums(Array.isArray(data.albums) ? data.albums : emptyState.albums);
       } catch (err: unknown) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const message =
           err instanceof ApiClientError ? err.message : 'Failed to load photo gallery.';
         setError(message);
         setPhotos([]);
         setAlbums([]);
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -97,7 +98,7 @@ export const usePhotoGallery = ({
     void fetchGallery();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [canQuery, normalizedAccountId, normalizedTeamId, apiClient, refreshKey]);
 

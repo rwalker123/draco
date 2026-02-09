@@ -63,19 +63,15 @@ const TeamFeaturedVideosWidget: React.FC<TeamFeaturedVideosWidgetProps> = ({
       return;
     }
 
-    let isActive = true;
+    const controller = new AbortController();
 
     fetchVideos({ limit: 4, teamId })
       .then((items) => {
-        if (!isActive) {
-          return;
-        }
+        if (controller.signal.aborted) return;
         setVideoState({ items, loading: false, error: null });
       })
       .catch((error) => {
-        if (!isActive) {
-          return;
-        }
+        if (controller.signal.aborted) return;
         setVideoState({
           items: [],
           loading: false,
@@ -84,7 +80,7 @@ const TeamFeaturedVideosWidget: React.FC<TeamFeaturedVideosWidgetProps> = ({
       });
 
     return () => {
-      isActive = false;
+      controller.abort();
     };
   }, [canFetch, fetchVideos, teamId]);
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApiClient } from './useApiClient';
 import {
   approveAccountPhotoSubmission,
@@ -69,8 +69,8 @@ export const usePendingPhotoSubmissions = ({
   enabled = true,
 }: UsePendingPhotoSubmissionsOptions): PendingPhotoSubmissionsState => {
   const apiClient = useApiClient();
-  const normalizedAccountId = useMemo(() => normalizeId(accountId), [accountId]);
-  const normalizedTeamId = useMemo(() => normalizeId(teamId), [teamId]);
+  const normalizedAccountId = normalizeId(accountId);
+  const normalizedTeamId = normalizeId(teamId);
 
   const [submissions, setSubmissions] = useState<PhotoSubmissionDetailType[]>([]);
   const [loading, setLoading] = useState(false);
@@ -80,12 +80,58 @@ export const usePendingPhotoSubmissions = ({
 
   const canQuery = Boolean(enabled && normalizedAccountId);
 
-  const fetchSubmissions = useCallback(async () => {
-    if (!canQuery) {
+  useEffect(() => {
+    if (!canQuery || !normalizedAccountId) {
       setSubmissions([]);
       setLoading(false);
       return;
     }
+
+    const controller = new AbortController();
+
+    const doFetch = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = normalizedTeamId
+          ? await listPendingTeamPhotoSubmissions({
+              client: apiClient,
+              path: { accountId: normalizedAccountId, teamId: normalizedTeamId },
+              signal: controller.signal,
+              throwOnError: false,
+            })
+          : await listPendingAccountPhotoSubmissions({
+              client: apiClient,
+              path: { accountId: normalizedAccountId },
+              signal: controller.signal,
+              throwOnError: false,
+            });
+
+        if (controller.signal.aborted) return;
+        const data = unwrapApiResult(result, 'Failed to load pending photo submissions');
+        setSubmissions(data.submissions ?? []);
+      } catch (err: unknown) {
+        if (controller.signal.aborted) return;
+        const message =
+          err instanceof ApiClientError ? err.message : 'Failed to load pending photo submissions';
+        setError(message);
+        setSubmissions([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void doFetch();
+    return () => {
+      controller.abort();
+    };
+  }, [canQuery, normalizedAccountId, normalizedTeamId, apiClient]);
+
+  const reloadSubmissions = async () => {
+    if (!canQuery || !normalizedAccountId) return;
 
     setLoading(true);
     setError(null);
@@ -94,12 +140,12 @@ export const usePendingPhotoSubmissions = ({
       const result = normalizedTeamId
         ? await listPendingTeamPhotoSubmissions({
             client: apiClient,
-            path: { accountId: normalizedAccountId!, teamId: normalizedTeamId },
+            path: { accountId: normalizedAccountId, teamId: normalizedTeamId },
             throwOnError: false,
           })
         : await listPendingAccountPhotoSubmissions({
             client: apiClient,
-            path: { accountId: normalizedAccountId! },
+            path: { accountId: normalizedAccountId },
             throwOnError: false,
           });
 
@@ -113,159 +159,149 @@ export const usePendingPhotoSubmissions = ({
     } finally {
       setLoading(false);
     }
-  }, [apiClient, canQuery, normalizedAccountId, normalizedTeamId]);
+  };
 
-  useEffect(() => {
-    void fetchSubmissions();
-  }, [fetchSubmissions]);
-
-  const clearStatus = useCallback(() => {
+  const clearStatus = () => {
     setError(null);
     setSuccessMessage(null);
-  }, []);
+  };
 
-  const approve = useCallback(
-    async (submissionId: string, albumId?: string | null): Promise<boolean> => {
-      if (!canQuery || !normalizedAccountId) {
-        setError('Account information is required to approve submissions.');
-        return false;
+  const approve = async (submissionId: string, albumId?: string | null): Promise<boolean> => {
+    if (!canQuery || !normalizedAccountId) {
+      setError('Account information is required to approve submissions.');
+      return false;
+    }
+
+    setProcessingIds((current) => createProcessingSet(current, submissionId, true));
+    setError(null);
+
+    const submission = submissions.find((item) => item.id === submissionId);
+    const normalizedAlbumSelection = normalizeAlbumSelection(albumId);
+
+    try {
+      const apiResult = normalizedTeamId
+        ? await approveTeamPhotoSubmission({
+            client: apiClient,
+            path: { accountId: normalizedAccountId, teamId: normalizedTeamId, submissionId },
+            throwOnError: false,
+          })
+        : await approveAccountPhotoSubmission({
+            client: apiClient,
+            path: { accountId: normalizedAccountId, submissionId },
+            throwOnError: false,
+          });
+
+      const detail = unwrapApiResult(apiResult, 'Failed to approve photo submission');
+      const warningMessage = getPhotoEmailWarningMessage(
+        apiResult.response?.headers.get('x-photo-email-warning') ?? null,
+      );
+
+      let albumAssignmentError: string | null = null;
+      if (normalizedAlbumSelection !== undefined && detail?.approvedPhoto?.id) {
+        try {
+          const updateResult = await updateAccountGalleryPhoto({
+            client: apiClient,
+            path: {
+              accountId: normalizedAccountId,
+              photoId: detail.approvedPhoto.id,
+            },
+            body: {
+              albumId: normalizedAlbumSelection,
+            },
+            throwOnError: false,
+          });
+
+          unwrapApiResult(updateResult, 'Failed to assign approved photo to the album.');
+        } catch (assignmentError) {
+          albumAssignmentError =
+            assignmentError instanceof ApiClientError
+              ? assignmentError.message
+              : 'Approved photo but failed to assign it to the selected album.';
+        }
       }
 
-      setProcessingIds((current) => createProcessingSet(current, submissionId, true));
-      setError(null);
-
-      const submission = submissions.find((item) => item.id === submissionId);
-      const normalizedAlbumSelection = normalizeAlbumSelection(albumId);
-
-      try {
-        const apiResult = normalizedTeamId
-          ? await approveTeamPhotoSubmission({
-              client: apiClient,
-              path: { accountId: normalizedAccountId, teamId: normalizedTeamId, submissionId },
-              throwOnError: false,
-            })
-          : await approveAccountPhotoSubmission({
-              client: apiClient,
-              path: { accountId: normalizedAccountId, submissionId },
-              throwOnError: false,
-            });
-
-        const detail = unwrapApiResult(apiResult, 'Failed to approve photo submission');
-        const warningMessage = getPhotoEmailWarningMessage(
-          apiResult.response?.headers.get('x-photo-email-warning') ?? null,
+      await reloadSubmissions();
+      if (warningMessage) {
+        setError(warningMessage);
+        setSuccessMessage(null);
+      } else if (albumAssignmentError) {
+        setError(
+          albumAssignmentError ??
+            'Approved submission, but failed to assign it to the selected album.',
         );
-
-        let albumAssignmentError: string | null = null;
-        if (normalizedAlbumSelection !== undefined && detail?.approvedPhoto?.id) {
-          try {
-            const updateResult = await updateAccountGalleryPhoto({
-              client: apiClient,
-              path: {
-                accountId: normalizedAccountId,
-                photoId: detail.approvedPhoto.id,
-              },
-              body: {
-                albumId: normalizedAlbumSelection,
-              },
-              throwOnError: false,
-            });
-
-            unwrapApiResult(updateResult, 'Failed to assign approved photo to the album.');
-          } catch (assignmentError) {
-            albumAssignmentError =
-              assignmentError instanceof ApiClientError
-                ? assignmentError.message
-                : 'Approved photo but failed to assign it to the selected album.';
-          }
-        }
-
-        await fetchSubmissions();
-        if (warningMessage) {
-          setError(warningMessage);
-          setSuccessMessage(null);
-        } else if (albumAssignmentError) {
-          setError(
-            albumAssignmentError ??
-              'Approved submission, but failed to assign it to the selected album.',
-          );
-          setSuccessMessage(null);
-        } else if (submission) {
-          setSuccessMessage(`Approved “${submission.title}”.`);
-          setError(null);
-        } else {
-          setSuccessMessage('Submission approved.');
-          setError(null);
-        }
-        return true;
-      } catch (err: unknown) {
-        const message =
-          err instanceof ApiClientError ? err.message : 'Failed to approve photo submission';
-        setError(message);
-        return false;
-      } finally {
-        setProcessingIds((current) => createProcessingSet(current, submissionId, false));
+        setSuccessMessage(null);
+      } else if (submission) {
+        setSuccessMessage(`Approved "${submission.title}".`);
+        setError(null);
+      } else {
+        setSuccessMessage('Submission approved.');
+        setError(null);
       }
-    },
-    [apiClient, canQuery, fetchSubmissions, normalizedAccountId, normalizedTeamId, submissions],
-  );
+      return true;
+    } catch (err: unknown) {
+      const message =
+        err instanceof ApiClientError ? err.message : 'Failed to approve photo submission';
+      setError(message);
+      return false;
+    } finally {
+      setProcessingIds((current) => createProcessingSet(current, submissionId, false));
+    }
+  };
 
-  const deny = useCallback(
-    async (submissionId: string, reason: string): Promise<boolean> => {
-      if (!canQuery || !normalizedAccountId) {
-        setError('Account information is required to deny submissions.');
-        return false;
+  const deny = async (submissionId: string, reason: string): Promise<boolean> => {
+    if (!canQuery || !normalizedAccountId) {
+      setError('Account information is required to deny submissions.');
+      return false;
+    }
+
+    setProcessingIds((current) => createProcessingSet(current, submissionId, true));
+    setError(null);
+
+    const submission = submissions.find((item) => item.id === submissionId);
+
+    try {
+      const result = normalizedTeamId
+        ? await denyTeamPhotoSubmission({
+            client: apiClient,
+            path: { accountId: normalizedAccountId, teamId: normalizedTeamId, submissionId },
+            body: { denialReason: reason },
+            throwOnError: false,
+          })
+        : await denyAccountPhotoSubmission({
+            client: apiClient,
+            path: { accountId: normalizedAccountId, submissionId },
+            body: { denialReason: reason },
+            throwOnError: false,
+          });
+
+      unwrapApiResult(result, 'Failed to deny photo submission');
+      const warningMessage = getPhotoEmailWarningMessage(
+        result.response?.headers.get('x-photo-email-warning') ?? null,
+      );
+
+      await reloadSubmissions();
+      if (warningMessage) {
+        setError(warningMessage);
+        setSuccessMessage(null);
+      } else if (submission) {
+        setSuccessMessage(`Denied "${submission.title}".`);
+      } else {
+        setSuccessMessage('Submission denied.');
       }
+      return true;
+    } catch (err: unknown) {
+      const message =
+        err instanceof ApiClientError ? err.message : 'Failed to deny photo submission';
+      setError(message);
+      return false;
+    } finally {
+      setProcessingIds((current) => createProcessingSet(current, submissionId, false));
+    }
+  };
 
-      setProcessingIds((current) => createProcessingSet(current, submissionId, true));
-      setError(null);
-
-      const submission = submissions.find((item) => item.id === submissionId);
-
-      try {
-        const result = normalizedTeamId
-          ? await denyTeamPhotoSubmission({
-              client: apiClient,
-              path: { accountId: normalizedAccountId, teamId: normalizedTeamId, submissionId },
-              body: { denialReason: reason },
-              throwOnError: false,
-            })
-          : await denyAccountPhotoSubmission({
-              client: apiClient,
-              path: { accountId: normalizedAccountId, submissionId },
-              body: { denialReason: reason },
-              throwOnError: false,
-            });
-
-        unwrapApiResult(result, 'Failed to deny photo submission');
-        const warningMessage = getPhotoEmailWarningMessage(
-          result.response?.headers.get('x-photo-email-warning') ?? null,
-        );
-
-        await fetchSubmissions();
-        if (warningMessage) {
-          setError(warningMessage);
-          setSuccessMessage(null);
-        } else if (submission) {
-          setSuccessMessage(`Denied “${submission.title}”.`);
-        } else {
-          setSuccessMessage('Submission denied.');
-        }
-        return true;
-      } catch (err: unknown) {
-        const message =
-          err instanceof ApiClientError ? err.message : 'Failed to deny photo submission';
-        setError(message);
-        return false;
-      } finally {
-        setProcessingIds((current) => createProcessingSet(current, submissionId, false));
-      }
-    },
-    [apiClient, canQuery, fetchSubmissions, normalizedAccountId, normalizedTeamId, submissions],
-  );
-
-  const refresh = useCallback(async () => {
-    await fetchSubmissions();
-  }, [fetchSubmissions]);
+  const refresh = async () => {
+    await reloadSubmissions();
+  };
 
   return {
     submissions,
