@@ -103,12 +103,9 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
       }
     };
 
-    const timeoutId = setTimeout(() => {
-      void loadPitchingStats();
-    }, 50);
+    void loadPitchingStats();
 
     return () => {
-      clearTimeout(timeoutId);
       controller.abort();
     };
   }, [

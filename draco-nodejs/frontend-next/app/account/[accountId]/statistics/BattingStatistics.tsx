@@ -98,12 +98,9 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
       }
     };
 
-    const timeoutId = setTimeout(() => {
-      void loadBattingStats();
-    }, 50);
+    void loadBattingStats();
 
     return () => {
-      clearTimeout(timeoutId);
       controller.abort();
     };
   }, [
