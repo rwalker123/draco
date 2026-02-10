@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Box, CircularProgress, Container, Fab, Snackbar, Typography } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import type { LeagueFaqType } from '@draco/shared-schemas';
+import type { LeagueFaqType, LeagueFaqListType } from '@draco/shared-schemas';
+import { listLeagueFaqs } from '@draco/shared-api-client';
 import AccountPageHeader from '../AccountPageHeader';
 import { AdminBreadcrumbs } from '../admin';
 import { useLeagueFaqService } from '../../hooks/useLeagueFaqService';
+import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
 import { LeagueFaqFormDialog } from './dialogs/LeagueFaqFormDialog';
 import { DeleteLeagueFaqDialog } from './dialogs/DeleteLeagueFaqDialog';
 import { LeagueFaqList } from './LeagueFaqList';
@@ -28,7 +31,8 @@ const sortFaqs = (items: LeagueFaqType[]): LeagueFaqType[] =>
   );
 
 export const LeagueFaqManagement: React.FC<LeagueFaqManagementProps> = ({ accountId }) => {
-  const { listFaqs, createFaq, updateFaq, deleteFaq } = useLeagueFaqService(accountId);
+  const { createFaq, updateFaq, deleteFaq } = useLeagueFaqService(accountId);
+  const apiClient = useApiClient();
 
   const [faqs, setFaqs] = useState<LeagueFaqType[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -44,101 +48,97 @@ export const LeagueFaqManagement: React.FC<LeagueFaqManagementProps> = ({ accoun
   const [feedback, setFeedback] = useState<FeedbackState>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchFaqs = async () => {
       setInitialLoading(true);
       setInitialError(null);
 
-      const result = await listFaqs();
-      if (cancelled) {
-        return;
-      }
+      try {
+        const result = await listLeagueFaqs({
+          client: apiClient,
+          path: { accountId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
 
-      if (result.success) {
-        setFaqs(sortFaqs(result.data));
-      } else {
-        setInitialError(result.error);
-      }
+        if (controller.signal.aborted) return;
 
-      setInitialLoading(false);
+        const data = unwrapApiResult(result, 'Failed to load FAQs') as LeagueFaqListType;
+        const faqsList = Array.isArray(data) ? data : [];
+        setFaqs(sortFaqs(faqsList as LeagueFaqType[]));
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        const message = error instanceof Error ? error.message : 'Failed to load FAQs';
+        setInitialError(message);
+      } finally {
+        if (!controller.signal.aborted) {
+          setInitialLoading(false);
+        }
+      }
     };
 
     void fetchFaqs();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
-  }, [listFaqs]);
+  }, [accountId, apiClient]);
 
-  const openCreateDialog = useCallback(() => {
+  const openCreateDialog = () => {
     setFormMode('create');
     setActiveFaq(null);
     setFormOpen(true);
-  }, []);
+  };
 
-  const openEditDialog = useCallback((faq: LeagueFaqType) => {
+  const openEditDialog = (faq: LeagueFaqType) => {
     setFormMode('edit');
     setActiveFaq(faq);
     setFormOpen(true);
-  }, []);
+  };
 
-  const closeForm = useCallback(() => {
+  const closeForm = () => {
     setFormOpen(false);
     setActiveFaq(null);
-  }, []);
+  };
 
-  const openDeleteDialog = useCallback((faq: LeagueFaqType) => {
+  const openDeleteDialog = (faq: LeagueFaqType) => {
     setFaqPendingDeletion(faq);
     setDeleteDialogOpen(true);
-  }, []);
+  };
 
-  const closeDeleteDialog = useCallback(() => {
+  const closeDeleteDialog = () => {
     setDeleteDialogOpen(false);
     setFaqPendingDeletion(null);
-  }, []);
+  };
 
-  const handleCreateSuccess = useCallback(
-    (result: { faq: LeagueFaqType; message: string }) => {
-      setFaqs((current) => sortFaqs([...current, result.faq]));
-      setFeedback({ severity: 'success', message: result.message });
-      closeForm();
-    },
-    [closeForm],
-  );
+  const handleCreateSuccess = (result: { faq: LeagueFaqType; message: string }) => {
+    setFaqs((current) => sortFaqs([...current, result.faq]));
+    setFeedback({ severity: 'success', message: result.message });
+    closeForm();
+  };
 
-  const handleUpdateSuccess = useCallback(
-    (result: { faq: LeagueFaqType; message: string }) => {
-      setFaqs((current) =>
-        sortFaqs(current.map((item) => (item.id === result.faq.id ? result.faq : item))),
-      );
-      setFeedback({ severity: 'success', message: result.message });
-      closeForm();
-    },
-    [closeForm],
-  );
+  const handleUpdateSuccess = (result: { faq: LeagueFaqType; message: string }) => {
+    setFaqs((current) =>
+      sortFaqs(current.map((item) => (item.id === result.faq.id ? result.faq : item))),
+    );
+    setFeedback({ severity: 'success', message: result.message });
+    closeForm();
+  };
 
-  const handleDeleteSuccess = useCallback(
-    (result: { faqId: string; message: string }) => {
-      setFaqs((current) => current.filter((item) => item.id !== result.faqId));
-      setFeedback({ severity: 'success', message: result.message });
-      closeDeleteDialog();
-    },
-    [closeDeleteDialog],
-  );
+  const handleDeleteSuccess = (result: { faqId: string; message: string }) => {
+    setFaqs((current) => current.filter((item) => item.id !== result.faqId));
+    setFeedback({ severity: 'success', message: result.message });
+    closeDeleteDialog();
+  };
 
-  const handleError = useCallback((message: string) => {
+  const handleError = (message: string) => {
     setFeedback({ severity: 'error', message });
-  }, []);
+  };
 
-  const handleFeedbackClose = useCallback(() => {
+  const handleFeedbackClose = () => {
     setFeedback(null);
-  }, []);
-
-  const headerDescription = useMemo(
-    () => 'Create and maintain FAQs to help league members quickly find answers.',
-    [],
-  );
+  };
 
   return (
     <main className="min-h-screen bg-background">
@@ -151,7 +151,7 @@ export const LeagueFaqManagement: React.FC<LeagueFaqManagementProps> = ({ accoun
           League FAQ Management
         </Typography>
         <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
-          {headerDescription}
+          Create and maintain FAQs to help league members quickly find answers.
         </Typography>
       </AccountPageHeader>
 

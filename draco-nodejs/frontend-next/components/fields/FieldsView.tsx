@@ -1,13 +1,6 @@
 'use client';
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  forwardRef,
-  useImperativeHandle,
-} from 'react';
+import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import {
   Alert,
   Box,
@@ -80,59 +73,61 @@ export const FieldsView = forwardRef<FieldsViewRef, FieldsViewProps>(
     const [searchTerm, setSearchTerm] = useState('');
     const trimmedSearch = searchTerm.trim();
 
-    const loadFields = useCallback(async () => {
-      setLoading(true);
-      setFetchError(null);
-
-      try {
-        const result = await listFields({
-          page: page + 1,
-          limit: rowsPerPage,
-          sortBy,
-          sortOrder,
-          search: trimmedSearch || undefined,
-        });
-
-        if (result.success) {
-          const { fields: fetchedFields, pagination: pageInfo } = result.data;
-          setFields(fetchedFields);
-          setPagination(pageInfo ?? null);
-
-          setSelectedField((previous) => {
-            if (!previous) {
-              return fetchedFields[0] ?? null;
-            }
-
-            const match = fetchedFields.find((item) => item.id === previous.id);
-            return match ?? fetchedFields[0] ?? null;
-          });
-        } else {
-          setFields([]);
-          setPagination(null);
-          setFetchError(result.error);
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to load fields';
-        setFields([]);
-        setPagination(null);
-        setFetchError(message);
-      } finally {
-        setLoading(false);
-      }
-    }, [listFields, page, rowsPerPage, sortBy, sortOrder, trimmedSearch]);
+    const [refreshCounter, setRefreshCounter] = useState(0);
 
     useEffect(() => {
+      const loadFields = async () => {
+        setLoading(true);
+        setFetchError(null);
+
+        try {
+          const result = await listFields({
+            page: page + 1,
+            limit: rowsPerPage,
+            sortBy,
+            sortOrder,
+            search: trimmedSearch || undefined,
+          });
+
+          if (result.success) {
+            const { fields: fetchedFields, pagination: pageInfo } = result.data;
+            setFields(fetchedFields);
+            setPagination(pageInfo ?? null);
+
+            setSelectedField((previous) => {
+              if (!previous) {
+                return fetchedFields[0] ?? null;
+              }
+
+              const match = fetchedFields.find((item) => item.id === previous.id);
+              return match ?? fetchedFields[0] ?? null;
+            });
+          } else {
+            setFields([]);
+            setPagination(null);
+            setFetchError(result.error);
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to load fields';
+          setFields([]);
+          setPagination(null);
+          setFetchError(message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
       void loadFields();
-    }, [loadFields]);
+    }, [listFields, page, rowsPerPage, sortBy, sortOrder, trimmedSearch, refreshCounter]);
 
     useImperativeHandle(
       ref,
       () => ({
         refresh: () => {
-          void loadFields();
+          setRefreshCounter((c) => c + 1);
         },
       }),
-      [loadFields],
+      [],
     );
 
     const handleChangePage = (_event: unknown, newPage: number) => {
@@ -158,10 +153,7 @@ export const FieldsView = forwardRef<FieldsViewRef, FieldsViewProps>(
       setPage(0);
     }, [trimmedSearch]);
 
-    const totalCount = useMemo(
-      () => pagination?.total ?? fields.length,
-      [fields.length, pagination?.total],
-    );
+    const totalCount = pagination?.total ?? fields.length;
 
     return (
       <main className="min-h-screen bg-background">

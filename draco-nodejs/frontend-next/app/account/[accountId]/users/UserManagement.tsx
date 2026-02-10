@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import { Alert, Box, Container, Typography, Fab, Snackbar } from '@mui/material';
 import { useUserManagement } from '../../../../hooks/useUserManagement';
 import { useUserDialogs } from '../../../../hooks/useUserDialogs';
@@ -106,171 +106,132 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
   const canManageUsers = true; // The hook handles permission checking
 
   // Wrapper function for photo deletion with confirmation
-  const handleDeleteContactPhotoWithConfirm = useCallback(
-    async (contactId: string) => {
-      dialogs.photoDeleteConfirmDialog.open(contactId);
-    },
-    [dialogs.photoDeleteConfirmDialog],
-  );
+  const handleDeleteContactPhotoWithConfirm = async (contactId: string) => {
+    dialogs.photoDeleteConfirmDialog.open(contactId);
+  };
 
-  const handleRevokeWithConfirm = useCallback(
-    async (contactId: string) => {
-      dialogs.revokeConfirmDialog.open(contactId);
-    },
-    [dialogs.revokeConfirmDialog],
-  );
+  const handleRevokeWithConfirm = async (contactId: string) => {
+    dialogs.revokeConfirmDialog.open(contactId);
+  };
 
-  const handleAutoRegisterConflict = useCallback(
-    (data: {
-      contact: ContactType;
-      otherContactName?: string;
-      otherContactId?: string;
-      email?: string;
-      message?: string;
-    }) => {
-      dialogs.autoRegisterDialog.close();
-      dialogs.autoRegisterConflictDialog.open(data);
-    },
-    [dialogs.autoRegisterDialog, dialogs.autoRegisterConflictDialog],
-  );
+  const handleAutoRegisterConflict = (data: {
+    contact: ContactType;
+    otherContactName?: string;
+    otherContactId?: string;
+    email?: string;
+    message?: string;
+  }) => {
+    dialogs.autoRegisterDialog.close();
+    dialogs.autoRegisterConflictDialog.open(data);
+  };
 
   // Async wrapper functions to match the interface expectations
-  const handleAssignRoleWrapper = useCallback(
-    async (user: ContactType) => {
-      dialogs.assignRoleDialog.open(user);
-      await loadContextData();
-    },
-    [dialogs.assignRoleDialog, loadContextData],
-  );
+  const handleAssignRoleWrapper = async (user: ContactType) => {
+    dialogs.assignRoleDialog.open(user);
+    await loadContextData();
+  };
 
   // Handle success events from the self-contained dialogs
-  const handleAssignRoleSuccess = useCallback(
-    (result: { message: string; assignedRole: RoleWithContactType }) => {
+  const handleAssignRoleSuccess = (result: {
+    message: string;
+    assignedRole: RoleWithContactType;
+  }) => {
+    setFeedback({ severity: 'success', message: result.message });
+    handleRoleAssigned(result.assignedRole);
+    dialogs.assignRoleDialog.close();
+  };
+
+  const handleRemoveRoleSuccess = (result: {
+    message: string;
+    removedRole: { contactId: string; roleId: string; id: string };
+  }) => {
+    setFeedback({ severity: 'success', message: result.message });
+    handleRoleRemoved(result.removedRole.contactId, result.removedRole.id);
+    dialogs.removeRoleDialog.close();
+  };
+
+  const handleEditContactSuccess = (result: {
+    message: string;
+    contact: ContactType;
+    isCreate: boolean;
+    status?: 'success' | 'warning';
+  }) => {
+    const message = result.status === 'warning' ? `⚠️ ${result.message}` : result.message;
+    setFeedback({ severity: 'success', message });
+    handleContactUpdated(result.contact, result.isCreate);
+    if (result.isCreate) {
+      dialogs.createContactDialog.close();
+    } else {
+      dialogs.editContactDialog.close();
+    }
+  };
+
+  const handlePhotoDeleteSuccess = (result: { message: string; contactId: string }) => {
+    setFeedback({ severity: 'success', message: result.message });
+    handlePhotoDeleted(result.contactId);
+    dialogs.photoDeleteConfirmDialog.close();
+  };
+
+  const handleRevokeRegistrationSuccess = (result: { message: string; contactId: string }) => {
+    setFeedback({ severity: 'success', message: result.message });
+    handleRegistrationRevoked(result.contactId);
+    dialogs.revokeConfirmDialog.close();
+  };
+
+  const handleAutoRegisterSuccess = (result: {
+    message?: string;
+    contactId: string;
+    userId: string;
+  }) => {
+    if (result.message) {
       setFeedback({ severity: 'success', message: result.message });
-      handleRoleAssigned(result.assignedRole);
-      dialogs.assignRoleDialog.close();
-    },
-    [setFeedback, handleRoleAssigned, dialogs.assignRoleDialog],
-  );
+    }
+    handleRegistrationLinked(result.contactId, result.userId);
+    dialogs.autoRegisterDialog.close();
+  };
 
-  const handleRemoveRoleSuccess = useCallback(
-    (result: {
-      message: string;
-      removedRole: { contactId: string; roleId: string; id: string };
-    }) => {
-      setFeedback({ severity: 'success', message: result.message });
-      handleRoleRemoved(result.removedRole.contactId, result.removedRole.id);
-      dialogs.removeRoleDialog.close();
-    },
-    [setFeedback, handleRoleRemoved, dialogs.removeRoleDialog],
-  );
+  const handleContactDeleteSuccess = (result: {
+    message: string;
+    contactId: string;
+    dependenciesDeleted?: number;
+    wasForced: boolean;
+  }) => {
+    const finalMessage =
+      result.dependenciesDeleted && result.dependenciesDeleted > 0
+        ? `${result.message} (${result.dependenciesDeleted} related records deleted)`
+        : result.message;
 
-  const handleEditContactSuccess = useCallback(
-    (result: {
-      message: string;
-      contact: ContactType;
-      isCreate: boolean;
-      status?: 'success' | 'warning';
-    }) => {
-      const message = result.status === 'warning' ? `⚠️ ${result.message}` : result.message;
-      setFeedback({ severity: 'success', message });
-      handleContactUpdated(result.contact, result.isCreate);
-      if (result.isCreate) {
-        dialogs.createContactDialog.close();
-      } else {
-        dialogs.editContactDialog.close();
-      }
-    },
-    [setFeedback, handleContactUpdated, dialogs.createContactDialog, dialogs.editContactDialog],
-  );
+    setFeedback({ severity: 'success', message: finalMessage });
+    handleContactDeleted(result.contactId);
+    dialogs.deleteContactDialog.close();
+  };
 
-  const handlePhotoDeleteSuccess = useCallback(
-    (result: { message: string; contactId: string }) => {
-      setFeedback({ severity: 'success', message: result.message });
-      handlePhotoDeleted(result.contactId);
-      dialogs.photoDeleteConfirmDialog.close();
-    },
-    [setFeedback, handlePhotoDeleted, dialogs.photoDeleteConfirmDialog],
-  );
+  const handleRemoveRoleWrapper = async (user: ContactType, role: ContactRoleType) => {
+    dialogs.removeRoleDialog.open(user, role);
+  };
 
-  const handleRevokeRegistrationSuccess = useCallback(
-    (result: { message: string; contactId: string }) => {
-      setFeedback({ severity: 'success', message: result.message });
-      handleRegistrationRevoked(result.contactId);
-      dialogs.revokeConfirmDialog.close();
-    },
-    [setFeedback, handleRegistrationRevoked, dialogs.revokeConfirmDialog],
-  );
+  const handleAutoRegisterWrapper = async (contact: ContactType) => {
+    dialogs.autoRegisterDialog.open(contact);
+  };
 
-  const handleAutoRegisterSuccess = useCallback(
-    (result: { message?: string; contactId: string; userId: string }) => {
-      if (result.message) {
-        setFeedback({ severity: 'success', message: result.message });
-      }
-      handleRegistrationLinked(result.contactId, result.userId);
-      dialogs.autoRegisterDialog.close();
-    },
-    [setFeedback, handleRegistrationLinked, dialogs.autoRegisterDialog],
-  );
+  const handleEditContactWrapper = async (contact: ContactType) => {
+    dialogs.editContactDialog.open(contact);
+  };
 
-  const handleContactDeleteSuccess = useCallback(
-    (result: {
-      message: string;
-      contactId: string;
-      dependenciesDeleted?: number;
-      wasForced: boolean;
-    }) => {
-      const finalMessage =
-        result.dependenciesDeleted && result.dependenciesDeleted > 0
-          ? `${result.message} (${result.dependenciesDeleted} related records deleted)`
-          : result.message;
+  const handleDeleteContactWrapper = async (contact: ContactType) => {
+    dialogs.deleteContactDialog.open(contact);
+  };
 
-      setFeedback({ severity: 'success', message: finalMessage });
-      handleContactDeleted(result.contactId);
-      dialogs.deleteContactDialog.close();
-    },
-    [setFeedback, handleContactDeleted, dialogs.deleteContactDialog],
-  );
-
-  const handleRemoveRoleWrapper = useCallback(
-    async (user: ContactType, role: ContactRoleType) => {
-      dialogs.removeRoleDialog.open(user, role);
-    },
-    [dialogs.removeRoleDialog],
-  );
-
-  const handleAutoRegisterWrapper = useCallback(
-    async (contact: ContactType) => {
-      dialogs.autoRegisterDialog.open(contact);
-    },
-    [dialogs.autoRegisterDialog],
-  );
-
-  const handleEditContactWrapper = useCallback(
-    async (contact: ContactType) => {
-      dialogs.editContactDialog.open(contact);
-    },
-    [dialogs.editContactDialog],
-  );
-
-  const handleDeleteContactWrapper = useCallback(
-    async (contact: ContactType) => {
-      dialogs.deleteContactDialog.open(contact);
-    },
-    [dialogs.deleteContactDialog],
-  );
-
-  const handleAddUserWrapper = useCallback(async () => {
+  const handleAddUserWrapper = async () => {
     dialogs.createContactDialog.open();
-  }, [dialogs.createContactDialog]);
+  };
 
-  const handleFeedbackClose = useCallback(() => {
+  const handleFeedbackClose = () => {
     setFeedback(null);
-  }, [setFeedback]);
+  };
 
-  const handleExportUsers = useCallback(async () => {
+  const handleExportUsers = async () => {
     try {
-      // All three filter fields must be present (non-empty) for a valid filter
       const hasCompleteFilter =
         hasActiveFilter && filter.filterField && filter.filterOp && filter.filterValue;
 
@@ -281,8 +242,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
           searchTerm: isShowingSearchResults ? searchTerm : undefined,
           onlyWithRoles: onlyWithRoles ? 'true' : undefined,
           seasonId: currentSeasonId || undefined,
-          // Only include filter params when all three are non-empty strings
-          // The || undefined converts empty string to undefined for type safety
           filterField: hasCompleteFilter ? filter.filterField || undefined : undefined,
           filterOp: hasCompleteFilter ? filter.filterOp || undefined : undefined,
           filterValue: hasCompleteFilter ? filter.filterValue : undefined,
@@ -299,17 +258,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         message: err instanceof Error ? err.message : 'Failed to export users',
       });
     }
-  }, [
-    apiClient,
-    accountId,
-    searchTerm,
-    isShowingSearchResults,
-    onlyWithRoles,
-    currentSeasonId,
-    setFeedback,
-    hasActiveFilter,
-    filter,
-  ]);
+  };
 
   return (
     <main className="min-h-screen bg-background">

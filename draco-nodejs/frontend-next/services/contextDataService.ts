@@ -34,11 +34,16 @@ export class ContextDataService {
    * Fetch leagues and teams for a specific season
    * This single call provides all the data needed for both league and team selection
    */
-  async fetchLeaguesAndTeams(accountId: string, seasonId: string): Promise<ContextDataResponse> {
+  async fetchLeaguesAndTeams(
+    accountId: string,
+    seasonId: string,
+    signal?: AbortSignal,
+  ): Promise<ContextDataResponse> {
     const result = await listSeasonLeagueSeasons({
       client: this.client,
       path: { accountId, seasonId },
       query: { includeTeams: true, includeUnassignedTeams: true },
+      signal,
       throwOnError: false,
     });
 
@@ -57,10 +62,12 @@ export class ContextDataService {
   async fetchLeagues(
     accountId: string,
     seasonId: string,
+    signal?: AbortSignal,
   ): Promise<LeagueSeasonWithDivisionTeamsAndUnassignedType[]> {
     const result = await listSeasonLeagueSeasons({
       client: this.client,
       path: { accountId, seasonId },
+      signal,
       throwOnError: false,
     });
 
@@ -73,12 +80,15 @@ export class ContextDataService {
   /**
    * Get all teams for a season (flattened from all leagues and divisions)
    */
-  async fetchTeams(accountId: string, seasonId: string): Promise<TeamSeasonWithPlayerCountType[]> {
-    const contextData = await this.fetchLeaguesAndTeams(accountId, seasonId);
+  async fetchTeams(
+    accountId: string,
+    seasonId: string,
+    signal?: AbortSignal,
+  ): Promise<TeamSeasonWithPlayerCountType[]> {
+    const contextData = await this.fetchLeaguesAndTeams(accountId, seasonId, signal);
 
     const allTeams: TeamSeasonWithPlayerCountType[] = [];
 
-    // Add teams from divisions
     contextData.leagueSeasons.forEach((leagueSeason) => {
       if (leagueSeason.divisions) {
         leagueSeason.divisions.forEach((division) => {
@@ -87,7 +97,6 @@ export class ContextDataService {
       }
     });
 
-    // Add unassigned teams
     contextData.leagueSeasons.forEach((leagueSeason) => {
       if (leagueSeason.unassignedTeams) {
         allTeams.push(...leagueSeason.unassignedTeams);

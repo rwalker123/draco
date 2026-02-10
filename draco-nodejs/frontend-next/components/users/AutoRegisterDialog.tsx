@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -37,8 +37,16 @@ const AutoRegisterDialog: React.FC<AutoRegisterDialogProps> = ({
 }) => {
   const { autoRegisterContact, loading } = useRegistrationOperations(accountId);
   const [error, setError] = useState<string | null>(null);
+  const [prevOpen, setPrevOpen] = useState(false);
 
-  const handleConfirm = useCallback(async () => {
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setError(null);
+    }
+  }
+
+  const handleConfirm = async () => {
     if (!contact) return;
 
     setError(null);
@@ -92,7 +100,7 @@ const AutoRegisterDialog: React.FC<AutoRegisterDialogProps> = ({
     }
 
     setError('Auto registration did not complete.');
-  }, [autoRegisterContact, contact, onClose, onSuccess, onConflict]);
+  };
 
   if (!open || !contact) {
     return null;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -81,46 +81,48 @@ const AccountSettings: React.FC = () => {
     requireManage: true,
   });
 
-  const loadAccountData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      if (!accountIdStr) {
-        setError('Account ID not found');
-        setAccount(null);
-        return;
-      }
-
-      const result = await getAccountById({
-        client: apiClient,
-        path: { accountId: accountIdStr },
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult(result, 'Failed to load account data');
-      setAccount(data.account as AccountType);
-    } catch (err) {
-      console.error('Failed to load account data', err);
-      setAccount(null);
-      setError('Failed to load account data');
-    } finally {
-      setLoading(false);
-    }
-  }, [accountIdStr, apiClient]);
-
   useEffect(() => {
-    if (accountId && token) {
-      loadAccountData();
-    }
-  }, [accountId, token, loadAccountData]);
+    if (!accountId || !token || !accountIdStr) return;
 
-  const handleSettingUpdate = useCallback(
-    async (key: AccountSettingKey, value: boolean | number) => {
-      await updateSetting(key, value);
-    },
-    [updateSetting],
-  );
+    const controller = new AbortController();
+
+    const loadAccountData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const result = await getAccountById({
+          client: apiClient,
+          path: { accountId: accountIdStr },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+        const data = unwrapApiResult(result, 'Failed to load account data');
+        setAccount(data.account as AccountType);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load account data', err);
+        setAccount(null);
+        setError('Failed to load account data');
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadAccountData();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, token, accountIdStr, apiClient]);
+
+  const handleSettingUpdate = async (key: AccountSettingKey, value: boolean | number) => {
+    await updateSetting(key, value);
+  };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);

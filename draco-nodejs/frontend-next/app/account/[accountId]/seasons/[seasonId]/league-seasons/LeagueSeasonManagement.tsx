@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -51,7 +51,7 @@ import type {
   SeasonType,
   TeamSeasonType,
 } from '@draco/shared-schemas';
-import { createApiClient } from '../../../../../../lib/apiClientFactory';
+import { useApiClient } from '../../../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../../../utils/apiResult';
 import { mapLeagueSetup } from '../../../../../../utils/leagueSeasonMapper';
 import { downloadBlob } from '../../../../../../utils/downloadUtils';
@@ -95,26 +95,29 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
   } | null>(null);
   const router = useRouter();
   const { token } = useAuth();
-  const apiClient = useMemo(() => createApiClient({ token: token || undefined }), [token]);
+  const apiClient = useApiClient();
   const [season, setSeason] = useState<SeasonType | null>(null);
   const LOGO_SIZE = getLogoSize();
 
   useEffect(() => {
-    let isMounted = true;
+    if (!accountId || !seasonId) return;
+
+    const controller = new AbortController();
 
     const fetchSeason = async () => {
       try {
         const result = await getAccountSeason({
           client: apiClient,
           path: { accountId, seasonId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
+        if (controller.signal.aborted) return;
         const seasonResult = unwrapApiResult(result, 'Failed to fetch season');
-        if (!isMounted) return;
         setSeason(seasonResult);
       } catch {
-        if (!isMounted) return;
+        if (controller.signal.aborted) return;
         setFeedback({ severity: 'error', message: 'Failed to load season details.' });
       }
     };
@@ -122,7 +125,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
     void fetchSeason();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountId, seasonId, apiClient]);
 
@@ -188,56 +191,21 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
   const [selectedLeagueForExport, setSelectedLeagueForExport] =
     useState<LeagueSeasonWithDivisionTeamsAndUnassignedType | null>(null);
 
-  const handleFeedbackClose = useCallback(() => {
+  const handleFeedbackClose = () => {
     setFeedback(null);
-  }, []);
+  };
 
-  // Get available divisions (excluding those already assigned to the selected league)
-  const availableDivisions = useMemo(() => {
-    if (!selectedLeagueSeason) return [];
-    return []; // No global divisions list, divisions are fetched per league
-  }, [selectedLeagueSeason]);
+  const availableDivisions: never[] = [];
 
-  // Fetch league seasons with divisions and teams
-  const fetchLeagueSeasons = useCallback(async () => {
-    if (!accountId || !seasonId) return;
-
-    setLoading(true);
-    try {
-      const result = await listSeasonLeagueSeasons({
-        client: apiClient,
-        path: { accountId, seasonId },
-        query: { includeTeams: true, includeUnassignedTeams: true },
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult(result, 'Failed to fetch league seasons');
-      const formattedLeagueSeasons = mapLeagueSetup(data);
-      setLeagueSeasons(formattedLeagueSeasons.leagueSeasons || []);
-    } catch (error) {
-      console.error('Error fetching league seasons:', error);
-      setFeedback({
-        severity: 'error',
-        message: error instanceof Error ? error.message : 'Failed to fetch league seasons',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, apiClient, seasonId]);
-
-  // Targeted update functions for better UX
-  const removeLeagueSeasonFromState = useCallback((leagueSeasonId: string) => {
+  const removeLeagueSeasonFromState = (leagueSeasonId: string) => {
     setLeagueSeasons((prev) => prev.filter((ls) => ls.id !== leagueSeasonId));
-  }, []);
+  };
 
-  const addLeagueSeasonToState = useCallback(
-    (leagueSeason: LeagueSeasonWithDivisionTeamsAndUnassignedType) => {
-      setLeagueSeasons((prev) => [...prev, leagueSeason]);
-    },
-    [],
-  );
+  const addLeagueSeasonToState = (leagueSeason: LeagueSeasonWithDivisionTeamsAndUnassignedType) => {
+    setLeagueSeasons((prev) => [...prev, leagueSeason]);
+  };
 
-  const updateLeagueNameInState = useCallback((leagueSeasonId: string, newName: string) => {
+  const updateLeagueNameInState = (leagueSeasonId: string, newName: string) => {
     setLeagueSeasons((prev) =>
       prev.map((ls) => {
         if (ls.id !== leagueSeasonId) return ls;
@@ -250,152 +218,149 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
         };
       }),
     );
-  }, []);
+  };
 
-  const addTeamToDivisionInState = useCallback(
-    (leagueSeasonId: string, divisionSeasonId: string, teamSeason: TeamSeasonType) => {
-      setLeagueSeasons((prev) =>
-        prev.map((ls) => {
-          if (ls.id !== leagueSeasonId) return ls;
+  const addTeamToDivisionInState = (
+    leagueSeasonId: string,
+    divisionSeasonId: string,
+    teamSeason: TeamSeasonType,
+  ) => {
+    setLeagueSeasons((prev) =>
+      prev.map((ls) => {
+        if (ls.id !== leagueSeasonId) return ls;
 
-          return {
-            ...ls,
-            divisions: ls.divisions?.map((div) => {
-              if (div.id !== divisionSeasonId) return div;
-              return {
-                ...div,
-                teams: [...div.teams, teamSeason],
-              };
-            }),
-            unassignedTeams: ls.unassignedTeams?.filter((team) => team.id !== teamSeason.id) || [],
-          };
-        }),
-      );
-    },
-    [],
-  );
+        return {
+          ...ls,
+          divisions: ls.divisions?.map((div) => {
+            if (div.id !== divisionSeasonId) return div;
+            return {
+              ...div,
+              teams: [...div.teams, teamSeason],
+            };
+          }),
+          unassignedTeams: ls.unassignedTeams?.filter((team) => team.id !== teamSeason.id) || [],
+        };
+      }),
+    );
+  };
 
-  const removeTeamFromDivisionInState = useCallback(
-    (leagueSeasonId: string, divisionSeasonId: string, teamSeason: TeamSeasonType) => {
-      setLeagueSeasons((prev) =>
-        prev.map((ls) => {
-          if (ls.id !== leagueSeasonId) return ls;
+  const removeTeamFromDivisionInState = (
+    leagueSeasonId: string,
+    divisionSeasonId: string,
+    teamSeason: TeamSeasonType,
+  ) => {
+    setLeagueSeasons((prev) =>
+      prev.map((ls) => {
+        if (ls.id !== leagueSeasonId) return ls;
 
-          return {
-            ...ls,
-            divisions: ls.divisions?.map((div) => {
-              if (div.id !== divisionSeasonId) return div;
-              return {
-                ...div,
-                teams: div.teams.filter((team) => team.id !== teamSeason.id),
-              };
-            }),
-            unassignedTeams: [...(ls.unassignedTeams || []), teamSeason],
-          };
-        }),
-      );
-    },
-    [],
-  );
+        return {
+          ...ls,
+          divisions: ls.divisions?.map((div) => {
+            if (div.id !== divisionSeasonId) return div;
+            return {
+              ...div,
+              teams: div.teams.filter((team) => team.id !== teamSeason.id),
+            };
+          }),
+          unassignedTeams: [...(ls.unassignedTeams || []), teamSeason],
+        };
+      }),
+    );
+  };
 
-  const addTeamToLeagueSeasonInState = useCallback(
-    (leagueSeasonId: string, teamSeason: TeamSeasonType) => {
-      setLeagueSeasons((prev) =>
-        prev.map((ls) => {
-          if (ls.id !== leagueSeasonId) return ls;
+  const addTeamToLeagueSeasonInState = (leagueSeasonId: string, teamSeason: TeamSeasonType) => {
+    setLeagueSeasons((prev) =>
+      prev.map((ls) => {
+        if (ls.id !== leagueSeasonId) return ls;
 
-          return {
-            ...ls,
-            unassignedTeams: [...(ls.unassignedTeams || []), teamSeason],
-          };
-        }),
-      );
-    },
-    [],
-  );
+        return {
+          ...ls,
+          unassignedTeams: [...(ls.unassignedTeams || []), teamSeason],
+        };
+      }),
+    );
+  };
 
-  const removeTeamFromLeagueSeasonInState = useCallback(
-    (leagueSeasonId: string, teamSeasonId: string) => {
-      setLeagueSeasons((prev) =>
-        prev.map((ls) => {
-          if (ls.id !== leagueSeasonId) return ls;
+  const removeTeamFromLeagueSeasonInState = (leagueSeasonId: string, teamSeasonId: string) => {
+    setLeagueSeasons((prev) =>
+      prev.map((ls) => {
+        if (ls.id !== leagueSeasonId) return ls;
 
-          return {
-            ...ls,
-            divisions:
-              ls.divisions?.map((div) => ({
-                ...div,
-                teams: div.teams?.filter((team) => team.id !== teamSeasonId) || [],
-              })) || [],
-            unassignedTeams: ls.unassignedTeams?.filter((team) => team.id !== teamSeasonId) || [],
-          };
-        }),
-      );
-    },
-    [],
-  );
+        return {
+          ...ls,
+          divisions:
+            ls.divisions?.map((div) => ({
+              ...div,
+              teams: div.teams?.filter((team) => team.id !== teamSeasonId) || [],
+            })) || [],
+          unassignedTeams: ls.unassignedTeams?.filter((team) => team.id !== teamSeasonId) || [],
+        };
+      }),
+    );
+  };
 
-  const addDivisionToLeagueSeasonInState = useCallback(
-    (leagueSeasonId: string, divisionSeason: DivisionSeasonWithTeamsType) => {
-      setLeagueSeasons((prev) =>
-        prev.map((ls) => {
-          if (ls.id !== leagueSeasonId) return ls;
+  const addDivisionToLeagueSeasonInState = (
+    leagueSeasonId: string,
+    divisionSeason: DivisionSeasonWithTeamsType,
+  ) => {
+    setLeagueSeasons((prev) =>
+      prev.map((ls) => {
+        if (ls.id !== leagueSeasonId) return ls;
 
-          return {
-            ...ls,
-            divisions: [...(ls.divisions || []), divisionSeason],
-          };
-        }),
-      );
-    },
-    [],
-  );
+        return {
+          ...ls,
+          divisions: [...(ls.divisions || []), divisionSeason],
+        };
+      }),
+    );
+  };
 
-  const removeDivisionFromLeagueSeasonInState = useCallback(
-    (leagueSeasonId: string, divisionSeasonId: string) => {
-      setLeagueSeasons((prev) =>
-        prev.map((ls) => {
-          if (ls.id !== leagueSeasonId) return ls;
+  const removeDivisionFromLeagueSeasonInState = (
+    leagueSeasonId: string,
+    divisionSeasonId: string,
+  ) => {
+    setLeagueSeasons((prev) =>
+      prev.map((ls) => {
+        if (ls.id !== leagueSeasonId) return ls;
 
-          // Move all teams from the deleted division to unassigned
-          const divisionToRemove = ls.divisions?.find((div) => div.id === divisionSeasonId);
-          const teamsToMove = divisionToRemove ? divisionToRemove.teams || [] : [];
+        const divisionToRemove = ls.divisions?.find((div) => div.id === divisionSeasonId);
+        const teamsToMove = divisionToRemove ? divisionToRemove.teams || [] : [];
 
-          return {
-            ...ls,
-            divisions: ls.divisions?.filter((div) => div.id !== divisionSeasonId) || [],
-            unassignedTeams: [...(ls.unassignedTeams || []), ...teamsToMove],
-          };
-        }),
-      );
-    },
-    [],
-  );
+        return {
+          ...ls,
+          divisions: ls.divisions?.filter((div) => div.id !== divisionSeasonId) || [],
+          unassignedTeams: [...(ls.unassignedTeams || []), ...teamsToMove],
+        };
+      }),
+    );
+  };
 
-  const updateDivisionInState = useCallback(
-    (leagueSeasonId: string, divisionSeasonId: string, name: string, priority: number) => {
-      setLeagueSeasons((prev) =>
-        prev.map((ls) => {
-          if (ls.id !== leagueSeasonId) return ls;
+  const updateDivisionInState = (
+    leagueSeasonId: string,
+    divisionSeasonId: string,
+    name: string,
+    priority: number,
+  ) => {
+    setLeagueSeasons((prev) =>
+      prev.map((ls) => {
+        if (ls.id !== leagueSeasonId) return ls;
 
-          return {
-            ...ls,
-            divisions: ls.divisions?.map((div) => {
-              if (div.id !== divisionSeasonId) return div;
-              return {
-                ...div,
-                division: { ...div.division, name },
-                priority,
-              };
-            }),
-          };
-        }),
-      );
-    },
-    [],
-  );
+        return {
+          ...ls,
+          divisions: ls.divisions?.map((div) => {
+            if (div.id !== divisionSeasonId) return div;
+            return {
+              ...div,
+              division: { ...div.division, name },
+              priority,
+            };
+          }),
+        };
+      }),
+    );
+  };
 
-  const updateTeamInState = useCallback((updatedTeam: TeamSeasonType) => {
+  const updateTeamInState = (updatedTeam: TeamSeasonType) => {
     setLeagueSeasons((prev) =>
       prev.map((ls) => ({
         ...ls,
@@ -408,13 +373,48 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
         ),
       })),
     );
-  }, []);
+  };
 
   useEffect(() => {
-    if (accountId) {
-      fetchLeagueSeasons();
-    }
-  }, [accountId, fetchLeagueSeasons]);
+    if (!accountId || !seasonId) return;
+
+    const controller = new AbortController();
+
+    const fetchLeagueSeasons = async () => {
+      setLoading(true);
+      try {
+        const result = await listSeasonLeagueSeasons({
+          client: apiClient,
+          path: { accountId, seasonId },
+          query: { includeTeams: true, includeUnassignedTeams: true },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+        const data = unwrapApiResult(result, 'Failed to fetch league seasons');
+        const formattedLeagueSeasons = mapLeagueSetup(data);
+        setLeagueSeasons(formattedLeagueSeasons.leagueSeasons || []);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error('Error fetching league seasons:', error);
+        setFeedback({
+          severity: 'error',
+          message: error instanceof Error ? error.message : 'Failed to fetch league seasons',
+        });
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void fetchLeagueSeasons();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, seasonId, apiClient]);
 
   // Handler to open add division dialog
   const openAddDivisionDialog = (leagueSeason: LeagueSeasonType) => {
@@ -575,14 +575,10 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
     setEditTeamDialogOpen(true);
   };
 
-  // Handler for team update success
-  const handleTeamUpdateSuccess = useCallback(
-    (result: UpdateTeamMetadataResult) => {
-      updateTeamInState(result.teamSeason);
-      setFeedback({ severity: 'success', message: result.message });
-    },
-    [updateTeamInState],
-  );
+  const handleTeamUpdateSuccess = (result: UpdateTeamMetadataResult) => {
+    updateTeamInState(result.teamSeason);
+    setFeedback({ severity: 'success', message: result.message });
+  };
 
   // Export handlers
   const handleLeagueExportMenuOpen = (

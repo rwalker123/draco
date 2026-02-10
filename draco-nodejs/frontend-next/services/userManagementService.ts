@@ -370,6 +370,10 @@ export class UserManagementService {
 
     const typedResult = result as { data?: unknown; error?: unknown; response?: Response };
 
+    if (typedResult.response?.status === 409 && typedResult.error) {
+      return typedResult.error as AutoRegisterContactResponseType;
+    }
+
     if (typedResult.error || (typedResult.response && typedResult.response.status >= 400)) {
       const message = getApiErrorMessage(typedResult.error, 'Failed to auto-register contact');
       throw new ApiClientError(message, {

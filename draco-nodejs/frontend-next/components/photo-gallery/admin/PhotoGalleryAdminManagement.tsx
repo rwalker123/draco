@@ -317,7 +317,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const loadData = async () => {
       setLoading(true);
@@ -325,16 +325,16 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
 
       try {
         const [galleryData, albumData] = await Promise.all([
-          listGalleryPhotosAdmin(accountId, token),
-          listGalleryAlbumsAdmin(accountId, token),
+          listGalleryPhotosAdmin(accountId, token, controller.signal),
+          listGalleryAlbumsAdmin(accountId, token, controller.signal),
         ]);
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         setPhotos(Array.isArray(galleryData.photos) ? galleryData.photos : []);
         setAlbums(Array.isArray(albumData.albums) ? albumData.albums : []);
       } catch (err) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         const message =
           err instanceof ApiClientError
@@ -346,7 +346,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
         setPhotos([]);
         setAlbums([]);
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -355,7 +355,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     void loadData();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, token, refreshKey]);
 

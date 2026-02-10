@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -43,76 +43,77 @@ const SurveyManagementPage: React.FC<SurveyManagementPageProps> = ({ accountId }
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
-  const hasFetchedCategoriesRef = React.useRef(false);
   const [responsesInitialized, setResponsesInitialized] = useState(false);
 
-  const handleSuccess = useCallback((message: string) => {
+  const handleSuccess = (message: string) => {
     setGlobalSuccess(message);
     setGlobalError(null);
-  }, []);
+  };
 
-  const handleError = useCallback((message: string) => {
+  const handleError = (message: string) => {
     setGlobalError(message);
     setGlobalSuccess(null);
-  }, []);
+  };
 
-  const surveySetting = useMemo(
-    () => accountSettings?.find((setting) => setting.definition.key === 'ShowPlayerSurvey'),
-    [accountSettings],
+  const surveySetting = accountSettings?.find(
+    (setting) => setting.definition.key === 'ShowPlayerSurvey',
   );
 
-  const handleSurveyAvailabilityToggle = useCallback(
-    async (_event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
-      try {
-        await updateSetting('ShowPlayerSurvey', checked);
-        setGlobalError(null);
-        setGlobalSuccess(null);
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Unable to update player survey availability.';
-        handleError(message);
-      }
-    },
-    [handleError, updateSetting],
-  );
-
-  const refreshCategories = useCallback(async () => {
-    setCategoriesLoading(true);
-    setCategoriesError(null);
-
+  const handleSurveyAvailabilityToggle = async (
+    _event: React.ChangeEvent<HTMLInputElement>,
+    checked: boolean,
+  ) => {
     try {
-      const response = await listPlayerSurveyCategories({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult(response, 'Failed to load survey categories');
-      const normalized = data?.map((category) => ({
-        ...category,
-        questions: category.questions ?? [],
-      }));
-      setCategories(normalized ? sortCategories(normalized) : []);
+      await updateSetting('ShowPlayerSurvey', checked);
+      setGlobalError(null);
+      setGlobalSuccess(null);
     } catch (error) {
-      console.error('Failed to load survey categories', error);
-      setCategoriesError('Failed to load survey categories.');
-      setCategories([]);
-    } finally {
-      setCategoriesLoading(false);
+      const message =
+        error instanceof Error ? error.message : 'Unable to update player survey availability.';
+      handleError(message);
     }
-  }, [accountId, apiClient]);
+  };
 
   useEffect(() => {
-    if (hasFetchedCategoriesRef.current) {
-      return;
-    }
-    hasFetchedCategoriesRef.current = true;
+    const controller = new AbortController();
+
+    const refreshCategories = async () => {
+      setCategoriesLoading(true);
+      setCategoriesError(null);
+
+      try {
+        const response = await listPlayerSurveyCategories({
+          client: apiClient,
+          path: { accountId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+        const data = unwrapApiResult(response, 'Failed to load survey categories');
+        const normalized = data?.map((category) => ({
+          ...category,
+          questions: category.questions ?? [],
+        }));
+        setCategories(normalized ? sortCategories(normalized) : []);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load survey categories', error);
+        setCategoriesError('Failed to load survey categories.');
+        setCategories([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setCategoriesLoading(false);
+        }
+      }
+    };
+
     void refreshCategories();
-  }, [refreshCategories]);
 
-  useEffect(() => {
-    hasFetchedCategoriesRef.current = false;
-  }, [accountId]);
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient]);
 
   useEffect(() => {
     if (activeTab === 1 && !responsesInitialized) {
@@ -120,12 +121,11 @@ const SurveyManagementPage: React.FC<SurveyManagementPageProps> = ({ accountId }
     }
   }, [activeTab, responsesInitialized]);
 
-  const handleCategoriesChange = useCallback(
-    (updater: (prev: PlayerSurveyCategoryType[]) => PlayerSurveyCategoryType[]) => {
-      setCategories((prev) => sortCategories(updater(prev)));
-    },
-    [],
-  );
+  const handleCategoriesChange = (
+    updater: (prev: PlayerSurveyCategoryType[]) => PlayerSurveyCategoryType[],
+  ) => {
+    setCategories((prev) => sortCategories(updater(prev)));
+  };
 
   return (
     <main className="min-h-screen bg-background">

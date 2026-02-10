@@ -72,7 +72,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
       return;
     }
 
-    let active = true;
+    const controller = new AbortController();
 
     const fetchTeamsWantedCount = async () => {
       try {
@@ -80,26 +80,26 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
           accountId,
           { page: 1, limit: 1 },
           token,
+          controller.signal,
         );
-        if (!active) {
+        if (controller.signal.aborted) {
           return;
         }
         const total = typeof result.total === 'number' ? result.total : result.data.length;
         setTeamsWantedCount(total);
         setTeamsWantedCountError(false);
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error('Failed to load teams wanted count', error);
-        if (active) {
-          setTeamsWantedCount(null);
-          setTeamsWantedCountError(true);
-        }
+        setTeamsWantedCount(null);
+        setTeamsWantedCountError(true);
       }
     };
 
     fetchTeamsWantedCount();
 
     return () => {
-      active = false;
+      controller.abort();
     };
   }, [accountId, token, teamsWantedHref]);
 
