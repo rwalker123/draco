@@ -82,7 +82,10 @@ const AccountSettings: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!accountId || !token || !accountIdStr) return;
+    if (!accountId || !token || !accountIdStr) {
+      setLoading(false);
+      return;
+    }
 
     const controller = new AbortController();
 
