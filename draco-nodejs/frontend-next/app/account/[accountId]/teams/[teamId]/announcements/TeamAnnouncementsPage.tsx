@@ -13,10 +13,10 @@ import {
   Typography,
 } from '@mui/material';
 import { useParams } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
 import { useApiClient } from '@/hooks/useApiClient';
-import { AnnouncementService } from '@/services/announcementService';
-import type { AnnouncementType } from '@draco/shared-schemas';
+import { listTeamAnnouncements } from '@draco/shared-api-client';
+import type { AnnouncementType, AnnouncementListType } from '@draco/shared-schemas';
+import { unwrapApiResult } from '@/utils/apiResult';
 import { useTeamResourceHeader } from '@/hooks/useTeamHandoutHeader';
 import TeamHandoutPageLayout from '@/components/handouts/TeamHandoutPageLayout';
 import AnnouncementDetailDialog from '@/components/announcements/AnnouncementDetailDialog';
@@ -28,12 +28,7 @@ const TeamAnnouncementsPage: React.FC = () => {
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
   const teamId = Array.isArray(teamIdParam) ? teamIdParam[0] : teamIdParam;
 
-  const { token } = useAuth();
   const apiClient = useApiClient();
-  const announcementService = React.useMemo(
-    () => new AnnouncementService(token, apiClient),
-    [token, apiClient],
-  );
 
   const {
     teamHeader,
@@ -63,36 +58,40 @@ const TeamAnnouncementsPage: React.FC = () => {
       return;
     }
 
-    let ignore = false;
+    const controller = new AbortController();
 
     const fetchAnnouncements = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const data = await announcementService.listTeamAnnouncements({
-          accountId,
-          teamId: resolvedTeamId,
+        const result = await listTeamAnnouncements({
+          client: apiClient,
+          path: { accountId, teamId: resolvedTeamId },
+          signal: controller.signal,
+          throwOnError: false,
         });
 
-        if (ignore) {
-          return;
-        }
+        if (controller.signal.aborted) return;
 
-        const sorted = data.slice().sort((a, b) => {
-          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
-        });
+        const payload = unwrapApiResult<AnnouncementListType>(
+          result,
+          'Failed to load team announcements',
+        );
+        const sorted = payload.announcements
+          .slice()
+          .sort(
+            (a: AnnouncementType, b: AnnouncementType) =>
+              new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+          );
         setAnnouncements(sorted);
       } catch (err) {
-        if (ignore) {
-          return;
-        }
-
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load team announcements';
         setError(message);
         setAnnouncements([]);
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -101,9 +100,9 @@ const TeamAnnouncementsPage: React.FC = () => {
     void fetchAnnouncements();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
-  }, [accountId, resolvedTeamId, announcementService, notMember]);
+  }, [accountId, resolvedTeamId, apiClient, notMember]);
 
   const handleAnnouncementSelect = (announcement: AnnouncementType) => {
     setSelectedAnnouncement(announcement);

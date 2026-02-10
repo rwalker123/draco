@@ -15,10 +15,10 @@ import {
 } from '@mui/material';
 import { useParams } from 'next/navigation';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
-import { AnnouncementService } from '../../../../services/announcementService';
+import { listAccountAnnouncements } from '@draco/shared-api-client';
 import { useApiClient } from '../../../../hooks/useApiClient';
-import { useAuth } from '../../../../context/AuthContext';
-import type { AnnouncementType } from '@draco/shared-schemas';
+import type { AnnouncementType, AnnouncementListType } from '@draco/shared-schemas';
+import { unwrapApiResult } from '@/utils/apiResult';
 import AnnouncementDetailDialog from '@/components/announcements/AnnouncementDetailDialog';
 import { formatDateTime } from '@/utils/dateUtils';
 import WidgetShell from '@/components/ui/WidgetShell';
@@ -28,11 +28,6 @@ const AccountAnnouncementsPage: React.FC = () => {
   const accountIdParam = params?.accountId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
   const apiClient = useApiClient();
-  const { token } = useAuth();
-  const announcementService = React.useMemo(
-    () => new AnnouncementService(token, apiClient),
-    [token, apiClient],
-  );
 
   const [announcements, setAnnouncements] = React.useState<AnnouncementType[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
@@ -51,30 +46,40 @@ const AccountAnnouncementsPage: React.FC = () => {
       return;
     }
 
-    let ignore = false;
+    const controller = new AbortController();
 
     const fetchAnnouncements = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const data = await announcementService.listAccountAnnouncements(accountId);
-        if (ignore) {
-          return;
-        }
-        const sorted = data.slice().sort((a, b) => {
-          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+        const result = await listAccountAnnouncements({
+          client: apiClient,
+          path: { accountId },
+          signal: controller.signal,
+          throwOnError: false,
         });
+
+        if (controller.signal.aborted) return;
+
+        const payload = unwrapApiResult<AnnouncementListType>(
+          result,
+          'Failed to load account announcements',
+        );
+        const sorted = payload.announcements
+          .slice()
+          .sort(
+            (a: AnnouncementType, b: AnnouncementType) =>
+              new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+          );
         setAnnouncements(sorted);
       } catch (err) {
-        if (ignore) {
-          return;
-        }
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load account announcements';
         setError(message);
         setAnnouncements([]);
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -83,9 +88,9 @@ const AccountAnnouncementsPage: React.FC = () => {
     void fetchAnnouncements();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
-  }, [accountId, announcementService]);
+  }, [accountId, apiClient]);
 
   const handleAnnouncementSelect = (announcement: AnnouncementType) => {
     setSelectedAnnouncement(announcement);

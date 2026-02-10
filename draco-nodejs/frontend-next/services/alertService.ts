@@ -20,8 +20,11 @@ const mapAlert = (alert: AlertType): AlertType => ({
 
 const mapList = (list: AlertListType): AlertType[] => list.alerts.map(mapAlert);
 
-export const fetchActiveAlerts = async (client: Client): Promise<AlertType[]> => {
-  const result = await listActiveAlerts({ client, throwOnError: false });
+export const fetchActiveAlerts = async (
+  client: Client,
+  signal?: AbortSignal,
+): Promise<AlertType[]> => {
+  const result = await listActiveAlerts({ client, throwOnError: false, signal });
   const data = unwrapApiResult(result, 'Unable to fetch alerts');
   return mapList(data as AlertListType);
 };

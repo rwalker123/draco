@@ -54,39 +54,48 @@ const TeamYouTubeManagementPage: React.FC = () => {
     error: null,
   });
 
-  const loadChannelState = React.useCallback(async () => {
+  React.useEffect(() => {
     if (!accountId || !seasonId || !teamSeasonId) {
       return;
     }
 
-    setChannelState((previous) => ({ ...previous, loading: true, error: null }));
-    try {
-      const result = await apiGetTeamSeasonDetails({
-        client: apiClient,
-        path: { accountId, seasonId, teamSeasonId },
-        throwOnError: false,
-      });
-      const data = unwrapApiResult<TeamSeasonRecordType>(
-        result,
-        'Failed to load team YouTube configuration',
-      );
-      setChannelState({
-        channelId: data.team.youtubeUserId ?? null,
-        loading: false,
-        error: null,
-      });
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Unable to load the current YouTube configuration.';
-      setChannelState({ channelId: null, loading: false, error: message });
-    }
-  }, [accountId, apiClient, seasonId, teamSeasonId]);
+    const controller = new AbortController();
 
-  React.useEffect(() => {
+    const loadChannelState = async () => {
+      setChannelState((previous) => ({ ...previous, loading: true, error: null }));
+      try {
+        const result = await apiGetTeamSeasonDetails({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+
+        const data = unwrapApiResult<TeamSeasonRecordType>(
+          result,
+          'Failed to load team YouTube configuration',
+        );
+        setChannelState({
+          channelId: data.team.youtubeUserId ?? null,
+          loading: false,
+          error: null,
+        });
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message =
+          err instanceof Error ? err.message : 'Unable to load the current YouTube configuration.';
+        setChannelState({ channelId: null, loading: false, error: message });
+      }
+    };
+
     void loadChannelState();
-  }, [loadChannelState]);
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient, seasonId, teamSeasonId]);
 
   if (!accountId || !seasonId || !teamSeasonId) {
     return null;

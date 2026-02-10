@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Box, Typography } from '@mui/material';
 import { debounce } from '@mui/material/utils';
 import { keyframes } from '@mui/system';
@@ -24,22 +24,18 @@ const AlertsTicker: React.FC = () => {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let isMounted = true;
+    const controller = new AbortController();
 
     const loadAlerts = async () => {
       try {
-        const activeAlerts = await fetchActiveAlerts(apiClient);
-        if (!isMounted) {
-          return;
-        }
+        const activeAlerts = await fetchActiveAlerts(apiClient, controller.signal);
+        if (controller.signal.aborted) return;
         setAlerts(activeAlerts);
       } catch (err) {
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : 'Unable to load alerts');
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -48,24 +44,20 @@ const AlertsTicker: React.FC = () => {
     void loadAlerts();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [apiClient]);
 
   const alertsLengthRef = useRef(alerts.length);
   alertsLengthRef.current = alerts.length;
 
-  const checkOverflow = useMemo(
-    () =>
-      debounce(() => {
-        if (containerRef.current && contentRef.current) {
-          const containerWidth = containerRef.current.offsetWidth;
-          const contentWidth = contentRef.current.scrollWidth;
-          setShouldScroll(contentWidth > containerWidth || alertsLengthRef.current > 1);
-        }
-      }, 150),
-    [],
-  );
+  const checkOverflow = debounce(() => {
+    if (containerRef.current && contentRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      const contentWidth = contentRef.current.scrollWidth;
+      setShouldScroll(contentWidth > containerWidth || alertsLengthRef.current > 1);
+    }
+  }, 150);
 
   useEffect(() => {
     const frameId = requestAnimationFrame(checkOverflow);
