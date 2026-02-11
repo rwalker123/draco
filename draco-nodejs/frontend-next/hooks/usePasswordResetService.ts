@@ -75,30 +75,12 @@ export function usePasswordResetService(): PasswordResetService {
         return { success: true, message: DEFAULT_REQUEST_SUCCESS_MESSAGE };
       }
 
-      if (typeof data === 'object' && data !== null) {
-        if ('success' in data) {
-          const { success, message } = data as { success: boolean; message?: string };
-          if (!success) {
-            const failureMessage = message ?? 'Failed to request password reset.';
-            setError(failureMessage);
-            return { success: false, message: failureMessage };
-          }
-
-          return { success: true, message: message ?? DEFAULT_REQUEST_SUCCESS_MESSAGE };
-        }
-
-        if ('message' in data && typeof (data as { message?: unknown }).message === 'string') {
-          const { message } = data as { message?: string };
-          if (message) {
-            return { success: true, message };
-          }
-        }
+      if (!data.success) {
+        setError(data.message);
+        return { success: false, message: data.message };
       }
 
-      return {
-        success: true,
-        message: 'Password reset request processed. Check your email for further instructions.',
-      };
+      return { success: true, message: data.message ?? DEFAULT_REQUEST_SUCCESS_MESSAGE };
     } catch (caughtError) {
       console.error('Password reset request failed:', caughtError);
       const message =
@@ -123,16 +105,13 @@ export function usePasswordResetService(): PasswordResetService {
         throwOnError: false,
       });
 
-      const data = unwrapApiResult(
-        result,
-        'Failed to verify the reset token. Please try again.',
-      ) as { valid: boolean; message?: string };
+      const data = unwrapApiResult(result, 'Failed to verify the reset token. Please try again.');
 
       if (data.valid) {
         return { valid: true, message: DEFAULT_TOKEN_SUCCESS_MESSAGE, token };
       }
 
-      const message = data.message ?? 'Invalid or expired reset token';
+      const message = 'Invalid or expired reset token';
       setError(message);
       return { valid: false, message };
     } catch (caughtError) {
@@ -162,28 +141,9 @@ export function usePasswordResetService(): PasswordResetService {
         throwOnError: false,
       });
 
-      const data = unwrapApiResult(result, 'Failed to reset password. Please try again.') as
-        | { success?: boolean; message?: string }
-        | boolean;
+      const data = unwrapApiResult(result, 'Failed to reset password. Please try again.');
 
-      if (typeof data === 'object' && data !== null) {
-        const { success, message } = data as { success?: boolean; message?: string };
-        if (success === false) {
-          const failureMessage = message ?? 'Failed to reset password. Please try again.';
-          setError(failureMessage);
-          return { success: false, message: failureMessage };
-        }
-
-        if (success) {
-          return { success: true, message: message ?? DEFAULT_RESET_SUCCESS_MESSAGE };
-        }
-
-        if (message) {
-          return { success: true, message };
-        }
-      }
-
-      if (data === false) {
+      if (!data) {
         const failureMessage = 'Failed to reset password. Please try again.';
         setError(failureMessage);
         return { success: false, message: failureMessage };
