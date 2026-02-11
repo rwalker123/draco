@@ -18,7 +18,7 @@ export function useTeamMembership(
   const [teamSeason, setTeamSeason] = useState<TeamSeasonType | null>(null);
 
   useEffect(() => {
-    let ignore = false;
+    const controller = new AbortController();
 
     const checkMembership = async () => {
       if (!accountId || !teamSeasonId || !user || !token) {
@@ -36,10 +36,11 @@ export function useTeamMembership(
         const result = await getAccountUserTeams({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -57,7 +58,7 @@ export function useTeamMembership(
         setTeamSeason(match ?? null);
         setIsMember(Boolean(match));
       } catch (err) {
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
         const message = err instanceof Error ? err.message : 'Failed to verify team membership';
@@ -65,7 +66,7 @@ export function useTeamMembership(
         setIsMember(false);
         setTeamSeason(null);
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -74,7 +75,7 @@ export function useTeamMembership(
     void checkMembership();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountId, apiClient, seasonId, teamSeasonId, token, user]);
 

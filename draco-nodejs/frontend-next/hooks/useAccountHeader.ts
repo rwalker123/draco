@@ -43,7 +43,7 @@ export const useAccountHeader = (
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchHeader = async () => {
       setIsLoading(true);
@@ -53,10 +53,11 @@ export const useAccountHeader = (
         const result = await apiGetAccountHeader({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (cancelled) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -66,7 +67,7 @@ export const useAccountHeader = (
         const chosenLogo = preferredLogoUrl ?? accountLogoUrl ?? null;
         setLogoUrl(addCacheBuster(chosenLogo));
       } catch (err) {
-        if (cancelled) {
+        if (controller.signal.aborted) {
           return;
         }
         setAccountName(null);
@@ -75,7 +76,7 @@ export const useAccountHeader = (
         }
         setError(err instanceof Error ? err.message : 'Failed to fetch account header');
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setIsLoading(false);
         }
       }
@@ -84,7 +85,7 @@ export const useAccountHeader = (
     fetchHeader();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, preferredLogoUrl, apiClient]);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Button,
@@ -55,98 +55,95 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({
   const apiClient = useApiClient();
 
   useEffect(() => {
-    let isMounted = true;
+    const controller = new AbortController();
     const fetchCurrentSeason = async () => {
       setLoadingSeason(true);
       try {
         const result = await getCurrentSeason({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
+        if (controller.signal.aborted) return;
         const season = unwrapApiResult(result, 'Failed to load current season');
-        if (isMounted) setCurrentSeasonId(season.id);
+        setCurrentSeasonId(season.id);
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.warn('Failed to load current season', error);
-        if (isMounted) setCurrentSeasonId(null);
+        setCurrentSeasonId(null);
       } finally {
-        if (isMounted) setLoadingSeason(false);
+        if (!controller.signal.aborted) setLoadingSeason(false);
       }
     };
     fetchCurrentSeason();
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountId, apiClient]);
 
-  const menuItems = React.useMemo(
-    () => [
-      {
-        label: 'Socials',
-        icon: <SocialIcon />,
-        path: `/account/${accountId}/social-hub`,
-      },
-      {
-        label: 'Fields',
-        icon: <FieldIcon />,
-        path: `/account/${accountId}/fields`,
-      },
-      {
-        label: 'Schedule',
-        icon: <ScheduleIcon />,
-        onClick: () => {
-          if (loadingSeason) return;
-          if (currentSeasonId) {
-            router.push(`/account/${accountId}/schedule`);
-          } else {
-            router.push(`/account/${accountId}/no-current-seasons`);
-          }
-        },
-        needsSeason: true,
-      },
-      {
-        label: 'Stats',
-        icon: <StatsIcon />,
-        path: `/account/${accountId}/statistics`,
-      },
-      {
-        label: 'Standings',
-        icon: <StandingsIcon />,
-        onClick: () => {
-          if (loadingSeason) return;
-          if (currentSeasonId) {
-            router.push(`/account/${accountId}/seasons/${currentSeasonId}/standings`);
-          } else {
-            router.push(`/account/${accountId}/no-current-seasons`);
-          }
-        },
-        needsSeason: true,
-      },
-      {
-        label: 'Teams',
-        icon: <TeamsIcon />,
-        onClick: () => {
-          if (loadingSeason) return;
-          if (currentSeasonId) {
-            router.push(`/account/${accountId}/seasons/${currentSeasonId}/teams`);
-          } else {
-            router.push(`/account/${accountId}/no-current-seasons`);
-          }
-        },
-        needsSeason: true,
-      },
-    ],
-    [accountId, currentSeasonId, loadingSeason, router],
-  );
-
-  const handleNavigation = React.useCallback(
-    (path: string) => {
-      router.push(path);
-      setAnchorEl(null);
+  const menuItems = [
+    {
+      label: 'Socials',
+      icon: <SocialIcon />,
+      path: `/account/${accountId}/social-hub`,
     },
-    [router],
-  );
+    {
+      label: 'Fields',
+      icon: <FieldIcon />,
+      path: `/account/${accountId}/fields`,
+    },
+    {
+      label: 'Schedule',
+      icon: <ScheduleIcon />,
+      onClick: () => {
+        if (loadingSeason) return;
+        if (currentSeasonId) {
+          router.push(`/account/${accountId}/schedule`);
+        } else {
+          router.push(`/account/${accountId}/no-current-seasons`);
+        }
+      },
+      needsSeason: true,
+    },
+    {
+      label: 'Stats',
+      icon: <StatsIcon />,
+      path: `/account/${accountId}/statistics`,
+    },
+    {
+      label: 'Standings',
+      icon: <StandingsIcon />,
+      onClick: () => {
+        if (loadingSeason) return;
+        if (currentSeasonId) {
+          router.push(`/account/${accountId}/seasons/${currentSeasonId}/standings`);
+        } else {
+          router.push(`/account/${accountId}/no-current-seasons`);
+        }
+      },
+      needsSeason: true,
+    },
+    {
+      label: 'Teams',
+      icon: <TeamsIcon />,
+      onClick: () => {
+        if (loadingSeason) return;
+        if (currentSeasonId) {
+          router.push(`/account/${accountId}/seasons/${currentSeasonId}/teams`);
+        } else {
+          router.push(`/account/${accountId}/no-current-seasons`);
+        }
+      },
+      needsSeason: true,
+    },
+  ];
+
+  const handleNavigation = (path: string) => {
+    router.push(path);
+    setAnchorEl(null);
+  };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -156,34 +153,35 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({
     setAnchorEl(null);
   };
 
-  const menuItemsWithState = React.useMemo(
-    () =>
-      menuItems.map((item) => ({
-        ...item,
-        isBusy: Boolean(item.needsSeason && loadingSeason),
-        action: item.onClick || (() => handleNavigation(item.path)),
-      })),
-    [handleNavigation, loadingSeason, menuItems],
-  );
+  const menuItemsWithState = menuItems.map((item) => ({
+    ...item,
+    isBusy: Boolean(item.needsSeason && loadingSeason),
+    action: item.onClick || (() => handleNavigation(item.path)),
+  }));
 
-  const latestOverflowChangeRef = React.useRef<BaseballMenuProps['onOverflowItemsChange']>(null);
-  React.useEffect(() => {
+  const menuItemsWithStateRef = useRef(menuItemsWithState);
+  menuItemsWithStateRef.current = menuItemsWithState;
+
+  const latestOverflowChangeRef = useRef<BaseballMenuProps['onOverflowItemsChange']>(null);
+  useEffect(() => {
     latestOverflowChangeRef.current = onOverflowItemsChange;
   }, [onOverflowItemsChange]);
 
-  React.useEffect(() => {
-    if (!useUnifiedMenu || !onOverflowItemsChange) {
+  useEffect(() => {
+    const callback = latestOverflowChangeRef.current;
+    if (!useUnifiedMenu || !callback) {
       return;
     }
 
     if (isLargeScreen) {
-      onOverflowItemsChange([]);
+      callback([]);
       return;
     }
 
-    const overflowItems = isMediumScreen ? menuItemsWithState.slice(3) : menuItemsWithState;
+    const items = menuItemsWithStateRef.current;
+    const overflowItems = isMediumScreen ? items.slice(3) : items;
 
-    onOverflowItemsChange(
+    callback(
       overflowItems.map((item) => ({
         label: item.label,
         icon: item.icon,
@@ -191,9 +189,9 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({
         busy: item.isBusy,
       })),
     );
-  }, [isLargeScreen, isMediumScreen, menuItemsWithState, onOverflowItemsChange, useUnifiedMenu]);
+  }, [isLargeScreen, isMediumScreen, useUnifiedMenu, loadingSeason, currentSeasonId, accountId]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       latestOverflowChangeRef.current?.([]);
     };

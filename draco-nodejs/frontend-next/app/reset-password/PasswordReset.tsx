@@ -44,7 +44,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
   const steps = ['Request Reset', 'Verify Token', 'Set New Password'];
 
   useEffect(() => {
-    let isMounted = true;
+    const controller = new AbortController();
 
     const autoVerifyTokenFromQuery = async () => {
       const trimmedToken = initialToken?.trim();
@@ -58,9 +58,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
       setActiveStep(1);
 
       const result = await verifyToken(trimmedToken);
-      if (!isMounted) {
-        return;
-      }
+      if (controller.signal.aborted) return;
 
       if (result.valid) {
         setToken(result.token ?? trimmedToken);
@@ -72,7 +70,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
     autoVerifyTokenFromQuery();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [initialToken, verifyToken, clearError]);
 

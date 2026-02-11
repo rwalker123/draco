@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
 import {
   listLeagueFaqs,
   createLeagueFaq,
@@ -33,7 +32,7 @@ const sanitizePayload = (payload: UpsertLeagueFaqType): UpsertLeagueFaqType => (
 export const useLeagueFaqService = (accountId: string): LeagueFaqService => {
   const apiClient = useApiClient();
 
-  const listFaqs = useCallback<LeagueFaqService['listFaqs']>(async () => {
+  const listFaqs: LeagueFaqService['listFaqs'] = async () => {
     try {
       const result = await listLeagueFaqs({
         client: apiClient,
@@ -53,81 +52,72 @@ export const useLeagueFaqService = (accountId: string): LeagueFaqService => {
       const message = error instanceof Error ? error.message : 'Failed to load FAQs';
       return { success: false, error: message } as const;
     }
-  }, [accountId, apiClient]);
+  };
 
-  const createFaq = useCallback<LeagueFaqService['createFaq']>(
-    async (payload) => {
-      try {
-        const result = await createLeagueFaq({
-          client: apiClient,
-          path: { accountId },
-          body: sanitizePayload(payload),
-          throwOnError: false,
-        });
+  const createFaq: LeagueFaqService['createFaq'] = async (payload) => {
+    try {
+      const result = await createLeagueFaq({
+        client: apiClient,
+        path: { accountId },
+        body: sanitizePayload(payload),
+        throwOnError: false,
+      });
 
-        const faq = unwrapApiResult(result, 'Failed to create FAQ') as LeagueFaqType;
+      const faq = unwrapApiResult(result, 'Failed to create FAQ') as LeagueFaqType;
 
-        return {
-          success: true,
-          data: faq,
-          message: 'FAQ created successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to create FAQ';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: faq,
+        message: 'FAQ created successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create FAQ';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const updateFaq = useCallback<LeagueFaqService['updateFaq']>(
-    async (faqId, payload) => {
-      try {
-        const result = await updateLeagueFaq({
-          client: apiClient,
-          path: { accountId, faqId },
-          body: sanitizePayload(payload),
-          throwOnError: false,
-        });
+  const updateFaq: LeagueFaqService['updateFaq'] = async (faqId, payload) => {
+    try {
+      const result = await updateLeagueFaq({
+        client: apiClient,
+        path: { accountId, faqId },
+        body: sanitizePayload(payload),
+        throwOnError: false,
+      });
 
-        const faq = unwrapApiResult(result, 'Failed to update FAQ') as LeagueFaqType;
+      const faq = unwrapApiResult(result, 'Failed to update FAQ') as LeagueFaqType;
 
-        return {
-          success: true,
-          data: faq,
-          message: 'FAQ updated successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to update FAQ';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: faq,
+        message: 'FAQ updated successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update FAQ';
+      return { success: false, error: message } as const;
+    }
+  };
 
-  const deleteFaq = useCallback<LeagueFaqService['deleteFaq']>(
-    async (faqId) => {
-      try {
-        const result = await deleteLeagueFaq({
-          client: apiClient,
-          path: { accountId, faqId },
-          throwOnError: false,
-        });
+  const deleteFaq: LeagueFaqService['deleteFaq'] = async (faqId) => {
+    try {
+      const result = await deleteLeagueFaq({
+        client: apiClient,
+        path: { accountId, faqId },
+        throwOnError: false,
+      });
 
-        assertNoApiError(result, 'Failed to delete FAQ');
+      assertNoApiError(result, 'Failed to delete FAQ');
 
-        return {
-          success: true,
-          data: null,
-          message: 'FAQ deleted successfully',
-        } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to delete FAQ';
-        return { success: false, error: message } as const;
-      }
-    },
-    [accountId, apiClient],
-  );
+      return {
+        success: true,
+        data: null,
+        message: 'FAQ deleted successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete FAQ';
+      return { success: false, error: message } as const;
+    }
+  };
 
   return {
     listFaqs,

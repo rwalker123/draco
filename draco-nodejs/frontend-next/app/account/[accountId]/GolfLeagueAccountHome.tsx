@@ -37,7 +37,7 @@ const GolfLeagueAccountHome: React.FC = () => {
       return;
     }
 
-    let isMounted = true;
+    const controller = new AbortController();
 
     const fetchAccountData = async () => {
       setLoading(true);
@@ -48,12 +48,11 @@ const GolfLeagueAccountHome: React.FC = () => {
           client: apiClient,
           path: { accountId: accountIdStr },
           query: { includeCurrentSeason: true },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
 
         const { account: accountData, currentSeason: responseCurrentSeason } = unwrapApiResult(
           result,
@@ -63,15 +62,13 @@ const GolfLeagueAccountHome: React.FC = () => {
 
         setCurrentSeason(responseCurrentSeason as AccountSeasonWithStatusType | null);
       } catch (err) {
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
         console.error('Failed to fetch account data:', err);
         setError('Failed to load account data');
         setAccount(null);
         setCurrentSeason(null);
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -80,7 +77,7 @@ const GolfLeagueAccountHome: React.FC = () => {
     fetchAccountData();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountIdStr, apiClient]);
 

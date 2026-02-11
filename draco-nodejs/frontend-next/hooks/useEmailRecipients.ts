@@ -166,7 +166,7 @@ export function useEmailRecipients(accountId: string, seasonId?: string): UseEma
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchRecipients = async (): Promise<void> => {
       const service = new EmailRecipientService({
@@ -179,27 +179,22 @@ export function useEmailRecipients(accountId: string, seasonId?: string): UseEma
         setIsLoading(true);
         setError(null);
 
-        // Use the service's comprehensive method
         const result = await service.getRecipientData(accountId, token, seasonId);
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         if (result.success) {
-          // Update state with successful data
           setContacts(result.data.contacts);
           setHasMoreContacts(result.data.pagination?.hasNext ?? false);
 
-          // Reset retry count on success
           setRetryCount(0);
         } else {
-          // Handle service-level errors
           const normalizedError = result.error;
           setError(normalizedError);
           logError(normalizedError, 'useEmailRecipients.fetchRecipients');
         }
       } catch (err) {
-        if (cancelled) return;
-        // Handle unexpected errors
+        if (controller.signal.aborted) return;
         const normalizedError = normalizeError(err, {
           operation: 'useEmailRecipients.fetchRecipients',
           accountId,
@@ -209,7 +204,7 @@ export function useEmailRecipients(accountId: string, seasonId?: string): UseEma
         setError(normalizedError);
         logError(normalizedError, 'useEmailRecipients.fetchRecipients - unexpected error');
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setIsLoading(false);
           setIsRetrying(false);
         }
@@ -219,7 +214,7 @@ export function useEmailRecipients(accountId: string, seasonId?: string): UseEma
     void fetchRecipients();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, seasonId, isValidAccountId, token, refreshKey]);
 
@@ -430,7 +425,7 @@ export function useCurrentSeason(accountId: string): UseCurrentSeasonReturn {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchSeasonData = async (): Promise<void> => {
       const service = new EmailRecipientService();
@@ -439,22 +434,19 @@ export function useCurrentSeason(accountId: string): UseCurrentSeasonReturn {
         setIsLoading(true);
         setError(null);
 
-        // Fetch current season
         const currentSeasonResult = await service.fetchCurrentSeason(accountId, token);
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         if (currentSeasonResult.success) {
           setCurrentSeason(currentSeasonResult.data);
-          // Note: Seasons list would require additional API endpoint
-          // For now, we only provide the current season
           setSeasons(currentSeasonResult.data ? [currentSeasonResult.data] : []);
         } else {
           logError(currentSeasonResult.error, 'useCurrentSeason.fetchSeasonData');
           throw currentSeasonResult.error;
         }
       } catch (err) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const normalizedError = normalizeError(err, {
           operation: 'useCurrentSeason.fetchSeasonData',
           accountId,
@@ -462,7 +454,7 @@ export function useCurrentSeason(accountId: string): UseCurrentSeasonReturn {
         setError(normalizedError);
         logError(normalizedError, 'useCurrentSeason.fetchSeasonData');
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setIsLoading(false);
         }
       }
@@ -471,7 +463,7 @@ export function useCurrentSeason(accountId: string): UseCurrentSeasonReturn {
     void fetchSeasonData();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, token]);
 

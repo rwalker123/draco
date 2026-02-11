@@ -49,10 +49,10 @@ export function useTeamHandoutHeader({
   const [notMember, setNotMember] = React.useState<boolean>(false);
 
   React.useEffect(() => {
-    let ignore = false;
+    const controller = new AbortController();
 
     const resetState = () => {
-      if (ignore) {
+      if (controller.signal.aborted) {
         return;
       }
       setTeamHeader(null);
@@ -70,6 +70,7 @@ export function useTeamHandoutHeader({
           client: apiClient,
           path: { accountId: accountIdValue },
           query: { includeDivisions: false },
+          signal: controller.signal,
           throwOnError: false,
         });
 
@@ -91,6 +92,7 @@ export function useTeamHandoutHeader({
                 seasonId: season.id,
                 teamSeasonId: teamSeasonIdValue,
               },
+              signal: controller.signal,
               throwOnError: false,
             });
 
@@ -133,10 +135,11 @@ export function useTeamHandoutHeader({
             seasonId: seasonIdValue,
             teamSeasonId: teamSeasonIdValue,
           },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -155,14 +158,14 @@ export function useTeamHandoutHeader({
           youtubeUserId: data.team.youtubeUserId ?? null,
         });
       } catch (err) {
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
         const message = err instanceof Error ? err.message : 'Failed to load team information';
         setError(message);
         setTeamHeader(null);
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -185,10 +188,11 @@ export function useTeamHandoutHeader({
         const result = await apiGetAccountUserTeams({
           client: apiClient,
           path: { accountId: accountIdValue },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -215,7 +219,7 @@ export function useTeamHandoutHeader({
         if (!resolvedSeasonId && match.id) {
           const resolvedDetails = await resolveTeamSeasonDetails(accountIdValue, match.id);
 
-          if (ignore) {
+          if (controller.signal.aborted) {
             return;
           }
 
@@ -239,7 +243,7 @@ export function useTeamHandoutHeader({
         });
         setNotMember(false);
       } catch (err) {
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
         const message =
@@ -248,7 +252,7 @@ export function useTeamHandoutHeader({
         setTeamHeader(null);
         setNotMember(false);
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -265,7 +269,7 @@ export function useTeamHandoutHeader({
     }
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountId, apiClient, seasonId, teamId, teamSeasonId, token, user]);
 
