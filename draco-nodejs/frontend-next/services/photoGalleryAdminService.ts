@@ -39,11 +39,13 @@ const createClient = (token?: string | null) => createApiClient({ token: token ?
 export async function listGalleryPhotosAdmin(
   accountId: string,
   token?: string | null,
+  signal?: AbortSignal,
 ): Promise<PhotoGalleryListType> {
   const client = createClient(token);
   const result = await listAccountGalleryPhotosAdmin({
     client,
     path: { accountId },
+    signal,
     throwOnError: false,
   });
 
@@ -122,11 +124,13 @@ export async function deleteGalleryPhotoAdmin(
 export async function listGalleryAlbumsAdmin(
   accountId: string,
   token?: string | null,
+  signal?: AbortSignal,
 ): Promise<PhotoGalleryAdminAlbumListType> {
   const client = createClient(token);
   const result = await listAccountGalleryAlbumsAdmin({
     client,
     path: { accountId },
+    signal,
     throwOnError: false,
   });
 

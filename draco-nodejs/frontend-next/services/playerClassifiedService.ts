@@ -172,6 +172,7 @@ export const playerClassifiedService = {
     accountId: string,
     params: Partial<PlayerClassifiedSearchQueryType> | undefined,
     token: string,
+    signal?: AbortSignal,
   ): Promise<TeamsWantedPublicClassifiedPagedType> {
     const client = createClient(token);
 
@@ -179,6 +180,7 @@ export const playerClassifiedService = {
       client,
       path: { accountId },
       query: buildListQuery(params),
+      signal,
       throwOnError: false,
     });
 

@@ -48,7 +48,7 @@ export const usePlayerCareerStatistics = ({
   useEffect(() => {
     if (!hasActiveSearch) return;
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const performSearch = async () => {
       const trimmedQuery = searchQuery.trim();
@@ -59,9 +59,9 @@ export const usePlayerCareerStatistics = ({
         const response = await searchPublicContacts(
           accountId,
           { query: trimmedQuery },
-          { client: apiClient },
+          { client: apiClient, signal: controller.signal },
         );
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const results: PlayerCareerSearchResult[] =
           response.results?.map((contact) => ({
             playerId: contact.id,
@@ -71,26 +71,26 @@ export const usePlayerCareerStatistics = ({
           })) ?? [];
         setSearchResults(results);
       } catch (error) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const message = error instanceof Error ? error.message : 'Failed to search players';
         setSearchError(message);
         setSearchResults([]);
       } finally {
-        if (!cancelled) setSearchLoading(false);
+        if (!controller.signal.aborted) setSearchLoading(false);
       }
     };
 
     void performSearch();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [hasActiveSearch, searchQuery, accountId, apiClient]);
 
   useEffect(() => {
     if (!hasActivePlayer) return;
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const loadPlayerStats = async () => {
       setPlayerLoading(true);
@@ -99,24 +99,25 @@ export const usePlayerCareerStatistics = ({
       try {
         const stats = await fetchPlayerCareerStatistics(accountId, playerId, {
           client: apiClient,
+          signal: controller.signal,
         });
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         setPlayerStats(stats);
       } catch (error) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const message =
           error instanceof Error ? error.message : 'Failed to load player career statistics';
         setPlayerError(message);
         setPlayerStats(null);
       } finally {
-        if (!cancelled) setPlayerLoading(false);
+        if (!controller.signal.aborted) setPlayerLoading(false);
       }
     };
 
     void loadPlayerStats();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [hasActivePlayer, playerId, accountId, apiClient]);
 

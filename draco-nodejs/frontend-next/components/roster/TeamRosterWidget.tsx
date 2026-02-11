@@ -85,7 +85,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const loadPrivateRoster = async () => {
       setPrivateLoading(true);
@@ -95,16 +95,18 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
           apiGetTeamRosterMembers({
             client: apiClient,
             path: { accountId, seasonId, teamSeasonId },
+            signal: controller.signal,
             throwOnError: false,
           }),
           apiListTeamManagers({
             client: apiClient,
             path: { accountId, seasonId, teamSeasonId },
+            signal: controller.signal,
             throwOnError: false,
           }),
         ]);
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         const roster = unwrapApiResult(
           rosterResult,
@@ -116,20 +118,20 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
         setPrivateRosterData(roster);
         setPrivateManagers(managersData);
       } catch (err) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load roster';
         setPrivateError(message);
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setPrivateLoading(false);
         }
       }
     };
 
-    loadPrivateRoster();
+    void loadPrivateRoster();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, seasonId, teamSeasonId, hasPrivateAccess, token, apiClient]);
 
@@ -141,7 +143,8 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
       return;
     }
 
-    let ignore = false;
+    const controller = new AbortController();
+
     const load = async () => {
       setPublicLoading(true);
       setPublicError(null);
@@ -149,10 +152,11 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
         const result = await getPublicTeamRosterMembers({
           client: apiClient,
           path: { accountId, seasonId, teamSeasonId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -162,7 +166,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
         ) as PublicTeamRosterResponseType;
         setPublicRoster(data);
       } catch (err) {
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
         const message =
@@ -170,7 +174,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
         setPublicError(message);
         setPublicRoster(null);
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setPublicLoading(false);
         }
       }
@@ -179,17 +183,14 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
     void load();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountId, apiClient, hasPrivateAccess, seasonId, teamSeasonId]);
 
-  const getSettingValue = React.useCallback(
-    (key: AccountSettingKey) => {
-      const state = accountSettings?.find((setting) => setting.definition.key === key);
-      return Boolean(state?.effectiveValue ?? state?.value);
-    },
-    [accountSettings],
-  );
+  const getSettingValue = (key: AccountSettingKey) => {
+    const state = accountSettings?.find((setting) => setting.definition.key === key);
+    return Boolean(state?.effectiveValue ?? state?.value);
+  };
 
   const showWaiverStatus = getSettingValue('ShowWaiver');
   const showIdentificationStatus = getSettingValue('ShowIdentification');
@@ -201,66 +202,57 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   const effectiveLoading = hasPrivateAccess ? privateLoading : publicLoading;
   const effectiveError = hasPrivateAccess ? privateError : publicError;
 
-  const activePlayers = React.useMemo(() => {
-    const members = effectiveRosterData?.rosterMembers ?? [];
-    return [...members]
-      .filter((member) => !member.inactive)
-      .sort((a, b) => {
-        const aLast = a.player.contact.lastName || '';
-        const bLast = b.player.contact.lastName || '';
-        if (aLast !== bLast) {
-          return aLast.localeCompare(bLast);
-        }
-        const aFirst = a.player.contact.firstName || '';
-        const bFirst = b.player.contact.firstName || '';
-        if (aFirst !== bFirst) {
-          return aFirst.localeCompare(bFirst);
-        }
-        const aMiddle = a.player.contact.middleName || '';
-        const bMiddle = b.player.contact.middleName || '';
-        return aMiddle.localeCompare(bMiddle);
-      });
-  }, [effectiveRosterData?.rosterMembers]);
-
-  const publicPlayers = React.useMemo(() => {
-    const members: PublicRosterMemberType[] = publicRoster?.rosterMembers ?? [];
-    return [...members].sort((a, b) => {
-      const aLast = a.lastName || '';
-      const bLast = b.lastName || '';
+  const members = effectiveRosterData?.rosterMembers ?? [];
+  const activePlayers = [...members]
+    .filter((member) => !member.inactive)
+    .sort((a, b) => {
+      const aLast = a.player.contact.lastName || '';
+      const bLast = b.player.contact.lastName || '';
       if (aLast !== bLast) {
         return aLast.localeCompare(bLast);
       }
-      const aFirst = a.firstName || '';
-      const bFirst = b.firstName || '';
+      const aFirst = a.player.contact.firstName || '';
+      const bFirst = b.player.contact.firstName || '';
       if (aFirst !== bFirst) {
         return aFirst.localeCompare(bFirst);
       }
-      const aMiddle = a.middleName || '';
-      const bMiddle = b.middleName || '';
+      const aMiddle = a.player.contact.middleName || '';
+      const bMiddle = b.player.contact.middleName || '';
       return aMiddle.localeCompare(bMiddle);
     });
-  }, [publicRoster?.rosterMembers]);
 
-  const managerIds = React.useMemo(() => {
-    const managers = hasPrivateAccess ? privateManagers : [];
-    return new Set(managers.map((manager) => manager.contact.id));
-  }, [hasPrivateAccess, privateManagers]);
+  const publicMembers: PublicRosterMemberType[] = publicRoster?.rosterMembers ?? [];
+  const publicPlayers = [...publicMembers].sort((a, b) => {
+    const aLast = a.lastName || '';
+    const bLast = b.lastName || '';
+    if (aLast !== bLast) {
+      return aLast.localeCompare(bLast);
+    }
+    const aFirst = a.firstName || '';
+    const bFirst = b.firstName || '';
+    if (aFirst !== bFirst) {
+      return aFirst.localeCompare(bFirst);
+    }
+    const aMiddle = a.middleName || '';
+    const bMiddle = b.middleName || '';
+    return aMiddle.localeCompare(bMiddle);
+  });
 
-  const openPhotoDialog = React.useCallback(
-    (contact: BaseContactType) => {
-      if (!allowPhotoEdit) {
-        return;
-      }
-      setSelectedContact(contact);
-      setPhotoDialogOpen(true);
-    },
-    [allowPhotoEdit],
-  );
+  const managers = hasPrivateAccess ? privateManagers : [];
+  const managerIds = new Set(managers.map((manager) => manager.contact.id));
 
-  const closePhotoDialog = React.useCallback(() => {
+  const openPhotoDialog = (contact: BaseContactType) => {
+    if (!allowPhotoEdit) {
+      return;
+    }
+    setSelectedContact(contact);
+    setPhotoDialogOpen(true);
+  };
+
+  const closePhotoDialog = () => {
     setPhotoDialogOpen(false);
     setSelectedContact(null);
-  }, []);
+  };
 
   const handlePhotoUpdated = (updatedContact: ContactType) => {
     setPrivateRosterData((prev) => {

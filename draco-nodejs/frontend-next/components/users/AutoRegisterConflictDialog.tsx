@@ -43,7 +43,9 @@ const AutoRegisterConflictDialog: React.FC<AutoRegisterConflictDialogProps> = ({
       <DialogTitle>Auto Register Contact</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
-          <Alert severity="error">User already linked to another contact in this account.</Alert>
+          <Alert severity="error">
+            Users email already linked to {otherContactName || 'another contact'} in this account.
+          </Alert>
           <Typography>
             {contact.firstName} {contact.lastName} cannot be auto registered because this email is
             already linked to {otherContactName || 'another contact'} in this account.

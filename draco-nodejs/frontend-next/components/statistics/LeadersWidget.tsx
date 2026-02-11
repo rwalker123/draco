@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Alert,
@@ -182,48 +182,29 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   const teamSeasonIdForHref = teamProps?.teamSeasonId;
   const teamSeasonSeasonIdProp = teamProps?.seasonId;
 
-  const { resolvedLeagues, defaultLeagueId, fullStatisticsHref, teamIdFilter } = useMemo(() => {
-    if (isTeamVariant && teamSeasonIdForHref) {
-      const leaguesList =
-        teamLeaguesProp && teamLeaguesProp.length > 0
-          ? teamLeaguesProp
-          : teamLeagueIdProp
-            ? [{ id: teamLeagueIdProp, name: teamLeagueNameProp ?? 'League' }]
-            : [];
+  const resolvedLeagues =
+    isTeamVariant && teamSeasonIdForHref
+      ? teamLeaguesProp && teamLeaguesProp.length > 0
+        ? teamLeaguesProp
+        : teamLeagueIdProp
+          ? [{ id: teamLeagueIdProp, name: teamLeagueNameProp ?? 'League' }]
+          : []
+      : (leaguesProp ?? []);
 
-      return {
-        resolvedLeagues: leaguesList,
-        defaultLeagueId: teamLeagueIdProp ?? leaguesList[0]?.id ?? null,
-        fullStatisticsHref: `/account/${accountId}/seasons/${teamSeasonSeasonIdProp}/teams/${teamSeasonIdForHref}/stat-entry`,
-        teamIdFilter: teamIdProp ?? teamSeasonIdProp,
-      };
-    }
+  const defaultLeagueId =
+    isTeamVariant && teamSeasonIdForHref
+      ? (teamLeagueIdProp ?? resolvedLeagues[0]?.id ?? null)
+      : (resolvedLeagues[0]?.id ?? null);
 
-    const leaguesList = leaguesProp ?? [];
-    const defaultId = leaguesList[0]?.id ?? null;
-    const statsHref = seasonIdProp
-      ? `/account/${accountId}/statistics?seasonId=${seasonIdProp}`
-      : `/account/${accountId}/statistics`;
+  const fullStatisticsHref =
+    isTeamVariant && teamSeasonIdForHref
+      ? `/account/${accountId}/seasons/${teamSeasonSeasonIdProp}/teams/${teamSeasonIdForHref}/stat-entry`
+      : seasonIdProp
+        ? `/account/${accountId}/statistics?seasonId=${seasonIdProp}`
+        : `/account/${accountId}/statistics`;
 
-    return {
-      resolvedLeagues: leaguesList,
-      defaultLeagueId: defaultId,
-      fullStatisticsHref: statsHref,
-      teamIdFilter: undefined,
-    };
-  }, [
-    accountId,
-    isTeamVariant,
-    leaguesProp,
-    seasonIdProp,
-    teamLeaguesProp,
-    teamLeagueIdProp,
-    teamLeagueNameProp,
-    teamSeasonIdProp,
-    teamIdProp,
-    teamSeasonIdForHref,
-    teamSeasonSeasonIdProp,
-  ]);
+  const teamIdFilter =
+    isTeamVariant && teamSeasonIdForHref ? (teamIdProp ?? teamSeasonIdProp) : undefined;
 
   const apiClient = useApiClient();
   const title = props.title ?? (isTeamVariant ? DEFAULT_TEAM_TITLE : DEFAULT_ACCOUNT_TITLE);
@@ -247,35 +228,30 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
 
   const isTeamDataFetchable = !isTeamVariant || Boolean(teamIdFilter);
 
-  const requestSelectionLoad = useCallback(
-    (selection: WidgetSelection | null) => {
-      if (!selection || !isTeamDataFetchable) {
-        return;
-      }
+  const initialSelectionQueuedRef = useRef(false);
 
-      if (
-        model &&
-        model.selection.leagueId === selection.leagueId &&
-        model.selection.statType === selection.statType &&
-        model.selection.categoryKey === selection.categoryKey
-      ) {
-        return;
-      }
+  useEffect(() => {
+    if (initialSelectionQueuedRef.current || model || pendingSelection || !isTeamDataFetchable) {
+      return;
+    }
 
-      setPendingSelection(selection);
-    },
-    [isTeamDataFetchable, model],
-  );
+    const leagues =
+      isTeamVariant && teamSeasonIdForHref
+        ? teamLeaguesProp && teamLeaguesProp.length > 0
+          ? teamLeaguesProp
+          : teamLeagueIdProp
+            ? [{ id: teamLeagueIdProp, name: teamLeagueNameProp ?? 'League' }]
+            : []
+        : (leaguesProp ?? []);
 
-  const queueInitialSelection = useCallback(() => {
-    if (!resolvedLeagues[0]) {
-      return null;
+    if (!leagues[0]) {
+      return;
     }
 
     const initialLeagueId =
-      getRandomLeagueId(randomize, isTeamVariant, resolvedLeagues) ??
+      getRandomLeagueId(randomize, isTeamVariant, leagues) ??
       defaultLeagueId ??
-      resolvedLeagues[0]?.id ??
+      leagues[0]?.id ??
       null;
 
     const initialStatType =
@@ -292,43 +268,39 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
         : resolveCategoryForType(initialStatType, battingCategories, pitchingCategories);
 
     if (!initialLeagueId || !initialCategoryKey) {
-      return null;
+      return;
     }
 
-    return {
+    const initialSelection = {
       leagueId: initialLeagueId,
       statType: initialStatType,
       categoryKey: initialCategoryKey,
     };
+
+    initialSelectionQueuedRef.current = true;
+    setPendingSelection(initialSelection);
   }, [
+    isTeamDataFetchable,
+    model,
+    pendingSelection,
     battingCategories,
     defaultLeagueId,
     isTeamVariant,
     pitchingCategories,
     randomize,
-    resolvedLeagues,
+    teamSeasonIdForHref,
+    teamLeaguesProp,
+    teamLeagueIdProp,
+    teamLeagueNameProp,
+    leaguesProp,
   ]);
-
-  const initialSelectionQueuedRef = useRef(false);
-
-  useEffect(() => {
-    if (initialSelectionQueuedRef.current || model || pendingSelection || !isTeamDataFetchable) {
-      return;
-    }
-
-    const initialSelection = queueInitialSelection();
-    if (initialSelection) {
-      initialSelectionQueuedRef.current = true;
-      requestSelectionLoad(initialSelection);
-    }
-  }, [isTeamDataFetchable, model, pendingSelection, queueInitialSelection, requestSelectionLoad]);
 
   useEffect(() => {
     if (!pendingSelection) {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
     setLeadersErrorMessage(null);
     const selection = pendingSelection;
 
@@ -345,10 +317,10 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
             includeAllGameTypes: undefined,
             limit: leaderLimit,
           },
-          { client: apiClient },
+          { client: apiClient, signal: controller.signal },
         );
 
-        if (cancelled) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -365,14 +337,14 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
           setHasAnyLeaders(false);
         }
       } catch (err) {
-        if (cancelled) {
+        if (controller.signal.aborted) {
           return;
         }
         console.error('Failed to load statistical leaders:', err);
         const message = err instanceof Error ? err.message : 'Failed to load statistical leaders';
         setLeadersErrorMessage(message);
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setPendingSelection(null);
         }
       }
@@ -381,7 +353,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     void run();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [
     accountId,
@@ -401,12 +373,9 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     statType === 'batting' ? battingCategories : pitchingCategories;
 
   const displayedCategoryKey = model?.selection.categoryKey ?? activeCategories[0]?.key ?? null;
-  const displayedCategory = useMemo(() => {
-    if (!displayedCategoryKey) {
-      return null;
-    }
-    return activeCategories.find((category) => category.key === displayedCategoryKey) ?? null;
-  }, [activeCategories, displayedCategoryKey]);
+  const displayedCategory = displayedCategoryKey
+    ? (activeCategories.find((category) => category.key === displayedCategoryKey) ?? null)
+    : null;
 
   const tabCategoryKey = displayedCategory?.key ?? activeCategories[0]?.key ?? '';
   const displayedLeaders: LeaderRowType[] = model?.leaders ?? [];
@@ -415,67 +384,53 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   const showLeagueTabs = resolvedLeagues.length > 1;
   const isUpdatingSelection = pendingSelection !== null;
 
-  const buildSelection = useCallback(
-    (overrides: Partial<WidgetSelection> & { leagueId?: string | null }) => {
-      const fallbackLeagueId =
-        overrides.leagueId ??
-        model?.selection.leagueId ??
-        defaultLeagueId ??
-        resolvedLeagues[0]?.id ??
-        null;
-      const fallbackStatType = overrides.statType ?? model?.selection.statType ?? defaultStatType;
-      const preferredCategory =
-        overrides.categoryKey ??
-        categoryPreferences[fallbackStatType] ??
-        (fallbackStatType === model?.selection.statType ? model?.selection.categoryKey : undefined);
+  const triggerSelectionChange = (
+    overrides: Partial<WidgetSelection> & { leagueId?: string | null },
+  ) => {
+    const fallbackLeagueId =
+      overrides.leagueId ??
+      model?.selection.leagueId ??
+      defaultLeagueId ??
+      resolvedLeagues[0]?.id ??
+      null;
+    const fallbackStatType = overrides.statType ?? model?.selection.statType ?? defaultStatType;
+    const preferredCategory =
+      overrides.categoryKey ??
+      categoryPreferences[fallbackStatType] ??
+      (fallbackStatType === model?.selection.statType ? model?.selection.categoryKey : undefined);
 
-      const categoryKey = resolveCategoryForType(
-        fallbackStatType,
-        battingCategories,
-        pitchingCategories,
-        preferredCategory,
-      );
-
-      if (!fallbackLeagueId || !categoryKey) {
-        return null;
-      }
-
-      return {
-        leagueId: fallbackLeagueId,
-        statType: fallbackStatType,
-        categoryKey,
-      };
-    },
-    [
+    const categoryKey = resolveCategoryForType(
+      fallbackStatType,
       battingCategories,
-      categoryPreferences,
-      defaultLeagueId,
-      defaultStatType,
-      model,
       pitchingCategories,
-      resolvedLeagues,
-    ],
-  );
+      preferredCategory,
+    );
 
-  const triggerSelectionChange = useCallback(
-    (overrides: Partial<WidgetSelection> & { leagueId?: string | null }) => {
-      const selection = buildSelection(overrides);
-      if (selection) {
-        requestSelectionLoad(selection);
-      }
-    },
-    [buildSelection, requestSelectionLoad],
-  );
-
-  const resetTabsScrollLeft = useCallback((node: HTMLDivElement | null) => {
-    if (!node) {
+    if (!fallbackLeagueId || !categoryKey) {
       return;
     }
-    const scroller = node.querySelector<HTMLElement>('.MuiTabs-scroller');
-    if (scroller) {
-      scroller.scrollLeft = 0;
+
+    const selection = {
+      leagueId: fallbackLeagueId,
+      statType: fallbackStatType,
+      categoryKey,
+    };
+
+    if (!isTeamDataFetchable) {
+      return;
     }
-  }, []);
+
+    if (
+      model &&
+      model.selection.leagueId === selection.leagueId &&
+      model.selection.statType === selection.statType &&
+      model.selection.categoryKey === selection.categoryKey
+    ) {
+      return;
+    }
+
+    setPendingSelection(selection);
+  };
 
   const handleLeagueChange = (_: React.SyntheticEvent, value: string) => {
     if (!value) {
@@ -499,16 +454,34 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   };
 
   useEffect(() => {
-    resetTabsScrollLeft(leagueTabsRef.current);
-  }, [resetTabsScrollLeft, resolvedLeagues.length]);
+    const node = leagueTabsRef.current;
+    if (node) {
+      const scroller = node.querySelector<HTMLElement>('.MuiTabs-scroller');
+      if (scroller) {
+        scroller.scrollLeft = 0;
+      }
+    }
+  }, [resolvedLeagues.length]);
 
   useEffect(() => {
-    resetTabsScrollLeft(statTabsRef.current);
-  }, [resetTabsScrollLeft, statType]);
+    const node = statTabsRef.current;
+    if (node) {
+      const scroller = node.querySelector<HTMLElement>('.MuiTabs-scroller');
+      if (scroller) {
+        scroller.scrollLeft = 0;
+      }
+    }
+  }, [statType]);
 
   useEffect(() => {
-    resetTabsScrollLeft(categoryTabsRef.current);
-  }, [resetTabsScrollLeft, tabCategoryKey, activeCategories.length]);
+    const node = categoryTabsRef.current;
+    if (node) {
+      const scroller = node.querySelector<HTMLElement>('.MuiTabs-scroller');
+      if (scroller) {
+        scroller.scrollLeft = 0;
+      }
+    }
+  }, [tabCategoryKey, activeCategories.length]);
 
   useEffect(() => {
     if (hasAnyLeaders !== null && onHasLeaders) {

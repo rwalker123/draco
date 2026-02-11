@@ -39,7 +39,7 @@ const InformationMessagesManagementPage: React.FC = () => {
       return;
     }
 
-    let ignore = false;
+    const controller = new AbortController();
 
     const fetchData = async () => {
       setLoading(true);
@@ -50,10 +50,11 @@ const InformationMessagesManagementPage: React.FC = () => {
           client: apiClient,
           path: { accountId },
           query: { includeCurrentSeason: true },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -79,9 +80,13 @@ const InformationMessagesManagementPage: React.FC = () => {
         }
 
         const contextService = createContextDataService(token);
-        const teams = await contextService.fetchTeams(accountId, currentSeasonId);
+        const teams = await contextService.fetchTeams(
+          accountId,
+          currentSeasonId,
+          controller.signal,
+        );
 
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -89,7 +94,7 @@ const InformationMessagesManagementPage: React.FC = () => {
         setTeamOptions(mappedOptions);
         setDefaultTeamSeasonId(mappedOptions[0]?.teamSeasonId ?? null);
       } catch (err) {
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
         const message = err instanceof Error ? err.message : 'Failed to load information messages';
@@ -97,7 +102,7 @@ const InformationMessagesManagementPage: React.FC = () => {
         setTeamOptions([]);
         setDefaultTeamSeasonId(null);
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -106,7 +111,7 @@ const InformationMessagesManagementPage: React.FC = () => {
     void fetchData();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountId, apiClient, token]);
 

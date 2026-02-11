@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Alert, Fab, Snackbar, Stack } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import type { FieldType } from '@draco/shared-schemas';
@@ -31,14 +31,14 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleDialogSuccess = useCallback((result: { message: string; field: FieldType }) => {
+  const handleDialogSuccess = (result: { message: string; field: FieldType }) => {
     setSuccessMessage(result.message);
     viewRef.current?.refresh();
-  }, []);
+  };
 
-  const handleSnackbarClose = useCallback(() => {
+  const handleSnackbarClose = () => {
     setSuccessMessage(null);
-  }, []);
+  };
 
   return (
     <>

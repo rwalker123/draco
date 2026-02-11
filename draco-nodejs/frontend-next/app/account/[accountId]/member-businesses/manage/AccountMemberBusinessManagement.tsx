@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -72,34 +72,47 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
     setSuccess(null);
   };
 
-  const loadMemberBusinesses = useCallback(async () => {
-    try {
-      setLoading(true);
-      resetMessages();
-
-      const result = await listMemberBusinesses({
-        client: apiClient,
-        path: { accountId },
-        security: [{ type: 'http', scheme: 'bearer' }],
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult(result, 'Unable to load member businesses');
-      const businesses = data?.memberBusinesses ?? [];
-      setMemberBusinesses(businesses);
-    } catch (err) {
-      console.error('Failed to load member businesses', err);
-      const message = err instanceof Error ? err.message : 'Unable to load member businesses';
-      setError(message);
-      setMemberBusinesses([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, apiClient]);
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   useEffect(() => {
+    const controller = new AbortController();
+
+    const loadMemberBusinesses = async () => {
+      try {
+        setLoading(true);
+        resetMessages();
+
+        const result = await listMemberBusinesses({
+          client: apiClient,
+          path: { accountId },
+          security: [{ type: 'http', scheme: 'bearer' }],
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+        const data = unwrapApiResult(result, 'Unable to load member businesses');
+        const businesses = data?.memberBusinesses ?? [];
+        setMemberBusinesses(businesses);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load member businesses', err);
+        const message = err instanceof Error ? err.message : 'Unable to load member businesses';
+        setError(message);
+        setMemberBusinesses([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
     void loadMemberBusinesses();
-  }, [loadMemberBusinesses]);
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient, refreshCounter]);
 
   const handleEdit = (business: MemberBusinessType) => {
     setFormState({ open: true, business });
@@ -121,23 +134,22 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
     setSuccess(result.message);
     setError(null);
     handleFormClose();
-    void loadMemberBusinesses();
+    setRefreshCounter((c) => c + 1);
   };
 
   const handleDeleteSuccess = (result: MemberBusinessDeleteResult) => {
     setSuccess(result.message);
     setError(null);
     handleDeleteClose();
-    void loadMemberBusinesses();
+    setRefreshCounter((c) => c + 1);
   };
 
   const handleDialogError = (message: string) => {
     setError(message);
   };
 
-  const directorySetting = useMemo(
-    () => accountSettings?.find((setting) => setting.definition.key === 'ShowBusinessDirectory'),
-    [accountSettings],
+  const directorySetting = accountSettings?.find(
+    (setting) => setting.definition.key === 'ShowBusinessDirectory',
   );
 
   const handleDirectoryToggle = async (

@@ -86,7 +86,7 @@ const SocialMediaManagement: React.FC = () => {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const loadAccountData = async () => {
       try {
@@ -102,20 +102,21 @@ const SocialMediaManagement: React.FC = () => {
         const result = await getAccountById({
           client: apiClient,
           path: { accountId: accountIdStr },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         const data = unwrapApiResult(result, 'Failed to load account data');
         setAccount(data.account as AccountType);
       } catch (err) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         console.error('Failed to load account data', err);
         setAccount(null);
         setError('Failed to load account data');
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -124,7 +125,7 @@ const SocialMediaManagement: React.FC = () => {
     void loadAccountData();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, token, accountIdStr, apiClient]);
 

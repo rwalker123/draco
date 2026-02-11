@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   Container,
@@ -69,18 +69,20 @@ export function GolfLeagueSetupPage() {
   useEffect(() => {
     if (!accountId || !seasonId || !leagueSeasonId) return;
 
-    let isMounted = true;
+    const controller = new AbortController();
 
     const fetchSeasonData = async () => {
       try {
         const result = await getAccountSeason({
           client: apiClient,
           path: { accountId, seasonId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
+        if (controller.signal.aborted) return;
+
         const seasonResult = unwrapApiResult(result, 'Failed to fetch season');
-        if (!isMounted) return;
 
         if (seasonResult.name) {
           setSeasonName(seasonResult.name);
@@ -91,14 +93,14 @@ export function GolfLeagueSetupPage() {
           setLeagueName(league.league.name);
         }
       } catch {
-        // Silently fail - we'll just show generic title
+        if (controller.signal.aborted) return;
       }
     };
 
     void fetchSeasonData();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountId, seasonId, leagueSeasonId, apiClient]);
 
@@ -189,29 +191,26 @@ export function GolfLeagueSetupPage() {
     }
   };
 
-  const handleBreadcrumbNavigate = useCallback(
-    (href: string) => {
-      if (isDirtyRef.current) {
-        pendingNavigationRef.current = href;
-        setShowUnsavedChangesDialog(true);
-      } else {
-        router.push(href);
-      }
-    },
-    [router],
-  );
+  const handleBreadcrumbNavigate = (href: string) => {
+    if (isDirtyRef.current) {
+      pendingNavigationRef.current = href;
+      setShowUnsavedChangesDialog(true);
+    } else {
+      router.push(href);
+    }
+  };
 
-  const handleConfirmLeave = useCallback(() => {
+  const handleConfirmLeave = () => {
     setShowUnsavedChangesDialog(false);
     const href = pendingNavigationRef.current ?? backHref;
     pendingNavigationRef.current = null;
     router.push(href);
-  }, [router, backHref]);
+  };
 
-  const handleCancelLeave = useCallback(() => {
+  const handleCancelLeave = () => {
     pendingNavigationRef.current = null;
     setShowUnsavedChangesDialog(false);
-  }, []);
+  };
 
   if (!accountId || !seasonId || !leagueSeasonId) {
     return null;

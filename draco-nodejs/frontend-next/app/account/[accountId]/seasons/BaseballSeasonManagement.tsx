@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -95,46 +95,56 @@ const BaseballSeasonManagement: React.FC = () => {
   const canManageLeagues = hasSeasonManagementPermissions;
   const canExport = hasSeasonManagementPermissions;
 
-  const handleFeedbackClose = useCallback(() => {
+  const handleFeedbackClose = () => {
     setFeedback(null);
-  }, []);
+  };
 
-  const fetchSeasons = useCallback(async () => {
-    if (!accountIdStr) return;
-
-    setLoading(true);
-    try {
-      const result = await listAccountSeasons({
-        client: apiClient,
-        path: { accountId: accountIdStr },
-        throwOnError: false,
-      });
-
-      const seasonsData = unwrapApiResult(result, 'Failed to fetch seasons');
-      const mappedSeasons = mapSeasonsWithDivisions(seasonsData);
-      setSeasons(mappedSeasons);
-    } catch (err: unknown) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to load season data',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [accountIdStr, apiClient]);
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   useEffect(() => {
-    if (accountIdStr) {
-      fetchSeasons();
-    }
-  }, [accountIdStr, fetchSeasons]);
+    if (!accountIdStr) return;
 
-  // Targeted update functions for better UX
-  const addSeasonToState = useCallback((newSeason: Season) => {
+    const controller = new AbortController();
+
+    const fetchSeasons = async () => {
+      setLoading(true);
+      try {
+        const result = await listAccountSeasons({
+          client: apiClient,
+          path: { accountId: accountIdStr },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+        const seasonsData = unwrapApiResult(result, 'Failed to fetch seasons');
+        const mappedSeasons = mapSeasonsWithDivisions(seasonsData);
+        setSeasons(mappedSeasons);
+      } catch (err: unknown) {
+        if (controller.signal.aborted) return;
+        setFeedback({
+          severity: 'error',
+          message: err instanceof Error ? err.message : 'Failed to load season data',
+        });
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void fetchSeasons();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountIdStr, apiClient, refreshCounter]);
+
+  const addSeasonToState = (newSeason: Season) => {
     setSeasons((prev) => [...prev, newSeason]);
-  }, []);
+  };
 
-  const updateSeasonInState = useCallback((seasonUpdate: Partial<Season> & { id: string }) => {
+  const updateSeasonInState = (seasonUpdate: Partial<Season> & { id: string }) => {
     setSeasons((prev) =>
       prev.map((season) =>
         season.id === seasonUpdate.id
@@ -145,20 +155,20 @@ const BaseballSeasonManagement: React.FC = () => {
           : season,
       ),
     );
-  }, []);
+  };
 
-  const removeSeasonFromState = useCallback((seasonId: string) => {
+  const removeSeasonFromState = (seasonId: string) => {
     setSeasons((prev) => prev.filter((season) => season.id !== seasonId));
-  }, []);
+  };
 
-  const updateCurrentSeasonInState = useCallback((currentSeasonId: string) => {
+  const updateCurrentSeasonInState = (currentSeasonId: string) => {
     setSeasons((prev) =>
       prev.map((season) => ({
         ...season,
         isCurrent: season.id === currentSeasonId,
       })),
     );
-  }, []);
+  };
 
   const handleCreateSeason = async () => {
     if (!accountIdStr || !token || !formData.name.trim()) return;
@@ -271,7 +281,7 @@ const BaseballSeasonManagement: React.FC = () => {
       });
       setCopyDialogOpen(false);
       setSelectedSeason(null);
-      await fetchSeasons();
+      setRefreshCounter((c) => c + 1);
     } catch (err: unknown) {
       setFeedback({
         severity: 'error',

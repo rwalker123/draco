@@ -98,7 +98,7 @@ const ProfilePageClient: React.FC = () => {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchContact = async () => {
       setContactLoading(true);
@@ -108,13 +108,14 @@ const ProfilePageClient: React.FC = () => {
         const result = await getCurrentUserContact({
           client: apiClient,
           path: { accountId: currentAccount.id },
+          signal: controller.signal,
           throwOnError: false,
         });
 
         if (result.error) {
           const status = result.response?.status;
           if (status === 403) {
-            if (!cancelled) {
+            if (!controller.signal.aborted) {
               setContact(null);
               setContactError(null);
               setContactInfoMessage('Not a member of this organization.');
@@ -123,7 +124,7 @@ const ProfilePageClient: React.FC = () => {
             return;
           }
 
-          if (!cancelled) {
+          if (!controller.signal.aborted) {
             const message = result.error.message ?? CONTACT_ERROR_MESSAGE;
             setContact(null);
             setContactError(message);
@@ -135,14 +136,14 @@ const ProfilePageClient: React.FC = () => {
 
         const data = result.data as BaseContactType | null;
 
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setContact(data ?? null);
           setContactLoading(false);
           setContactError(null);
           setContactInfoMessage(null);
         }
       } catch (error) {
-        if (cancelled) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -164,7 +165,7 @@ const ProfilePageClient: React.FC = () => {
     void fetchContact();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [apiClient, currentAccount?.id, token]);
 
@@ -177,7 +178,7 @@ const ProfilePageClient: React.FC = () => {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchOrganizations = async () => {
       setOrganizationsLoading(true);
@@ -186,22 +187,23 @@ const ProfilePageClient: React.FC = () => {
       try {
         const result = await getMyAccounts({
           client: apiClient,
+          signal: controller.signal,
           throwOnError: false,
         });
 
         const data = unwrapApiResult(result, ORGANIZATIONS_ERROR_MESSAGE) as AccountType[];
 
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setOrganizations(Array.isArray(data) ? data : []);
         }
       } catch (error) {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           const message = error instanceof Error ? error.message : ORGANIZATIONS_ERROR_MESSAGE;
           setOrganizations([]);
           setOrganizationsError(message);
         }
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setOrganizationsLoading(false);
         }
       }
@@ -210,7 +212,7 @@ const ProfilePageClient: React.FC = () => {
     void fetchOrganizations();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [apiClient, token]);
 
@@ -220,7 +222,7 @@ const ProfilePageClient: React.FC = () => {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const currentTeams = teamsByAccountRef.current;
     const organizationsToFetch = organizations.filter(
@@ -250,6 +252,7 @@ const ProfilePageClient: React.FC = () => {
             const result = await getAccountUserTeams({
               client: apiClient,
               path: { accountId: organization.id },
+              signal: controller.signal,
               throwOnError: false,
             });
 
@@ -257,7 +260,7 @@ const ProfilePageClient: React.FC = () => {
               | TeamSeasonType[]
               | undefined;
 
-            if (cancelled) {
+            if (controller.signal.aborted) {
               return;
             }
 
@@ -273,7 +276,7 @@ const ProfilePageClient: React.FC = () => {
               },
             }));
           } catch (error) {
-            if (cancelled) {
+            if (controller.signal.aborted) {
               return;
             }
 
@@ -298,7 +301,7 @@ const ProfilePageClient: React.FC = () => {
     void fetchTeamsForOrganizations();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [apiClient, organizations, token]);
 

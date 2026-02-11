@@ -65,32 +65,30 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
   }, [listSponsors]);
 
   React.useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     const loadSponsors = async () => {
       try {
         setLoading(true);
         setError(null);
         const data = await listSponsorsRef.current();
-        if (!cancelled) {
-          setSponsors(data);
-        }
+        if (controller.signal.aborted) return;
+        setSponsors(data);
       } catch (err) {
-        if (!cancelled) {
-          const message = err instanceof Error ? err.message : 'Failed to load sponsors';
-          setError(message);
-        }
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load sponsors';
+        setError(message);
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
     };
 
-    loadSponsors();
+    void loadSponsors();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId]);
 
