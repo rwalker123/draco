@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HandoutType } from '@draco/shared-schemas';
 import { HandoutInput, HandoutService } from '../services/handoutService';
 import { useAuth } from '../context/AuthContext';
@@ -20,11 +20,22 @@ export type HandoutScope =
 export function useHandoutOperations(scope: HandoutScope) {
   const { token } = useAuth();
   const apiClient = useApiClient();
-  const service = new HandoutService(token, apiClient);
+  const serviceRef = useRef<HandoutService | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (token) {
+      serviceRef.current = new HandoutService(token, apiClient);
+    } else {
+      serviceRef.current = null;
+    }
+  }, [token, apiClient]);
   const [error, setError] = useState<string | null>(null);
 
   const listHandouts = async (): Promise<HandoutType[]> => {
+    const service = serviceRef.current;
+    if (!service) return [];
+
     if (scope.type === 'team') {
       return service.listTeamHandouts({ accountId: scope.accountId, teamId: scope.teamId });
     }
@@ -33,6 +44,9 @@ export function useHandoutOperations(scope: HandoutScope) {
   };
 
   const createHandout = async (input: HandoutInput): Promise<HandoutType> => {
+    const service = serviceRef.current;
+    if (!service) throw new Error('Service not initialized');
+
     setLoading(true);
     setError(null);
 
@@ -55,6 +69,9 @@ export function useHandoutOperations(scope: HandoutScope) {
   };
 
   const updateHandout = async (handoutId: string, input: HandoutInput): Promise<HandoutType> => {
+    const service = serviceRef.current;
+    if (!service) throw new Error('Service not initialized');
+
     setLoading(true);
     setError(null);
 
@@ -78,6 +95,9 @@ export function useHandoutOperations(scope: HandoutScope) {
   };
 
   const deleteHandout = async (handoutId: string): Promise<void> => {
+    const service = serviceRef.current;
+    if (!service) throw new Error('Service not initialized');
+
     setLoading(true);
     setError(null);
 

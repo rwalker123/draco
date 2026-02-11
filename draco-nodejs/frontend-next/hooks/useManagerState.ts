@@ -310,7 +310,26 @@ export const useManagerState = (options: UseManagerStateOptions): UseManagerStat
     const service = managerServiceRef.current;
     if (!accountId || !seasonId || !service) return;
 
-    const controller = new AbortController();
+    const requestId = `fetchByTeam-${accountId}-${seasonId}-${teamId}`;
+
+    if (
+      currentRequestRef.current?.id === requestId &&
+      !currentRequestRef.current.controller.signal.aborted
+    ) {
+      return;
+    }
+
+    if (currentRequestRef.current && currentRequestRef.current.id !== requestId) {
+      currentRequestRef.current.controller.abort();
+    }
+
+    currentRequestRef.current = {
+      id: requestId,
+      controller: new AbortController(),
+      type: 'fetchByTeam',
+    };
+
+    const currentRequest = currentRequestRef.current;
 
     setIsLoading(true);
     setError(null);
@@ -320,10 +339,14 @@ export const useManagerState = (options: UseManagerStateOptions): UseManagerStat
         accountId,
         seasonId,
         teamId,
-        controller.signal,
+        currentRequest.controller.signal,
       );
 
-      if (controller.signal.aborted) {
+      if (currentRequest.controller.signal.aborted) {
+        return;
+      }
+
+      if (currentRequestRef.current?.id !== requestId) {
         return;
       }
 
@@ -331,13 +354,20 @@ export const useManagerState = (options: UseManagerStateOptions): UseManagerStat
       setLeagueNames(result.leagueNames);
       setTeamNames(result.teamNames);
     } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
+      if (err instanceof Error && (err.name === 'AbortError' || err.name === 'CanceledError')) {
         return;
       }
 
-      setError(err instanceof Error ? err.message : 'Failed to fetch managers by team');
+      if (currentRequestRef.current?.id === requestId) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch managers by team');
+      }
     } finally {
-      setIsLoading(false);
+      if (
+        currentRequestRef.current?.id === requestId &&
+        !currentRequest.controller.signal.aborted
+      ) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -345,7 +375,26 @@ export const useManagerState = (options: UseManagerStateOptions): UseManagerStat
     const managerService = managerServiceRef.current;
     if (!accountId || !seasonId || !managerService) return;
 
-    const controller = new AbortController();
+    const requestId = `search-${accountId}-${seasonId}-${query}`;
+
+    if (
+      currentRequestRef.current?.id === requestId &&
+      !currentRequestRef.current.controller.signal.aborted
+    ) {
+      return;
+    }
+
+    if (currentRequestRef.current && currentRequestRef.current.id !== requestId) {
+      currentRequestRef.current.controller.abort();
+    }
+
+    currentRequestRef.current = {
+      id: requestId,
+      controller: new AbortController(),
+      type: 'search',
+    };
+
+    const currentRequest = currentRequestRef.current;
 
     setIsSearching(true);
     setError(null);
@@ -355,10 +404,14 @@ export const useManagerState = (options: UseManagerStateOptions): UseManagerStat
         accountId,
         seasonId,
         query,
-        controller.signal,
+        currentRequest.controller.signal,
       );
 
-      if (controller.signal.aborted) {
+      if (currentRequest.controller.signal.aborted) {
+        return;
+      }
+
+      if (currentRequestRef.current?.id !== requestId) {
         return;
       }
 
@@ -366,13 +419,20 @@ export const useManagerState = (options: UseManagerStateOptions): UseManagerStat
       setLeagueNames(result.leagueNames);
       setTeamNames(result.teamNames);
     } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
+      if (err instanceof Error && (err.name === 'AbortError' || err.name === 'CanceledError')) {
         return;
       }
 
-      setError(err instanceof Error ? err.message : 'Failed to search managers');
+      if (currentRequestRef.current?.id === requestId) {
+        setError(err instanceof Error ? err.message : 'Failed to search managers');
+      }
     } finally {
-      setIsSearching(false);
+      if (
+        currentRequestRef.current?.id === requestId &&
+        !currentRequest.controller.signal.aborted
+      ) {
+        setIsSearching(false);
+      }
     }
   };
 
