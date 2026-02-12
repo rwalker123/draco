@@ -94,6 +94,27 @@ export const passwordRateLimit = createRateLimit({
   skipSuccessfulRequests: true,
 });
 
+export const passwordResetRequestRateLimit = createRateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  message: 'Too many password reset requests, please try again in 15 minutes.',
+  skipSuccessfulRequests: false,
+});
+
+export const passwordResetVerifyRateLimit = createRateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many verification attempts, please try again in 15 minutes.',
+  skipSuccessfulRequests: false,
+});
+
+export const passwordResetCompleteRateLimit = createRateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: 'Too many password reset attempts, please try again in 15 minutes.',
+  skipSuccessfulRequests: false,
+});
+
 /**
  * General API rate limiting
  * 100 requests per 15 minutes per IP
