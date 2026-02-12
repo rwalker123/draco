@@ -42,6 +42,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [success, setSuccess] = useState('');
+  const [autoVerifyError, setAutoVerifyError] = useState<string | null>(null);
   const { requestReset, verifyToken, resetPassword, loading, error, setErrorMessage, clearError } =
     usePasswordResetService();
 
@@ -54,6 +55,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
     const controller = new AbortController();
 
     const autoVerifyTokenFromQuery = async () => {
+      setAutoVerifyError(null);
       setSuccess('');
       setToken(trimmedToken);
       setActiveStep(1);
@@ -75,11 +77,11 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
           setSuccess('Token verified successfully');
           setActiveStep(2);
         } else {
-          setErrorMessage('Invalid or expired reset token');
+          setAutoVerifyError('Invalid or expired reset token');
         }
       } catch (err: unknown) {
         if (controller.signal.aborted) return;
-        setErrorMessage(
+        setAutoVerifyError(
           err instanceof Error ? err.message : 'An error occurred while verifying the token.',
         );
       }
@@ -90,10 +92,11 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
     return () => {
       controller.abort();
     };
-  }, [initialToken, apiClient, setErrorMessage]);
+  }, [initialToken, apiClient]);
 
   const handleRequestReset = async () => {
     clearError();
+    setAutoVerifyError(null);
     setSuccess('');
 
     const trimmedEmail = email.trim();
@@ -112,6 +115,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
 
   const handleVerifyToken = async () => {
     clearError();
+    setAutoVerifyError(null);
     setSuccess('');
 
     const trimmedToken = token.trim();
@@ -130,6 +134,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
 
   const handleResetPassword = async () => {
     clearError();
+    setAutoVerifyError(null);
     setSuccess('');
 
     if (!newPassword || !confirmPassword) {
@@ -307,9 +312,9 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
             ))}
           </Stepper>
 
-          {error && (
+          {(error || autoVerifyError) && (
             <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
+              {error || autoVerifyError}
             </Alert>
           )}
 

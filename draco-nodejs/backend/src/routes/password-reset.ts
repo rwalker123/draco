@@ -7,7 +7,11 @@ import {
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { passwordResetRateLimit } from '../middleware/rateLimitMiddleware.js';
+import {
+  passwordResetRequestRateLimit,
+  passwordResetVerifyRateLimit,
+  passwordResetCompleteRateLimit,
+} from '../middleware/rateLimitMiddleware.js';
 
 const router = Router();
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -22,7 +26,7 @@ const PASSWORD_RESET_ACKNOWLEDGEMENT =
  */
 router.post(
   '/request',
-  passwordResetRateLimit,
+  passwordResetRequestRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { email, accountId } = PasswordResetRequestSchema.parse(req.body);
 
@@ -49,7 +53,7 @@ router.post(
  */
 router.post(
   '/verify',
-  passwordResetRateLimit,
+  passwordResetVerifyRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { token } = VerifyTokenRequestSchema.parse(req.body);
 
@@ -65,7 +69,7 @@ router.post(
  */
 router.post(
   '/reset',
-  passwordResetRateLimit,
+  passwordResetCompleteRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { token } = VerifyTokenRequestSchema.pick({ token: true }).parse({
       token: req.body?.token,
