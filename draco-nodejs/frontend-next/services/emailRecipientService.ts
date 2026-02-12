@@ -855,6 +855,7 @@ export class EmailRecipientService {
     groupType: RecipientGroupType,
     groupId: string,
     managersOnly: boolean,
+    signal?: AbortSignal,
   ): AsyncResult<GroupContact[]> {
     if (!accountId || accountId.trim() === '') {
       return {
@@ -905,6 +906,7 @@ export class EmailRecipientService {
             groupId,
             managersOnly: managersOnly ? 'true' : 'false',
           },
+          signal,
           throwOnError: false,
         });
 

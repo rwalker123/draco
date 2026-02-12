@@ -6,7 +6,6 @@ import React, {
   useState,
   useEffect,
   useLayoutEffect,
-  useCallback,
   useRef,
   ReactNode,
 } from 'react';
@@ -124,7 +123,7 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
   const isConnectingRef = useRef(false);
   const connectionRequestIdRef = useRef(0);
 
-  const disconnect = useCallback(() => {
+  const disconnect = () => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
@@ -148,9 +147,9 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
     setIsConnecting(false);
     setSessionState(null);
     setViewerCount(0);
-  }, []);
+  };
 
-  const connectWithTicket = useCallback((accountId: string, ticket: string) => {
+  const connectWithTicket = (accountId: string, ticket: string) => {
     const sseBaseUrl = process.env.NEXT_PUBLIC_SSE_URL || '';
     const baseSseUrl = `${sseBaseUrl}/api/accounts/${accountId}/golfer/live/subscribe`;
     const sseUrl = `${baseSseUrl}?ticket=${encodeURIComponent(ticket)}`;
@@ -158,7 +157,6 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
     const eventSource = new EventSource(sseUrl);
     eventSourceRef.current = eventSource;
 
-    // Set connection timeout
     connectionTimeoutRef.current = setTimeout(() => {
       if (!isConnectedRef.current && eventSourceRef.current) {
         eventSourceRef.current.close();
@@ -220,9 +218,7 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
       }
     };
 
-    eventSource.addEventListener('connected', () => {
-      // Connection acknowledged by server
-    });
+    eventSource.addEventListener('connected', () => {});
 
     eventSource.addEventListener('state', (event) => {
       const state = JSON.parse(event.data) as IndividualLiveScoringState;
@@ -301,9 +297,7 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
       setIsConnected(false);
     });
 
-    eventSource.addEventListener('ping', () => {
-      // Keep-alive ping received - no action needed
-    });
+    eventSource.addEventListener('ping', () => {});
 
     eventSource.addEventListener('viewer_count', (event) => {
       const data = JSON.parse(event.data) as { viewerCount: number };
@@ -316,126 +310,119 @@ export function IndividualLiveScoringProvider({ children }: IndividualLiveScorin
       eventSourceRef.current = null;
       currentAccountIdRef.current = null;
     });
-  }, []);
+  };
 
-  const connect = useCallback(
-    (accountId: string) => {
-      if (!token) {
-        setConnectionError('Authentication required');
-        return;
-      }
+  const connect = (accountId: string) => {
+    if (!token) {
+      setConnectionError('Authentication required');
+      return;
+    }
 
-      if (
-        currentAccountIdRef.current === accountId &&
-        (isConnectedRef.current || isConnectingRef.current)
-      ) {
-        return;
-      }
+    if (
+      currentAccountIdRef.current === accountId &&
+      (isConnectedRef.current || isConnectingRef.current)
+    ) {
+      return;
+    }
 
-      disconnect();
+    disconnect();
 
-      const requestId = ++connectionRequestIdRef.current;
+    const requestId = ++connectionRequestIdRef.current;
 
-      currentAccountIdRef.current = accountId;
-      isConnectingRef.current = true;
-      setIsConnecting(true);
-      setConnectionError(null);
+    currentAccountIdRef.current = accountId;
+    isConnectingRef.current = true;
+    setIsConnecting(true);
+    setConnectionError(null);
 
-      getIndividualLiveScoringTicket({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      })
-        .then((result) => {
-          if (
-            currentAccountIdRef.current !== accountId ||
-            connectionRequestIdRef.current !== requestId
-          ) {
-            return;
-          }
+    getIndividualLiveScoringTicket({
+      client: apiClient,
+      path: { accountId },
+      throwOnError: false,
+    })
+      .then((result) => {
+        if (
+          currentAccountIdRef.current !== accountId ||
+          connectionRequestIdRef.current !== requestId
+        ) {
+          return;
+        }
 
-          if (result.error || !result.data?.ticket) {
-            isConnectingRef.current = false;
-            setIsConnecting(false);
-            setConnectionError('Failed to get connection ticket');
-            return;
-          }
-
-          connectWithTicket(accountId, result.data.ticket);
-        })
-        .catch(() => {
-          if (
-            currentAccountIdRef.current !== accountId ||
-            connectionRequestIdRef.current !== requestId
-          ) {
-            return;
-          }
+        if (result.error || !result.data?.ticket) {
           isConnectingRef.current = false;
           setIsConnecting(false);
           setConnectionError('Failed to get connection ticket');
-        });
-    },
-    [token, apiClient, disconnect, connectWithTicket],
-  );
+          return;
+        }
 
-  // useLayoutEffect runs synchronously after render but before effects,
-  // ensuring connectRef is available for the reconnect timeout callback
+        connectWithTicket(accountId, result.data.ticket);
+      })
+      .catch(() => {
+        if (
+          currentAccountIdRef.current !== accountId ||
+          connectionRequestIdRef.current !== requestId
+        ) {
+          return;
+        }
+        isConnectingRef.current = false;
+        setIsConnecting(false);
+        setConnectionError('Failed to get connection ticket');
+      });
+  };
+
   useLayoutEffect(() => {
     connectRef.current = connect;
-  }, [connect]);
+  });
 
-  // stableConnect provides a stable function reference that doesn't change across re-renders,
-  // preventing unnecessary disconnect/reconnect cycles when connect's dependencies change
-  const stableConnect = useCallback((accountId: string) => {
+  const stableConnect = (accountId: string) => {
     if (connectRef.current) {
       connectRef.current(accountId);
     }
-  }, []);
+  };
 
-  const stableDisconnect = useCallback(() => {
+  const stableDisconnect = () => {
     disconnect();
-  }, [disconnect]);
+  };
 
-  const onScoreUpdate = useCallback((callback: (event: ScoreUpdateEvent) => void) => {
+  const onScoreUpdate = (callback: (event: ScoreUpdateEvent) => void) => {
     scoreUpdateCallbacks.current.add(callback);
     return () => {
       scoreUpdateCallbacks.current.delete(callback);
     };
-  }, []);
+  };
 
-  const onSessionStarted = useCallback((callback: (event: SessionStartedEvent) => void) => {
+  const onSessionStarted = (callback: (event: SessionStartedEvent) => void) => {
     sessionStartedCallbacks.current.add(callback);
     return () => {
       sessionStartedCallbacks.current.delete(callback);
     };
-  }, []);
+  };
 
-  const onSessionFinalized = useCallback((callback: (event: SessionFinalizedEvent) => void) => {
+  const onSessionFinalized = (callback: (event: SessionFinalizedEvent) => void) => {
     sessionFinalizedCallbacks.current.add(callback);
     return () => {
       sessionFinalizedCallbacks.current.delete(callback);
     };
-  }, []);
+  };
 
-  const onSessionStopped = useCallback((callback: (event: SessionStoppedEvent) => void) => {
+  const onSessionStopped = (callback: (event: SessionStoppedEvent) => void) => {
     sessionStoppedCallbacks.current.add(callback);
     return () => {
       sessionStoppedCallbacks.current.delete(callback);
     };
-  }, []);
+  };
 
-  const onHoleAdvanced = useCallback((callback: (event: HoleAdvancedEvent) => void) => {
+  const onHoleAdvanced = (callback: (event: HoleAdvancedEvent) => void) => {
     holeAdvancedCallbacks.current.add(callback);
     return () => {
       holeAdvancedCallbacks.current.delete(callback);
     };
-  }, []);
+  };
 
   useEffect(() => {
     return () => {
       disconnect();
     };
-  }, [disconnect]);
+  }, []);
 
   const value: IndividualLiveScoringContextValue = {
     isConnected,

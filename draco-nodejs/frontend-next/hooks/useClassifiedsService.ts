@@ -102,6 +102,7 @@ export function usePlayersWantedClassifieds(accountId: string) {
 
   const listPlayersWanted = async (
     params?: Partial<PlayerClassifiedSearchQueryType>,
+    signal?: AbortSignal,
   ): Promise<ClassifiedsOperationResult<PlayersWantedClassifiedPagedType>> => {
     return runOperation<PlayersWantedClassifiedPagedType>({
       defaultError: 'Failed to load Players Wanted classifieds',
@@ -110,6 +111,7 @@ export function usePlayersWantedClassifieds(accountId: string) {
           client: apiClient,
           path: { accountId },
           query: buildListQuery(params),
+          signal,
           throwOnError: false,
         });
 

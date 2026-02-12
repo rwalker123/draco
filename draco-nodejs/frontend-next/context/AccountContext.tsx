@@ -143,26 +143,6 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     persistAccount(normalized);
   };
 
-  const resolveAccountDetails = async (accountId: string, signal?: AbortSignal) => {
-    const result = await getAccountById({
-      client: apiClient,
-      path: { accountId },
-      signal,
-      throwOnError: false,
-    });
-
-    const data = unwrapApiResult(result, 'Failed to fetch account');
-    const account = data.account;
-
-    return {
-      id: account.id,
-      name: account.name,
-      accountType: account.configuration?.accountType?.name ?? undefined,
-      timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
-      timeZoneSource: 'account' as const,
-    };
-  };
-
   const hasRoles = (userRoles?.contactRoles?.length ?? 0) > 0;
   const accountId = userRoles?.accountId ?? null;
 
@@ -183,10 +163,25 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     requestedAccountIdRef.current = accountId;
     const controller = new AbortController();
 
-    resolveAccountDetails(accountId, controller.signal)
-      .then((account) => {
+    getAccountById({
+      client: apiClient,
+      path: { accountId },
+      signal: controller.signal,
+      throwOnError: false,
+    })
+      .then((result) => {
         if (controller.signal.aborted) return;
-        handleSetCurrentAccount(account);
+        const data = unwrapApiResult(result, 'Failed to fetch account');
+        const account = data.account;
+        const normalized = normalizeAccountShape({
+          id: account.id,
+          name: account.name,
+          accountType: account.configuration?.accountType?.name ?? undefined,
+          timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
+          timeZoneSource: 'account' as const,
+        });
+        setFetchedAccount(normalized);
+        persistAccount(normalized);
         setError(null);
       })
       .catch((err) => {

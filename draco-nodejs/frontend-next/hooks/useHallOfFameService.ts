@@ -165,7 +165,7 @@ export interface HallOfFameService {
     nominationId: string,
     payload: HofNominationInductType,
   ) => Promise<HofMemberType>;
-  getNominationSetup: () => Promise<HofNominationSetupType>;
+  getNominationSetup: (signal?: AbortSignal) => Promise<HofNominationSetupType>;
   updateNominationSetup: (payload: UpdateHofNominationSetupType) => Promise<HofNominationSetupType>;
 }
 
@@ -360,16 +360,20 @@ export function useHallOfFameService(accountId: string): HallOfFameService {
     [accountId, apiClient],
   );
 
-  const getNominationSetup = useCallback(async (): Promise<HofNominationSetupType> => {
-    const result = await getAccountHallOfFameNominationSetup({
-      client: apiClient,
-      path: { accountId },
-      throwOnError: false,
-    });
+  const getNominationSetup = useCallback(
+    async (signal?: AbortSignal): Promise<HofNominationSetupType> => {
+      const result = await getAccountHallOfFameNominationSetup({
+        client: apiClient,
+        path: { accountId },
+        signal,
+        throwOnError: false,
+      });
 
-    const raw = unwrapApiResult(result, 'Failed to load nomination settings.');
-    return normalizeNominationSetup(raw);
-  }, [accountId, apiClient]);
+      const raw = unwrapApiResult(result, 'Failed to load nomination settings.');
+      return normalizeNominationSetup(raw);
+    },
+    [accountId, apiClient],
+  );
 
   const updateNominationSetup = useCallback(
     async (payload: UpdateHofNominationSetupType): Promise<HofNominationSetupType> => {

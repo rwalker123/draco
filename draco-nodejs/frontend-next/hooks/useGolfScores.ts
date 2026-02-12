@@ -25,40 +25,55 @@ export type GolfScoreServiceResult<T> =
   | { success: false; error: string };
 
 export interface GolfScoreService {
-  getMatchScores: (matchId: string) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
+  getMatchScores: (
+    matchId: string,
+    signal?: AbortSignal,
+  ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
   getTeamMatchScores: (
     matchId: string,
     teamId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
   getPlayerScores: (
     contactId: string,
     limit?: number,
+    signal?: AbortSignal,
   ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
   getPlayerSeasonScores: (
     contactId: string,
     seasonId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfScoreServiceResult<PlayerSeasonScoresResponseType>>;
-  getScore: (scoreId: string) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType>>;
+  getScore: (
+    scoreId: string,
+    signal?: AbortSignal,
+  ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType>>;
   submitMatchResults: (
     matchId: string,
     payload: SubmitMatchResultsType,
+    signal?: AbortSignal,
   ) => Promise<GolfScoreServiceResult<GolfMatchType>>;
-  deleteMatchScores: (matchId: string) => Promise<GolfScoreServiceResult<void>>;
+  deleteMatchScores: (
+    matchId: string,
+    signal?: AbortSignal,
+  ) => Promise<GolfScoreServiceResult<void>>;
   getBatchCourseHandicaps: (
     golferIds: string[],
     teeId: string,
     holesPlayed?: number,
+    signal?: AbortSignal,
   ) => Promise<GolfScoreServiceResult<BatchCourseHandicapResponse>>;
 }
 
 export function useGolfScores(accountId: string): GolfScoreService {
   const apiClient = useApiClient();
 
-  const getMatchScores: GolfScoreService['getMatchScores'] = async (matchId) => {
+  const getMatchScores: GolfScoreService['getMatchScores'] = async (matchId, signal) => {
     try {
       const result = await getGolfMatchScores({
         client: apiClient,
         path: { accountId, matchId },
+        signal,
         throwOnError: false,
       });
 
@@ -211,12 +226,14 @@ export function useGolfScores(accountId: string): GolfScoreService {
     golferIds,
     teeId,
     holesPlayed = 18,
+    signal,
   ) => {
     try {
       const result = await calculateBatchCourseHandicaps({
         client: apiClient,
         path: { accountId },
         body: { golferIds, teeId, holesPlayed },
+        signal,
         throwOnError: false,
       });
 

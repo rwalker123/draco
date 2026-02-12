@@ -1,14 +1,6 @@
 'use client';
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  ReactNode,
-} from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useAccount } from './AccountContext';
 import { useApiClient } from '../hooks/useApiClient';
@@ -115,7 +107,7 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
   const isConnectedRef = useRef(false);
   const isConnectingRef = useRef(false);
 
-  const disconnect = useCallback(() => {
+  const disconnect = () => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
@@ -140,315 +132,306 @@ export function LiveScoringProvider({ children }: LiveScoringProviderProps) {
     setSessionState(null);
     setViewerCount(0);
     setScorerCount(0);
-  }, []);
+  };
 
-  const connectWithTicket = useCallback(
-    async (matchId: string, ticket: string) => {
-      if (!currentAccount?.id) return;
+  const connectWithTicket = async (matchId: string, ticket: string) => {
+    if (!currentAccount?.id) return;
 
-      const sseBaseUrl = process.env.NEXT_PUBLIC_SSE_URL || '';
-      const baseSseUrl = `${sseBaseUrl}/api/accounts/${currentAccount.id}/golf/matches/${matchId}/live/subscribe`;
-      const sseUrl = `${baseSseUrl}?ticket=${encodeURIComponent(ticket)}`;
+    const sseBaseUrl = process.env.NEXT_PUBLIC_SSE_URL || '';
+    const baseSseUrl = `${sseBaseUrl}/api/accounts/${currentAccount.id}/golf/matches/${matchId}/live/subscribe`;
+    const sseUrl = `${baseSseUrl}?ticket=${encodeURIComponent(ticket)}`;
 
-      const eventSource = new EventSource(sseUrl);
-      eventSourceRef.current = eventSource;
+    const eventSource = new EventSource(sseUrl);
+    eventSourceRef.current = eventSource;
 
-      // Set connection timeout
-      connectionTimeoutRef.current = setTimeout(() => {
-        if (!isConnectedRef.current && eventSourceRef.current) {
-          eventSourceRef.current.close();
-          eventSourceRef.current = null;
-          isConnectingRef.current = false;
-          setIsConnecting(false);
-          setConnectionError('Connection timed out. Please try again.');
-        }
-      }, connectionTimeoutMs);
-
-      eventSource.onopen = () => {
-        if (connectionTimeoutRef.current) {
-          clearTimeout(connectionTimeoutRef.current);
-          connectionTimeoutRef.current = null;
-        }
+    connectionTimeoutRef.current = setTimeout(() => {
+      if (!isConnectedRef.current && eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
         isConnectingRef.current = false;
-        isConnectedRef.current = true;
         setIsConnecting(false);
-        setIsConnected(true);
-        setConnectionError(null);
-        reconnectAttempts.current = 0;
-      };
+        setConnectionError('Connection timed out. Please try again.');
+      }
+    }, connectionTimeoutMs);
 
-      eventSource.onerror = () => {
-        if (connectionTimeoutRef.current) {
-          clearTimeout(connectionTimeoutRef.current);
-          connectionTimeoutRef.current = null;
-        }
-        isConnectedRef.current = false;
-        isConnectingRef.current = false;
-        setIsConnected(false);
-        setIsConnecting(false);
+    eventSource.onopen = () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
+      isConnectingRef.current = false;
+      isConnectedRef.current = true;
+      setIsConnecting(false);
+      setIsConnected(true);
+      setConnectionError(null);
+      reconnectAttempts.current = 0;
+    };
 
-        if (currentMatchIdRef.current !== matchId) {
-          eventSource.close();
-          return;
-        }
+    eventSource.onerror = () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
+      isConnectedRef.current = false;
+      isConnectingRef.current = false;
+      setIsConnected(false);
+      setIsConnecting(false);
 
-        if (reconnectAttempts.current < maxReconnectAttempts) {
-          const delay = baseReconnectDelay * Math.pow(2, reconnectAttempts.current);
-          reconnectAttempts.current++;
-          setConnectionError(`Connection lost. Reconnecting in ${delay / 1000}s...`);
+      if (currentMatchIdRef.current !== matchId) {
+        eventSource.close();
+        return;
+      }
 
-          eventSource.close();
-          eventSourceRef.current = null;
+      if (reconnectAttempts.current < maxReconnectAttempts) {
+        const delay = baseReconnectDelay * Math.pow(2, reconnectAttempts.current);
+        reconnectAttempts.current++;
+        setConnectionError(`Connection lost. Reconnecting in ${delay / 1000}s...`);
 
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (currentMatchIdRef.current === matchId && connectRef.current) {
-              connectRef.current(matchId, currentRoleRef.current);
-            }
-          }, delay);
+        eventSource.close();
+        eventSourceRef.current = null;
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (currentMatchIdRef.current === matchId && connectRef.current) {
+            connectRef.current(matchId, currentRoleRef.current);
+          }
+        }, delay);
+      } else {
+        eventSource.close();
+        eventSourceRef.current = null;
+        currentMatchIdRef.current = null;
+        setConnectionError(
+          'Unable to connect to live scoring. Please check your connection and try again.',
+        );
+      }
+    };
+
+    eventSource.addEventListener('connected', (event) => {
+      const data = safeJsonParse<{ message: string }>(event.data, 'connected');
+      if (!data) return;
+      console.log('SSE connected:', data);
+    });
+
+    eventSource.addEventListener('state', (event) => {
+      const state = safeJsonParse<LiveScoringState>(event.data, 'state');
+      if (!state) return;
+      setSessionState(state);
+      if (state.viewerCount !== undefined) {
+        setViewerCount(state.viewerCount);
+      }
+    });
+
+    eventSource.addEventListener('session_started', (event) => {
+      const data = safeJsonParse<SessionStartedEvent>(event.data, 'session_started');
+      if (!data) return;
+      sessionStartedCallbacks.current.forEach((cb) => cb(data));
+    });
+
+    eventSource.addEventListener('score_update', (event) => {
+      const data = safeJsonParse<ScoreUpdateEvent>(event.data, 'score_update');
+      if (!data) return;
+
+      setSessionState((prev) => {
+        if (!prev) return prev;
+
+        const existingScoreIndex = prev.scores.findIndex(
+          (s) => s.golferId === data.golferId && s.holeNumber === data.holeNumber,
+        );
+
+        let updatedScores: LiveHoleScore[];
+        if (existingScoreIndex >= 0) {
+          updatedScores = [...prev.scores];
+          updatedScores[existingScoreIndex] = {
+            ...updatedScores[existingScoreIndex],
+            score: data.score,
+            enteredBy: data.enteredBy,
+            enteredAt: data.timestamp,
+          };
         } else {
-          eventSource.close();
-          eventSourceRef.current = null;
-          currentMatchIdRef.current = null;
-          setConnectionError(
-            'Unable to connect to live scoring. Please check your connection and try again.',
-          );
-        }
-      };
-
-      eventSource.addEventListener('connected', (event) => {
-        const data = safeJsonParse<{ message: string }>(event.data, 'connected');
-        if (!data) return;
-        console.log('SSE connected:', data);
-      });
-
-      eventSource.addEventListener('state', (event) => {
-        const state = safeJsonParse<LiveScoringState>(event.data, 'state');
-        if (!state) return;
-        setSessionState(state);
-        if (state.viewerCount !== undefined) {
-          setViewerCount(state.viewerCount);
-        }
-      });
-
-      eventSource.addEventListener('session_started', (event) => {
-        const data = safeJsonParse<SessionStartedEvent>(event.data, 'session_started');
-        if (!data) return;
-        sessionStartedCallbacks.current.forEach((cb) => cb(data));
-      });
-
-      eventSource.addEventListener('score_update', (event) => {
-        const data = safeJsonParse<ScoreUpdateEvent>(event.data, 'score_update');
-        if (!data) return;
-
-        setSessionState((prev) => {
-          if (!prev) return prev;
-
-          const existingScoreIndex = prev.scores.findIndex(
-            (s) => s.golferId === data.golferId && s.holeNumber === data.holeNumber,
-          );
-
-          let updatedScores: LiveHoleScore[];
-          if (existingScoreIndex >= 0) {
-            updatedScores = [...prev.scores];
-            updatedScores[existingScoreIndex] = {
-              ...updatedScores[existingScoreIndex],
+          updatedScores = [
+            ...prev.scores,
+            {
+              id: `temp-${Date.now()}`,
+              golferId: data.golferId,
+              golferName: data.golferName,
+              teamId: data.teamId,
+              holeNumber: data.holeNumber,
               score: data.score,
               enteredBy: data.enteredBy,
               enteredAt: data.timestamp,
-            };
-          } else {
-            updatedScores = [
-              ...prev.scores,
-              {
-                id: `temp-${Date.now()}`,
-                golferId: data.golferId,
-                golferName: data.golferName,
-                teamId: data.teamId,
-                holeNumber: data.holeNumber,
-                score: data.score,
-                enteredBy: data.enteredBy,
-                enteredAt: data.timestamp,
-              },
-            ];
-          }
+            },
+          ];
+        }
 
-          return {
-            ...prev,
-            scores: updatedScores,
-            teamPoints: data.teamPoints ?? prev.teamPoints,
-          };
-        });
-
-        scoreUpdateCallbacks.current.forEach((cb) => cb(data));
+        return {
+          ...prev,
+          scores: updatedScores,
+          teamPoints: data.teamPoints ?? prev.teamPoints,
+        };
       });
 
-      eventSource.addEventListener('hole_advanced', (event) => {
-        const data = safeJsonParse<HoleAdvancedEvent>(event.data, 'hole_advanced');
-        if (!data) return;
-        setSessionState((prev) => (prev ? { ...prev, currentHole: data.holeNumber } : prev));
-        holeAdvancedCallbacks.current.forEach((cb) => cb(data));
-      });
+      scoreUpdateCallbacks.current.forEach((cb) => cb(data));
+    });
 
-      eventSource.addEventListener('session_finalized', (event) => {
-        const data = safeJsonParse<SessionFinalizedEvent>(event.data, 'session_finalized');
-        if (!data) return;
-        setSessionState((prev) => (prev ? { ...prev, status: 'finalized' } : prev));
-        sessionFinalizedCallbacks.current.forEach((cb) => cb(data));
-        eventSource.close();
-        eventSourceRef.current = null;
-        currentMatchIdRef.current = null;
-        isConnectedRef.current = false;
-        setIsConnected(false);
-      });
+    eventSource.addEventListener('hole_advanced', (event) => {
+      const data = safeJsonParse<HoleAdvancedEvent>(event.data, 'hole_advanced');
+      if (!data) return;
+      setSessionState((prev) => (prev ? { ...prev, currentHole: data.holeNumber } : prev));
+      holeAdvancedCallbacks.current.forEach((cb) => cb(data));
+    });
 
-      eventSource.addEventListener('session_stopped', (event) => {
-        const data = safeJsonParse<SessionStoppedEvent>(event.data, 'session_stopped');
-        if (!data) return;
-        setSessionState((prev) => (prev ? { ...prev, status: 'stopped' } : prev));
-        sessionStoppedCallbacks.current.forEach((cb) => cb(data));
-        eventSource.close();
-        eventSourceRef.current = null;
-        currentMatchIdRef.current = null;
-        isConnectedRef.current = false;
-        setIsConnected(false);
-      });
+    eventSource.addEventListener('session_finalized', (event) => {
+      const data = safeJsonParse<SessionFinalizedEvent>(event.data, 'session_finalized');
+      if (!data) return;
+      setSessionState((prev) => (prev ? { ...prev, status: 'finalized' } : prev));
+      sessionFinalizedCallbacks.current.forEach((cb) => cb(data));
+      eventSource.close();
+      eventSourceRef.current = null;
+      currentMatchIdRef.current = null;
+      isConnectedRef.current = false;
+      setIsConnected(false);
+    });
 
-      eventSource.addEventListener('ping', () => {
-        // Keep-alive ping received - no action needed
-      });
+    eventSource.addEventListener('session_stopped', (event) => {
+      const data = safeJsonParse<SessionStoppedEvent>(event.data, 'session_stopped');
+      if (!data) return;
+      setSessionState((prev) => (prev ? { ...prev, status: 'stopped' } : prev));
+      sessionStoppedCallbacks.current.forEach((cb) => cb(data));
+      eventSource.close();
+      eventSourceRef.current = null;
+      currentMatchIdRef.current = null;
+      isConnectedRef.current = false;
+      setIsConnected(false);
+    });
 
-      eventSource.addEventListener('viewer_count', (event) => {
-        const data = safeJsonParse<{ viewerCount: number }>(event.data, 'viewer_count');
-        if (!data) return;
-        setViewerCount(data.viewerCount);
-      });
+    eventSource.addEventListener('ping', () => {});
 
-      eventSource.addEventListener('scorer_count', (event) => {
-        const data = safeJsonParse<{ scorerCount: number }>(event.data, 'scorer_count');
-        if (!data) return;
-        setScorerCount(data.scorerCount);
-      });
+    eventSource.addEventListener('viewer_count', (event) => {
+      const data = safeJsonParse<{ viewerCount: number }>(event.data, 'viewer_count');
+      if (!data) return;
+      setViewerCount(data.viewerCount);
+    });
 
-      eventSource.addEventListener('no_session', () => {
-        setConnectionError('No active live scoring session found. The session may have ended.');
-        eventSource.close();
-        eventSourceRef.current = null;
-        currentMatchIdRef.current = null;
-      });
-    },
-    [currentAccount],
-  );
+    eventSource.addEventListener('scorer_count', (event) => {
+      const data = safeJsonParse<{ scorerCount: number }>(event.data, 'scorer_count');
+      if (!data) return;
+      setScorerCount(data.scorerCount);
+    });
 
-  const connect = useCallback(
-    (matchId: string, role: GolfSseRoleType = 'watcher') => {
-      if (!token || !currentAccount?.id) {
-        setConnectionError('Authentication required');
-        return;
-      }
+    eventSource.addEventListener('no_session', () => {
+      setConnectionError('No active live scoring session found. The session may have ended.');
+      eventSource.close();
+      eventSourceRef.current = null;
+      currentMatchIdRef.current = null;
+    });
+  };
 
-      if (
-        currentMatchIdRef.current === matchId &&
-        (isConnectedRef.current || isConnectingRef.current)
-      ) {
-        return;
-      }
+  const connect = (matchId: string, role: GolfSseRoleType = 'watcher') => {
+    if (!token || !currentAccount?.id) {
+      setConnectionError('Authentication required');
+      return;
+    }
 
-      disconnect();
+    if (
+      currentMatchIdRef.current === matchId &&
+      (isConnectedRef.current || isConnectingRef.current)
+    ) {
+      return;
+    }
 
-      currentMatchIdRef.current = matchId;
-      currentRoleRef.current = role;
-      isConnectingRef.current = true;
-      setIsConnecting(true);
-      setConnectionError(null);
+    disconnect();
 
-      getLiveScoringTicket({
-        client: apiClient,
-        path: { accountId: currentAccount.id, matchId },
-        body: { role },
-        throwOnError: false,
-      })
-        .then((result) => {
-          if (currentMatchIdRef.current !== matchId) {
-            return;
-          }
+    currentMatchIdRef.current = matchId;
+    currentRoleRef.current = role;
+    isConnectingRef.current = true;
+    setIsConnecting(true);
+    setConnectionError(null);
 
-          if (result.error || !result.data?.ticket) {
-            isConnectingRef.current = false;
-            setIsConnecting(false);
-            setConnectionError('Failed to get connection ticket');
-            return;
-          }
+    getLiveScoringTicket({
+      client: apiClient,
+      path: { accountId: currentAccount.id, matchId },
+      body: { role },
+      throwOnError: false,
+    })
+      .then((result) => {
+        if (currentMatchIdRef.current !== matchId) {
+          return;
+        }
 
-          connectWithTicket(matchId, result.data.ticket);
-        })
-        .catch(() => {
-          if (currentMatchIdRef.current !== matchId) {
-            return;
-          }
+        if (result.error || !result.data?.ticket) {
           isConnectingRef.current = false;
           setIsConnecting(false);
           setConnectionError('Failed to get connection ticket');
-        });
-    },
-    [token, currentAccount, apiClient, disconnect, connectWithTicket],
-  );
+          return;
+        }
+
+        connectWithTicket(matchId, result.data.ticket);
+      })
+      .catch(() => {
+        if (currentMatchIdRef.current !== matchId) {
+          return;
+        }
+        isConnectingRef.current = false;
+        setIsConnecting(false);
+        setConnectionError('Failed to get connection ticket');
+      });
+  };
 
   useEffect(() => {
     connectRef.current = connect;
-  }, [connect]);
+  });
 
   useEffect(() => {
     disconnectRef.current = disconnect;
-  }, [disconnect]);
+  });
 
-  const stableConnect = useCallback((matchId: string, role?: GolfSseRoleType) => {
+  const stableConnect = (matchId: string, role?: GolfSseRoleType) => {
     connectRef.current?.(matchId, role);
-  }, []);
+  };
 
-  const stableDisconnect = useCallback(() => {
+  const stableDisconnect = () => {
     disconnectRef.current?.();
-  }, []);
+  };
 
-  const onScoreUpdate = useCallback((callback: (event: ScoreUpdateEvent) => void) => {
+  const onScoreUpdate = (callback: (event: ScoreUpdateEvent) => void) => {
     scoreUpdateCallbacks.current.add(callback);
     return () => {
       scoreUpdateCallbacks.current.delete(callback);
     };
-  }, []);
+  };
 
-  const onSessionStarted = useCallback((callback: (event: SessionStartedEvent) => void) => {
+  const onSessionStarted = (callback: (event: SessionStartedEvent) => void) => {
     sessionStartedCallbacks.current.add(callback);
     return () => {
       sessionStartedCallbacks.current.delete(callback);
     };
-  }, []);
+  };
 
-  const onSessionFinalized = useCallback((callback: (event: SessionFinalizedEvent) => void) => {
+  const onSessionFinalized = (callback: (event: SessionFinalizedEvent) => void) => {
     sessionFinalizedCallbacks.current.add(callback);
     return () => {
       sessionFinalizedCallbacks.current.delete(callback);
     };
-  }, []);
+  };
 
-  const onSessionStopped = useCallback((callback: (event: SessionStoppedEvent) => void) => {
+  const onSessionStopped = (callback: (event: SessionStoppedEvent) => void) => {
     sessionStoppedCallbacks.current.add(callback);
     return () => {
       sessionStoppedCallbacks.current.delete(callback);
     };
-  }, []);
+  };
 
-  const onHoleAdvanced = useCallback((callback: (event: HoleAdvancedEvent) => void) => {
+  const onHoleAdvanced = (callback: (event: HoleAdvancedEvent) => void) => {
     holeAdvancedCallbacks.current.add(callback);
     return () => {
       holeAdvancedCallbacks.current.delete(callback);
     };
-  }, []);
+  };
 
   useEffect(() => {
     return () => {
       disconnect();
     };
-  }, [disconnect]);
+  }, []);
 
   const value: LiveScoringContextValue = {
     isConnected,

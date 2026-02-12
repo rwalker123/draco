@@ -30,23 +30,31 @@ export function useContactDeletion(accountId: string) {
   const { token } = useAuth();
   const userService = token ? createUserManagementService(token) : null;
 
-  const checkDependencies = async (contactId: string): Promise<DependencyCheckResponse> => {
+  const checkDependencies = async (
+    contactId: string,
+    signal?: AbortSignal,
+  ): Promise<DependencyCheckResponse> => {
     if (!userService) {
       return { success: false, error: 'User service not available' };
     }
 
     try {
       setCheckingDependencies(true);
-      const result = await userService.checkContactDependencies(accountId, contactId);
+      const result = await userService.checkContactDependencies(accountId, contactId, signal);
       return {
         success: true,
         dependencyCheck: result.dependencyCheck,
       };
     } catch (err) {
+      if (signal?.aborted) {
+        return { success: false, error: 'Request cancelled' };
+      }
       const errorMessage = err instanceof Error ? err.message : 'Failed to check dependencies';
       return { success: false, error: errorMessage };
     } finally {
-      setCheckingDependencies(false);
+      if (!signal?.aborted) {
+        setCheckingDependencies(false);
+      }
     }
   };
 

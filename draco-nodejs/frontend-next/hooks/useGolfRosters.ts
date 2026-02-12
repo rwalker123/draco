@@ -31,48 +31,65 @@ export interface GolfRosterService {
   getTeamRoster: (
     seasonId: string,
     teamSeasonId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType[]>>;
   listSubstitutesForSeason: (
     seasonId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfSubstituteType[]>>;
   listAvailablePlayers: (
     seasonId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<AvailablePlayerType[]>>;
   getRosterEntry: (
     seasonId: string,
     rosterId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
   createAndSignPlayer: (
     seasonId: string,
     teamSeasonId: string,
     payload: CreateGolfPlayerType,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
   signPlayer: (
     seasonId: string,
     teamSeasonId: string,
     payload: SignPlayerType,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
   updatePlayer: (
     seasonId: string,
     rosterId: string,
     payload: UpdateGolfPlayerType,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
   releasePlayer: (
     seasonId: string,
     rosterId: string,
     payload: ReleasePlayerType,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<void>>;
-  deletePlayer: (seasonId: string, rosterId: string) => Promise<GolfRosterServiceResult<void>>;
+  deletePlayer: (
+    seasonId: string,
+    rosterId: string,
+    signal?: AbortSignal,
+  ) => Promise<GolfRosterServiceResult<void>>;
 }
 
 export function useGolfRosters(accountId: string): GolfRosterService {
   const apiClient = useApiClient();
 
-  const getTeamRoster: GolfRosterService['getTeamRoster'] = async (seasonId, teamSeasonId) => {
+  const getTeamRoster: GolfRosterService['getTeamRoster'] = async (
+    seasonId,
+    teamSeasonId,
+    signal,
+  ) => {
     try {
       const result = await getGolfTeamRoster({
         client: apiClient,
         path: { accountId, seasonId, teamSeasonId },
+        signal,
         throwOnError: false,
       });
 
@@ -91,11 +108,13 @@ export function useGolfRosters(accountId: string): GolfRosterService {
 
   const listSubstitutesForSeason: GolfRosterService['listSubstitutesForSeason'] = async (
     seasonId,
+    signal,
   ) => {
     try {
       const result = await listGolfSubstitutesForSeason({
         client: apiClient,
         path: { accountId, seasonId },
+        signal,
         throwOnError: false,
       });
 
