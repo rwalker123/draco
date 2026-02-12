@@ -19,6 +19,7 @@ const allowedDevOrigins = Array.from(
 const nextConfig: NextConfig = {
   experimental: {
     reactCompiler: true,
+    webpackMemoryOptimizations: true,
   },
   allowedDevOrigins,
   /* config options here */

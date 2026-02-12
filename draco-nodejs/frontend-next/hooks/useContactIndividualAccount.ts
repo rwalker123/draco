@@ -23,7 +23,7 @@ export function useContactIndividualAccount(contactId: string): UseContactIndivi
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchData = async () => {
       setLoading(true);
@@ -33,10 +33,11 @@ export function useContactIndividualAccount(contactId: string): UseContactIndivi
         const result = await getContactIndividualGolfPlayerScores({
           client: apiClient,
           path: { contactId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         if (result.response.ok && result.data !== undefined) {
           setData(result.data);
@@ -44,11 +45,11 @@ export function useContactIndividualAccount(contactId: string): UseContactIndivi
           setError('Failed to load individual account');
         }
       } catch (err) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         console.error('Failed to fetch individual golf account:', err);
         setError(err instanceof Error ? err.message : 'Failed to load individual account');
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -57,7 +58,7 @@ export function useContactIndividualAccount(contactId: string): UseContactIndivi
     void fetchData();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [contactId, apiClient]);
 

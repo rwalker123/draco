@@ -22,7 +22,7 @@ export function useAdminDashboardSummary(accountId: string): UseAdminDashboardSu
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchSummary = async () => {
       setLoading(true);
@@ -32,20 +32,21 @@ export function useAdminDashboardSummary(accountId: string): UseAdminDashboardSu
         const result = await getAdminDashboardSummary({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         const data = unwrapApiResult(result, 'Failed to fetch dashboard summary');
         setSummary(data);
       } catch (err) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load dashboard summary';
         setError(message);
         setSummary(null);
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -54,7 +55,7 @@ export function useAdminDashboardSummary(accountId: string): UseAdminDashboardSu
     void fetchSummary();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, apiClient]);
 

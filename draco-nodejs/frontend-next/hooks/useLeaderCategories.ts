@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { LeaderCategoryType, LeaderCategoriesType } from '@draco/shared-schemas';
 import { useApiClient } from './useApiClient';
 import { fetchLeaderCategories } from '../services/statisticsService';
@@ -21,64 +21,48 @@ export function useLeaderCategories(
   const [pitchingCategories, setPitchingCategories] = useState<LeaderCategoryType[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const isMountedRef = useRef(true);
-
-  const fetchCategories = useCallback(async () => {
-    if (!accountId) {
-      return {
-        batting: [] as LeaderCategoryType[],
-        pitching: [] as LeaderCategoryType[],
-      };
-    }
-
-    const categories: LeaderCategoriesType = await fetchLeaderCategories(accountId, {
-      client: apiClient,
-    });
-
-    return {
-      batting: categories.batting ?? [],
-      pitching: categories.pitching ?? [],
-    };
-  }, [accountId, apiClient]);
-
-  const applyCategories = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await fetchCategories();
-
-      if (!isMountedRef.current) {
-        return;
-      }
-
-      setBattingCategories(result.batting);
-      setPitchingCategories(result.pitching);
-    } catch (err) {
-      if (!isMountedRef.current) {
-        return;
-      }
-
-      console.error('Error loading leader categories:', err);
-      const message = err instanceof Error ? err.message : 'Failed to load leader categories';
-      setError(message);
-      setBattingCategories([]);
-      setPitchingCategories([]);
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [fetchCategories]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    isMountedRef.current = true;
-    void applyCategories();
-    return () => {
-      isMountedRef.current = false;
+    if (!accountId) return;
+
+    const controller = new AbortController();
+
+    const loadCategories = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const categories: LeaderCategoriesType = await fetchLeaderCategories(accountId, {
+          client: apiClient,
+          signal: controller.signal,
+        });
+
+        if (controller.signal.aborted) return;
+
+        setBattingCategories(categories.batting ?? []);
+        setPitchingCategories(categories.pitching ?? []);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+
+        console.error('Error loading leader categories:', err);
+        const message = err instanceof Error ? err.message : 'Failed to load leader categories';
+        setError(message);
+        setBattingCategories([]);
+        setPitchingCategories([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
     };
-  }, [applyCategories]);
+
+    void loadCategories();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient, refreshKey]);
 
   return {
     battingCategories,
@@ -86,7 +70,7 @@ export function useLeaderCategories(
     loading,
     error,
     refetch: () => {
-      void applyCategories();
+      setRefreshKey((prev) => prev + 1);
     },
   };
 }

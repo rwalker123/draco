@@ -56,6 +56,10 @@ const defaultValues: HandoutFormValues = {
   file: null,
 };
 
+const computePlainTextLength = (html: string): number => {
+  return sanitizeDisplayText(html ?? '').trim().length;
+};
+
 const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
   open,
   onClose,
@@ -65,26 +69,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
   onSuccess,
   onError,
 }) => {
-  const isTeamScope = scope.type === 'team';
-
-  const teamId = scope.type === 'team' ? scope.teamId : null;
-  const stableScope = React.useMemo<HandoutScope>(() => {
-    if (isTeamScope) {
-      return {
-        type: 'team',
-        accountId: scope.accountId,
-        teamId: teamId as string,
-      };
-    }
-
-    return {
-      type: 'account',
-      accountId: scope.accountId,
-    };
-  }, [isTeamScope, scope.accountId, teamId]);
-
-  const { createHandout, updateHandout, loading, error, clearError } =
-    useHandoutOperations(stableScope);
+  const { createHandout, updateHandout, loading, error, clearError } = useHandoutOperations(scope);
   const [localError, setLocalError] = React.useState<string | null>(null);
 
   const {
@@ -106,17 +91,12 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
   const [plainTextLength, setPlainTextLength] = React.useState<number>(0);
   const [editorKey, setEditorKey] = React.useState<number>(0);
 
-  const computePlainTextLength = React.useCallback<(html: string) => number>((html) => {
-    return sanitizeDisplayText(html ?? '').trim().length;
-  }, []);
-
   React.useEffect(() => {
     if (!open) {
       reset(defaultValues);
       setEditorInitialValue('');
       setPlainTextLength(0);
       setLocalError(null);
-      clearError();
       return;
     }
 
@@ -130,8 +110,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
     setPlainTextLength(computePlainTextLength(sanitizedDescription));
     setEditorKey((key) => key + 1);
     setLocalError(null);
-    clearError();
-  }, [open, mode, initialHandout, reset, clearError, computePlainTextLength, getValues]);
+  }, [open, mode, initialHandout, reset, getValues]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -147,7 +126,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
     clearError();
   };
 
-  const syncEditorContent = React.useCallback(() => {
+  const syncEditorContent = () => {
     if (!editorRef.current) {
       return;
     }
@@ -159,7 +138,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
       shouldValidate: true,
     });
     setPlainTextLength(computePlainTextLength(sanitizedHtml));
-  }, [setValue, computePlainTextLength]);
+  };
 
   const submitHandler = handleSubmit(async (values) => {
     try {

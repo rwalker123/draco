@@ -26,7 +26,7 @@ export function useClassifiedsConfig(accountId: string) {
   const apiClient = useApiClient();
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     const cacheKey = `${CACHE_KEY_PREFIX}_${accountId}`;
 
     const fetchConfig = async () => {
@@ -40,19 +40,18 @@ export function useClassifiedsConfig(accountId: string) {
             return;
           }
         }
-      } catch {
-        // Ignore cache read errors
-      }
+      } catch {}
 
       try {
         setLoading(true);
         const result = await getPlayerClassifiedsConfig({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         if (result.data) {
           const newConfig = { expirationDays: result.data.expirationDays };
@@ -64,16 +63,14 @@ export function useClassifiedsConfig(accountId: string) {
               timestamp: Date.now(),
             };
             sessionStorage.setItem(cacheKey, JSON.stringify(cacheEntry));
-          } catch {
-            // Ignore cache write errors
-          }
+          } catch {}
         }
       } catch (err) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         console.error('Failed to fetch classifieds config:', err);
         setError('Failed to load configuration');
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -82,7 +79,7 @@ export function useClassifiedsConfig(accountId: string) {
     void fetchConfig();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, apiClient]);
 

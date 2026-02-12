@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Alert,
   Box,
@@ -91,7 +91,7 @@ const IndividualGolfAccountHome: React.FC = () => {
       return;
     }
 
-    let isMounted = true;
+    const controller = new AbortController();
 
     const fetchAccountData = async () => {
       setLoading(true);
@@ -102,12 +102,11 @@ const IndividualGolfAccountHome: React.FC = () => {
           client: apiClient,
           path: { accountId: accountIdStr },
           query: { includeCurrentSeason: true },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
 
         const { account: accountData, currentSeason: responseCurrentSeason } = unwrapApiResult(
           result,
@@ -118,7 +117,7 @@ const IndividualGolfAccountHome: React.FC = () => {
         setCurrentSeason(responseCurrentSeason as AccountSeasonWithStatusType | null);
 
         const summaryResult = await getGolferSummary(accountIdStr);
-        if (isMounted && summaryResult.success) {
+        if (!controller.signal.aborted && summaryResult.success) {
           setGolferSummary(summaryResult.data);
         }
 
@@ -126,33 +125,31 @@ const IndividualGolfAccountHome: React.FC = () => {
 
         if (isCurrentUserOwner) {
           const golferResult = await getGolfer(accountIdStr);
-          if (isMounted && golferResult.success) {
+          if (!controller.signal.aborted && golferResult.success) {
             setGolfer(golferResult.data);
           }
 
           const scoresResult = await getScores(accountIdStr, 20);
-          if (isMounted && scoresResult.success) {
+          if (!controller.signal.aborted && scoresResult.success) {
             setRecentScores(scoresResult.data);
           }
         }
 
         const liveStatus = await checkSessionStatus(accountIdStr);
-        if (isMounted && liveStatus?.hasActiveSession) {
+        if (!controller.signal.aborted && liveStatus?.hasActiveSession) {
           const sessionState = await getSessionState(accountIdStr);
-          if (isMounted && sessionState) {
+          if (!controller.signal.aborted && sessionState) {
             setLiveSession(sessionState);
           }
         }
       } catch (err) {
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
         console.error('Failed to fetch account data:', err);
         setError('Failed to load account data');
         setAccount(null);
         setCurrentSeason(null);
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -161,7 +158,7 @@ const IndividualGolfAccountHome: React.FC = () => {
     fetchAccountData();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [
     accountIdStr,
@@ -174,55 +171,48 @@ const IndividualGolfAccountHome: React.FC = () => {
     getSessionState,
   ]);
 
-  const handleRoundEntered = useCallback(
-    async (score: GolfScoreWithDetails) => {
-      setRecentScores((prev) => [score, ...prev.slice(0, 19)]);
-      setRoundEntryDialogOpen(false);
+  const handleRoundEntered = async (score: GolfScoreWithDetails) => {
+    setRecentScores((prev) => [score, ...prev.slice(0, 19)]);
+    setRoundEntryDialogOpen(false);
 
-      if (accountIdStr) {
-        const summaryResult = await getGolferSummary(accountIdStr);
-        if (summaryResult.success) {
-          setGolferSummary(summaryResult.data);
-        }
+    if (accountIdStr) {
+      const summaryResult = await getGolferSummary(accountIdStr);
+      if (summaryResult.success) {
+        setGolferSummary(summaryResult.data);
       }
-    },
-    [accountIdStr, getGolferSummary],
-  );
+    }
+  };
 
-  const handleUpdateHomeCourse = useCallback(
-    async (courseId: string): Promise<{ success: boolean; error?: string }> => {
-      if (!accountIdStr) {
-        return { success: false, error: 'Account ID not found' };
+  const handleUpdateHomeCourse = async (
+    courseId: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!accountIdStr) {
+      return { success: false, error: 'Account ID not found' };
+    }
+
+    const result = await updateHomeCourse(accountIdStr, courseId);
+    if (result.success) {
+      setGolfer(result.data);
+      return { success: true };
+    }
+    return { success: false, error: result.error };
+  };
+
+  const handleScoreUpdated = async (updatedScore: GolfScoreWithDetails) => {
+    setRecentScores((prev) =>
+      prev.map((score) => (score.id === updatedScore.id ? updatedScore : score)),
+    );
+    setEditingScore(null);
+
+    if (accountIdStr) {
+      const summaryResult = await getGolferSummary(accountIdStr);
+      if (summaryResult.success) {
+        setGolferSummary(summaryResult.data);
       }
+    }
+  };
 
-      const result = await updateHomeCourse(accountIdStr, courseId);
-      if (result.success) {
-        setGolfer(result.data);
-        return { success: true };
-      }
-      return { success: false, error: result.error };
-    },
-    [accountIdStr, updateHomeCourse],
-  );
-
-  const handleScoreUpdated = useCallback(
-    async (updatedScore: GolfScoreWithDetails) => {
-      setRecentScores((prev) =>
-        prev.map((score) => (score.id === updatedScore.id ? updatedScore : score)),
-      );
-      setEditingScore(null);
-
-      if (accountIdStr) {
-        const summaryResult = await getGolferSummary(accountIdStr);
-        if (summaryResult.success) {
-          setGolferSummary(summaryResult.data);
-        }
-      }
-    },
-    [accountIdStr, getGolferSummary],
-  );
-
-  const handleDeleteScore = useCallback(async () => {
+  const handleDeleteScore = async () => {
     if (!accountIdStr || !deleteConfirmScore) return;
 
     setIsDeleting(true);
@@ -241,44 +231,41 @@ const IndividualGolfAccountHome: React.FC = () => {
     } else {
       setDeleteError(result.error);
     }
-  }, [accountIdStr, deleteConfirmScore, deleteScore, getGolferSummary]);
+  };
 
-  const handleStartLiveRound = useCallback(
-    async (data: {
-      courseId: string;
-      teeId: string;
-      datePlayed: string;
-      startingHole: number;
-      holesPlayed: 9 | 18;
-    }): Promise<boolean> => {
-      console.log('[LIVE_HOME] handleStartLiveRound called', { accountIdStr, data });
-      if (!accountIdStr) {
-        console.log('[LIVE_HOME] No accountIdStr, returning false');
-        return false;
-      }
-
-      setIsStartingLiveSession(true);
-      console.log('[LIVE_HOME] Calling startSession...');
-      const result = await startSession(accountIdStr, data);
-      console.log('[LIVE_HOME] startSession returned', { result });
-      setIsStartingLiveSession(false);
-
-      if (result) {
-        console.log(
-          '[LIVE_HOME] Session started successfully, setting liveSession and opening dialog',
-        );
-        setLiveSession(result);
-        setStartLiveRoundDialogOpen(false);
-        setLiveScoringDialogOpen(true);
-        return true;
-      }
-      console.log('[LIVE_HOME] startSession returned null/falsy');
+  const handleStartLiveRound = async (data: {
+    courseId: string;
+    teeId: string;
+    datePlayed: string;
+    startingHole: number;
+    holesPlayed: 9 | 18;
+  }): Promise<boolean> => {
+    console.log('[LIVE_HOME] handleStartLiveRound called', { accountIdStr, data });
+    if (!accountIdStr) {
+      console.log('[LIVE_HOME] No accountIdStr, returning false');
       return false;
-    },
-    [accountIdStr, startSession],
-  );
+    }
 
-  const handleLiveSessionEnded = useCallback(async () => {
+    setIsStartingLiveSession(true);
+    console.log('[LIVE_HOME] Calling startSession...');
+    const result = await startSession(accountIdStr, data);
+    console.log('[LIVE_HOME] startSession returned', { result });
+    setIsStartingLiveSession(false);
+
+    if (result) {
+      console.log(
+        '[LIVE_HOME] Session started successfully, setting liveSession and opening dialog',
+      );
+      setLiveSession(result);
+      setStartLiveRoundDialogOpen(false);
+      setLiveScoringDialogOpen(true);
+      return true;
+    }
+    console.log('[LIVE_HOME] startSession returned null/falsy');
+    return false;
+  };
+
+  const handleLiveSessionEnded = async () => {
     setLiveSession(null);
     setLiveScoringDialogOpen(false);
 
@@ -293,9 +280,9 @@ const IndividualGolfAccountHome: React.FC = () => {
         setGolferSummary(summaryResult.data);
       }
     }
-  }, [accountIdStr, getScores, getGolferSummary]);
+  };
 
-  const handleCancelSession = useCallback(async () => {
+  const handleCancelSession = async () => {
     if (!accountIdStr) return;
 
     setIsCancellingSession(true);
@@ -306,22 +293,20 @@ const IndividualGolfAccountHome: React.FC = () => {
       setLiveSession(null);
       setCancelSessionConfirmOpen(false);
     }
-  }, [accountIdStr, stopSession]);
+  };
 
-  const contributingIndices = useMemo(() => {
-    const indexedDifferentials = recentScores
-      .map((score, idx) => ({ idx, diff: score.differential }))
-      .filter((item): item is { idx: number; diff: number } => item.diff != null);
+  const indexedDifferentials = recentScores
+    .map((score, idx) => ({ idx, diff: score.differential }))
+    .filter((item): item is { idx: number; diff: number } => item.diff != null);
 
-    if (indexedDifferentials.length < 3) {
-      return new Set<number>();
-    }
-
-    const differentialValues = indexedDifferentials.map((item) => item.diff);
-    const contributingSet = getContributingDifferentialIndices(differentialValues);
-
-    return new Set([...contributingSet].map((diffIndex) => indexedDifferentials[diffIndex].idx));
-  }, [recentScores]);
+  const contributingIndices =
+    indexedDifferentials.length < 3
+      ? new Set<number>()
+      : new Set(
+          [
+            ...getContributingDifferentialIndices(indexedDifferentials.map((item) => item.diff)),
+          ].map((diffIndex) => indexedDifferentials[diffIndex].idx),
+        );
 
   if (!accountIdStr) {
     return (

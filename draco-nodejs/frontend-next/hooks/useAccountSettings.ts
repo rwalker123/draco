@@ -49,7 +49,7 @@ export function useAccountSettings(accountId?: string | null, options?: UseAccou
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchSettings = async (): Promise<void> => {
       setState((previous) => ({ ...previous, loading: true, error: null }));
@@ -60,15 +60,17 @@ export function useAccountSettings(accountId?: string | null, options?: UseAccou
           ? await getAccountSettings({
               client: apiClient,
               path,
+              signal: controller.signal,
               throwOnError: false,
             })
           : await getAccountSettingsPublic({
               client: apiClient,
               path,
+              signal: controller.signal,
               throwOnError: false,
             });
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         const payload = unwrapApiResult(result, 'Failed to load account settings');
 
@@ -78,14 +80,14 @@ export function useAccountSettings(accountId?: string | null, options?: UseAccou
           error: null,
         }));
       } catch (error) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const message = error instanceof Error ? error.message : 'Failed to load account settings';
         setState((previous) => ({
           ...previous,
           error: message,
         }));
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setState((previous) => ({
             ...previous,
             loading: false,
@@ -98,7 +100,7 @@ export function useAccountSettings(accountId?: string | null, options?: UseAccou
     void fetchSettings();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, canRequest, hasAccountContext, apiClient, refreshKey]);
 

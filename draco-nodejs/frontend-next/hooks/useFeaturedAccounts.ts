@@ -27,7 +27,7 @@ export function useFeaturedAccounts(accountIds: string[]): FeaturedAccountsResul
       return;
     }
 
-    let ignore = false;
+    const controller = new AbortController();
 
     const fetchAccounts = async () => {
       setLoading(true);
@@ -40,6 +40,7 @@ export function useFeaturedAccounts(accountIds: string[]): FeaturedAccountsResul
               const result = await getAccountById({
                 client: apiClient,
                 path: { accountId },
+                signal: controller.signal,
                 throwOnError: false,
               });
 
@@ -53,27 +54,26 @@ export function useFeaturedAccounts(accountIds: string[]): FeaturedAccountsResul
           }),
         );
 
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           const validAccounts = results.filter(
             (account): account is AccountType => account !== null,
           );
           setAccounts(validAccounts);
         }
       } catch (err) {
-        if (!ignore) {
-          setError(err instanceof Error ? err.message : 'Failed to load featured accounts');
-        }
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : 'Failed to load featured accounts');
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
     };
 
-    fetchAccounts();
+    void fetchAccounts();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountIdsKey, apiClient]);
 

@@ -47,7 +47,7 @@ export function useGolfLeagueSetup(
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchSetup = async (): Promise<void> => {
       setState((previous) => ({ ...previous, loading: true, error: null }));
@@ -60,10 +60,11 @@ export function useGolfLeagueSetup(
             seasonId: seasonId as string,
             leagueSeasonId: leagueSeasonId as string,
           },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         if (result.response.status === 404) {
           setState((previous) => ({
@@ -84,14 +85,14 @@ export function useGolfLeagueSetup(
           error: null,
         }));
       } catch (error) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const message = error instanceof Error ? error.message : 'Failed to load golf league setup';
         setState((previous) => ({
           ...previous,
           error: message,
         }));
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setState((previous) => ({
             ...previous,
             loading: false,
@@ -104,7 +105,7 @@ export function useGolfLeagueSetup(
     void fetchSetup();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, seasonId, leagueSeasonId, canRequest, apiClient, refreshKey]);
 

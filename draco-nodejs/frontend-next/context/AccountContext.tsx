@@ -6,7 +6,6 @@ import React, {
   useEffect,
   useSyncExternalStore,
   ReactNode,
-  useCallback,
   useRef,
 } from 'react';
 import { useAuth } from './AuthContext';
@@ -122,12 +121,9 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
 
   const currentAccount = fetchedAccount ?? persistedAccount;
 
-  const normalizeAccount = useCallback(
-    (account: Account): Account => normalizeAccountShape(account),
-    [],
-  );
+  const normalizeAccount = (account: Account): Account => normalizeAccountShape(account);
 
-  const persistAccount = useCallback((account: Account | null) => {
+  const persistAccount = (account: Account | null) => {
     if (typeof window === 'undefined') {
       return;
     }
@@ -138,41 +134,34 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
         window.localStorage.removeItem(ACCOUNT_STORAGE_KEY);
       }
       accountStorageStore.invalidate();
-    } catch {
-      // Ignore storage failures
-    }
-  }, []);
+    } catch {}
+  };
 
-  const handleSetCurrentAccount = useCallback(
-    (account: Account) => {
-      const normalized = normalizeAccount(account);
-      setFetchedAccount(normalized);
-      persistAccount(normalized);
-    },
-    [normalizeAccount, persistAccount],
-  );
+  const handleSetCurrentAccount = (account: Account) => {
+    const normalized = normalizeAccount(account);
+    setFetchedAccount(normalized);
+    persistAccount(normalized);
+  };
 
-  const resolveAccountDetails = useCallback(
-    async (accountId: string) => {
-      const result = await getAccountById({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
+  const resolveAccountDetails = async (accountId: string, signal?: AbortSignal) => {
+    const result = await getAccountById({
+      client: apiClient,
+      path: { accountId },
+      signal,
+      throwOnError: false,
+    });
 
-      const data = unwrapApiResult(result, 'Failed to fetch account');
-      const account = data.account;
+    const data = unwrapApiResult(result, 'Failed to fetch account');
+    const account = data.account;
 
-      return {
-        id: account.id,
-        name: account.name,
-        accountType: account.configuration?.accountType?.name ?? undefined,
-        timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
-        timeZoneSource: 'account' as const,
-      };
-    },
-    [apiClient],
-  );
+    return {
+      id: account.id,
+      name: account.name,
+      accountType: account.configuration?.accountType?.name ?? undefined,
+      timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
+      timeZoneSource: 'account' as const,
+    };
+  };
 
   const hasRoles = (userRoles?.contactRoles?.length ?? 0) > 0;
   const accountId = userRoles?.accountId ?? null;
@@ -192,43 +181,31 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     }
 
     requestedAccountIdRef.current = accountId;
-    let cancelled = false;
+    const controller = new AbortController();
 
-    resolveAccountDetails(accountId)
+    resolveAccountDetails(accountId, controller.signal)
       .then((account) => {
-        if (cancelled) {
-          return;
-        }
+        if (controller.signal.aborted) return;
         handleSetCurrentAccount(account);
         setError(null);
       })
       .catch((err) => {
-        if (cancelled) {
-          return;
-        }
+        if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : 'Failed to fetch account');
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
-  }, [
-    accountId,
-    authLoading,
-    handleSetCurrentAccount,
-    hasRoles,
-    resolveAccountDetails,
-    roleLoading,
-    token,
-  ]);
+  }, [accountId, authLoading, hasRoles, roleLoading, token, apiClient]);
 
-  const clearAccounts = useCallback(() => {
+  const clearAccounts = () => {
     setFetchedAccount(null);
     setUserAccounts([]);
     setError(null);
     requestedAccountIdRef.current = null;
     persistAccount(null);
-  }, [persistAccount]);
+  };
 
   const requiresAccountSelection = Boolean(token && accountId && hasRoles);
   const awaitingAuthOrRole = authLoading || roleLoading;

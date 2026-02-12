@@ -30,7 +30,7 @@ const AccountHome: React.FC = () => {
       return;
     }
 
-    let isMounted = true;
+    const controller = new AbortController();
 
     const fetchAccountData = async () => {
       setIsLoading(true);
@@ -40,12 +40,11 @@ const AccountHome: React.FC = () => {
         const result = await getAccountById({
           client: apiClient,
           path: { accountId: accountIdStr },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
 
         const accountWithSeasons = unwrapApiResult(
           result,
@@ -54,14 +53,12 @@ const AccountHome: React.FC = () => {
 
         setAccount(accountWithSeasons.account as AccountType);
       } catch (err) {
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
         console.error('Failed to load account information', err);
         setError('Failed to load account information');
         setAccount(null);
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setIsLoading(false);
         }
       }
@@ -70,7 +67,7 @@ const AccountHome: React.FC = () => {
     fetchAccountData();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountIdStr, apiClient]);
 

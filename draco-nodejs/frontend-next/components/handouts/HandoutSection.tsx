@@ -5,10 +5,16 @@ import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import { HandoutType } from '@draco/shared-schemas';
+import {
+  listAccountHandouts as apiListAccountHandouts,
+  listTeamHandouts as apiListTeamHandouts,
+} from '@draco/shared-api-client';
 import HandoutList, { HandoutListVariant } from './HandoutList';
 import HandoutFormDialog from './HandoutFormDialog';
 import ConfirmationDialog from '../common/ConfirmationDialog';
 import { HandoutScope, useHandoutOperations } from '../../hooks/useHandoutOperations';
+import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
 import NextLink from 'next/link';
 import WidgetShell from '../ui/WidgetShell';
 
@@ -55,6 +61,7 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
     error: mutationError,
     clearError,
   } = useHandoutOperations(scope);
+  const apiClient = useApiClient();
   const [handouts, setHandouts] = React.useState<HandoutType[]>([]);
   const [fetching, setFetching] = React.useState<boolean>(true);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
@@ -70,7 +77,60 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
     handout: null,
   });
 
-  const refreshHandouts = React.useCallback(async () => {
+  const teamId = scope.type === 'team' ? scope.teamId : undefined;
+
+  React.useEffect(() => {
+    const controller = new AbortController();
+
+    const loadHandouts = async () => {
+      try {
+        setFetching(true);
+        setFetchError(null);
+
+        let data: HandoutType[];
+        if (scope.type === 'team' && teamId) {
+          const result = await apiListTeamHandouts({
+            client: apiClient,
+            path: { accountId: scope.accountId, teamId },
+            signal: controller.signal,
+            throwOnError: false,
+          });
+          if (controller.signal.aborted) return;
+          const wrapped = unwrapApiResult(result, 'Failed to load team handouts');
+          data = wrapped.handouts ?? [];
+        } else {
+          const result = await apiListAccountHandouts({
+            client: apiClient,
+            path: { accountId: scope.accountId },
+            signal: controller.signal,
+            throwOnError: false,
+          });
+          if (controller.signal.aborted) return;
+          const wrapped = unwrapApiResult(result, 'Failed to load account handouts');
+          data = wrapped.handouts ?? [];
+        }
+
+        if (controller.signal.aborted) return;
+        setHandouts(data);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load handouts';
+        setFetchError(message);
+        setHandouts([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setFetching(false);
+        }
+      }
+    };
+
+    void loadHandouts();
+    return () => {
+      controller.abort();
+    };
+  }, [scope.type, scope.accountId, teamId, apiClient]);
+
+  const refreshHandouts = async () => {
     try {
       setFetching(true);
       setFetchError(null);
@@ -83,11 +143,7 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
     } finally {
       setFetching(false);
     }
-  }, [listHandouts]);
-
-  React.useEffect(() => {
-    void refreshHandouts();
-  }, [refreshHandouts]);
+  };
 
   const handleOpenCreate = () => {
     setDialogState({ open: true, mode: 'create', handout: null });
@@ -179,19 +235,17 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
     </Stack>
   );
 
-  const widgetSx: SxProps<Theme> = React.useMemo(() => {
-    const base =
-      variant === 'card'
-        ? {
-            alignSelf: 'flex-start',
-            width: '100%',
-            maxWidth: { xs: '100%', md: 420 },
-          }
-        : {
-            width: '100%',
-          };
-    return [base];
-  }, [variant]);
+  const widgetSx: SxProps<Theme> = [
+    variant === 'card'
+      ? {
+          alignSelf: 'flex-start',
+          width: '100%',
+          maxWidth: { xs: '100%', md: 420 },
+        }
+      : {
+          width: '100%',
+        },
+  ];
 
   const shouldHideForEmpty =
     hideWhenEmpty && !fetching && !fetchError && handouts.length === 0 && !mutationError;

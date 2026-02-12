@@ -16,25 +16,23 @@ export default function ResetPasswordClientWrapper() {
   const { setCurrentAccount } = useAccount();
   const apiClient = useApiClient();
 
-  // Set the account in context when accountId is present in query string
   useEffect(() => {
-    let isMounted = true;
+    if (!accountId) {
+      return;
+    }
+
+    const controller = new AbortController();
 
     const fetchAndSetAccount = async () => {
-      if (!accountId) {
-        return;
-      }
-
       try {
         const result = await getAccountById({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
 
         const data = unwrapApiResult(result, 'Failed to fetch account');
         const account = data.account;
@@ -47,13 +45,14 @@ export default function ResetPasswordClientWrapper() {
           timeZoneSource: 'account',
         });
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error('Failed to fetch account:', error);
       }
     };
     fetchAndSetAccount();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountId, apiClient, setCurrentAccount]);
 

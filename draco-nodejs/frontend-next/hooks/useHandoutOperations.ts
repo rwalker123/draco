@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HandoutType } from '@draco/shared-schemas';
 import { HandoutInput, HandoutService } from '../services/handoutService';
 import { useAuth } from '../context/AuthContext';
@@ -20,95 +20,106 @@ export type HandoutScope =
 export function useHandoutOperations(scope: HandoutScope) {
   const { token } = useAuth();
   const apiClient = useApiClient();
-  const service = useMemo(() => new HandoutService(token, apiClient), [token, apiClient]);
+  const serviceRef = useRef<HandoutService | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (token) {
+      serviceRef.current = new HandoutService(token, apiClient);
+    } else {
+      serviceRef.current = null;
+    }
+  }, [token, apiClient]);
   const [error, setError] = useState<string | null>(null);
 
-  const listHandouts = useCallback(async (): Promise<HandoutType[]> => {
+  const listHandouts = async (): Promise<HandoutType[]> => {
+    const service = serviceRef.current;
+    if (!service) return [];
+
     if (scope.type === 'team') {
       return service.listTeamHandouts({ accountId: scope.accountId, teamId: scope.teamId });
     }
 
     return service.listAccountHandouts(scope.accountId);
-  }, [scope, service]);
+  };
 
-  const createHandout = useCallback(
-    async (input: HandoutInput): Promise<HandoutType> => {
-      setLoading(true);
-      setError(null);
+  const createHandout = async (input: HandoutInput): Promise<HandoutType> => {
+    const service = serviceRef.current;
+    if (!service) throw new Error('Service not initialized');
 
-      try {
-        if (scope.type === 'team') {
-          return await service.createTeamHandout(
-            { accountId: scope.accountId, teamId: scope.teamId },
-            input,
-          );
-        }
+    setLoading(true);
+    setError(null);
 
-        return await service.createAccountHandout(scope.accountId, input);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to create handout';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
+    try {
+      if (scope.type === 'team') {
+        return await service.createTeamHandout(
+          { accountId: scope.accountId, teamId: scope.teamId },
+          input,
+        );
       }
-    },
-    [scope, service],
-  );
 
-  const updateHandout = useCallback(
-    async (handoutId: string, input: HandoutInput): Promise<HandoutType> => {
-      setLoading(true);
-      setError(null);
+      return await service.createAccountHandout(scope.accountId, input);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create handout';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      try {
-        if (scope.type === 'team') {
-          return await service.updateTeamHandout(
-            { accountId: scope.accountId, teamId: scope.teamId },
-            handoutId,
-            input,
-          );
-        }
+  const updateHandout = async (handoutId: string, input: HandoutInput): Promise<HandoutType> => {
+    const service = serviceRef.current;
+    if (!service) throw new Error('Service not initialized');
 
-        return await service.updateAccountHandout(scope.accountId, handoutId, input);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to update handout';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (scope.type === 'team') {
+        return await service.updateTeamHandout(
+          { accountId: scope.accountId, teamId: scope.teamId },
+          handoutId,
+          input,
+        );
       }
-    },
-    [scope, service],
-  );
 
-  const deleteHandout = useCallback(
-    async (handoutId: string): Promise<void> => {
-      setLoading(true);
-      setError(null);
+      return await service.updateAccountHandout(scope.accountId, handoutId, input);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update handout';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      try {
-        if (scope.type === 'team') {
-          await service.deleteTeamHandout(
-            { accountId: scope.accountId, teamId: scope.teamId },
-            handoutId,
-          );
-        } else {
-          await service.deleteAccountHandout(scope.accountId, handoutId);
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to delete handout';
-        setError(message);
-        throw new Error(message);
-      } finally {
-        setLoading(false);
+  const deleteHandout = async (handoutId: string): Promise<void> => {
+    const service = serviceRef.current;
+    if (!service) throw new Error('Service not initialized');
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (scope.type === 'team') {
+        await service.deleteTeamHandout(
+          { accountId: scope.accountId, teamId: scope.teamId },
+          handoutId,
+        );
+      } else {
+        await service.deleteAccountHandout(scope.accountId, handoutId);
       }
-    },
-    [scope, service],
-  );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete handout';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const clearError = useCallback(() => setError(null), []);
+  const clearError = () => setError(null);
 
   return {
     listHandouts,
