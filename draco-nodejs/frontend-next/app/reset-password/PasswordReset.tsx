@@ -15,8 +15,11 @@ import {
   Link,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
+import { verifyPasswordResetToken as verifyPasswordResetTokenOperation } from '@draco/shared-api-client';
 import AccountPageHeader from '../../components/AccountPageHeader';
 import { usePasswordResetService } from '../../hooks/usePasswordResetService';
+import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
 
 interface PasswordResetProps {
   onResetSuccess?: () => void;
@@ -32,38 +35,55 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
   initialToken,
 }) => {
   const router = useRouter();
+  const apiClient = useApiClient();
   const [activeStep, setActiveStep] = useState(initialToken ? 1 : 0);
   const [email, setEmail] = useState('');
   const [token, setToken] = useState(initialToken?.trim() ?? '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [success, setSuccess] = useState('');
+  const [autoVerifyError, setAutoVerifyError] = useState<string | null>(null);
   const { requestReset, verifyToken, resetPassword, loading, error, setErrorMessage, clearError } =
     usePasswordResetService();
 
   const steps = ['Request Reset', 'Verify Token', 'Set New Password'];
 
   useEffect(() => {
+    const trimmedToken = initialToken?.trim();
+    if (!trimmedToken) return;
+
     const controller = new AbortController();
 
     const autoVerifyTokenFromQuery = async () => {
-      const trimmedToken = initialToken?.trim();
-      if (!trimmedToken) {
-        return;
-      }
-
-      clearError();
+      setAutoVerifyError(null);
       setSuccess('');
       setToken(trimmedToken);
       setActiveStep(1);
 
-      const result = await verifyToken(trimmedToken);
-      if (controller.signal.aborted) return;
+      try {
+        const result = await verifyPasswordResetTokenOperation({
+          client: apiClient,
+          body: { token: trimmedToken },
+          signal: controller.signal,
+          throwOnError: false,
+        });
 
-      if (result.valid) {
-        setToken(result.token ?? trimmedToken);
-        setSuccess(result.message);
-        setActiveStep(2);
+        if (controller.signal.aborted) return;
+
+        const data = unwrapApiResult(result, 'Failed to verify the reset token.');
+
+        if (data.valid) {
+          setToken(trimmedToken);
+          setSuccess('Token verified successfully');
+          setActiveStep(2);
+        } else {
+          setAutoVerifyError('Invalid or expired reset token');
+        }
+      } catch (err: unknown) {
+        if (controller.signal.aborted) return;
+        setAutoVerifyError(
+          err instanceof Error ? err.message : 'An error occurred while verifying the token.',
+        );
       }
     };
 
@@ -72,10 +92,11 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
     return () => {
       controller.abort();
     };
-  }, [initialToken, verifyToken, clearError]);
+  }, [initialToken, apiClient]);
 
   const handleRequestReset = async () => {
     clearError();
+    setAutoVerifyError(null);
     setSuccess('');
 
     const trimmedEmail = email.trim();
@@ -94,6 +115,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
 
   const handleVerifyToken = async () => {
     clearError();
+    setAutoVerifyError(null);
     setSuccess('');
 
     const trimmedToken = token.trim();
@@ -112,6 +134,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
 
   const handleResetPassword = async () => {
     clearError();
+    setAutoVerifyError(null);
     setSuccess('');
 
     if (!newPassword || !confirmPassword) {
@@ -289,9 +312,9 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
             ))}
           </Stepper>
 
-          {error && (
+          {(error || autoVerifyError) && (
             <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
+              {error || autoVerifyError}
             </Alert>
           )}
 
