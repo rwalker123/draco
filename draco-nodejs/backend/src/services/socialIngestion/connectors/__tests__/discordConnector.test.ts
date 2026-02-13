@@ -66,13 +66,13 @@ describe('DiscordConnector message cache', () => {
         connector as unknown as {
           fetchChannelMessages: (
             target: DiscordIngestionTarget,
-          ) => Promise<DiscordMessageIngestionRecord[]>;
+          ) => Promise<{ messages: DiscordMessageIngestionRecord[]; rateLimited: boolean }>;
         },
         'fetchChannelMessages',
       )
-      .mockResolvedValueOnce([firstMessage])
-      .mockResolvedValueOnce([firstMessage])
-      .mockResolvedValueOnce([updatedMessage]);
+      .mockResolvedValueOnce({ messages: [firstMessage], rateLimited: false })
+      .mockResolvedValueOnce({ messages: [firstMessage], rateLimited: false })
+      .mockResolvedValueOnce({ messages: [updatedMessage], rateLimited: false });
 
     const run = () =>
       (connector as unknown as { runIngestion: () => Promise<void> }).runIngestion();
@@ -105,12 +105,12 @@ describe('DiscordConnector message cache', () => {
         connector as unknown as {
           fetchChannelMessages: (
             target: DiscordIngestionTarget,
-          ) => Promise<DiscordMessageIngestionRecord[]>;
+          ) => Promise<{ messages: DiscordMessageIngestionRecord[]; rateLimited: boolean }>;
         },
         'fetchChannelMessages',
       )
-      .mockResolvedValueOnce([first, second])
-      .mockResolvedValueOnce([first]);
+      .mockResolvedValueOnce({ messages: [first, second], rateLimited: false })
+      .mockResolvedValueOnce({ messages: [first], rateLimited: false });
 
     const run = () =>
       (connector as unknown as { runIngestion: () => Promise<void> }).runIngestion();
@@ -149,11 +149,11 @@ describe('DiscordConnector message cache', () => {
         connector as unknown as {
           fetchChannelMessages: (
             target: DiscordIngestionTarget,
-          ) => Promise<DiscordMessageIngestionRecord[]>;
+          ) => Promise<{ messages: DiscordMessageIngestionRecord[]; rateLimited: boolean }>;
         },
         'fetchChannelMessages',
       )
-      .mockResolvedValue([]);
+      .mockResolvedValue({ messages: [], rateLimited: false });
 
     await (connector as unknown as { runIngestion: () => Promise<void> }).runIngestion();
 
