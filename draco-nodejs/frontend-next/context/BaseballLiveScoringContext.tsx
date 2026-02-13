@@ -85,9 +85,11 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
   const eventSourceRef = useRef<EventSource | null>(null);
   const currentGameIdRef = useRef<string | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
   const baseReconnectDelay = 1000;
+  const connectionTimeoutMs = 30000;
 
   const scoreUpdateCallbacks = useRef<Set<(event: ScoreUpdateEvent) => void>>(new Set());
   const sessionStartedCallbacks = useRef<Set<(event: SessionStartedEvent) => void>>(new Set());
@@ -96,10 +98,16 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
   const inningAdvancedCallbacks = useRef<Set<(event: InningAdvancedEvent) => void>>(new Set());
   const connectRef = useRef<((gameId: string, role?: SseRole) => void) | null>(null);
   const disconnectRef = useRef<(() => void) | null>(null);
+  const currentRoleRef = useRef<SseRole>('watcher');
   const isConnectedRef = useRef(false);
   const isConnectingRef = useRef(false);
 
   const disconnect = () => {
+    if (connectionTimeoutRef.current) {
+      clearTimeout(connectionTimeoutRef.current);
+      connectionTimeoutRef.current = null;
+    }
+
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
@@ -133,7 +141,21 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
     const eventSource = new EventSource(sseUrl);
     eventSourceRef.current = eventSource;
 
+    connectionTimeoutRef.current = setTimeout(() => {
+      if (eventSourceRef.current === eventSource && !isConnectedRef.current) {
+        eventSource.close();
+        eventSourceRef.current = null;
+        isConnectingRef.current = false;
+        setIsConnecting(false);
+        setConnectionError('Connection timed out. Please try again.');
+      }
+    }, connectionTimeoutMs);
+
     eventSource.onopen = () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
       isConnectingRef.current = false;
       isConnectedRef.current = true;
       setIsConnecting(false);
@@ -143,6 +165,10 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
     };
 
     eventSource.onerror = () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
       isConnectedRef.current = false;
       isConnectingRef.current = false;
       setIsConnected(false);
@@ -163,7 +189,7 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
 
         reconnectTimeoutRef.current = setTimeout(() => {
           if (currentGameIdRef.current === gameId && connectRef.current) {
-            connectRef.current(gameId);
+            connectRef.current(gameId, currentRoleRef.current);
           }
         }, delay);
       } else {
@@ -328,6 +354,7 @@ export function BaseballLiveScoringProvider({ children }: BaseballLiveScoringPro
     disconnect();
 
     currentGameIdRef.current = gameId;
+    currentRoleRef.current = role;
     isConnectingRef.current = true;
     setIsConnecting(true);
     setConnectionError(null);
