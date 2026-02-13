@@ -108,6 +108,8 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    const controller = new AbortController();
+
     const loadRoles = async () => {
       setLoading(true);
       setInitialized(false);
@@ -127,9 +129,11 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
         if (!metadata) {
           const result = await getRoleMetadata({
             client: apiClient,
+            signal: controller.signal,
             throwOnError: false,
           });
 
+          if (controller.signal.aborted) return;
           metadata = unwrapApiResult(result, 'Failed to fetch role metadata');
           sessionStorage.setItem(ROLE_METADATA_CACHE_KEY, JSON.stringify(metadata));
         }
@@ -140,10 +144,12 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
         const result = await getCurrentUserRoles({
           client: apiClient,
+          signal: controller.signal,
           throwOnError: false,
           query: accountIdStr ? { accountId: accountIdStr } : undefined,
         });
 
+        if (controller.signal.aborted) return;
         const data = unwrapApiResult(result, 'Failed to fetch user roles');
 
         setUserRoles((previous) => {
@@ -170,6 +176,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
           return nextRoles;
         });
       } catch (err: unknown) {
+        if (controller.signal.aborted) return;
         if (err instanceof Error) {
           console.error('Error loading roles:', err);
           setError(err.message);
@@ -178,12 +185,18 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
         }
         setUserRoles(null);
       } finally {
-        setLoading(false);
-        setInitialized(true);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+          setInitialized(true);
+        }
       }
     };
 
     void loadRoles();
+
+    return () => {
+      controller.abort();
+    };
   }, [user, token, accountIdStr, apiClient]);
 
   const clearRoles = () => {
