@@ -118,11 +118,20 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
 
     let noChangeCount = 0;
     for (const target of targets) {
+      if (Date.now() < this.nextAllowedRun || Date.now() < this.globalCooldownUntil) {
+        break;
+      }
+
       await this.ensureCacheHydrated(target);
-      const messages = await this.fetchChannelMessages(target);
+      const result = await this.fetchChannelMessages(target);
+
+      if (result.rateLimited) {
+        break;
+      }
+
       let ingestedCount = 0;
 
-      for (const message of messages) {
+      for (const message of result.messages) {
         if (this.isMessageCached(target, message)) {
           continue;
         }
@@ -153,7 +162,7 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
         ingestedCount += 1;
       }
 
-      const deletedCount = await this.removeDeletedMessages(target, messages);
+      const deletedCount = await this.removeDeletedMessages(target, result.messages);
 
       if (ingestedCount > 0) {
         if (shouldLogVerbose) {
@@ -181,7 +190,7 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
 
   private async fetchChannelMessages(
     target: DiscordIngestionTarget,
-  ): Promise<DiscordMessageIngestionRecord[]> {
+  ): Promise<{ messages: DiscordMessageIngestionRecord[]; rateLimited: boolean }> {
     const { channelId, guildId } = target;
     const url = new URL(`https://discord.com/api/v10/channels/${channelId}/messages`);
     url.searchParams.set('limit', String(this.getFetchLimit()));
@@ -195,10 +204,10 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
       });
 
       if (!Array.isArray(response) || !response.length) {
-        return [];
+        return { messages: [], rateLimited: false };
       }
 
-      return Promise.all(
+      const messages = await Promise.all(
         response.map(async (message) => {
           const normalized = normalizeDiscordMessage(message);
           const attachments =
@@ -248,19 +257,22 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
           };
         }),
       );
+
+      return { messages, rateLimited: false };
     } catch (error) {
       if (error instanceof HttpError && error.status === 429) {
         const retryAfterMs = this.extractRetryAfterMs(error.body);
         console.warn(
-          `[discord] Rate limit hit for channel ${channelId}. Pausing for ${retryAfterMs}ms`,
+          `[discord] Rate limit hit for channel ${channelId}. Pausing for ${retryAfterMs}ms. Raw body: ${error.body}`,
         );
         this.nextAllowedRun = Date.now() + retryAfterMs;
+        return { messages: [], rateLimited: true };
       } else if (error instanceof HttpError && error.status >= 500) {
         console.error(`[discord] Discord API error ${error.status} for channel ${channelId}`);
       } else {
         console.error(`[discord] Failed to fetch messages for channel ${channelId}`, error);
       }
-      return [];
+      return { messages: [], rateLimited: false };
     }
   }
 
