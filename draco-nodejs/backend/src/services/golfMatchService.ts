@@ -275,6 +275,71 @@ export class GolfMatchService {
     return GolfMatchResponseFormatter.format(updatedMatch);
   }
 
+  async changeMatchSeason(matchId: bigint, targetSeasonId: bigint): Promise<GolfMatchType> {
+    const match = await this.matchRepository.findById(matchId);
+    if (!match) {
+      throw new NotFoundError('Golf match not found');
+    }
+
+    if (match.matchstatus === GolfMatchStatus.COMPLETED) {
+      throw new ValidationError('Cannot move a completed match to a different season');
+    }
+
+    const hasScores = await this.matchRepository.hasScores(matchId);
+    if (hasScores) {
+      throw new ValidationError('Cannot move a match with recorded scores to a different season');
+    }
+
+    const currentFlight = await this.flightRepository.findById(match.leagueid);
+    if (!currentFlight) {
+      throw new NotFoundError('Current league season not found');
+    }
+
+    if (currentFlight.seasonid === targetSeasonId) {
+      throw new ValidationError('Match is already in the target season');
+    }
+
+    const targetLeagueSeason = await this.flightRepository.findByLeagueAndSeason(
+      currentFlight.leagueid,
+      targetSeasonId,
+    );
+    if (!targetLeagueSeason) {
+      throw new ValidationError('The target season does not have a matching flight for this match');
+    }
+
+    const team1DefId = match.teamsseason_golfmatch_team1Toteamsseason.teamid;
+    const team2DefId = match.teamsseason_golfmatch_team2Toteamsseason.teamid;
+
+    const newTeam1Season = await this.teamRepository.findByTeamAndLeagueSeason(
+      team1DefId,
+      targetLeagueSeason.id,
+    );
+    if (!newTeam1Season) {
+      throw new ValidationError(
+        `Team "${match.teamsseason_golfmatch_team1Toteamsseason.name}" does not exist in the target season's flight`,
+      );
+    }
+
+    const newTeam2Season = await this.teamRepository.findByTeamAndLeagueSeason(
+      team2DefId,
+      targetLeagueSeason.id,
+    );
+    if (!newTeam2Season) {
+      throw new ValidationError(
+        `Team "${match.teamsseason_golfmatch_team2Toteamsseason.name}" does not exist in the target season's flight`,
+      );
+    }
+
+    const updatedMatch = await this.matchRepository.changeMatchSeason(
+      matchId,
+      targetLeagueSeason.id,
+      newTeam1Season.id,
+      newTeam2Season.id,
+    );
+
+    return GolfMatchResponseFormatter.format(updatedMatch);
+  }
+
   private parseDateTime(dateString: string): Date {
     const parsed = new Date(dateString);
     const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(dateString);

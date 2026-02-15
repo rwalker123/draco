@@ -75,7 +75,7 @@ export interface GameDialogProps {
 
   // Callbacks
   onClose: () => void;
-  onSuccess: (result: { message: string; game?: Game }) => void;
+  onSuccess: (result: { message: string; game?: Game; removed?: boolean }) => void;
   onError: (error: string) => void;
   onDelete?: () => void;
 

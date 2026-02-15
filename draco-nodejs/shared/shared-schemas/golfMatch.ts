@@ -106,6 +106,15 @@ export const GolfMatchDayResultsSchema = z
     description: 'All match results for a specific day',
   });
 
+export const ChangeGolfMatchSeasonSchema = z
+  .object({
+    seasonId: bigintToStringSchema,
+  })
+  .openapi({
+    title: 'ChangeGolfMatchSeason',
+    description: 'Data required to move a golf match to a different season',
+  });
+
 export type GolfMatchStatusType = z.infer<typeof GolfMatchStatusSchema>;
 export type GolfMatchTypeType = z.infer<typeof GolfMatchTypeSchema>;
 export type GolfMatchTeamType = z.infer<typeof GolfMatchTeamSchema>;
@@ -115,3 +124,4 @@ export type GolfMatchResultType = z.infer<typeof GolfMatchResultSchema>;
 export type CreateGolfMatchType = z.infer<typeof CreateGolfMatchSchema>;
 export type UpdateGolfMatchType = z.infer<typeof UpdateGolfMatchSchema>;
 export type GolfMatchDayResultsType = z.infer<typeof GolfMatchDayResultsSchema>;
+export type ChangeGolfMatchSeasonType = z.infer<typeof ChangeGolfMatchSeasonSchema>;

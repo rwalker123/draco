@@ -19,4 +19,5 @@ export interface IGolfFlightRepository {
   getPlayerCountForFlight(flightId: bigint): Promise<number>;
   flightNameExistsInSeason(accountId: bigint, seasonId: bigint, name: string): Promise<boolean>;
   seasonHasFlights(seasonId: bigint): Promise<boolean>;
+  findByLeagueAndSeason(leagueId: bigint, seasonId: bigint): Promise<{ id: bigint } | null>;
 }

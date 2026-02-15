@@ -194,4 +194,14 @@ export class PrismaGolfFlightRepository implements IGolfFlightRepository {
     });
     return count > 0;
   }
+
+  async findByLeagueAndSeason(leagueId: bigint, seasonId: bigint): Promise<{ id: bigint } | null> {
+    return this.prisma.leagueseason.findFirst({
+      where: {
+        leagueid: leagueId,
+        seasonid: seasonId,
+      },
+      select: { id: true },
+    });
+  }
 }

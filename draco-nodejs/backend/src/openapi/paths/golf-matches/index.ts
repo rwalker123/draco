@@ -11,6 +11,7 @@ export const registerGolfMatchesEndpoints = ({ registry, schemaRefs, z }: Regist
     NotFoundErrorSchemaRef,
     SubmitMatchResultsSchemaRef,
     UpdateGolfMatchSchemaRef,
+    ChangeGolfMatchSeasonSchemaRef,
     ValidationErrorSchemaRef,
   } = schemaRefs;
 
@@ -844,6 +845,96 @@ export const registerGolfMatchesEndpoints = ({ registry, schemaRefs, z }: Regist
     responses: {
       200: {
         description: 'Match status updated',
+        content: {
+          'application/json': {
+            schema: GolfMatchSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied - account management permission required',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Match not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // PUT /api/accounts/{accountId}/golf/matches/{matchId}/change-season
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/golf/matches/{matchId}/change-season',
+    description: 'Move a golf match to a different season within the same league',
+    operationId: 'changeGolfMatchSeason',
+    summary: 'Change match season',
+    tags: ['Golf Matches'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'matchId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: ChangeGolfMatchSeasonSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Match moved to new season',
         content: {
           'application/json': {
             schema: GolfMatchSchemaRef,

@@ -148,6 +148,13 @@ describe('GolfFlightService', () => {
       async seasonHasFlights(seasonId: bigint): Promise<boolean> {
         return flights.some((f) => f.seasonid === seasonId);
       },
+      async findByLeagueAndSeason(
+        leagueId: bigint,
+        seasonId: bigint,
+      ): Promise<{ id: bigint } | null> {
+        const found = flights.find((f) => f.leagueid === leagueId && f.seasonid === seasonId);
+        return found ? { id: found.id } : null;
+      },
     };
 
     service = new GolfFlightService(repository);

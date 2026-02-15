@@ -20818,6 +20818,17 @@ components:
           type: integer
       title: UpdateGolfMatch
       description: Data for updating an existing golf match
+    ChangeGolfMatchSeason:
+      type: object
+      properties:
+        seasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+      required:
+        - seasonId
+      title: ChangeGolfMatchSeason
+      description: Data required to move a golf match to a different season
     GolfScore:
       type: object
       properties:
@@ -34846,6 +34857,70 @@ paths:
       responses:
         "200":
           description: Match status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfMatch"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - account management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Match not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/matches/{matchId}/change-season:
+    put:
+      description: Move a golf match to a different season within the same league
+      operationId: changeGolfMatchSeason
+      summary: Change match season
+      tags:
+        - Golf Matches
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeGolfMatchSeason"
+      responses:
+        "200":
+          description: Match moved to new season
           content:
             application/json:
               schema:
