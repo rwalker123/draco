@@ -250,4 +250,21 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
       },
     });
   }
+
+  async changeMatchSeason(
+    matchId: bigint,
+    newLeagueSeasonId: bigint,
+    newTeam1Id: bigint,
+    newTeam2Id: bigint,
+  ): Promise<GolfMatchWithTeams> {
+    return this.prisma.golfmatch.update({
+      where: { id: matchId },
+      data: {
+        leagueid: newLeagueSeasonId,
+        team1: newTeam1Id,
+        team2: newTeam2Id,
+      },
+      include: matchTeamInclude,
+    });
+  }
 }

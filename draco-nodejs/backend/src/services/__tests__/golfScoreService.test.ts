@@ -110,6 +110,9 @@ describe('GolfScoreService', () => {
       updateStatus: vi.fn(),
       updatePoints: vi.fn(),
       updateTee: vi.fn(),
+      changeMatchSeason: vi.fn(async () => {
+        throw new Error('Not implemented');
+      }),
     };
     mockRosterRepository = {
       findByIds: vi.fn(),

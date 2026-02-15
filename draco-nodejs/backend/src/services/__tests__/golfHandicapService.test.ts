@@ -62,6 +62,7 @@ describe('GolfHandicapService', () => {
     };
     mockTeamRepository = {
       findByFlightId: vi.fn(),
+      findByTeamAndLeagueSeason: vi.fn(async () => null),
     };
     mockTeeRepository = {
       findById: vi.fn(),

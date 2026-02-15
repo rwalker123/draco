@@ -35,6 +35,9 @@ describe('GolfIndividualScoringService', () => {
     mockMatchRepository = {
       findByIdWithScores: vi.fn(),
       updatePoints: vi.fn(),
+      changeMatchSeason: vi.fn(async () => {
+        throw new Error('Not implemented');
+      }),
     };
     mockLeagueRepository = {
       findByLeagueSeasonId: vi.fn(),

@@ -6,6 +6,7 @@ import {
   CreateGolfMatchSchema,
   UpdateGolfMatchSchema,
   SubmitMatchResultsSchema,
+  ChangeGolfMatchSeasonSchema,
 } from '@draco/shared-schemas';
 import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
 
@@ -156,6 +157,19 @@ router.put(
     const { matchId } = extractBigIntParams(req.params, 'matchId');
     const { status } = req.body;
     const match = await golfMatchService.updateMatchStatus(matchId, status);
+    res.json(match);
+  }),
+);
+
+router.put(
+  '/:matchId/change-season',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { matchId } = extractBigIntParams(req.params, 'matchId');
+    const { seasonId } = ChangeGolfMatchSeasonSchema.parse(req.body);
+    const match = await golfMatchService.changeMatchSeason(matchId, BigInt(seasonId));
     res.json(match);
   }),
 );

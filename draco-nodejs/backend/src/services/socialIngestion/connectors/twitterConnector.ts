@@ -35,7 +35,7 @@ interface TwitterApiResponse {
 }
 
 export class TwitterConnector extends BaseSocialIngestionConnector {
-  private readonly rateLimitUntilByHandle = new Map<string, number>();
+  private readonly rateLimitUntilByToken = new Map<string, number>();
   private readonly feedCache: SocialFeedCache;
 
   constructor(
@@ -53,24 +53,8 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
     }
 
     const shouldLogVerbose = this.isDevelopmentEnvironment();
-    const requestsPerWindowBudget = 400; // stay safely below typical 450/15m limit
-    const windowMs = 15 * 60 * 1000;
-    const allowedPerRun = Math.max(
-      1,
-      Math.floor((requestsPerWindowBudget * this.options.intervalMs) / windowMs),
-    );
 
-    const limitedTargets =
-      targets.length > allowedPerRun ? targets.slice(0, allowedPerRun) : targets;
-
-    if (targets.length > allowedPerRun) {
-      console.warn('[twitter] Skipping extra ingestion targets to stay within rate limits', {
-        considered: targets.length,
-        allowedThisRun: allowedPerRun,
-      });
-    }
-
-    for (const target of limitedTargets) {
+    for (const target of targets) {
       if (!target.bearerToken) {
         console.warn('[twitter] Skipping ingestion target without bearer token', {
           accountId: target.accountId.toString(),
@@ -79,7 +63,8 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
         continue;
       }
 
-      const blockedUntil = this.rateLimitUntilByHandle.get(target.handle);
+      const tokenKey = target.bearerToken as string;
+      const blockedUntil = this.rateLimitUntilByToken.get(tokenKey);
       if (blockedUntil && Date.now() < blockedUntil) {
         console.warn('[twitter] Skipping ingestion target due to rate limit window', {
           handle: target.handle,
@@ -154,6 +139,7 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
     target: TwitterIngestionTargetWithAuth,
   ): Promise<SocialFeedIngestionRecord[]> {
     const { handle, bearerToken } = target;
+    const tokenKey = bearerToken as string;
     const query = new URL('https://api.twitter.com/2/tweets/search/recent');
     query.searchParams.set('query', `from:${handle}`);
     query.searchParams.set('tweet.fields', 'author_id,created_at,public_metrics');
@@ -161,106 +147,85 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
     query.searchParams.set('media.fields', 'url,preview_image_url,type');
     query.searchParams.set('max_results', String(this.options.maxResults));
 
-    const maxAttempts = 3;
-    let attempt = 0;
+    try {
+      const { body: response, headers } = await this.fetchTwitterJson<TwitterApiResponse>(
+        query,
+        tokenKey,
+      );
 
-    while (attempt < maxAttempts) {
-      attempt += 1;
-      try {
-        const { body: response, headers } = await this.fetchTwitterJson<TwitterApiResponse>(
-          query,
-          bearerToken as string,
-        );
+      if (!response.data?.length) {
+        return [];
+      }
 
-        if (!response.data?.length) {
-          return [];
-        }
+      const mediaMap = new Map(
+        response.includes?.media?.map((media) => [media.media_key, media]) ?? [],
+      );
 
-        const mediaMap = new Map(
-          response.includes?.media?.map((media) => [media.media_key, media]) ?? [],
-        );
+      const userMap = new Map(response.includes?.users?.map((user) => [user.id, user]) ?? []);
 
-        const userMap = new Map(response.includes?.users?.map((user) => [user.id, user]) ?? []);
+      const records = response.data.map((tweet) => {
+        const mediaEntries =
+          (tweet.attachments?.media_keys
+            ?.map((key) => mediaMap.get(key))
+            .filter((item): item is NonNullable<typeof item> => Boolean(item))
+            .map((item) => ({
+              type: item.type === 'video' ? 'video' : 'image',
+              url: item.url ?? item.preview_image_url ?? '',
+              thumbnailUrl: item.preview_image_url ?? null,
+            })) as SocialMediaAttachmentType[]) ?? [];
 
-        const records = response.data.map((tweet) => {
-          const mediaEntries =
-            (tweet.attachments?.media_keys
-              ?.map((key) => mediaMap.get(key))
-              .filter((item): item is NonNullable<typeof item> => Boolean(item))
-              .map((item) => ({
-                type: item.type === 'video' ? 'video' : 'image',
-                url: item.url ?? item.preview_image_url ?? '',
-                thumbnailUrl: item.preview_image_url ?? null,
-              })) as SocialMediaAttachmentType[]) ?? [];
+        const author = tweet.author_id ? userMap.get(tweet.author_id) : undefined;
 
-          const author = tweet.author_id ? userMap.get(tweet.author_id) : undefined;
+        return {
+          externalId: tweet.id,
+          text: tweet.text,
+          authorName: author?.name ?? null,
+          authorHandle: author ? `@${author.username}` : null,
+          channelName: handle,
+          postedAt: tweet.created_at ? new Date(tweet.created_at) : new Date(),
+          permalink: `https://twitter.com/${handle}/status/${tweet.id}`,
+          media: mediaEntries.length ? mediaEntries : undefined,
+          metadata: tweet.public_metrics
+            ? {
+                reactions: tweet.public_metrics.like_count,
+                replies: tweet.public_metrics.reply_count,
+                viewCount: tweet.public_metrics.impression_count,
+              }
+            : undefined,
+        };
+      });
 
-          return {
-            externalId: tweet.id,
-            text: tweet.text,
-            authorName: author?.name ?? null,
-            authorHandle: author ? `@${author.username}` : null,
-            channelName: handle,
-            postedAt: tweet.created_at ? new Date(tweet.created_at) : new Date(),
-            permalink: `https://twitter.com/${handle}/status/${tweet.id}`,
-            media: mediaEntries.length ? mediaEntries : undefined,
-            metadata: tweet.public_metrics
-              ? {
-                  reactions: tweet.public_metrics.like_count,
-                  replies: tweet.public_metrics.reply_count,
-                  viewCount: tweet.public_metrics.impression_count,
-                }
-              : undefined,
-          };
+      const remaining = this.parseNumberHeader(headers['x-rate-limit-remaining']);
+      const resetSeconds = this.parseNumberHeader(headers['x-rate-limit-reset']);
+      const resetMs = resetSeconds ? resetSeconds * 1000 : null;
+      if (remaining !== null && remaining <= 0 && resetMs) {
+        this.rateLimitUntilByToken.set(tokenKey, resetMs);
+        console.warn('[twitter] Applied post-success rate limit window', {
+          handle,
+          retryAfter: new Date(resetMs).toISOString(),
+          limit: this.parseNumberHeader(headers['x-rate-limit-limit']),
+          remaining,
+          reset: new Date(resetMs).toISOString(),
         });
+      }
 
-        const remaining = this.parseNumberHeader(headers['x-rate-limit-remaining']);
-        const resetSeconds = this.parseNumberHeader(headers['x-rate-limit-reset']);
-        const resetMs = resetSeconds ? resetSeconds * 1000 : null;
-        if (remaining !== null && remaining <= 0 && resetMs) {
-          this.rateLimitUntilByHandle.set(handle, resetMs);
-          console.warn('[twitter] Applied post-success rate limit window', {
-            handle,
-            retryAfter: new Date(resetMs).toISOString(),
-          });
-        }
-
-        return records;
-      } catch (error) {
-        const status = (error as { status?: number }).status;
-        const retryAfter = this.computeRetryAfter(error);
-        if (retryAfter) {
-          this.rateLimitUntilByHandle.set(handle, retryAfter.untilMs);
-        }
-        if (status === 429 && attempt < maxAttempts) {
-          const backoffMs = retryAfter
-            ? Math.max(0, retryAfter.untilMs - Date.now())
-            : 2000 * attempt;
-          console.warn('[twitter] Rate limited fetching tweets, backing off', {
-            handle,
-            attempt,
-            backoffMs,
-            retryHint: retryAfter?.hint ?? null,
-          });
-          await this.sleep(backoffMs);
-          continue;
-        }
-        console.error(`[twitter] Failed to fetch tweets for @${handle}`, {
-          error,
-          retryHint: retryAfter?.hint ?? null,
-          limit: retryAfter?.limit ?? null,
-          remaining: retryAfter?.remaining ?? null,
-          reset: retryAfter?.resetIso ?? null,
+      return records;
+    } catch (error) {
+      const retryAfter = this.computeRetryAfter(error);
+      if (retryAfter) {
+        this.rateLimitUntilByToken.set(tokenKey, retryAfter.untilMs);
+        console.warn('[twitter] Rate limited, setting cooldown until next window', {
+          handle,
+          retryAfter: new Date(retryAfter.untilMs).toISOString(),
+          limit: retryAfter.limit ?? null,
+          remaining: retryAfter.remaining ?? null,
+          reset: retryAfter.resetIso ?? null,
         });
         return [];
       }
+      console.error(`[twitter] Failed to fetch tweets for @${handle}`, { error });
+      return [];
     }
-
-    return [];
-  }
-
-  private async sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private computeRetryAfter(error: unknown): {
