@@ -76,7 +76,7 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
       return;
     }
 
-    let isMounted = true;
+    const controller = new AbortController();
 
     const loadHallOfFame = async () => {
       setHallOfFameLoading(true);
@@ -86,14 +86,13 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
         const classesResult = await listAccountHallOfFameClasses({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        const classes = unwrapApiResult(classesResult, 'Unable to load Hall of Fame data.');
+        if (controller.signal.aborted) return;
 
-        if (!isMounted) {
-          return;
-        }
+        const classes = unwrapApiResult(classesResult, 'Unable to load Hall of Fame data.');
 
         const hasClasses = Array.isArray(classes) && classes.length > 0;
         setHasHallOfFame(hasClasses);
@@ -104,40 +103,38 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
               client: apiClient,
               path: { accountId },
               query: memberCount > 1 ? { count: memberCount } : undefined,
+              signal: controller.signal,
               throwOnError: false,
             });
 
+            if (controller.signal.aborted) return;
+
             const members = unwrapApiResult(randomResult, 'Unable to load Hall of Fame spotlight.');
 
-            if (isMounted) {
-              const normalizedMembers = (Array.isArray(members) ? members : [members])
-                .map(coerceMember)
-                .filter(Boolean) as HofMemberType[];
+            const normalizedMembers = (Array.isArray(members) ? members : [members])
+              .map(coerceMember)
+              .filter(Boolean) as HofMemberType[];
 
-              if (normalizedMembers.length > 0) {
-                setHallOfFameMembers(normalizedMembers);
-              } else {
-                setHallOfFameError('Unable to load Hall of Fame spotlight.');
-                setHallOfFameMembers([]);
-              }
-            }
-          } catch (error) {
-            if (isMounted) {
-              const message =
-                error instanceof ApiClientError
-                  ? error.message
-                  : 'Unable to load Hall of Fame spotlight.';
-              setHallOfFameError(message);
+            if (normalizedMembers.length > 0) {
+              setHallOfFameMembers(normalizedMembers);
+            } else {
+              setHallOfFameError('Unable to load Hall of Fame spotlight.');
               setHallOfFameMembers([]);
             }
+          } catch (error: unknown) {
+            if (controller.signal.aborted) return;
+            const message =
+              error instanceof ApiClientError
+                ? error.message
+                : 'Unable to load Hall of Fame spotlight.';
+            setHallOfFameError(message);
+            setHallOfFameMembers([]);
           }
         } else {
           setHallOfFameMembers([]);
         }
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
+      } catch (error: unknown) {
+        if (controller.signal.aborted) return;
 
         const message =
           error instanceof ApiClientError ? error.message : 'Unable to load Hall of Fame data.';
@@ -145,7 +142,7 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
         setHasHallOfFame(false);
         setHallOfFameMembers([]);
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setHallOfFameLoading(false);
         }
       }
@@ -154,7 +151,7 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
     loadHallOfFame();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountId, apiClient, memberCount]);
 

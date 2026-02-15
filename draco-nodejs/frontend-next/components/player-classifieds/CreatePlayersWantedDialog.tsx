@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -135,14 +135,12 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     setFormData(initialData ?? EMPTY_FORM);
   }, [initialData]);
 
-  const selectedPositions = useMemo(() => {
-    return formData.positionsNeeded
-      ? formData.positionsNeeded
-          .split(',')
-          .map((position) => position.trim())
-          .filter((position) => position.length > 0)
-      : [];
-  }, [formData.positionsNeeded]);
+  const selectedPositions = formData.positionsNeeded
+    ? formData.positionsNeeded
+        .split(',')
+        .map((position) => position.trim())
+        .filter((position) => position.length > 0)
+    : [];
 
   const handleFieldChange = (
     field: keyof UpsertPlayersWantedClassifiedType,
@@ -202,7 +200,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const buildPayload = useCallback((): UpsertPlayersWantedClassifiedType => {
+  const buildPayload = (): UpsertPlayersWantedClassifiedType => {
     const payload: UpsertPlayersWantedClassifiedType = {
       ...(formData.id ? { id: formData.id } : {}),
       teamEventName: formData.teamEventName.trim(),
@@ -211,7 +209,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
       notifyOptOut: formData.notifyOptOut ?? false,
     };
     return payload;
-  }, [formData, selectedPositions]);
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -271,15 +269,19 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
       return;
     }
 
-    let ignore = false;
+    const controller = new AbortController();
+
     const fetchTeams = async () => {
       try {
         setTeamsLoading(true);
         const result = await getAccountUserTeams({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
+
+        if (controller.signal.aborted) return;
 
         const teamsResponse = unwrapApiResult(result, 'Failed to load teams');
         const normalizedTeams = Array.isArray(teamsResponse) ? teamsResponse : [];
@@ -297,25 +299,22 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
           ),
         );
 
-        if (!ignore) {
-          setTeamOptions(teams);
-        }
+        setTeamOptions(teams);
       } catch (error) {
-        if (!ignore) {
-          console.error('Failed to load user teams:', error);
-          setTeamOptions([]);
-        }
+        if (controller.signal.aborted) return;
+        console.error('Failed to load user teams:', error);
+        setTeamOptions([]);
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setTeamsLoading(false);
         }
       }
     };
 
-    fetchTeams();
+    void fetchTeams();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [open, accountId, isAuthenticated, token, apiClient]);
 

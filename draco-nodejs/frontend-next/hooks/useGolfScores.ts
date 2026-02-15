@@ -25,40 +25,55 @@ export type GolfScoreServiceResult<T> =
   | { success: false; error: string };
 
 export interface GolfScoreService {
-  getMatchScores: (matchId: string) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
+  getMatchScores: (
+    matchId: string,
+    signal?: AbortSignal,
+  ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
   getTeamMatchScores: (
     matchId: string,
     teamId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
   getPlayerScores: (
     contactId: string,
     limit?: number,
+    signal?: AbortSignal,
   ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
   getPlayerSeasonScores: (
     contactId: string,
     seasonId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfScoreServiceResult<PlayerSeasonScoresResponseType>>;
-  getScore: (scoreId: string) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType>>;
+  getScore: (
+    scoreId: string,
+    signal?: AbortSignal,
+  ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType>>;
   submitMatchResults: (
     matchId: string,
     payload: SubmitMatchResultsType,
+    signal?: AbortSignal,
   ) => Promise<GolfScoreServiceResult<GolfMatchType>>;
-  deleteMatchScores: (matchId: string) => Promise<GolfScoreServiceResult<void>>;
+  deleteMatchScores: (
+    matchId: string,
+    signal?: AbortSignal,
+  ) => Promise<GolfScoreServiceResult<void>>;
   getBatchCourseHandicaps: (
     golferIds: string[],
     teeId: string,
     holesPlayed?: number,
+    signal?: AbortSignal,
   ) => Promise<GolfScoreServiceResult<BatchCourseHandicapResponse>>;
 }
 
 export function useGolfScores(accountId: string): GolfScoreService {
   const apiClient = useApiClient();
 
-  const getMatchScores: GolfScoreService['getMatchScores'] = async (matchId) => {
+  const getMatchScores: GolfScoreService['getMatchScores'] = async (matchId, signal) => {
     try {
       const result = await getGolfMatchScores({
         client: apiClient,
         path: { accountId, matchId },
+        signal,
         throwOnError: false,
       });
 
@@ -75,11 +90,16 @@ export function useGolfScores(accountId: string): GolfScoreService {
     }
   };
 
-  const getTeamMatchScores: GolfScoreService['getTeamMatchScores'] = async (matchId, teamId) => {
+  const getTeamMatchScores: GolfScoreService['getTeamMatchScores'] = async (
+    matchId,
+    teamId,
+    signal,
+  ) => {
     try {
       const result = await getGolfTeamMatchScores({
         client: apiClient,
         path: { accountId, matchId, teamId },
+        signal,
         throwOnError: false,
       });
 
@@ -96,12 +116,17 @@ export function useGolfScores(accountId: string): GolfScoreService {
     }
   };
 
-  const getPlayerScores: GolfScoreService['getPlayerScores'] = async (contactId, limit = 20) => {
+  const getPlayerScores: GolfScoreService['getPlayerScores'] = async (
+    contactId,
+    limit = 20,
+    signal,
+  ) => {
     try {
       const result = await getGolfPlayerScores({
         client: apiClient,
         path: { accountId, contactId },
         query: { limit },
+        signal,
         throwOnError: false,
       });
 
@@ -121,11 +146,13 @@ export function useGolfScores(accountId: string): GolfScoreService {
   const getPlayerSeasonScores: GolfScoreService['getPlayerSeasonScores'] = async (
     contactId,
     seasonId,
+    signal,
   ) => {
     try {
       const result = await getGolfPlayerSeasonScores({
         client: apiClient,
         path: { accountId, contactId, seasonId },
+        signal,
         throwOnError: false,
       });
 
@@ -143,11 +170,12 @@ export function useGolfScores(accountId: string): GolfScoreService {
     }
   };
 
-  const getScore: GolfScoreService['getScore'] = async (scoreId) => {
+  const getScore: GolfScoreService['getScore'] = async (scoreId, signal) => {
     try {
       const result = await getGolfScore({
         client: apiClient,
         path: { accountId, scoreId },
+        signal,
         throwOnError: false,
       });
 
@@ -164,12 +192,17 @@ export function useGolfScores(accountId: string): GolfScoreService {
     }
   };
 
-  const submitMatchResults: GolfScoreService['submitMatchResults'] = async (matchId, payload) => {
+  const submitMatchResults: GolfScoreService['submitMatchResults'] = async (
+    matchId,
+    payload,
+    signal,
+  ) => {
     try {
       const result = await submitGolfMatchResults({
         client: apiClient,
         path: { accountId, matchId },
         body: payload,
+        signal,
         throwOnError: false,
       });
 
@@ -186,11 +219,12 @@ export function useGolfScores(accountId: string): GolfScoreService {
     }
   };
 
-  const deleteMatchScores: GolfScoreService['deleteMatchScores'] = async (matchId) => {
+  const deleteMatchScores: GolfScoreService['deleteMatchScores'] = async (matchId, signal) => {
     try {
       const result = await deleteGolfMatchScores({
         client: apiClient,
         path: { accountId, matchId },
+        signal,
         throwOnError: false,
       });
 
@@ -211,12 +245,14 @@ export function useGolfScores(accountId: string): GolfScoreService {
     golferIds,
     teeId,
     holesPlayed = 18,
+    signal,
   ) => {
     try {
       const result = await calculateBatchCourseHandicaps({
         client: apiClient,
         path: { accountId },
         body: { golferIds, teeId, holesPlayed },
+        signal,
         throwOnError: false,
       });
 

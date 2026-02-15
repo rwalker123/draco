@@ -21,28 +21,28 @@ const SettingsWidget: React.FC<SettingsWidgetProps> = ({ accountId }) => {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    let ignore = false;
+    const controller = new AbortController();
     const load = async () => {
       setLoading(true);
       setError(null);
       try {
-        const setup = await getNominationSetup();
-        if (ignore) return;
+        const setup = await getNominationSetup(controller.signal);
+        if (controller.signal.aborted) return;
         setEnableNomination(Boolean(setup.enableNomination));
         setCriteriaText(setup.criteriaText ?? '');
       } catch (err) {
-        if (ignore) return;
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load settings.';
         setError(message);
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
     };
     void load();
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [getNominationSetup]);
 

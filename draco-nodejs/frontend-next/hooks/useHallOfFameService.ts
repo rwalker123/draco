@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
 import {
   CreateHofMemberType,
   HofClassSummaryType,
@@ -165,14 +164,14 @@ export interface HallOfFameService {
     nominationId: string,
     payload: HofNominationInductType,
   ) => Promise<HofMemberType>;
-  getNominationSetup: () => Promise<HofNominationSetupType>;
+  getNominationSetup: (signal?: AbortSignal) => Promise<HofNominationSetupType>;
   updateNominationSetup: (payload: UpdateHofNominationSetupType) => Promise<HofNominationSetupType>;
 }
 
 export function useHallOfFameService(accountId: string): HallOfFameService {
   const apiClient = useApiClient();
 
-  const fetchClasses = useCallback(async (): Promise<HofClassSummaryType[]> => {
+  const fetchClasses = async (): Promise<HofClassSummaryType[]> => {
     const result = await listAccountHallOfFameClasses({
       client: apiClient,
       path: { accountId },
@@ -182,209 +181,194 @@ export function useHallOfFameService(accountId: string): HallOfFameService {
     const classes = unwrapApiResult(result, 'Failed to load Hall of Fame classes') ?? [];
     const list = Array.isArray(classes) ? classes : [];
     return list.map((cls) => normalizeClassSummary(cls));
-  }, [accountId, apiClient]);
+  };
 
-  const fetchClassMembers = useCallback(
-    async (year: number): Promise<HofClassWithMembersType> => {
-      const result = await getAccountHallOfFameClass({
-        client: apiClient,
-        path: { accountId, year },
-        throwOnError: false,
-      });
+  const fetchClassMembers = async (year: number): Promise<HofClassWithMembersType> => {
+    const result = await getAccountHallOfFameClass({
+      client: apiClient,
+      path: { accountId, year },
+      throwOnError: false,
+    });
 
-      const raw = unwrapApiResult(result, 'Failed to load Hall of Fame class.');
-      return normalizeClassWithMembers(raw, year);
-    },
-    [accountId, apiClient],
-  );
+    const raw = unwrapApiResult(result, 'Failed to load Hall of Fame class.');
+    return normalizeClassWithMembers(raw, year);
+  };
 
-  const listEligibleContacts = useCallback(
-    async ({
-      search,
-      page = 1,
-      pageSize = 10,
-    }: ListEligibleContactsParams): Promise<HofEligibleContactsResponseType> => {
-      const result = await listAccountHallOfFameEligibleContacts({
-        client: apiClient,
-        path: { accountId },
-        query: {
-          search: search && search.trim().length > 0 ? search.trim() : undefined,
-          page,
-          pageSize,
-        },
-        throwOnError: false,
-      });
+  const listEligibleContacts = async ({
+    search,
+    page = 1,
+    pageSize = 10,
+  }: ListEligibleContactsParams): Promise<HofEligibleContactsResponseType> => {
+    const result = await listAccountHallOfFameEligibleContacts({
+      client: apiClient,
+      path: { accountId },
+      query: {
+        search: search && search.trim().length > 0 ? search.trim() : undefined,
+        page,
+        pageSize,
+      },
+      throwOnError: false,
+    });
 
-      const raw = unwrapApiResult(
-        result,
-        'Failed to load eligible contacts for Hall of Fame nominations.',
-      );
-      return {
-        contacts: (raw?.contacts ?? []).map(normalizeContact),
-        pagination: raw?.pagination
-          ? {
-              page: Number(raw.pagination.page ?? 1),
-              limit: Number(raw.pagination.limit ?? 0),
-              skip: Number(raw.pagination.skip ?? 0),
-              sortOrder: (raw.pagination.sortOrder as 'asc' | 'desc') ?? 'asc',
-              sortBy: raw.pagination.sortBy ?? undefined,
-            }
-          : undefined,
-      };
-    },
-    [accountId, apiClient],
-  );
+    const raw = unwrapApiResult(
+      result,
+      'Failed to load eligible contacts for Hall of Fame nominations.',
+    );
+    return {
+      contacts: (raw?.contacts ?? []).map(normalizeContact),
+      pagination: raw?.pagination
+        ? {
+            page: Number(raw.pagination.page ?? 1),
+            limit: Number(raw.pagination.limit ?? 0),
+            skip: Number(raw.pagination.skip ?? 0),
+            sortOrder: (raw.pagination.sortOrder as 'asc' | 'desc') ?? 'asc',
+            sortBy: raw.pagination.sortBy ?? undefined,
+          }
+        : undefined,
+    };
+  };
 
-  const createMember = useCallback(
-    async (payload: CreateHofMemberType): Promise<HofMemberType> => {
-      const result = await createAccountHallOfFameMember({
-        client: apiClient,
-        path: { accountId },
-        body: payload,
-        throwOnError: false,
-      });
+  const createMember = async (payload: CreateHofMemberType): Promise<HofMemberType> => {
+    const result = await createAccountHallOfFameMember({
+      client: apiClient,
+      path: { accountId },
+      body: payload,
+      throwOnError: false,
+    });
 
-      const raw = unwrapApiResult(result, 'Failed to create Hall of Fame member.');
-      return normalizeMember(raw);
-    },
-    [accountId, apiClient],
-  );
+    const raw = unwrapApiResult(result, 'Failed to create Hall of Fame member.');
+    return normalizeMember(raw);
+  };
 
-  const updateMember = useCallback(
-    async (memberId: string, payload: UpdateHofMemberType): Promise<HofMemberType> => {
-      const result = await updateAccountHallOfFameMember({
-        client: apiClient,
-        path: { accountId, memberId },
-        body: payload,
-        throwOnError: false,
-      });
+  const updateMember = async (
+    memberId: string,
+    payload: UpdateHofMemberType,
+  ): Promise<HofMemberType> => {
+    const result = await updateAccountHallOfFameMember({
+      client: apiClient,
+      path: { accountId, memberId },
+      body: payload,
+      throwOnError: false,
+    });
 
-      const raw = unwrapApiResult(result, 'Failed to update Hall of Fame member.');
-      return normalizeMember(raw);
-    },
-    [accountId, apiClient],
-  );
+    const raw = unwrapApiResult(result, 'Failed to update Hall of Fame member.');
+    return normalizeMember(raw);
+  };
 
-  const deleteMember = useCallback(
-    async (memberId: string): Promise<void> => {
-      const result = await deleteAccountHallOfFameMember({
-        client: apiClient,
-        path: { accountId, memberId },
-        throwOnError: false,
-      });
+  const deleteMember = async (memberId: string): Promise<void> => {
+    const result = await deleteAccountHallOfFameMember({
+      client: apiClient,
+      path: { accountId, memberId },
+      throwOnError: false,
+    });
 
-      assertNoApiError(result, 'Failed to delete Hall of Fame member.');
-    },
-    [accountId, apiClient],
-  );
+    assertNoApiError(result, 'Failed to delete Hall of Fame member.');
+  };
 
-  const listNominations = useCallback(
-    async ({ page = 1, pageSize = 10 }: ListNominationsParams): Promise<HofNominationListType> => {
-      const result = await listAccountHallOfFameNominations({
-        client: apiClient,
-        path: { accountId },
-        query: {
-          page,
-          pageSize,
-        },
-        throwOnError: false,
-      });
+  const listNominations = async ({
+    page = 1,
+    pageSize = 10,
+  }: ListNominationsParams): Promise<HofNominationListType> => {
+    const result = await listAccountHallOfFameNominations({
+      client: apiClient,
+      path: { accountId },
+      query: {
+        page,
+        pageSize,
+      },
+      throwOnError: false,
+    });
 
-      const raw = unwrapApiResult(result, 'Failed to load Hall of Fame nominations.');
-      const nominations = (raw?.nominations ?? []).map(normalizeNomination);
-      return {
-        nominations,
-        total: Number(raw?.total ?? nominations.length),
-        pagination: raw?.pagination
-          ? {
-              page: Number(raw.pagination.page ?? 1),
-              limit: Number(raw.pagination.limit ?? pageSize),
-              skip: Number(raw.pagination.skip ?? 0),
-              sortOrder: (raw.pagination.sortOrder as 'asc' | 'desc') ?? 'desc',
-              sortBy: raw.pagination.sortBy ?? undefined,
-            }
-          : {
-              page,
-              limit: pageSize,
-              skip: (page - 1) * pageSize,
-              sortOrder: 'desc',
-            },
-      };
-    },
-    [accountId, apiClient],
-  );
+    const raw = unwrapApiResult(result, 'Failed to load Hall of Fame nominations.');
+    const nominations = (raw?.nominations ?? []).map(normalizeNomination);
+    return {
+      nominations,
+      total: Number(raw?.total ?? nominations.length),
+      pagination: raw?.pagination
+        ? {
+            page: Number(raw.pagination.page ?? 1),
+            limit: Number(raw.pagination.limit ?? pageSize),
+            skip: Number(raw.pagination.skip ?? 0),
+            sortOrder: (raw.pagination.sortOrder as 'asc' | 'desc') ?? 'desc',
+            sortBy: raw.pagination.sortBy ?? undefined,
+          }
+        : {
+            page,
+            limit: pageSize,
+            skip: (page - 1) * pageSize,
+            sortOrder: 'desc',
+          },
+    };
+  };
 
-  const updateNomination = useCallback(
-    async (nominationId: string, payload: UpdateHofNominationType): Promise<HofNominationType> => {
-      const result = await updateAccountHallOfFameNomination({
-        client: apiClient,
-        path: { accountId, nominationId },
-        body: {
-          ...payload,
-          phoneNumber: payload.phoneNumber ?? '',
-        },
-        throwOnError: false,
-      });
+  const updateNomination = async (
+    nominationId: string,
+    payload: UpdateHofNominationType,
+  ): Promise<HofNominationType> => {
+    const result = await updateAccountHallOfFameNomination({
+      client: apiClient,
+      path: { accountId, nominationId },
+      body: {
+        ...payload,
+        phoneNumber: payload.phoneNumber ?? '',
+      },
+      throwOnError: false,
+    });
 
-      const raw = unwrapApiResult(result, 'Failed to update nomination.');
-      return normalizeNomination(raw);
-    },
-    [accountId, apiClient],
-  );
+    const raw = unwrapApiResult(result, 'Failed to update nomination.');
+    return normalizeNomination(raw);
+  };
 
-  const deleteNomination = useCallback(
-    async (nominationId: string): Promise<void> => {
-      const result = await deleteAccountHallOfFameNomination({
-        client: apiClient,
-        path: { accountId, nominationId },
-        throwOnError: false,
-      });
+  const deleteNomination = async (nominationId: string): Promise<void> => {
+    const result = await deleteAccountHallOfFameNomination({
+      client: apiClient,
+      path: { accountId, nominationId },
+      throwOnError: false,
+    });
 
-      assertNoApiError(result, 'Failed to delete nomination.');
-    },
-    [accountId, apiClient],
-  );
+    assertNoApiError(result, 'Failed to delete nomination.');
+  };
 
-  const inductNomination = useCallback(
-    async (nominationId: string, payload: HofNominationInductType): Promise<HofMemberType> => {
-      const result = await inductAccountHallOfFameNomination({
-        client: apiClient,
-        path: { accountId, nominationId },
-        body: payload,
-        throwOnError: false,
-      });
+  const inductNomination = async (
+    nominationId: string,
+    payload: HofNominationInductType,
+  ): Promise<HofMemberType> => {
+    const result = await inductAccountHallOfFameNomination({
+      client: apiClient,
+      path: { accountId, nominationId },
+      body: payload,
+      throwOnError: false,
+    });
 
-      const raw = unwrapApiResult(result, 'Failed to induct Hall of Fame nomination.');
-      return normalizeMember(raw);
-    },
-    [accountId, apiClient],
-  );
+    const raw = unwrapApiResult(result, 'Failed to induct Hall of Fame nomination.');
+    return normalizeMember(raw);
+  };
 
-  const getNominationSetup = useCallback(async (): Promise<HofNominationSetupType> => {
+  const getNominationSetup = async (signal?: AbortSignal): Promise<HofNominationSetupType> => {
     const result = await getAccountHallOfFameNominationSetup({
       client: apiClient,
       path: { accountId },
+      signal,
       throwOnError: false,
     });
 
     const raw = unwrapApiResult(result, 'Failed to load nomination settings.');
     return normalizeNominationSetup(raw);
-  }, [accountId, apiClient]);
+  };
 
-  const updateNominationSetup = useCallback(
-    async (payload: UpdateHofNominationSetupType): Promise<HofNominationSetupType> => {
-      const result = await updateAccountHallOfFameNominationSetup({
-        client: apiClient,
-        path: { accountId },
-        body: payload,
-        throwOnError: false,
-      });
+  const updateNominationSetup = async (
+    payload: UpdateHofNominationSetupType,
+  ): Promise<HofNominationSetupType> => {
+    const result = await updateAccountHallOfFameNominationSetup({
+      client: apiClient,
+      path: { accountId },
+      body: payload,
+      throwOnError: false,
+    });
 
-      const raw = unwrapApiResult(result, 'Failed to update nomination settings.');
-      return normalizeNominationSetup(raw);
-    },
-    [accountId, apiClient],
-  );
+    const raw = unwrapApiResult(result, 'Failed to update nomination settings.');
+    return normalizeNominationSetup(raw);
+  };
 
   return {
     fetchClasses,

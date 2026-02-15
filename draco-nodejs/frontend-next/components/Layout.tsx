@@ -1,5 +1,5 @@
 'use client';
-import React, { useCallback } from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
 import {
   AppBar,
@@ -57,6 +57,43 @@ const getAccountIdFromPath = (pathname: string): string | null => {
   return match ? match[1] : null;
 };
 
+const getGreetingName = (
+  user: { contact?: { firstName?: string; lastName?: string }; userName?: string } | null,
+): string => {
+  if (!user) {
+    return '';
+  }
+
+  const firstName = (user.contact?.firstName ?? '').trim();
+  if (firstName) {
+    return firstName;
+  }
+
+  const lastName = (user.contact?.lastName ?? '').trim();
+  if (lastName) {
+    return lastName;
+  }
+
+  const fallbackSource = user.userName ?? '';
+  if (!fallbackSource) {
+    return '';
+  }
+
+  const [usernameWithoutDomain] = fallbackSource.split('@');
+  return usernameWithoutDomain || fallbackSource;
+};
+
+const formatGreetingDisplay = (greetingName: string): string => {
+  if (!greetingName) {
+    return '';
+  }
+  const full = `Hi, ${greetingName}`;
+  if (full.length >= 10) {
+    return `${full.slice(0, 9)}...`;
+  }
+  return full;
+};
+
 const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) => {
   const { user, clearAllContexts } = useAuth();
   const { hasRole, hasManageableAccount } = useRole();
@@ -94,25 +131,25 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     propAccountId ?? accountIdFromPath ?? accountIdFromQuery ?? accountIdFromContext;
   const { isMember } = useAccountMembership(accountId);
 
-  // Fetch account type and current account info
   React.useEffect(() => {
-    let isMounted = true;
+    if (!accountId) {
+      setAccountType(null);
+      setCurrentAccount(null);
+      return;
+    }
+
+    const controller = new AbortController();
 
     const fetchAccount = async () => {
-      if (!accountId) {
-        setAccountType(null);
-        setCurrentAccount(null);
-        return;
-      }
-
       try {
         const result = await getAccountById({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (!isMounted) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -131,7 +168,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           lastSyncedAccountIdRef.current = String(account.id);
         }
       } catch {
-        if (!isMounted) {
+        if (controller.signal.aborted) {
           return;
         }
         setAccountType(null);
@@ -139,85 +176,52 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
       }
     };
 
-    fetchAccount();
+    void fetchAccount();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountId, apiClient, setAccountContext]);
 
-  const handleMenuOpen = React.useCallback((event: React.MouseEvent<HTMLElement>) => {
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-  }, []);
+  };
 
-  const handleMenuClose = React.useCallback(() => {
+  const handleMenuClose = () => {
     setAnchorEl(null);
-  }, []);
+  };
 
-  const handleLogout = React.useCallback(() => {
+  const handleLogout = () => {
     clearAllContexts();
-    logout(); // Will automatically handle redirect if on protected page
+    logout();
     handleMenuClose();
-  }, [clearAllContexts, handleMenuClose, logout]);
+  };
 
-  const handleLogin = React.useCallback(() => {
+  const handleLogin = () => {
     const params = new URLSearchParams();
     if (accountId) params.set('accountId', accountId);
     params.set('next', pathname);
     router.push(`/login?${params.toString()}`);
-  }, [accountId, pathname, router]);
+  };
 
-  const handleSignup = React.useCallback(() => {
+  const handleSignup = () => {
     const params = new URLSearchParams();
     if (accountId) params.set('accountId', accountId);
     params.set('next', pathname);
     router.push(`/signup?${params.toString()}`);
-  }, [accountId, pathname, router]);
+  };
 
-  const greetingName = React.useMemo(() => {
-    if (!user) {
-      return '';
-    }
+  const greetingName = getGreetingName(user);
+  const greetingDisplay = formatGreetingDisplay(greetingName);
 
-    const firstName = (user.contact?.firstName ?? '').trim();
-    if (firstName) {
-      return firstName;
-    }
-
-    const lastName = (user.contact?.lastName ?? '').trim();
-    if (lastName) {
-      return lastName;
-    }
-
-    const fallbackSource = user.userName ?? '';
-    if (!fallbackSource) {
-      return '';
-    }
-
-    const [usernameWithoutDomain] = fallbackSource.split('@');
-    return usernameWithoutDomain || fallbackSource;
-  }, [user]);
-
-  const greetingDisplay = React.useMemo(() => {
-    if (!greetingName) {
-      return '';
-    }
-    const full = `Hi, ${greetingName}`;
-    if (full.length >= 10) {
-      return `${full.slice(0, 9)}...`;
-    }
-    return full;
-  }, [greetingName]);
-
-  const handleProfileClick = useCallback(() => {
+  const handleProfileClick = () => {
     if (!user) {
       return;
     }
-
     router.push('/profile');
-  }, [router, user]);
+  };
 
-  const authMenuItems = React.useMemo(() => {
+  const buildAuthMenuItems = (): React.ReactNode[] => {
     const items: React.ReactNode[] = [];
     if (user) {
       if (greetingDisplay) {
@@ -314,26 +318,17 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
       }
     }
     return items;
-  }, [
-    accountId,
-    greetingDisplay,
-    handleLogin,
-    handleLogout,
-    handleMenuClose,
-    handleProfileClick,
-    handleSignup,
-    isIndividualGolfAccount,
-    isMember,
-    user,
-  ]);
+  };
 
-  const handleHomeClick = useCallback(() => {
+  const authMenuItems = buildAuthMenuItems();
+
+  const handleHomeClick = () => {
     if (accountId) {
       router.push(`/account/${accountId}/home`);
     } else {
       router.push('/');
     }
-  }, [accountId, router]);
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>

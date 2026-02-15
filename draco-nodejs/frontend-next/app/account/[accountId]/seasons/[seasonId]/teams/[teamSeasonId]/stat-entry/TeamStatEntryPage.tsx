@@ -388,7 +388,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   const gameOutcome = determineGameOutcome(selectedGame);
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
     const service = new TeamStatsEntryService(token, apiClient);
 
     const loadGames = async () => {
@@ -396,17 +396,22 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       setGamesError(null);
 
       try {
-        const data = await service.listCompletedGames(accountId, seasonId, teamSeasonId);
-        if (!active) return;
+        const data = await service.listCompletedGames(
+          accountId,
+          seasonId,
+          teamSeasonId,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
 
         setGames(data);
       } catch (error) {
-        if (!active) return;
+        if (controller.signal.aborted) return;
         const message = error instanceof Error ? error.message : 'Unable to load completed games.';
         setGamesError(message);
         setGames([]);
       } finally {
-        if (active) {
+        if (!controller.signal.aborted) {
           setGamesLoading(false);
         }
       }
@@ -415,7 +420,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     void loadGames();
 
     return () => {
-      active = false;
+      controller.abort();
     };
   }, [accountId, seasonId, teamSeasonId, token, apiClient]);
 
@@ -446,7 +451,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   };
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
     const service = new TeamStatsEntryService(token, apiClient);
     setSeasonStatsLoading(true);
     setSeasonStatsError(null);
@@ -454,16 +459,16 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     const load = async () => {
       try {
         const [batting, pitching] = await Promise.all([
-          service.getSeasonBattingStats(accountId, seasonId, teamSeasonId),
-          service.getSeasonPitchingStats(accountId, seasonId, teamSeasonId),
+          service.getSeasonBattingStats(accountId, seasonId, teamSeasonId, controller.signal),
+          service.getSeasonPitchingStats(accountId, seasonId, teamSeasonId, controller.signal),
         ]);
-        if (!active) {
+        if (controller.signal.aborted) {
           return;
         }
         setSeasonBattingStats(batting);
         setSeasonPitchingStats(pitching);
       } catch (err) {
-        if (!active) {
+        if (controller.signal.aborted) {
           return;
         }
         const message =
@@ -472,7 +477,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
         setSeasonBattingStats([]);
         setSeasonPitchingStats([]);
       } finally {
-        if (active) {
+        if (!controller.signal.aborted) {
           setSeasonStatsLoading(false);
         }
       }
@@ -481,7 +486,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     void load();
 
     return () => {
-      active = false;
+      controller.abort();
     };
   }, [accountId, seasonId, teamSeasonId, token, apiClient]);
 

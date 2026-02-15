@@ -26,14 +26,17 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
+    const controller = new AbortController();
 
     const fetchUpcomingWorkouts = async () => {
       try {
         setError(null);
 
-        const upcomingWorkouts = await listWorkouts(accountId, false, token, 'upcoming');
-        if (!isMounted) {
+        const upcomingWorkouts = await listWorkouts(accountId, false, token, 'upcoming', {
+          signal: controller.signal,
+        });
+
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -42,8 +45,8 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({
           .slice(0, maxDisplay);
 
         setWorkouts(upcoming);
-      } catch (err) {
-        if (!isMounted) {
+      } catch (err: unknown) {
+        if (controller.signal.aborted) {
           return;
         }
         console.error('Failed to fetch upcoming workouts:', err);
@@ -55,7 +58,7 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({
     fetchUpcomingWorkouts();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountId, token, maxDisplay]);
 

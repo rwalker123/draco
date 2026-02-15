@@ -176,6 +176,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   const [handoutAnchorEl, setHandoutAnchorEl] = React.useState<null | HTMLElement>(null);
   const [announcementAnchorEl, setAnnouncementAnchorEl] = React.useState<null | HTMLElement>(null);
   const [compactAnchorEl, setCompactAnchorEl] = React.useState<null | HTMLElement>(null);
+  const lastEmittedEmptyRef = React.useRef(true);
 
   const { currentThemeName, setCurrentThemeName } = useThemeContext();
   const isDarkMode = currentThemeName === 'dark';
@@ -1269,18 +1270,17 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   );
 
   React.useEffect(() => {
-    if (!useUnifiedMenu || !isCompact) {
-      onCompactMenuItemsChange?.([]);
-      return;
-    }
-
-    if (!allQuickActionsLoaded) {
-      onCompactMenuItemsChange?.([]);
+    if (!useUnifiedMenu || !isCompact || !allQuickActionsLoaded) {
+      if (!lastEmittedEmptyRef.current) {
+        onCompactMenuItemsChange?.([]);
+        lastEmittedEmptyRef.current = true;
+      }
       return;
     }
 
     const items = buildCompactMenuItems(onUnifiedMenuClose ?? (() => {}));
     onCompactMenuItemsChange?.(items);
+    lastEmittedEmptyRef.current = items.length === 0;
   }, [
     allQuickActionsLoaded,
     buildCompactMenuItems,

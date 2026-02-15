@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -18,7 +18,9 @@ import { PlayersWantedDetailDialog } from '../player-classifieds';
 import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
 import CreatePlayersWantedDialog from '../player-classifieds/CreatePlayersWantedDialog';
 import { useAuth } from '../../context/AuthContext';
-import { usePlayersWantedClassifieds } from '../../hooks/useClassifiedsService';
+import { useApiClient } from '../../hooks/useApiClient';
+import { listPlayersWantedClassifieds } from '@draco/shared-api-client';
+import { unwrapApiResult } from '../../utils/apiResult';
 import type { PlayersWantedDialogSuccessEvent } from '../player-classifieds/CreatePlayersWantedDialog';
 
 interface PlayersWantedPreviewProps {
@@ -46,40 +48,41 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const router = useRouter();
   const { token } = useAuth();
-  const { listPlayersWanted } = usePlayersWantedClassifieds(accountId);
-  const listPlayersWantedRef = useRef(listPlayersWanted);
-  listPlayersWantedRef.current = listPlayersWanted;
+  const apiClient = useApiClient();
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     const loadPlayersWanted = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await listPlayersWantedRef.current();
-        if (cancelled) return;
 
-        if (response.success && response.data) {
-          const allTeams = response.data.data;
-          setTotalCount(response.data.total);
+        const result = await listPlayersWantedClassifieds({
+          client: apiClient,
+          path: { accountId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
 
-          const shuffled = [...allTeams];
-          for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-          }
-          setPlayersWanted(shuffled.slice(0, maxDisplay));
-        } else {
-          const message = response.error || 'Failed to load player opportunities';
-          setError(message);
+        if (controller.signal.aborted) return;
+
+        const data = unwrapApiResult(result, 'Failed to load player opportunities');
+        const allTeams = data.data;
+        setTotalCount(data.total);
+
+        const shuffled = [...allTeams];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
+        setPlayersWanted(shuffled.slice(0, maxDisplay));
       } catch (err) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         console.error('Failed to fetch players wanted:', err);
         setError('Failed to load player opportunities');
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -88,9 +91,9 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
     loadPlayersWanted();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
-  }, [accountId, maxDisplay, refreshTrigger]);
+  }, [accountId, maxDisplay, refreshTrigger, apiClient]);
 
   const handleViewAll = () => {
     router.push(`/account/${accountId}/player-classifieds`);
