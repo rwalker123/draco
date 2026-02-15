@@ -407,9 +407,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           setEditDialogOpen(false);
           setSelectedGame(null);
         }}
-        onSuccess={({ message, game }) => {
+        onSuccess={({ message, game, removed }) => {
           setSuccess(message);
-          if (game) {
+          if (removed && selectedGame) {
+            removeGameFromCache(selectedGame.id);
+          } else if (game) {
             upsertGameInCache(game);
           }
         }}

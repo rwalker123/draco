@@ -161,4 +161,17 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
     });
     return count > 0;
   }
+
+  async findByTeamAndLeagueSeason(
+    teamId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<{ id: bigint } | null> {
+    return this.prisma.teamsseason.findFirst({
+      where: {
+        teamid: teamId,
+        leagueseasonid: leagueSeasonId,
+      },
+      select: { id: true },
+    });
+  }
 }

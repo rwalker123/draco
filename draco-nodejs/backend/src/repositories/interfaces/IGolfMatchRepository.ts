@@ -72,6 +72,12 @@ export interface IGolfMatchRepository {
   updateTee(matchId: bigint, teeId: bigint): Promise<void>;
   hasScores(matchId: bigint): Promise<boolean>;
   seasonHasLeagueSeasons(seasonId: bigint): Promise<boolean>;
+  changeMatchSeason(
+    matchId: bigint,
+    newLeagueSeasonId: bigint,
+    newTeam1Id: bigint,
+    newTeam2Id: bigint,
+  ): Promise<GolfMatchWithTeams>;
   updatePoints(
     matchId: bigint,
     data: {

@@ -38,4 +38,5 @@ export interface IGolfTeamRepository {
   delete(teamSeasonId: bigint): Promise<teamsseason>;
   hasMatches(teamSeasonId: bigint): Promise<boolean>;
   hasRosterEntries(teamSeasonId: bigint): Promise<boolean>;
+  findByTeamAndLeagueSeason(teamId: bigint, leagueSeasonId: bigint): Promise<{ id: bigint } | null>;
 }

@@ -20,6 +20,9 @@ describe('GolfStandingsService', () => {
     mockMatchRepository = {
       findByFlightId: vi.fn(),
       findByIdWithScores: vi.fn(),
+      changeMatchSeason: vi.fn(async () => {
+        throw new Error('Not implemented');
+      }),
     };
     mockScoreRepository = {
       findByMatchIds: vi.fn(),
@@ -30,6 +33,7 @@ describe('GolfStandingsService', () => {
     };
     mockTeamRepository = {
       findByFlightId: vi.fn(),
+      findByTeamAndLeagueSeason: vi.fn(async () => null),
     };
     mockLeagueRepository = {
       findByLeagueSeasonId: vi.fn(),

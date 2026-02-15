@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { formatGameDateTime } from '../../../utils/dateUtils';
-import { createGolfMatch, updateGolfMatch } from '@draco/shared-api-client';
+import { createGolfMatch, updateGolfMatch, changeGolfMatchSeason } from '@draco/shared-api-client';
 import type { GolfMatch } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../../../utils/apiResult';
 import type { Game } from '@/types/schedule';
@@ -181,9 +181,34 @@ export const useGolfMatchOperations = ({ accountId, timeZone }: UseGolfMatchOper
     [accountId, apiClient, timeZone],
   );
 
+  const changeMatchSeason = async (
+    matchId: string,
+    seasonId: string,
+  ): Promise<GolfMatchOperationResult> => {
+    setLoading(true);
+    try {
+      const result = await changeGolfMatchSeason({
+        client: apiClient,
+        path: { accountId, matchId },
+        body: { seasonId },
+        throwOnError: false,
+      });
+
+      const updatedMatch = unwrapApiResult(result, 'Failed to change match season');
+
+      return {
+        message: 'Match moved to new season successfully',
+        game: mapGolfMatchToGame(updatedMatch),
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     createMatch,
     updateMatch,
+    changeMatchSeason,
     loading,
   };
 };
