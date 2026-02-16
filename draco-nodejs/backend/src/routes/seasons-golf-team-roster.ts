@@ -29,14 +29,9 @@ router.post(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { teamSeasonId, seasonId } = extractBigIntParams(req.params, 'teamSeasonId', 'seasonId');
+    const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
     const playerData = CreateGolfPlayerSchema.parse(req.body);
-    const entry = await golfRosterService.createAndSignPlayer(
-      teamSeasonId,
-      accountId,
-      seasonId,
-      playerData,
-    );
+    const entry = await golfRosterService.createAndSignPlayer(teamSeasonId, accountId, playerData);
     res.status(201).json(entry);
   }),
 );
@@ -49,9 +44,9 @@ router.post(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { teamSeasonId, seasonId } = extractBigIntParams(req.params, 'teamSeasonId', 'seasonId');
+    const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
     const signData = SignPlayerSchema.parse(req.body);
-    const entry = await golfRosterService.signPlayer(teamSeasonId, accountId, seasonId, signData);
+    const entry = await golfRosterService.signPlayer(teamSeasonId, accountId, signData);
     res.status(201).json(entry);
   }),
 );

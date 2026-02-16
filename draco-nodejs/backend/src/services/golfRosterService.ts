@@ -67,7 +67,6 @@ export class GolfRosterService {
   async createAndSignPlayer(
     teamSeasonId: bigint,
     accountId: bigint,
-    seasonId: bigint,
     data: CreateGolfPlayerType,
   ): Promise<GolfRosterEntryType> {
     const team = await this.teamRepository.findById(teamSeasonId);
@@ -90,7 +89,7 @@ export class GolfRosterService {
     if (data.isSub) {
       const sub = await this.rosterRepository.createLeagueSub({
         golferid: golfer.id,
-        seasonid: seasonId,
+        seasonid: team.leagueseasonid,
         isactive: true,
       });
       const subEntry = await this.rosterRepository.findLeagueSubById(sub.id);
@@ -124,7 +123,6 @@ export class GolfRosterService {
   async signPlayer(
     teamSeasonId: bigint,
     accountId: bigint,
-    seasonId: bigint,
     data: SignPlayerType,
   ): Promise<GolfRosterEntryType> {
     const team = await this.teamRepository.findById(teamSeasonId);
@@ -150,7 +148,7 @@ export class GolfRosterService {
 
     const existingSub = await this.rosterRepository.findLeagueSubByGolferAndSeason(
       golfer.id,
-      seasonId,
+      team.leagueseasonid,
     );
     if (existingSub) {
       throw new ValidationError('This player is already in the substitute pool for this season');
@@ -159,7 +157,7 @@ export class GolfRosterService {
     if (data.isSub) {
       const sub = await this.rosterRepository.createLeagueSub({
         golferid: golfer.id,
-        seasonid: seasonId,
+        seasonid: team.leagueseasonid,
         isactive: true,
       });
       const subEntry = await this.rosterRepository.findLeagueSubById(sub.id);

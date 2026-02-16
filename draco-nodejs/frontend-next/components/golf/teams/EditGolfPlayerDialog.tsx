@@ -4,14 +4,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Alert,
   Button,
-  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   FormLabel,
   Stack,
   TextField,
@@ -35,14 +33,12 @@ const EditGolfPlayerDialog: React.FC<EditGolfPlayerDialogProps> = ({
   teamName,
 }) => {
   const [initialDifferential, setInitialDifferential] = useState<number | null>(null);
-  const [isSub, setIsSub] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open && player) {
       setInitialDifferential(player.initialDifferential ?? null);
-      setIsSub(false);
       setError(null);
     }
   }, [open, player]);
@@ -56,7 +52,6 @@ const EditGolfPlayerDialog: React.FC<EditGolfPlayerDialogProps> = ({
     try {
       const updateData: UpdateGolfPlayerType = {
         initialDifferential,
-        isSub,
         isActive: player.isActive,
       };
       await onSubmit(updateData);
@@ -66,7 +61,7 @@ const EditGolfPlayerDialog: React.FC<EditGolfPlayerDialogProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [player, initialDifferential, isSub, onSubmit, onClose]);
+  }, [player, initialDifferential, onSubmit, onClose]);
 
   const handleClose = useCallback(() => {
     if (!isSubmitting) {
@@ -114,17 +109,6 @@ const EditGolfPlayerDialog: React.FC<EditGolfPlayerDialogProps> = ({
               inputProps={{ step: 0.1 }}
             />
           </FormControl>
-
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={isSub}
-                onChange={(e) => setIsSub(e.target.checked)}
-                disabled={isSubmitting}
-              />
-            }
-            label="Register as substitute player"
-          />
         </Stack>
       </DialogContent>
 
