@@ -2,4 +2,21 @@
 
 # Pre-push hook - pre-commit already handles secret detection
 echo "✅ Pre-push check: secrets are already validated by pre-commit hook"
-echo "Proceeding with push..." 
+
+# Run E2E tests if the frontend dev server is running
+PORT="${PORT:-4001}"
+if curl -s -o /dev/null -w '' "http://localhost:$PORT" 2>/dev/null; then
+  echo "🎭 Frontend detected on port $PORT — running E2E tests..."
+  npm run e2e:chromium -w @draco/frontend-next
+  E2E_EXIT=$?
+  if [ $E2E_EXIT -ne 0 ]; then
+    echo "❌ E2E tests failed. Push aborted."
+    echo "   Run 'npm run e2e:report -w @draco/frontend-next' to see the report."
+    exit 1
+  fi
+  echo "✅ E2E tests passed."
+else
+  echo "⏭️  Frontend not running on port $PORT — skipping E2E tests."
+fi
+
+echo "Proceeding with push..."

@@ -23,6 +23,11 @@ const eslintConfig = [{
   rules: {
     '@next/next/no-img-element': 'off',
   },
+}, {
+  files: ['e2e/**/*'],
+  rules: {
+    '@next/next/no-img-element': 'off',
+  },
 }];
 
 export default eslintConfig;

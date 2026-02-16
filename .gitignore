@@ -94,3 +94,9 @@ draco-nodejs/backend/db_dump.bak
 draco-nodejs/shared/shared-api-client/generated/
 migration-progress.json
 **/temp-migration/
+
+# Playwright E2E
+draco-nodejs/frontend-next/e2e/.auth/
+draco-nodejs/frontend-next/e2e/.results/
+draco-nodejs/frontend-next/e2e/.report/
+draco-nodejs/frontend-next/.env.e2e
