@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -63,7 +63,7 @@ const GroupBadgeEditDialogComponent: React.FC<GroupBadgeEditDialogProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const mapGroupTypeToApiGroupType = useCallback((groupType: GroupType): RecipientGroupType => {
+  function mapGroupTypeToApiGroupType(groupType: GroupType): RecipientGroupType {
     switch (groupType) {
       case 'season':
         return 'season';
@@ -76,12 +76,12 @@ const GroupBadgeEditDialogComponent: React.FC<GroupBadgeEditDialogProps> = ({
       default:
         return 'season';
     }
-  }, []);
+  }
 
   useEffect(() => {
     if (!open) return;
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchContacts = async () => {
       setLoading(true);
@@ -91,7 +91,7 @@ const GroupBadgeEditDialogComponent: React.FC<GroupBadgeEditDialogProps> = ({
       const groupId = Array.from(group.ids)[0];
 
       if (!groupId) {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setError('No group ID found');
           setLoading(false);
         }
@@ -105,9 +105,10 @@ const GroupBadgeEditDialogComponent: React.FC<GroupBadgeEditDialogProps> = ({
         mapGroupTypeToApiGroupType(group.groupType),
         groupId,
         group.managersOnly,
+        controller.signal,
       );
 
-      if (cancelled) return;
+      if (controller.signal.aborted) return;
 
       if (!result.success) {
         setError(result.error?.message || 'Failed to load contacts');
@@ -123,25 +124,21 @@ const GroupBadgeEditDialogComponent: React.FC<GroupBadgeEditDialogProps> = ({
     fetchContacts();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
-  }, [open, accountId, token, seasonId, group, mapGroupTypeToApiGroupType]);
+  }, [open, accountId, token, seasonId, group]);
 
-  const filteredContacts = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return contacts;
-    }
+  const query = searchQuery.trim().toLowerCase();
+  const filteredContacts = !query
+    ? contacts
+    : contacts.filter(
+        (contact) =>
+          contact.firstName.toLowerCase().includes(query) ||
+          contact.lastName.toLowerCase().includes(query) ||
+          (contact.email && contact.email.toLowerCase().includes(query)),
+      );
 
-    const query = searchQuery.toLowerCase();
-    return contacts.filter(
-      (contact) =>
-        contact.firstName.toLowerCase().includes(query) ||
-        contact.lastName.toLowerCase().includes(query) ||
-        (contact.email && contact.email.toLowerCase().includes(query)),
-    );
-  }, [contacts, searchQuery]);
-
-  const handleToggleContact = useCallback((contactId: string) => {
+  function handleToggleContact(contactId: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(contactId)) {
@@ -151,25 +148,25 @@ const GroupBadgeEditDialogComponent: React.FC<GroupBadgeEditDialogProps> = ({
       }
       return next;
     });
-  }, []);
+  }
 
-  const handleSelectAll = useCallback(() => {
+  function handleSelectAll() {
     setSelectedIds(new Set(contacts.map((c) => c.id)));
-  }, [contacts]);
+  }
 
-  const handleDeselectAll = useCallback(() => {
+  function handleDeselectAll() {
     setSelectedIds(new Set());
-  }, []);
+  }
 
-  const handleApply = useCallback(() => {
+  function handleApply() {
     onApply(selectedIds, contacts);
     onClose();
-  }, [selectedIds, contacts, onApply, onClose]);
+  }
 
-  const handleCancel = useCallback(() => {
+  function handleCancel() {
     setSearchQuery('');
     onClose();
-  }, [onClose]);
+  }
 
   const selectedCount = selectedIds.size;
   const totalCount = contacts.length;

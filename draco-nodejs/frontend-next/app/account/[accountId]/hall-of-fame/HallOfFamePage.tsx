@@ -52,6 +52,22 @@ type ClassPortrait = {
   displayName: string;
 };
 
+function selectRandomPortrait(members: HofMemberType[]): ClassPortrait | null {
+  if (!members || members.length === 0) {
+    return null;
+  }
+  const randomIndex = Math.floor(Math.random() * members.length);
+  const selected = members[randomIndex];
+  const displayName =
+    selected.contact.displayName ??
+    (`${selected.contact.firstName ?? ''} ${selected.contact.lastName ?? ''}`.trim() ||
+      'Hall of Fame Member');
+  return {
+    photoUrl: selected.contact.photoUrl ?? null,
+    displayName,
+  };
+}
+
 interface HallOfFamePageProps {
   accountId: string;
 }
@@ -114,97 +130,88 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
     setSearchLoading(false);
   }, [accountId]);
 
-  const selectRandomPortrait = React.useCallback(
-    (members: HofMemberType[]): ClassPortrait | null => {
-      if (!members || members.length === 0) {
-        return null;
-      }
-      const randomIndex = Math.floor(Math.random() * members.length);
-      const selected = members[randomIndex];
-      const displayName =
-        selected.contact.displayName ??
-        (`${selected.contact.firstName ?? ''} ${selected.contact.lastName ?? ''}`.trim() ||
-          'Hall of Fame Member');
-      return {
-        photoUrl: selected.contact.photoUrl ?? null,
-        displayName,
-      };
-    },
-    [],
-  );
+  const fetchMembersForYear = async (
+    year: number,
+    options?: { allowExisting?: boolean; suppressLoading?: boolean; signal?: AbortSignal },
+  ) => {
+    if (!accountId) {
+      return;
+    }
 
-  const fetchMembersForYear = React.useCallback(
-    async (year: number, options?: { allowExisting?: boolean; suppressLoading?: boolean }) => {
-      if (!accountId) {
-        return;
-      }
+    const allowExisting = options?.allowExisting ?? false;
+    const suppressLoading = options?.suppressLoading ?? false;
+    const signal = options?.signal;
 
-      const allowExisting = options?.allowExisting ?? false;
-      const suppressLoading = options?.suppressLoading ?? false;
+    const existingMembers = membersByYearRef.current[year];
 
-      const existingMembers = membersByYearRef.current[year];
-
-      if (!allowExisting && existingMembers) {
-        if (classPortraitsRef.current[year] === undefined) {
-          const portrait = selectRandomPortrait(existingMembers);
-          setClassPortraits((prev) => {
-            if (prev[year] !== undefined) {
-              return prev;
-            }
-            const next = { ...prev, [year]: portrait ?? null };
-            classPortraitsRef.current = next;
-            return next;
-          });
-        }
-        return;
-      }
-
-      if (!suppressLoading) {
-        setLoadingMembersYear(year);
-        setMembersError(null);
-      }
-
-      try {
-        const result = await getAccountHallOfFameClass({
-          client: apiClient,
-          path: { accountId, year },
-          throwOnError: false,
-        });
-        const data = unwrapApiResult(result, 'Unable to load Hall of Fame class.');
-        const normalizedMembers = HofMemberSchema.array().parse(data.members);
-        setMembersByYear((prev) => {
-          if (prev[year] && !allowExisting) {
-            return prev;
-          }
-          const next = { ...prev, [year]: normalizedMembers };
-          membersByYearRef.current = next;
-          return next;
-        });
+    if (!allowExisting && existingMembers) {
+      if (classPortraitsRef.current[year] === undefined) {
+        const portrait = selectRandomPortrait(existingMembers);
         setClassPortraits((prev) => {
           if (prev[year] !== undefined) {
             return prev;
           }
-          const portrait = selectRandomPortrait(normalizedMembers);
           const next = { ...prev, [year]: portrait ?? null };
           classPortraitsRef.current = next;
           return next;
         });
-      } catch (error) {
-        if (!suppressLoading) {
-          const message =
-            error instanceof ApiClientError ? error.message : 'Unable to load Hall of Fame class.';
-          setMembersError(message);
-        }
-      } finally {
-        if (!suppressLoading) {
-          setLoadingMembersYear(null);
-        }
       }
-    },
-    [accountId, apiClient, selectRandomPortrait],
-  );
+      return;
+    }
 
-  const loadAllMembers = React.useCallback(async () => {
+    if (!suppressLoading) {
+      setLoadingMembersYear(year);
+      setMembersError(null);
+    }
+
+    try {
+      const result = await getAccountHallOfFameClass({
+        client: apiClient,
+        path: { accountId, year },
+        signal,
+        throwOnError: false,
+      });
+
+      if (signal?.aborted) return;
+
+      const data = unwrapApiResult(result, 'Unable to load Hall of Fame class.');
+      const normalizedMembers = HofMemberSchema.array().parse(data.members);
+
+      if (signal?.aborted) return;
+
+      setMembersByYear((prev) => {
+        if (prev[year] && !allowExisting) {
+          return prev;
+        }
+        const next = { ...prev, [year]: normalizedMembers };
+        membersByYearRef.current = next;
+        return next;
+      });
+      setClassPortraits((prev) => {
+        if (prev[year] !== undefined) {
+          return prev;
+        }
+        const portrait = selectRandomPortrait(normalizedMembers);
+        const next = { ...prev, [year]: portrait ?? null };
+        classPortraitsRef.current = next;
+        return next;
+      });
+    } catch (error) {
+      if (signal?.aborted) return;
+
+      if (!suppressLoading) {
+        const message =
+          error instanceof ApiClientError ? error.message : 'Unable to load Hall of Fame class.';
+        setMembersError(message);
+      }
+    } finally {
+      if (!signal?.aborted && !suppressLoading) {
+        setLoadingMembersYear(null);
+      }
+    }
+  };
+
+  const loadAllMembers = async (signal?: AbortSignal) => {
     if (!accountId) {
       return;
     }
@@ -219,17 +226,17 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
 
     await Promise.all(
       missingYears.map((year) =>
-        fetchMembersForYear(year, { allowExisting: true, suppressLoading: true }),
+        fetchMembersForYear(year, { allowExisting: true, suppressLoading: true, signal }),
       ),
     );
-  }, [accountId, classSummaries, fetchMembersForYear]);
+  };
 
   React.useEffect(() => {
     if (!accountId) {
       return;
     }
 
-    let isMounted = true;
+    const controller = new AbortController();
 
     const loadData = async () => {
       setLoadingClasses(true);
@@ -239,29 +246,72 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
         const classesResult = await listAccountHallOfFameClasses({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
-        const classes = unwrapApiResult(classesResult, 'Unable to load Hall of Fame classes.');
 
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
+
+        const classes = unwrapApiResult(classesResult, 'Unable to load Hall of Fame classes.');
 
         setClassSummaries(classes);
 
         if (classes.length > 0) {
           setSelectedClassIndex(0);
-          void fetchMembersForYear(classes[0].year);
+
+          const year = classes[0].year;
+          setLoadingMembersYear(year);
+          setMembersError(null);
+
+          try {
+            const result = await getAccountHallOfFameClass({
+              client: apiClient,
+              path: { accountId, year },
+              signal: controller.signal,
+              throwOnError: false,
+            });
+
+            if (controller.signal.aborted) return;
+
+            const data = unwrapApiResult(result, 'Unable to load Hall of Fame class.');
+            const normalizedMembers = HofMemberSchema.array().parse(data.members);
+
+            if (controller.signal.aborted) return;
+
+            setMembersByYear((prev) => {
+              const next = { ...prev, [year]: normalizedMembers };
+              membersByYearRef.current = next;
+              return next;
+            });
+
+            const portrait = selectRandomPortrait(normalizedMembers);
+            setClassPortraits((prev) => {
+              const next = { ...prev, [year]: portrait ?? null };
+              classPortraitsRef.current = next;
+              return next;
+            });
+          } catch (error) {
+            if (controller.signal.aborted) return;
+
+            const message =
+              error instanceof ApiClientError
+                ? error.message
+                : 'Unable to load Hall of Fame class.';
+            setMembersError(message);
+          } finally {
+            if (!controller.signal.aborted) {
+              setLoadingMembersYear(null);
+            }
+          }
         }
       } catch (error) {
-        if (!isMounted) {
-          return;
-        }
+        if (controller.signal.aborted) return;
+
         const message =
           error instanceof ApiClientError ? error.message : 'Unable to load Hall of Fame classes.';
         setClassesError(message);
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setLoadingClasses(false);
         }
       }
@@ -272,19 +322,21 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
         const setupResult = await getAccountHallOfFameNominationSetup({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
+
+        if (controller.signal.aborted) return;
+
         const setup = unwrapApiResult(
           setupResult,
           'Unable to load Hall of Fame nomination settings.',
         );
-        if (isMounted) {
-          setNominationSetup(setup);
-        }
+        setNominationSetup(setup);
       } catch {
-        if (isMounted) {
-          setNominationSetup(null);
-        }
+        if (controller.signal.aborted) return;
+
+        setNominationSetup(null);
       }
     };
 
@@ -292,14 +344,69 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
     loadNominationSetup();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
-  }, [accountId, apiClient, fetchMembersForYear]);
+  }, [accountId, apiClient]);
 
   React.useEffect(() => {
     if (!accountId || classSummaries.length === 0) {
       return;
     }
+
+    const controller = new AbortController();
+
+    const prefetchMembers = async (year: number) => {
+      const existingMembers = membersByYearRef.current[year];
+
+      if (existingMembers && classPortraitsRef.current[year] === undefined) {
+        const portrait = selectRandomPortrait(existingMembers);
+        setClassPortraits((prev) => {
+          if (prev[year] !== undefined) {
+            return prev;
+          }
+          const next = { ...prev, [year]: portrait ?? null };
+          classPortraitsRef.current = next;
+          return next;
+        });
+        return;
+      }
+
+      if (!existingMembers) {
+        try {
+          const result = await getAccountHallOfFameClass({
+            client: apiClient,
+            path: { accountId, year },
+            signal: controller.signal,
+            throwOnError: false,
+          });
+
+          if (controller.signal.aborted) return;
+
+          const data = unwrapApiResult(result, 'Unable to load Hall of Fame class.');
+          const normalizedMembers = HofMemberSchema.array().parse(data.members);
+
+          if (controller.signal.aborted) return;
+
+          setMembersByYear((prev) => {
+            const next = { ...prev, [year]: normalizedMembers };
+            membersByYearRef.current = next;
+            return next;
+          });
+
+          setClassPortraits((prev) => {
+            if (prev[year] !== undefined) {
+              return prev;
+            }
+            const portrait = selectRandomPortrait(normalizedMembers);
+            const next = { ...prev, [year]: portrait ?? null };
+            classPortraitsRef.current = next;
+            return next;
+          });
+        } catch {
+          if (controller.signal.aborted) return;
+        }
+      }
+    };
 
     classSummaries.forEach(({ year }) => {
       if (classPortraitsRef.current[year] !== undefined) {
@@ -309,95 +416,90 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
         return;
       }
       portraitPrefetchingRef.current.add(year);
-      void fetchMembersForYear(year, { allowExisting: true, suppressLoading: true }).finally(() => {
+      void prefetchMembers(year).finally(() => {
         portraitPrefetchingRef.current.delete(year);
       });
     });
-  }, [accountId, classSummaries, fetchMembersForYear]);
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient, classSummaries]);
 
   const selectedClass = classSummaries[selectedClassIndex] ?? null;
   const selectedYear = selectedClass?.year ?? null;
   const membersForSelectedYear = selectedYear ? (membersByYear[selectedYear] ?? []) : [];
   const isMembersLoading = selectedYear !== null && loadingMembersYear === selectedYear;
 
-  const handleSelectClass = React.useCallback(
-    (index: number) => {
-      setSelectedClassIndex(index);
-      const summary = classSummaries[index];
-      if (summary) {
-        void fetchMembersForYear(summary.year);
-        const ref = classCardRefs.current[summary.year];
-        ref?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  const handleSelectClass = (index: number) => {
+    setSelectedClassIndex(index);
+    const summary = classSummaries[index];
+    if (summary) {
+      void fetchMembersForYear(summary.year);
+      const ref = classCardRefs.current[summary.year];
+      ref?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  };
+
+  const handleSearchSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const term = searchTerm.trim();
+
+    if (!term) {
+      setSearchError('Enter a name to search.');
+      return;
+    }
+
+    setSearchLoading(true);
+    setSearchError(null);
+
+    try {
+      await loadAllMembers();
+      const allMembers = Object.values(membersByYearRef.current).flat();
+      const normalizedTerm = term.toLowerCase();
+
+      const matches = allMembers
+        .filter((member) => {
+          const displayName = member.contact.displayName?.toLowerCase() ?? '';
+          const first = member.contact.firstName?.toLowerCase() ?? '';
+          const last = member.contact.lastName?.toLowerCase() ?? '';
+          const fullName = `${first} ${last}`.trim();
+          const reversedName = `${last} ${first}`.trim();
+          return (
+            displayName.includes(normalizedTerm) ||
+            (fullName && fullName.includes(normalizedTerm)) ||
+            (reversedName && reversedName.includes(normalizedTerm))
+          );
+        })
+        .sort((a, b) => (a.contact.displayName ?? '').localeCompare(b.contact.displayName ?? ''))
+        .slice(0, 5);
+
+      setSearchResults(matches);
+      if (matches.length === 0) {
+        setSearchError(null);
       }
-    },
-    [classSummaries, fetchMembersForYear],
-  );
+    } catch (error) {
+      console.error('Hall of Fame search failed:', error);
+      setSearchError('Unable to search inductees right now. Please try again later.');
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
-  const handleSearchSubmit = React.useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      const term = searchTerm.trim();
-
-      if (!term) {
-        setSearchError('Enter a name to search.');
-        return;
-      }
-
-      setSearchLoading(true);
-      setSearchError(null);
-
-      try {
-        await loadAllMembers();
-        const allMembers = Object.values(membersByYearRef.current).flat();
-        const normalizedTerm = term.toLowerCase();
-
-        const matches = allMembers
-          .filter((member) => {
-            const displayName = member.contact.displayName?.toLowerCase() ?? '';
-            const first = member.contact.firstName?.toLowerCase() ?? '';
-            const last = member.contact.lastName?.toLowerCase() ?? '';
-            const fullName = `${first} ${last}`.trim();
-            const reversedName = `${last} ${first}`.trim();
-            return (
-              displayName.includes(normalizedTerm) ||
-              (fullName && fullName.includes(normalizedTerm)) ||
-              (reversedName && reversedName.includes(normalizedTerm))
-            );
-          })
-          .sort((a, b) => (a.contact.displayName ?? '').localeCompare(b.contact.displayName ?? ''))
-          .slice(0, 5);
-
-        setSearchResults(matches);
-        if (matches.length === 0) {
-          setSearchError(null);
-        }
-      } catch (error) {
-        console.error('Hall of Fame search failed:', error);
-        setSearchError('Unable to search inductees right now. Please try again later.');
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
-    },
-    [loadAllMembers, searchTerm],
-  );
-
-  const handleClearSearch = React.useCallback(() => {
+  const handleClearSearch = () => {
     setSearchResults(null);
     setSearchTerm('');
     setSearchError(null);
     setSearchLoading(false);
-  }, []);
+  };
 
-  const handleSearchResultSelect = React.useCallback(
-    (member: HofMemberType) => {
-      const index = classSummaries.findIndex((summary) => summary.year === member.yearInducted);
-      if (index >= 0) {
-        handleSelectClass(index);
-      }
-    },
-    [classSummaries, handleSelectClass],
-  );
+  const handleSearchResultSelect = (member: HofMemberType) => {
+    const index = classSummaries.findIndex((summary) => summary.year === member.yearInducted);
+    if (index >= 0) {
+      handleSelectClass(index);
+    }
+  };
 
   if (!accountId) {
     return null;
@@ -618,7 +720,9 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
                       </Typography>
                       <TextField
                         value={searchTerm}
-                        onChange={(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                        onChange={(
+                          event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+                        ) => {
                           setSearchTerm(event.target.value);
                           if (searchError) {
                             setSearchError(null);

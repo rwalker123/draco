@@ -42,6 +42,7 @@ export class TeamStatsEntryService {
     accountId: string,
     seasonId: string,
     teamSeasonId: string,
+    signal?: AbortSignal,
   ): Promise<TeamCompletedGameType[]> {
     const result = await apiListTeamStatEntryGames({
       client: this.client,
@@ -50,6 +51,7 @@ export class TeamStatsEntryService {
         seasonId,
         teamSeasonId,
       },
+      signal,
       throwOnError: false,
     });
 
@@ -60,10 +62,12 @@ export class TeamStatsEntryService {
     accountId: string,
     seasonId: string,
     teamSeasonId: string,
+    signal?: AbortSignal,
   ): Promise<PlayerBattingStatsType[]> {
     const result = await apiListTeamSeasonBattingStats({
       client: this.client,
       path: { accountId, seasonId, teamSeasonId },
+      signal,
       throwOnError: false,
     });
 
@@ -74,10 +78,12 @@ export class TeamStatsEntryService {
     accountId: string,
     seasonId: string,
     teamSeasonId: string,
+    signal?: AbortSignal,
   ): Promise<PlayerPitchingStatsType[]> {
     const result = await apiListTeamSeasonPitchingStats({
       client: this.client,
       path: { accountId, seasonId, teamSeasonId },
+      signal,
       throwOnError: false,
     });
 

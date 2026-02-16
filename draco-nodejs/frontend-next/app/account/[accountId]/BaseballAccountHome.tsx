@@ -116,15 +116,16 @@ const BaseballAccountHome: React.FC = () => {
   useEffect(() => {
     if (!accountIdStr) return;
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchActiveSessions = async () => {
       try {
         const result = await getActiveBaseballLiveScoringSessions({
           client: apiClient,
           path: { accountId: accountIdStr },
+          signal: controller.signal,
         });
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const sessions = unwrapApiResult(result, 'Failed to get active sessions') as
           | { gameId: string; sessionId: string }[]
           | null;
@@ -132,16 +133,15 @@ const BaseballAccountHome: React.FC = () => {
           setLiveSessionGameIds(new Set(sessions.map((s) => s.gameId)));
         }
       } catch (err) {
-        if (!cancelled) {
-          console.error('Failed to get active sessions:', err);
-        }
+        if (controller.signal.aborted) return;
+        console.error('Failed to get active sessions:', err);
       }
     };
 
     fetchActiveSessions();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountIdStr, apiClient]);
 
@@ -462,7 +462,7 @@ const BaseballAccountHome: React.FC = () => {
       return;
     }
 
-    let isMounted = true;
+    const controller = new AbortController();
 
     const fetchAccountData = async () => {
       setLoading(true);
@@ -473,10 +473,11 @@ const BaseballAccountHome: React.FC = () => {
           client: apiClient,
           path: { accountId: accountIdStr },
           query: { includeCurrentSeason: true },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (!isMounted) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -493,7 +494,7 @@ const BaseballAccountHome: React.FC = () => {
         };
         setCurrentSeason(currentSeasonCandidate as AccountSeasonWithStatusType);
       } catch (err) {
-        if (!isMounted) {
+        if (controller.signal.aborted) {
           return;
         }
         console.error('Failed to fetch account data:', err);
@@ -501,7 +502,7 @@ const BaseballAccountHome: React.FC = () => {
         setAccount(null);
         setCurrentSeason(null);
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -510,7 +511,7 @@ const BaseballAccountHome: React.FC = () => {
     fetchAccountData();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountIdStr, apiClient]);
 
@@ -521,7 +522,7 @@ const BaseballAccountHome: React.FC = () => {
       return;
     }
 
-    let ignore = false;
+    const controller = new AbortController();
 
     const fetchSeasonLeagueHierarchy = async () => {
       try {
@@ -529,10 +530,11 @@ const BaseballAccountHome: React.FC = () => {
           client: apiClient,
           path: { accountId: accountIdStr, seasonId: currentSeason.id },
           query: { includeTeams: true, includeUnassignedTeams: true },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -560,18 +562,17 @@ const BaseballAccountHome: React.FC = () => {
 
         setSeasonTeamIds(Array.from(ids));
       } catch (err) {
-        if (!ignore) {
-          console.warn('Failed to load season league hierarchy:', err);
-          setSeasonLeagueHierarchy([]);
-          setSeasonTeamIds([]);
-        }
+        if (controller.signal.aborted) return;
+        console.warn('Failed to load season league hierarchy:', err);
+        setSeasonLeagueHierarchy([]);
+        setSeasonTeamIds([]);
       }
     };
 
     void fetchSeasonLeagueHierarchy();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountIdStr, currentSeason?.id, apiClient]);
 
@@ -579,23 +580,24 @@ const BaseballAccountHome: React.FC = () => {
   useEffect(() => {
     if (!accountIdStr || !user || !token) return;
 
-    let ignore = false;
+    const controller = new AbortController();
 
     const fetchUserTeams = async () => {
       try {
         const result = await getAccountUserTeams({
           client: apiClient,
           path: { accountId: accountIdStr },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
 
         const teamsResponse = unwrapApiResult(result, 'Failed to load teams');
 
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -611,33 +613,42 @@ const BaseballAccountHome: React.FC = () => {
 
         setUserTeams(teams);
       } catch (err) {
-        if (!ignore) {
-          console.warn('Failed to fetch user teams:', err);
-        }
+        if (controller.signal.aborted) return;
+        console.warn('Failed to fetch user teams:', err);
       }
     };
 
     fetchUserTeams();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountIdStr, user, token, apiClient]);
 
   useEffect(() => {
     if (!accountIdStr) return;
 
-    const service = new SponsorService();
-    service
-      .listAccountSponsors(accountIdStr)
-      .then((sponsors) => {
+    const controller = new AbortController();
+
+    const fetchSponsors = async () => {
+      try {
+        const service = new SponsorService();
+        const sponsors = await service.listAccountSponsors(accountIdStr, controller.signal);
+        if (controller.signal.aborted) return;
         setAccountSponsors(sponsors);
         setSponsorError(null);
-      })
-      .catch((error: unknown) => {
+      } catch (error: unknown) {
+        if (controller.signal.aborted) return;
         console.error('Failed to load account sponsors:', error);
         setSponsorError('Sponsors are currently unavailable.');
-      });
+      }
+    };
+
+    fetchSponsors();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountIdStr]);
 
   const shouldShowAccountSponsors = accountSponsors.length > 0 || Boolean(sponsorError);

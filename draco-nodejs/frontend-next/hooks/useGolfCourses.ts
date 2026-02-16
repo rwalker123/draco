@@ -25,7 +25,10 @@ export type GolfCourseServiceResult<T> =
 
 export interface GolfCourseService {
   listCourses: () => Promise<GolfCourseServiceResult<GolfLeagueCourseType[]>>;
-  getCourse: (courseId: string) => Promise<GolfCourseServiceResult<GolfCourseWithTeesType>>;
+  getCourse: (
+    courseId: string,
+    signal?: AbortSignal,
+  ) => Promise<GolfCourseServiceResult<GolfCourseWithTeesType>>;
   createCourse: (
     payload: CreateGolfCourseType,
   ) => Promise<GolfCourseServiceResult<GolfCourseWithTeesType>>;
@@ -65,11 +68,12 @@ export function useGolfCourses(accountId: string): GolfCourseService {
     }
   };
 
-  const getCourse: GolfCourseService['getCourse'] = async (courseId) => {
+  const getCourse: GolfCourseService['getCourse'] = async (courseId, signal) => {
     try {
       const result = await getGolfCourse({
         client: apiClient,
         path: { accountId, courseId },
+        signal,
         throwOnError: false,
       });
 

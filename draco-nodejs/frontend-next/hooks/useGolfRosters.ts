@@ -31,48 +31,65 @@ export interface GolfRosterService {
   getTeamRoster: (
     seasonId: string,
     teamSeasonId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType[]>>;
   listSubstitutesForSeason: (
     seasonId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfSubstituteType[]>>;
   listAvailablePlayers: (
     seasonId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<AvailablePlayerType[]>>;
   getRosterEntry: (
     seasonId: string,
     rosterId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
   createAndSignPlayer: (
     seasonId: string,
     teamSeasonId: string,
     payload: CreateGolfPlayerType,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
   signPlayer: (
     seasonId: string,
     teamSeasonId: string,
     payload: SignPlayerType,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
   updatePlayer: (
     seasonId: string,
     rosterId: string,
     payload: UpdateGolfPlayerType,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType>>;
   releasePlayer: (
     seasonId: string,
     rosterId: string,
     payload: ReleasePlayerType,
+    signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<void>>;
-  deletePlayer: (seasonId: string, rosterId: string) => Promise<GolfRosterServiceResult<void>>;
+  deletePlayer: (
+    seasonId: string,
+    rosterId: string,
+    signal?: AbortSignal,
+  ) => Promise<GolfRosterServiceResult<void>>;
 }
 
 export function useGolfRosters(accountId: string): GolfRosterService {
   const apiClient = useApiClient();
 
-  const getTeamRoster: GolfRosterService['getTeamRoster'] = async (seasonId, teamSeasonId) => {
+  const getTeamRoster: GolfRosterService['getTeamRoster'] = async (
+    seasonId,
+    teamSeasonId,
+    signal,
+  ) => {
     try {
       const result = await getGolfTeamRoster({
         client: apiClient,
         path: { accountId, seasonId, teamSeasonId },
+        signal,
         throwOnError: false,
       });
 
@@ -91,11 +108,13 @@ export function useGolfRosters(accountId: string): GolfRosterService {
 
   const listSubstitutesForSeason: GolfRosterService['listSubstitutesForSeason'] = async (
     seasonId,
+    signal,
   ) => {
     try {
       const result = await listGolfSubstitutesForSeason({
         client: apiClient,
         path: { accountId, seasonId },
+        signal,
         throwOnError: false,
       });
 
@@ -112,11 +131,15 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     }
   };
 
-  const listAvailablePlayers: GolfRosterService['listAvailablePlayers'] = async (seasonId) => {
+  const listAvailablePlayers: GolfRosterService['listAvailablePlayers'] = async (
+    seasonId,
+    signal,
+  ) => {
     try {
       const result = await listAvailableGolfPlayers({
         client: apiClient,
         path: { accountId, seasonId },
+        signal,
         throwOnError: false,
       });
 
@@ -133,11 +156,16 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     }
   };
 
-  const getRosterEntry: GolfRosterService['getRosterEntry'] = async (seasonId, rosterId) => {
+  const getRosterEntry: GolfRosterService['getRosterEntry'] = async (
+    seasonId,
+    rosterId,
+    signal,
+  ) => {
     try {
       const result = await getGolfRosterEntry({
         client: apiClient,
         path: { accountId, seasonId, rosterId },
+        signal,
         throwOnError: false,
       });
 
@@ -158,12 +186,14 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     seasonId,
     teamSeasonId,
     payload,
+    signal,
   ) => {
     try {
       const result = await createAndSignGolfPlayer({
         client: apiClient,
         path: { accountId, seasonId, teamSeasonId },
         body: payload,
+        signal,
         throwOnError: false,
       });
 
@@ -183,12 +213,18 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     }
   };
 
-  const signPlayer: GolfRosterService['signPlayer'] = async (seasonId, teamSeasonId, payload) => {
+  const signPlayer: GolfRosterService['signPlayer'] = async (
+    seasonId,
+    teamSeasonId,
+    payload,
+    signal,
+  ) => {
     try {
       const result = await signGolfPlayer({
         client: apiClient,
         path: { accountId, seasonId, teamSeasonId },
         body: payload,
+        signal,
         throwOnError: false,
       });
 
@@ -205,12 +241,18 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     }
   };
 
-  const updatePlayer: GolfRosterService['updatePlayer'] = async (seasonId, rosterId, payload) => {
+  const updatePlayer: GolfRosterService['updatePlayer'] = async (
+    seasonId,
+    rosterId,
+    payload,
+    signal,
+  ) => {
     try {
       const result = await updateGolfPlayer({
         client: apiClient,
         path: { accountId, seasonId, rosterId },
         body: payload,
+        signal,
         throwOnError: false,
       });
 
@@ -227,12 +269,18 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     }
   };
 
-  const releasePlayer: GolfRosterService['releasePlayer'] = async (seasonId, rosterId, payload) => {
+  const releasePlayer: GolfRosterService['releasePlayer'] = async (
+    seasonId,
+    rosterId,
+    payload,
+    signal,
+  ) => {
     try {
       const result = await releaseGolfPlayer({
         client: apiClient,
         path: { accountId, seasonId, rosterId },
         body: payload,
+        signal,
         throwOnError: false,
       });
 
@@ -249,11 +297,12 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     }
   };
 
-  const deletePlayer: GolfRosterService['deletePlayer'] = async (seasonId, rosterId) => {
+  const deletePlayer: GolfRosterService['deletePlayer'] = async (seasonId, rosterId, signal) => {
     try {
       const result = await deleteGolfPlayer({
         client: apiClient,
         path: { accountId, seasonId, rosterId },
+        signal,
         throwOnError: false,
       });
 

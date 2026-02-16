@@ -98,11 +98,11 @@ const DeleteContactDialogInner: React.FC<DeleteContactDialogInnerProps> = ({
   }, [checkDependencies]);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     const performCheck = async () => {
-      const result = await checkDependenciesRef.current(contact.id);
-      if (cancelled) {
+      const result = await checkDependenciesRef.current(contact.id, controller.signal);
+      if (controller.signal.aborted) {
         return;
       }
       if (result.success) {
@@ -117,7 +117,7 @@ const DeleteContactDialogInner: React.FC<DeleteContactDialogInnerProps> = ({
     performCheck();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [contact.id]);
 

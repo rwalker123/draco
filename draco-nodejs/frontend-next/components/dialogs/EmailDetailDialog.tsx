@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   AlertTitle,
@@ -59,7 +59,7 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
 }) => {
   const { token } = useAuth();
   const apiClient = useApiClient();
-  const emailService = useMemo(() => createEmailService(token, apiClient), [token, apiClient]);
+  const emailService = createEmailService(token, apiClient);
 
   const [detail, setDetail] = useState<EmailRecord | null>(null);
   const [loading, setLoading] = useState(false);
@@ -86,20 +86,20 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchDetail = async () => {
       try {
         setLoading(true);
         setError(null);
-        const result = await emailService.getEmail(accountId, email.id);
-        if (cancelled) {
+        const result = await emailService.getEmail(accountId, email.id, controller.signal);
+        if (controller.signal.aborted) {
           return;
         }
         detailCacheRef.current.set(email.id, result);
         setDetail(result);
       } catch (err) {
-        if (cancelled) {
+        if (controller.signal.aborted) {
           return;
         }
         console.error('Failed to load email detail:', err);
@@ -107,7 +107,7 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
         setError(message);
         onError?.(message);
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -116,77 +116,64 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
     fetchDetail();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [open, email, accountId, emailService, onError, retryCounter]);
 
-  const handleRetry = useCallback(() => {
+  const handleRetry = () => {
     if (!email) {
       return;
     }
     detailCacheRef.current.delete(email.id);
     setRetryCounter((prev) => prev + 1);
-  }, [email]);
+  };
 
-  const handleDownloadAttachment = useCallback(
-    async (attachment: AttachmentDetails) => {
-      if (!email) {
-        return;
-      }
+  const handleDownloadAttachment = async (attachment: AttachmentDetails) => {
+    if (!email) {
+      return;
+    }
 
-      try {
-        const targetEmail = detail ?? email;
-        const blob = await emailService.downloadAttachment(
-          accountId,
-          targetEmail.id,
-          attachment.id,
-        );
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = attachment.originalName ?? attachment.filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } catch (err) {
-        console.error('Failed to download attachment:', err);
-        const message = 'Unable to download attachment. Please try again.';
-        setError(message);
-        onError?.(message);
-      }
-    },
-    [accountId, detail, email, emailService, onError],
-  );
+    try {
+      const targetEmail = detail ?? email;
+      const blob = await emailService.downloadAttachment(accountId, targetEmail.id, attachment.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = attachment.originalName ?? attachment.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download attachment:', err);
+      const message = 'Unable to download attachment. Please try again.';
+      setError(message);
+      onError?.(message);
+    }
+  };
 
   const summary = email;
   const recipients = detail?.recipients ?? summary?.recipients ?? [];
   const attachments = detail?.attachments ?? summary?.attachments ?? [];
   const effectiveStatus = (detail?.status ?? summary?.status ?? 'draft') as EmailStatus;
 
-  const detailAnalytics = useMemo(() => {
-    const source = detail ?? summary;
-    if (!source) {
-      return {
+  const source = detail ?? summary;
+  const detailAnalytics = !source
+    ? {
         totalRecipients: 0,
         successfulDeliveries: 0,
         failedDeliveries: 0,
         deliverability: 0,
+      }
+    : {
+        totalRecipients: source.totalRecipients,
+        successfulDeliveries: source.successfulDeliveries,
+        failedDeliveries: source.failedDeliveries,
+        deliverability:
+          source.totalRecipients > 0
+            ? (source.successfulDeliveries / source.totalRecipients) * 100
+            : 0,
       };
-    }
-
-    const totalRecipients = source.totalRecipients;
-    const successfulDeliveries = source.successfulDeliveries;
-    const failedDeliveries = source.failedDeliveries;
-    const deliverability = totalRecipients > 0 ? (successfulDeliveries / totalRecipients) * 100 : 0;
-
-    return {
-      totalRecipients,
-      successfulDeliveries,
-      failedDeliveries,
-      deliverability,
-    };
-  }, [detail, summary]);
 
   const bodyPreview = detail?.bodyHtml || summary?.bodyHtml || summary?.bodyText;
 

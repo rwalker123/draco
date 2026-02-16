@@ -55,7 +55,7 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
       return;
     }
 
-    let ignore = false;
+    const controller = new AbortController();
 
     const fetchBirthdays = async () => {
       setLoading(true);
@@ -65,12 +65,11 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
         const result = await getAccountTodaysBirthdays({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (ignore) {
-          return;
-        }
+        if (controller.signal.aborted) return;
 
         const birthdaysResponse = unwrapApiResult<BaseContact[]>(
           result,
@@ -78,14 +77,13 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
         );
         const normalizedBirthdays = birthdaysResponse.map(normalizeBirthdayContact);
         setBirthdays(normalizedBirthdays);
-      } catch (err) {
-        if (!ignore) {
-          console.error("Failed to fetch today's birthdays:", err);
-          setError('Birthdays are currently unavailable.');
-          setBirthdays([]);
-        }
+      } catch (err: unknown) {
+        if (controller.signal.aborted) return;
+        console.error("Failed to fetch today's birthdays:", err);
+        setError('Birthdays are currently unavailable.');
+        setBirthdays([]);
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -94,7 +92,7 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
     fetchBirthdays();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountId, apiClient]);
 

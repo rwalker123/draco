@@ -5,6 +5,9 @@ import { Alert, Box, Skeleton, Button } from '@mui/material';
 import type { SocialFeedItemType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
+import { listSocialFeed } from '@draco/shared-api-client';
+import { useApiClient } from '@/hooks/useApiClient';
+import { unwrapApiResult } from '@/utils/apiResult';
 import SocialPostCard from './SocialPostCard';
 import { useRole } from '@/context/RoleContext';
 import ConfirmDeleteDialog from './ConfirmDeleteDialog';
@@ -22,10 +25,11 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
   limit = 4,
   viewAllHref,
 }) => {
-  const { fetchFeed, deleteFeedItem } = useSocialHubService({
+  const { deleteFeedItem } = useSocialHubService({
     accountId,
     seasonId,
   });
+  const apiClient = useApiClient();
   const { hasPermission } = useRole();
   const canManage = hasPermission('account.manage', accountId ? { accountId } : undefined);
   const [state, setState] = useState<{
@@ -43,31 +47,45 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
   const loadCompleted = state.completedKey === requestKey;
 
   useEffect(() => {
-    if (!canFetch) {
+    if (!canFetch || !accountId || !seasonId) {
       return;
     }
-    let isMounted = true;
-    fetchFeed({
-      sources: ['twitter', 'bluesky'],
-      limit,
-      includeDeleted: false,
-    })
-      .then((items) => {
-        if (!isMounted) return;
-        setState({ items, error: null, completedKey: requestKey });
-      })
-      .catch((error) => {
-        if (!isMounted) return;
+
+    const controller = new AbortController();
+
+    const loadFeed = async () => {
+      try {
+        const result = await listSocialFeed({
+          client: apiClient,
+          path: { accountId, seasonId },
+          query: {
+            sources: ['twitter', 'bluesky'],
+            limit,
+            includeDeleted: false,
+          },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+        const payload = unwrapApiResult(result, 'Failed to load social feed');
+        setState({ items: payload.feed, error: null, completedKey: requestKey });
+      } catch (error) {
+        if (controller.signal.aborted) return;
         setState({
           items: [],
           error: error instanceof Error ? error.message : 'Unable to load posts.',
           completedKey: requestKey,
         });
-      });
-    return () => {
-      isMounted = false;
+      }
     };
-  }, [canFetch, fetchFeed, limit, requestKey]);
+
+    void loadFeed();
+
+    return () => {
+      controller.abort();
+    };
+  }, [canFetch, accountId, seasonId, limit, requestKey, apiClient]);
 
   if (!canFetch) {
     return null;

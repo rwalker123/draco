@@ -35,7 +35,7 @@ const MemberBusinessSpotlightWidget: React.FC<MemberBusinessSpotlightWidgetProps
       return;
     }
 
-    let ignore = false;
+    const controller = new AbortController();
 
     const loadBusinesses = async () => {
       setLoading(true);
@@ -45,19 +45,18 @@ const MemberBusinessSpotlightWidget: React.FC<MemberBusinessSpotlightWidgetProps
           client: apiClient,
           path: { accountId },
           query: { seasonId, limit: BUSINESSES_TO_DISPLAY, randomize: true },
+          signal: controller.signal,
           throwOnError: false,
         });
-        const payload = unwrapApiResult(result, 'Unable to load member businesses.');
-        if (!ignore) {
-          setBusinesses(payload?.memberBusinesses ?? []);
-        }
-      } catch (err) {
-        if (ignore) {
-          return;
-        }
+        if (controller.signal.aborted) return;
+        setBusinesses(
+          unwrapApiResult(result, 'Unable to load member businesses.')?.memberBusinesses ?? [],
+        );
+      } catch (err: unknown) {
+        if (controller.signal.aborted) return;
         setError(err instanceof ApiClientError ? err.message : 'Unable to load member businesses.');
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -66,7 +65,7 @@ const MemberBusinessSpotlightWidget: React.FC<MemberBusinessSpotlightWidgetProps
     void loadBusinesses();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountId, apiClient, seasonId]);
 

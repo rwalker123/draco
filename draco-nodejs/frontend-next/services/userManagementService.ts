@@ -288,11 +288,13 @@ export class UserManagementService {
   async checkContactDependencies(
     accountId: string,
     contactId: string,
+    signal?: AbortSignal,
   ): Promise<{ contact: unknown; dependencyCheck: DependencyCheckResult }> {
     const result = await apiDeleteContact({
       client: this.client,
       path: { accountId, contactId },
       query: { check: true },
+      signal,
       throwOnError: false,
     });
 

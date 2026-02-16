@@ -317,10 +317,11 @@ export class EmailService {
     return mapListResponse(accountId, data as EmailListPagedType);
   }
 
-  async getEmail(accountId: string, emailId: string): Promise<EmailRecord> {
+  async getEmail(accountId: string, emailId: string, signal?: AbortSignal): Promise<EmailRecord> {
     const result = await apiGetAccountEmail({
       client: this.client,
       path: { accountId, emailId },
+      signal,
       throwOnError: false,
     });
 
@@ -446,10 +447,12 @@ export class EmailService {
     accountId: string,
     emailId: string,
     attachmentId: string,
+    signal?: AbortSignal,
   ): Promise<Blob> {
     const result = await apiDownloadEmailAttachment({
       client: this.client,
       path: { accountId, emailId, attachmentId },
+      signal,
       throwOnError: false,
       parseAs: 'blob',
     });

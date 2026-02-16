@@ -76,16 +76,17 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
   } | null>(null);
 
   React.useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     const loadTeamData = async () => {
       try {
         const result = await getTeamSeasonDetails({
           client: apiClient,
           path: { accountId, seasonId, teamSeasonId },
+          signal: controller.signal,
           throwOnError: false,
         });
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const data = unwrapApiResult<TeamSeasonRecordType>(
           result,
           'Failed to fetch team information',
@@ -98,14 +99,14 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
           leagueId: data.league?.id ? String(data.league.id) : undefined,
         });
       } catch {
-        // Team header data is optional, don't set error state
+        if (controller.signal.aborted) return;
       }
     };
 
     loadTeamData();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, seasonId, teamSeasonId, apiClient]);
 
@@ -129,7 +130,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
   };
 
   React.useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     const loadSponsors = async () => {
       try {
@@ -138,17 +139,18 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
         const result = await listTeamSponsors({
           client: apiClient,
           path: { accountId, seasonId, teamSeasonId },
+          signal: controller.signal,
           throwOnError: false,
         });
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const data = unwrapApiResult(result, 'Failed to load team sponsors');
         setSponsors(data.sponsors ?? []);
       } catch (err) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load team sponsors';
         setError(message);
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -157,7 +159,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
     loadSponsors();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [accountId, seasonId, teamSeasonId, apiClient]);
 

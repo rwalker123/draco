@@ -32,8 +32,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const LOGO_SIZE = getLogoSize();
 
   useEffect(() => {
-    const abortController = new AbortController();
-    let isMounted = true;
+    const controller = new AbortController();
 
     const loadTeamsData = async () => {
       try {
@@ -47,24 +46,22 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             includeTeams: true,
             includeUnassignedTeams: true,
           },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (!isMounted || abortController.signal.aborted) return;
+        if (controller.signal.aborted) return;
 
         const leagueData = unwrapApiResult(leagueResult, 'Failed to load teams data');
         const mapped = mapLeagueSetup(leagueData);
         mapped.season = mapped.season ?? { id: seasonId, name: '', accountId };
 
-        if (isMounted) {
-          setTeamsData(mapped);
-        }
+        setTeamsData(mapped);
       } catch (err) {
-        if (isMounted && !abortController.signal.aborted) {
-          setError(err instanceof Error ? err.message : 'Failed to load teams data');
-        }
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : 'Failed to load teams data');
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -73,8 +70,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     loadTeamsData();
 
     return () => {
-      isMounted = false;
-      abortController.abort();
+      controller.abort();
     };
   }, [accountId, seasonId, apiClient]);
 

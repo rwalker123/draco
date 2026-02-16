@@ -88,7 +88,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   useEffect(() => {
     if (!user || providedOrganizations) return;
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchAccounts = async () => {
       setLoading(true);
@@ -96,10 +96,11 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       try {
         const result = await getMyAccounts({
           client: apiClient,
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         const organizations =
           (
@@ -109,11 +110,10 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
           )?.filter((account) => (excludeAccountId ? account.id !== excludeAccountId : true)) ?? [];
         setAccounts(organizations);
       } catch {
-        if (!cancelled) {
-          setError('Failed to load your organizations. Please try again.');
-        }
+        if (controller.signal.aborted) return;
+        setError('Failed to load your organizations. Please try again.');
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -122,7 +122,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     fetchAccounts();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [user, providedOrganizations, apiClient, excludeAccountId, refreshKey]);
 

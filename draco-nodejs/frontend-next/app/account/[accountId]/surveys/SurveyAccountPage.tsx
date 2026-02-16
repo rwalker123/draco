@@ -81,7 +81,7 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
   };
 
   useEffect(() => {
-    let isMounted = true;
+    const controller = new AbortController();
     const loadCategories = async () => {
       setCategoriesLoading(true);
       setCategoriesError(null);
@@ -89,10 +89,11 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
         const result = await listPlayerSurveyCategories({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (!isMounted) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -104,14 +105,14 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
           })) ?? [];
         setCategories(normalized);
       } catch (error) {
-        if (!isMounted) {
+        if (controller.signal.aborted) {
           return;
         }
         console.error('Failed to load survey categories', error);
         setCategories([]);
         setCategoriesError('Failed to load survey structure.');
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setCategoriesLoading(false);
         }
       }
@@ -119,7 +120,7 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
 
     void loadCategories();
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountId, apiClient]);
 

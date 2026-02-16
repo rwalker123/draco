@@ -24,18 +24,20 @@ const GolfFlightsAdminPage: React.FC<GolfFlightsAdminPageProps> = ({ accountId, 
   const apiClient = useApiClient();
 
   useEffect(() => {
-    let isMounted = true;
+    const controller = new AbortController();
 
     const fetchSeason = async () => {
       try {
         const result = await getAccountSeason({
           client: apiClient,
           path: { accountId, seasonId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
+        if (controller.signal.aborted) return;
+
         const seasonResult = unwrapApiResult(result, 'Failed to fetch season');
-        if (!isMounted) return;
 
         setSeasonName(seasonResult.name);
 
@@ -43,7 +45,7 @@ const GolfFlightsAdminPage: React.FC<GolfFlightsAdminPageProps> = ({ accountId, 
           setLeagueSeasonId(seasonResult.leagues[0].id);
         }
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -52,7 +54,7 @@ const GolfFlightsAdminPage: React.FC<GolfFlightsAdminPageProps> = ({ accountId, 
     void fetchSeason();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [accountId, seasonId, apiClient]);
 

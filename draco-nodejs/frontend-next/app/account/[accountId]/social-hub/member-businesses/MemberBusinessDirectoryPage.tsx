@@ -55,7 +55,7 @@ const MemberBusinessDirectoryPage: React.FC = () => {
       return;
     }
 
-    let ignore = false;
+    const controller = new AbortController();
 
     const loadBusinesses = async () => {
       setLoading(true);
@@ -65,14 +65,16 @@ const MemberBusinessDirectoryPage: React.FC = () => {
           client: apiClient,
           path: { accountId },
           query: { seasonId: currentSeasonId },
+          signal: controller.signal,
           throwOnError: false,
         });
-        const payload = unwrapApiResult(result, 'Unable to load member businesses.');
-        if (!ignore) {
-          setBusinesses(payload?.memberBusinesses ?? []);
+        if (controller.signal.aborted) {
+          return;
         }
+        const payload = unwrapApiResult(result, 'Unable to load member businesses.');
+        setBusinesses(payload?.memberBusinesses ?? []);
       } catch (err) {
-        if (ignore) {
+        if (controller.signal.aborted) {
           return;
         }
         if (err instanceof ApiClientError) {
@@ -81,7 +83,7 @@ const MemberBusinessDirectoryPage: React.FC = () => {
           setError('Unable to load member businesses.');
         }
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -90,7 +92,7 @@ const MemberBusinessDirectoryPage: React.FC = () => {
     void loadBusinesses();
 
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountId, apiClient, currentSeasonId]);
 

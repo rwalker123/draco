@@ -89,7 +89,7 @@ export async function listWorkouts(
   includeRegistrationCounts = true,
   token?: string,
   status?: WorkoutStatusType,
-  options?: { after?: string; before?: string; limit?: number },
+  options?: { after?: string; before?: string; limit?: number; signal?: AbortSignal },
 ): Promise<WorkoutSummaryType[]> {
   const client = createClient(token);
   const queryParams: Partial<{
@@ -124,6 +124,7 @@ export async function listWorkouts(
     client,
     path: { accountId },
     query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+    signal: options?.signal,
     throwOnError: false,
   });
 

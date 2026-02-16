@@ -50,10 +50,11 @@ export class SponsorService {
     this.client = client ?? createApiClient({ token: token ?? undefined });
   }
 
-  async listAccountSponsors(accountId: string): Promise<SponsorType[]> {
+  async listAccountSponsors(accountId: string, signal?: AbortSignal): Promise<SponsorType[]> {
     const result = await apiListAccountSponsors({
       path: { accountId },
       client: this.client,
+      signal,
       throwOnError: false,
     });
 
@@ -65,10 +66,12 @@ export class SponsorService {
     accountId: string,
     seasonId: string,
     teamSeasonId: string,
+    signal?: AbortSignal,
   ): Promise<SponsorType[]> {
     const result = await apiListTeamSponsors({
       path: { accountId, seasonId, teamSeasonId },
       client: this.client,
+      signal,
       throwOnError: false,
     });
 

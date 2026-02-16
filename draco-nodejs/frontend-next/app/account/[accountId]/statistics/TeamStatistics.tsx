@@ -90,7 +90,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
 
     if (!seasonId) return;
 
-    let ignore = false;
+    const controller = new AbortController();
 
     setLoading((prev) => ({ ...prev, teams: true }));
 
@@ -102,10 +102,11 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
           const result = await apiListAllTimeTeams({
             client: apiClient,
             path: { accountId },
+            signal: controller.signal,
             throwOnError: false,
           });
 
-          if (ignore) return;
+          if (controller.signal.aborted) return;
 
           const allTimeTeams = unwrapApiResult<AllTimeTeamSummaryType[]>(
             result,
@@ -142,10 +143,11 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
           const result = await apiListSeasonTeams({
             client: apiClient,
             path: { accountId, seasonId },
+            signal: controller.signal,
             throwOnError: false,
           });
 
-          if (ignore) return;
+          if (controller.signal.aborted) return;
 
           const teamSeasons = unwrapApiResult(result, 'Failed to load teams');
           teamsData = (teamSeasons ?? []).map((teamSeason) => {
@@ -168,12 +170,11 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
           setSelectedTeamId(teamsData[0].teamId);
         }
       } catch (err) {
-        if (!ignore) {
-          console.error('Error loading teams:', err);
-          setError('Failed to load teams');
-        }
+        if (controller.signal.aborted) return;
+        console.error('Error loading teams:', err);
+        setError('Failed to load teams');
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading((prev) => ({ ...prev, teams: false }));
         }
       }
@@ -181,14 +182,14 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
 
     loadTeams();
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountId, seasonId, isAllTime, apiClient]);
 
   useEffect(() => {
     if (!selectedTeamId || !seasonId) return;
 
-    let ignore = false;
+    const controller = new AbortController();
 
     setLoading((prev) => ({ ...prev, batting: true, pitching: true }));
 
@@ -201,11 +202,13 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
             apiListAllTimeTeamBattingStats({
               client: apiClient,
               path: { accountId, teamId: selectedTeamId },
+              signal: controller.signal,
               throwOnError: false,
             }),
             apiListAllTimeTeamPitchingStats({
               client: apiClient,
               path: { accountId, teamId: selectedTeamId },
+              signal: controller.signal,
               throwOnError: false,
             }),
           ]);
@@ -214,17 +217,19 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
             apiListTeamSeasonBattingStats({
               client: apiClient,
               path: { accountId, seasonId, teamSeasonId: selectedTeamId },
+              signal: controller.signal,
               throwOnError: false,
             }),
             apiListTeamSeasonPitchingStats({
               client: apiClient,
               path: { accountId, seasonId, teamSeasonId: selectedTeamId },
+              signal: controller.signal,
               throwOnError: false,
             }),
           ]);
         }
 
-        if (ignore) return;
+        if (controller.signal.aborted) return;
 
         const battingData = unwrapApiResult<PlayerBattingStatsType[]>(
           battingResult,
@@ -238,12 +243,11 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
         );
         setPitchingStats(pitchingData.map((stat) => ({ ...stat })));
       } catch (fetchError) {
-        if (!ignore) {
-          console.error('Error loading stats:', fetchError);
-          setError(fetchError instanceof Error ? fetchError.message : 'Failed to load stats');
-        }
+        if (controller.signal.aborted) return;
+        console.error('Error loading stats:', fetchError);
+        setError(fetchError instanceof Error ? fetchError.message : 'Failed to load stats');
       } finally {
-        if (!ignore) {
+        if (!controller.signal.aborted) {
           setLoading((prev) => ({ ...prev, batting: false, pitching: false }));
         }
       }
@@ -251,7 +255,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
 
     loadStats();
     return () => {
-      ignore = true;
+      controller.abort();
     };
   }, [accountId, seasonId, isAllTime, selectedTeamId, apiClient]);
 

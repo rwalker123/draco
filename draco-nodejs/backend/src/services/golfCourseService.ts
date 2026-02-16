@@ -307,8 +307,8 @@ export class GolfCourseService {
       const tee = externalCourse.tees[i];
       await this.teeRepository.create({
         courseid: newCourse.id,
-        teecolor: tee.teeColor,
-        teename: tee.teeName,
+        teecolor: this.truncateString(tee.teeColor, 20),
+        teename: this.truncateString(tee.teeName, 20),
         priority: i + 1,
         mensrating: tee.mensRating,
         menslope: tee.mensSlope,

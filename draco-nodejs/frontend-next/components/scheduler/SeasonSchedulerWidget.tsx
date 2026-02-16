@@ -424,21 +424,21 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     const doLoadRules = async () => {
       const nextRules = await listFieldAvailabilityRulesRef.current();
-      if (!cancelled) setRules(nextRules);
+      if (!controller.signal.aborted) setRules(nextRules);
     };
 
     const doLoadExclusions = async () => {
       const nextExclusions = await listFieldExclusionDatesRef.current();
-      if (!cancelled) setExclusions(nextExclusions);
+      if (!controller.signal.aborted) setExclusions(nextExclusions);
     };
 
     const doLoadSeasonWindow = async () => {
       const config = await getSeasonWindowConfigRef.current();
-      if (cancelled) return;
+      if (controller.signal.aborted) return;
       setSeasonWindowConfig(config);
       if (config) {
         setSeasonStartDate(config.startDate);
@@ -468,43 +468,46 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
 
     const doLoadSeasonExclusions = async () => {
       const next = await listSeasonExclusionsRef.current();
-      if (!cancelled) setSeasonExclusions(next);
+      if (!controller.signal.aborted) setSeasonExclusions(next);
     };
 
     const doLoadTeamExclusions = async () => {
       const next = await listTeamExclusionsRef.current();
-      if (!cancelled) setTeamExclusions(next);
+      if (!controller.signal.aborted) setTeamExclusions(next);
     };
 
     const doLoadUmpireExclusions = async () => {
       const next = await listUmpireExclusionsRef.current();
-      if (!cancelled) setUmpireExclusions(next);
+      if (!controller.signal.aborted) setUmpireExclusions(next);
     };
 
     doLoadRules().catch((err: unknown) => {
-      if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load rules');
+      if (!controller.signal.aborted)
+        setError(err instanceof Error ? err.message : 'Failed to load rules');
     });
     doLoadExclusions().catch((err: unknown) => {
-      if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load exclusions');
+      if (!controller.signal.aborted)
+        setError(err instanceof Error ? err.message : 'Failed to load exclusions');
     });
     doLoadSeasonWindow().catch((err: unknown) => {
-      if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load season window');
+      if (!controller.signal.aborted)
+        setError(err instanceof Error ? err.message : 'Failed to load season window');
     });
     doLoadSeasonExclusions().catch((err: unknown) => {
-      if (!cancelled)
+      if (!controller.signal.aborted)
         setError(err instanceof Error ? err.message : 'Failed to load season exclusions');
     });
     doLoadTeamExclusions().catch((err: unknown) => {
-      if (!cancelled)
+      if (!controller.signal.aborted)
         setError(err instanceof Error ? err.message : 'Failed to load team exclusions');
     });
     doLoadUmpireExclusions().catch((err: unknown) => {
-      if (!cancelled)
+      if (!controller.signal.aborted)
         setError(err instanceof Error ? err.message : 'Failed to load umpire exclusions');
     });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [canEdit, seasonId, setError]);
 
