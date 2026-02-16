@@ -263,7 +263,9 @@ const RosterCardPageClient: React.FC<RosterCardPageClientProps> = ({
           </Box>
         </Box>
       </Box>
-      <style jsx global>{`
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         @media print {
           @page {
             size: letter portrait;
@@ -313,7 +315,9 @@ const RosterCardPageClient: React.FC<RosterCardPageClientProps> = ({
             margin-bottom: 8px !important;
           }
         }
-      `}</style>
+      `,
+        }}
+      />
     </>
   );
 };

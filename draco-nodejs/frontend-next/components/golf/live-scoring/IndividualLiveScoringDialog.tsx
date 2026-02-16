@@ -391,7 +391,9 @@ function IndividualLiveScoringDialogContent({
         </DialogActions>
       </Dialog>
 
-      <style jsx global>{`
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         @keyframes pulse {
           0% {
             opacity: 1;
@@ -403,7 +405,9 @@ function IndividualLiveScoringDialogContent({
             opacity: 1;
           }
         }
-      `}</style>
+      `,
+        }}
+      />
     </>
   );
 }

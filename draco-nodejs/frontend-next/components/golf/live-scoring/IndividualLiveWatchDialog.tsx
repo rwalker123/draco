@@ -199,7 +199,9 @@ function IndividualLiveWatchDialogContent({
         )}
       </DialogActions>
 
-      <style jsx global>{`
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         @keyframes pulse {
           0% {
             opacity: 1;
@@ -211,7 +213,9 @@ function IndividualLiveWatchDialogContent({
             opacity: 1;
           }
         }
-      `}</style>
+      `,
+        }}
+      />
     </>
   );
 }

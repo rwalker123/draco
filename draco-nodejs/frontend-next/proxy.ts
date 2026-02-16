@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { normalizeOrigin } from './lib/url/normalizeOrigin';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Handle compression headers for API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
     // Clone the request headers and add Accept-Encoding
