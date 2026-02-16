@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Container, Typography, Box, CircularProgress, Alert, Divider } from '@mui/material';
 import Grid from '@mui/material/Grid';
@@ -12,9 +12,10 @@ import ShareIcon from '@mui/icons-material/Share';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
-import { AdminCategoryCard, type AdminMetric } from '../../../../components/admin';
+import { AdminCategoryCard, AdminHubSearch, type AdminMetric } from '../../../../components/admin';
 import { useAdminDashboardSummary } from '../../../../hooks/useAdminDashboardSummary';
 import { useRole } from '../../../../context/RoleContext';
+import { getBaseballAdminItems } from '../../../../lib/admin-hub-registry';
 
 interface CategoryConfig {
   title: string;
@@ -33,10 +34,15 @@ const BaseballAdminHubPage: React.FC = () => {
   const { summary, loading, error } = useAdminDashboardSummary(accountId || '');
 
   const isGlobalAdmin = hasRole('Administrator');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const baseballItems = getBaseballAdminItems();
 
   if (!accountId) {
     return null;
   }
+
+  const isSearching = searchTerm.trim().length > 0;
 
   const categories: CategoryConfig[] = [
     {
@@ -121,63 +127,74 @@ const BaseballAdminHubPage: React.FC = () => {
       </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        )}
+        <AdminHubSearch
+          items={baseballItems}
+          accountId={accountId}
+          isGlobalAdmin={isGlobalAdmin}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
 
-        {error && (
-          <Alert severity="warning" sx={{ mb: 3 }}>
-            Unable to load summary data. You can still navigate to admin sections.
-          </Alert>
-        )}
-
-        <Grid container spacing={3}>
-          {categories.map((category) => (
-            <Grid key={category.title} size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
-              <AdminCategoryCard
-                title={category.title}
-                description={category.description}
-                icon={category.icon}
-                href={category.href}
-                metrics={category.getMetrics(summary)}
-              />
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Global Administration Section - Administrators Only */}
-        {isGlobalAdmin && (
+        {!isSearching && (
           <>
-            <Divider sx={{ my: 4 }} />
-            <Typography
-              variant="h5"
-              component="h2"
-              sx={{ fontWeight: 'bold', mb: 3, color: 'text.primary' }}
-            >
-              Global Administration
-            </Typography>
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            )}
+
+            {error && (
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                Unable to load summary data. You can still navigate to admin sections.
+              </Alert>
+            )}
+
             <Grid container spacing={3}>
-              <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
-                <AdminCategoryCard
-                  title="Admin Dashboard"
-                  description="System-wide administration and monitoring tools."
-                  icon={<DashboardIcon />}
-                  href="/admin"
-                  metrics={[]}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
-                <AdminCategoryCard
-                  title="Alert Management"
-                  description="Create and manage system-wide alerts and notifications."
-                  icon={<CampaignIcon />}
-                  href="/admin/alerts"
-                  metrics={[]}
-                />
-              </Grid>
+              {categories.map((category) => (
+                <Grid key={category.title} size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
+                  <AdminCategoryCard
+                    title={category.title}
+                    description={category.description}
+                    icon={category.icon}
+                    href={category.href}
+                    metrics={category.getMetrics(summary)}
+                  />
+                </Grid>
+              ))}
             </Grid>
+
+            {isGlobalAdmin && (
+              <>
+                <Divider sx={{ my: 4 }} />
+                <Typography
+                  variant="h5"
+                  component="h2"
+                  sx={{ fontWeight: 'bold', mb: 3, color: 'text.primary' }}
+                >
+                  Global Administration
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
+                    <AdminCategoryCard
+                      title="Admin Dashboard"
+                      description="System-wide administration and monitoring tools."
+                      icon={<DashboardIcon />}
+                      href="/admin"
+                      metrics={[]}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
+                    <AdminCategoryCard
+                      title="Alert Management"
+                      description="Create and manage system-wide alerts and notifications."
+                      icon={<CampaignIcon />}
+                      href="/admin/alerts"
+                      metrics={[]}
+                    />
+                  </Grid>
+                </Grid>
+              </>
+            )}
           </>
         )}
       </Container>

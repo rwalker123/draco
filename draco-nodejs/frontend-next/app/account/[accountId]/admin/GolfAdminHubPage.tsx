@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Container, Typography, Divider } from '@mui/material';
 import Grid from '@mui/material/Grid';
@@ -11,8 +11,9 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
-import { AdminCategoryCard } from '../../../../components/admin';
+import { AdminCategoryCard, AdminHubSearch } from '../../../../components/admin';
 import { useRole } from '../../../../context/RoleContext';
+import { getGolfAdminItems } from '../../../../lib/admin-hub-registry';
 
 interface CategoryConfig {
   title: string;
@@ -28,10 +29,15 @@ const GolfAdminHubPage: React.FC = () => {
   const { hasRole } = useRole();
 
   const isGlobalAdmin = hasRole('Administrator');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const golfItems = getGolfAdminItems();
 
   if (!accountId) {
     return null;
   }
+
+  const isSearching = searchTerm.trim().length > 0;
 
   const categories: CategoryConfig[] = [
     {
@@ -70,59 +76,71 @@ const GolfAdminHubPage: React.FC = () => {
       </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Grid container spacing={3}>
-          {categories.map((category) => (
-            <Grid key={category.title} size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
-              <AdminCategoryCard
-                title={category.title}
-                description={category.description}
-                icon={category.icon}
-                href={category.href}
-                metrics={[]}
-              />
-            </Grid>
-          ))}
-        </Grid>
+        <AdminHubSearch
+          items={golfItems}
+          accountId={accountId}
+          isGlobalAdmin={isGlobalAdmin}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
 
-        {isGlobalAdmin && (
+        {!isSearching && (
           <>
-            <Divider sx={{ my: 4 }} />
-            <Typography
-              variant="h5"
-              component="h2"
-              sx={{ fontWeight: 'bold', mb: 3, color: 'text.primary' }}
-            >
-              Global Administration
-            </Typography>
             <Grid container spacing={3}>
-              <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
-                <AdminCategoryCard
-                  title="Admin Dashboard"
-                  description="System-wide administration and monitoring tools."
-                  icon={<DashboardIcon />}
-                  href="/admin"
-                  metrics={[]}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
-                <AdminCategoryCard
-                  title="Alert Management"
-                  description="Create and manage system-wide alerts and notifications."
-                  icon={<CampaignIcon />}
-                  href="/admin/alerts"
-                  metrics={[]}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
-                <AdminCategoryCard
-                  title="Golf Course Management"
-                  description="Create and manage golf courses. Only global admins can create courses from scratch."
-                  icon={<SportsGolfIcon />}
-                  href="/admin/golf/courses"
-                  metrics={[]}
-                />
-              </Grid>
+              {categories.map((category) => (
+                <Grid key={category.title} size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
+                  <AdminCategoryCard
+                    title={category.title}
+                    description={category.description}
+                    icon={category.icon}
+                    href={category.href}
+                    metrics={[]}
+                  />
+                </Grid>
+              ))}
             </Grid>
+
+            {isGlobalAdmin && (
+              <>
+                <Divider sx={{ my: 4 }} />
+                <Typography
+                  variant="h5"
+                  component="h2"
+                  sx={{ fontWeight: 'bold', mb: 3, color: 'text.primary' }}
+                >
+                  Global Administration
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
+                    <AdminCategoryCard
+                      title="Admin Dashboard"
+                      description="System-wide administration and monitoring tools."
+                      icon={<DashboardIcon />}
+                      href="/admin"
+                      metrics={[]}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
+                    <AdminCategoryCard
+                      title="Alert Management"
+                      description="Create and manage system-wide alerts and notifications."
+                      icon={<CampaignIcon />}
+                      href="/admin/alerts"
+                      metrics={[]}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
+                    <AdminCategoryCard
+                      title="Golf Course Management"
+                      description="Create and manage golf courses. Only global admins can create courses from scratch."
+                      icon={<SportsGolfIcon />}
+                      href="/admin/golf/courses"
+                      metrics={[]}
+                    />
+                  </Grid>
+                </Grid>
+              </>
+            )}
           </>
         )}
       </Container>
