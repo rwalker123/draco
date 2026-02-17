@@ -80,6 +80,7 @@ export interface IGolfScoreRepository {
   deleteMatchScores(matchId: bigint): Promise<number>;
   deleteMatchScoresForTeam(matchId: bigint, teamId: bigint): Promise<number>;
   getPlayerScoresForSeason(contactId: bigint, seasonId: bigint): Promise<GolfScoreWithDetails[]>;
+  getPlayerLeagueScores(contactId: bigint, limit?: number): Promise<GolfScoreWithDetails[]>;
   calculateDifferential(score: golfscore, teeInfo: golfteeinformation): number;
   submitMatchScoresTransactional(
     matchId: bigint,

@@ -231,6 +231,26 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     });
   }
 
+  async getPlayerLeagueScores(contactId: bigint, limit = 20): Promise<GolfScoreWithDetails[]> {
+    return this.prisma.golfscore.findMany({
+      where: {
+        golfer: {
+          contactid: contactId,
+        },
+        golfmatchscores: {
+          some: {
+            golfmatch: {
+              matchstatus: GolfMatchStatus.COMPLETED,
+            },
+          },
+        },
+      },
+      include: scoreWithDetailsInclude,
+      orderBy: { dateplayed: 'desc' },
+      take: limit,
+    });
+  }
+
   calculateDifferential(score: golfscore, teeInfo: golfteeinformation): number {
     const courseRating = Number(teeInfo.mensrating) || 72;
     const slopeRating = Number(teeInfo.menslope) || 113;

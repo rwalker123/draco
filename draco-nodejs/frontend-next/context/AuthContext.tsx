@@ -85,15 +85,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setLoading(true); // Set loading when we start checking localStorage
       const storedToken = localStorage.getItem('jwtToken');
+      setLoading(true);
       setToken(storedToken);
-      // If no token, set loading to false immediately
       if (!storedToken) {
         setLoading(false);
         setInitialized(true);
       }
-      // If there is a token, loading will be set to false by fetchUser
     } else {
       setInitialized(true);
     }
@@ -174,7 +172,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       loadUser();
     } else {
       setUser(null);
-      setInitialized(true);
       lastFetchedAccountIdRef.current = null;
     }
   }, [token, accountIdFromPath]);

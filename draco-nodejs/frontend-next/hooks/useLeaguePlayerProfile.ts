@@ -25,7 +25,6 @@ export interface UseLeaguePlayerProfileResult {
 
 export function useLeaguePlayerProfile(
   accountId: string,
-  seasonId: string,
   contactId: string,
 ): UseLeaguePlayerProfileResult {
   const [scores, setScores] = useState<GolfScoreWithDetails[]>([]);
@@ -34,10 +33,10 @@ export function useLeaguePlayerProfile(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { getPlayerSeasonScores } = useGolfScores(accountId);
+  const { getPlayerLeagueScores } = useGolfScores(accountId);
 
   const fetchData = useCallback(async () => {
-    if (!accountId || !seasonId || !contactId) {
+    if (!accountId || !contactId) {
       setError('Missing required parameters');
       setLoading(false);
       return;
@@ -47,7 +46,7 @@ export function useLeaguePlayerProfile(
     setError(null);
 
     try {
-      const scoresResult = await getPlayerSeasonScores(contactId, seasonId);
+      const scoresResult = await getPlayerLeagueScores(contactId);
 
       if (scoresResult.success) {
         setScores(scoresResult.data.scores);
@@ -62,7 +61,7 @@ export function useLeaguePlayerProfile(
     } finally {
       setLoading(false);
     }
-  }, [accountId, seasonId, contactId, getPlayerSeasonScores]);
+  }, [accountId, contactId, getPlayerLeagueScores]);
 
   useEffect(() => {
     fetchData();

@@ -311,11 +311,8 @@ export class GolfScoreService {
     await this.matchRepository.updateStatus(matchId, GolfMatchStatus.SCHEDULED);
   }
 
-  async getPlayerSeasonScores(
-    contactId: bigint,
-    seasonId: bigint,
-  ): Promise<PlayerSeasonScoresResponseType> {
-    const scores = await this.scoreRepository.getPlayerScoresForSeason(contactId, seasonId);
+  async getPlayerSeasonScores(contactId: bigint): Promise<PlayerSeasonScoresResponseType> {
+    const scores = await this.scoreRepository.getPlayerLeagueScores(contactId, 20);
     const formattedScores = scores.map((s) => GolfScoreResponseFormatter.formatWithDetails(s));
 
     let initialDifferential: number | null = null;

@@ -314,10 +314,7 @@ app.use('/api/accounts/:accountId/golf/scores', golfScoresRouter);
 app.use('/api/accounts/:accountId/golf/handicaps', golfHandicapsRouter);
 app.use('/api/accounts/:accountId/golf/standings', golfStandingsRouter);
 app.use('/api/accounts/:accountId/golf/stats', golfStatsRouter);
-app.use(
-  '/api/accounts/:accountId/golf/season/:seasonId/player/:contactId/scores',
-  golfPlayerScoresRouter,
-);
+app.use('/api/accounts/:accountId/golf/player/:contactId/scores', golfPlayerScoresRouter);
 app.use('/api/contacts/:contactId/golf', contactsGolfRouter);
 // Global error handler
 app.use(globalErrorHandler as express.ErrorRequestHandler);

@@ -95,7 +95,7 @@ const formatGreetingDisplay = (greetingName: string): string => {
 };
 
 const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) => {
-  const { user, clearAllContexts } = useAuth();
+  const { user, initialized, clearAllContexts } = useAuth();
   const { hasRole, hasManageableAccount } = useRole();
   const { currentAccount: contextAccount, setCurrentAccount: setAccountContext } = useAccount();
   const isIndividualGolfAccount = useIsIndividualGolfAccount();
@@ -223,6 +223,9 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
 
   const buildAuthMenuItems = (): React.ReactNode[] => {
     const items: React.ReactNode[] = [];
+    if (!initialized) {
+      return items;
+    }
     if (user) {
       if (greetingDisplay) {
         items.push(
@@ -444,7 +447,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
               onCompactMenuItemsChange={setQuickActionItems}
               onUnifiedMenuClose={handleMenuClose}
             />
-            {user ? (
+            {!initialized ? null : user ? (
               <>
                 {!isSmallScreen && greetingDisplay && (
                   <Typography

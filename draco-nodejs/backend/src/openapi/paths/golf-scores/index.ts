@@ -205,27 +205,18 @@ export const registerGolfScoresEndpoints = ({ registry, schemaRefs, z }: Registe
     },
   });
 
-  // GET /api/accounts/{accountId}/golf/season/{seasonId}/player/{contactId}/scores
+  // GET /api/accounts/{accountId}/golf/player/{contactId}/scores
   registry.registerPath({
     method: 'get',
-    path: '/api/accounts/{accountId}/golf/season/{seasonId}/player/{contactId}/scores',
-    description: 'Get scores for a player in a specific season',
-    operationId: 'getGolfPlayerSeasonScores',
-    summary: 'Get player season scores',
+    path: '/api/accounts/{accountId}/golf/player/{contactId}/scores',
+    description: 'Get recent league scores for a player across all seasons',
+    operationId: 'getGolfPlayerLeagueScores',
+    summary: 'Get player league scores',
     tags: ['Golf Scores'],
     security: [{ bearerAuth: [] }],
     parameters: [
       {
         name: 'accountId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'seasonId',
         in: 'path',
         required: true,
         schema: {
