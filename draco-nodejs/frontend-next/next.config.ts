@@ -18,6 +18,7 @@ const allowedDevOrigins = Array.from(
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  cacheComponents: true,
   experimental: {
     webpackMemoryOptimizations: true,
   },

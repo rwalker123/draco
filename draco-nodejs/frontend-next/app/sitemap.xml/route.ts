@@ -18,9 +18,6 @@ const PRIORITIES: Record<(typeof STATIC_ROUTES)[number], number> = {
   '/signup': 0.6,
 };
 
-export const revalidate = 0; // Avoid caching host-specific output in the Next.js cache
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: Request): Promise<Response> {
   const requestUrl = new URL(request.url);
   const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL;
