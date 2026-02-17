@@ -263,51 +263,27 @@ const RosterCardPageClient: React.FC<RosterCardPageClientProps> = ({
           </Box>
         </Box>
       </Box>
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
+      <style>{`
         @media print {
           @page {
             size: letter portrait;
             margin: 0.4in;
           }
-
-          body {
-            background: white !important;
-          }
-
-          body * {
-            visibility: hidden !important;
-          }
-
-          .print-root,
-          .print-root * {
-            visibility: visible !important;
-          }
-
-          .print-root {
-            width: 100%;
-          }
-
-          .print-hidden {
-            display: none !important;
-          }
-
+          body { background: white !important; }
+          body * { visibility: hidden !important; }
+          .print-root, .print-root * { visibility: visible !important; }
+          .print-root { width: 100%; }
+          .print-hidden { display: none !important; }
           .print-container {
             margin: 0 auto !important;
             padding: 0 !important;
             max-width: 620px !important;
           }
-
           .print-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             gap: 16px !important;
           }
-
-          .print-container table {
-            font-size: 10px !important;
-          }
-
+          .print-container table { font-size: 10px !important; }
           .print-container h5,
           .print-container h4,
           .print-container h3 {
@@ -315,9 +291,7 @@ const RosterCardPageClient: React.FC<RosterCardPageClientProps> = ({
             margin-bottom: 8px !important;
           }
         }
-      `,
-        }}
-      />
+      `}</style>
     </>
   );
 };
