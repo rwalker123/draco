@@ -165,17 +165,11 @@ export const LiveRoundCard: React.FC<LiveRoundCardProps> = ({
         )}
       </Box>
 
-      <style jsx global>{`
+      <style>{`
         @keyframes pulse {
-          0% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.4;
-          }
-          100% {
-            opacity: 1;
-          }
+          0% { opacity: 1; }
+          50% { opacity: 0.4; }
+          100% { opacity: 1; }
         }
       `}</style>
     </Paper>
