@@ -1183,6 +1183,14 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
           acctHndIds: accountHandouts.map((h) => h.id),
           teamHndIds: teamHandoutSections.map((s) => `${s.teamId}:${s.handouts.map((h) => h.id)}`),
           dl: downloadingHandoutId,
+          acctHndErr: accountHandoutsError,
+          teamHndErr: teamHandoutsError,
+          acctAnnErr: accountAnnouncementsError,
+          teamAnnErr: teamAnnouncementsError,
+          acctHndLoading: accountHandoutsLoading,
+          teamHndLoading: teamHandoutsLoading,
+          acctAnnLoading: accountAnnouncementsLoading,
+          teamAnnLoading: teamAnnouncementsLoading,
         })
       : '';
 
