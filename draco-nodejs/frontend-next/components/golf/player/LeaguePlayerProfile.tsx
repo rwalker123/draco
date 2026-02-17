@@ -19,19 +19,17 @@ import { useLeaguePlayerProfile } from '../../../hooks/useLeaguePlayerProfile';
 
 export interface LeaguePlayerProfileProps {
   accountId: string;
-  seasonId: string;
   contactId: string;
   playerName?: string;
 }
 
 export default function LeaguePlayerProfile({
   accountId,
-  seasonId,
   contactId,
   playerName,
 }: LeaguePlayerProfileProps) {
   const router = useRouter();
-  const { data, loading, error } = useLeaguePlayerProfile(accountId, seasonId, contactId);
+  const { data, loading, error } = useLeaguePlayerProfile(accountId, contactId);
   const [errorDismissed, setErrorDismissed] = useState(false);
 
   const handleBack = () => {

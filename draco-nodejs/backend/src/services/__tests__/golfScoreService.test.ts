@@ -3,6 +3,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const serviceFactoryMock = vi.hoisted(() => {
   const handicapService = {
     calculateHandicapIndexAsOf: vi.fn().mockResolvedValue(null),
+    getPlayerHandicap: vi.fn().mockResolvedValue({
+      contactId: '1',
+      firstName: 'Test',
+      lastName: 'Player',
+      handicapIndex: null,
+      roundsUsed: 0,
+      totalRounds: 0,
+    }),
   };
   return {
     getGolfHandicapService: vi.fn(() => handicapService),
@@ -12,8 +20,40 @@ const serviceFactoryMock = vi.hoisted(() => {
   };
 });
 
+const golferRepositoryMock = vi.hoisted(() => ({
+  findByContactId: vi.fn().mockResolvedValue(null),
+}));
+
+const repositoryFactoryMock = vi.hoisted(() => ({
+  getGolfScoreRepository: vi.fn(),
+  getGolfMatchRepository: vi.fn(),
+  getGolfRosterRepository: vi.fn(),
+  getGolfCourseRepository: vi.fn(),
+  getGolfLeagueRepository: vi.fn(),
+  getGolfTeeRepository: vi.fn(),
+  getGolferRepository: vi.fn(() => golferRepositoryMock),
+}));
+
+const formatterMock = vi.hoisted(() => ({
+  formatWithDetails: vi.fn((score: Record<string, unknown>) => ({
+    id: String(score.id),
+    totalScore: score.totalscore,
+    holesPlayed: score.holesplayed,
+    datePlayed: (score.dateplayed as Date).toISOString(),
+    differential: 5.0,
+  })),
+}));
+
 vi.mock('../serviceFactory.js', () => ({
   ServiceFactory: serviceFactoryMock,
+}));
+
+vi.mock('../../repositories/repositoryFactory.js', () => ({
+  RepositoryFactory: repositoryFactoryMock,
+}));
+
+vi.mock('../../responseFormatters/golfScoreResponseFormatter.js', () => ({
+  GolfScoreResponseFormatter: formatterMock,
 }));
 
 import { GolfScoreService } from '../golfScoreService.js';
@@ -103,6 +143,7 @@ describe('GolfScoreService', () => {
       submitMatchScoresTransactional: vi.fn(),
       deleteMatchScores: vi.fn(),
       getPlayerScoresForSeason: vi.fn(),
+      getPlayerLeagueScores: vi.fn(),
     };
     mockMatchRepository = {
       findById: vi.fn(),
@@ -571,6 +612,152 @@ describe('GolfScoreService', () => {
 
       expect(mockScoreRepository.deleteMatchScores).toHaveBeenCalledWith(1n);
       expect(mockMatchRepository.updateStatus).toHaveBeenCalledWith(1n, GolfMatchStatus.SCHEDULED);
+    });
+  });
+
+  describe('getPlayerSeasonScores', () => {
+    const createMockScore = (id: bigint, date: Date) => ({
+      id,
+      golferid: 100n,
+      courseid: 5n,
+      teeid: 1n,
+      dateplayed: date,
+      holesplayed: 18,
+      totalscore: 85,
+      totalsonly: false,
+      holescrore1: 5,
+      holescrore2: 4,
+      holescrore3: 5,
+      holescrore4: 4,
+      holescrore5: 5,
+      holescrore6: 4,
+      holescrore7: 5,
+      holescrore8: 4,
+      holescrore9: 5,
+      holescrore10: 5,
+      holescrore11: 4,
+      holescrore12: 5,
+      holescrore13: 4,
+      holescrore14: 5,
+      holescrore15: 4,
+      holescrore16: 5,
+      holescrore17: 4,
+      holescrore18: 4,
+      startindex: null,
+      startindex9: null,
+      differential: 10.5,
+      golfer: {
+        id: 100n,
+        initialdifferential: 12.0,
+        gender: 'M',
+        contact: { id: 500n, firstname: 'Ken', lastname: 'Vadella', middlename: null },
+        contactid: 500n,
+      },
+      golfcourse: { id: 5n, name: 'Test Course', city: 'TestCity', state: 'TS' },
+      golfteeinformation: {
+        id: 1n,
+        courseid: 5n,
+        teename: 'White',
+        teecolor: '#FFFFFF',
+        priority: 1,
+        mensrating: 72.0,
+        menslope: 130,
+        womansrating: 74.0,
+        womanslope: 135,
+        distancehole1: 350,
+        distancehole2: 400,
+        distancehole3: 180,
+        distancehole4: 420,
+        distancehole5: 510,
+        distancehole6: 370,
+        distancehole7: 200,
+        distancehole8: 440,
+        distancehole9: 380,
+        distancehole10: 360,
+        distancehole11: 410,
+        distancehole12: 170,
+        distancehole13: 430,
+        distancehole14: 520,
+        distancehole15: 380,
+        distancehole16: 190,
+        distancehole17: 450,
+        distancehole18: 390,
+      },
+    });
+
+    it('returns formatted scores with handicap from all seasons', async () => {
+      const scores = [
+        createMockScore(1n, new Date('2025-06-15')),
+        createMockScore(2n, new Date('2024-09-10')),
+      ];
+
+      vi.mocked(mockScoreRepository.getPlayerLeagueScores!).mockResolvedValue(scores as never);
+
+      const handicapService = serviceFactoryMock.getGolfHandicapService();
+      vi.mocked(handicapService.getPlayerHandicap).mockResolvedValue({
+        contactId: '500',
+        firstName: 'Ken',
+        lastName: 'Vadella',
+        handicapIndex: 10.2,
+        roundsUsed: 8,
+        totalRounds: 20,
+      });
+
+      const result = await service.getPlayerSeasonScores(500n);
+
+      expect(mockScoreRepository.getPlayerLeagueScores).toHaveBeenCalledWith(500n);
+      expect(result.scores).toHaveLength(2);
+      expect(result.handicapIndex).toBe(10.2);
+      expect(result.isInitialIndex).toBe(false);
+    });
+
+    it('falls back to initial differential when no calculated handicap', async () => {
+      const scores = [createMockScore(1n, new Date('2025-06-15'))];
+
+      vi.mocked(mockScoreRepository.getPlayerLeagueScores!).mockResolvedValue(scores as never);
+
+      const handicapService = serviceFactoryMock.getGolfHandicapService();
+      vi.mocked(handicapService.getPlayerHandicap).mockResolvedValue({
+        contactId: '500',
+        firstName: 'Ken',
+        lastName: 'Vadella',
+        handicapIndex: null,
+        roundsUsed: 0,
+        totalRounds: 1,
+      });
+
+      const result = await service.getPlayerSeasonScores(500n);
+
+      expect(result.handicapIndex).toBe(12.0);
+      expect(result.isInitialIndex).toBe(true);
+      expect(result.initialDifferential).toBe(12.0);
+    });
+
+    it('returns empty scores with golfer fallback when no league scores exist', async () => {
+      vi.mocked(mockScoreRepository.getPlayerLeagueScores!).mockResolvedValue([]);
+
+      vi.mocked(golferRepositoryMock.findByContactId).mockResolvedValue({
+        id: 100n,
+        initialdifferential: 15.0,
+        contactid: 500n,
+      } as never);
+
+      const handicapService = serviceFactoryMock.getGolfHandicapService();
+      vi.mocked(handicapService.getPlayerHandicap).mockResolvedValue({
+        contactId: '500',
+        firstName: 'Ken',
+        lastName: 'Vadella',
+        handicapIndex: null,
+        roundsUsed: 0,
+        totalRounds: 0,
+      });
+
+      const result = await service.getPlayerSeasonScores(500n);
+
+      expect(result.scores).toHaveLength(0);
+      expect(result.handicapIndex).toBe(15.0);
+      expect(result.isInitialIndex).toBe(true);
+      expect(result.initialDifferential).toBe(15.0);
     });
   });
 });

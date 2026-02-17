@@ -13,8 +13,8 @@ router.get(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { seasonId, contactId } = extractBigIntParams(req.params, 'seasonId', 'contactId');
-    const scores = await golfScoreService.getPlayerSeasonScores(contactId, seasonId);
+    const { contactId } = extractBigIntParams(req.params, 'contactId');
+    const scores = await golfScoreService.getPlayerSeasonScores(contactId);
     res.json(scores);
   }),
 );

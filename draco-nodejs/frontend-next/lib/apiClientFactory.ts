@@ -73,14 +73,16 @@ export const createApiClient = ({
     });
   }
 
-  let unauthorizedFired = false;
-  client.interceptors.response.use((response) => {
-    if (response.status === 401 && onUnauthorizedCallback && !unauthorizedFired) {
-      unauthorizedFired = true;
-      onUnauthorizedCallback();
-    }
-    return response;
-  });
+  if (token) {
+    let unauthorizedFired = false;
+    client.interceptors.response.use((response) => {
+      if (response.status === 401 && onUnauthorizedCallback && !unauthorizedFired) {
+        unauthorizedFired = true;
+        onUnauthorizedCallback();
+      }
+      return response;
+    });
+  }
 
   if (useCache) {
     cachedClient = { token, client };

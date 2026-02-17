@@ -4,7 +4,7 @@ import {
   getGolfMatchScores,
   getGolfTeamMatchScores,
   getGolfPlayerScores,
-  getGolfPlayerSeasonScores,
+  getGolfPlayerLeagueScores,
   getGolfScore,
   submitGolfMatchResults,
   deleteGolfMatchScores,
@@ -39,9 +39,8 @@ export interface GolfScoreService {
     limit?: number,
     signal?: AbortSignal,
   ) => Promise<GolfScoreServiceResult<GolfScoreWithDetailsType[]>>;
-  getPlayerSeasonScores: (
+  getPlayerLeagueScores: (
     contactId: string,
-    seasonId: string,
     signal?: AbortSignal,
   ) => Promise<GolfScoreServiceResult<PlayerSeasonScoresResponseType>>;
   getScore: (
@@ -143,29 +142,28 @@ export function useGolfScores(accountId: string): GolfScoreService {
     }
   };
 
-  const getPlayerSeasonScores: GolfScoreService['getPlayerSeasonScores'] = async (
+  const getPlayerLeagueScores: GolfScoreService['getPlayerLeagueScores'] = async (
     contactId,
-    seasonId,
     signal,
   ) => {
     try {
-      const result = await getGolfPlayerSeasonScores({
+      const result = await getGolfPlayerLeagueScores({
         client: apiClient,
-        path: { accountId, contactId, seasonId },
+        path: { accountId, contactId },
         signal,
         throwOnError: false,
       });
 
-      const response = unwrapApiResult(result, 'Failed to load player season scores');
+      const response = unwrapApiResult(result, 'Failed to load player league scores');
 
       return {
         success: true,
         data: response as PlayerSeasonScoresResponseType,
-        message: 'Player season scores loaded successfully',
+        message: 'Player league scores loaded successfully',
       } as const;
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to load player season scores';
+        error instanceof Error ? error.message : 'Failed to load player league scores';
       return { success: false, error: message } as const;
     }
   };
@@ -274,7 +272,7 @@ export function useGolfScores(accountId: string): GolfScoreService {
     getMatchScores,
     getTeamMatchScores,
     getPlayerScores,
-    getPlayerSeasonScores,
+    getPlayerLeagueScores,
     getScore,
     submitMatchResults,
     deleteMatchScores,
