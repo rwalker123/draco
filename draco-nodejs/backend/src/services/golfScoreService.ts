@@ -312,7 +312,7 @@ export class GolfScoreService {
   }
 
   async getPlayerSeasonScores(contactId: bigint): Promise<PlayerSeasonScoresResponseType> {
-    const scores = await this.scoreRepository.getPlayerLeagueScores(contactId, 20);
+    const scores = await this.scoreRepository.getPlayerLeagueScores(contactId);
     const formattedScores = scores.map((s) => GolfScoreResponseFormatter.formatWithDetails(s));
 
     let initialDifferential: number | null = null;

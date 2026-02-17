@@ -85,7 +85,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const storedToken = localStorage.getItem('jwtToken');
+      let storedToken: string | null = null;
+      try {
+        storedToken = localStorage.getItem('jwtToken');
+      } catch {
+        setInitialized(true);
+        return;
+      }
       setLoading(true);
       setToken(storedToken);
       if (!storedToken) {

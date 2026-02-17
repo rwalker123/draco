@@ -10,6 +10,7 @@ import {
   SubmitMatchScoresResult,
 } from '../interfaces/IGolfScoreRepository.js';
 import { GolfMatchStatus } from '../../utils/golfConstants.js';
+import { MAX_DIFFERENTIALS_FOR_HANDICAP } from '../../services/golfHandicapService.js';
 
 const scoreWithDetailsInclude = {
   golfer: {
@@ -231,7 +232,10 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     });
   }
 
-  async getPlayerLeagueScores(contactId: bigint, limit = 20): Promise<GolfScoreWithDetails[]> {
+  async getPlayerLeagueScores(
+    contactId: bigint,
+    limit = MAX_DIFFERENTIALS_FOR_HANDICAP,
+  ): Promise<GolfScoreWithDetails[]> {
     return this.prisma.golfscore.findMany({
       where: {
         golfer: {

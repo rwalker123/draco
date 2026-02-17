@@ -30,7 +30,7 @@ interface ScoreDifferential {
 }
 
 const MAX_SCORES_TO_FETCH = 40;
-const MAX_DIFFERENTIALS_FOR_HANDICAP = 20;
+export const MAX_DIFFERENTIALS_FOR_HANDICAP = 20;
 
 export class GolfHandicapService {
   private readonly scoreRepository: IGolfScoreRepository;

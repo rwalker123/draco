@@ -31,3 +31,14 @@ test.describe('Authenticated Navigation', () => {
     await context.close();
   });
 });
+
+test.describe('Unauthenticated Public Page', () => {
+  test('loads public account page and shows Sign In', async ({ browser }) => {
+    const context = await browser.newContext({ storageState: undefined });
+    const page = await context.newPage();
+    await page.goto('/account/1');
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible({ timeout: 15_000 });
+    await context.close();
+  });
+});
