@@ -1,5 +1,5 @@
 import { test as base } from './base-fixtures';
-import { ApiHelper } from '../helpers/api';
+import { ApiHelper, ApiError } from '../helpers/api';
 import fs from 'fs';
 import path from 'path';
 
@@ -134,37 +134,37 @@ export async function createGolfTestData(
 export async function cleanupGolfTestData(baseURL: string, data: GolfTestData): Promise<void> {
   const token = getJwtToken();
   const api = new ApiHelper(baseURL, token);
+  const errors: string[] = [];
 
-  try {
-    await api.deleteMatch(data.accountId, data.matchId, true);
-  } catch {
-    /* match may already be deleted */
-  }
+  const tryCleanup = async (fn: () => Promise<void>) => {
+    try {
+      await fn();
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) return;
+      errors.push(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  await tryCleanup(() => api.deleteMatch(data.accountId, data.matchId, true));
 
   for (const rosterId of [data.player1RosterId, data.player2RosterId]) {
-    try {
-      await api.deleteRosterEntry(data.accountId, data.seasonId, rosterId);
-    } catch {
-      /* roster entry may already be deleted */
-    }
+    await tryCleanup(() => api.deleteRosterEntry(data.accountId, data.seasonId, rosterId));
   }
 
-  try {
-    await api.removeLeagueFromSeason(data.accountId, data.seasonId, data.leagueSeasonId);
-  } catch {
-    /* may already be removed */
+  for (const teamId of [data.team1Id, data.team2Id]) {
+    await tryCleanup(() => api.deleteTeam(data.accountId, data.seasonId, teamId));
   }
 
-  try {
-    await api.deleteSeason(data.accountId, data.seasonId);
-  } catch {
-    /* may already be deleted */
-  }
+  await tryCleanup(() =>
+    api.removeLeagueFromSeason(data.accountId, data.seasonId, data.leagueSeasonId),
+  );
 
-  try {
-    await api.deleteLeague(data.accountId, data.leagueId);
-  } catch {
-    /* may already be deleted */
+  await tryCleanup(() => api.deleteSeason(data.accountId, data.seasonId));
+
+  await tryCleanup(() => api.deleteLeague(data.accountId, data.leagueId));
+
+  if (errors.length > 0) {
+    throw new Error(`Golf cleanup failed:\n  ${errors.join('\n  ')}`);
   }
 }
 

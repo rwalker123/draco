@@ -10,6 +10,7 @@ import {
   createLeagueSeasonTeam,
   createAndSignGolfPlayer,
   deleteGolfPlayer,
+  deleteGolfTeam,
   createGolfMatch,
   deleteGolfMatch,
   submitGolfMatchResults,
@@ -36,6 +37,15 @@ export function createE2EApiClient(baseUrl: string, token: string) {
 
 type E2EClient = ReturnType<typeof createE2EApiClient>;
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(label: string, status: number, details: unknown) {
+    super(`${label} (${status}): ${JSON.stringify(details)}`);
+    this.status = status;
+  }
+}
+
 export class ApiHelper {
   private client: E2EClient;
 
@@ -54,11 +64,11 @@ export class ApiHelper {
   }
 
   async deleteLeague(accountId: string, leagueId: string): Promise<void> {
-    const { error } = await deleteLeague({
+    const { error, response } = await deleteLeague({
       client: this.client,
       path: { accountId, leagueId },
     });
-    if (error) throw new Error(`deleteLeague failed: ${JSON.stringify(error)}`);
+    if (error) throw new ApiError('deleteLeague', response.status, error);
   }
 
   async createSeason(accountId: string, data: { name: string }): Promise<LeagueSeasonWithDivision> {
@@ -72,11 +82,11 @@ export class ApiHelper {
   }
 
   async deleteSeason(accountId: string, seasonId: string): Promise<void> {
-    const { error } = await deleteAccountSeason({
+    const { error, response } = await deleteAccountSeason({
       client: this.client,
       path: { accountId, seasonId },
     });
-    if (error) throw new Error(`deleteSeason failed: ${JSON.stringify(error)}`);
+    if (error) throw new ApiError('deleteSeason', response.status, error);
   }
 
   async addLeagueToSeason(
@@ -99,11 +109,11 @@ export class ApiHelper {
     seasonId: string,
     leagueSeasonId: string,
   ): Promise<void> {
-    const { error } = await removeLeagueFromSeason({
+    const { error, response } = await removeLeagueFromSeason({
       client: this.client,
       path: { accountId, seasonId, leagueSeasonId },
     });
-    if (error) throw new Error(`removeLeagueFromSeason failed: ${JSON.stringify(error)}`);
+    if (error) throw new ApiError('removeLeagueFromSeason', response.status, error);
   }
 
   async updateLeagueSetup(
@@ -135,6 +145,14 @@ export class ApiHelper {
     return team;
   }
 
+  async deleteTeam(accountId: string, seasonId: string, teamSeasonId: string): Promise<void> {
+    const { error, response } = await deleteGolfTeam({
+      client: this.client,
+      path: { accountId, seasonId, teamSeasonId },
+    });
+    if (error) throw new ApiError('deleteTeam', response.status, error);
+  }
+
   async createAndSignPlayer(
     accountId: string,
     seasonId: string,
@@ -156,11 +174,11 @@ export class ApiHelper {
   }
 
   async deleteRosterEntry(accountId: string, seasonId: string, rosterId: string): Promise<void> {
-    const { error } = await deleteGolfPlayer({
+    const { error, response } = await deleteGolfPlayer({
       client: this.client,
       path: { accountId, seasonId, rosterId },
     });
-    if (error) throw new Error(`deleteRosterEntry failed: ${JSON.stringify(error)}`);
+    if (error) throw new ApiError('deleteRosterEntry', response.status, error);
   }
 
   async createMatch(
@@ -185,12 +203,12 @@ export class ApiHelper {
   }
 
   async deleteMatch(accountId: string, matchId: string, force = false): Promise<void> {
-    const { error } = await deleteGolfMatch({
+    const { error, response } = await deleteGolfMatch({
       client: this.client,
       path: { accountId, matchId },
       query: force ? { force: true } : undefined,
     });
-    if (error) throw new Error(`deleteMatch failed: ${JSON.stringify(error)}`);
+    if (error) throw new ApiError('deleteMatch', response.status, error);
   }
 
   async submitMatchResults(
