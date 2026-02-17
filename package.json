@@ -4,7 +4,7 @@
   "description": "Draco Sports Manager - Node.js Migration",
   "private": true,
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=24.0.0"
   },
   "workspaces": {
     "packages": [
@@ -67,7 +67,8 @@
     "mobile:format": "npm run format -w @draco/mobile"
   },
   "overrides": {
-    "react-native": "0.81.4"
+    "react-native": "0.81.4",
+    "@types/node": "^24.0.1"
   },
   "devDependencies": {
     "@types/node": "^24.0.1",
