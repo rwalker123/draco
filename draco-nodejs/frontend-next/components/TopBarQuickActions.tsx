@@ -177,6 +177,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   const [announcementAnchorEl, setAnnouncementAnchorEl] = React.useState<null | HTMLElement>(null);
   const [compactAnchorEl, setCompactAnchorEl] = React.useState<null | HTMLElement>(null);
   const lastEmittedEmptyRef = React.useRef(true);
+  const prevCompactKeyRef = React.useRef<string>('');
 
   const { currentThemeName, setCurrentThemeName } = useThemeContext();
   const isDarkMode = currentThemeName === 'dark';
@@ -1168,6 +1169,29 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   const shouldShowQuickActionsMenu =
     shouldShowAnnouncementAction || shouldShowHandoutAction || shouldShowComposeAction;
 
+  const compactItemsKey =
+    useUnifiedMenu && isCompact && allQuickActionsLoaded
+      ? JSON.stringify({
+          compose: shouldShowComposeAction ? composeHref : null,
+          dark: isDarkMode,
+          announcements: shouldShowAnnouncementAction,
+          handouts: shouldShowHandoutAction,
+          acctAnnIds: accountAnnouncements.map((a) => a.id),
+          teamAnnIds: teamAnnouncementSections.map(
+            (s) => `${s.teamId}:${s.announcements.map((a) => a.id).join(',')}`,
+          ),
+          acctHndIds: accountHandouts.map((h) => h.id),
+          teamHndIds: teamHandoutSections.map(
+            (s) => `${s.teamId}:${s.handouts.map((h) => h.id).join(',')}`,
+          ),
+          dl: downloadingHandoutId,
+          acctHndErr: accountHandoutsError,
+          teamHndErr: teamHandoutsError,
+          acctAnnErr: accountAnnouncementsError,
+          teamAnnErr: teamAnnouncementsError,
+        })
+      : '';
+
   const buildCompactMenuItems = React.useCallback(
     (closeMenu: () => void): React.ReactNode[] => {
       const nodes: React.ReactNode[] = [];
@@ -1275,8 +1299,14 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
         onCompactMenuItemsChange?.([]);
         lastEmittedEmptyRef.current = true;
       }
+      prevCompactKeyRef.current = '';
       return;
     }
+
+    if (compactItemsKey === prevCompactKeyRef.current) {
+      return;
+    }
+    prevCompactKeyRef.current = compactItemsKey;
 
     const items = buildCompactMenuItems(onUnifiedMenuClose ?? (() => {}));
     onCompactMenuItemsChange?.(items);
@@ -1284,6 +1314,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   }, [
     allQuickActionsLoaded,
     buildCompactMenuItems,
+    compactItemsKey,
     isCompact,
     onCompactMenuItemsChange,
     onUnifiedMenuClose,
