@@ -705,7 +705,7 @@ describe('GolfScoreService', () => {
 
       const result = await service.getPlayerSeasonScores(500n);
 
-      expect(mockScoreRepository.getPlayerLeagueScores).toHaveBeenCalledWith(500n, 20);
+      expect(mockScoreRepository.getPlayerLeagueScores).toHaveBeenCalledWith(500n);
       expect(result.scores).toHaveLength(2);
       expect(result.handicapIndex).toBe(10.2);
       expect(result.isInitialIndex).toBe(false);
