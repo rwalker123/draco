@@ -264,8 +264,8 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
       return { messages, rateLimited: false };
     } catch (error) {
       if (error instanceof HttpError && error.status === 429) {
-        this.consecutiveRateLimits += 1;
         const retryAfterMs = this.extractRetryAfterMs(error.body);
+        this.consecutiveRateLimits += 1;
         console.warn(
           `[discord] Rate limit hit for channel ${channelId}. Pausing for ${retryAfterMs}ms (attempt ${this.consecutiveRateLimits}). Raw body: ${error.body}`,
         );

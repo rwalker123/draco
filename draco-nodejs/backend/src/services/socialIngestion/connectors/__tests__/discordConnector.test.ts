@@ -6,6 +6,15 @@ import type {
 } from '../../ingestionTypes.js';
 import type { DiscordIngestionTarget } from '../../../../config/socialIngestion.js';
 import type { ISocialContentRepository } from '../../../../repositories/interfaces/ISocialContentRepository.js';
+import { HttpError } from '../../../../utils/fetchJson.js';
+
+vi.mock('../../../../utils/fetchJson.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../../utils/fetchJson.js')>();
+  return {
+    ...actual,
+    fetchJson: vi.fn(),
+  };
+});
 
 const target: DiscordIngestionTarget = {
   accountId: BigInt(1),
@@ -165,5 +174,162 @@ describe('DiscordConnector message cache', () => {
       target.channelId,
       options.limit,
     );
+  });
+});
+
+describe('DiscordConnector rate limit handling', () => {
+  let repository: Pick<
+    ISocialContentRepository,
+    'upsertCommunityMessage' | 'deleteCommunityMessages' | 'listCommunityMessageCacheEntries'
+  >;
+  let options: DiscordConnectorOptions;
+  let connector: DiscordConnector;
+
+  type ConnectorInternals = {
+    fetchChannelMessages: (
+      target: DiscordIngestionTarget,
+    ) => Promise<{ messages: DiscordMessageIngestionRecord[]; rateLimited: boolean }>;
+    extractRetryAfterMs: (body: string) => number;
+    nextAllowedRun: number;
+    globalCooldownUntil: number;
+    consecutiveRateLimits: number;
+  };
+
+  function internals(): ConnectorInternals {
+    return connector as unknown as ConnectorInternals;
+  }
+
+  beforeEach(() => {
+    repository = {
+      upsertCommunityMessage: vi.fn().mockResolvedValue(undefined),
+      deleteCommunityMessages: vi.fn().mockResolvedValue(undefined),
+      listCommunityMessageCacheEntries: vi.fn().mockResolvedValue([]),
+    };
+
+    options = {
+      botToken: 'bot-token',
+      limit: 10,
+      intervalMs: 1000,
+      enabled: true,
+      targetsProvider: vi.fn().mockResolvedValue([target]),
+    };
+
+    connector = new DiscordConnector(repository as ISocialContentRepository, options);
+  });
+
+  it('uses retry_after from a standard per-channel 429 response', async () => {
+    const { fetchJson } = await import('../../../../utils/fetchJson.js');
+    const mockFetchJson = vi.mocked(fetchJson);
+    mockFetchJson.mockRejectedValueOnce(
+      new HttpError('rate limited', 429, JSON.stringify({ retry_after: 3 })),
+    );
+
+    const result = await internals().fetchChannelMessages(target);
+
+    expect(result.rateLimited).toBe(true);
+    expect(result.messages).toEqual([]);
+    expect(internals().nextAllowedRun).toBeGreaterThan(Date.now() + 2500);
+    expect(internals().globalCooldownUntil).toBe(0);
+  });
+
+  it('sets globalCooldownUntil when response has global flag', async () => {
+    const { fetchJson } = await import('../../../../utils/fetchJson.js');
+    const mockFetchJson = vi.mocked(fetchJson);
+    mockFetchJson.mockRejectedValueOnce(
+      new HttpError('rate limited', 429, JSON.stringify({ retry_after: 5, global: true })),
+    );
+
+    const before = Date.now();
+    await internals().fetchChannelMessages(target);
+
+    expect(internals().globalCooldownUntil).toBeGreaterThanOrEqual(before + 5000);
+    expect(internals().globalCooldownUntil).toBeLessThan(before + 10_000);
+  });
+
+  it('applies 60s default cooldown for global block without retry_after', async () => {
+    const { fetchJson } = await import('../../../../utils/fetchJson.js');
+    const mockFetchJson = vi.mocked(fetchJson);
+    const globalBlockBody = JSON.stringify({
+      code: 0,
+      message:
+        'You are being blocked from accessing our API temporarily due to exceeding global rate limits.',
+    });
+    mockFetchJson.mockRejectedValueOnce(new HttpError('rate limited', 429, globalBlockBody));
+
+    const before = Date.now();
+    await internals().fetchChannelMessages(target);
+
+    expect(internals().globalCooldownUntil).toBeGreaterThanOrEqual(before + 60_000);
+    expect(internals().nextAllowedRun).toBeGreaterThanOrEqual(before + 60_000);
+  });
+
+  it('applies exponential backoff on consecutive rate limits', async () => {
+    const { fetchJson } = await import('../../../../utils/fetchJson.js');
+    const mockFetchJson = vi.mocked(fetchJson);
+    const globalBlockBody = JSON.stringify({
+      code: 0,
+      message:
+        'You are being blocked from accessing our API temporarily due to exceeding global rate limits.',
+    });
+
+    mockFetchJson.mockRejectedValue(new HttpError('rate limited', 429, globalBlockBody));
+
+    internals().globalCooldownUntil = 0;
+    internals().nextAllowedRun = 0;
+    await internals().fetchChannelMessages(target);
+    const firstCooldown = internals().globalCooldownUntil;
+
+    internals().globalCooldownUntil = 0;
+    internals().nextAllowedRun = 0;
+    await internals().fetchChannelMessages(target);
+    const secondCooldown = internals().globalCooldownUntil;
+
+    internals().globalCooldownUntil = 0;
+    internals().nextAllowedRun = 0;
+    await internals().fetchChannelMessages(target);
+    const thirdCooldown = internals().globalCooldownUntil;
+
+    const now = Date.now();
+    expect(firstCooldown - now).toBeGreaterThanOrEqual(55_000);
+    expect(firstCooldown - now).toBeLessThan(65_000);
+    expect(secondCooldown - now).toBeGreaterThanOrEqual(115_000);
+    expect(secondCooldown - now).toBeLessThan(125_000);
+    expect(thirdCooldown - now).toBeGreaterThanOrEqual(235_000);
+    expect(thirdCooldown - now).toBeLessThan(245_000);
+    expect(internals().consecutiveRateLimits).toBe(3);
+  });
+
+  it('resets consecutiveRateLimits on a successful fetch', async () => {
+    const { fetchJson } = await import('../../../../utils/fetchJson.js');
+    const mockFetchJson = vi.mocked(fetchJson);
+
+    mockFetchJson.mockRejectedValueOnce(
+      new HttpError(
+        'rate limited',
+        429,
+        JSON.stringify({ code: 0, message: 'exceeding global rate limits' }),
+      ),
+    );
+
+    await internals().fetchChannelMessages(target);
+    expect(internals().consecutiveRateLimits).toBe(1);
+
+    mockFetchJson.mockResolvedValueOnce([]);
+    internals().nextAllowedRun = 0;
+    internals().globalCooldownUntil = 0;
+    await internals().fetchChannelMessages(target);
+    expect(internals().consecutiveRateLimits).toBe(0);
+  });
+
+  it('defaults to 5s when 429 body is unparseable', async () => {
+    const { fetchJson } = await import('../../../../utils/fetchJson.js');
+    const mockFetchJson = vi.mocked(fetchJson);
+    mockFetchJson.mockRejectedValueOnce(new HttpError('rate limited', 429, 'not json'));
+
+    const before = Date.now();
+    await internals().fetchChannelMessages(target);
+
+    expect(internals().nextAllowedRun).toBeGreaterThanOrEqual(before + 5000);
+    expect(internals().nextAllowedRun).toBeLessThan(before + 10_000);
   });
 });
