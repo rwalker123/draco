@@ -89,6 +89,7 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
   private readonly hydratedTargets = new Set<string>();
   private nextAllowedRun = 0;
   private globalCooldownUntil = 0;
+  private consecutiveRateLimits = 0;
 
   constructor(
     private readonly repository: ISocialContentRepository,
@@ -203,6 +204,8 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
         timeoutMs: 5000,
       });
 
+      this.consecutiveRateLimits = 0;
+
       if (!Array.isArray(response) || !response.length) {
         return { messages: [], rateLimited: false };
       }
@@ -261,9 +264,10 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
       return { messages, rateLimited: false };
     } catch (error) {
       if (error instanceof HttpError && error.status === 429) {
+        this.consecutiveRateLimits += 1;
         const retryAfterMs = this.extractRetryAfterMs(error.body);
         console.warn(
-          `[discord] Rate limit hit for channel ${channelId}. Pausing for ${retryAfterMs}ms. Raw body: ${error.body}`,
+          `[discord] Rate limit hit for channel ${channelId}. Pausing for ${retryAfterMs}ms (attempt ${this.consecutiveRateLimits}). Raw body: ${error.body}`,
         );
         this.nextAllowedRun = Date.now() + retryAfterMs;
         return { messages: [], rateLimited: true };
@@ -279,11 +283,17 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
   private extractRetryAfterMs(body: string): number {
     try {
       const parsed = JSON.parse(body);
-      const retrySeconds = typeof parsed?.retry_after === 'number' ? parsed.retry_after : 1;
-      const isGlobal = Boolean(parsed?.global);
+      const hasRetryAfter = typeof parsed?.retry_after === 'number';
+      const isGlobal =
+        Boolean(parsed?.global) ||
+        (typeof parsed?.message === 'string' && parsed.message.includes('global rate limit'));
       if (isGlobal) {
-        this.globalCooldownUntil = Date.now() + retrySeconds * 1000;
+        const baseMs = hasRetryAfter ? parsed.retry_after * 1000 : 60_000;
+        const backoffMs = baseMs * Math.pow(2, Math.min(this.consecutiveRateLimits, 5));
+        this.globalCooldownUntil = Date.now() + backoffMs;
+        return backoffMs;
       }
+      const retrySeconds = hasRetryAfter ? parsed.retry_after : 1;
       return Math.max(1000, retrySeconds * 1000);
     } catch {
       return 5000;

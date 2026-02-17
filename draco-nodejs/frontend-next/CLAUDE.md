@@ -11,6 +11,9 @@
 - After changes, run `npm run frontend:lint` and check for errors.
 - If you add a new route with metadata, use the helpers in `lib/metadataParams` for both `searchParams` and `params`.
 
+## MCP Initialization
+When starting work on the Next.js frontend, ALWAYS call the `init` tool from next-devtools-mcp FIRST to set up proper context and establish documentation requirements. Do this automatically without being asked.
+
 ## React Compiler (Automatic Memoization)
 **Do not introduce `useMemo` or `useCallback`** — the React Compiler handles memoization automatically at build time. If you believe manual memoization is necessary, stop and ask for approval first.
 
