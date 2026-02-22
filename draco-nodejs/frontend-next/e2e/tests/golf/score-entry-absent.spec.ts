@@ -32,7 +32,6 @@ test.describe('Golf Score Entry - Absent Checkbox Persistence', () => {
   });
 
   test('persists absent for one player and score for the other after save and reopen', async ({
-    page,
     scoreEntryData,
   }) => {
     await scoreEntryPage.goto(scoreEntryData.accountId);
@@ -41,11 +40,8 @@ test.describe('Golf Score Entry - Absent Checkbox Persistence', () => {
 
     await scoreEntryPage.markPlayerAbsent(scoreEntryData.team1Name);
 
-    const dialog = page.getByTestId('score-entry-dialog');
-    const team2Accordion = dialog
-      .locator('.MuiAccordion-root')
-      .filter({ hasText: scoreEntryData.team2Name });
-    await team2Accordion.getByLabel('Total Score').fill('42');
+    await scoreEntryPage.fillFrontNine(scoreEntryData.team2Name, '21');
+    await scoreEntryPage.fillBackNine(scoreEntryData.team2Name, '21');
 
     await scoreEntryPage.saveScores();
 

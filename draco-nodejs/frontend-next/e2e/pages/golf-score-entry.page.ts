@@ -18,6 +18,10 @@ export class GolfScoreEntryPage {
     await card.getByTestId('enter-game-results-btn').click();
     await this.page.getByTestId('score-entry-dialog').waitFor({ state: 'visible' });
     await this.page.waitForLoadState('networkidle');
+    await this.dialog()
+      .locator('.MuiAccordion-root')
+      .first()
+      .waitFor({ state: 'visible', timeout: 10000 });
   }
 
   private dialog(): Locator {
@@ -41,7 +45,7 @@ export class GolfScoreEntryPage {
   }
 
   async setHoles(holes: '9 Holes' | '18 Holes'): Promise<void> {
-    const holesSelect = this.dialog().getByLabel('Holes');
+    const holesSelect = this.dialog().getByRole('combobox', { name: 'Holes' });
     await holesSelect.click();
     await this.page.getByRole('option', { name: holes }).click();
   }
@@ -75,7 +79,12 @@ export class GolfScoreEntryPage {
 
   async isFrontNineVisible(teamName: string): Promise<boolean> {
     const accordion = this.teamAccordion(teamName);
-    return accordion.getByLabel('Front 9').isVisible();
+    try {
+      await accordion.getByLabel('Front 9').waitFor({ state: 'visible', timeout: 5000 });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async saveScores(): Promise<void> {

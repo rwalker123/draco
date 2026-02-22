@@ -32,6 +32,7 @@ export type ScoreEntryTestData = {
   player1RosterId: string;
   player2RosterId: string;
   matchDate: string;
+  seasonOwned: boolean;
 };
 
 export async function createScoreEntryTestData(
@@ -52,11 +53,11 @@ export async function createScoreEntryTestData(
 
   const league = await api.createLeague(accountId, { name: `E2E SE Lg ${suffix}` });
 
-  const season = await api.createSeason(accountId, { name: `E2E SE Sn ${suffix}` });
+  const currentSeason = await api.fetchCurrentSeason(accountId);
 
-  const leagueSeason = await api.addLeagueToSeason(accountId, season.id, league.id);
+  const leagueSeason = await api.addLeagueToSeason(accountId, currentSeason.id, league.id);
 
-  await api.updateLeagueSetup(accountId, season.id, leagueSeason.id, {
+  await api.updateLeagueSetup(accountId, currentSeason.id, leagueSeason.id, {
     holesPerMatch: options?.holesPerMatch ?? 9,
     teamSize: 1,
     scoringType: 'individual',
@@ -65,27 +66,27 @@ export async function createScoreEntryTestData(
   const team1Name = `E2E Alpha ${suffix}`;
   const team2Name = `E2E Bravo ${suffix}`;
 
-  const team1 = await api.createTeam(accountId, season.id, leagueSeason.id, {
+  const team1 = await api.createTeam(accountId, currentSeason.id, leagueSeason.id, {
     name: team1Name,
   });
 
-  const team2 = await api.createTeam(accountId, season.id, leagueSeason.id, {
+  const team2 = await api.createTeam(accountId, currentSeason.id, leagueSeason.id, {
     name: team2Name,
   });
 
-  const player1 = await api.createAndSignPlayer(accountId, season.id, team1.id, {
+  const player1 = await api.createAndSignPlayer(accountId, currentSeason.id, team1.id, {
     firstName: 'E2E',
     lastName: `Alpha${suffix}`,
     initialDifferential: 12.0,
   });
 
-  const player2 = await api.createAndSignPlayer(accountId, season.id, team2.id, {
+  const player2 = await api.createAndSignPlayer(accountId, currentSeason.id, team2.id, {
     firstName: 'E2E',
     lastName: `Bravo${suffix}`,
     initialDifferential: 15.0,
   });
 
-  const match = await api.createMatch(accountId, season.id, {
+  const match = await api.createMatch(accountId, currentSeason.id, {
     leagueSeasonId: leagueSeason.id,
     team1Id: team1.id,
     team2Id: team2.id,
@@ -96,7 +97,7 @@ export async function createScoreEntryTestData(
 
   return {
     accountId,
-    seasonId: season.id,
+    seasonId: currentSeason.id,
     leagueId: league.id,
     leagueSeasonId: leagueSeason.id,
     courseId,
@@ -109,6 +110,7 @@ export async function createScoreEntryTestData(
     player1RosterId: player1.id,
     player2RosterId: player2.id,
     matchDate,
+    seasonOwned: false,
   };
 }
 
@@ -143,7 +145,9 @@ export async function cleanupScoreEntryTestData(
     api.removeLeagueFromSeason(data.accountId, data.seasonId, data.leagueSeasonId),
   );
 
-  await tryCleanup(() => api.deleteSeason(data.accountId, data.seasonId));
+  if (data.seasonOwned) {
+    await tryCleanup(() => api.deleteSeason(data.accountId, data.seasonId));
+  }
 
   await tryCleanup(() => api.deleteLeague(data.accountId, data.leagueId));
 
