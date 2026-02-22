@@ -69,7 +69,7 @@ export class GolfScoreResponseFormatter {
     const baseScore = this.format(score);
     const gender = normalizeGender(score.golfer.gender);
 
-    const differential = this.calculateDifferential(score, gender);
+    const differential = score.isabsent ? undefined : this.calculateDifferential(score, gender);
 
     const teeInfo = score.golfteeinformation;
     const distances = [
@@ -95,6 +95,7 @@ export class GolfScoreResponseFormatter {
 
     return {
       ...baseScore,
+      isAbsent: score.isabsent ?? false,
       player: {
         id: score.golfer.contact.id.toString(),
         firstName: score.golfer.contact.firstname,
@@ -114,6 +115,14 @@ export class GolfScoreResponseFormatter {
         womansSlope: teeInfo.womanslope,
       },
       differential,
+      frontNineScore:
+        score.totalsonly && score.holesplayed >= 18 && score.holescrore1 > 0
+          ? score.holescrore1
+          : undefined,
+      backNineScore:
+        score.totalsonly && score.holesplayed >= 18 && score.holescrore10 > 0
+          ? score.holescrore10
+          : undefined,
       courseName: score.golfcourse.name,
       courseCity: score.golfcourse.city ?? null,
       courseState: score.golfcourse.state ?? null,
@@ -192,17 +201,19 @@ export class GolfScoreResponseFormatter {
         courseHandicap = courseHandicapForNdb;
       }
 
-      if (!score.totalsonly) {
-        const adjustedHoleScores = applyNetDoubleBogey(
-          holeScores,
-          holePars,
-          holeHandicapIndexes,
-          courseHandicapForNdb,
-        );
-        const adjustedScore = adjustedHoleScores.reduce((sum, s) => sum + s, 0);
-        differential = calculateScoreDifferential(adjustedScore, courseRating, slopeRating);
-      } else {
-        differential = calculateScoreDifferential(score.totalscore, courseRating, slopeRating);
+      if (!score.isabsent) {
+        if (!score.totalsonly) {
+          const adjustedHoleScores = applyNetDoubleBogey(
+            holeScores,
+            holePars,
+            holeHandicapIndexes,
+            courseHandicapForNdb,
+          );
+          const adjustedScore = adjustedHoleScores.reduce((sum, s) => sum + s, 0);
+          differential = calculateScoreDifferential(adjustedScore, courseRating, slopeRating);
+        } else {
+          differential = calculateScoreDifferential(score.totalscore, courseRating, slopeRating);
+        }
       }
     }
 
@@ -218,6 +229,7 @@ export class GolfScoreResponseFormatter {
       startIndex: score.startindex ?? undefined,
       startIndex9: score.startindex9 ?? undefined,
       holeScores,
+      isAbsent: score.isabsent ?? false,
       player: {
         id: matchScore.golfer.contact.id.toString(),
         firstName: matchScore.golfer.contact.firstname,
@@ -226,6 +238,14 @@ export class GolfScoreResponseFormatter {
       },
       differential,
       courseHandicap,
+      frontNineScore:
+        score.totalsonly && score.holesplayed >= 18 && score.holescrore1 > 0
+          ? score.holescrore1
+          : undefined,
+      backNineScore:
+        score.totalsonly && score.holesplayed >= 18 && score.holescrore10 > 0
+          ? score.holescrore10
+          : undefined,
     };
   }
 
@@ -301,17 +321,19 @@ export class GolfScoreResponseFormatter {
         courseHandicap = courseHandicapForNdb;
       }
 
-      if (!score.totalsonly) {
-        const adjustedHoleScores = applyNetDoubleBogey(
-          holeScores,
-          holePars,
-          holeHandicapIndexes,
-          courseHandicapForNdb,
-        );
-        const adjustedScore = adjustedHoleScores.reduce((sum, s) => sum + s, 0);
-        differential = calculateScoreDifferential(adjustedScore, courseRating, slopeRating);
-      } else {
-        differential = calculateScoreDifferential(score.totalscore, courseRating, slopeRating);
+      if (!score.isabsent) {
+        if (!score.totalsonly) {
+          const adjustedHoleScores = applyNetDoubleBogey(
+            holeScores,
+            holePars,
+            holeHandicapIndexes,
+            courseHandicapForNdb,
+          );
+          const adjustedScore = adjustedHoleScores.reduce((sum, s) => sum + s, 0);
+          differential = calculateScoreDifferential(adjustedScore, courseRating, slopeRating);
+        } else {
+          differential = calculateScoreDifferential(score.totalscore, courseRating, slopeRating);
+        }
       }
     }
 
@@ -327,6 +349,7 @@ export class GolfScoreResponseFormatter {
       startIndex: score.startindex ?? undefined,
       startIndex9: score.startindex9 ?? undefined,
       holeScores,
+      isAbsent: score.isabsent ?? false,
       player: {
         id: score.golfer.contact.id.toString(),
         firstName: score.golfer.contact.firstname,
@@ -335,6 +358,14 @@ export class GolfScoreResponseFormatter {
       },
       differential,
       courseHandicap,
+      frontNineScore:
+        score.totalsonly && score.holesplayed >= 18 && score.holescrore1 > 0
+          ? score.holescrore1
+          : undefined,
+      backNineScore:
+        score.totalsonly && score.holesplayed >= 18 && score.holescrore10 > 0
+          ? score.holescrore10
+          : undefined,
     };
   }
 

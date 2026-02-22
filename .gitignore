@@ -100,3 +100,7 @@ draco-nodejs/frontend-next/e2e/.auth/
 draco-nodejs/frontend-next/e2e/.results/
 draco-nodejs/frontend-next/e2e/.report/
 draco-nodejs/frontend-next/.env.e2e
+
+# Claude Code tools
+.claude/skills/
+.playwright-cli/

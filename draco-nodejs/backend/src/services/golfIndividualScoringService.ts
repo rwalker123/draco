@@ -10,7 +10,7 @@ import {
 import { IGolfCourseRepository } from '../repositories/interfaces/IGolfCourseRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
-import { AbsentPlayerMode } from '../utils/golfConstants.js';
+import { AbsentPlayerMode, FullTeamAbsentMode } from '../utils/golfConstants.js';
 import {
   getHoleHandicapIndexes,
   getHolePars,
@@ -458,7 +458,63 @@ export class GolfIndividualScoringService {
       const team1Entry = team1Scores[i];
       const team2Entry = team2Scores[i];
 
-      if (!team1Entry && !team2Entry) {
+      const team1IsAbsent = !team1Entry || team1Entry.golfscore.isabsent === true;
+      const team2IsAbsent = !team2Entry || team2Entry.golfscore.isabsent === true;
+
+      if (team1IsAbsent && team2IsAbsent) {
+        if (leagueSetup.fullteamabsentmode !== FullTeamAbsentMode.HANDICAP_PENALTY) {
+          continue;
+        }
+        const rawHolesPlayed =
+          team1Entry?.golfscore.holesplayed || team2Entry?.golfscore.holesplayed || 9;
+        const bothAbsentHolesPlayed: 9 | 18 = rawHolesPlayed === 18 ? 18 : 9;
+
+        const bothTotalsOnly = team1Entry?.golfscore.totalsonly && team2Entry?.golfscore.totalsonly;
+
+        if (bothTotalsOnly && team1Entry && team2Entry) {
+          const pairingResult = this.calculateTotalsOnlyPairingPoints(
+            team1Entry,
+            team2Entry,
+            course,
+            match.golfteeinformation,
+            leagueSetup,
+            scoringConfig,
+            bothAbsentHolesPlayed,
+          );
+          aggregateResult = this.addResults(aggregateResult, pairingResult.result);
+          team1TotalScore += pairingResult.team1TotalScore;
+          team2TotalScore += pairingResult.team2TotalScore;
+        } else {
+          const refGender: Gender = team1Entry ? normalizeGender(team1Entry.golfer.gender) : 'M';
+          const holePars = getHolePars(course, refGender).slice(0, bothAbsentHolesPlayed);
+          const holeHandicapIndexes = getHoleHandicapIndexes(course, refGender);
+          const penaltyStrokes = leagueSetup.absentplayerpenalty ?? 0;
+          const syntheticScores = this.generateSyntheticHoleScores(
+            holePars,
+            holeHandicapIndexes,
+            penaltyStrokes,
+            bothAbsentHolesPlayed,
+          );
+          const syntheticTotal = syntheticScores.reduce((sum, s) => sum + s, 0);
+          const syntheticData: PlayerScoreData = {
+            golferId: 0n,
+            holeScores: syntheticScores,
+            totalScore: syntheticTotal,
+            courseHandicap: 0,
+            gender: refGender,
+          };
+          const result = this.calculateIndividualMatchPoints(
+            syntheticData,
+            syntheticData,
+            holeHandicapIndexes,
+            holePars,
+            scoringConfig,
+            bothAbsentHolesPlayed,
+          );
+          aggregateResult = this.addResults(aggregateResult, result);
+        }
+        if (team1Entry?.golfscore) team1TotalScore += team1Entry.golfscore.totalscore;
+        if (team2Entry?.golfscore) team2TotalScore += team2Entry.golfscore.totalscore;
         continue;
       }
 
@@ -468,41 +524,73 @@ export class GolfIndividualScoringService {
       const rawHolesPlayed = score1?.holesplayed || score2?.holesplayed || 9;
       const holesPlayed: 9 | 18 = rawHolesPlayed === 18 ? 18 : 9;
 
-      if (team1Entry && team2Entry) {
-        const pairingResult = this.calculatePairingPoints(
-          team1Entry,
-          team2Entry,
-          course,
-          match.golfteeinformation,
-          leagueSetup,
-          scoringConfig,
-          holesPlayed,
-        );
+      if (!team1IsAbsent && !team2IsAbsent) {
+        const score1 = team1Entry!.golfscore;
+        const score2 = team2Entry!.golfscore;
+        const bothTotalsOnly = score1.totalsonly && score2.totalsonly;
+
+        const pairingResult = bothTotalsOnly
+          ? this.calculateTotalsOnlyPairingPoints(
+              team1Entry!,
+              team2Entry!,
+              course,
+              match.golfteeinformation,
+              leagueSetup,
+              scoringConfig,
+              holesPlayed,
+            )
+          : this.calculatePairingPoints(
+              team1Entry!,
+              team2Entry!,
+              course,
+              match.golfteeinformation,
+              leagueSetup,
+              scoringConfig,
+              holesPlayed,
+            );
         aggregateResult = this.addResults(aggregateResult, pairingResult.result);
         team1TotalScore += pairingResult.team1TotalScore;
         team2TotalScore += pairingResult.team2TotalScore;
       } else {
-        const presentPlayerIsTeam1 = !!team1Entry;
-        const presentPlayerEntry = team1Entry ?? team2Entry;
+        const presentPlayerIsTeam1 = !team1IsAbsent;
+        const presentPlayerEntry = presentPlayerIsTeam1 ? team1Entry! : team2Entry!;
 
-        if (absentPlayerMode === AbsentPlayerMode.HANDICAP_PENALTY && presentPlayerEntry) {
-          const penaltyResult = this.calculateHandicapPenaltyPairingPoints(
-            presentPlayerEntry,
-            course,
-            match.golfteeinformation,
-            leagueSetup,
-            scoringConfig,
-            holesPlayed,
-            presentPlayerIsTeam1,
-          );
-          aggregateResult = this.addResults(aggregateResult, penaltyResult.result);
+        if (absentPlayerMode === AbsentPlayerMode.HANDICAP_PENALTY) {
+          const presentScore = presentPlayerEntry.golfscore;
+          const absentEntry = presentPlayerIsTeam1 ? team2Entry : team1Entry;
 
-          if (presentPlayerIsTeam1) {
-            team1TotalScore += penaltyResult.presentPlayerTotalScore;
-            team2TotalScore += penaltyResult.syntheticTotalScore;
+          if (presentScore.totalsonly && absentEntry) {
+            const pairingResult = this.calculateTotalsOnlyPairingPoints(
+              team1Entry!,
+              team2Entry!,
+              course,
+              match.golfteeinformation,
+              leagueSetup,
+              scoringConfig,
+              holesPlayed,
+            );
+            aggregateResult = this.addResults(aggregateResult, pairingResult.result);
+            team1TotalScore += pairingResult.team1TotalScore;
+            team2TotalScore += pairingResult.team2TotalScore;
           } else {
-            team1TotalScore += penaltyResult.syntheticTotalScore;
-            team2TotalScore += penaltyResult.presentPlayerTotalScore;
+            const penaltyResult = this.calculateHandicapPenaltyPairingPoints(
+              presentPlayerEntry,
+              course,
+              match.golfteeinformation,
+              leagueSetup,
+              scoringConfig,
+              holesPlayed,
+              presentPlayerIsTeam1,
+            );
+            aggregateResult = this.addResults(aggregateResult, penaltyResult.result);
+
+            if (presentPlayerIsTeam1) {
+              team1TotalScore += penaltyResult.presentPlayerTotalScore;
+              team2TotalScore += penaltyResult.syntheticTotalScore;
+            } else {
+              team1TotalScore += penaltyResult.syntheticTotalScore;
+              team2TotalScore += penaltyResult.presentPlayerTotalScore;
+            }
           }
         } else {
           const absentResult = this.calculateAbsentPairingPoints(
@@ -634,6 +722,174 @@ export class GolfIndividualScoringService {
 
     return {
       result,
+      team1TotalScore: score1.totalscore,
+      team2TotalScore: score2.totalscore,
+    };
+  }
+
+  private calculateTotalsOnlyPairingPoints(
+    team1Entry: GolfMatchScoreEntry,
+    team2Entry: GolfMatchScoreEntry,
+    course: NonNullable<Awaited<ReturnType<IGolfCourseRepository['findById']>>>,
+    teeInfo: golfteeinformation | null,
+    leagueSetup: GolfLeagueSetupWithOfficers,
+    scoringConfig: ScoringConfig,
+    holesPlayed: 9 | 18,
+  ): { result: IndividualMatchResult; team1TotalScore: number; team2TotalScore: number } {
+    const score1 = team1Entry.golfscore;
+    const score2 = team2Entry.golfscore;
+
+    const gender1 = normalizeGender(team1Entry.golfer.gender);
+    const gender2 = normalizeGender(team2Entry.golfer.gender);
+
+    let team1CourseHandicap = 0;
+    let team2CourseHandicap = 0;
+
+    if (leagueSetup.usehandicapscoring && teeInfo) {
+      const teeRatings = {
+        mensRating: Number(teeInfo.mensrating) || 72,
+        mensSlope: Number(teeInfo.menslope) || 113,
+        womansRating: Number(teeInfo.womansrating) || 72,
+        womansSlope: Number(teeInfo.womanslope) || 113,
+      };
+
+      const handicapIndex1 = holesPlayed === 9 ? score1.startindex9 : score1.startindex;
+      if (handicapIndex1 !== null) {
+        const ratings1 = getRatingsForGender(teeRatings, gender1);
+        const par1 = this.calculatePar(course, gender1, holesPlayed);
+        team1CourseHandicap = calculateCourseHandicap(
+          handicapIndex1,
+          ratings1.slopeRating,
+          ratings1.courseRating,
+          par1,
+        );
+      }
+
+      const handicapIndex2 = holesPlayed === 9 ? score2.startindex9 : score2.startindex;
+      if (handicapIndex2 !== null) {
+        const ratings2 = getRatingsForGender(teeRatings, gender2);
+        const par2 = this.calculatePar(course, gender2, holesPlayed);
+        team2CourseHandicap = calculateCourseHandicap(
+          handicapIndex2,
+          ratings2.slopeRating,
+          ratings2.courseRating,
+          par2,
+        );
+      }
+    }
+
+    let team1Points = 0;
+    let team2Points = 0;
+    let team1NineWins = 0;
+    let team2NineWins = 0;
+    let team1MatchWins = 0;
+    let team2MatchWins = 0;
+
+    if (holesPlayed === 18 && scoringConfig.perNinePoints > 0) {
+      const holeScores1 = this.extractHoleScores(score1, 18);
+      const holeScores2 = this.extractHoleScores(score2, 18);
+      const front9Gross1 = holeScores1.slice(0, 9).reduce((s, v) => s + v, 0);
+      const front9Gross2 = holeScores2.slice(0, 9).reduce((s, v) => s + v, 0);
+      const back9Gross1 = holeScores1.slice(9, 18).reduce((s, v) => s + v, 0);
+      const back9Gross2 = holeScores2.slice(9, 18).reduce((s, v) => s + v, 0);
+
+      const hasNineData =
+        front9Gross1 > 0 && front9Gross2 > 0 && back9Gross1 > 0 && back9Gross2 > 0;
+
+      if (hasNineData && leagueSetup.usehandicapscoring) {
+        const holeHandicapIndexes = getHoleHandicapIndexes(course, gender1);
+        const { team1Strokes, team2Strokes } = this.calculateStrokeDistribution(
+          team1CourseHandicap,
+          team2CourseHandicap,
+          holeHandicapIndexes,
+          18,
+        );
+        const front9Strokes1 = team1Strokes.slice(0, 9).reduce((s, v) => s + v, 0);
+        const front9Strokes2 = team2Strokes.slice(0, 9).reduce((s, v) => s + v, 0);
+        const back9Strokes1 = team1Strokes.slice(9, 18).reduce((s, v) => s + v, 0);
+        const back9Strokes2 = team2Strokes.slice(9, 18).reduce((s, v) => s + v, 0);
+
+        const front9Net1 = front9Gross1 - front9Strokes1;
+        const front9Net2 = front9Gross2 - front9Strokes2;
+        const back9Net1 = back9Gross1 - back9Strokes1;
+        const back9Net2 = back9Gross2 - back9Strokes2;
+
+        if (front9Net1 < front9Net2) {
+          team1NineWins++;
+          team1Points += scoringConfig.perNinePoints;
+        } else if (front9Net2 < front9Net1) {
+          team2NineWins++;
+          team2Points += scoringConfig.perNinePoints;
+        } else {
+          team1Points += scoringConfig.perNinePoints / 2;
+          team2Points += scoringConfig.perNinePoints / 2;
+        }
+
+        if (back9Net1 < back9Net2) {
+          team1NineWins++;
+          team1Points += scoringConfig.perNinePoints;
+        } else if (back9Net2 < back9Net1) {
+          team2NineWins++;
+          team2Points += scoringConfig.perNinePoints;
+        } else {
+          team1Points += scoringConfig.perNinePoints / 2;
+          team2Points += scoringConfig.perNinePoints / 2;
+        }
+      } else if (hasNineData) {
+        if (front9Gross1 < front9Gross2) {
+          team1NineWins++;
+          team1Points += scoringConfig.perNinePoints;
+        } else if (front9Gross2 < front9Gross1) {
+          team2NineWins++;
+          team2Points += scoringConfig.perNinePoints;
+        } else {
+          team1Points += scoringConfig.perNinePoints / 2;
+          team2Points += scoringConfig.perNinePoints / 2;
+        }
+
+        if (back9Gross1 < back9Gross2) {
+          team1NineWins++;
+          team1Points += scoringConfig.perNinePoints;
+        } else if (back9Gross2 < back9Gross1) {
+          team2NineWins++;
+          team2Points += scoringConfig.perNinePoints;
+        } else {
+          team1Points += scoringConfig.perNinePoints / 2;
+          team2Points += scoringConfig.perNinePoints / 2;
+        }
+      } else {
+        team1Points += scoringConfig.perNinePoints;
+        team2Points += scoringConfig.perNinePoints;
+      }
+    }
+
+    const net1 = score1.totalscore - team1CourseHandicap;
+    const net2 = score2.totalscore - team2CourseHandicap;
+
+    if (net1 < net2) {
+      team1MatchWins = 1;
+      team1Points += scoringConfig.perMatchPoints;
+    } else if (net2 < net1) {
+      team2MatchWins = 1;
+      team2Points += scoringConfig.perMatchPoints;
+    } else {
+      team1Points += scoringConfig.perMatchPoints / 2;
+      team2Points += scoringConfig.perMatchPoints / 2;
+    }
+
+    return {
+      result: {
+        team1Points,
+        team2Points,
+        team1HoleWins: 0,
+        team2HoleWins: 0,
+        team1NineWins,
+        team2NineWins,
+        team1MatchWins,
+        team2MatchWins,
+        team1NetScore: net1,
+        team2NetScore: net2,
+      },
       team1TotalScore: score1.totalscore,
       team2TotalScore: score2.totalscore,
     };

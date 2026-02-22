@@ -14,6 +14,7 @@ import {
   createGolfMatch,
   deleteGolfMatch,
   submitGolfMatchResults,
+  getCurrentSeason,
 } from '@draco/shared-api-client';
 import type {
   League,
@@ -24,6 +25,7 @@ import type {
   GolfMatch,
   UpdateGolfLeagueSetup,
   SubmitMatchResults,
+  CurrentSeasonResponse,
 } from '@draco/shared-api-client';
 
 export function createE2EApiClient(baseUrl: string, token: string) {
@@ -223,5 +225,14 @@ export class ApiHelper {
     });
     if (error || !result) throw new Error(`submitMatchResults failed: ${JSON.stringify(error)}`);
     return result;
+  }
+
+  async fetchCurrentSeason(accountId: string): Promise<CurrentSeasonResponse> {
+    const { data: season, error } = await getCurrentSeason({
+      client: this.client,
+      path: { accountId },
+    });
+    if (error || !season) throw new Error(`getCurrentSeason failed: ${JSON.stringify(error)}`);
+    return season;
   }
 }

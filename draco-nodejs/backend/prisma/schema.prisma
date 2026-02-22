@@ -972,6 +972,7 @@ model golfscore {
   holescrore18       Int
   startindex         Float?
   startindex9        Float?
+  isabsent           Boolean            @default(false)
   golferid           BigInt
   golferstatsvalue   golferstatsvalue[]
   golfmatchscores    golfmatchscores[]

@@ -62,6 +62,7 @@ import type { IGolfMatchRepository } from '../../repositories/interfaces/IGolfMa
 import type { IGolfRosterRepository } from '../../repositories/interfaces/IGolfRosterRepository.js';
 import type { IGolfCourseRepository } from '../../repositories/interfaces/IGolfCourseRepository.js';
 import type { IGolfLeagueRepository } from '../../repositories/interfaces/IGolfLeagueRepository.js';
+import type { IGolfTeeRepository } from '../../repositories/interfaces/IGolfTeeRepository.js';
 import { NotFoundError, ValidationError } from '../../utils/customErrors.js';
 import { GolfMatchStatus, FullTeamAbsentMode } from '../../utils/golfConstants.js';
 
@@ -72,6 +73,7 @@ describe('GolfScoreService', () => {
   let mockRosterRepository: Partial<IGolfRosterRepository>;
   let mockCourseRepository: Partial<IGolfCourseRepository>;
   let mockLeagueRepository: Partial<IGolfLeagueRepository>;
+  let mockTeeRepository: Partial<IGolfTeeRepository>;
 
   const createMockLeagueSetup = (overrides: Record<string, unknown> = {}) => ({
     id: 1n,
@@ -122,11 +124,120 @@ describe('GolfScoreService', () => {
     name: 'Test Course',
   });
 
+  const createMockCourseWithPars = (par = 4) => ({
+    id: 5n,
+    name: 'Test Course',
+    menspar1: par,
+    menspar2: par,
+    menspar3: par,
+    menspar4: par,
+    menspar5: par,
+    menspar6: par,
+    menspar7: par,
+    menspar8: par,
+    menspar9: par,
+    menspar10: 0,
+    menspar11: 0,
+    menspar12: 0,
+    menspar13: 0,
+    menspar14: 0,
+    menspar15: 0,
+    menspar16: 0,
+    menspar17: 0,
+    menspar18: 0,
+    womanspar1: par,
+    womanspar2: par,
+    womanspar3: par,
+    womanspar4: par,
+    womanspar5: par,
+    womanspar6: par,
+    womanspar7: par,
+    womanspar8: par,
+    womanspar9: par,
+    womanspar10: 0,
+    womanspar11: 0,
+    womanspar12: 0,
+    womanspar13: 0,
+    womanspar14: 0,
+    womanspar15: 0,
+    womanspar16: 0,
+    womanspar17: 0,
+    womanspar18: 0,
+    menshcp1: 1,
+    menshcp2: 2,
+    menshcp3: 3,
+    menshcp4: 4,
+    menshcp5: 5,
+    menshcp6: 6,
+    menshcp7: 7,
+    menshcp8: 8,
+    menshcp9: 9,
+    menshcp10: 0,
+    menshcp11: 0,
+    menshcp12: 0,
+    menshcp13: 0,
+    menshcp14: 0,
+    menshcp15: 0,
+    menshcp16: 0,
+    menshcp17: 0,
+    menshcp18: 0,
+    womanshcp1: 1,
+    womanshcp2: 2,
+    womanshcp3: 3,
+    womanshcp4: 4,
+    womanshcp5: 5,
+    womanshcp6: 6,
+    womanshcp7: 7,
+    womanshcp8: 8,
+    womanshcp9: 9,
+    womanshcp10: 0,
+    womanshcp11: 0,
+    womanshcp12: 0,
+    womanshcp13: 0,
+    womanshcp14: 0,
+    womanshcp15: 0,
+    womanshcp16: 0,
+    womanshcp17: 0,
+    womanshcp18: 0,
+  });
+
+  const createMockTee = () => ({
+    id: 1n,
+    courseid: 5n,
+    teename: 'White',
+    teecolor: 'white',
+    priority: 1,
+    mensrating: '36.0',
+    menslope: 113,
+    womansrating: '36.0',
+    womanslope: 113,
+    distancehole1: 350,
+    distancehole2: 350,
+    distancehole3: 350,
+    distancehole4: 350,
+    distancehole5: 350,
+    distancehole6: 350,
+    distancehole7: 350,
+    distancehole8: 350,
+    distancehole9: 350,
+    distancehole10: 0,
+    distancehole11: 0,
+    distancehole12: 0,
+    distancehole13: 0,
+    distancehole14: 0,
+    distancehole15: 0,
+    distancehole16: 0,
+    distancehole17: 0,
+    distancehole18: 0,
+  });
+
   const createMockRosterEntry = (id: bigint, golferId: bigint, firstName: string) => ({
     id,
     golferid: golferId,
     golfer: {
       id: golferId,
+      gender: 'M',
+      initialdifferential: null,
       contact: {
         firstname: firstName,
         lastname: 'Player',
@@ -164,6 +275,9 @@ describe('GolfScoreService', () => {
     mockLeagueRepository = {
       findByLeagueSeasonId: vi.fn(),
     };
+    mockTeeRepository = {
+      findById: vi.fn().mockResolvedValue(null),
+    };
 
     service = new GolfScoreService(
       mockScoreRepository as IGolfScoreRepository,
@@ -171,6 +285,7 @@ describe('GolfScoreService', () => {
       mockRosterRepository as IGolfRosterRepository,
       mockCourseRepository as IGolfCourseRepository,
       mockLeagueRepository as IGolfLeagueRepository,
+      mockTeeRepository as IGolfTeeRepository,
     );
   });
 
@@ -199,6 +314,8 @@ describe('GolfScoreService', () => {
       };
 
       vi.mocked(mockRosterRepository.findByIds!).mockResolvedValue([
+        createMockRosterEntry(100n, 1000n, 'Player100'),
+        createMockRosterEntry(101n, 1001n, 'Player101'),
         createMockRosterEntry(200n, 2000n, 'Player200'),
         createMockRosterEntry(201n, 2001n, 'Player201'),
       ] as never);
@@ -246,6 +363,8 @@ describe('GolfScoreService', () => {
       vi.mocked(mockRosterRepository.findByIds!).mockResolvedValue([
         createMockRosterEntry(100n, 1000n, 'Player100'),
         createMockRosterEntry(101n, 1001n, 'Player101'),
+        createMockRosterEntry(200n, 2000n, 'Player200'),
+        createMockRosterEntry(201n, 2001n, 'Player201'),
       ] as never);
 
       await service.submitMatchResults(matchId, submitData);
@@ -291,6 +410,7 @@ describe('GolfScoreService', () => {
       };
 
       vi.mocked(mockRosterRepository.findByIds!).mockResolvedValue([
+        createMockRosterEntry(100n, 1000n, 'Player100'),
         createMockRosterEntry(101n, 1001n, 'Player101'),
         createMockRosterEntry(200n, 2000n, 'Player200'),
         createMockRosterEntry(201n, 2001n, 'Player201'),
@@ -332,6 +452,7 @@ describe('GolfScoreService', () => {
       };
 
       vi.mocked(mockRosterRepository.findByIds!).mockResolvedValue([
+        createMockRosterEntry(100n, 1000n, 'Player100'),
         createMockRosterEntry(200n, 2000n, 'Player200'),
       ] as never);
 
@@ -381,6 +502,7 @@ describe('GolfScoreService', () => {
       };
 
       vi.mocked(mockRosterRepository.findByIds!).mockResolvedValue([
+        createMockRosterEntry(100n, 1000n, 'Player100'),
         createMockRosterEntry(200n, 2000n, 'Player200'),
       ] as never);
 
@@ -408,6 +530,10 @@ describe('GolfScoreService', () => {
       vi.mocked(mockMatchRepository.updateStatus!).mockResolvedValue({} as never);
       vi.mocked(mockMatchRepository.updatePoints!).mockResolvedValue({} as never);
       vi.mocked(mockMatchRepository.findById!).mockResolvedValue(match as never);
+      vi.mocked(mockRosterRepository.findByIds!).mockResolvedValue([
+        createMockRosterEntry(100n, 1000n, 'Player100'),
+        createMockRosterEntry(200n, 2000n, 'Player200'),
+      ] as never);
 
       const submitData = {
         courseId: '5',
@@ -446,6 +572,7 @@ describe('GolfScoreService', () => {
       };
 
       vi.mocked(mockRosterRepository.findByIds!).mockResolvedValue([
+        createMockRosterEntry(100n, 1000n, 'Player100'),
         createMockRosterEntry(200n, 2000n, 'Player200'),
       ] as never);
 
@@ -459,6 +586,60 @@ describe('GolfScoreService', () => {
   });
 
   describe('submitMatchResults - Full Team Absence Handicap Penalty Mode', () => {
+    it('stores penalty total score for absent player when teeId is provided', async () => {
+      const matchId = 1n;
+      const match = createMockMatch();
+      const leagueSetup = createMockLeagueSetup({
+        fullteamabsentmode: FullTeamAbsentMode.HANDICAP_PENALTY,
+        holespermatch: 9,
+        absentplayerpenalty: 9,
+      });
+      const course = createMockCourseWithPars(4);
+      const tee = createMockTee();
+
+      vi.mocked(mockMatchRepository.findByIdWithScores!).mockResolvedValue(match as never);
+      vi.mocked(mockCourseRepository.findById!).mockResolvedValue(course as never);
+      vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue(leagueSetup as never);
+      vi.mocked(mockTeeRepository.findById!).mockResolvedValue(tee as never);
+      vi.mocked(mockScoreRepository.submitMatchScoresTransactional!).mockResolvedValue({
+        createdScoreIds: [1n],
+      });
+      vi.mocked(mockScoreRepository.findByTeamAndMatch!).mockResolvedValue([]);
+      vi.mocked(mockMatchRepository.findById!).mockResolvedValue(match as never);
+
+      const handicapService = serviceFactoryMock.getGolfHandicapService();
+      vi.mocked(handicapService.calculateHandicapIndexAsOf).mockResolvedValueOnce(10.0);
+      vi.mocked(handicapService.calculateHandicapIndexAsOf).mockResolvedValueOnce(null);
+
+      vi.mocked(mockRosterRepository.findByIds!).mockResolvedValue([
+        createMockRosterEntry(100n, 1000n, 'Player100'),
+        createMockRosterEntry(200n, 2000n, 'Player200'),
+      ] as never);
+
+      const submitData = {
+        courseId: '5',
+        teeId: '1',
+        scores: [createPlayerScore('10', '100', true), createPlayerScore('20', '200', false)],
+      };
+
+      await service.submitMatchResults(matchId, submitData);
+
+      // coursePar=36 (9 × 4), startIndex9=5 (10/2), CH=round(5 * 113/113 + (36-36))=5, penalty=9
+      // penaltyTotal = 36 + 5 + 9 = 50
+      expect(mockScoreRepository.submitMatchScoresTransactional).toHaveBeenCalledWith(
+        matchId,
+        expect.any(Array),
+        expect.arrayContaining([
+          expect.objectContaining({
+            scoreData: expect.objectContaining({
+              totalscore: 50,
+              isabsent: true,
+            }),
+          }),
+        ]),
+      );
+    });
+
     it('proceeds with normal score submission when handicap penalty mode is selected', async () => {
       const matchId = 1n;
       const match = createMockMatch();
@@ -477,6 +658,7 @@ describe('GolfScoreService', () => {
       vi.mocked(mockMatchRepository.findById!).mockResolvedValue(match as never);
 
       vi.mocked(mockRosterRepository.findByIds!).mockResolvedValue([
+        createMockRosterEntry(100n, 1000n, 'Player100'),
         createMockRosterEntry(200n, 2000n, 'Player200'),
       ] as never);
 

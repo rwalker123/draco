@@ -27041,6 +27041,9 @@
                   "minItems": 9,
                   "maxItems": 18
                 },
+                "isAbsent": {
+                  "type": "boolean"
+                },
                 "player": {
                   "type": "object",
                   "properties": {
@@ -27195,6 +27198,12 @@
                 "courseHandicap": {
                   "type": "integer"
                 },
+                "frontNineScore": {
+                  "type": "integer"
+                },
+                "backNineScore": {
+                  "type": "integer"
+                },
                 "courseName": {
                   "type": "string"
                 },
@@ -27280,6 +27289,9 @@
                   },
                   "minItems": 9,
                   "maxItems": 18
+                },
+                "isAbsent": {
+                  "type": "boolean"
                 },
                 "player": {
                   "type": "object",
@@ -27433,6 +27445,12 @@
                   "type": "number"
                 },
                 "courseHandicap": {
+                  "type": "integer"
+                },
+                "frontNineScore": {
+                  "type": "integer"
+                },
+                "backNineScore": {
                   "type": "integer"
                 },
                 "courseName": {
@@ -27719,6 +27737,9 @@
             "minItems": 9,
             "maxItems": 18
           },
+          "isAbsent": {
+            "type": "boolean"
+          },
           "player": {
             "type": "object",
             "properties": {
@@ -27873,6 +27894,12 @@
           "courseHandicap": {
             "type": "integer"
           },
+          "frontNineScore": {
+            "type": "integer"
+          },
+          "backNineScore": {
+            "type": "integer"
+          },
           "courseName": {
             "type": "string"
           },
@@ -27927,6 +27954,16 @@
             "type": "integer",
             "minimum": 18,
             "maximum": 200
+          },
+          "frontNineScore": {
+            "type": "integer",
+            "minimum": 9,
+            "maximum": 100
+          },
+          "backNineScore": {
+            "type": "integer",
+            "minimum": 9,
+            "maximum": 100
           },
           "holeScores": {
             "type": "array",
@@ -27999,6 +28036,14 @@
             "pattern": "^\\d+$",
             "example": "12345"
           },
+          "teeId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "totalsOnly": {
+            "type": "boolean"
+          },
           "scores": {
             "type": "array",
             "items": {
@@ -28056,6 +28101,16 @@
                       "type": "integer",
                       "minimum": 18,
                       "maximum": 200
+                    },
+                    "frontNineScore": {
+                      "type": "integer",
+                      "minimum": 9,
+                      "maximum": 100
+                    },
+                    "backNineScore": {
+                      "type": "integer",
+                      "minimum": 9,
+                      "maximum": 100
                     },
                     "holeScores": {
                       "type": "array",
@@ -28149,6 +28204,16 @@
                 "type": "integer",
                 "minimum": 18,
                 "maximum": 200
+              },
+              "frontNineScore": {
+                "type": "integer",
+                "minimum": 9,
+                "maximum": 100
+              },
+              "backNineScore": {
+                "type": "integer",
+                "minimum": 9,
+                "maximum": 100
               },
               "holeScores": {
                 "type": "array",
@@ -29619,6 +29684,9 @@
                   "minItems": 9,
                   "maxItems": 18
                 },
+                "isAbsent": {
+                  "type": "boolean"
+                },
                 "player": {
                   "type": "object",
                   "properties": {
@@ -29771,6 +29839,12 @@
                   "type": "number"
                 },
                 "courseHandicap": {
+                  "type": "integer"
+                },
+                "frontNineScore": {
+                  "type": "integer"
+                },
+                "backNineScore": {
                   "type": "integer"
                 },
                 "courseName": {

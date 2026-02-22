@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -130,44 +130,36 @@ const GolfMatchDialogInner: React.FC<GameDialogProps> = ({
   });
   const apiClient = useApiClient();
 
-  const defaultValues: GolfMatchFormValues = useMemo(() => {
-    if (mode === 'edit' && selectedGame) {
-      return {
-        leagueSeasonId: selectedGame.league.id,
-        matchDate: new Date(selectedGame.gameDate),
-        matchTime: new Date(selectedGame.gameDate),
-        team1Id: selectedGame.homeTeamId,
-        team2Id: selectedGame.visitorTeamId,
-        courseId: selectedGame.fieldId ?? null,
-        teeId: selectedGame.teeId ?? null,
-        comment: selectedGame.comment ?? '',
-        matchType: selectedGame.gameType ?? 0,
-      };
-    }
-    const initialLeagueSeasonId = defaultLeagueSeasonId ?? leagues[0]?.id ?? '';
-    const initialCourseId = locations.length === 1 ? locations[0].id : null;
-    return {
-      leagueSeasonId: initialLeagueSeasonId,
-      matchDate: defaultGameDate ?? new Date(),
-      matchTime: new Date(),
-      team1Id: '',
-      team2Id: '',
-      courseId: initialCourseId,
-      teeId: null,
-      comment: '',
-      matchType: 0,
-    };
-  }, [mode, selectedGame, defaultLeagueSeasonId, defaultGameDate, leagues, locations]);
+  const defaultValues: GolfMatchFormValues =
+    mode === 'edit' && selectedGame
+      ? {
+          leagueSeasonId: selectedGame.league.id,
+          matchDate: new Date(selectedGame.gameDate),
+          matchTime: new Date(selectedGame.gameDate),
+          team1Id: selectedGame.homeTeamId,
+          team2Id: selectedGame.visitorTeamId,
+          courseId: selectedGame.fieldId ?? null,
+          teeId: selectedGame.teeId ?? null,
+          comment: selectedGame.comment ?? '',
+          matchType: selectedGame.gameType ?? 0,
+        }
+      : {
+          leagueSeasonId: defaultLeagueSeasonId ?? leagues[0]?.id ?? '',
+          matchDate: defaultGameDate ?? new Date(),
+          matchTime: new Date(),
+          team1Id: '',
+          team2Id: '',
+          courseId: locations.length === 1 ? locations[0].id : null,
+          teeId: null,
+          comment: '',
+          matchType: 0,
+        };
 
-  const formResolver = useMemo(
-    () =>
-      zodResolver(golfMatchSchema) as Resolver<
-        GolfMatchFormValues,
-        Record<string, never>,
-        GolfMatchFormValues
-      >,
-    [],
-  );
+  const formResolver = zodResolver(golfMatchSchema) as Resolver<
+    GolfMatchFormValues,
+    Record<string, never>,
+    GolfMatchFormValues
+  >;
 
   const methods = useForm<GolfMatchFormValues>({
     resolver: formResolver,
@@ -190,39 +182,45 @@ const GolfMatchDialogInner: React.FC<GameDialogProps> = ({
   // Track the previous course ID to detect user-initiated changes
   const prevCourseIdRef = useRef<string | null | undefined>(selectedCourseId);
 
-  const leagueTeams = useMemo(() => {
-    if (!selectedLeagueSeasonId) return [];
-    return leagueTeamsCache.get(selectedLeagueSeasonId) ?? [];
-  }, [selectedLeagueSeasonId, leagueTeamsCache]);
+  const leagueTeams = selectedLeagueSeasonId
+    ? (leagueTeamsCache.get(selectedLeagueSeasonId) ?? [])
+    : [];
 
   useEffect(() => {
-    const fetchTees = async () => {
-      if (!selectedCourseId) {
-        setAvailableTees([]);
-        return;
-      }
+    if (!selectedCourseId) {
+      setAvailableTees([]);
+      return;
+    }
 
+    const controller = new AbortController();
+
+    const fetchTees = async () => {
       setLoadingTees(true);
       try {
         const result = await listGolfCourseTees({
           client: apiClient,
           path: { accountId, courseId: selectedCourseId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
-        if (result.data) {
-          setAvailableTees(result.data);
-        } else {
-          setAvailableTees([]);
-        }
+        if (controller.signal.aborted) return;
+        setAvailableTees(result.data ?? []);
       } catch {
+        if (controller.signal.aborted) return;
         setAvailableTees([]);
       } finally {
-        setLoadingTees(false);
+        if (!controller.signal.aborted) {
+          setLoadingTees(false);
+        }
       }
     };
 
-    fetchTees();
+    void fetchTees();
+
+    return () => {
+      controller.abort();
+    };
   }, [selectedCourseId, accountId, apiClient]);
 
   // Clear tee when course changes (user action only)
@@ -234,61 +232,42 @@ const GolfMatchDialogInner: React.FC<GameDialogProps> = ({
     prevCourseIdRef.current = selectedCourseId;
   }, [selectedCourseId, setValue]);
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     setError(null);
     onClose();
-  }, [onClose]);
+  };
 
-  const onSubmit = useCallback(
-    async (data: GolfMatchFormValues) => {
-      setError(null);
+  const onSubmit = async (data: GolfMatchFormValues) => {
+    setError(null);
 
-      try {
-        const result =
-          mode === 'create' ? await createMatch(data) : await updateMatch(selectedGame!.id, data);
+    try {
+      const result =
+        mode === 'create' ? await createMatch(data) : await updateMatch(selectedGame!.id, data);
 
-        onSuccess?.({ message: result.message, game: result.game });
+      onSuccess?.({ message: result.message, game: result.game });
 
-        if (mode === 'create' && keepDialogOpen) {
-          const preservedDate = data.matchDate;
-          const preservedTime = data.matchTime;
-          const preservedLeague = data.leagueSeasonId;
-          const preservedCourse = data.courseId;
-          const preservedTee = data.teeId;
-
-          reset({
-            leagueSeasonId: preservedLeague,
-            matchDate: preservedDate,
-            matchTime: preservedTime,
-            team1Id: '',
-            team2Id: '',
-            courseId: preservedCourse,
-            teeId: preservedTee,
-            comment: '',
-            matchType: 0,
-          });
-          return;
-        }
-
-        handleClose();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to save match';
-        setError(message);
-        onError?.(message);
+      if (mode === 'create' && keepDialogOpen) {
+        reset({
+          leagueSeasonId: data.leagueSeasonId,
+          matchDate: data.matchDate,
+          matchTime: data.matchTime,
+          team1Id: '',
+          team2Id: '',
+          courseId: data.courseId,
+          teeId: data.teeId,
+          comment: '',
+          matchType: 0,
+        });
+        return;
       }
-    },
-    [
-      mode,
-      selectedGame,
-      createMatch,
-      updateMatch,
-      onSuccess,
-      onError,
-      handleClose,
-      keepDialogOpen,
-      reset,
-    ],
-  );
+
+      handleClose();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save match';
+      setError(message);
+      onError?.(message);
+    }
+  };
 
   const handleMoveToSeason = async (seasonId: string) => {
     if (!selectedGame) return;

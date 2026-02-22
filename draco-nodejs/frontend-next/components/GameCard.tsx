@@ -509,6 +509,7 @@ const GameCard: React.FC<GameCardProps> = ({
                         size="small"
                         onClick={handleGameResultsClick}
                         color="primary"
+                        data-testid="enter-game-results-btn"
                         sx={{
                           p: 0.5,
                           '&:hover': {
@@ -647,6 +648,7 @@ const GameCard: React.FC<GameCardProps> = ({
                       size="small"
                       onClick={handleGameResultsClick}
                       color="primary"
+                      data-testid="enter-game-results-btn"
                       sx={{
                         mt: 1,
                         p: 0.5,
