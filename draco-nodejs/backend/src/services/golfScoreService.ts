@@ -143,9 +143,12 @@ export class GolfScoreService {
     const handicapService = ServiceFactory.getGolfHandicapService();
     const submissions: MatchScoreSubmission[] = [];
 
-    let absentTee: Awaited<ReturnType<typeof this.teeRepository.findById>> | null = null;
+    let matchTee: Awaited<ReturnType<typeof this.teeRepository.findById>> | null = null;
     if (leagueSetup.fullteamabsentmode === FullTeamAbsentMode.HANDICAP_PENALTY && data.teeId) {
-      absentTee = await this.teeRepository.findById(BigInt(data.teeId));
+      matchTee = await this.teeRepository.findById(BigInt(data.teeId));
+      if (!matchTee) {
+        throw new NotFoundError(`Tee ${data.teeId} not found`);
+      }
     }
 
     for (const [teamId, teamScores] of scoresByTeam) {
@@ -167,19 +170,19 @@ export class GolfScoreService {
 
         if (playerScore.isAbsent) {
           if (!data.teeId) continue;
-          const absentTeeId = BigInt(data.teeId);
+          const matchTeeId = BigInt(data.teeId);
 
           let absentTotalScore = 0;
           let absentFrontNine = 0;
           let absentBackNine = 0;
           let syntheticScores: number[] = [];
-          if (leagueSetup.fullteamabsentmode === FullTeamAbsentMode.HANDICAP_PENALTY && absentTee) {
+          if (leagueSetup.fullteamabsentmode === FullTeamAbsentMode.HANDICAP_PENALTY && matchTee) {
             const gender = normalizeGender(rosterEntry.golfer.gender);
             const teeRatings: TeeRatings = {
-              mensRating: Number(absentTee.mensrating) || 72,
-              mensSlope: Number(absentTee.menslope) || 113,
-              womansRating: Number(absentTee.womansrating) || 72,
-              womansSlope: Number(absentTee.womanslope) || 113,
+              mensRating: Number(matchTee.mensrating) || 72,
+              mensSlope: Number(matchTee.menslope) || 113,
+              womansRating: Number(matchTee.womansrating) || 72,
+              womansSlope: Number(matchTee.womanslope) || 113,
             };
             const { courseRating, slopeRating } = getRatingsForGender(teeRatings, gender);
             const holePars = getHolePars(course, gender);
@@ -227,7 +230,7 @@ export class GolfScoreService {
             scoreData: {
               courseid: courseId,
               golferid: rosterEntry.golferid,
-              teeid: absentTeeId,
+              teeid: matchTeeId,
               dateplayed: match.matchdate,
               holesplayed: leagueSetup.holespermatch,
               totalscore: absentTotalScore,

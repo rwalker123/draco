@@ -113,11 +113,12 @@ export function PlayerScoreRow({
 
     const front = nine === 'front' ? numValue : scoreData.frontNineScore;
     const back = nine === 'back' ? numValue : scoreData.backNineScore;
+    const bothValid = front >= 9 && back >= 9;
     onChange({
       ...scoreData,
       frontNineScore: front,
       backNineScore: back,
-      totalScore: front + back,
+      totalScore: bothValid ? front + back : 0,
       totalsOnly: true,
     });
   };
