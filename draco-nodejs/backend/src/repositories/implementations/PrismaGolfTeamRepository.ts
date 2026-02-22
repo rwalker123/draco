@@ -105,7 +105,7 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
       throw new Error('Flight not found');
     }
 
-    const teamDef = await this.findOrCreateTeamDef(leagueseason.season.accountid);
+    const teamDef = await this.createTeamDef(leagueseason.season.accountid);
 
     return this.prisma.teamsseason.create({
       data: {
@@ -116,15 +116,7 @@ export class PrismaGolfTeamRepository implements IGolfTeamRepository {
     });
   }
 
-  private async findOrCreateTeamDef(accountId: bigint) {
-    const existing = await this.prisma.teams.findFirst({
-      where: { accountid: accountId },
-    });
-
-    if (existing) {
-      return existing;
-    }
-
+  private async createTeamDef(accountId: bigint) {
     return this.prisma.teams.create({
       data: {
         accountid: accountId,

@@ -25,6 +25,8 @@ export interface PlayerScoreData {
   substituteGolferId?: string;
   totalsOnly: boolean;
   totalScore: number;
+  frontNineScore: number;
+  backNineScore: number;
   holeScores: number[];
 }
 
@@ -101,6 +103,21 @@ export function PlayerScoreRow({
     onChange({
       ...scoreData,
       totalScore: numValue,
+      totalsOnly: true,
+    });
+  };
+
+  const handleNineScoreChange = (nine: 'front' | 'back', value: string) => {
+    const numValue = value === '' ? 0 : parseInt(value, 10);
+    if (isNaN(numValue) || numValue < 0 || numValue > 100) return;
+
+    const front = nine === 'front' ? numValue : scoreData.frontNineScore;
+    const back = nine === 'back' ? numValue : scoreData.backNineScore;
+    onChange({
+      ...scoreData,
+      frontNineScore: front,
+      backNineScore: back,
+      totalScore: front + back,
       totalsOnly: true,
     });
   };
@@ -213,7 +230,45 @@ export function PlayerScoreRow({
           </Select>
         )}
 
-        {!showHoleByHole && (
+        {!showHoleByHole && numberOfHoles >= 18 && (
+          <>
+            <TextField
+              type="number"
+              size="small"
+              label="Front 9"
+              value={scoreData.frontNineScore > 0 ? scoreData.frontNineScore : ''}
+              onChange={(e) => handleNineScoreChange('front', e.target.value)}
+              disabled={isScoreDisabled}
+              inputProps={{ min: 9, max: 100 }}
+              sx={{ width: 90 }}
+            />
+            <TextField
+              type="number"
+              size="small"
+              label="Back 9"
+              value={scoreData.backNineScore > 0 ? scoreData.backNineScore : ''}
+              onChange={(e) => handleNineScoreChange('back', e.target.value)}
+              disabled={isScoreDisabled}
+              inputProps={{ min: 9, max: 100 }}
+              sx={{ width: 90 }}
+            />
+            {scoreData.totalScore > 0 && (
+              <Typography variant="body2" color="text.secondary">
+                Total: {scoreData.totalScore}
+              </Typography>
+            )}
+            {netScore !== null && (
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 500, color: theme.palette.success.main }}
+              >
+                Net: {netScore}
+              </Typography>
+            )}
+          </>
+        )}
+
+        {!showHoleByHole && numberOfHoles < 18 && (
           <>
             <TextField
               type="number"
@@ -222,19 +277,13 @@ export function PlayerScoreRow({
               value={scoreData.totalScore > 0 ? scoreData.totalScore : ''}
               onChange={(e) => handleTotalScoreChange(e.target.value)}
               disabled={isScoreDisabled}
-              inputProps={{
-                min: 18,
-                max: 200,
-              }}
+              inputProps={{ min: 18, max: 200 }}
               sx={{ width: 120 }}
             />
             {netScore !== null && (
               <Typography
                 variant="body2"
-                sx={{
-                  fontWeight: 500,
-                  color: theme.palette.success.main,
-                }}
+                sx={{ fontWeight: 500, color: theme.palette.success.main }}
               >
                 Net: {netScore}
               </Typography>

@@ -145,6 +145,8 @@ export class GolfStatsService {
       const matchScores = await this.scoreRepository.findByMatchId(match.id);
 
       for (const ms of matchScores) {
+        if (ms.golfscore.isabsent) continue;
+
         const golferIdStr = ms.golfscore.golferid.toString();
         const playerData = playerDataMap.get(golferIdStr);
 

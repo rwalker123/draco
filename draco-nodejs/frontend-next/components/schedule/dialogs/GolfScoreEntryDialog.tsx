@@ -222,15 +222,17 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
 
           roster.forEach((player, index) => {
             const existingScore = existing.find((s) => s.golferId === player.golferId);
-            const shouldBeAbsent = hasMoreThanAllowed && index >= maxPlayers;
+            const excessRosterAbsent = hasMoreThanAllowed && index >= maxPlayers;
 
             scores[player.id] = {
               rosterId: player.id,
-              isAbsent: existingScore ? false : shouldBeAbsent,
+              isAbsent: existingScore?.isAbsent ?? excessRosterAbsent,
               isSubstitute: false,
               substituteGolferId: undefined,
               totalsOnly: existingScore?.totalsOnly ?? true,
               totalScore: existingScore?.totalScore ?? 0,
+              frontNineScore: existingScore?.frontNineScore ?? 0,
+              backNineScore: existingScore?.backNineScore ?? 0,
               holeScores: existingScore?.holeScores ?? [],
             };
           });
@@ -338,31 +340,33 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     scores: Record<string, PlayerScoreData>,
     teamSeasonId: string,
   ): PlayerMatchScoreType[] {
-    return Object.values(scores)
-      .filter((score) => !score.isAbsent || score.substituteGolferId)
-      .map((score) => {
-        const playerScore: PlayerMatchScoreType = {
-          teamSeasonId,
-          rosterId: score.rosterId,
-          isAbsent: score.isAbsent,
-          isSubstitute: score.isSubstitute,
-          substituteGolferId: score.substituteGolferId,
+    return Object.values(scores).map((score) => {
+      const playerScore: PlayerMatchScoreType = {
+        teamSeasonId,
+        rosterId: score.rosterId,
+        isAbsent: score.isAbsent,
+        isSubstitute: score.isSubstitute,
+        substituteGolferId: score.substituteGolferId,
+      };
+
+      if (score.totalScore > 0 && !score.isAbsent) {
+        const isTotalsOnly = score.totalsOnly || showHoleByHole === false;
+        const isTotalsOnlyEighteen = isTotalsOnly && numberOfHoles >= 18;
+        playerScore.score = {
+          courseId: selectedGame?.fieldId || '',
+          teeId: selectedTeeId,
+          datePlayed: selectedGame?.gameDate || new Date().toISOString(),
+          holesPlayed: numberOfHoles,
+          totalsOnly: isTotalsOnly,
+          totalScore: score.totalScore,
+          frontNineScore: isTotalsOnlyEighteen ? score.frontNineScore : undefined,
+          backNineScore: isTotalsOnlyEighteen ? score.backNineScore : undefined,
+          holeScores: isTotalsOnly ? undefined : score.holeScores.filter((s) => s > 0),
         };
+      }
 
-        if (score.totalScore > 0) {
-          playerScore.score = {
-            courseId: selectedGame?.fieldId || '',
-            teeId: selectedTeeId,
-            datePlayed: selectedGame?.gameDate || new Date().toISOString(),
-            holesPlayed: numberOfHoles,
-            totalsOnly: score.totalsOnly || showHoleByHole === false,
-            totalScore: score.totalScore,
-            holeScores: score.totalsOnly ? undefined : score.holeScores.filter((s) => s > 0),
-          };
-        }
-
-        return playerScore;
-      });
+      return playerScore;
+    });
   }
 
   const handleSave = async () => {
@@ -382,6 +386,8 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
       if (allScores.length > 0 && selectedGame.fieldId) {
         const payload: SubmitMatchResultsType = {
           courseId: selectedGame.fieldId,
+          teeId: selectedTeeId || undefined,
+          totalsOnly: !showHoleByHole,
           scores: allScores,
         };
         const result = await scoreService.submitMatchResults(selectedGame.id, payload);
@@ -404,13 +410,14 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
         updatedMatch = unwrapApiResult(matchResult, 'Failed to update match status');
       }
 
+      const effectiveStatus = updatedMatch?.matchStatus ?? matchStatus;
       const updatedGame = {
         ...selectedGame,
         homeScore: updatedMatch?.team1TotalScore ?? selectedGame.homeScore,
         visitorScore: updatedMatch?.team2TotalScore ?? selectedGame.visitorScore,
-        gameStatus: matchStatus,
-        gameStatusText: getGameStatusText(matchStatus),
-        gameStatusShortText: getGameStatusShortText(matchStatus),
+        gameStatus: effectiveStatus,
+        gameStatusText: getGameStatusText(effectiveStatus),
+        gameStatusShortText: getGameStatusShortText(effectiveStatus),
         teeId: selectedTeeId || selectedGame.teeId,
         golfExtras: {
           ...selectedGame.golfExtras,
@@ -434,12 +441,16 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
 
   const team1HasScores = Object.values(team1Scores).some((s) => !s.isAbsent && s.totalScore > 0);
   const team2HasScores = Object.values(team2Scores).some((s) => !s.isAbsent && s.totalScore > 0);
+  const hasAbsentPlayers =
+    Object.values(team1Scores).some((s) => s.isAbsent) ||
+    Object.values(team2Scores).some((s) => s.isAbsent);
   const hasScoresToSubmit = team1HasScores || team2HasScores;
+  const hasDataToSubmit = hasScoresToSubmit || hasAbsentPlayers;
 
   const canSave =
     selectedGame?.fieldId &&
     selectedTeeId &&
-    (matchStatus !== GameStatus.Completed || hasScoresToSubmit);
+    (matchStatus !== GameStatus.Completed || hasDataToSubmit);
 
   const courseHandicapMap: Record<string, number | null> = {};
   for (const score of existingScoresData) {
@@ -475,7 +486,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
   });
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth data-testid="score-entry-dialog">
       <DialogTitle>
         <Box>
           <Typography variant="h5" component="div" gutterBottom>

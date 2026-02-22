@@ -20400,6 +20400,8 @@ components:
                   maximum: 20
                 minItems: 9
                 maxItems: 18
+              isAbsent:
+                type: boolean
               player:
                 type: object
                 properties:
@@ -20521,6 +20523,10 @@ components:
               differential:
                 type: number
               courseHandicap:
+                type: integer
+              frontNineScore:
+                type: integer
+              backNineScore:
                 type: integer
               courseName:
                 type: string
@@ -20589,6 +20595,8 @@ components:
                   maximum: 20
                 minItems: 9
                 maxItems: 18
+              isAbsent:
+                type: boolean
               player:
                 type: object
                 properties:
@@ -20710,6 +20718,10 @@ components:
               differential:
                 type: number
               courseHandicap:
+                type: integer
+              frontNineScore:
+                type: integer
+              backNineScore:
                 type: integer
               courseName:
                 type: string
@@ -20932,6 +20944,8 @@ components:
             maximum: 20
           minItems: 9
           maxItems: 18
+        isAbsent:
+          type: boolean
         player:
           type: object
           properties:
@@ -21054,6 +21068,10 @@ components:
           type: number
         courseHandicap:
           type: integer
+        frontNineScore:
+          type: integer
+        backNineScore:
+          type: integer
         courseName:
           type: string
         courseCity:
@@ -21097,6 +21115,14 @@ components:
           type: integer
           minimum: 18
           maximum: 200
+        frontNineScore:
+          type: integer
+          minimum: 9
+          maximum: 100
+        backNineScore:
+          type: integer
+          minimum: 9
+          maximum: 100
         holeScores:
           type: array
           items:
@@ -21152,6 +21178,12 @@ components:
           type: string
           pattern: ^\d+$
           example: "12345"
+        teeId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        totalsOnly:
+          type: boolean
         scores:
           type: array
           items:
@@ -21199,6 +21231,14 @@ components:
                     type: integer
                     minimum: 18
                     maximum: 200
+                  frontNineScore:
+                    type: integer
+                    minimum: 9
+                    maximum: 100
+                  backNineScore:
+                    type: integer
+                    minimum: 9
+                    maximum: 100
                   holeScores:
                     type: array
                     items:
@@ -21269,6 +21309,14 @@ components:
               type: integer
               minimum: 18
               maximum: 200
+            frontNineScore:
+              type: integer
+              minimum: 9
+              maximum: 100
+            backNineScore:
+              type: integer
+              minimum: 9
+              maximum: 100
             holeScores:
               type: array
               items:
@@ -22378,6 +22426,8 @@ components:
                   maximum: 20
                 minItems: 9
                 maxItems: 18
+              isAbsent:
+                type: boolean
               player:
                 type: object
                 properties:
@@ -22499,6 +22549,10 @@ components:
               differential:
                 type: number
               courseHandicap:
+                type: integer
+              frontNineScore:
+                type: integer
+              backNineScore:
                 type: integer
               courseName:
                 type: string

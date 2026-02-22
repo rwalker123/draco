@@ -86,8 +86,11 @@ export class GolfStandingsService {
       const team1Scores = matchScores.filter((ms) => ms.teamid === match.team1);
       const team2Scores = matchScores.filter((ms) => ms.teamid === match.team2);
 
-      const team1Total = team1Scores.reduce((sum, ms) => sum + ms.golfscore.totalscore, 0);
-      const team2Total = team2Scores.reduce((sum, ms) => sum + ms.golfscore.totalscore, 0);
+      const team1Present = team1Scores.filter((ms) => !ms.golfscore.isabsent);
+      const team2Present = team2Scores.filter((ms) => !ms.golfscore.isabsent);
+
+      const team1Total = team1Present.reduce((sum, ms) => sum + ms.golfscore.totalscore, 0);
+      const team2Total = team2Present.reduce((sum, ms) => sum + ms.golfscore.totalscore, 0);
 
       const team1Standing = standingsMap.get(match.team1);
       const team2Standing = standingsMap.get(match.team2);
@@ -98,8 +101,8 @@ export class GolfStandingsService {
 
         team1Standing.totalStrokes += team1Total;
         team2Standing.totalStrokes += team2Total;
-        team1Standing.roundsPlayed += team1Scores.length;
-        team2Standing.roundsPlayed += team2Scores.length;
+        team1Standing.roundsPlayed += team1Present.length;
+        team2Standing.roundsPlayed += team2Present.length;
 
         if (isIndividualScoring && match.team1points !== null && match.team2points !== null) {
           team1Standing.matchPoints += match.team1points;

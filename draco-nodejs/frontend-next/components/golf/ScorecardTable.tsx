@@ -20,6 +20,8 @@ interface PlayerScore {
   handicapIndex?: number | null;
   courseHandicap?: number;
   differential?: number;
+  isAbsent?: boolean;
+  absentModeLabel?: string;
 }
 
 interface ScorecardTableProps {
@@ -182,6 +184,19 @@ export default function ScorecardTable({
   };
 
   const renderPlayerScoreRow = (player: PlayerScore, holeNumbers: number[]) => {
+    const hasHoleScores = player.holeScores.some((s) => s > 0);
+    if (player.isAbsent && !hasHoleScores) {
+      return (
+        <>
+          {holeNumbers.map((_, idx) => (
+            <TableCell key={idx} sx={cellSx}>
+              —
+            </TableCell>
+          ))}
+          <TableCell sx={totalCellSx}>—</TableCell>
+        </>
+      );
+    }
     const startIdx = holeNumbers[0] - 1;
     const relevantScores = player.holeScores.slice(startIdx, startIdx + holeNumbers.length);
     const relevantPars = pars.slice(startIdx, startIdx + holeNumbers.length);
@@ -248,14 +263,20 @@ export default function ScorecardTable({
                   <Typography variant="body2" fontWeight={600} noWrap>
                     {player.playerName}
                   </Typography>
-                  {(player.courseHandicap !== undefined || player.differential !== undefined) && (
+                  {(player.isAbsent ||
+                    player.courseHandicap !== undefined ||
+                    player.differential !== undefined) && (
                     <Typography variant="caption" color="text.secondary">
-                      {player.courseHandicap !== undefined && `CH: ${player.courseHandicap}`}
-                      {player.courseHandicap !== undefined &&
-                        player.differential !== undefined &&
-                        '  '}
-                      {player.differential !== undefined &&
-                        `Diff: ${player.differential.toFixed(1)}`}
+                      {[
+                        player.courseHandicap !== undefined ? `CH: ${player.courseHandicap}` : null,
+                        player.isAbsent
+                          ? (player.absentModeLabel ?? 'Absent')
+                          : player.differential !== undefined
+                            ? `Diff: ${player.differential.toFixed(1)}`
+                            : null,
+                      ]
+                        .filter(Boolean)
+                        .join('  ')}
                     </Typography>
                   )}
                 </Box>

@@ -213,7 +213,7 @@ function GolfScorecardDialogContent({
       return allScores.map((score) => {
         const baseHoleScores = [...(score.holeScores || Array(holesPlayedCount).fill(0))];
 
-        if (liveData?.sessionState?.scores) {
+        if (!score.isAbsent && liveData?.sessionState?.scores) {
           liveData.sessionState.scores
             .filter((liveScore: LiveHoleScore) => liveScore.golferId === score.golferId)
             .forEach((liveScore: LiveHoleScore) => {
@@ -221,7 +221,9 @@ function GolfScorecardDialogContent({
             });
         }
 
-        const totalScore = baseHoleScores.reduce((sum, s) => sum + (s || 0), 0);
+        const totalScore = score.isAbsent
+          ? score.totalScore
+          : baseHoleScores.reduce((sum, s) => sum + (s || 0), 0);
 
         return {
           playerName: score.player
@@ -232,6 +234,7 @@ function GolfScorecardDialogContent({
           handicapIndex: score.player?.handicapIndex,
           courseHandicap: score.courseHandicap,
           differential: score.differential,
+          isAbsent: score.isAbsent,
           golferId: score.golferId,
           teamId: matchData.team1Scores?.some((s) => s.golferId === score.golferId)
             ? matchData.team1.id

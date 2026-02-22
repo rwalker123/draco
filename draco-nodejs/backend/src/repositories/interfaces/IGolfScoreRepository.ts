@@ -39,6 +39,7 @@ export type CreateGolfScoreData = {
   holescrore18: number;
   startindex?: number | null;
   startindex9?: number | null;
+  isabsent?: boolean;
 };
 
 export type UpdateGolfScoreData = Partial<Omit<CreateGolfScoreData, 'golferid'>>;

@@ -42,6 +42,7 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     return this.prisma.golfscore.findMany({
       where: {
         golferid: golferId,
+        isabsent: false,
         golfmatchscores: {
           some: {
             golfmatch: {
@@ -75,6 +76,7 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     return this.prisma.golfscore.findMany({
       where: {
         golferid: golferId,
+        isabsent: false,
         dateplayed: { lt: beforeDate },
         golfmatchscores: {
           some: {
@@ -161,6 +163,7 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
         holescrore18: data.holescrore18,
         startindex: data.startindex ?? null,
         startindex9: data.startindex9 ?? null,
+        isabsent: data.isabsent ?? false,
       },
     });
   }
@@ -213,6 +216,7 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
   ): Promise<GolfScoreWithDetails[]> {
     return this.prisma.golfscore.findMany({
       where: {
+        isabsent: false,
         golfer: {
           contactid: contactId,
         },
@@ -238,6 +242,7 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
   ): Promise<GolfScoreWithDetails[]> {
     return this.prisma.golfscore.findMany({
       where: {
+        isabsent: false,
         golfer: {
           contactid: contactId,
         },
@@ -322,6 +327,7 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
               holesplayed: submission.scoreData.holesplayed,
               totalscore: submission.scoreData.totalscore,
               totalsonly: submission.scoreData.totalsonly,
+              isabsent: submission.scoreData.isabsent ?? false,
               holescrore1: submission.scoreData.holescrore1,
               holescrore2: submission.scoreData.holescrore2,
               holescrore3: submission.scoreData.holescrore3,
@@ -363,6 +369,7 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
               holesplayed: submission.scoreData.holesplayed,
               totalscore: submission.scoreData.totalscore,
               totalsonly: submission.scoreData.totalsonly,
+              isabsent: submission.scoreData.isabsent ?? false,
               holescrore1: submission.scoreData.holescrore1,
               holescrore2: submission.scoreData.holescrore2,
               holescrore3: submission.scoreData.holescrore3,

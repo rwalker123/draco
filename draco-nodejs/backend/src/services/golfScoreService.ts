@@ -20,6 +20,15 @@ import { GolfScoreResponseFormatter } from '../responseFormatters/golfScoreRespo
 import { GolfMatchResponseFormatter } from '../responseFormatters/golfMatchResponseFormatter.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { GolfMatchStatus, FullTeamAbsentMode } from '../utils/golfConstants.js';
+import {
+  normalizeGender,
+  getRatingsForGender,
+  getHolePars,
+  getHoleHandicapIndexes,
+  calculateTotalPar,
+  calculateCourseHandicap,
+  type TeeRatings,
+} from '../utils/whsCalculator.js';
 import { ServiceFactory } from './serviceFactory.js';
 
 export class GolfScoreService {
@@ -125,49 +134,27 @@ export class GolfScoreService {
     const team1FullAbsent = team1Players.length > 0 && team1Present.length === 0;
     const team2FullAbsent = team2Players.length > 0 && team2Present.length === 0;
 
-    if (
-      (team1FullAbsent || team2FullAbsent) &&
-      leagueSetup.fullteamabsentmode === FullTeamAbsentMode.FORFEIT
-    ) {
-      return this.handleFullTeamAbsence(
-        matchId,
-        match,
-        leagueSetup,
-        team1FullAbsent,
-        team2FullAbsent,
-      );
-    }
-
-    const rosterIds = data.scores.filter((ps) => !ps.isAbsent).map((ps) => BigInt(ps.rosterId));
+    const rosterIds = data.scores.map((ps) => BigInt(ps.rosterId));
     const rosterEntries = await this.rosterRepository.findByIds(rosterIds);
     const rosterMap = new Map(rosterEntries.map((r) => [r.id, r]));
+
+    const matchTotalsOnly = data.totalsOnly ?? true;
 
     const handicapService = ServiceFactory.getGolfHandicapService();
     const submissions: MatchScoreSubmission[] = [];
 
+    let absentTee: Awaited<ReturnType<typeof this.teeRepository.findById>> | null = null;
+    if (leagueSetup.fullteamabsentmode === FullTeamAbsentMode.HANDICAP_PENALTY && data.teeId) {
+      absentTee = await this.teeRepository.findById(BigInt(data.teeId));
+    }
+
     for (const [teamId, teamScores] of scoresByTeam) {
       for (const playerScore of teamScores) {
-        if (playerScore.isAbsent) {
-          continue;
-        }
-
         const rosterId = BigInt(playerScore.rosterId);
         const rosterEntry = rosterMap.get(rosterId);
         if (!rosterEntry) {
           throw new NotFoundError(`Roster entry ${playerScore.rosterId} not found`);
         }
-
-        if (!playerScore.score) {
-          const playerName = `${rosterEntry.golfer.contact.firstname} ${rosterEntry.golfer.contact.lastname}`;
-          throw new ValidationError(`Score data required for player ${playerName}`);
-        }
-
-        const scoreData = playerScore.score;
-        const teeId = BigInt(scoreData.teeId);
-        const holeScores = scoreData.holeScores ?? [];
-
-        const totalScore =
-          scoreData.totalScore ?? holeScores.reduce((sum: number, s: number) => sum + s, 0);
 
         let startIndex = await handicapService.calculateHandicapIndexAsOf(
           rosterEntry.golferid,
@@ -177,6 +164,112 @@ export class GolfScoreService {
           startIndex = rosterEntry.golfer.initialdifferential ?? null;
         }
         const startIndex9 = startIndex !== null ? startIndex / 2 : null;
+
+        if (playerScore.isAbsent) {
+          if (!data.teeId) continue;
+          const absentTeeId = BigInt(data.teeId);
+
+          let absentTotalScore = 0;
+          let absentFrontNine = 0;
+          let absentBackNine = 0;
+          let syntheticScores: number[] = [];
+          if (leagueSetup.fullteamabsentmode === FullTeamAbsentMode.HANDICAP_PENALTY && absentTee) {
+            const gender = normalizeGender(rosterEntry.golfer.gender);
+            const teeRatings: TeeRatings = {
+              mensRating: Number(absentTee.mensrating) || 72,
+              mensSlope: Number(absentTee.menslope) || 113,
+              womansRating: Number(absentTee.womansrating) || 72,
+              womansSlope: Number(absentTee.womanslope) || 113,
+            };
+            const { courseRating, slopeRating } = getRatingsForGender(teeRatings, gender);
+            const holePars = getHolePars(course, gender);
+            const is9Hole = leagueSetup.holespermatch === 9;
+            const relevantPars = is9Hole ? holePars.slice(0, 9) : holePars;
+            const coursePar = calculateTotalPar(relevantPars);
+            const handicapIndex = is9Hole ? startIndex9 : startIndex;
+            const courseHandicap =
+              handicapIndex !== null
+                ? calculateCourseHandicap(handicapIndex, slopeRating, courseRating, coursePar)
+                : 0;
+            const penalty = leagueSetup.absentplayerpenalty ?? 0;
+
+            syntheticScores = [...relevantPars];
+            const totalPenalty = Math.round(courseHandicap + penalty);
+            if (totalPenalty > 0) {
+              const holeHcpIndexes = getHoleHandicapIndexes(course, gender).slice(
+                0,
+                relevantPars.length,
+              );
+              const indexedHoles = holeHcpIndexes.map((hcpIdx, holeIdx) => ({
+                holeIdx,
+                hcpIdx,
+              }));
+              indexedHoles.sort((a, b) => a.hcpIdx - b.hcpIdx);
+              for (let i = 0; i < totalPenalty; i++) {
+                const { holeIdx } = indexedHoles[i % relevantPars.length];
+                syntheticScores[holeIdx]++;
+              }
+            }
+
+            absentTotalScore = syntheticScores.reduce((s, v) => s + v, 0);
+            if (!is9Hole) {
+              absentFrontNine = syntheticScores.slice(0, 9).reduce((s, v) => s + v, 0);
+              absentBackNine = syntheticScores.slice(9, 18).reduce((s, v) => s + v, 0);
+            }
+          }
+
+          const useHoleByHole = !matchTotalsOnly && syntheticScores.length > 0;
+          const s = useHoleByHole ? syntheticScores : [];
+
+          submissions.push({
+            teamId,
+            golferId: rosterEntry.golferid,
+            scoreData: {
+              courseid: courseId,
+              golferid: rosterEntry.golferid,
+              teeid: absentTeeId,
+              dateplayed: match.matchdate,
+              holesplayed: leagueSetup.holespermatch,
+              totalscore: absentTotalScore,
+              totalsonly: matchTotalsOnly,
+              isabsent: true,
+              holescrore1: useHoleByHole ? (s[0] ?? 0) : absentFrontNine,
+              holescrore2: s[1] ?? 0,
+              holescrore3: s[2] ?? 0,
+              holescrore4: s[3] ?? 0,
+              holescrore5: s[4] ?? 0,
+              holescrore6: s[5] ?? 0,
+              holescrore7: s[6] ?? 0,
+              holescrore8: s[7] ?? 0,
+              holescrore9: s[8] ?? 0,
+              holescrore10: useHoleByHole ? (s[9] ?? 0) : absentBackNine,
+              holescrore11: s[10] ?? 0,
+              holescrore12: s[11] ?? 0,
+              holescrore13: s[12] ?? 0,
+              holescrore14: s[13] ?? 0,
+              holescrore15: s[14] ?? 0,
+              holescrore16: s[15] ?? 0,
+              holescrore17: s[16] ?? 0,
+              holescrore18: s[17] ?? 0,
+              startindex: startIndex,
+              startindex9: startIndex9,
+            },
+          });
+          continue;
+        }
+
+        if (!playerScore.score) {
+          continue;
+        }
+
+        const scoreData = playerScore.score;
+        const teeId = BigInt(scoreData.teeId);
+        const holeScores = scoreData.holeScores ?? [];
+
+        const isTotalsOnlyEighteen = scoreData.totalsOnly && scoreData.holesPlayed >= 18;
+        const totalScore = isTotalsOnlyEighteen
+          ? (scoreData.frontNineScore ?? 0) + (scoreData.backNineScore ?? 0)
+          : (scoreData.totalScore ?? holeScores.reduce((sum: number, s: number) => sum + s, 0));
 
         submissions.push({
           teamId,
@@ -189,7 +282,9 @@ export class GolfScoreService {
             holesplayed: scoreData.holesPlayed,
             totalscore: totalScore,
             totalsonly: scoreData.totalsOnly,
-            holescrore1: holeScores[0] ?? 0,
+            holescrore1: isTotalsOnlyEighteen
+              ? (scoreData.frontNineScore ?? 0)
+              : (holeScores[0] ?? 0),
             holescrore2: holeScores[1] ?? 0,
             holescrore3: holeScores[2] ?? 0,
             holescrore4: holeScores[3] ?? 0,
@@ -198,7 +293,9 @@ export class GolfScoreService {
             holescrore7: holeScores[6] ?? 0,
             holescrore8: holeScores[7] ?? 0,
             holescrore9: holeScores[8] ?? 0,
-            holescrore10: holeScores[9] ?? 0,
+            holescrore10: isTotalsOnlyEighteen
+              ? (scoreData.backNineScore ?? 0)
+              : (holeScores[9] ?? 0),
             holescrore11: holeScores[10] ?? 0,
             holescrore12: holeScores[11] ?? 0,
             holescrore13: holeScores[12] ?? 0,
@@ -215,17 +312,38 @@ export class GolfScoreService {
     }
 
     const teamIds = Array.from(scoresByTeam.keys());
-    await this.scoreRepository.submitMatchScoresTransactional(matchId, teamIds, submissions);
+    if (teamIds.length > 0) {
+      await this.scoreRepository.submitMatchScoresTransactional(matchId, teamIds, submissions);
 
-    const firstTeeId = submissions[0]?.scoreData.teeid;
-    if (firstTeeId) {
-      await this.matchRepository.updateTee(matchId, firstTeeId);
+      const firstTeeId = submissions[0]?.scoreData.teeid;
+      if (firstTeeId) {
+        await this.matchRepository.updateTee(matchId, firstTeeId);
+      }
     }
 
-    const team1Scores = await this.scoreRepository.findByTeamAndMatch(matchId, match.team1);
-    const team2Scores = await this.scoreRepository.findByTeamAndMatch(matchId, match.team2);
+    const bothTeamsSubmitted = scoresByTeam.has(match.team1) && scoresByTeam.has(match.team2);
 
-    if (team1Scores.length > 0 && team2Scores.length > 0) {
+    if (
+      bothTeamsSubmitted &&
+      (team1FullAbsent || team2FullAbsent) &&
+      leagueSetup.fullteamabsentmode === FullTeamAbsentMode.FORFEIT
+    ) {
+      return this.handleFullTeamAbsence(
+        matchId,
+        match,
+        leagueSetup,
+        team1FullAbsent,
+        team2FullAbsent,
+      );
+    }
+
+    const team1DbScores = await this.scoreRepository.findByTeamAndMatch(matchId, match.team1);
+    const team2DbScores = await this.scoreRepository.findByTeamAndMatch(matchId, match.team2);
+    const hasScoresFromBothTeams = team1DbScores.length > 0 && team2DbScores.length > 0;
+    const hasAbsentPairings =
+      bothTeamsSubmitted && (team1DbScores.length > 0 || team2DbScores.length > 0);
+
+    if (hasScoresFromBothTeams || hasAbsentPairings) {
       await this.matchRepository.updateStatus(matchId, GolfMatchStatus.COMPLETED);
 
       const scoringService = ServiceFactory.getGolfIndividualScoringService();

@@ -60,10 +60,13 @@ export const GolfScoreSchema = z
   });
 
 export const GolfScoreWithDetailsSchema = GolfScoreSchema.extend({
+  isAbsent: z.boolean().optional(),
   player: GolfPlayerSchema.optional(),
   tee: GolfCourseTeeSchema.optional(),
   differential: z.number().optional(),
   courseHandicap: z.number().int().optional(),
+  frontNineScore: z.number().int().optional(),
+  backNineScore: z.number().int().optional(),
   courseName: z.string().optional(),
   courseCity: z.string().nullable().optional(),
   courseState: z.string().nullable().optional(),
@@ -80,17 +83,23 @@ export const CreateGolfScoreSchema = z
     holesPlayed: z.number().int().min(9).max(18),
     totalsOnly: z.boolean().default(false),
     totalScore: z.number().int().min(18).max(200).optional(),
+    frontNineScore: z.number().int().min(9).max(100).optional(),
+    backNineScore: z.number().int().min(9).max(100).optional(),
     holeScores: z.array(holeScoreSchema).min(9).max(18).optional(),
   })
   .refine(
     (data) => {
       if (data.totalsOnly) {
+        if (data.holesPlayed >= 18) {
+          return data.frontNineScore !== undefined && data.backNineScore !== undefined;
+        }
         return data.totalScore !== undefined;
       }
       return data.holeScores !== undefined && data.holeScores.length >= data.holesPlayed;
     },
     {
-      message: 'Either totalScore (for totalsOnly) or holeScores array is required',
+      message:
+        'Either totalScore (for 9-hole totalsOnly), frontNineScore + backNineScore (for 18-hole totalsOnly), or holeScores array is required',
     },
   )
   .openapi({
@@ -115,6 +124,8 @@ export const PlayerMatchScoreSchema = z
 export const SubmitMatchResultsSchema = z
   .object({
     courseId: bigintToStringSchema,
+    teeId: bigintToStringSchema.optional(),
+    totalsOnly: z.boolean().optional(),
     scores: z.array(PlayerMatchScoreSchema),
   })
   .openapi({
