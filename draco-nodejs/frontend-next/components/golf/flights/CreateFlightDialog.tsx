@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -37,17 +37,17 @@ const CreateFlightDialog: React.FC<CreateFlightDialogProps> = ({
 
   const flightService = useGolfFlights(accountId);
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     setFlightName('');
     setError(null);
-  }, []);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     resetForm();
     onClose();
-  }, [resetForm, onClose]);
+  };
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     if (!flightName.trim()) return;
 
     setLoading(true);
@@ -72,7 +72,7 @@ const CreateFlightDialog: React.FC<CreateFlightDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [flightName, seasonId, flightService, onSuccess, onError, handleClose]);
+  };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

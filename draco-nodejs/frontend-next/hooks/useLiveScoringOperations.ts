@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApiClient } from './useApiClient';
 import { useAccount } from '../context/AccountContext';
 import {
@@ -42,13 +42,23 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  const apiClientRef = useRef(apiClient);
+  useEffect(() => {
+    apiClientRef.current = apiClient;
+  }, [apiClient]);
 
-  const checkSessionStatus = useCallback(
-    async (matchId: string): Promise<LiveSessionStatus | null> => {
-      if (!currentAccount?.id) {
+  const currentAccountRef = useRef(currentAccount);
+  useEffect(() => {
+    currentAccountRef.current = currentAccount;
+  }, [currentAccount]);
+
+  const [ops] = useState(() => ({
+    clearError: () => {
+      setError(null);
+    },
+
+    checkSessionStatus: async (matchId: string): Promise<LiveSessionStatus | null> => {
+      if (!currentAccountRef.current?.id) {
         setError('No account selected');
         return null;
       }
@@ -58,9 +68,9 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
 
       try {
         const result = await getLiveSessionStatus({
-          client: apiClient,
+          client: apiClientRef.current,
           path: {
-            accountId: currentAccount.id,
+            accountId: currentAccountRef.current.id,
             matchId,
           },
         });
@@ -74,12 +84,9 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
         setIsLoading(false);
       }
     },
-    [apiClient, currentAccount?.id],
-  );
 
-  const getSessionState = useCallback(
-    async (matchId: string): Promise<LiveScoringState | null> => {
-      if (!currentAccount?.id) {
+    getSessionState: async (matchId: string): Promise<LiveScoringState | null> => {
+      if (!currentAccountRef.current?.id) {
         setError('No account selected');
         return null;
       }
@@ -89,9 +96,9 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
 
       try {
         const result = await getLiveScoringState({
-          client: apiClient,
+          client: apiClientRef.current,
           path: {
-            accountId: currentAccount.id,
+            accountId: currentAccountRef.current.id,
             matchId,
           },
         });
@@ -105,12 +112,12 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
         setIsLoading(false);
       }
     },
-    [apiClient, currentAccount?.id],
-  );
 
-  const startSession = useCallback(
-    async (matchId: string, options?: StartLiveScoring): Promise<LiveScoringState | null> => {
-      if (!currentAccount?.id) {
+    startSession: async (
+      matchId: string,
+      options?: StartLiveScoring,
+    ): Promise<LiveScoringState | null> => {
+      if (!currentAccountRef.current?.id) {
         setError('No account selected');
         return null;
       }
@@ -120,9 +127,9 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
 
       try {
         const result = await startLiveScoringSession({
-          client: apiClient,
+          client: apiClientRef.current,
           path: {
-            accountId: currentAccount.id,
+            accountId: currentAccountRef.current.id,
             matchId,
           },
           body: options ?? {},
@@ -137,12 +144,12 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
         setIsLoading(false);
       }
     },
-    [apiClient, currentAccount?.id],
-  );
 
-  const submitScore = useCallback(
-    async (matchId: string, data: SubmitLiveHoleScore): Promise<LiveHoleScore | null> => {
-      if (!currentAccount?.id) {
+    submitScore: async (
+      matchId: string,
+      data: SubmitLiveHoleScore,
+    ): Promise<LiveHoleScore | null> => {
+      if (!currentAccountRef.current?.id) {
         setError('No account selected');
         return null;
       }
@@ -152,9 +159,9 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
 
       try {
         const result = await submitLiveHoleScore({
-          client: apiClient,
+          client: apiClientRef.current,
           path: {
-            accountId: currentAccount.id,
+            accountId: currentAccountRef.current.id,
             matchId,
           },
           body: data,
@@ -169,12 +176,9 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
         setIsLoading(false);
       }
     },
-    [apiClient, currentAccount?.id],
-  );
 
-  const advanceHoleOp = useCallback(
-    async (matchId: string, holeNumber: number): Promise<boolean> => {
-      if (!currentAccount?.id) {
+    advanceHole: async (matchId: string, holeNumber: number): Promise<boolean> => {
+      if (!currentAccountRef.current?.id) {
         setError('No account selected');
         return false;
       }
@@ -184,9 +188,9 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
 
       try {
         await advanceLiveHole({
-          client: apiClient,
+          client: apiClientRef.current,
           path: {
-            accountId: currentAccount.id,
+            accountId: currentAccountRef.current.id,
             matchId,
           },
           body: { holeNumber },
@@ -201,12 +205,9 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
         setIsLoading(false);
       }
     },
-    [apiClient, currentAccount?.id],
-  );
 
-  const finalizeSession = useCallback(
-    async (matchId: string): Promise<boolean> => {
-      if (!currentAccount?.id) {
+    finalizeSession: async (matchId: string): Promise<boolean> => {
+      if (!currentAccountRef.current?.id) {
         setError('No account selected');
         return false;
       }
@@ -216,9 +217,9 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
 
       try {
         await finalizeLiveScoringSession({
-          client: apiClient,
+          client: apiClientRef.current,
           path: {
-            accountId: currentAccount.id,
+            accountId: currentAccountRef.current.id,
             matchId,
           },
           body: { confirm: true },
@@ -233,12 +234,9 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
         setIsLoading(false);
       }
     },
-    [apiClient, currentAccount?.id],
-  );
 
-  const stopSession = useCallback(
-    async (matchId: string): Promise<boolean> => {
-      if (!currentAccount?.id) {
+    stopSession: async (matchId: string): Promise<boolean> => {
+      if (!currentAccountRef.current?.id) {
         setError('No account selected');
         return false;
       }
@@ -248,9 +246,9 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
 
       try {
         await stopLiveScoringSession({
-          client: apiClient,
+          client: apiClientRef.current,
           path: {
-            accountId: currentAccount.id,
+            accountId: currentAccountRef.current.id,
             matchId,
           },
           body: { confirm: true },
@@ -265,16 +263,12 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
         setIsLoading(false);
       }
     },
-    [apiClient, currentAccount?.id],
-  );
 
-  const getActiveSessions = useCallback(
-    async (
+    getActiveSessions: async (
       accountIdOverride?: string,
     ): Promise<{ matchId: string; sessionId: string }[] | null> => {
-      const accountId = accountIdOverride ?? currentAccount?.id;
+      const accountId = accountIdOverride ?? currentAccountRef.current?.id;
       if (!accountId) {
-        // Don't set error - this is expected for unauthenticated users without override
         return null;
       }
 
@@ -283,7 +277,7 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
 
       try {
         const result = await getActiveLiveScoringSessions({
-          client: apiClient,
+          client: apiClientRef.current,
           path: {
             accountId,
           },
@@ -301,20 +295,11 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
         setIsLoading(false);
       }
     },
-    [apiClient, currentAccount?.id],
-  );
+  }));
 
   return {
     isLoading,
     error,
-    checkSessionStatus,
-    getSessionState,
-    startSession,
-    submitScore,
-    advanceHole: advanceHoleOp,
-    finalizeSession,
-    stopSession,
-    getActiveSessions,
-    clearError,
+    ...ops,
   };
 }

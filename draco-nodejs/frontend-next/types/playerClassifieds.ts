@@ -250,7 +250,7 @@ export interface IUsePlayerClassifiedsReturn {
   clearTeamsWantedState: () => void;
 
   // Refresh data
-  refreshData: () => Promise<void>;
+  refreshData: () => void;
 
   // Error handling
   clearError: () => void;

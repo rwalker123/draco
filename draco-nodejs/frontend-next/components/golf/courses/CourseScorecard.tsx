@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   Box,
   Grid,
@@ -46,30 +46,27 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
   onEditTee,
   onDeleteTee,
 }) => {
-  const tees = useMemo(() => {
-    if (!showTees || !course.tees) return [];
-    if (selectedTeeId) {
-      return course.tees.filter((tee) => tee.id === selectedTeeId);
-    }
-    return [...course.tees].sort((a, b) => a.priority - b.priority);
-  }, [course.tees, showTees, selectedTeeId]);
+  const tees =
+    !showTees || !course.tees
+      ? []
+      : selectedTeeId
+        ? course.tees.filter((tee) => tee.id === selectedTeeId)
+        : [...course.tees].sort((a, b) => a.priority - b.priority);
 
-  const holes: HoleData[] = useMemo(() => {
-    return Array.from({ length: course.numberOfHoles }, (_, i) => ({
-      hole: i + 1,
-      mensPar: course.mensPar[i],
-      womansPar: course.womansPar[i],
-      mensHandicap: course.mensHandicap[i],
-      womansHandicap: course.womansHandicap[i],
-      distances: tees.reduce(
-        (acc, tee) => {
-          acc[tee.id] = tee.distances[i];
-          return acc;
-        },
-        {} as Record<string, number>,
-      ),
-    }));
-  }, [course, tees]);
+  const holes: HoleData[] = Array.from({ length: course.numberOfHoles }, (_, i) => ({
+    hole: i + 1,
+    mensPar: course.mensPar[i],
+    womansPar: course.womansPar[i],
+    mensHandicap: course.mensHandicap[i],
+    womansHandicap: course.womansHandicap[i],
+    distances: tees.reduce(
+      (acc, tee) => {
+        acc[tee.id] = tee.distances[i];
+        return acc;
+      },
+      {} as Record<string, number>,
+    ),
+  }));
 
   const frontNine = holes.slice(0, 9);
   const backNine = holes.slice(9, 18);

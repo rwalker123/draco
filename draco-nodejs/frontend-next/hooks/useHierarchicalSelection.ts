@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
 import { HierarchicalSelectionItem } from '../types/emails/recipients';
 import { HierarchyMaps } from './useHierarchicalMaps';
 
@@ -88,30 +87,24 @@ export function useHierarchicalSelection(
     managersOnly: boolean,
   ) => void,
 ) {
-  const handleSelectionChange = useCallback(
-    (itemId: string, forceState?: 'selected' | 'unselected') => {
-      const newStateMap = new Map(itemSelectedState);
-      const currentState = newStateMap.get(itemId)?.state || 'unselected';
-      const newState = forceState ?? (currentState === 'selected' ? 'unselected' : 'selected');
+  const handleSelectionChange = (itemId: string, forceState?: 'selected' | 'unselected') => {
+    const newStateMap = new Map(itemSelectedState);
+    const currentState = newStateMap.get(itemId)?.state || 'unselected';
+    const newState = forceState ?? (currentState === 'selected' ? 'unselected' : 'selected');
 
-      applySelectionToMap(newStateMap, itemId, newState, hierarchyMaps);
-      onSelectionChange(newStateMap, managersOnly);
-    },
-    [itemSelectedState, hierarchyMaps, managersOnly, onSelectionChange],
-  );
+    applySelectionToMap(newStateMap, itemId, newState, hierarchyMaps);
+    onSelectionChange(newStateMap, managersOnly);
+  };
 
-  const applyMultipleSelections = useCallback(
-    (itemIds: string[], state: 'selected' | 'unselected') => {
-      const newStateMap = new Map(itemSelectedState);
+  const applyMultipleSelections = (itemIds: string[], state: 'selected' | 'unselected') => {
+    const newStateMap = new Map(itemSelectedState);
 
-      itemIds.forEach((itemId) => {
-        applySelectionToMap(newStateMap, itemId, state, hierarchyMaps);
-      });
+    itemIds.forEach((itemId) => {
+      applySelectionToMap(newStateMap, itemId, state, hierarchyMaps);
+    });
 
-      onSelectionChange(newStateMap, managersOnly);
-    },
-    [itemSelectedState, hierarchyMaps, managersOnly, onSelectionChange],
-  );
+    onSelectionChange(newStateMap, managersOnly);
+  };
 
   return {
     handleSelectionChange,

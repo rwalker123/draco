@@ -101,10 +101,7 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
   const [optionsReloadToken, setOptionsReloadToken] = React.useState(0);
   const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
   const [captchaResetKey, setCaptchaResetKey] = React.useState(0);
-  const captchaRequired = React.useMemo(
-    () => Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
-    [],
-  );
+  const captchaRequired = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   const {
     register,
@@ -122,7 +119,7 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
       return;
     }
 
-    let isActive = true;
+    const controller = new AbortController();
 
     const fetchOptions = async () => {
       setIsLoadingOptions(true);
@@ -134,7 +131,7 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
           fetchManagedAccounts(),
         ]);
 
-        if (!isActive) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -170,14 +167,14 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
 
         setOwnerPrefill(owner);
       } catch (error) {
-        if (!isActive) {
+        if (controller.signal.aborted) {
           return;
         }
         const message = error instanceof Error ? error.message : 'Failed to load account details';
         setOptionsError(message);
         onError?.(message);
       } finally {
-        if (isActive) {
+        if (!controller.signal.aborted) {
           setIsLoadingOptions(false);
         }
       }
@@ -186,7 +183,7 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
     void fetchOptions();
 
     return () => {
-      isActive = false;
+      controller.abort();
     };
   }, [
     open,
@@ -227,13 +224,13 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
     });
   }, [open, isDirty, affiliations, ownerPrefill.firstName, ownerPrefill.lastName, reset]);
 
-  const handleRetryOptions = React.useCallback(() => {
+  const handleRetryOptions = () => {
     if (!isLoadingOptions) {
       setOptionsReloadToken((token) => token + 1);
       setCaptchaToken(null);
       setCaptchaResetKey((key) => key + 1);
     }
-  }, [isLoadingOptions]);
+  };
 
   const disableForm =
     isLoadingOptions ||
@@ -241,50 +238,47 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
     Boolean(optionsError) ||
     (captchaRequired && !captchaToken);
 
-  const buildPayload = React.useCallback(
-    (values: CreateAccountFormValues): CreateAccountType => {
-      const accountType = accountTypes.find((type) => type.id === values.accountTypeId);
-      const affiliation = affiliations.find((item) => item.id === values.affiliationId);
+  const buildPayload = (values: CreateAccountFormValues): CreateAccountType => {
+    const accountType = accountTypes.find((type) => type.id === values.accountTypeId);
+    const affiliation = affiliations.find((item) => item.id === values.affiliationId);
 
-      const configuration: NonNullable<CreateAccountType['configuration']> = {};
+    const configuration: NonNullable<CreateAccountType['configuration']> = {};
 
-      if (accountType) {
-        configuration.accountType = {
-          id: accountType.id,
-          name: accountType.name,
-        };
-      }
-
-      if (affiliation) {
-        configuration.affiliation = {
-          id: affiliation.id,
-          name: affiliation.name,
-          url: affiliation.url ?? undefined,
-        };
-      }
-
-      configuration.timeZone = values.timezoneId;
-      configuration.firstYear = values.firstYear;
-
-      const payload: CreateAccountType = {
-        name: values.name.trim(),
-        accountLogoUrl: '',
-        configuration,
-        urls: [],
-        seasonName: values.seasonName.trim(),
-        ownerContact: {
-          firstName: values.ownerFirstName.trim(),
-          lastName: values.ownerLastName.trim(),
-        },
+    if (accountType) {
+      configuration.accountType = {
+        id: accountType.id,
+        name: accountType.name,
       };
+    }
 
-      CreateContactSchema.pick({ firstName: true, lastName: true }).parse(payload.ownerContact);
-      CreateAccountSchema.parse(payload);
+    if (affiliation) {
+      configuration.affiliation = {
+        id: affiliation.id,
+        name: affiliation.name,
+        url: affiliation.url ?? undefined,
+      };
+    }
 
-      return payload;
-    },
-    [accountTypes, affiliations],
-  );
+    configuration.timeZone = values.timezoneId;
+    configuration.firstYear = values.firstYear;
+
+    const payload: CreateAccountType = {
+      name: values.name.trim(),
+      accountLogoUrl: '',
+      configuration,
+      urls: [],
+      seasonName: values.seasonName.trim(),
+      ownerContact: {
+        firstName: values.ownerFirstName.trim(),
+        lastName: values.ownerLastName.trim(),
+      },
+    };
+
+    CreateContactSchema.pick({ firstName: true, lastName: true }).parse(payload.ownerContact);
+    CreateAccountSchema.parse(payload);
+
+    return payload;
+  };
 
   const onSubmit = handleSubmit(async (formValues) => {
     try {

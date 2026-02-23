@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -69,39 +69,37 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadCourseTees = useCallback(
-    async (courseId: string, courseName?: string) => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const result = await getCourse(courseId);
-        if (result.success && result.data.tees) {
-          setTees(result.data.tees);
-          setSelectedCourseId(courseId);
-          setSelectedCourseName(courseName ?? result.data.name);
-          if (result.data.tees.length > 0) {
-            setSelectedTeeId(result.data.tees[0].id);
-          }
-        } else if (!result.success) {
-          setError(result.error);
-        }
-      } finally {
-        setLoading(false);
-      }
-    },
-    [getCourse],
-  );
-
   useEffect(() => {
     if (open && !selectedCourseId) {
-      if (editScore) {
-        loadCourseTees(editScore.courseId, editScore.courseName ?? undefined);
-      } else if (homeCourse) {
-        loadCourseTees(homeCourse.id, homeCourse.name);
-      }
+      const courseId = editScore?.courseId ?? homeCourse?.id;
+      const courseName = editScore ? (editScore.courseName ?? undefined) : homeCourse?.name;
+
+      if (!courseId) return;
+
+      const doLoad = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+          const result = await getCourse(courseId);
+          if (result.success && result.data.tees) {
+            setTees(result.data.tees);
+            setSelectedCourseId(courseId);
+            setSelectedCourseName(courseName ?? result.data.name);
+            if (result.data.tees.length > 0) {
+              setSelectedTeeId(result.data.tees[0].id);
+            }
+          } else if (!result.success) {
+            setError(result.error);
+          }
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      void doLoad();
     }
-  }, [open, homeCourse, editScore, selectedCourseId, loadCourseTees]);
+  }, [open, homeCourse, editScore, selectedCourseId, getCourse]);
 
   useEffect(() => {
     if (!open) {
@@ -127,57 +125,44 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
     }
   }, [open, editScore]);
 
-  const handleCourseSearchSelect = useCallback(
-    async (courseId: string): Promise<{ success: boolean; error?: string }> => {
-      setLoading(true);
-      try {
-        const result = await getCourse(courseId);
-        if (result.success) {
-          setTees(result.data.tees ?? []);
-          setSelectedCourseId(courseId);
-          setSelectedCourseName(result.data.name);
-          if (result.data.tees && result.data.tees.length > 0) {
-            setSelectedTeeId(result.data.tees[0].id);
-          }
-          return { success: true };
+  const handleCourseSearchSelect = async (
+    courseId: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    setLoading(true);
+    try {
+      const result = await getCourse(courseId);
+      if (result.success) {
+        setTees(result.data.tees ?? []);
+        setSelectedCourseId(courseId);
+        setSelectedCourseName(result.data.name);
+        if (result.data.tees && result.data.tees.length > 0) {
+          setSelectedTeeId(result.data.tees[0].id);
         }
-        return { success: false, error: result.error };
-      } finally {
-        setLoading(false);
+        return { success: true };
       }
-    },
-    [getCourse],
-  );
-
-  const handleHoleScoresChange = useCallback((scores: number[]) => {
-    setHoleScores(scores);
-  }, []);
-
-  const calculatedTotal = useMemo(() => {
-    if (totalsOnly) return totalScore ?? 0;
-    return holeScores.reduce((sum, score) => sum + (score || 0), 0);
-  }, [totalsOnly, totalScore, holeScores]);
-
-  const canSave = useMemo(() => {
-    if (!selectedCourseId) return false;
-    if (!selectedTeeId) return false;
-    if (!datePlayed) return false;
-    if (totalsOnly) {
-      return totalScore !== null && totalScore >= 18 && totalScore <= 200;
+      return { success: false, error: result.error };
+    } finally {
+      setLoading(false);
     }
-    const validHoles = holeScores.filter((s) => s > 0).length;
-    return validHoles >= numberOfHoles;
-  }, [
-    selectedCourseId,
-    selectedTeeId,
-    datePlayed,
-    totalsOnly,
-    totalScore,
-    holeScores,
-    numberOfHoles,
-  ]);
+  };
 
-  const handleSave = useCallback(async () => {
+  const handleHoleScoresChange = (scores: number[]) => {
+    setHoleScores(scores);
+  };
+
+  const calculatedTotal = totalsOnly
+    ? (totalScore ?? 0)
+    : holeScores.reduce((sum, score) => sum + (score || 0), 0);
+
+  const canSave =
+    !!selectedCourseId &&
+    !!selectedTeeId &&
+    !!datePlayed &&
+    (totalsOnly
+      ? totalScore !== null && totalScore >= 18 && totalScore <= 200
+      : holeScores.filter((s) => s > 0).length >= numberOfHoles);
+
+  const handleSave = async () => {
     if (!selectedCourseId || !selectedTeeId) return;
 
     setSaving(true);
@@ -215,23 +200,7 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
     } finally {
       setSaving(false);
     }
-  }, [
-    selectedCourseId,
-    selectedTeeId,
-    datePlayed,
-    numberOfHoles,
-    totalsOnly,
-    totalScore,
-    holeScores,
-    createScore,
-    updateScore,
-    isEditing,
-    editScore,
-    accountId,
-    onSuccess,
-    onClose,
-    onError,
-  ]);
+  };
 
   const todayString = new Date().toISOString().split('T')[0];
 

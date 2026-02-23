@@ -48,7 +48,10 @@ export async function createScoreEntryTestData(
   const suffix = `${Date.now() % 10000000}w${workerIndex}`;
 
   const today = new Date();
-  const matchDate = today.toISOString().split('T')[0];
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const matchDate = `${year}-${month}-${day}`;
   const matchDateTime = `${matchDate}T14:00:00Z`;
 
   const league = await api.createLeague(accountId, { name: `E2E SE Lg ${suffix}` });

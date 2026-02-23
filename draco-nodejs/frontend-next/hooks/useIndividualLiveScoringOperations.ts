@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApiClient } from './useApiClient';
+
 import {
   getIndividualLiveSessionStatus,
   getIndividualLiveScoringState,
@@ -42,18 +43,23 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  const apiClientRef = useRef(apiClient);
+  useEffect(() => {
+    apiClientRef.current = apiClient;
+  }, [apiClient]);
 
-  const checkSessionStatus = useCallback(
-    async (accountId: string): Promise<IndividualLiveSessionStatus | null> => {
+  const [ops] = useState(() => ({
+    clearError: () => {
+      setError(null);
+    },
+
+    checkSessionStatus: async (accountId: string): Promise<IndividualLiveSessionStatus | null> => {
       setIsLoading(true);
       setError(null);
 
       try {
         const result = await getIndividualLiveSessionStatus({
-          client: apiClient,
+          client: apiClientRef.current,
           path: { accountId },
         });
 
@@ -66,17 +72,14 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
         setIsLoading(false);
       }
     },
-    [apiClient],
-  );
 
-  const getSessionState = useCallback(
-    async (accountId: string): Promise<IndividualLiveScoringState | null> => {
+    getSessionState: async (accountId: string): Promise<IndividualLiveScoringState | null> => {
       setIsLoading(true);
       setError(null);
 
       try {
         const result = await getIndividualLiveScoringState({
-          client: apiClient,
+          client: apiClientRef.current,
           path: { accountId },
         });
 
@@ -89,11 +92,8 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
         setIsLoading(false);
       }
     },
-    [apiClient],
-  );
 
-  const startSession = useCallback(
-    async (
+    startSession: async (
       accountId: string,
       options: StartIndividualLiveScoring,
     ): Promise<IndividualLiveScoringState | null> => {
@@ -102,7 +102,7 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
 
       try {
         const result = await startIndividualLiveScoringSession({
-          client: apiClient,
+          client: apiClientRef.current,
           path: { accountId },
           body: options,
         });
@@ -116,11 +116,8 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
         setIsLoading(false);
       }
     },
-    [apiClient],
-  );
 
-  const submitScore = useCallback(
-    async (
+    submitScore: async (
       accountId: string,
       data: SubmitIndividualLiveHoleScore,
     ): Promise<IndividualLiveHoleScore | null> => {
@@ -129,7 +126,7 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
 
       try {
         const result = await submitIndividualLiveHoleScore({
-          client: apiClient,
+          client: apiClientRef.current,
           path: { accountId },
           body: data,
         });
@@ -143,17 +140,14 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
         setIsLoading(false);
       }
     },
-    [apiClient],
-  );
 
-  const advanceHoleOp = useCallback(
-    async (accountId: string, holeNumber: number): Promise<boolean> => {
+    advanceHole: async (accountId: string, holeNumber: number): Promise<boolean> => {
       setIsLoading(true);
       setError(null);
 
       try {
         await advanceIndividualLiveHole({
-          client: apiClient,
+          client: apiClientRef.current,
           path: { accountId },
           body: { holeNumber },
         });
@@ -167,17 +161,14 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
         setIsLoading(false);
       }
     },
-    [apiClient],
-  );
 
-  const finalizeSession = useCallback(
-    async (accountId: string): Promise<boolean> => {
+    finalizeSession: async (accountId: string): Promise<boolean> => {
       setIsLoading(true);
       setError(null);
 
       try {
         await finalizeIndividualLiveScoringSession({
-          client: apiClient,
+          client: apiClientRef.current,
           path: { accountId },
         });
 
@@ -190,17 +181,14 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
         setIsLoading(false);
       }
     },
-    [apiClient],
-  );
 
-  const stopSession = useCallback(
-    async (accountId: string): Promise<boolean> => {
+    stopSession: async (accountId: string): Promise<boolean> => {
       setIsLoading(true);
       setError(null);
 
       try {
         await stopIndividualLiveScoringSession({
-          client: apiClient,
+          client: apiClientRef.current,
           path: { accountId },
         });
 
@@ -213,19 +201,11 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
         setIsLoading(false);
       }
     },
-    [apiClient],
-  );
+  }));
 
   return {
     isLoading,
     error,
-    checkSessionStatus,
-    getSessionState,
-    startSession,
-    submitScore,
-    advanceHole: advanceHoleOp,
-    finalizeSession,
-    stopSession,
-    clearError,
+    ...ops,
   };
 }

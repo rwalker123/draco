@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
 import { HierarchicalSeason } from '../types/emails/recipients';
 import { useApiClient } from './useApiClient';
@@ -13,72 +13,74 @@ export function useHierarchicalData() {
   const [error, setError] = useState<string | null>(null);
   const apiClient = useApiClient();
 
-  const loadHierarchicalData = useCallback(
-    async (accountId: string, seasonId: string) => {
-      if (!accountId || !seasonId) return;
+  const apiClientRef = useRef(apiClient);
+  useEffect(() => {
+    apiClientRef.current = apiClient;
+  }, [apiClient]);
 
-      try {
-        setLoading(true);
-        setError(null);
+  const loadHierarchicalData = useRef(async (accountId: string, seasonId: string) => {
+    if (!accountId || !seasonId) return;
 
-        const result = await listSeasonLeagueSeasons({
-          client: apiClient,
-          path: { accountId, seasonId },
-          query: {
-            includeTeams: true,
-            includeUnassignedTeams: false,
-            includePlayerCounts: true,
-            includeManagerCounts: true,
-          },
-          throwOnError: false,
-        });
+    try {
+      setLoading(true);
+      setError(null);
 
-        const data = unwrapApiResult(result, 'Failed to load hierarchical data');
-        const mapped = mapLeagueSetup(data);
+      const result = await listSeasonLeagueSeasons({
+        client: apiClientRef.current,
+        path: { accountId, seasonId },
+        query: {
+          includeTeams: true,
+          includeUnassignedTeams: false,
+          includePlayerCounts: true,
+          includeManagerCounts: true,
+        },
+        throwOnError: false,
+      });
 
-        mapped.season = mapped.season ?? {
-          id: seasonId,
-          name: 'Season',
-          accountId,
-        };
+      const data = unwrapApiResult(result, 'Failed to load hierarchical data');
+      const mapped = mapLeagueSetup(data);
 
-        const transformedData: HierarchicalSeason = {
-          id: mapped.season.id,
-          name: mapped.season.name || 'Season',
-          totalPlayers: 0,
-          totalManagers: 0,
-          leagues: mapped.leagueSeasons.map((league) => {
-            const divisions = league.divisions?.sort(
-              (a, b) => a.priority - b.priority || a.division.name.localeCompare(b.division.name),
-            );
+      mapped.season = mapped.season ?? {
+        id: seasonId,
+        name: 'Season',
+        accountId,
+      };
 
-            return {
-              ...league,
-              divisions,
-            };
-          }),
-        };
+      const transformedData: HierarchicalSeason = {
+        id: mapped.season.id,
+        name: mapped.season.name || 'Season',
+        totalPlayers: 0,
+        totalManagers: 0,
+        leagues: mapped.leagueSeasons.map((league) => {
+          const divisions = league.divisions?.sort(
+            (a, b) => a.priority - b.priority || a.division.name.localeCompare(b.division.name),
+          );
 
-        transformedData.totalPlayers = transformedData.leagues.reduce(
-          (sum, league) => sum + (league.totalPlayers || 0),
-          0,
-        );
-        transformedData.totalManagers = transformedData.leagues.reduce(
-          (sum, league) => sum + (league.totalManagers || 0),
-          0,
-        );
+          return {
+            ...league,
+            divisions,
+          };
+        }),
+      };
 
-        setHierarchicalData(transformedData);
-      } catch (err) {
-        console.error('Error loading hierarchical data:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [apiClient],
-  );
+      transformedData.totalPlayers = transformedData.leagues.reduce(
+        (sum, league) => sum + (league.totalPlayers || 0),
+        0,
+      );
+      transformedData.totalManagers = transformedData.leagues.reduce(
+        (sum, league) => sum + (league.totalManagers || 0),
+        0,
+      );
+
+      setHierarchicalData(transformedData);
+    } catch (err) {
+      console.error('Error loading hierarchical data:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }).current;
 
   return {
     hierarchicalData,

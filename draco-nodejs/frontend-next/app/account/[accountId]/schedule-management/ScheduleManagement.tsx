@@ -460,7 +460,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           position: 'fixed',
           bottom: { xs: 24, sm: 32 },
           right: { xs: 24, sm: 32 },
-          zIndex: (theme) => theme.zIndex.snackbar + 1,
+          zIndex: (theme) => theme.zIndex.fab,
         }}
       >
         <AddIcon />

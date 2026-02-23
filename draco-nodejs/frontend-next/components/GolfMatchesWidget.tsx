@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -54,6 +54,11 @@ export default function GolfMatchesWidget({
   const timeZone = useAccountTimezone();
   const { user } = useAuth();
   const isAuthenticated = !!user;
+
+  const apiClientRef = useRef(apiClient);
+  useEffect(() => {
+    apiClientRef.current = apiClient;
+  }, [apiClient]);
   const [recentMatches, setRecentMatches] = useState<GolfMatch[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<GolfMatch[]>([]);
   const [teams, setTeams] = useState<Map<string, GolfTeamWithRoster>>(new Map());
@@ -111,7 +116,7 @@ export default function GolfMatchesWidget({
         endDate.setHours(23, 59, 59, 999);
 
         const matchesResult = await listGolfMatchesForSeason({
-          client: apiClient,
+          client: apiClientRef.current,
           path: { accountId, seasonId },
           query: {
             startDate: startDate.toISOString(),
@@ -130,7 +135,7 @@ export default function GolfMatchesWidget({
 
         const teamPromises = Array.from(uniqueTeamIds).map((teamSeasonId) =>
           getGolfTeamWithRoster({
-            client: apiClient,
+            client: apiClientRef.current,
             path: { accountId, seasonId, teamSeasonId },
             throwOnError: false,
           }),
@@ -164,7 +169,7 @@ export default function GolfMatchesWidget({
 
           if (golferIds.length > 0) {
             const handicapResult = await calculateBatchCourseHandicaps({
-              client: apiClient,
+              client: apiClientRef.current,
               path: { accountId },
               body: {
                 golferIds,
@@ -218,7 +223,7 @@ export default function GolfMatchesWidget({
 
     loadMatches();
     loadActiveSessions();
-  }, [accountId, apiClient, seasonId, getActiveSessions, refreshTrigger]);
+  }, [accountId, seasonId, getActiveSessions, refreshTrigger]);
 
   const getTeamName = (teamId: string, teamName: string | undefined): string => {
     const team = teams.get(teamId);

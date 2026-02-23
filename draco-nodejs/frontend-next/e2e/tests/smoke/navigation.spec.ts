@@ -38,7 +38,14 @@ test.describe('Unauthenticated Public Page', () => {
     const page = await context.newPage();
     await page.goto('/account/1');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible({ timeout: 15_000 });
+    const signInButton = page.getByRole('button', { name: 'Sign In' });
+    const menuButton = page.getByRole('button', { name: 'menu' });
+    if (await menuButton.isVisible()) {
+      await menuButton.click();
+      await expect(page.getByText('Sign In').first()).toBeVisible({ timeout: 5_000 });
+    } else {
+      await expect(signInButton).toBeVisible({ timeout: 15_000 });
+    }
     await context.close();
   });
 });

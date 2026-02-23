@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -78,12 +78,10 @@ function IndividualLiveScoringDialogContent({
 
   const currentHole = currentHoleOverride ?? sessionState?.currentHole ?? 1;
 
-  const selectedScore = useMemo(() => {
-    if (selectedScoreOverride !== null) return selectedScoreOverride;
-    if (!sessionState) return null;
-    const existingScore = sessionState.scores.find((s) => s.holeNumber === currentHole);
-    return existingScore?.score ?? null;
-  }, [selectedScoreOverride, sessionState, currentHole]);
+  const selectedScore =
+    selectedScoreOverride !== null
+      ? selectedScoreOverride
+      : (sessionState?.scores.find((s) => s.holeNumber === currentHole)?.score ?? null);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     title: string;
@@ -102,46 +100,40 @@ function IndividualLiveScoringDialogContent({
     };
   }, [accountId, hasActiveSession, connect, disconnect]);
 
-  const handleScoreSelect = useCallback(
-    async (score: number) => {
-      const existingScore = sessionState?.scores.find((s) => s.holeNumber === currentHole)?.score;
+  const handleScoreSelect = async (score: number) => {
+    const existingScore = sessionState?.scores.find((s) => s.holeNumber === currentHole)?.score;
 
-      if (score === existingScore) {
-        setSelectedScoreOverride(score);
-        return;
-      }
-
+    if (score === existingScore) {
       setSelectedScoreOverride(score);
-      setSubmitting(true);
+      return;
+    }
 
-      const result = await submitScore(accountId, {
-        holeNumber: currentHole,
-        score,
-      });
+    setSelectedScoreOverride(score);
+    setSubmitting(true);
 
-      setSubmitting(false);
+    const result = await submitScore(accountId, {
+      holeNumber: currentHole,
+      score,
+    });
 
-      if (!result) {
-        setSelectedScoreOverride(existingScore ?? null);
-      } else {
-        setSelectedScoreOverride(null);
-      }
-    },
-    [accountId, currentHole, sessionState, submitScore],
-  );
+    setSubmitting(false);
 
-  const handleAdvanceHole = useCallback(
-    async (direction: 'prev' | 'next') => {
-      const holesPlayed = sessionState?.holesPlayed ?? 18;
-      const newHole = direction === 'next' ? currentHole + 1 : currentHole - 1;
-      if (newHole < 1 || newHole > holesPlayed) return;
-
-      setCurrentHoleOverride(newHole);
+    if (!result) {
+      setSelectedScoreOverride(existingScore ?? null);
+    } else {
       setSelectedScoreOverride(null);
-      await advanceHole(accountId, newHole);
-    },
-    [accountId, currentHole, sessionState?.holesPlayed, advanceHole],
-  );
+    }
+  };
+
+  const handleAdvanceHole = async (direction: 'prev' | 'next') => {
+    const holesPlayed = sessionState?.holesPlayed ?? 18;
+    const newHole = direction === 'next' ? currentHole + 1 : currentHole - 1;
+    if (newHole < 1 || newHole > holesPlayed) return;
+
+    setCurrentHoleOverride(newHole);
+    setSelectedScoreOverride(null);
+    await advanceHole(accountId, newHole);
+  };
 
   const handleFinalize = () => {
     setConfirmDialog({

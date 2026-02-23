@@ -17,6 +17,7 @@ import {
   Select,
   Switch,
   Typography,
+  useMediaQuery,
   useTheme,
 } from '@mui/material';
 import type { ScoreEntryDialogProps } from '../types/sportAdapter';
@@ -95,6 +96,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
   getTeamName,
 }) => {
   const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const apiClient = useApiClient();
   const scoreService = useGolfScores(accountId);
   const rosterService = useGolfRosters(accountId);
@@ -486,7 +488,14 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
   });
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth data-testid="score-entry-dialog">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="lg"
+      fullWidth
+      fullScreen={fullScreen}
+      data-testid="score-entry-dialog"
+    >
       <DialogTitle>
         <Box>
           <Typography variant="h5" component="div" gutterBottom>

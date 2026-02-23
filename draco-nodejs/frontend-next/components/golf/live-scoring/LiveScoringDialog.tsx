@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -185,7 +185,7 @@ function LiveScoringDialogContent({
     };
   }, [matchId, stopSession]);
 
-  const handleStartSession = useCallback(async () => {
+  const handleStartSession = async () => {
     setStartingSession(true);
     startingSessionRef.current = true;
     const result = await startSession(matchId, { startingHole: 1 });
@@ -195,7 +195,7 @@ function LiveScoringDialogContent({
       setStartingSession(false);
       startingSessionRef.current = false;
     }
-  }, [matchId, startSession, connect]);
+  };
 
   const handleScoreChange = (golferId: string, value: string) => {
     if (value === '' || /^\d{1,2}$/.test(value)) {

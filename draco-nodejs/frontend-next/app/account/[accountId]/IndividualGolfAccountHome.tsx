@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Alert,
   Box,
@@ -82,6 +82,11 @@ const IndividualGolfAccountHome: React.FC = () => {
   const { checkSessionStatus, getSessionState, startSession, stopSession } =
     useIndividualLiveScoringOperations();
 
+  const apiClientRef = useRef(apiClient);
+  useEffect(() => {
+    apiClientRef.current = apiClient;
+  }, [apiClient]);
+
   useEffect(() => {
     if (!accountIdStr) {
       setAccount(null);
@@ -99,7 +104,7 @@ const IndividualGolfAccountHome: React.FC = () => {
 
       try {
         const result = await getAccountById({
-          client: apiClient,
+          client: apiClientRef.current,
           path: { accountId: accountIdStr },
           query: { includeCurrentSeason: true },
           signal: controller.signal,
@@ -162,7 +167,6 @@ const IndividualGolfAccountHome: React.FC = () => {
     };
   }, [
     accountIdStr,
-    apiClient,
     getGolfer,
     getGolferSummary,
     getScores,

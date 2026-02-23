@@ -87,12 +87,16 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
     loadTeamsWantedPage,
   } = usePlayerClassifieds(accountId, token || undefined);
 
-  // Load initial data on mount
+  const loadTeamsWantedPageRef = React.useRef(loadTeamsWantedPage);
+  React.useEffect(() => {
+    loadTeamsWantedPageRef.current = loadTeamsWantedPage;
+  }, [loadTeamsWantedPage]);
+
   React.useEffect(() => {
     if (token) {
-      loadTeamsWantedPage(pagination.page, pagination.limit);
+      loadTeamsWantedPageRef.current(pagination.page, pagination.limit);
     }
-  }, [accountId, token, loadTeamsWantedPage, pagination.page, pagination.limit]);
+  }, [accountId, token, pagination.page, pagination.limit]);
 
   // Handle pagination changes
   const handlePageChange = (newPage: number) => {
