@@ -91,7 +91,10 @@ export const CreateGolfScoreSchema = z
     (data) => {
       if (data.totalsOnly) {
         if (data.holesPlayed >= 18) {
-          return data.frontNineScore !== undefined && data.backNineScore !== undefined;
+          return (
+            (data.frontNineScore !== undefined && data.backNineScore !== undefined) ||
+            data.totalScore !== undefined
+          );
         }
         return data.totalScore !== undefined;
       }
@@ -99,7 +102,7 @@ export const CreateGolfScoreSchema = z
     },
     {
       message:
-        'Either totalScore (for 9-hole totalsOnly), frontNineScore + backNineScore (for 18-hole totalsOnly), or holeScores array is required',
+        'Either totalScore, frontNineScore + backNineScore (for 18-hole totalsOnly), or holeScores array is required',
     },
   )
   .openapi({
