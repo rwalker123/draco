@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNotifications } from './useNotifications';
 import { playerClassifiedService } from '../services/playerClassifiedService';
 import { IUsePlayerClassifiedsReturn, IClassifiedsUIState } from '../types/playerClassifieds';
@@ -50,11 +50,6 @@ export const usePlayerClassifieds = (
 
   const { showNotification } = useNotifications();
 
-  const showNotificationRef = useRef(showNotification);
-  useEffect(() => {
-    showNotificationRef.current = showNotification;
-  }, [showNotification]);
-
   const [reloadKey, setReloadKey] = useState(0);
   const [teamsWantedReloadKey, setTeamsWantedReloadKey] = useState(0);
 
@@ -83,7 +78,7 @@ export const usePlayerClassifieds = (
       } catch {
         if (controller.signal.aborted) return;
         const errorMessage = 'Failed to load classifieds';
-        showNotificationRef.current(errorMessage, 'error');
+        showNotification(errorMessage, 'error');
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -96,7 +91,7 @@ export const usePlayerClassifieds = (
     return () => {
       controller.abort();
     };
-  }, [accountId, token, reloadKey, hasPagination]);
+  }, [accountId, token, reloadKey, hasPagination, showNotification]);
 
   useEffect(() => {
     if (!token || !hasPagination) return;
@@ -133,7 +128,7 @@ export const usePlayerClassifieds = (
       } catch (err) {
         if (controller.signal.aborted) return;
         const errorMessage = err instanceof Error ? err.message : 'Failed to load Teams Wanted';
-        showNotificationRef.current(errorMessage, 'error');
+        showNotification(errorMessage, 'error');
       } finally {
         if (!controller.signal.aborted) {
           setPaginationLoading(false);
@@ -146,7 +141,15 @@ export const usePlayerClassifieds = (
     return () => {
       controller.abort();
     };
-  }, [accountId, token, teamsWantedPage, teamsWantedLimit, hasPagination, teamsWantedReloadKey]);
+  }, [
+    accountId,
+    token,
+    teamsWantedPage,
+    teamsWantedLimit,
+    hasPagination,
+    teamsWantedReloadKey,
+    showNotification,
+  ]);
 
   const createPlayersWanted = async (data: UpsertPlayersWantedClassifiedType): Promise<void> => {
     if (!token) {
