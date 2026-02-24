@@ -21,7 +21,6 @@ export interface UseUmpireSelectionResult {
   umpireSelectionCount: number;
   hasUmpires: boolean;
 
-  loadUmpires: () => Promise<void>;
   handleToggleAllUmpires: (checked: boolean) => void;
   handleToggleUmpire: (umpireId: string, checked: boolean) => void;
   setSelectedUmpireIds: React.Dispatch<React.SetStateAction<Set<string>>>;
@@ -87,29 +86,6 @@ export function useUmpireSelection({
     };
   }, [enabled, accountId, apiClient]);
 
-  const loadUmpires = async () => {
-    if (!accountId) return;
-
-    setUmpiresLoading(true);
-    setUmpiresError(null);
-
-    try {
-      const result = await listAccountUmpires({
-        client: apiClient,
-        path: { accountId },
-        query: { page: 1, limit: 100, skip: 0, sortBy: 'contacts.lastname', sortOrder: 'asc' },
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult(result, 'Failed to load umpires') as { umpires: UmpireType[] };
-      setUmpires(data.umpires || []);
-    } catch (err: unknown) {
-      setUmpiresError(err instanceof Error ? err.message : 'Failed to load umpires');
-    } finally {
-      setUmpiresLoading(false);
-    }
-  };
-
   const handleToggleAllUmpires = (checked: boolean) => {
     if (!checked) {
       setSelectedUmpireIds(new Set());
@@ -156,7 +132,6 @@ export function useUmpireSelection({
     umpireSelectionCount,
     hasUmpires,
 
-    loadUmpires,
     handleToggleAllUmpires,
     handleToggleUmpire,
     setSelectedUmpireIds,
