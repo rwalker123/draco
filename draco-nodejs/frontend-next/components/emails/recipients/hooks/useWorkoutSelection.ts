@@ -112,6 +112,9 @@ export function useWorkoutSelection({
     const controller = new AbortController();
 
     const autoLoad = async () => {
+      const twoWeeksAgo = new Date();
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
       setWorkoutsLoading(true);
       setWorkoutsError(null);
 
@@ -127,6 +130,7 @@ export function useWorkoutSelection({
               accountId,
               workout.id,
               token ?? undefined,
+              controller.signal,
             );
             if (controller.signal.aborted) return null;
             return { ...workout, registrants } satisfies WorkoutWithRegistrants;
@@ -152,9 +156,6 @@ export function useWorkoutSelection({
       setPastWorkoutsError(null);
 
       try {
-        const twoWeeksAgo = new Date();
-        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
         const pastRaw = await listWorkouts(accountId, true, token ?? undefined, 'past', {
           after: twoWeeksAgo.toISOString(),
           limit: 25,
@@ -168,6 +169,7 @@ export function useWorkoutSelection({
               accountId,
               workout.id,
               token ?? undefined,
+              controller.signal,
             );
             if (controller.signal.aborted) return null;
             return { ...workout, registrants } satisfies WorkoutWithRegistrants;
@@ -193,9 +195,6 @@ export function useWorkoutSelection({
       setOlderWorkoutsError(null);
 
       try {
-        const twoWeeksAgo = new Date();
-        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
         const olderRaw = await listWorkouts(accountId, false, token ?? undefined, 'past', {
           before: twoWeeksAgo.toISOString(),
           limit: 100,

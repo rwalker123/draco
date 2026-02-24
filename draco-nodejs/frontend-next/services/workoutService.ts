@@ -204,11 +204,13 @@ export async function listWorkoutRegistrations(
   accountId: string,
   workoutId: string,
   token?: string,
+  signal?: AbortSignal,
 ): Promise<WorkoutRegistrationType[]> {
   const client = createClient(token);
   const result = await apiListWorkoutRegistrations({
     client,
     path: { accountId, workoutId },
+    signal,
     throwOnError: false,
   });
 

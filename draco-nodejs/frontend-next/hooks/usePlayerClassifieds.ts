@@ -67,9 +67,9 @@ export const usePlayerClassifieds = (
       setLoading(true);
       try {
         const [playersResponse, teamsResponse] = await Promise.all([
-          playerClassifiedService.getPlayersWanted(accountId),
+          playerClassifiedService.getPlayersWanted(accountId, undefined, controller.signal),
           !hasPagination && token
-            ? playerClassifiedService.getTeamsWanted(accountId, undefined, token)
+            ? playerClassifiedService.getTeamsWanted(accountId, undefined, token, controller.signal)
             : Promise.resolve(null),
         ]);
 

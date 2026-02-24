@@ -108,6 +108,7 @@ export const playerClassifiedService = {
   async getPlayersWanted(
     accountId: string,
     params?: Partial<PlayerClassifiedSearchQueryType>,
+    signal?: AbortSignal,
   ): Promise<PlayersWantedClassifiedPagedType> {
     const client = createClient();
 
@@ -115,6 +116,7 @@ export const playerClassifiedService = {
       client,
       path: { accountId },
       query: buildListQuery(params),
+      signal,
       throwOnError: false,
     });
 
