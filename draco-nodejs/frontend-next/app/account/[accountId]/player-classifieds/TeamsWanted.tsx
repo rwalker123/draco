@@ -37,119 +37,82 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   autoVerificationData,
   onVerificationProcessed,
 }) => {
-  // Get permission functions for edit/delete controls
   const { canEditTeamsWantedById, canDeleteTeamsWantedById } = useClassifiedsPermissions({
     accountId,
   });
 
-  // Get authentication and account membership status
   const { user, token } = useAuth();
   const { isMember } = useAccountMembership(accountId);
   const isAuthenticated = !!user;
   const isAccountMember = !!isMember;
 
-  // Use hook state directly (no local state needed)
-
-  // Notification state
   const [success, setSuccess] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  // Pagination info will come from hook
 
-  // Dialog state
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [editDialogOpen, setEditDialogOpen] = React.useState(false);
 
-  // State for delete operation
   const [selectedClassified, setSelectedClassified] =
     React.useState<TeamsWantedPublicClassifiedType | null>(null);
 
-  // State for edit operation
   const [editingClassified, setEditingClassified] =
     React.useState<TeamsWantedFormInitialData | null>(null);
   const [editingClassifiedId, setEditingClassifiedId] = React.useState<string | null>(null);
 
-  // State for contact fetching during edit
   const [editContactError, setEditContactError] = React.useState<string | null>(null);
 
-  // Pagination state
   const { pagination, setPage, setLimit } = useClassifiedsPagination({
     initialPage: 1,
     initialLimit: 25,
   });
 
-  // Use the main hook for data management with pagination
   const {
     teamsWanted,
     paginationLoading,
     error: hookError,
     paginationInfo,
-    loadTeamsWantedPage,
-  } = usePlayerClassifieds(accountId, token || undefined);
+    reloadTeamsWantedPage,
+  } = usePlayerClassifieds(accountId, token || undefined, pagination.page, pagination.limit);
 
-  const loadTeamsWantedPageRef = React.useRef(loadTeamsWantedPage);
-  React.useEffect(() => {
-    loadTeamsWantedPageRef.current = loadTeamsWantedPage;
-  }, [loadTeamsWantedPage]);
-
-  React.useEffect(() => {
-    if (token) {
-      loadTeamsWantedPageRef.current(pagination.page, pagination.limit);
-    }
-  }, [accountId, token, pagination.page, pagination.limit]);
-
-  // Handle pagination changes
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    loadTeamsWantedPage(newPage, pagination.limit);
   };
 
   const handleLimitChange = (newLimit: number) => {
     setLimit(newLimit);
-    loadTeamsWantedPage(1, newLimit); // Reset to first page when changing limit
   };
 
-  // Handle next page
   const handleNextPage = () => {
-    const nextPage = pagination.page + 1;
-    setPage(nextPage);
-    loadTeamsWantedPage(nextPage, pagination.limit);
+    setPage(pagination.page + 1);
   };
 
-  // Handle previous page
   const handlePrevPage = () => {
-    const prevPage = pagination.page - 1;
-    setPage(prevPage);
-    loadTeamsWantedPage(prevPage, pagination.limit);
+    setPage(pagination.page - 1);
   };
 
-  // Check if user can perform operation without access code
   const canOperateWithoutAccessCode = (classified: TeamsWantedPublicClassifiedType) => {
-    // AccountAdmins and owners can operate without access code
     return (
       isAccountMember &&
       (canEditTeamsWantedById(classified) || canDeleteTeamsWantedById(classified))
     );
   };
 
-  // Handle edit - unified contact fetching for both AccountAdmin and Access Code users
   const handleEdit = async (id: string, _accessCodeRequired: string) => {
     const classified = teamsWanted.find((c) => c.id.toString() === id);
     if (!classified) return;
 
     if (canOperateWithoutAccessCode(classified)) {
-      // AccountAdmins - fetch contact info with JWT token
       setEditContactError(null);
 
       try {
         const contact = await playerClassifiedService.getTeamsWantedContactForEdit(
           accountId,
           classified.id.toString(),
-          '', // Empty access code for AccountAdmins
-          token || undefined, // JWT token for authentication
+          '',
+          token || undefined,
         );
 
-        // Merge contact info with classified data
         const classifiedWithContact = {
           ...classified,
           email: contact.email,
@@ -167,78 +130,61 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         setEditContactError(errorMessage);
       }
     }
-    // Access code verification is handled by TeamsWantedStateManager for non-AccountAdmins
   };
 
-  // Handle edit dialog close
-  const closeEditDialog = React.useCallback(() => {
+  const closeEditDialog = () => {
     setEditDialogOpen(false);
     setEditingClassified(null);
     setEditingClassifiedId(null);
     setEditContactError(null);
-  }, []);
+  };
 
-  const handleCreateDialogSuccess = React.useCallback(
-    (event: TeamsWantedDialogSuccessEvent) => {
-      setCreateDialogOpen(false);
-      setSuccess(event.message);
-      setError(null);
-      loadTeamsWantedPage(pagination.page, pagination.limit);
-      setTimeout(() => setSuccess(null), 8000);
-    },
-    [loadTeamsWantedPage, pagination.limit, pagination.page],
-  );
+  const handleCreateDialogSuccess = (event: TeamsWantedDialogSuccessEvent) => {
+    setCreateDialogOpen(false);
+    setSuccess(event.message);
+    setError(null);
+    reloadTeamsWantedPage();
+    setTimeout(() => setSuccess(null), 8000);
+  };
 
-  const handleEditDialogSuccess = React.useCallback(
-    (event: TeamsWantedDialogSuccessEvent) => {
-      setSuccess(event.message);
-      setError(null);
-      closeEditDialog();
-      loadTeamsWantedPage(pagination.page, pagination.limit);
-      setTimeout(() => setSuccess(null), 5000);
-    },
-    [closeEditDialog, loadTeamsWantedPage, pagination.limit, pagination.page],
-  );
+  const handleEditDialogSuccess = (event: TeamsWantedDialogSuccessEvent) => {
+    setSuccess(event.message);
+    setError(null);
+    closeEditDialog();
+    reloadTeamsWantedPage();
+    setTimeout(() => setSuccess(null), 5000);
+  };
 
-  const handleDialogError = React.useCallback((message: string) => {
+  const handleDialogError = (message: string) => {
     setError(message);
-  }, []);
+  };
 
-  // Handle delete
   const handleDelete = async (id: string, _accessCodeRequired: string) => {
     const classified = teamsWanted.find((c) => c.id.toString() === id);
     if (!classified) {
-      // No classified found - this should be handled by TeamsWantedStateManager for access code users
       return;
     }
 
     if (canOperateWithoutAccessCode(classified)) {
-      // AccountAdmins can delete directly - open confirmation dialog
       setSelectedClassified(classified);
       setDeleteDialogOpen(true);
     }
-    // Access code verification is handled by TeamsWantedStateManager for non-AccountAdmins
   };
 
-  // Handle delete dialog close
   const closeDeleteDialog = () => {
     setDeleteDialogOpen(false);
     setSelectedClassified(null);
   };
 
-  const handleDeleteDialogSuccess = React.useCallback(
-    (event: DeleteTeamsWantedSuccessEvent) => {
-      setSuccess(event.message);
-      setError(null);
-      loadTeamsWantedPage(pagination.page, pagination.limit);
-      setTimeout(() => setSuccess(null), 3000);
-    },
-    [loadTeamsWantedPage, pagination.limit, pagination.page],
-  );
+  const handleDeleteDialogSuccess = (event: DeleteTeamsWantedSuccessEvent) => {
+    setSuccess(event.message);
+    setError(null);
+    reloadTeamsWantedPage();
+    setTimeout(() => setSuccess(null), 3000);
+  };
 
   return (
     <Box>
-      {/* Notifications */}
       {error && (
         <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
           {error}
@@ -257,7 +203,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         </Alert>
       )}
 
-      {/* Content - Delegated to TeamsWantedStateManager */}
       <TeamsWantedStateManager
         accountId={accountId}
         teamsWanted={teamsWanted}
@@ -265,7 +210,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         onDelete={handleDelete}
         canEdit={canEditTeamsWantedById}
         canDelete={canDeleteTeamsWantedById}
-        loading={false} // Never show loading in the state manager during pagination
+        loading={false}
         error={hookError || undefined}
         autoVerificationData={autoVerificationData}
         onVerificationProcessed={onVerificationProcessed}
@@ -286,7 +231,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         <AddIcon />
       </Fab>
 
-      {/* Pagination Controls - Only show for authenticated account members */}
       {isAuthenticated && isAccountMember && teamsWanted.length > 0 && (
         <Box display="flex" justifyContent="center" mt={4}>
           <StreamPaginationControl
@@ -300,14 +244,13 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
             onJumpToPage={handlePageChange}
             currentItems={teamsWanted.length}
             itemLabel="Ads"
-            loading={paginationLoading} // Use pagination-specific loading state
+            loading={paginationLoading}
             showPageSize={true}
             showJumpControls={false}
           />
         </Box>
       )}
 
-      {/* Create Teams Wanted Dialog */}
       <CreateTeamsWantedDialog
         accountId={accountId}
         open={createDialogOpen}
@@ -325,7 +268,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         onError={handleDialogError}
       />
 
-      {/* Edit Teams Wanted Dialog */}
       {editingClassified && (
         <CreateTeamsWantedDialog
           accountId={accountId}

@@ -13,6 +13,8 @@ import {
 export const usePlayerClassifieds = (
   accountId: string,
   token?: string,
+  teamsWantedPage?: number,
+  teamsWantedLimit?: number,
 ): IUsePlayerClassifiedsReturn => {
   const [playersWanted, setPlayersWanted] = useState<PlayersWantedClassifiedType[]>([]);
   const [teamsWanted, setTeamsWanted] = useState<TeamsWantedPublicClassifiedType[]>([]);
@@ -54,6 +56,9 @@ export const usePlayerClassifieds = (
   }, [showNotification]);
 
   const [reloadKey, setReloadKey] = useState(0);
+  const [teamsWantedReloadKey, setTeamsWantedReloadKey] = useState(0);
+
+  const hasPagination = teamsWantedPage !== undefined && teamsWantedLimit !== undefined;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -63,7 +68,7 @@ export const usePlayerClassifieds = (
       try {
         const [playersResponse, teamsResponse] = await Promise.all([
           playerClassifiedService.getPlayersWanted(accountId),
-          token
+          !hasPagination && token
             ? playerClassifiedService.getTeamsWanted(accountId, undefined, token)
             : Promise.resolve(null),
         ]);
@@ -91,7 +96,57 @@ export const usePlayerClassifieds = (
     return () => {
       controller.abort();
     };
-  }, [accountId, token, reloadKey]);
+  }, [accountId, token, reloadKey, hasPagination]);
+
+  useEffect(() => {
+    if (!token || !hasPagination) return;
+
+    const controller = new AbortController();
+
+    const loadPage = async () => {
+      setError(null);
+      setPaginationLoading(true);
+
+      try {
+        const response = await playerClassifiedService.getTeamsWanted(
+          accountId,
+          {
+            page: teamsWantedPage,
+            limit: teamsWantedLimit,
+            sortBy: 'dateCreated',
+            sortOrder: 'desc',
+          },
+          token,
+          controller.signal,
+        );
+
+        if (controller.signal.aborted) return;
+
+        setTeamsWanted(response.data);
+        setPaginationInfo({
+          total: response.total || 0,
+          totalPages: response.pagination?.totalPages || 0,
+          hasNext: response.pagination?.hasNext || false,
+          hasPrev: response.pagination?.hasPrev || false,
+        });
+        setError(null);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load Teams Wanted';
+        showNotificationRef.current(errorMessage, 'error');
+      } finally {
+        if (!controller.signal.aborted) {
+          setPaginationLoading(false);
+        }
+      }
+    };
+
+    void loadPage();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, token, teamsWantedPage, teamsWantedLimit, hasPagination, teamsWantedReloadKey]);
 
   const createPlayersWanted = async (data: UpsertPlayersWantedClassifiedType): Promise<void> => {
     if (!token) {
@@ -257,39 +312,8 @@ export const usePlayerClassifieds = (
     setError(null);
   };
 
-  const loadTeamsWantedPage = async (page: number, limit: number) => {
-    setError(null);
-    setPaginationLoading(true);
-
-    try {
-      if (!token) {
-        return;
-      }
-      const response = await playerClassifiedService.getTeamsWanted(
-        accountId,
-        {
-          page,
-          limit,
-          sortBy: 'dateCreated',
-          sortOrder: 'desc',
-        },
-        token,
-      );
-
-      setTeamsWanted(response.data);
-      setPaginationInfo({
-        total: response.total || 0,
-        totalPages: response.pagination?.totalPages || 0,
-        hasNext: response.pagination?.hasNext || false,
-        hasPrev: response.pagination?.hasPrev || false,
-      });
-      setError(null);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load Teams Wanted';
-      showNotificationRef.current(errorMessage, 'error');
-    } finally {
-      setPaginationLoading(false);
-    }
+  const reloadTeamsWantedPage = () => {
+    setTeamsWantedReloadKey((k) => k + 1);
   };
 
   const clearTeamsWantedState = () => {
@@ -318,7 +342,7 @@ export const usePlayerClassifieds = (
     updateTeamsWanted,
     deleteTeamsWanted,
 
-    loadTeamsWantedPage,
+    reloadTeamsWantedPage,
     clearTeamsWantedState,
 
     refreshData,

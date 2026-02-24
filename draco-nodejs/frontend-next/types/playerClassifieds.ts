@@ -246,7 +246,7 @@ export interface IUsePlayerClassifiedsReturn {
   ) => Promise<{ success: boolean; error?: string }>;
 
   // Pagination methods
-  loadTeamsWantedPage: (page: number, limit: number) => Promise<void>;
+  reloadTeamsWantedPage: () => void;
   clearTeamsWantedState: () => void;
 
   // Refresh data
