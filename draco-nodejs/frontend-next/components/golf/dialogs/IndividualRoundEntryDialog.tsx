@@ -24,10 +24,17 @@ import {
   Switch,
 } from '@mui/material';
 import { Close as CloseIcon, GolfCourse as GolfCourseIcon } from '@mui/icons-material';
-import type { GolfCourseSlimType, GolfCourseTeeType } from '@draco/shared-schemas';
+import type {
+  GolfCourseSlimType,
+  GolfCourseTeeType,
+  GolfCourseWithTeesType,
+} from '@draco/shared-schemas';
+import { getGolfCourse } from '@draco/shared-api-client';
 import type { CreateGolfScore, GolfScoreWithDetails } from '@draco/shared-api-client';
+import { useApiClient } from '../../../hooks/useApiClient';
 import { useGolfCourses } from '../../../hooks/useGolfCourses';
 import { useIndividualGolfAccountService } from '../../../hooks/useIndividualGolfAccountService';
+import { unwrapApiResult } from '../../../utils/apiResult';
 import { HoleScoreGrid } from '../../schedule/dialogs/golf-score-entry/HoleScoreGrid';
 import { CourseSearchDialog } from './CourseSearchDialog';
 
@@ -50,6 +57,7 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
   homeCourse,
   editScore,
 }) => {
+  const apiClient = useApiClient();
   const { getCourse } = useGolfCourses(accountId);
   const { createScore, updateScore } = useIndividualGolfAccountService();
   const isEditing = !!editScore;
@@ -70,36 +78,54 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open && !selectedCourseId) {
-      const courseId = editScore?.courseId ?? homeCourse?.id;
-      const courseName = editScore ? (editScore.courseName ?? undefined) : homeCourse?.name;
+    if (!open || selectedCourseId) return;
 
-      if (!courseId) return;
+    const courseId = editScore?.courseId ?? homeCourse?.id;
+    const courseName = editScore ? (editScore.courseName ?? undefined) : homeCourse?.name;
 
-      const doLoad = async () => {
-        setLoading(true);
-        setError(null);
+    if (!courseId) return;
 
-        try {
-          const result = await getCourse(courseId);
-          if (result.success && result.data.tees) {
-            setTees(result.data.tees);
-            setSelectedCourseId(courseId);
-            setSelectedCourseName(courseName ?? result.data.name);
-            if (result.data.tees.length > 0) {
-              setSelectedTeeId(result.data.tees[0].id);
-            }
-          } else if (!result.success) {
-            setError(result.error);
+    const controller = new AbortController();
+
+    const doLoad = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await getGolfCourse({
+          client: apiClient,
+          path: { accountId, courseId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+
+        const course = unwrapApiResult(result, 'Failed to load course') as GolfCourseWithTeesType;
+
+        if (course.tees) {
+          setTees(course.tees);
+          setSelectedCourseId(courseId);
+          setSelectedCourseName(courseName ?? course.name);
+          if (course.tees.length > 0) {
+            setSelectedTeeId(course.tees[0].id);
           }
-        } finally {
+        }
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load course';
+        setError(message);
+      } finally {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
-      };
+      }
+    };
 
-      void doLoad();
-    }
-  }, [open, homeCourse, editScore, selectedCourseId, getCourse]);
+    void doLoad();
+
+    return () => controller.abort();
+  }, [open, homeCourse, editScore, selectedCourseId, apiClient, accountId]);
 
   useEffect(() => {
     if (!open) {
