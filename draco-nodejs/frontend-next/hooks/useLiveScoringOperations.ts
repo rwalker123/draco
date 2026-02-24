@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useApiClient } from './useApiClient';
 import { useAccount } from '../context/AccountContext';
 import {
@@ -42,264 +42,260 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const apiClientRef = useRef(apiClient);
-  useEffect(() => {
-    apiClientRef.current = apiClient;
-  }, [apiClient]);
+  const clearError = () => {
+    setError(null);
+  };
 
-  const currentAccountRef = useRef(currentAccount);
-  useEffect(() => {
-    currentAccountRef.current = currentAccount;
-  }, [currentAccount]);
+  const checkSessionStatus = async (matchId: string): Promise<LiveSessionStatus | null> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return null;
+    }
 
-  const [ops] = useState(() => ({
-    clearError: () => {
-      setError(null);
-    },
+    setIsLoading(true);
+    setError(null);
 
-    checkSessionStatus: async (matchId: string): Promise<LiveSessionStatus | null> => {
-      if (!currentAccountRef.current?.id) {
-        setError('No account selected');
-        return null;
-      }
+    try {
+      const result = await getLiveSessionStatus({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+      });
 
-      setIsLoading(true);
-      setError(null);
+      return unwrapApiResult(result, 'Failed to check session status');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to check session status';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      try {
-        const result = await getLiveSessionStatus({
-          client: apiClientRef.current,
-          path: {
-            accountId: currentAccountRef.current.id,
-            matchId,
-          },
-        });
+  const getSessionState = async (matchId: string): Promise<LiveScoringState | null> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return null;
+    }
 
-        return unwrapApiResult(result, 'Failed to check session status');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to check session status';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+    setIsLoading(true);
+    setError(null);
 
-    getSessionState: async (matchId: string): Promise<LiveScoringState | null> => {
-      if (!currentAccountRef.current?.id) {
-        setError('No account selected');
-        return null;
-      }
+    try {
+      const result = await getLiveScoringState({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+      });
 
-      setIsLoading(true);
-      setError(null);
+      return unwrapApiResult(result, 'Failed to get session state');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to get session state';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      try {
-        const result = await getLiveScoringState({
-          client: apiClientRef.current,
-          path: {
-            accountId: currentAccountRef.current.id,
-            matchId,
-          },
-        });
+  const startSession = async (
+    matchId: string,
+    options?: StartLiveScoring,
+  ): Promise<LiveScoringState | null> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return null;
+    }
 
-        return unwrapApiResult(result, 'Failed to get session state');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to get session state';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+    setIsLoading(true);
+    setError(null);
 
-    startSession: async (
-      matchId: string,
-      options?: StartLiveScoring,
-    ): Promise<LiveScoringState | null> => {
-      if (!currentAccountRef.current?.id) {
-        setError('No account selected');
-        return null;
-      }
+    try {
+      const result = await startLiveScoringSession({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+        body: options ?? {},
+      });
 
-      setIsLoading(true);
-      setError(null);
+      return unwrapApiResult(result, 'Failed to start live scoring');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to start live scoring';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      try {
-        const result = await startLiveScoringSession({
-          client: apiClientRef.current,
-          path: {
-            accountId: currentAccountRef.current.id,
-            matchId,
-          },
-          body: options ?? {},
-        });
+  const submitScore = async (
+    matchId: string,
+    data: SubmitLiveHoleScore,
+  ): Promise<LiveHoleScore | null> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return null;
+    }
 
-        return unwrapApiResult(result, 'Failed to start live scoring');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to start live scoring';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+    setIsLoading(true);
+    setError(null);
 
-    submitScore: async (
-      matchId: string,
-      data: SubmitLiveHoleScore,
-    ): Promise<LiveHoleScore | null> => {
-      if (!currentAccountRef.current?.id) {
-        setError('No account selected');
-        return null;
-      }
+    try {
+      const result = await submitLiveHoleScore({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+        body: data,
+      });
 
-      setIsLoading(true);
-      setError(null);
+      return unwrapApiResult(result, 'Failed to submit score');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to submit score';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      try {
-        const result = await submitLiveHoleScore({
-          client: apiClientRef.current,
-          path: {
-            accountId: currentAccountRef.current.id,
-            matchId,
-          },
-          body: data,
-        });
+  const advanceHole = async (matchId: string, holeNumber: number): Promise<boolean> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return false;
+    }
 
-        return unwrapApiResult(result, 'Failed to submit score');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to submit score';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+    setIsLoading(true);
+    setError(null);
 
-    advanceHole: async (matchId: string, holeNumber: number): Promise<boolean> => {
-      if (!currentAccountRef.current?.id) {
-        setError('No account selected');
-        return false;
-      }
+    try {
+      await advanceLiveHole({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+        body: { holeNumber },
+      });
 
-      setIsLoading(true);
-      setError(null);
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to advance hole';
+      setError(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      try {
-        await advanceLiveHole({
-          client: apiClientRef.current,
-          path: {
-            accountId: currentAccountRef.current.id,
-            matchId,
-          },
-          body: { holeNumber },
-        });
+  const finalizeSession = async (matchId: string): Promise<boolean> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return false;
+    }
 
-        return true;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to advance hole';
-        setError(message);
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+    setIsLoading(true);
+    setError(null);
 
-    finalizeSession: async (matchId: string): Promise<boolean> => {
-      if (!currentAccountRef.current?.id) {
-        setError('No account selected');
-        return false;
-      }
+    try {
+      await finalizeLiveScoringSession({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+        body: { confirm: true },
+      });
 
-      setIsLoading(true);
-      setError(null);
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to finalize session';
+      setError(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      try {
-        await finalizeLiveScoringSession({
-          client: apiClientRef.current,
-          path: {
-            accountId: currentAccountRef.current.id,
-            matchId,
-          },
-          body: { confirm: true },
-        });
+  const stopSession = async (matchId: string): Promise<boolean> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return false;
+    }
 
-        return true;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to finalize session';
-        setError(message);
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+    setIsLoading(true);
+    setError(null);
 
-    stopSession: async (matchId: string): Promise<boolean> => {
-      if (!currentAccountRef.current?.id) {
-        setError('No account selected');
-        return false;
-      }
+    try {
+      await stopLiveScoringSession({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+        body: { confirm: true },
+      });
 
-      setIsLoading(true);
-      setError(null);
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to stop session';
+      setError(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      try {
-        await stopLiveScoringSession({
-          client: apiClientRef.current,
-          path: {
-            accountId: currentAccountRef.current.id,
-            matchId,
-          },
-          body: { confirm: true },
-        });
+  const getActiveSessions = async (
+    accountIdOverride?: string,
+  ): Promise<{ matchId: string; sessionId: string }[] | null> => {
+    const accountId = accountIdOverride ?? currentAccount?.id;
+    if (!accountId) {
+      return null;
+    }
 
-        return true;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to stop session';
-        setError(message);
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+    setIsLoading(true);
+    setError(null);
 
-    getActiveSessions: async (
-      accountIdOverride?: string,
-    ): Promise<{ matchId: string; sessionId: string }[] | null> => {
-      const accountId = accountIdOverride ?? currentAccountRef.current?.id;
-      if (!accountId) {
-        return null;
-      }
+    try {
+      const result = await getActiveLiveScoringSessions({
+        client: apiClient,
+        path: {
+          accountId,
+        },
+      });
 
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const result = await getActiveLiveScoringSessions({
-          client: apiClientRef.current,
-          path: {
-            accountId,
-          },
-        });
-
-        return unwrapApiResult(result, 'Failed to get active sessions') as {
-          matchId: string;
-          sessionId: string;
-        }[];
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to get active sessions';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-  }));
+      return unwrapApiResult(result, 'Failed to get active sessions') as {
+        matchId: string;
+        sessionId: string;
+      }[];
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to get active sessions';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
     isLoading,
     error,
-    ...ops,
+    clearError,
+    checkSessionStatus,
+    getSessionState,
+    startSession,
+    submitScore,
+    advanceHole,
+    finalizeSession,
+    stopSession,
+    getActiveSessions,
   };
 }

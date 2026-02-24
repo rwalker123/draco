@@ -2,9 +2,25 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+const { mockGetGolfCourse } = vi.hoisted(() => ({
+  mockGetGolfCourse: vi.fn(),
+}));
+
 const mockGetCourse = vi.fn();
 const mockCreateScore = vi.fn();
 const mockUpdateScore = vi.fn();
+
+vi.mock('@draco/shared-api-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@draco/shared-api-client')>();
+  return {
+    ...actual,
+    getGolfCourse: mockGetGolfCourse,
+  };
+});
+
+vi.mock('@/hooks/useApiClient', () => ({
+  useApiClient: vi.fn(() => ({ key: 'test-client' })),
+}));
 
 vi.mock('@/hooks/useGolfCourses', () => ({
   useGolfCourses: () => ({
@@ -62,23 +78,30 @@ const defaultProps: IndividualRoundEntryDialogProps = {
   accountId: 'account-1',
 };
 
+const mockCourseData = {
+  id: 'course-1',
+  name: 'Pebble Beach',
+  tees: [
+    { id: 'tee-1', teeName: 'Blue' },
+    { id: 'tee-2', teeName: 'White' },
+  ],
+};
+
 const mockCourseResult = {
   success: true as const,
-  data: {
-    id: 'course-1',
-    name: 'Pebble Beach',
-    tees: [
-      { id: 'tee-1', teeName: 'Blue' },
-      { id: 'tee-2', teeName: 'White' },
-    ],
-  },
+  data: mockCourseData,
   message: 'OK',
+};
+
+const mockApiCourseResult = {
+  data: mockCourseData,
 };
 
 describe('IndividualRoundEntryDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetCourse.mockResolvedValue(mockCourseResult);
+    mockGetGolfCourse.mockResolvedValue(mockApiCourseResult);
   });
 
   describe('rendering', () => {
@@ -266,11 +289,11 @@ describe('IndividualRoundEntryDialog', () => {
 
   describe('course loading', () => {
     it('shows loading spinner when loading course data', async () => {
-      let resolve: (value: typeof mockCourseResult) => void;
-      const pendingPromise = new Promise<typeof mockCourseResult>((res) => {
+      let resolve: (value: typeof mockApiCourseResult) => void;
+      const pendingPromise = new Promise<typeof mockApiCourseResult>((res) => {
         resolve = res;
       });
-      mockGetCourse.mockReturnValue(pendingPromise);
+      mockGetGolfCourse.mockReturnValue(pendingPromise);
 
       render(
         <IndividualRoundEntryDialog
@@ -281,7 +304,7 @@ describe('IndividualRoundEntryDialog', () => {
 
       expect(screen.getByRole('progressbar')).toBeInTheDocument();
 
-      resolve!(mockCourseResult);
+      resolve!(mockApiCourseResult);
     });
 
     it('loads and displays home course tees on open', async () => {

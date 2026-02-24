@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
 import { HierarchicalSeason } from '../types/emails/recipients';
 import { useApiClient } from './useApiClient';
@@ -13,12 +13,7 @@ export function useHierarchicalData() {
   const [error, setError] = useState<string | null>(null);
   const apiClient = useApiClient();
 
-  const apiClientRef = useRef(apiClient);
-  useEffect(() => {
-    apiClientRef.current = apiClient;
-  }, [apiClient]);
-
-  const loadHierarchicalData = useRef(async (accountId: string, seasonId: string) => {
+  const loadHierarchicalData = async (accountId: string, seasonId: string) => {
     if (!accountId || !seasonId) return;
 
     try {
@@ -26,7 +21,7 @@ export function useHierarchicalData() {
       setError(null);
 
       const result = await listSeasonLeagueSeasons({
-        client: apiClientRef.current,
+        client: apiClient,
         path: { accountId, seasonId },
         query: {
           includeTeams: true,
@@ -80,7 +75,7 @@ export function useHierarchicalData() {
     } finally {
       setLoading(false);
     }
-  }).current;
+  };
 
   return {
     hierarchicalData,
