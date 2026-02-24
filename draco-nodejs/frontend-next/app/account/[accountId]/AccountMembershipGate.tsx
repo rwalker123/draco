@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Box, Typography, Container } from '@mui/material';
 import { isPublicRoute } from '../../../config/routePermissions';
 import { useAuth } from '../../../context/AuthContext';
@@ -23,7 +23,6 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
   const [isMember, setIsMember] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const showRegistration = (searchParams?.get('register') || '') === '1';
@@ -64,16 +63,7 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
     return () => {
       controller.abort();
     };
-  }, [
-    accountId,
-    token,
-    user,
-    router,
-    currentPath,
-    showRegistration,
-    isPublic,
-    isGlobalAdministrator,
-  ]);
+  }, [accountId, token, user, currentPath, showRegistration, isPublic, isGlobalAdministrator]);
 
   const handleSelfRegister = async (input: SelfRegisterInput) => {
     if (!token) return;
