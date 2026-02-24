@@ -22,7 +22,7 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useLiveScoring } from '../../../context/LiveScoringContext';
 import { useLiveScoringOperations } from '../../../hooks/useLiveScoringOperations';
-import { getGolfTeamWithRoster } from '@draco/shared-api-client';
+import { getGolfTeamWithRoster, stopLiveScoringSession } from '@draco/shared-api-client';
 import type { GolfTeamWithRoster } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { LiveScoringProvider } from '../../../context/LiveScoringContext';
@@ -171,19 +171,29 @@ function LiveScoringDialogContent({
 
   useEffect(() => {
     if (startingSession && connectionError && !isConnecting && !isConnected) {
-      stopSession(matchId);
+      void stopLiveScoringSession({
+        client: apiClient,
+        path: { accountId, matchId },
+        body: { confirm: true },
+        throwOnError: false,
+      });
       setStartingSession(false);
       startingSessionRef.current = false;
     }
-  }, [startingSession, connectionError, isConnecting, isConnected, stopSession, matchId]);
+  }, [startingSession, connectionError, isConnecting, isConnected, apiClient, accountId, matchId]);
 
   useEffect(() => {
     return () => {
       if (startingSessionRef.current) {
-        stopSession(matchId);
+        void stopLiveScoringSession({
+          client: apiClient,
+          path: { accountId, matchId },
+          body: { confirm: true },
+          throwOnError: false,
+        });
       }
     };
-  }, [matchId, stopSession]);
+  }, [matchId, apiClient, accountId]);
 
   const handleStartSession = async () => {
     setStartingSession(true);

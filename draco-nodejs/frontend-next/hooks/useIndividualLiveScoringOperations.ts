@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useApiClient } from './useApiClient';
 
 import {
@@ -43,169 +43,171 @@ export function useIndividualLiveScoringOperations(): UseIndividualLiveScoringOp
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const apiClientRef = useRef(apiClient);
-  useEffect(() => {
-    apiClientRef.current = apiClient;
-  }, [apiClient]);
+  const clearError = () => {
+    setError(null);
+  };
 
-  const [ops] = useState(() => ({
-    clearError: () => {
-      setError(null);
-    },
+  const checkSessionStatus = async (
+    accountId: string,
+  ): Promise<IndividualLiveSessionStatus | null> => {
+    setIsLoading(true);
+    setError(null);
 
-    checkSessionStatus: async (accountId: string): Promise<IndividualLiveSessionStatus | null> => {
-      setIsLoading(true);
-      setError(null);
+    try {
+      const result = await getIndividualLiveSessionStatus({
+        client: apiClient,
+        path: { accountId },
+      });
 
-      try {
-        const result = await getIndividualLiveSessionStatus({
-          client: apiClientRef.current,
-          path: { accountId },
-        });
+      return unwrapApiResult(result, 'Failed to check session status');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to check session status';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        return unwrapApiResult(result, 'Failed to check session status');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to check session status';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+  const getSessionState = async (accountId: string): Promise<IndividualLiveScoringState | null> => {
+    setIsLoading(true);
+    setError(null);
 
-    getSessionState: async (accountId: string): Promise<IndividualLiveScoringState | null> => {
-      setIsLoading(true);
-      setError(null);
+    try {
+      const result = await getIndividualLiveScoringState({
+        client: apiClient,
+        path: { accountId },
+      });
 
-      try {
-        const result = await getIndividualLiveScoringState({
-          client: apiClientRef.current,
-          path: { accountId },
-        });
+      return unwrapApiResult(result, 'Failed to get session state');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to get session state';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        return unwrapApiResult(result, 'Failed to get session state');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to get session state';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+  const startSession = async (
+    accountId: string,
+    options: StartIndividualLiveScoring,
+  ): Promise<IndividualLiveScoringState | null> => {
+    setIsLoading(true);
+    setError(null);
 
-    startSession: async (
-      accountId: string,
-      options: StartIndividualLiveScoring,
-    ): Promise<IndividualLiveScoringState | null> => {
-      setIsLoading(true);
-      setError(null);
+    try {
+      const result = await startIndividualLiveScoringSession({
+        client: apiClient,
+        path: { accountId },
+        body: options,
+      });
 
-      try {
-        const result = await startIndividualLiveScoringSession({
-          client: apiClientRef.current,
-          path: { accountId },
-          body: options,
-        });
+      return unwrapApiResult(result, 'Failed to start live scoring');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to start live scoring';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        return unwrapApiResult(result, 'Failed to start live scoring');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to start live scoring';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+  const submitScore = async (
+    accountId: string,
+    data: SubmitIndividualLiveHoleScore,
+  ): Promise<IndividualLiveHoleScore | null> => {
+    setIsLoading(true);
+    setError(null);
 
-    submitScore: async (
-      accountId: string,
-      data: SubmitIndividualLiveHoleScore,
-    ): Promise<IndividualLiveHoleScore | null> => {
-      setIsLoading(true);
-      setError(null);
+    try {
+      const result = await submitIndividualLiveHoleScore({
+        client: apiClient,
+        path: { accountId },
+        body: data,
+      });
 
-      try {
-        const result = await submitIndividualLiveHoleScore({
-          client: apiClientRef.current,
-          path: { accountId },
-          body: data,
-        });
+      return unwrapApiResult(result, 'Failed to submit score');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to submit score';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        return unwrapApiResult(result, 'Failed to submit score');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to submit score';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+  const advanceHole = async (accountId: string, holeNumber: number): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
 
-    advanceHole: async (accountId: string, holeNumber: number): Promise<boolean> => {
-      setIsLoading(true);
-      setError(null);
+    try {
+      await advanceIndividualLiveHole({
+        client: apiClient,
+        path: { accountId },
+        body: { holeNumber },
+      });
 
-      try {
-        await advanceIndividualLiveHole({
-          client: apiClientRef.current,
-          path: { accountId },
-          body: { holeNumber },
-        });
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to advance hole';
+      setError(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        return true;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to advance hole';
-        setError(message);
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+  const finalizeSession = async (accountId: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
 
-    finalizeSession: async (accountId: string): Promise<boolean> => {
-      setIsLoading(true);
-      setError(null);
+    try {
+      await finalizeIndividualLiveScoringSession({
+        client: apiClient,
+        path: { accountId },
+      });
 
-      try {
-        await finalizeIndividualLiveScoringSession({
-          client: apiClientRef.current,
-          path: { accountId },
-        });
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to finalize session';
+      setError(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        return true;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to finalize session';
-        setError(message);
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
+  const stopSession = async (accountId: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
 
-    stopSession: async (accountId: string): Promise<boolean> => {
-      setIsLoading(true);
-      setError(null);
+    try {
+      await stopIndividualLiveScoringSession({
+        client: apiClient,
+        path: { accountId },
+      });
 
-      try {
-        await stopIndividualLiveScoringSession({
-          client: apiClientRef.current,
-          path: { accountId },
-        });
-
-        return true;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to stop session';
-        setError(message);
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-  }));
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to stop session';
+      setError(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
     isLoading,
     error,
-    ...ops,
+    clearError,
+    checkSessionStatus,
+    getSessionState,
+    startSession,
+    submitScore,
+    advanceHole,
+    finalizeSession,
+    stopSession,
   };
 }

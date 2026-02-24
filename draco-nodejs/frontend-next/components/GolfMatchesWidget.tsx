@@ -21,6 +21,7 @@ import {
   listGolfMatchesForSeason,
   getGolfTeamWithRoster,
   calculateBatchCourseHandicaps,
+  getActiveLiveScoringSessions,
 } from '@draco/shared-api-client';
 import type {
   GolfMatch,
@@ -36,7 +37,6 @@ import { useAuth } from '../context/AuthContext';
 import GolfScorecardDialog from './golf/GolfScorecardDialog';
 import LiveScoringDialog from './golf/live-scoring/LiveScoringDialog';
 import { AccountOptional } from './account/AccountOptional';
-import { useLiveScoringOperations } from '../hooks/useLiveScoringOperations';
 import { formatDateInTimezone } from '../utils/dateUtils';
 
 interface GolfMatchesWidgetProps {
@@ -75,8 +75,6 @@ export default function GolfMatchesWidget({
 
   const currentContactId = user?.contact?.id;
 
-  const { getActiveSessions } = useLiveScoringOperations();
-
   const isMatchToday = (matchDate: string): boolean => {
     const matchDay = formatDateInTimezone(matchDate, timeZone, {
       year: 'numeric',
@@ -93,9 +91,20 @@ export default function GolfMatchesWidget({
 
   useEffect(() => {
     const loadActiveSessions = async () => {
-      const sessions = await getActiveSessions(accountId);
-      if (sessions) {
-        setActiveSessions(new Set(sessions.map((s) => s.matchId)));
+      try {
+        const result = await getActiveLiveScoringSessions({
+          client: apiClientRef.current,
+          path: { accountId },
+        });
+        const sessions = unwrapApiResult(result, 'Failed to get active sessions') as {
+          matchId: string;
+          sessionId: string;
+        }[];
+        if (sessions) {
+          setActiveSessions(new Set(sessions.map((s) => s.matchId)));
+        }
+      } catch {
+        // Non-critical — don't block match loading
       }
     };
 
@@ -223,7 +232,7 @@ export default function GolfMatchesWidget({
 
     loadMatches();
     loadActiveSessions();
-  }, [accountId, seasonId, getActiveSessions, refreshTrigger]);
+  }, [accountId, seasonId, refreshTrigger]);
 
   const getTeamName = (teamId: string, teamName: string | undefined): string => {
     const team = teams.get(teamId);

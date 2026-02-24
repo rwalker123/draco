@@ -27,6 +27,11 @@ import { useAuth } from '../../../context/AuthContext';
 import AccountPageHeader from '../../../components/AccountPageHeader';
 import {
   getAccountById,
+  getAccountGolfer,
+  getAccountGolferSummary,
+  getGolferScores,
+  getIndividualLiveSessionStatus,
+  getIndividualLiveScoringState,
   Golfer,
   GolfScoreWithDetails,
   GolferSummary,
@@ -77,10 +82,9 @@ const IndividualGolfAccountHome: React.FC = () => {
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
-  const { getGolfer, getGolferSummary, updateHomeCourse, getScores, deleteScore } =
+  const { getGolferSummary, updateHomeCourse, getScores, deleteScore } =
     useIndividualGolfAccountService();
-  const { checkSessionStatus, getSessionState, startSession, stopSession } =
-    useIndividualLiveScoringOperations();
+  const { startSession, stopSession } = useIndividualLiveScoringOperations();
 
   const apiClientRef = useRef(apiClient);
   useEffect(() => {
@@ -121,30 +125,57 @@ const IndividualGolfAccountHome: React.FC = () => {
         setAccount(typedAccount);
         setCurrentSeason(responseCurrentSeason as AccountSeasonWithStatusType | null);
 
-        const summaryResult = await getGolferSummary(accountIdStr);
-        if (!controller.signal.aborted && summaryResult.success) {
-          setGolferSummary(summaryResult.data);
+        const summaryResult = await getAccountGolferSummary({
+          client: apiClientRef.current,
+          path: { accountId: accountIdStr },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+        if (!controller.signal.aborted && summaryResult.data) {
+          setGolferSummary(summaryResult.data as GolferSummary);
         }
 
         const isCurrentUserOwner = user?.userId === typedAccount.accountOwner?.user?.userId;
 
         if (isCurrentUserOwner) {
-          const golferResult = await getGolfer(accountIdStr);
-          if (!controller.signal.aborted && golferResult.success) {
-            setGolfer(golferResult.data);
+          const golferResult = await getAccountGolfer({
+            client: apiClientRef.current,
+            path: { accountId: accountIdStr },
+            signal: controller.signal,
+            throwOnError: false,
+          });
+          if (!controller.signal.aborted && golferResult.data) {
+            setGolfer(golferResult.data as Golfer);
           }
 
-          const scoresResult = await getScores(accountIdStr, 20);
-          if (!controller.signal.aborted && scoresResult.success) {
-            setRecentScores(scoresResult.data);
+          const scoresResult = await getGolferScores({
+            client: apiClientRef.current,
+            path: { accountId: accountIdStr },
+            query: { limit: 20 },
+            signal: controller.signal,
+            throwOnError: false,
+          });
+          if (!controller.signal.aborted && scoresResult.data) {
+            setRecentScores(scoresResult.data as GolfScoreWithDetails[]);
           }
         }
 
-        const liveStatus = await checkSessionStatus(accountIdStr);
+        const liveStatusResult = await getIndividualLiveSessionStatus({
+          client: apiClientRef.current,
+          path: { accountId: accountIdStr },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+        const liveStatus = liveStatusResult.data;
         if (!controller.signal.aborted && liveStatus?.hasActiveSession) {
-          const sessionState = await getSessionState(accountIdStr);
-          if (!controller.signal.aborted && sessionState) {
-            setLiveSession(sessionState);
+          const sessionStateResult = await getIndividualLiveScoringState({
+            client: apiClientRef.current,
+            path: { accountId: accountIdStr },
+            signal: controller.signal,
+            throwOnError: false,
+          });
+          if (!controller.signal.aborted && sessionStateResult.data) {
+            setLiveSession(sessionStateResult.data);
           }
         }
       } catch (err) {
@@ -165,15 +196,7 @@ const IndividualGolfAccountHome: React.FC = () => {
     return () => {
       controller.abort();
     };
-  }, [
-    accountIdStr,
-    getGolfer,
-    getGolferSummary,
-    getScores,
-    user?.userId,
-    checkSessionStatus,
-    getSessionState,
-  ]);
+  }, [accountIdStr, user?.userId]);
 
   const handleRoundEntered = async (score: GolfScoreWithDetails) => {
     setRecentScores((prev) => [score, ...prev.slice(0, 19)]);

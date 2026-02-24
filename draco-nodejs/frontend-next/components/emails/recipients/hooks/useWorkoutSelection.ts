@@ -1,17 +1,27 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import {
-  WorkoutSummaryType,
-  WorkoutRegistrationType,
-  WorkoutStatusType,
-} from '@draco/shared-schemas';
+import { useState, useEffect } from 'react';
+import { WorkoutSummaryType, WorkoutRegistrationType } from '@draco/shared-schemas';
 import {
   getWorkout,
   listWorkouts,
   listWorkoutRegistrations,
 } from '../../../../services/workoutService';
 import { WorkoutRecipientSelection } from '../../../../types/emails/recipients';
+
+function buildAllWorkoutsMap(
+  recentPast: WorkoutWithRegistrants[],
+  active: WorkoutWithRegistrants[],
+  loadedOlder: WorkoutWithRegistrants[],
+): Map<string, WorkoutWithRegistrants> {
+  const map = new Map<string, WorkoutWithRegistrants>();
+  [...recentPast, ...active, ...loadedOlder].forEach((workout) => {
+    if (!map.has(workout.id)) {
+      map.set(workout.id, workout);
+    }
+  });
+  return map;
+}
 
 export type WorkoutWithRegistrants = WorkoutSummaryType & {
   registrants: WorkoutRegistrationType[];
@@ -22,6 +32,7 @@ export interface UseWorkoutSelectionProps {
   token: string | null;
   initialWorkoutRecipients?: WorkoutRecipientSelection[];
   initialWorkoutManagersOnly?: boolean;
+  enabled?: boolean;
 }
 
 export interface UseWorkoutSelectionResult {
@@ -71,6 +82,7 @@ export function useWorkoutSelection({
   token,
   initialWorkoutRecipients,
   initialWorkoutManagersOnly,
+  enabled = false,
 }: UseWorkoutSelectionProps): UseWorkoutSelectionResult {
   const [activeWorkouts, setActiveWorkouts] = useState<WorkoutWithRegistrants[]>([]);
   const [recentPastWorkouts, setRecentPastWorkouts] = useState<WorkoutWithRegistrants[]>([]);
@@ -92,35 +104,128 @@ export function useWorkoutSelection({
   const [olderWorkoutsLoading, setOlderWorkoutsLoading] = useState(false);
   const [olderWorkoutsError, setOlderWorkoutsError] = useState<string | null>(null);
 
-  const fetchWorkoutsWithRegistrants = useCallback(
-    async (params: {
-      status: WorkoutStatusType;
-      after?: string;
-      before?: string;
-      limit?: number;
-    }): Promise<WorkoutWithRegistrants[]> => {
-      const workouts = await listWorkouts(accountId, true, token ?? undefined, params.status, {
-        after: params.after,
-        before: params.before,
-        limit: params.limit,
-      });
+  useEffect(() => {
+    if (!enabled || !accountId) {
+      return;
+    }
 
-      return Promise.all(
-        workouts.map(async (workout) => {
-          const registrants = await listWorkoutRegistrations(
-            accountId,
-            workout.id,
-            token ?? undefined,
-          );
+    const controller = new AbortController();
 
-          return { ...workout, registrants } satisfies WorkoutWithRegistrants;
-        }),
-      );
-    },
-    [accountId, token],
-  );
+    const autoLoad = async () => {
+      setWorkoutsLoading(true);
+      setWorkoutsError(null);
 
-  const loadActiveWorkouts = useCallback(async () => {
+      try {
+        const activeRaw = await listWorkouts(accountId, true, token ?? undefined, 'upcoming', {
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+
+        const activeWithRegistrants = await Promise.all(
+          activeRaw.map(async (workout) => {
+            const registrants = await listWorkoutRegistrations(
+              accountId,
+              workout.id,
+              token ?? undefined,
+            );
+            if (controller.signal.aborted) return null;
+            return { ...workout, registrants } satisfies WorkoutWithRegistrants;
+          }),
+        );
+        if (controller.signal.aborted) return;
+        setActiveWorkouts(
+          activeWithRegistrants.filter((w): w is WorkoutWithRegistrants => w !== null),
+        );
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load workouts';
+        setWorkoutsError(message);
+      } finally {
+        if (!controller.signal.aborted) {
+          setWorkoutsLoading(false);
+        }
+      }
+
+      if (controller.signal.aborted) return;
+
+      setPastWorkoutsLoading(true);
+      setPastWorkoutsError(null);
+
+      try {
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+        const pastRaw = await listWorkouts(accountId, true, token ?? undefined, 'past', {
+          after: twoWeeksAgo.toISOString(),
+          limit: 25,
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+
+        const pastWithRegistrants = await Promise.all(
+          pastRaw.map(async (workout) => {
+            const registrants = await listWorkoutRegistrations(
+              accountId,
+              workout.id,
+              token ?? undefined,
+            );
+            if (controller.signal.aborted) return null;
+            return { ...workout, registrants } satisfies WorkoutWithRegistrants;
+          }),
+        );
+        if (controller.signal.aborted) return;
+        setRecentPastWorkouts(
+          pastWithRegistrants.filter((w): w is WorkoutWithRegistrants => w !== null),
+        );
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load recent past workouts';
+        setPastWorkoutsError(message);
+      } finally {
+        if (!controller.signal.aborted) {
+          setPastWorkoutsLoading(false);
+        }
+      }
+
+      if (controller.signal.aborted) return;
+
+      setOlderWorkoutsLoading(true);
+      setOlderWorkoutsError(null);
+
+      try {
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+        const olderRaw = await listWorkouts(accountId, false, token ?? undefined, 'past', {
+          before: twoWeeksAgo.toISOString(),
+          limit: 100,
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+
+        const sorted = [...olderRaw].sort(
+          (a, b) => new Date(b.workoutDate).getTime() - new Date(a.workoutDate).getTime(),
+        );
+        setOlderWorkoutsOptions(sorted);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load past workouts list';
+        setOlderWorkoutsError(message);
+      } finally {
+        if (!controller.signal.aborted) {
+          setOlderWorkoutsLoading(false);
+        }
+      }
+    };
+
+    void autoLoad();
+
+    return () => {
+      controller.abort();
+    };
+  }, [enabled, accountId, token]);
+
+  const loadActiveWorkouts = async () => {
     if (!accountId) {
       return;
     }
@@ -129,7 +234,17 @@ export function useWorkoutSelection({
     setWorkoutsError(null);
 
     try {
-      const workoutsWithRegistrants = await fetchWorkoutsWithRegistrants({ status: 'upcoming' });
+      const workouts = await listWorkouts(accountId, true, token ?? undefined, 'upcoming');
+      const workoutsWithRegistrants = await Promise.all(
+        workouts.map(async (workout) => {
+          const registrants = await listWorkoutRegistrations(
+            accountId,
+            workout.id,
+            token ?? undefined,
+          );
+          return { ...workout, registrants } satisfies WorkoutWithRegistrants;
+        }),
+      );
       setActiveWorkouts(workoutsWithRegistrants);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load workouts';
@@ -137,9 +252,9 @@ export function useWorkoutSelection({
     } finally {
       setWorkoutsLoading(false);
     }
-  }, [accountId, fetchWorkoutsWithRegistrants]);
+  };
 
-  const loadRecentPastWorkouts = useCallback(async () => {
+  const loadRecentPastWorkouts = async () => {
     if (!accountId) {
       return;
     }
@@ -150,11 +265,20 @@ export function useWorkoutSelection({
     try {
       const twoWeeksAgo = new Date();
       twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-      const workoutsWithRegistrants = await fetchWorkoutsWithRegistrants({
-        status: 'past',
+      const workouts = await listWorkouts(accountId, true, token ?? undefined, 'past', {
         after: twoWeeksAgo.toISOString(),
         limit: 25,
       });
+      const workoutsWithRegistrants = await Promise.all(
+        workouts.map(async (workout) => {
+          const registrants = await listWorkoutRegistrations(
+            accountId,
+            workout.id,
+            token ?? undefined,
+          );
+          return { ...workout, registrants } satisfies WorkoutWithRegistrants;
+        }),
+      );
       setRecentPastWorkouts(workoutsWithRegistrants);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load recent past workouts';
@@ -162,9 +286,9 @@ export function useWorkoutSelection({
     } finally {
       setPastWorkoutsLoading(false);
     }
-  }, [accountId, fetchWorkoutsWithRegistrants]);
+  };
 
-  const loadOlderWorkoutsOptions = useCallback(async () => {
+  const loadOlderWorkoutsOptions = async () => {
     if (!accountId) {
       return;
     }
@@ -189,168 +313,139 @@ export function useWorkoutSelection({
     } finally {
       setOlderWorkoutsLoading(false);
     }
-  }, [accountId, token]);
+  };
 
-  const loadOlderWorkoutWithRegistrants = useCallback(
-    async (workoutId: string) => {
-      if (!accountId) {
-        return;
-      }
-
-      setOlderWorkoutsLoading(true);
-      setOlderWorkoutsError(null);
-
-      try {
-        const [workout, registrants] = await Promise.all([
-          getWorkout(accountId, workoutId, token ?? undefined),
-          listWorkoutRegistrations(accountId, workoutId, token ?? undefined),
-        ]);
-        const workoutWithRegistrants: WorkoutWithRegistrants = {
-          ...workout,
-          registrants,
-        };
-
-        setLoadedOlderWorkouts((prev) => {
-          const exists = prev.some((item) => item.id === workoutId);
-          if (exists) {
-            return prev;
-          }
-          return [...prev, workoutWithRegistrants];
-        });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to load past workout';
-        setOlderWorkoutsError(message);
-      } finally {
-        setOlderWorkoutsLoading(false);
-      }
-    },
-    [accountId, token],
-  );
-
-  const allWorkoutsMap = useMemo(() => {
-    const map = new Map<string, WorkoutWithRegistrants>();
-    [...recentPastWorkouts, ...activeWorkouts, ...loadedOlderWorkouts].forEach((workout) => {
-      if (!map.has(workout.id)) {
-        map.set(workout.id, workout);
-      }
-    });
-    return map;
-  }, [activeWorkouts, recentPastWorkouts, loadedOlderWorkouts]);
-
-  const allWorkouts = useMemo(
-    () =>
-      Array.from(allWorkoutsMap.values()).sort(
-        (a, b) => new Date(b.workoutDate).getTime() - new Date(a.workoutDate).getTime(),
-      ),
-    [allWorkoutsMap],
-  );
-
-  const visibleWorkouts = useMemo(() => {
-    if (!workoutManagersOnly) {
-      return allWorkouts;
+  const loadOlderWorkoutWithRegistrants = async (workoutId: string) => {
+    if (!accountId) {
+      return;
     }
-    return allWorkouts.map((workout) => ({
-      ...workout,
-      registrants: workout.registrants.filter((registrant) => registrant.isManager),
-    }));
-  }, [allWorkouts, workoutManagersOnly]);
 
-  const workoutSelectionCount = useMemo(() => {
-    let total = 0;
-    selectedWorkoutRegistrantIds.forEach((ids) => {
-      total += ids.size;
-    });
-    return total;
-  }, [selectedWorkoutRegistrantIds]);
+    setOlderWorkoutsLoading(true);
+    setOlderWorkoutsError(null);
 
-  const totalWorkoutRegistrants = useMemo(
-    () => visibleWorkouts.reduce((sum, workout) => sum + workout.registrants.length, 0),
-    [visibleWorkouts],
-  );
+    try {
+      const [workout, registrants] = await Promise.all([
+        getWorkout(accountId, workoutId, token ?? undefined),
+        listWorkoutRegistrations(accountId, workoutId, token ?? undefined),
+      ]);
+      const workoutWithRegistrants: WorkoutWithRegistrants = {
+        ...workout,
+        registrants,
+      };
 
-  const handleToggleAllWorkouts = useCallback(
-    (checked: boolean) => {
-      if (!checked) {
-        setSelectedWorkoutRegistrantIds(new Map());
-        return;
-      }
-
-      const next = new Map<string, Set<string>>();
-      visibleWorkouts.forEach((workout) => {
-        if (workout.registrants.length > 0) {
-          next.set(workout.id, new Set(workout.registrants.map((registrant) => registrant.id)));
-        }
-      });
-      setSelectedWorkoutRegistrantIds(next);
-    },
-    [visibleWorkouts],
-  );
-
-  const handleToggleWorkout = useCallback(
-    (workoutId: string, checked: boolean) => {
-      setSelectedWorkoutRegistrantIds((prev) => {
-        const next = new Map(prev);
-        const workout = visibleWorkouts.find((item) => item.id === workoutId);
-        if (!workout) {
+      setLoadedOlderWorkouts((prev) => {
+        const exists = prev.some((item) => item.id === workoutId);
+        if (exists) {
           return prev;
         }
-
-        if (checked) {
-          next.set(workoutId, new Set(workout.registrants.map((registrant) => registrant.id)));
-        } else {
-          next.delete(workoutId);
-        }
-
-        return next;
+        return [...prev, workoutWithRegistrants];
       });
-    },
-    [visibleWorkouts],
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load past workout';
+      setOlderWorkoutsError(message);
+    } finally {
+      setOlderWorkoutsLoading(false);
+    }
+  };
+
+  const allWorkoutsMap = buildAllWorkoutsMap(
+    recentPastWorkouts,
+    activeWorkouts,
+    loadedOlderWorkouts,
   );
 
-  const handleToggleRegistrant = useCallback(
-    (workoutId: string, registrantId: string, checked: boolean) => {
-      setSelectedWorkoutRegistrantIds((prev) => {
-        const next = new Map(prev);
-        const ids = new Set(next.get(workoutId) ?? []);
-
-        if (checked) {
-          ids.add(registrantId);
-        } else {
-          ids.delete(registrantId);
-        }
-
-        if (ids.size > 0) {
-          next.set(workoutId, ids);
-        } else {
-          next.delete(workoutId);
-        }
-
-        return next;
-      });
-    },
-    [],
+  const allWorkouts = Array.from(allWorkoutsMap.values()).sort(
+    (a, b) => new Date(b.workoutDate).getTime() - new Date(a.workoutDate).getTime(),
   );
 
-  const handleWorkoutManagersOnlyToggle = useCallback((checked: boolean) => {
-    setWorkoutManagersOnly(checked);
-  }, []);
+  const visibleWorkouts = !workoutManagersOnly
+    ? allWorkouts
+    : allWorkouts.map((workout) => ({
+        ...workout,
+        registrants: workout.registrants.filter((registrant) => registrant.isManager),
+      }));
 
-  const handleOlderWorkoutSelect = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const workoutId = event.target.value;
-      setSelectedOlderWorkoutId(workoutId);
-      if (workoutId) {
-        void loadOlderWorkoutWithRegistrants(workoutId);
+  let workoutSelectionCount = 0;
+  selectedWorkoutRegistrantIds.forEach((ids) => {
+    workoutSelectionCount += ids.size;
+  });
+
+  const totalWorkoutRegistrants = visibleWorkouts.reduce(
+    (sum, workout) => sum + workout.registrants.length,
+    0,
+  );
+
+  const handleToggleAllWorkouts = (checked: boolean) => {
+    if (!checked) {
+      setSelectedWorkoutRegistrantIds(new Map());
+      return;
+    }
+
+    const next = new Map<string, Set<string>>();
+    visibleWorkouts.forEach((workout) => {
+      if (workout.registrants.length > 0) {
+        next.set(workout.id, new Set(workout.registrants.map((registrant) => registrant.id)));
       }
-    },
-    [loadOlderWorkoutWithRegistrants],
-  );
+    });
+    setSelectedWorkoutRegistrantIds(next);
+  };
 
-  const clearWorkoutSelections = useCallback(() => {
+  const handleToggleWorkout = (workoutId: string, checked: boolean) => {
+    setSelectedWorkoutRegistrantIds((prev) => {
+      const next = new Map(prev);
+      const workout = visibleWorkouts.find((item) => item.id === workoutId);
+      if (!workout) {
+        return prev;
+      }
+
+      if (checked) {
+        next.set(workoutId, new Set(workout.registrants.map((registrant) => registrant.id)));
+      } else {
+        next.delete(workoutId);
+      }
+
+      return next;
+    });
+  };
+
+  const handleToggleRegistrant = (workoutId: string, registrantId: string, checked: boolean) => {
+    setSelectedWorkoutRegistrantIds((prev) => {
+      const next = new Map(prev);
+      const ids = new Set(next.get(workoutId) ?? []);
+
+      if (checked) {
+        ids.add(registrantId);
+      } else {
+        ids.delete(registrantId);
+      }
+
+      if (ids.size > 0) {
+        next.set(workoutId, ids);
+      } else {
+        next.delete(workoutId);
+      }
+
+      return next;
+    });
+  };
+
+  const handleWorkoutManagersOnlyToggle = (checked: boolean) => {
+    setWorkoutManagersOnly(checked);
+  };
+
+  const handleOlderWorkoutSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const workoutId = event.target.value;
+    setSelectedOlderWorkoutId(workoutId);
+    if (workoutId) {
+      void loadOlderWorkoutWithRegistrants(workoutId);
+    }
+  };
+
+  const clearWorkoutSelections = () => {
     setSelectedWorkoutRegistrantIds(new Map());
-  }, []);
+  };
 
-  const getWorkoutSelections = useCallback((): WorkoutRecipientSelection[] => {
+  const getWorkoutSelections = (): WorkoutRecipientSelection[] => {
     const selections: WorkoutRecipientSelection[] = [];
 
     selectedWorkoutRegistrantIds.forEach((ids, workoutId) => {
@@ -378,15 +473,20 @@ export function useWorkoutSelection({
     });
 
     return selections;
-  }, [selectedWorkoutRegistrantIds, visibleWorkouts, allWorkouts, workoutManagersOnly]);
+  };
 
   useEffect(() => {
     if (!workoutManagersOnly) {
       return;
     }
+    const currentMap = buildAllWorkoutsMap(recentPastWorkouts, activeWorkouts, loadedOlderWorkouts);
+    const currentVisible = Array.from(currentMap.values()).map((workout) => ({
+      ...workout,
+      registrants: workout.registrants.filter((registrant) => registrant.isManager),
+    }));
     setSelectedWorkoutRegistrantIds((prev) => {
       const next = new Map<string, Set<string>>();
-      visibleWorkouts.forEach((workout) => {
+      currentVisible.forEach((workout) => {
         if (workout.registrants.length === 0) {
           return;
         }
@@ -399,22 +499,25 @@ export function useWorkoutSelection({
       });
       return next;
     });
-  }, [workoutManagersOnly, visibleWorkouts]);
+  }, [workoutManagersOnly, activeWorkouts, recentPastWorkouts, loadedOlderWorkouts]);
 
   useEffect(() => {
     if (!initialWorkoutRecipients || initialWorkoutRecipients.length === 0) {
       return;
     }
 
+    const currentMap = buildAllWorkoutsMap(recentPastWorkouts, activeWorkouts, loadedOlderWorkouts);
+    const currentAll = Array.from(currentMap.values());
+
     setSelectedWorkoutRegistrantIds((prev) => {
-      if (prev.size > 0 && !allWorkouts.length) {
+      if (prev.size > 0 && !currentAll.length) {
         return prev;
       }
 
       const next = new Map<string, Set<string>>();
 
       initialWorkoutRecipients.forEach((selection) => {
-        const workout = allWorkouts.find((item) => item.id === selection.workoutId);
+        const workout = currentAll.find((item) => item.id === selection.workoutId);
         if (!workout || workout.registrants.length === 0) {
           return;
         }
@@ -429,7 +532,7 @@ export function useWorkoutSelection({
 
       return next;
     });
-  }, [initialWorkoutRecipients, allWorkouts]);
+  }, [initialWorkoutRecipients, activeWorkouts, recentPastWorkouts, loadedOlderWorkouts]);
 
   return {
     activeWorkouts,
