@@ -12,7 +12,7 @@ export function useAccountMembership(accountId?: string | null) {
 
   useEffect(() => {
     if (!accountId || !user || !token) {
-      setIsMember(accountId ? null : null);
+      setIsMember(null);
       setContact(null);
       return;
     }
