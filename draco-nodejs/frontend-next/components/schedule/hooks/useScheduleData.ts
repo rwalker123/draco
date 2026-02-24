@@ -42,7 +42,6 @@ interface UseScheduleDataReturn {
   leagueTeamsCache: Map<string, TeamSeasonType[]>;
   loadingGames: boolean;
   loadingStaticData: boolean;
-  loadStaticData: () => Promise<void>;
   loadGamesData: () => Promise<void>;
   loadLeagueTeams: (leagueSeasonId: string) => void;
   loadOfficials: () => Promise<void>;
@@ -156,6 +155,36 @@ const computeDateRange = (
   }
 
   return { startDate: start, endDate: end };
+};
+
+const getOrFetchSeasonId = async (
+  apiClient: ReturnType<typeof useApiClient>,
+  accountId: string,
+  seasonIdRef: React.MutableRefObject<string | null>,
+  seasonFetchPromiseRef: React.MutableRefObject<Promise<string> | null>,
+): Promise<string> => {
+  const cachedId = seasonIdRef.current;
+  if (cachedId) return cachedId;
+
+  let promise = seasonFetchPromiseRef.current;
+  if (!promise) {
+    promise = (async () => {
+      const result = await getCurrentSeason({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
+      });
+      const season = unwrapApiResult(result, 'Failed to load current season');
+      seasonIdRef.current = season.id;
+      return season.id;
+    })();
+    seasonFetchPromiseRef.current = promise;
+    promise.finally(() => {
+      seasonFetchPromiseRef.current = null;
+    });
+  }
+
+  return promise;
 };
 
 export const useScheduleData = ({
@@ -288,143 +317,16 @@ export const useScheduleData = ({
     }
   };
 
-  const loadStaticData = async () => {
-    try {
-      setLoadingStaticData(true);
-
-      let currentSeasonId = seasonIdRef.current;
-      if (!currentSeasonId) {
-        let promise = seasonFetchPromiseRef.current;
-        if (!promise) {
-          promise = (async () => {
-            const result = await getCurrentSeason({
-              client: apiClient,
-              path: { accountId },
-              throwOnError: false,
-            });
-            const season = unwrapApiResult(result, 'Failed to load current season');
-            seasonIdRef.current = season.id;
-            return season.id;
-          })();
-          seasonFetchPromiseRef.current = promise;
-          promise.finally(() => {
-            seasonFetchPromiseRef.current = null;
-          });
-        }
-        currentSeasonId = await promise;
-      }
-
-      try {
-        if (adapter.loadTeams) {
-          const { leagues: loadedLeagues, leagueTeamsCache: loadedCache } = await adapter.loadTeams(
-            { accountId, seasonId: currentSeasonId, apiClient },
-          );
-          setLeagues(loadedLeagues);
-          setLeagueTeamsCache(loadedCache);
-
-          const uniqueTeams = new Map<string, TeamSeasonType>();
-          loadedCache.forEach((teamsForSeason) => {
-            teamsForSeason.forEach((team) => {
-              if (!uniqueTeams.has(team.id)) {
-                uniqueTeams.set(team.id, team);
-              }
-            });
-          });
-          setTeams(Array.from(uniqueTeams.values()));
-        } else {
-          const leagueResult = await listSeasonLeagueSeasons({
-            client: apiClient,
-            path: { accountId, seasonId: currentSeasonId },
-            query: {
-              includeTeams: true,
-              includeUnassignedTeams: false,
-            },
-            throwOnError: false,
-          });
-
-          const leagueData = unwrapApiResult(leagueResult, 'Failed to load leagues');
-          const mapped = mapLeagueSetup(leagueData);
-
-          const newLeagueTeamsCache = new Map<string, TeamSeasonType[]>();
-          const processedLeagues = mapped.leagueSeasons.map((leagueSeason) => {
-            const leagueTeamsForSeason: TeamSeasonType[] = [];
-
-            leagueSeason.divisions?.forEach((division) => {
-              division.teams.forEach((team) => {
-                leagueTeamsForSeason.push(team);
-              });
-            });
-
-            newLeagueTeamsCache.set(leagueSeason.id, leagueTeamsForSeason);
-
-            return {
-              id: leagueSeason.id,
-              name: leagueSeason.league.name,
-            };
-          });
-
-          setLeagues(processedLeagues);
-          setLeagueTeamsCache(newLeagueTeamsCache);
-
-          const uniqueTeams = new Map<string, TeamSeasonType>();
-          newLeagueTeamsCache.forEach((teamsForSeason) => {
-            teamsForSeason.forEach((team) => {
-              if (!uniqueTeams.has(team.id)) {
-                uniqueTeams.set(team.id, team);
-              }
-            });
-          });
-          setTeams(Array.from(uniqueTeams.values()));
-        }
-      } catch (leagueError) {
-        console.warn('Failed to load leagues:', leagueError);
-        setLeagues([]);
-        setLeagueTeamsCache(new Map());
-        setTeams([]);
-      }
-
-      try {
-        const loadedLocations = await adapter.loadLocations({ accountId, apiClient });
-        setLocations(loadedLocations);
-      } catch (locationsError) {
-        console.warn(`Failed to load ${adapter.locationLabel.toLowerCase()}s:`, locationsError);
-        setLocations([]);
-      }
-
-      setOfficials([]);
-    } catch (err: unknown) {
-      console.error('Failed to load static data:', err);
-      onError?.('Unable to load schedule data. Please refresh the page.');
-    } finally {
-      setLoadingStaticData(false);
-    }
-  };
-
   const loadGamesData = async () => {
     try {
       setLoadingGames(true);
 
-      let seasonId = seasonIdRef.current;
-      if (!seasonId) {
-        let promise = seasonFetchPromiseRef.current;
-        if (!promise) {
-          promise = (async () => {
-            const result = await getCurrentSeason({
-              client: apiClient,
-              path: { accountId },
-              throwOnError: false,
-            });
-            const season = unwrapApiResult(result, 'Failed to load current season');
-            seasonIdRef.current = season.id;
-            return season.id;
-          })();
-          seasonFetchPromiseRef.current = promise;
-          promise.finally(() => {
-            seasonFetchPromiseRef.current = null;
-          });
-        }
-        seasonId = await promise;
-      }
+      const seasonId = await getOrFetchSeasonId(
+        apiClient,
+        accountId,
+        seasonIdRef,
+        seasonFetchPromiseRef,
+      );
 
       const monthKeys = getMonthKeysForRange(startDate, endDate);
 
@@ -479,27 +381,12 @@ export const useScheduleData = ({
   };
 
   const deleteGame = async (game: Game, force?: boolean) => {
-    let seasonId = seasonIdRef.current;
-    if (!seasonId) {
-      let promise = seasonFetchPromiseRef.current;
-      if (!promise) {
-        promise = (async () => {
-          const result = await getCurrentSeason({
-            client: apiClient,
-            path: { accountId },
-            throwOnError: false,
-          });
-          const season = unwrapApiResult(result, 'Failed to load current season');
-          seasonIdRef.current = season.id;
-          return season.id;
-        })();
-        seasonFetchPromiseRef.current = promise;
-        promise.finally(() => {
-          seasonFetchPromiseRef.current = null;
-        });
-      }
-      seasonId = await promise;
-    }
+    const seasonId = await getOrFetchSeasonId(
+      apiClient,
+      accountId,
+      seasonIdRef,
+      seasonFetchPromiseRef,
+    );
 
     await adapter.deleteGame({
       accountId,
@@ -521,29 +408,12 @@ export const useScheduleData = ({
       try {
         setLoadingStaticData(true);
 
-        let currentSeasonId = seasonIdRef.current;
-        if (!currentSeasonId) {
-          let promise = seasonFetchPromiseRef.current;
-          if (!promise) {
-            promise = (async () => {
-              const result = await getCurrentSeason({
-                client: apiClient,
-                path: { accountId },
-                throwOnError: false,
-              });
-              if (controller.signal.aborted) return '';
-              const season = unwrapApiResult(result, 'Failed to load current season');
-              seasonIdRef.current = season.id;
-              return season.id;
-            })();
-            seasonFetchPromiseRef.current = promise;
-            promise.finally(() => {
-              seasonFetchPromiseRef.current = null;
-            });
-          }
-          currentSeasonId = await promise;
-        }
-
+        const currentSeasonId = await getOrFetchSeasonId(
+          apiClient,
+          accountId,
+          seasonIdRef,
+          seasonFetchPromiseRef,
+        );
         if (controller.signal.aborted) return;
 
         try {
@@ -661,29 +531,12 @@ export const useScheduleData = ({
       try {
         setLoadingGames(true);
 
-        let seasonId = seasonIdRef.current;
-        if (!seasonId) {
-          let promise = seasonFetchPromiseRef.current;
-          if (!promise) {
-            promise = (async () => {
-              const result = await getCurrentSeason({
-                client: apiClient,
-                path: { accountId },
-                throwOnError: false,
-              });
-              if (controller.signal.aborted) return '';
-              const season = unwrapApiResult(result, 'Failed to load current season');
-              seasonIdRef.current = season.id;
-              return season.id;
-            })();
-            seasonFetchPromiseRef.current = promise;
-            promise.finally(() => {
-              seasonFetchPromiseRef.current = null;
-            });
-          }
-          seasonId = await promise;
-        }
-
+        const seasonId = await getOrFetchSeasonId(
+          apiClient,
+          accountId,
+          seasonIdRef,
+          seasonFetchPromiseRef,
+        );
         if (controller.signal.aborted) return;
 
         const monthKeys = getMonthKeysForRange(rangeStart, rangeEnd);
@@ -786,7 +639,6 @@ export const useScheduleData = ({
     leagueTeamsCache,
     loadingGames,
     loadingStaticData,
-    loadStaticData,
     loadGamesData,
     loadLeagueTeams,
     loadOfficials,
