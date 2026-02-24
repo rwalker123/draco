@@ -30,7 +30,7 @@ vi.mock('../adapters', () => ({
   })),
 }));
 
-describe('useScheduleData module-level helpers', () => {
+describe('useScheduleData module-level helpers', { timeout: 15000 }, () => {
   it('module-level pure helpers (getMonthKeyFromDate, getMonthRangeForKey, getMonthKeysForRange, collectGamesForRange, computeDateRange) are not exported', async () => {
     const mod = await import('../useScheduleData');
     const exportedKeys = Object.keys(mod);

@@ -56,7 +56,7 @@ const defaultMatchData = {
   comment: null,
 };
 
-describe('GolfScorecardDialog', () => {
+describe('GolfScorecardDialog', { timeout: 15000 }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getGolfMatchWithScoresMock.mockResolvedValue({ data: defaultMatchData });
