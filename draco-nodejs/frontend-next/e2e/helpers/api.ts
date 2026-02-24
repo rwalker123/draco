@@ -15,6 +15,7 @@ import {
   deleteGolfMatch,
   submitGolfMatchResults,
   getCurrentSeason,
+  deleteContact,
 } from '@draco/shared-api-client';
 import type {
   League,
@@ -234,5 +235,14 @@ export class ApiHelper {
     });
     if (error || !season) throw new Error(`getCurrentSeason failed: ${JSON.stringify(error)}`);
     return season;
+  }
+
+  async deleteContact(accountId: string, contactId: string): Promise<void> {
+    const { error, response } = await deleteContact({
+      client: this.client,
+      path: { accountId, contactId },
+      query: { force: true },
+    });
+    if (error) throw new ApiError('deleteContact', response.status, error);
   }
 }

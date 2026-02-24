@@ -31,6 +31,7 @@ export type GolfTestData = {
   player1ContactId: string;
   player1Name: string;
   player2RosterId: string;
+  player2ContactId: string;
 };
 
 export async function createGolfTestData(
@@ -128,6 +129,7 @@ export async function createGolfTestData(
     player1ContactId: player1.player.id,
     player1Name: `${player1.player.firstName} ${player1.player.lastName}`,
     player2RosterId: player2.id,
+    player2ContactId: player2.player.id,
   };
 }
 
@@ -149,6 +151,10 @@ export async function cleanupGolfTestData(baseURL: string, data: GolfTestData): 
 
   for (const rosterId of [data.player1RosterId, data.player2RosterId]) {
     await tryCleanup(() => api.deleteRosterEntry(data.accountId, data.seasonId, rosterId));
+  }
+
+  for (const contactId of [data.player1ContactId, data.player2ContactId]) {
+    await tryCleanup(() => api.deleteContact(data.accountId, contactId));
   }
 
   for (const teamId of [data.team1Id, data.team2Id]) {
