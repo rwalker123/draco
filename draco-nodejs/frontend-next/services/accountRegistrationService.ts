@@ -118,13 +118,18 @@ const assertRegisteredContact = (
 };
 
 export const AccountRegistrationService = {
-  async fetchMyContact(accountId: string, token?: string): Promise<ContactType | null> {
+  async fetchMyContact(
+    accountId: string,
+    token?: string,
+    signal?: AbortSignal,
+  ): Promise<ContactType | null> {
     const client = createApiClient({ token: token || undefined });
 
     try {
       const result = await getCurrentUserContact({
         client,
         path: { accountId },
+        signal,
         throwOnError: false,
       });
 

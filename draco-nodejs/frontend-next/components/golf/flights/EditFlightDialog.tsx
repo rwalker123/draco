@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -43,17 +43,17 @@ const EditFlightDialog: React.FC<EditFlightDialogProps> = ({
     }
   }, [flight]);
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     setFlightName(flight?.name || '');
     setError(null);
-  }, [flight]);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     resetForm();
     onClose();
-  }, [resetForm, onClose]);
+  };
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     if (!flight || !flightName.trim()) return;
 
     setLoading(true);
@@ -78,7 +78,7 @@ const EditFlightDialog: React.FC<EditFlightDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [flight, flightName, flightService, onSuccess, onError, handleClose]);
+  };
 
   const hasChanges = flight && flightName.trim() !== flight.name;
 

@@ -30,7 +30,9 @@ export type ScoreEntryTestData = {
   team2Name: string;
   matchId: string;
   player1RosterId: string;
+  player1ContactId: string;
   player2RosterId: string;
+  player2ContactId: string;
   matchDate: string;
   seasonOwned: boolean;
 };
@@ -48,7 +50,10 @@ export async function createScoreEntryTestData(
   const suffix = `${Date.now() % 10000000}w${workerIndex}`;
 
   const today = new Date();
-  const matchDate = today.toISOString().split('T')[0];
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const matchDate = `${year}-${month}-${day}`;
   const matchDateTime = `${matchDate}T14:00:00Z`;
 
   const league = await api.createLeague(accountId, { name: `E2E SE Lg ${suffix}` });
@@ -108,7 +113,9 @@ export async function createScoreEntryTestData(
     team2Name,
     matchId: match.id,
     player1RosterId: player1.id,
+    player1ContactId: player1.player.id,
     player2RosterId: player2.id,
+    player2ContactId: player2.player.id,
     matchDate,
     seasonOwned: false,
   };
@@ -135,6 +142,10 @@ export async function cleanupScoreEntryTestData(
 
   for (const rosterId of [data.player1RosterId, data.player2RosterId]) {
     await tryCleanup(() => api.deleteRosterEntry(data.accountId, data.seasonId, rosterId));
+  }
+
+  for (const contactId of [data.player1ContactId, data.player2ContactId]) {
+    await tryCleanup(() => api.deleteContact(data.accountId, contactId));
   }
 
   for (const teamId of [data.team1Id, data.team2Id]) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -36,12 +36,12 @@ const DeleteFlightDialog: React.FC<DeleteFlightDialogProps> = ({
 
   const flightService = useGolfFlights(accountId);
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     setError(null);
     onClose();
-  }, [onClose]);
+  };
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     if (!flight) return;
 
     setLoading(true);
@@ -64,7 +64,7 @@ const DeleteFlightDialog: React.FC<DeleteFlightDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [flight, flightService, onSuccess, onError, handleClose]);
+  };
 
   const teamCount = flight?.teamCount || 0;
 

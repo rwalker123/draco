@@ -15,7 +15,9 @@ export class GolfScoreEntryPage {
   async openScoreDialog(team1Name: string): Promise<void> {
     const card = this.gameCard(team1Name);
     await card.waitFor({ state: 'visible', timeout: 15000 });
-    await card.getByTestId('enter-game-results-btn').click();
+    const btn = card.getByTestId('enter-game-results-btn');
+    await btn.scrollIntoViewIfNeeded();
+    await btn.click({ force: true });
     await this.page.getByTestId('score-entry-dialog').waitFor({ state: 'visible' });
     await this.page.waitForLoadState('networkidle');
     await this.dialog()
@@ -88,12 +90,16 @@ export class GolfScoreEntryPage {
   }
 
   async saveScores(): Promise<void> {
-    await this.dialog().getByRole('button', { name: 'Save Scores' }).click();
+    const btn = this.dialog().getByRole('button', { name: 'Save Scores' });
+    await btn.scrollIntoViewIfNeeded();
+    await btn.click({ force: true });
     await this.page.getByTestId('score-entry-dialog').waitFor({ state: 'hidden', timeout: 15000 });
   }
 
   async closeDialog(): Promise<void> {
-    await this.dialog().getByRole('button', { name: 'Cancel' }).click();
+    const btn = this.dialog().getByRole('button', { name: 'Cancel' });
+    await btn.scrollIntoViewIfNeeded();
+    await btn.click({ force: true });
     await this.page.getByTestId('score-entry-dialog').waitFor({ state: 'hidden', timeout: 10000 });
   }
 }

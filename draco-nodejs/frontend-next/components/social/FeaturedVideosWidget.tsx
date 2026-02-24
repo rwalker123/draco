@@ -53,27 +53,27 @@ const FeaturedVideosWidget: React.FC<FeaturedVideosWidgetProps> = ({
       return;
     }
 
-    let isActive = true;
-    fetchVideos({ limit: 6 })
-      .then((items) => {
-        if (!isActive) {
-          return;
-        }
+    const controller = new AbortController();
+
+    const loadVideos = async () => {
+      try {
+        const items = await fetchVideos({ limit: 6 }, controller.signal);
+        if (controller.signal.aborted) return;
         setVideoState({ items, loading: false, error: null });
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
+      } catch (err) {
+        if (controller.signal.aborted) return;
         setVideoState({
           items: [],
           loading: false,
-          error: error instanceof Error ? error.message : 'Unable to load social videos.',
+          error: err instanceof Error ? err.message : 'Unable to load social videos.',
         });
-      });
+      }
+    };
+
+    void loadVideos();
 
     return () => {
-      isActive = false;
+      controller.abort();
     };
   }, [canFetch, fetchVideos]);
 

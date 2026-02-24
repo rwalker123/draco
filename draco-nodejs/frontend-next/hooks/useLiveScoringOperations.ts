@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useApiClient } from './useApiClient';
 import { useAccount } from '../context/AccountContext';
 import {
@@ -42,279 +42,260 @@ export function useLiveScoringOperations(): UseLiveScoringOperationsReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const clearError = useCallback(() => {
+  const clearError = () => {
     setError(null);
-  }, []);
+  };
 
-  const checkSessionStatus = useCallback(
-    async (matchId: string): Promise<LiveSessionStatus | null> => {
-      if (!currentAccount?.id) {
-        setError('No account selected');
-        return null;
-      }
+  const checkSessionStatus = async (matchId: string): Promise<LiveSessionStatus | null> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return null;
+    }
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const result = await getLiveSessionStatus({
-          client: apiClient,
-          path: {
-            accountId: currentAccount.id,
-            matchId,
-          },
-        });
+    try {
+      const result = await getLiveSessionStatus({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+      });
 
-        return unwrapApiResult(result, 'Failed to check session status');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to check session status';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [apiClient, currentAccount?.id],
-  );
+      return unwrapApiResult(result, 'Failed to check session status');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to check session status';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const getSessionState = useCallback(
-    async (matchId: string): Promise<LiveScoringState | null> => {
-      if (!currentAccount?.id) {
-        setError('No account selected');
-        return null;
-      }
+  const getSessionState = async (matchId: string): Promise<LiveScoringState | null> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return null;
+    }
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const result = await getLiveScoringState({
-          client: apiClient,
-          path: {
-            accountId: currentAccount.id,
-            matchId,
-          },
-        });
+    try {
+      const result = await getLiveScoringState({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+      });
 
-        return unwrapApiResult(result, 'Failed to get session state');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to get session state';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [apiClient, currentAccount?.id],
-  );
+      return unwrapApiResult(result, 'Failed to get session state');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to get session state';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const startSession = useCallback(
-    async (matchId: string, options?: StartLiveScoring): Promise<LiveScoringState | null> => {
-      if (!currentAccount?.id) {
-        setError('No account selected');
-        return null;
-      }
+  const startSession = async (
+    matchId: string,
+    options?: StartLiveScoring,
+  ): Promise<LiveScoringState | null> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return null;
+    }
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const result = await startLiveScoringSession({
-          client: apiClient,
-          path: {
-            accountId: currentAccount.id,
-            matchId,
-          },
-          body: options ?? {},
-        });
+    try {
+      const result = await startLiveScoringSession({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+        body: options ?? {},
+      });
 
-        return unwrapApiResult(result, 'Failed to start live scoring');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to start live scoring';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [apiClient, currentAccount?.id],
-  );
+      return unwrapApiResult(result, 'Failed to start live scoring');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to start live scoring';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const submitScore = useCallback(
-    async (matchId: string, data: SubmitLiveHoleScore): Promise<LiveHoleScore | null> => {
-      if (!currentAccount?.id) {
-        setError('No account selected');
-        return null;
-      }
+  const submitScore = async (
+    matchId: string,
+    data: SubmitLiveHoleScore,
+  ): Promise<LiveHoleScore | null> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return null;
+    }
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const result = await submitLiveHoleScore({
-          client: apiClient,
-          path: {
-            accountId: currentAccount.id,
-            matchId,
-          },
-          body: data,
-        });
+    try {
+      const result = await submitLiveHoleScore({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+        body: data,
+      });
 
-        return unwrapApiResult(result, 'Failed to submit score');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to submit score';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [apiClient, currentAccount?.id],
-  );
+      return unwrapApiResult(result, 'Failed to submit score');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to submit score';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const advanceHoleOp = useCallback(
-    async (matchId: string, holeNumber: number): Promise<boolean> => {
-      if (!currentAccount?.id) {
-        setError('No account selected');
-        return false;
-      }
+  const advanceHole = async (matchId: string, holeNumber: number): Promise<boolean> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return false;
+    }
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        await advanceLiveHole({
-          client: apiClient,
-          path: {
-            accountId: currentAccount.id,
-            matchId,
-          },
-          body: { holeNumber },
-        });
+    try {
+      await advanceLiveHole({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+        body: { holeNumber },
+      });
 
-        return true;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to advance hole';
-        setError(message);
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [apiClient, currentAccount?.id],
-  );
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to advance hole';
+      setError(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const finalizeSession = useCallback(
-    async (matchId: string): Promise<boolean> => {
-      if (!currentAccount?.id) {
-        setError('No account selected');
-        return false;
-      }
+  const finalizeSession = async (matchId: string): Promise<boolean> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return false;
+    }
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        await finalizeLiveScoringSession({
-          client: apiClient,
-          path: {
-            accountId: currentAccount.id,
-            matchId,
-          },
-          body: { confirm: true },
-        });
+    try {
+      await finalizeLiveScoringSession({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+        body: { confirm: true },
+      });
 
-        return true;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to finalize session';
-        setError(message);
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [apiClient, currentAccount?.id],
-  );
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to finalize session';
+      setError(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const stopSession = useCallback(
-    async (matchId: string): Promise<boolean> => {
-      if (!currentAccount?.id) {
-        setError('No account selected');
-        return false;
-      }
+  const stopSession = async (matchId: string): Promise<boolean> => {
+    if (!currentAccount?.id) {
+      setError('No account selected');
+      return false;
+    }
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        await stopLiveScoringSession({
-          client: apiClient,
-          path: {
-            accountId: currentAccount.id,
-            matchId,
-          },
-          body: { confirm: true },
-        });
+    try {
+      await stopLiveScoringSession({
+        client: apiClient,
+        path: {
+          accountId: currentAccount.id,
+          matchId,
+        },
+        body: { confirm: true },
+      });
 
-        return true;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to stop session';
-        setError(message);
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [apiClient, currentAccount?.id],
-  );
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to stop session';
+      setError(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const getActiveSessions = useCallback(
-    async (
-      accountIdOverride?: string,
-    ): Promise<{ matchId: string; sessionId: string }[] | null> => {
-      const accountId = accountIdOverride ?? currentAccount?.id;
-      if (!accountId) {
-        // Don't set error - this is expected for unauthenticated users without override
-        return null;
-      }
+  const getActiveSessions = async (
+    accountIdOverride?: string,
+  ): Promise<{ matchId: string; sessionId: string }[] | null> => {
+    const accountId = accountIdOverride ?? currentAccount?.id;
+    if (!accountId) {
+      return null;
+    }
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const result = await getActiveLiveScoringSessions({
-          client: apiClient,
-          path: {
-            accountId,
-          },
-        });
+    try {
+      const result = await getActiveLiveScoringSessions({
+        client: apiClient,
+        path: {
+          accountId,
+        },
+      });
 
-        return unwrapApiResult(result, 'Failed to get active sessions') as {
-          matchId: string;
-          sessionId: string;
-        }[];
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to get active sessions';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [apiClient, currentAccount?.id],
-  );
+      return unwrapApiResult(result, 'Failed to get active sessions') as {
+        matchId: string;
+        sessionId: string;
+      }[];
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to get active sessions';
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
     isLoading,
     error,
+    clearError,
     checkSessionStatus,
     getSessionState,
     startSession,
     submitScore,
-    advanceHole: advanceHoleOp,
+    advanceHole,
     finalizeSession,
     stopSession,
     getActiveSessions,
-    clearError,
   };
 }

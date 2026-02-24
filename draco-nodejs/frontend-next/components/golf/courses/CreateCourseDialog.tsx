@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Button,
@@ -77,11 +77,11 @@ const CreateCourseDialog: React.FC<CreateCourseDialogProps> = ({ open, onClose, 
     },
   });
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     reset();
     setSubmitError(null);
     onClose();
-  }, [onClose, reset]);
+  };
 
   const onFormSubmit = handleSubmit(async (data: CreateCourseFormValues) => {
     setSubmitError(null);

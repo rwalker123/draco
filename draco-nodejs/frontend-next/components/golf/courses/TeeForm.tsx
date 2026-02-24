@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   Alert,
   Box,
@@ -126,11 +126,11 @@ const TeeForm: React.FC<TeeFormProps> = ({
   const isEditMode = Boolean(tee);
   const defaultSubmitLabel = isEditMode ? 'Save Changes' : 'Add Tee';
 
-  const formResolver = useMemo(
-    () =>
-      zodResolver(TeeFormSchema) as Resolver<TeeFormValues, Record<string, never>, TeeFormValues>,
-    [],
-  );
+  const formResolver = zodResolver(TeeFormSchema) as Resolver<
+    TeeFormValues,
+    Record<string, never>,
+    TeeFormValues
+  >;
 
   const {
     control,
@@ -147,12 +147,9 @@ const TeeForm: React.FC<TeeFormProps> = ({
   const selectedColor = useWatch({ control, name: 'teeColor' });
   const colorConfig = TEE_COLORS.find((c) => c.value === selectedColor) || TEE_COLORS[2];
 
-  const holes = useMemo(() => {
-    return Array.from({ length: numberOfHoles }, (_, i) => i + 1);
-  }, [numberOfHoles]);
-
-  const frontNineHoles = useMemo(() => holes.slice(0, 9), [holes]);
-  const backNineHoles = useMemo(() => holes.slice(9, 18), [holes]);
+  const holes = Array.from({ length: numberOfHoles }, (_, i) => i + 1);
+  const frontNineHoles = holes.slice(0, 9);
+  const backNineHoles = holes.slice(9, 18);
 
   const onFormSubmit = handleSubmit(async (data) => {
     setSubmitError(null);

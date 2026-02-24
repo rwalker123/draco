@@ -109,90 +109,80 @@ const SurveySpotlightWidget: React.FC<SurveySpotlightWidgetProps> = ({
   const [status, setStatus] = React.useState<SpotlightStatus>('loading');
   const [spotlight, setSpotlight] = React.useState<PlayerSurveySpotlightType | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const isMountedRef = React.useRef(true);
+
+  const fallbackMessage = getFallbackError(teamSeasonId);
+  const accountSurveyHref = surveysHref
+    ? surveysHref
+    : accountId
+      ? `/account/${encodeURIComponent(accountId)}/surveys`
+      : '#';
 
   React.useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  const fallbackMessage = React.useMemo(() => getFallbackError(teamSeasonId), [teamSeasonId]);
-  const accountSurveyHref = React.useMemo(() => {
-    if (surveysHref) {
-      return surveysHref;
-    }
     if (!accountId) {
-      return '#';
-    }
-    return `/account/${encodeURIComponent(accountId)}/surveys`;
-  }, [accountId, surveysHref]);
-
-  const loadSpotlight = React.useCallback(async () => {
-    if (!accountId) {
-      if (isMountedRef.current) {
-        setStatus('empty');
-        setSpotlight(null);
-      }
+      setStatus('empty');
+      setSpotlight(null);
       return;
     }
 
-    if (isMountedRef.current) {
+    const controller = new AbortController();
+
+    const loadSpotlight = async () => {
       setStatus('loading');
       setError(null);
-    }
 
-    try {
-      const response = teamSeasonId
-        ? await getPlayerSurveyTeamSpotlight({
-            client: apiClient,
-            path: { accountId, teamSeasonId },
-            throwOnError: false,
-          })
-        : await getPlayerSurveySpotlight({
-            client: apiClient,
-            path: { accountId },
-            throwOnError: false,
-          });
+      try {
+        const response = teamSeasonId
+          ? await getPlayerSurveyTeamSpotlight({
+              client: apiClient,
+              path: { accountId, teamSeasonId },
+              throwOnError: false,
+              signal: controller.signal,
+            })
+          : await getPlayerSurveySpotlight({
+              client: apiClient,
+              path: { accountId },
+              throwOnError: false,
+              signal: controller.signal,
+            });
 
-      const rawSpotlight = unwrapApiResult(response, fallbackMessage);
-      const parsed = normalizeSpotlight(rawSpotlight);
+        if (controller.signal.aborted) return;
 
-      if (!isMountedRef.current) {
-        return;
-      }
+        const rawSpotlight = unwrapApiResult(response, fallbackMessage);
+        const parsed = normalizeSpotlight(rawSpotlight);
 
-      if (!parsed) {
-        setError('Unable to load player survey spotlight.');
+        if (controller.signal.aborted) return;
+
+        if (!parsed) {
+          setError('Unable to load player survey spotlight.');
+          setSpotlight(null);
+          setStatus('error');
+          return;
+        }
+
+        setSpotlight(parsed);
+        setStatus('success');
+      } catch (err) {
+        if (controller.signal.aborted) return;
+
+        if (err instanceof ApiClientError && err.status === 404) {
+          setStatus('empty');
+          setSpotlight(null);
+          return;
+        }
+
+        const message = err instanceof ApiClientError ? err.message : fallbackMessage;
+        setError(message);
         setSpotlight(null);
         setStatus('error');
-        return;
       }
+    };
 
-      setSpotlight(parsed);
-      setStatus('success');
-    } catch (err) {
-      if (!isMountedRef.current) {
-        return;
-      }
-
-      if (err instanceof ApiClientError && err.status === 404) {
-        setStatus('empty');
-        setSpotlight(null);
-        return;
-      }
-
-      const message = err instanceof ApiClientError ? err.message : fallbackMessage;
-      setError(message);
-      setSpotlight(null);
-      setStatus('error');
-    }
-  }, [accountId, apiClient, fallbackMessage, teamSeasonId]);
-
-  React.useEffect(() => {
     void loadSpotlight();
-  }, [accountId, teamSeasonId, loadSpotlight]);
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, teamSeasonId, apiClient, fallbackMessage]);
 
   const renderSpotlightContent = () => {
     const isLoading = status === 'loading';

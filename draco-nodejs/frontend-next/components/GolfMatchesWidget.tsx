@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -21,6 +21,7 @@ import {
   listGolfMatchesForSeason,
   getGolfTeamWithRoster,
   calculateBatchCourseHandicaps,
+  getActiveLiveScoringSessions,
 } from '@draco/shared-api-client';
 import type {
   GolfMatch,
@@ -36,7 +37,6 @@ import { useAuth } from '../context/AuthContext';
 import GolfScorecardDialog from './golf/GolfScorecardDialog';
 import LiveScoringDialog from './golf/live-scoring/LiveScoringDialog';
 import { AccountOptional } from './account/AccountOptional';
-import { useLiveScoringOperations } from '../hooks/useLiveScoringOperations';
 import { formatDateInTimezone } from '../utils/dateUtils';
 
 interface GolfMatchesWidgetProps {
@@ -54,6 +54,11 @@ export default function GolfMatchesWidget({
   const timeZone = useAccountTimezone();
   const { user } = useAuth();
   const isAuthenticated = !!user;
+
+  const apiClientRef = useRef(apiClient);
+  useEffect(() => {
+    apiClientRef.current = apiClient;
+  }, [apiClient]);
   const [recentMatches, setRecentMatches] = useState<GolfMatch[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<GolfMatch[]>([]);
   const [teams, setTeams] = useState<Map<string, GolfTeamWithRoster>>(new Map());
@@ -69,8 +74,6 @@ export default function GolfMatchesWidget({
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const currentContactId = user?.contact?.id;
-
-  const { getActiveSessions } = useLiveScoringOperations();
 
   const isMatchToday = (matchDate: string): boolean => {
     const matchDay = formatDateInTimezone(matchDate, timeZone, {
@@ -88,9 +91,20 @@ export default function GolfMatchesWidget({
 
   useEffect(() => {
     const loadActiveSessions = async () => {
-      const sessions = await getActiveSessions(accountId);
-      if (sessions) {
-        setActiveSessions(new Set(sessions.map((s) => s.matchId)));
+      try {
+        const result = await getActiveLiveScoringSessions({
+          client: apiClientRef.current,
+          path: { accountId },
+        });
+        const sessions = unwrapApiResult(result, 'Failed to get active sessions') as {
+          matchId: string;
+          sessionId: string;
+        }[];
+        if (sessions) {
+          setActiveSessions(new Set(sessions.map((s) => s.matchId)));
+        }
+      } catch {
+        // Non-critical — don't block match loading
       }
     };
 
@@ -111,7 +125,7 @@ export default function GolfMatchesWidget({
         endDate.setHours(23, 59, 59, 999);
 
         const matchesResult = await listGolfMatchesForSeason({
-          client: apiClient,
+          client: apiClientRef.current,
           path: { accountId, seasonId },
           query: {
             startDate: startDate.toISOString(),
@@ -130,7 +144,7 @@ export default function GolfMatchesWidget({
 
         const teamPromises = Array.from(uniqueTeamIds).map((teamSeasonId) =>
           getGolfTeamWithRoster({
-            client: apiClient,
+            client: apiClientRef.current,
             path: { accountId, seasonId, teamSeasonId },
             throwOnError: false,
           }),
@@ -164,7 +178,7 @@ export default function GolfMatchesWidget({
 
           if (golferIds.length > 0) {
             const handicapResult = await calculateBatchCourseHandicaps({
-              client: apiClient,
+              client: apiClientRef.current,
               path: { accountId },
               body: {
                 golferIds,
@@ -218,7 +232,7 @@ export default function GolfMatchesWidget({
 
     loadMatches();
     loadActiveSessions();
-  }, [accountId, apiClient, seasonId, getActiveSessions, refreshTrigger]);
+  }, [accountId, seasonId, refreshTrigger]);
 
   const getTeamName = (teamId: string, teamName: string | undefined): string => {
     const team = teams.get(teamId);

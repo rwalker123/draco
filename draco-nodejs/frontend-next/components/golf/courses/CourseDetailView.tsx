@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Button, CircularProgress, Paper } from '@mui/material';
 import type {
   GolfCourseWithTeesType,
@@ -35,7 +35,7 @@ const CourseDetailView: React.FC<CourseDetailViewProps> = ({
     setHasChanges(false);
   }, [course]);
 
-  const handleFieldChange = useCallback((field: string, value: string | number | null) => {
+  const handleFieldChange = (field: string, value: string | number | null) => {
     setEditedCourse((prev) => {
       const updated = { ...prev };
 
@@ -56,9 +56,9 @@ const CourseDetailView: React.FC<CourseDetailViewProps> = ({
       return updated;
     });
     setHasChanges(true);
-  }, []);
+  };
 
-  const handleSave = useCallback(async () => {
+  const handleSave = async () => {
     if (!onSave || !hasChanges) return;
 
     setIsSaving(true);
@@ -81,12 +81,12 @@ const CourseDetailView: React.FC<CourseDetailViewProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [onSave, hasChanges, editedCourse]);
+  };
 
-  const handleReset = useCallback(() => {
+  const handleReset = () => {
     setEditedCourse(course);
     setHasChanges(false);
-  }, [course]);
+  };
 
   return (
     <Paper sx={{ p: 3 }}>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -76,22 +76,23 @@ function IndividualLiveWatchDialogContent({
   const isSessionFinalized = sessionState?.status === 'finalized';
   const isSessionStopped = sessionState?.status === 'stopped';
 
-  const playerScores = useMemo(() => {
-    if (!sessionState) return [];
-
-    const holeScores = Array(sessionState.holesPlayed).fill(0);
+  const playerScoreHoles = sessionState
+    ? (Array(sessionState.holesPlayed).fill(0) as number[])
+    : [];
+  if (sessionState) {
     sessionState.scores.forEach((s) => {
-      holeScores[s.holeNumber - 1] = s.score;
+      playerScoreHoles[s.holeNumber - 1] = s.score;
     });
-
-    return [
-      {
-        playerName: 'Score',
-        holeScores,
-        totalScore: sessionState.scores.reduce((sum, s) => sum + s.score, 0),
-      },
-    ];
-  }, [sessionState]);
+  }
+  const playerScores = sessionState
+    ? [
+        {
+          playerName: 'Score',
+          holeScores: playerScoreHoles,
+          totalScore: sessionState.scores.reduce((sum, s) => sum + s.score, 0),
+        },
+      ]
+    : [];
 
   return (
     <>

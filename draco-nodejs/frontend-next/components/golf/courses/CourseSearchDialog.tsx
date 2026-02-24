@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -70,7 +70,7 @@ export const CourseSearchDialog: React.FC<CourseSearchDialogProps> = ({
 
   const isLeagueContext = leagueCourses.length > 0;
 
-  const handleSearch = useCallback(async () => {
+  const handleSearch = async () => {
     if (searchQuery.length < 2) {
       setError('Please enter at least 2 characters to search');
       return;
@@ -105,27 +105,24 @@ export const CourseSearchDialog: React.FC<CourseSearchDialogProps> = ({
     } else {
       setError(searchResult.error);
     }
-  }, [search, searchQuery, isLeagueContext]);
+  };
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && searchQuery.length >= 2) {
-        handleSearch();
-      }
-    },
-    [handleSearch, searchQuery],
-  );
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchQuery.length >= 2) {
+      handleSearch();
+    }
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     setSearchQuery('');
     setResults([]);
     setError(null);
     setSelectedCourse(null);
     setImporting(false);
     onClose();
-  }, [onClose]);
+  };
 
-  const handleSelectCourse = useCallback(async () => {
+  const handleSelectCourse = async () => {
     if (!selectedCourse) return;
 
     setError(null);
@@ -142,12 +139,12 @@ export const CourseSearchDialog: React.FC<CourseSearchDialogProps> = ({
     } finally {
       setImporting(false);
     }
-  }, [selectedCourse, onSelectCourse, handleClose]);
+  };
 
-  const handleCreateManually = useCallback(() => {
+  const handleCreateManually = () => {
     handleClose();
     onCreateManually?.();
-  }, [handleClose, onCreateManually]);
+  };
 
   return (
     <Dialog

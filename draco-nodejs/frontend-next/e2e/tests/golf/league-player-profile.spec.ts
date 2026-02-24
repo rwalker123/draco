@@ -29,10 +29,15 @@ test.describe('Golf League Player Profile', () => {
     await expect(page.getByText('Handicap Index')).toBeVisible();
   });
 
-  test('navigates back when clicking back button', async ({ page }) => {
-    const currentUrl = page.url();
+  test('navigates back when clicking back button', async ({ page, golfData }) => {
+    const leaderboardUrl = `/account/${golfData.accountId}/seasons/${golfData.seasonId}/golf`;
+    await page.goto(leaderboardUrl);
+    await page.waitForLoadState('networkidle');
+    const profileUrl = `/account/${golfData.accountId}/seasons/${golfData.seasonId}/golf/players/${golfData.player1ContactId}?name=${encodeURIComponent(golfData.player1Name)}`;
+    await page.goto(profileUrl);
+    await page.waitForLoadState('networkidle');
     await profilePage.backButton.click();
-    await expect(page).not.toHaveURL(currentUrl);
+    await expect(page).not.toHaveURL(profileUrl, { timeout: 10_000 });
   });
 
   test('maintains auth state after page refresh', async ({ page, golfData }) => {

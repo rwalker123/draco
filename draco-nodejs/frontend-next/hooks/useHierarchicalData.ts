@@ -1,26 +1,31 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
 import { HierarchicalSeason } from '../types/emails/recipients';
 import { useApiClient } from './useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 import { mapLeagueSetup } from '../utils/leagueSeasonMapper';
 
-export function useHierarchicalData() {
+export function useHierarchicalData(
+  accountId: string | null | undefined,
+  seasonId: string | null | undefined,
+) {
   const [hierarchicalData, setHierarchicalData] = useState<HierarchicalSeason | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const apiClient = useApiClient();
 
-  const loadHierarchicalData = useCallback(
-    async (accountId: string, seasonId: string) => {
-      if (!accountId || !seasonId) return;
+  useEffect(() => {
+    if (!accountId || !seasonId) return;
+
+    const controller = new AbortController();
+
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
 
       try {
-        setLoading(true);
-        setError(null);
-
         const result = await listSeasonLeagueSeasons({
           client: apiClient,
           path: { accountId, seasonId },
@@ -30,8 +35,11 @@ export function useHierarchicalData() {
             includePlayerCounts: true,
             includeManagerCounts: true,
           },
+          signal: controller.signal,
           throwOnError: false,
         });
+
+        if (controller.signal.aborted) return;
 
         const data = unwrapApiResult(result, 'Failed to load hierarchical data');
         const mapped = mapLeagueSetup(data);
@@ -70,20 +78,27 @@ export function useHierarchicalData() {
 
         setHierarchicalData(transformedData);
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error('Error loading hierarchical data:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
         setError(errorMessage);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-    },
-    [apiClient],
-  );
+    };
+
+    void loadData();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, seasonId, apiClient]);
 
   return {
     hierarchicalData,
     loading,
     error,
-    loadHierarchicalData,
   };
 }

@@ -5,7 +5,10 @@ import { Box, Typography, Switch, Stack, CircularProgress, Alert, Paper } from '
 import { HierarchicalGroupSelectionProps } from '../../../types/emails/recipients';
 import { useHierarchicalData } from '../../../hooks/useHierarchicalData';
 import { useHierarchicalMaps } from '../../../hooks/useHierarchicalMaps';
-import { useHierarchicalSelection } from '../../../hooks/useHierarchicalSelection';
+import {
+  useHierarchicalSelection,
+  applySelectionToMap,
+} from '../../../hooks/useHierarchicalSelection';
 import HierarchicalTree from './HierarchicalTree';
 
 const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
@@ -18,33 +21,21 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
   initialSelectedIds,
 }) => {
   const initialSelectionAppliedRef = useRef(false);
-  // Data fetching
   const {
     hierarchicalData,
     loading: dataLoading,
     error: dataError,
-    loadHierarchicalData,
-  } = useHierarchicalData();
+  } = useHierarchicalData(accountId, seasonId);
 
-  // Hierarchy mapping
   const hierarchyMaps = useHierarchicalMaps(hierarchicalData, seasonId);
 
-  // Selection logic
-  const { handleSelectionChange, applyMultipleSelections } = useHierarchicalSelection(
+  const { handleSelectionChange } = useHierarchicalSelection(
     itemSelectedState,
     hierarchyMaps,
     managersOnly,
     onSelectionChange,
   );
 
-  // Load data when accountId or seasonId changes
-  useEffect(() => {
-    if (accountId && seasonId) {
-      loadHierarchicalData(accountId, seasonId);
-    }
-  }, [accountId, seasonId, loadHierarchicalData]);
-
-  // Apply initial selections when hierarchy maps become available
   useEffect(() => {
     if (
       initialSelectionAppliedRef.current ||
@@ -56,8 +47,19 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
 
     initialSelectionAppliedRef.current = true;
 
-    applyMultipleSelections(initialSelectedIds, 'selected');
-  }, [hierarchyMaps.parentMap.size, initialSelectedIds, applyMultipleSelections]);
+    const newStateMap = new Map(itemSelectedState);
+    initialSelectedIds.forEach((itemId) => {
+      applySelectionToMap(newStateMap, itemId, 'selected', hierarchyMaps);
+    });
+    onSelectionChange(newStateMap, managersOnly);
+  }, [
+    hierarchyMaps.parentMap.size,
+    initialSelectedIds,
+    itemSelectedState,
+    hierarchyMaps,
+    managersOnly,
+    onSelectionChange,
+  ]);
 
   // Handle managers-only toggle
   const handleManagersOnlyChange = (event: React.ChangeEvent<HTMLInputElement>) => {

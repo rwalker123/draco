@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -22,7 +22,7 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useLiveScoring } from '../../../context/LiveScoringContext';
 import { useLiveScoringOperations } from '../../../hooks/useLiveScoringOperations';
-import { getGolfTeamWithRoster } from '@draco/shared-api-client';
+import { getGolfTeamWithRoster, stopLiveScoringSession } from '@draco/shared-api-client';
 import type { GolfTeamWithRoster } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { LiveScoringProvider } from '../../../context/LiveScoringContext';
@@ -171,21 +171,31 @@ function LiveScoringDialogContent({
 
   useEffect(() => {
     if (startingSession && connectionError && !isConnecting && !isConnected) {
-      stopSession(matchId);
+      void stopLiveScoringSession({
+        client: apiClient,
+        path: { accountId, matchId },
+        body: { confirm: true },
+        throwOnError: false,
+      });
       setStartingSession(false);
       startingSessionRef.current = false;
     }
-  }, [startingSession, connectionError, isConnecting, isConnected, stopSession, matchId]);
+  }, [startingSession, connectionError, isConnecting, isConnected, apiClient, accountId, matchId]);
 
   useEffect(() => {
     return () => {
       if (startingSessionRef.current) {
-        stopSession(matchId);
+        void stopLiveScoringSession({
+          client: apiClient,
+          path: { accountId, matchId },
+          body: { confirm: true },
+          throwOnError: false,
+        });
       }
     };
-  }, [matchId, stopSession]);
+  }, [matchId, apiClient, accountId]);
 
-  const handleStartSession = useCallback(async () => {
+  const handleStartSession = async () => {
     setStartingSession(true);
     startingSessionRef.current = true;
     const result = await startSession(matchId, { startingHole: 1 });
@@ -195,7 +205,7 @@ function LiveScoringDialogContent({
       setStartingSession(false);
       startingSessionRef.current = false;
     }
-  }, [matchId, startSession, connect]);
+  };
 
   const handleScoreChange = (golferId: string, value: string) => {
     if (value === '' || /^\d{1,2}$/.test(value)) {

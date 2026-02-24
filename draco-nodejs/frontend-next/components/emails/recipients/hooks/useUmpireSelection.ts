@@ -1,19 +1,15 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { UmpireType } from '@draco/shared-schemas';
+import { listAccountUmpires } from '@draco/shared-api-client';
 import { UmpireRecipientSelection } from '../../../../types/emails/recipients';
-
-type UmpireServiceResult<T> =
-  | { success: true; data: T; message: string }
-  | { success: false; error: string };
+import { unwrapApiResult } from '../../../../utils/apiResult';
+import { useApiClient } from '../../../../hooks/useApiClient';
 
 export interface UseUmpireSelectionProps {
   accountId: string;
-  token: string | null;
-  listUmpires: (params: {
-    limit?: number;
-  }) => Promise<UmpireServiceResult<{ umpires: UmpireType[]; pagination?: unknown }>>;
+  enabled?: boolean;
   initialUmpireRecipients?: UmpireRecipientSelection[];
 }
 
@@ -25,7 +21,6 @@ export interface UseUmpireSelectionResult {
   umpireSelectionCount: number;
   hasUmpires: boolean;
 
-  loadUmpires: () => Promise<void>;
   handleToggleAllUmpires: (checked: boolean) => void;
   handleToggleUmpire: (umpireId: string, checked: boolean) => void;
   setSelectedUmpireIds: React.Dispatch<React.SetStateAction<Set<string>>>;
@@ -35,10 +30,10 @@ export interface UseUmpireSelectionResult {
 
 export function useUmpireSelection({
   accountId,
-  token,
-  listUmpires,
+  enabled = false,
   initialUmpireRecipients,
 }: UseUmpireSelectionProps): UseUmpireSelectionResult {
+  const apiClient = useApiClient();
   const [umpires, setUmpires] = useState<UmpireType[]>([]);
   const [selectedUmpireIds, setSelectedUmpireIds] = useState<Set<string>>(() => {
     if (initialUmpireRecipients && initialUmpireRecipients.length > 0) {
@@ -49,47 +44,58 @@ export function useUmpireSelection({
   const [umpiresLoading, setUmpiresLoading] = useState(false);
   const [umpiresError, setUmpiresError] = useState<string | null>(null);
 
-  const umpireSelectionCount = useMemo(() => selectedUmpireIds.size, [selectedUmpireIds]);
+  const umpireSelectionCount = selectedUmpireIds.size;
+  const hasUmpires = umpires.length > 0;
 
-  const hasUmpires = useMemo(() => umpires.length > 0, [umpires]);
+  useEffect(() => {
+    if (!enabled || !accountId) return;
 
-  const loadUmpires = useCallback(async () => {
-    if (!accountId || !token) {
+    const controller = new AbortController();
+
+    const loadData = async () => {
+      setUmpiresLoading(true);
+      setUmpiresError(null);
+
+      try {
+        const result = await listAccountUmpires({
+          client: apiClient,
+          path: { accountId },
+          query: { page: 1, limit: 100, skip: 0, sortBy: 'contacts.lastname', sortOrder: 'asc' },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+
+        const data = unwrapApiResult(result, 'Failed to load umpires') as { umpires: UmpireType[] };
+        setUmpires(data.umpires || []);
+      } catch (err: unknown) {
+        if (controller.signal.aborted) return;
+        setUmpiresError(err instanceof Error ? err.message : 'Failed to load umpires');
+      } finally {
+        if (!controller.signal.aborted) {
+          setUmpiresLoading(false);
+        }
+      }
+    };
+
+    void loadData();
+
+    return () => {
+      controller.abort();
+    };
+  }, [enabled, accountId, apiClient]);
+
+  const handleToggleAllUmpires = (checked: boolean) => {
+    if (!checked) {
+      setSelectedUmpireIds(new Set());
       return;
     }
+    const umpiresWithEmail = umpires.filter((umpire) => umpire.email?.trim());
+    setSelectedUmpireIds(new Set(umpiresWithEmail.map((item) => item.id)));
+  };
 
-    setUmpiresLoading(true);
-    setUmpiresError(null);
-
-    try {
-      const result = await listUmpires({ limit: 100 });
-
-      if (result.success) {
-        setUmpires(result.data.umpires || []);
-      } else {
-        setUmpiresError(result.error ?? 'Failed to load umpires');
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load umpires';
-      setUmpiresError(message);
-    } finally {
-      setUmpiresLoading(false);
-    }
-  }, [accountId, token, listUmpires]);
-
-  const handleToggleAllUmpires = useCallback(
-    (checked: boolean) => {
-      if (!checked) {
-        setSelectedUmpireIds(new Set());
-        return;
-      }
-      const umpiresWithEmail = umpires.filter((umpire) => umpire.email?.trim());
-      setSelectedUmpireIds(new Set(umpiresWithEmail.map((item) => item.id)));
-    },
-    [umpires],
-  );
-
-  const handleToggleUmpire = useCallback((umpireId: string, checked: boolean) => {
+  const handleToggleUmpire = (umpireId: string, checked: boolean) => {
     setSelectedUmpireIds((prev) => {
       const next = new Set(prev);
       if (checked) {
@@ -99,13 +105,13 @@ export function useUmpireSelection({
       }
       return next;
     });
-  }, []);
+  };
 
-  const clearUmpireSelections = useCallback(() => {
+  const clearUmpireSelections = () => {
     setSelectedUmpireIds(new Set());
-  }, []);
+  };
 
-  const getUmpireSelections = useCallback((): UmpireRecipientSelection[] => {
+  const getUmpireSelections = (): UmpireRecipientSelection[] => {
     const selections: UmpireRecipientSelection[] = [];
     selectedUmpireIds.forEach((id) => {
       const umpire = umpires.find((item) => item.id === id);
@@ -116,7 +122,7 @@ export function useUmpireSelection({
       });
     });
     return selections;
-  }, [selectedUmpireIds, umpires]);
+  };
 
   return {
     umpires,
@@ -126,7 +132,6 @@ export function useUmpireSelection({
     umpireSelectionCount,
     hasUmpires,
 
-    loadUmpires,
     handleToggleAllUmpires,
     handleToggleUmpire,
     setSelectedUmpireIds,

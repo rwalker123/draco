@@ -1,7 +1,4 @@
-// usePlayerClassifieds Hook
-// Main hook for managing Player Classifieds data and operations
-
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNotifications } from './useNotifications';
 import { playerClassifiedService } from '../services/playerClassifiedService';
 import { IUsePlayerClassifiedsReturn, IClassifiedsUIState } from '../types/playerClassifieds';
@@ -16,20 +13,18 @@ import {
 export const usePlayerClassifieds = (
   accountId: string,
   token?: string,
+  teamsWantedPage?: number,
+  teamsWantedLimit?: number,
 ): IUsePlayerClassifiedsReturn => {
-  // Data
   const [playersWanted, setPlayersWanted] = useState<PlayersWantedClassifiedType[]>([]);
   const [teamsWanted, setTeamsWanted] = useState<TeamsWantedPublicClassifiedType[]>([]);
 
-  // Loading states
   const [loading, setLoading] = useState(false);
   const [paginationLoading, setPaginationLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
 
-  // Error state
   const [error, setError] = useState<string | null>(null);
 
-  // Pagination state
   const [paginationInfo, setPaginationInfo] = useState<{
     total: number;
     totalPages: number;
@@ -42,7 +37,6 @@ export const usePlayerClassifieds = (
     hasPrev: false,
   });
 
-  // UI State
   const [uiState] = useState<IClassifiedsUIState>({
     loading: false,
     error: null,
@@ -54,272 +48,74 @@ export const usePlayerClassifieds = (
     viewMode: 'grid',
   });
 
-  // Notifications
   const { showNotification } = useNotifications();
 
-  // ============================================================================
-  // DATA LOADING
-  // ============================================================================
+  const [reloadKey, setReloadKey] = useState(0);
+  const [teamsWantedReloadKey, setTeamsWantedReloadKey] = useState(0);
 
-  // Load initial data
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [playersResponse, teamsResponse] = await Promise.all([
-        playerClassifiedService.getPlayersWanted(accountId),
-        token
-          ? playerClassifiedService.getTeamsWanted(accountId, undefined, token)
-          : Promise.resolve(null),
-      ]);
+  const hasPagination = teamsWantedPage !== undefined && teamsWantedLimit !== undefined;
 
-      // Handle Players Wanted response
-      setPlayersWanted(playersResponse.data);
-
-      // Handle Teams Wanted response
-      if (teamsResponse) {
-        setTeamsWanted(teamsResponse.data);
-      }
-    } catch {
-      const errorMessage = 'Failed to load classifieds';
-      showNotification(errorMessage, 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, token, showNotification]);
-
-  // Load data on mount
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    const controller = new AbortController();
 
-  // ============================================================================
-  // PLAYERS WANTED OPERATIONS
-  // ============================================================================
-
-  // Create Players Wanted
-  const createPlayersWanted = useCallback(
-    async (data: UpsertPlayersWantedClassifiedType): Promise<void> => {
-      if (!token) {
-        throw new Error('Authentication required to create Players Wanted');
-      }
-
-      setFormLoading(true);
+    const doLoad = async () => {
+      setLoading(true);
       try {
-        const createData: UpsertPlayersWantedClassifiedType = {
-          teamEventName: data.teamEventName,
-          description: data.description,
-          positionsNeeded: data.positionsNeeded,
-          notifyOptOut: data.notifyOptOut ?? false,
-        };
+        const [playersResponse, teamsResponse] = await Promise.all([
+          playerClassifiedService.getPlayersWanted(accountId, undefined, controller.signal),
+          !hasPagination && token
+            ? playerClassifiedService.getTeamsWanted(accountId, undefined, token, controller.signal)
+            : Promise.resolve(null),
+        ]);
 
-        const newClassified = await playerClassifiedService.createPlayersWanted(
-          accountId,
-          createData,
-          token,
-        );
-        setPlayersWanted((prev) => [newClassified, ...prev]);
-        showNotification('Players Wanted created successfully', 'success');
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Failed to create Players Wanted';
-        showNotification(errorMessage, 'error');
-        throw error;
-      } finally {
-        setFormLoading(false);
-      }
-    },
-    [accountId, token, showNotification],
-  );
+        if (controller.signal.aborted) return;
 
-  // Update Players Wanted
-  const updatePlayersWanted = useCallback(
-    async (id: string, data: UpsertPlayersWantedClassifiedType): Promise<void> => {
-      if (!token) {
-        throw new Error('Authentication required to update Players Wanted');
-      }
+        setPlayersWanted(playersResponse.data);
 
-      setFormLoading(true);
-      try {
-        const updatedClassified = await playerClassifiedService.updatePlayersWanted(
-          accountId,
-          id,
-          data,
-          token,
-        );
-        setPlayersWanted((prev) =>
-          prev.map((item) => (item.id.toString() === id ? updatedClassified : item)),
-        );
-        showNotification('Players Wanted updated successfully', 'success');
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Failed to update Players Wanted';
-        showNotification(errorMessage, 'error');
-        throw error;
-      } finally {
-        setFormLoading(false);
-      }
-    },
-    [accountId, token, showNotification],
-  );
-
-  // Delete Players Wanted
-  const deletePlayersWanted = useCallback(
-    async (id: string): Promise<void> => {
-      if (!token) {
-        throw new Error('Authentication required to delete Players Wanted');
-      }
-
-      try {
-        await playerClassifiedService.deletePlayersWanted(accountId, id, token);
-        setPlayersWanted((prev) => prev.filter((item) => item.id.toString() !== id));
-        showNotification('Players Wanted deleted successfully', 'success');
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Failed to delete Players Wanted';
-        showNotification(errorMessage, 'error');
-        throw error;
-      }
-    },
-    [accountId, token, showNotification],
-  );
-
-  // ============================================================================
-  // TEAMS WANTED OPERATIONS
-  // ============================================================================
-
-  // Create Teams Wanted
-  const createTeamsWanted = useCallback(
-    async (data: UpsertTeamsWantedClassifiedType): Promise<void> => {
-      setFormLoading(true);
-      try {
-        if (!data.birthDate) {
-          throw new Error('Birth date is required');
+        if (teamsResponse) {
+          setTeamsWanted(teamsResponse.data);
         }
-
-        const createData: UpsertTeamsWantedClassifiedType = {
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          experience: data.experience,
-          positionsPlayed: data.positionsPlayed,
-          birthDate: data.birthDate,
-          notifyOptOut: data.notifyOptOut,
-        };
-
-        const newClassified = await playerClassifiedService.createTeamsWanted(
-          accountId,
-          createData,
-        );
-        setTeamsWanted((prev) => [newClassified, ...prev]);
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Failed to create Teams Wanted';
+      } catch {
+        if (controller.signal.aborted) return;
+        const errorMessage = 'Failed to load classifieds';
         showNotification(errorMessage, 'error');
-        throw error;
       } finally {
-        setFormLoading(false);
-      }
-    },
-    [accountId, showNotification],
-  );
-
-  // Update Teams Wanted
-  const updateTeamsWanted = useCallback(
-    async (
-      id: string,
-      data: UpsertTeamsWantedClassifiedType,
-      accessCode: string,
-    ): Promise<TeamsWantedOwnerClassifiedType> => {
-      setFormLoading(true);
-
-      try {
-        // If we have a token (authenticated user), use token; otherwise use access code
-        const updatedClassified = await playerClassifiedService.updateTeamsWanted(
-          accountId,
-          id,
-          data,
-          token || undefined,
-          accessCode,
-        );
-        setTeamsWanted((prev) =>
-          prev.map((item: TeamsWantedPublicClassifiedType) =>
-            item && item.id && item.id.toString() === id
-              ? (updatedClassified as TeamsWantedPublicClassifiedType)
-              : item,
-          ),
-        );
-        return updatedClassified;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Failed to update Teams Wanted';
-        showNotification(errorMessage, 'error');
-        throw error;
-      } finally {
-        setFormLoading(false);
-      }
-    },
-    [accountId, token, showNotification],
-  );
-
-  // Delete Teams Wanted
-  const deleteTeamsWanted = useCallback(
-    async (id: string, accessCode: string): Promise<{ success: boolean; error?: string }> => {
-      try {
-        // If we have a token (authenticated user), use token; otherwise use access code
-        if (token) {
-          await playerClassifiedService.deleteTeamsWanted(accountId, id, token);
-        } else {
-          await playerClassifiedService.deleteTeamsWanted(accountId, id, undefined, accessCode);
+        if (!controller.signal.aborted) {
+          setLoading(false);
         }
-        setTeamsWanted((prev) => prev.filter((item) => item.id.toString() !== id));
-        return { success: true };
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Failed to delete Teams Wanted';
-        return { success: false, error: errorMessage };
       }
-    },
-    [accountId, token],
-  );
+    };
 
-  // ============================================================================
-  // DATA REFRESH
-  // ============================================================================
+    void doLoad();
 
-  // Refresh all data
-  const refreshData = useCallback(async (): Promise<void> => {
-    await loadData();
-  }, [loadData]);
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, token, reloadKey, hasPagination, showNotification]);
 
-  // Clear error
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  useEffect(() => {
+    if (!token || !hasPagination) return;
 
-  // ============================================================================
-  // PAGINATION AND LOADING
-  // ============================================================================
+    const controller = new AbortController();
 
-  // Load paginated Teams Wanted data
-  const loadTeamsWantedPage = useCallback(
-    async (page: number, limit: number) => {
+    const loadPage = async () => {
       setError(null);
       setPaginationLoading(true);
 
       try {
-        if (!token) {
-          return;
-        }
         const response = await playerClassifiedService.getTeamsWanted(
           accountId,
           {
-            page,
-            limit,
+            page: teamsWantedPage,
+            limit: teamsWantedLimit,
             sortBy: 'dateCreated',
             sortOrder: 'desc',
           },
           token,
+          controller.signal,
         );
+
+        if (controller.signal.aborted) return;
 
         setTeamsWanted(response.data);
         setPaginationInfo({
@@ -329,42 +125,219 @@ export const usePlayerClassifieds = (
           hasPrev: response.pagination?.hasPrev || false,
         });
         setError(null);
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to load Teams Wanted';
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load Teams Wanted';
         showNotification(errorMessage, 'error');
       } finally {
-        setPaginationLoading(false);
+        if (!controller.signal.aborted) {
+          setPaginationLoading(false);
+        }
       }
-    },
-    [accountId, token, showNotification],
-  );
+    };
 
-  // Clear Teams Wanted state (for preventing duplicate keys)
-  const clearTeamsWantedState = useCallback(() => {
+    void loadPage();
+
+    return () => {
+      controller.abort();
+    };
+  }, [
+    accountId,
+    token,
+    teamsWantedPage,
+    teamsWantedLimit,
+    hasPagination,
+    teamsWantedReloadKey,
+    showNotification,
+  ]);
+
+  const createPlayersWanted = async (data: UpsertPlayersWantedClassifiedType): Promise<void> => {
+    if (!token) {
+      throw new Error('Authentication required to create Players Wanted');
+    }
+
+    setFormLoading(true);
+    try {
+      const createData: UpsertPlayersWantedClassifiedType = {
+        teamEventName: data.teamEventName,
+        description: data.description,
+        positionsNeeded: data.positionsNeeded,
+        notifyOptOut: data.notifyOptOut ?? false,
+      };
+
+      const newClassified = await playerClassifiedService.createPlayersWanted(
+        accountId,
+        createData,
+        token,
+      );
+      setPlayersWanted((prev) => [newClassified, ...prev]);
+      showNotification('Players Wanted created successfully', 'success');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to create Players Wanted';
+      showNotification(errorMessage, 'error');
+      throw error;
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const updatePlayersWanted = async (
+    id: string,
+    data: UpsertPlayersWantedClassifiedType,
+  ): Promise<void> => {
+    if (!token) {
+      throw new Error('Authentication required to update Players Wanted');
+    }
+
+    setFormLoading(true);
+    try {
+      const updatedClassified = await playerClassifiedService.updatePlayersWanted(
+        accountId,
+        id,
+        data,
+        token,
+      );
+      setPlayersWanted((prev) =>
+        prev.map((item) => (item.id.toString() === id ? updatedClassified : item)),
+      );
+      showNotification('Players Wanted updated successfully', 'success');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update Players Wanted';
+      showNotification(errorMessage, 'error');
+      throw error;
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const deletePlayersWanted = async (id: string): Promise<void> => {
+    if (!token) {
+      throw new Error('Authentication required to delete Players Wanted');
+    }
+
+    try {
+      await playerClassifiedService.deletePlayersWanted(accountId, id, token);
+      setPlayersWanted((prev) => prev.filter((item) => item.id.toString() !== id));
+      showNotification('Players Wanted deleted successfully', 'success');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete Players Wanted';
+      showNotification(errorMessage, 'error');
+      throw error;
+    }
+  };
+
+  const createTeamsWanted = async (data: UpsertTeamsWantedClassifiedType): Promise<void> => {
+    setFormLoading(true);
+    try {
+      if (!data.birthDate) {
+        throw new Error('Birth date is required');
+      }
+
+      const createData: UpsertTeamsWantedClassifiedType = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        experience: data.experience,
+        positionsPlayed: data.positionsPlayed,
+        birthDate: data.birthDate,
+        notifyOptOut: data.notifyOptOut,
+      };
+
+      const newClassified = await playerClassifiedService.createTeamsWanted(accountId, createData);
+      setTeamsWanted((prev) => [newClassified, ...prev]);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create Teams Wanted';
+      showNotification(errorMessage, 'error');
+      throw error;
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const updateTeamsWanted = async (
+    id: string,
+    data: UpsertTeamsWantedClassifiedType,
+    accessCode: string,
+  ): Promise<TeamsWantedOwnerClassifiedType> => {
+    setFormLoading(true);
+
+    try {
+      const updatedClassified = await playerClassifiedService.updateTeamsWanted(
+        accountId,
+        id,
+        data,
+        token || undefined,
+        accessCode,
+      );
+      setTeamsWanted((prev) =>
+        prev.map((item: TeamsWantedPublicClassifiedType) =>
+          item && item.id && item.id.toString() === id
+            ? (updatedClassified as TeamsWantedPublicClassifiedType)
+            : item,
+        ),
+      );
+      return updatedClassified;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update Teams Wanted';
+      showNotification(errorMessage, 'error');
+      throw error;
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const deleteTeamsWanted = async (
+    id: string,
+    accessCode: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (token) {
+        await playerClassifiedService.deleteTeamsWanted(accountId, id, token);
+      } else {
+        await playerClassifiedService.deleteTeamsWanted(accountId, id, undefined, accessCode);
+      }
+      setTeamsWanted((prev) => prev.filter((item) => item.id.toString() !== id));
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete Teams Wanted';
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  const refreshData = (): void => {
+    setReloadKey((k) => k + 1);
+  };
+
+  const clearError = () => {
+    setError(null);
+  };
+
+  const reloadTeamsWantedPage = () => {
+    setTeamsWantedReloadKey((k) => k + 1);
+  };
+
+  const clearTeamsWantedState = () => {
     setTeamsWanted([]);
     setError(null);
-  }, []);
+  };
 
   return {
-    // Data
     playersWanted,
     teamsWanted,
 
-    // Loading states
     loading,
     paginationLoading,
     formLoading,
 
-    // Error state
     error,
 
-    // UI state
     uiState,
 
-    // Pagination info
     paginationInfo,
 
-    // Actions
     createPlayersWanted,
     updatePlayersWanted,
     deletePlayersWanted,
@@ -372,14 +345,11 @@ export const usePlayerClassifieds = (
     updateTeamsWanted,
     deleteTeamsWanted,
 
-    // Pagination methods
-    loadTeamsWantedPage,
+    reloadTeamsWantedPage,
     clearTeamsWantedState,
 
-    // Refresh data
     refreshData,
 
-    // Error handling
     clearError,
   };
 };

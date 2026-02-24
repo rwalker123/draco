@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
 import {
   createIndividualGolfAccount,
   createAuthenticatedGolfAccount,
@@ -83,256 +82,234 @@ export type DeleteScoreResult = { success: true } | { success: false; error: str
 export const useIndividualGolfAccountService = () => {
   const apiClient = useApiClient();
 
-  const create = useCallback(
-    async ({
-      firstName,
-      middleName,
-      lastName,
-      email,
-      password,
-      timezone,
-      homeCourseId,
-      captchaToken,
-    }: CreateIndividualGolfAccountInput): Promise<IndividualGolfAccountResult> => {
-      try {
-        const result = await createIndividualGolfAccount({
-          client: apiClient,
-          throwOnError: false,
-          headers: captchaToken ? { 'cf-turnstile-token': captchaToken } : undefined,
-          body: {
-            firstName: firstName.trim(),
-            middleName: middleName?.trim(),
-            lastName: lastName.trim(),
-            email: email.trim(),
-            password,
-            timezone,
-            homeCourseId,
-          },
-        });
+  const create = async ({
+    firstName,
+    middleName,
+    lastName,
+    email,
+    password,
+    timezone,
+    homeCourseId,
+    captchaToken,
+  }: CreateIndividualGolfAccountInput): Promise<IndividualGolfAccountResult> => {
+    try {
+      const result = await createIndividualGolfAccount({
+        client: apiClient,
+        throwOnError: false,
+        headers: captchaToken ? { 'cf-turnstile-token': captchaToken } : undefined,
+        body: {
+          firstName: firstName.trim(),
+          middleName: middleName?.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
+          password,
+          timezone,
+          homeCourseId,
+        },
+      });
 
-        const data = unwrapApiResult(result, ERROR_MESSAGE);
+      const data = unwrapApiResult(result, ERROR_MESSAGE);
 
-        return { success: true, data } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : ERROR_MESSAGE;
+      return { success: true, data } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ERROR_MESSAGE;
+      return { success: false, error: message } as const;
+    }
+  };
+
+  const createAuthenticated = async ({
+    firstName,
+    middleName,
+    lastName,
+    timezone,
+    homeCourseId,
+  }: CreateAuthenticatedGolfAccountInput): Promise<AuthenticatedGolfAccountResult> => {
+    try {
+      const result = await createAuthenticatedGolfAccount({
+        client: apiClient,
+        throwOnError: false,
+        body: {
+          firstName: firstName?.trim(),
+          middleName: middleName?.trim(),
+          lastName: lastName?.trim(),
+          timezone,
+          homeCourseId,
+        },
+      });
+
+      const data = unwrapApiResult(result, ERROR_MESSAGE);
+
+      return { success: true, data } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ERROR_MESSAGE;
+      return { success: false, error: message } as const;
+    }
+  };
+
+  const deleteAccount = async (
+    accountId: string,
+    deleteUser: boolean = false,
+  ): Promise<DeleteGolfAccountResult> => {
+    try {
+      const result = await deleteIndividualGolfAccount({
+        client: apiClient,
+        throwOnError: false,
+        path: { accountId },
+        body: { deleteUser },
+      });
+
+      const data = unwrapApiResult(result, 'Failed to delete account. Please try again.');
+
+      return {
+        success: true,
+        message: data.message ?? 'Account deleted successfully',
+      } as const;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to delete account. Please try again.';
+      return { success: false, error: message } as const;
+    }
+  };
+
+  const getGolfer = async (accountId: string): Promise<GetGolferResult> => {
+    try {
+      const result = await getAccountGolfer({
+        client: apiClient,
+        throwOnError: false,
+        path: { accountId },
+      });
+
+      const data = unwrapApiResult(result, 'Failed to get golfer profile. Please try again.');
+
+      return { success: true, data } as const;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to get golfer profile. Please try again.';
+      return { success: false, error: message } as const;
+    }
+  };
+
+  const getGolferSummary = async (accountId: string): Promise<GetGolferSummaryResult> => {
+    try {
+      const result = await getAccountGolferSummary({
+        client: apiClient,
+        throwOnError: false,
+        path: { accountId },
+      });
+
+      if (result.error) {
+        const message = result.error.message ?? 'Failed to get golfer summary.';
         return { success: false, error: message } as const;
       }
-    },
-    [apiClient],
-  );
 
-  const createAuthenticated = useCallback(
-    async ({
-      firstName,
-      middleName,
-      lastName,
-      timezone,
-      homeCourseId,
-    }: CreateAuthenticatedGolfAccountInput): Promise<AuthenticatedGolfAccountResult> => {
-      try {
-        const result = await createAuthenticatedGolfAccount({
-          client: apiClient,
-          throwOnError: false,
-          body: {
-            firstName: firstName?.trim(),
-            middleName: middleName?.trim(),
-            lastName: lastName?.trim(),
-            timezone,
-            homeCourseId,
-          },
-        });
+      return { success: true, data: result.data ?? null } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to get golfer summary.';
+      return { success: false, error: message } as const;
+    }
+  };
 
-        const data = unwrapApiResult(result, ERROR_MESSAGE);
+  const updateHomeCourse = async (
+    accountId: string,
+    homeCourseId: string | null,
+  ): Promise<UpdateHomeCourseResult> => {
+    try {
+      const result = await updateGolferHomeCourse({
+        client: apiClient,
+        throwOnError: false,
+        path: { accountId },
+        body: { homeCourseId },
+      });
 
-        return { success: true, data } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : ERROR_MESSAGE;
-        return { success: false, error: message } as const;
-      }
-    },
-    [apiClient],
-  );
+      const data = unwrapApiResult(result, 'Failed to update home course. Please try again.');
 
-  const deleteAccount = useCallback(
-    async (accountId: string, deleteUser: boolean = false): Promise<DeleteGolfAccountResult> => {
-      try {
-        const result = await deleteIndividualGolfAccount({
-          client: apiClient,
-          throwOnError: false,
-          path: { accountId },
-          body: { deleteUser },
-        });
+      return { success: true, data } as const;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update home course. Please try again.';
+      return { success: false, error: message } as const;
+    }
+  };
 
-        const data = unwrapApiResult(result, 'Failed to delete account. Please try again.');
+  const createScore = async (
+    accountId: string,
+    scoreData: CreateGolfScore,
+  ): Promise<CreateScoreResult> => {
+    try {
+      const result = await createGolferScore({
+        client: apiClient,
+        throwOnError: false,
+        path: { accountId },
+        body: scoreData,
+      });
 
-        return { success: true, message: data.message ?? 'Account deleted successfully' } as const;
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to delete account. Please try again.';
-        return { success: false, error: message } as const;
-      }
-    },
-    [apiClient],
-  );
+      const data = unwrapApiResult(result, 'Failed to create score. Please try again.');
 
-  const getGolfer = useCallback(
-    async (accountId: string): Promise<GetGolferResult> => {
-      try {
-        const result = await getAccountGolfer({
-          client: apiClient,
-          throwOnError: false,
-          path: { accountId },
-        });
+      return { success: true, data } as const;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to create score. Please try again.';
+      return { success: false, error: message } as const;
+    }
+  };
 
-        const data = unwrapApiResult(result, 'Failed to get golfer profile. Please try again.');
+  const getScores = async (accountId: string, limit?: number): Promise<GetScoresResult> => {
+    try {
+      const result = await getGolferScores({
+        client: apiClient,
+        throwOnError: false,
+        path: { accountId },
+        query: { limit },
+      });
 
-        return { success: true, data } as const;
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : 'Failed to get golfer profile. Please try again.';
-        return { success: false, error: message } as const;
-      }
-    },
-    [apiClient],
-  );
+      const data = unwrapApiResult(result, 'Failed to get scores. Please try again.');
 
-  const getGolferSummary = useCallback(
-    async (accountId: string): Promise<GetGolferSummaryResult> => {
-      try {
-        const result = await getAccountGolferSummary({
-          client: apiClient,
-          throwOnError: false,
-          path: { accountId },
-        });
+      return { success: true, data } as const;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to get scores. Please try again.';
+      return { success: false, error: message } as const;
+    }
+  };
 
-        if (result.error) {
-          const message = result.error.message ?? 'Failed to get golfer summary.';
-          return { success: false, error: message } as const;
-        }
+  const updateScore = async (
+    accountId: string,
+    scoreId: string,
+    scoreData: UpdateGolfScore,
+  ): Promise<UpdateScoreResult> => {
+    try {
+      const result = await updateGolferScore({
+        client: apiClient,
+        throwOnError: false,
+        path: { accountId, scoreId },
+        body: scoreData,
+      });
 
-        return { success: true, data: result.data ?? null } as const;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to get golfer summary.';
-        return { success: false, error: message } as const;
-      }
-    },
-    [apiClient],
-  );
+      const data = unwrapApiResult(result, 'Failed to update score. Please try again.');
 
-  const updateHomeCourse = useCallback(
-    async (accountId: string, homeCourseId: string | null): Promise<UpdateHomeCourseResult> => {
-      try {
-        const result = await updateGolferHomeCourse({
-          client: apiClient,
-          throwOnError: false,
-          path: { accountId },
-          body: { homeCourseId },
-        });
+      return { success: true, data } as const;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update score. Please try again.';
+      return { success: false, error: message } as const;
+    }
+  };
 
-        const data = unwrapApiResult(result, 'Failed to update home course. Please try again.');
+  const deleteScore = async (accountId: string, scoreId: string): Promise<DeleteScoreResult> => {
+    try {
+      await deleteGolferScore({
+        client: apiClient,
+        throwOnError: false,
+        path: { accountId, scoreId },
+      });
 
-        return { success: true, data } as const;
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : 'Failed to update home course. Please try again.';
-        return { success: false, error: message } as const;
-      }
-    },
-    [apiClient],
-  );
-
-  const createScore = useCallback(
-    async (accountId: string, scoreData: CreateGolfScore): Promise<CreateScoreResult> => {
-      try {
-        const result = await createGolferScore({
-          client: apiClient,
-          throwOnError: false,
-          path: { accountId },
-          body: scoreData,
-        });
-
-        const data = unwrapApiResult(result, 'Failed to create score. Please try again.');
-
-        return { success: true, data } as const;
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to create score. Please try again.';
-        return { success: false, error: message } as const;
-      }
-    },
-    [apiClient],
-  );
-
-  const getScores = useCallback(
-    async (accountId: string, limit?: number): Promise<GetScoresResult> => {
-      try {
-        const result = await getGolferScores({
-          client: apiClient,
-          throwOnError: false,
-          path: { accountId },
-          query: { limit },
-        });
-
-        const data = unwrapApiResult(result, 'Failed to get scores. Please try again.');
-
-        return { success: true, data } as const;
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to get scores. Please try again.';
-        return { success: false, error: message } as const;
-      }
-    },
-    [apiClient],
-  );
-
-  const updateScore = useCallback(
-    async (
-      accountId: string,
-      scoreId: string,
-      scoreData: UpdateGolfScore,
-    ): Promise<UpdateScoreResult> => {
-      try {
-        const result = await updateGolferScore({
-          client: apiClient,
-          throwOnError: false,
-          path: { accountId, scoreId },
-          body: scoreData,
-        });
-
-        const data = unwrapApiResult(result, 'Failed to update score. Please try again.');
-
-        return { success: true, data } as const;
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to update score. Please try again.';
-        return { success: false, error: message } as const;
-      }
-    },
-    [apiClient],
-  );
-
-  const deleteScore = useCallback(
-    async (accountId: string, scoreId: string): Promise<DeleteScoreResult> => {
-      try {
-        await deleteGolferScore({
-          client: apiClient,
-          throwOnError: false,
-          path: { accountId, scoreId },
-        });
-
-        return { success: true } as const;
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to delete score. Please try again.';
-        return { success: false, error: message } as const;
-      }
-    },
-    [apiClient],
-  );
+      return { success: true } as const;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to delete score. Please try again.';
+      return { success: false, error: message } as const;
+    }
+  };
 
   return {
     create,
@@ -345,5 +322,5 @@ export const useIndividualGolfAccountService = () => {
     getScores,
     updateScore,
     deleteScore,
-  } as const;
+  };
 };

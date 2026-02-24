@@ -35,7 +35,7 @@ import {
 import { useNotifications } from '../../../hooks/useNotifications';
 import { useHierarchicalData } from '../../../hooks/useHierarchicalData';
 import { useHierarchicalMaps } from '../../../hooks/useHierarchicalMaps';
-import { useHierarchicalSelection } from '../../../hooks/useHierarchicalSelection';
+import { applySelectionToMap } from '../../../hooks/useHierarchicalSelection';
 import HierarchicalGroupSelection from './HierarchicalGroupSelection';
 import { ManagerStateProvider } from './context/ManagerStateContext';
 import {
@@ -91,7 +91,6 @@ interface SimplifiedRecipientSelectionState {
 import { EmailRecipientError, EmailRecipientErrorCode } from '../../../types/errors';
 import { normalizeError, createEmailRecipientError } from '../../../utils/errorHandling';
 import { useAuth } from '../../../context/AuthContext';
-import { useUmpireService } from '../../../hooks/useUmpireService';
 
 export interface AdvancedRecipientDialogProps {
   open: boolean;
@@ -172,12 +171,12 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { showNotification } = useNotifications();
   const { token } = useAuth();
-  const { listUmpires } = useUmpireService(accountId);
 
   // Workout selection hook
   const workoutHook = useWorkoutSelection({
     accountId,
     token,
+    enabled: open,
     initialWorkoutRecipients,
     initialWorkoutManagersOnly,
   });
@@ -186,19 +185,19 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   const teamsWantedHook = useTeamsWantedSelection({
     accountId,
     token,
+    enabled: open,
     initialTeamsWantedRecipients,
   });
 
   // Umpire selection hook
   const umpireHook = useUmpireSelection({
     accountId,
-    token,
-    listUmpires,
+    enabled: open,
     initialUmpireRecipients,
   });
 
   // Hierarchical data for converting hierarchical selections to ContactGroups
-  const { hierarchicalData, loadHierarchicalData } = useHierarchicalData();
+  const { hierarchicalData } = useHierarchicalData(open ? accountId : null, open ? seasonId : null);
 
   // Hierarchy mapping
   const hierarchyMaps = useHierarchicalMaps(hierarchicalData, seasonId || '');
@@ -238,7 +237,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     teamsWantedError,
     teamsWantedSelectionCount,
     hasTeamsWanted,
-    loadTeamsWanted,
     handleToggleAllTeamsWanted,
     handleToggleTeamsWanted,
     clearTeamsWantedSelections,
@@ -253,7 +251,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     umpiresError,
     umpireSelectionCount,
     hasUmpires,
-    loadUmpires,
     handleToggleAllUmpires,
     handleToggleUmpire,
     clearUmpireSelections,
@@ -443,14 +440,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     // For now, we'll keep hierarchical selections separate from the main selectedGroups
   };
 
-  // Use hierarchical selection hook to get applyMultipleSelections for initial selection restoration
-  const { applyMultipleSelections } = useHierarchicalSelection(
-    hierarchicalSelectedIds,
-    hierarchyMaps,
-    hierarchicalManagersOnly,
-    handleHierarchicalSelectionChange,
-  );
-
   // Track whether we've populated the cache for the current dialog session
   const cachePopulatedRef = useRef(false);
 
@@ -484,13 +473,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     }
   }, [open, token, accountId, rowsPerPage, fetchContactsPage]);
 
-  // Load hierarchical data when dialog opens
-  useEffect(() => {
-    if (open && accountId && seasonId) {
-      loadHierarchicalData(accountId, seasonId);
-    }
-  }, [open, accountId, seasonId, loadHierarchicalData]);
-
   // Check if seasonId is available when dialog opens
   useEffect(() => {
     if (open && !seasonId) {
@@ -511,29 +493,22 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     }
 
     initialHierarchicalAppliedRef.current = true;
-    applyMultipleSelections(initialHierarchicalIds, 'selected');
+
+    const applyInitialSelections = async () => {
+      const newStateMap = new Map(hierarchicalSelectedIds);
+      initialHierarchicalIds.forEach((itemId) => {
+        applySelectionToMap(newStateMap, itemId, 'selected', hierarchyMaps);
+      });
+      setHierarchicalSelectedIds(newStateMap);
+    };
+
+    void applyInitialSelections();
   }, [
     hierarchyMaps.parentMap.size,
     initialHierarchicalIds,
     hierarchicalCleared,
-    applyMultipleSelections,
-  ]);
-
-  useEffect(() => {
-    if (open) {
-      loadActiveWorkouts();
-      loadTeamsWanted();
-      loadUmpires();
-      loadRecentPastWorkouts();
-      loadOlderWorkoutsOptions();
-    }
-  }, [
-    open,
-    loadActiveWorkouts,
-    loadTeamsWanted,
-    loadUmpires,
-    loadRecentPastWorkouts,
-    loadOlderWorkoutsOptions,
+    hierarchicalSelectedIds,
+    hierarchyMaps,
   ]);
 
   // User's requested tab - what they clicked on

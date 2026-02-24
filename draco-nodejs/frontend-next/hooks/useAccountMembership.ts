@@ -11,37 +11,37 @@ export function useAccountMembership(accountId?: string | null) {
   const [contact, setContact] = useState<ContactType | null>(null);
 
   useEffect(() => {
-    let mounted = true;
+    if (!accountId || !user || !token) {
+      setIsMember(null);
+      setContact(null);
+      return;
+    }
+
+    const controller = new AbortController();
     const run = async () => {
-      if (!accountId) {
-        setIsMember(null);
-        setContact(null);
-        return;
-      }
-      if (!user || !token) {
-        setIsMember(null);
-        setContact(null);
-        return;
-      }
       setLoading(true);
       setError(null);
       try {
-        const contact = await AccountRegistrationService.fetchMyContact(accountId, token);
-        if (!mounted) return;
-        setContact(contact);
-        setIsMember(!!contact);
+        const result = await AccountRegistrationService.fetchMyContact(
+          accountId,
+          token,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        setContact(result);
+        setIsMember(!!result);
       } catch {
-        if (!mounted) return;
+        if (controller.signal.aborted) return;
         setError('Failed to check membership');
         setIsMember(null);
         setContact(null);
       } finally {
-        if (mounted) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
-    run();
+    void run();
     return () => {
-      mounted = false;
+      controller.abort();
     };
   }, [accountId, user, token]);
 

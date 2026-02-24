@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Box,
@@ -51,35 +51,35 @@ const CourseList: React.FC<CourseListProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<GolfLeagueCourseType | null>(null);
 
-  const handleDeleteClick = useCallback((course: GolfLeagueCourseType) => {
+  const handleDeleteClick = (course: GolfLeagueCourseType) => {
     setCourseToDelete(course);
     setDeleteDialogOpen(true);
-  }, []);
+  };
 
-  const handleDeleteConfirm = useCallback(() => {
+  const handleDeleteConfirm = () => {
     if (courseToDelete && onDelete) {
       onDelete(courseToDelete);
     }
     setDeleteDialogOpen(false);
     setCourseToDelete(null);
-  }, [courseToDelete, onDelete]);
+  };
 
-  const handleDeleteCancel = useCallback(() => {
+  const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
     setCourseToDelete(null);
-  }, []);
+  };
 
-  const formatCourseLocation = useCallback((course: GolfLeagueCourseType): string => {
+  const formatCourseLocation = (course: GolfLeagueCourseType): string => {
     const { city, state } = course.course;
     const parts = [city, state].filter(Boolean);
     return parts.length > 0 ? parts.join(', ') : '';
-  }, []);
+  };
 
-  const formatCoursePar = useCallback((course: GolfLeagueCourseType): string => {
+  const formatCoursePar = (course: GolfLeagueCourseType): string => {
     const { mensPar, numberOfHoles } = course.course;
     const totalPar = mensPar.slice(0, numberOfHoles).reduce((sum, par) => sum + par, 0);
     return `Par ${totalPar} · ${numberOfHoles} holes`;
-  }, []);
+  };
 
   if (loading) {
     return (

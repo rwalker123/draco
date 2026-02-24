@@ -127,15 +127,7 @@ const EmailComposePageInternal: React.FC<
     // Use centralized notification management
     const { notification, showNotification, hideNotification } = useNotifications();
 
-    // Pre-load hierarchical data so it's available when dialog opens
-    const { hierarchicalData, loadHierarchicalData } = useHierarchicalData();
-
-    // Load hierarchical data on mount
-    useEffect(() => {
-      if (accountId && seasonId) {
-        loadHierarchicalData(accountId, seasonId);
-      }
-    }, [accountId, seasonId, loadHierarchicalData]);
+    const { hierarchicalData } = useHierarchicalData(accountId, seasonId);
 
     // Overall loading state - memoized for performance
     const isGeneralLoading = useMemo(() => loading, [loading]);

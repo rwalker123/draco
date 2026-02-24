@@ -27,6 +27,11 @@ import { useAuth } from '../../../context/AuthContext';
 import AccountPageHeader from '../../../components/AccountPageHeader';
 import {
   getAccountById,
+  getAccountGolfer,
+  getAccountGolferSummary,
+  getGolferScores,
+  getIndividualLiveSessionStatus,
+  getIndividualLiveScoringState,
   Golfer,
   GolfScoreWithDetails,
   GolferSummary,
@@ -77,10 +82,9 @@ const IndividualGolfAccountHome: React.FC = () => {
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
-  const { getGolfer, getGolferSummary, updateHomeCourse, getScores, deleteScore } =
+  const { getGolferSummary, updateHomeCourse, getScores, deleteScore } =
     useIndividualGolfAccountService();
-  const { checkSessionStatus, getSessionState, startSession, stopSession } =
-    useIndividualLiveScoringOperations();
+  const { startSession, stopSession } = useIndividualLiveScoringOperations();
 
   useEffect(() => {
     if (!accountIdStr) {
@@ -116,31 +120,88 @@ const IndividualGolfAccountHome: React.FC = () => {
         setAccount(typedAccount);
         setCurrentSeason(responseCurrentSeason as AccountSeasonWithStatusType | null);
 
-        const summaryResult = await getGolferSummary(accountIdStr);
-        if (!controller.signal.aborted && summaryResult.success) {
-          setGolferSummary(summaryResult.data);
+        try {
+          const summary = unwrapApiResult(
+            await getAccountGolferSummary({
+              client: apiClient,
+              path: { accountId: accountIdStr },
+              signal: controller.signal,
+              throwOnError: false,
+            }),
+            'Failed to load golfer summary',
+          );
+          if (!controller.signal.aborted) {
+            setGolferSummary(summary);
+          }
+        } catch {
+          // Non-critical — page still renders without summary
         }
 
         const isCurrentUserOwner = user?.userId === typedAccount.accountOwner?.user?.userId;
 
         if (isCurrentUserOwner) {
-          const golferResult = await getGolfer(accountIdStr);
-          if (!controller.signal.aborted && golferResult.success) {
-            setGolfer(golferResult.data);
+          try {
+            const golferData = unwrapApiResult(
+              await getAccountGolfer({
+                client: apiClient,
+                path: { accountId: accountIdStr },
+                signal: controller.signal,
+                throwOnError: false,
+              }),
+              'Failed to load golfer profile',
+            );
+            if (!controller.signal.aborted) {
+              setGolfer(golferData);
+            }
+          } catch {
+            // Non-critical — page still renders without golfer profile
           }
 
-          const scoresResult = await getScores(accountIdStr, 20);
-          if (!controller.signal.aborted && scoresResult.success) {
-            setRecentScores(scoresResult.data);
+          try {
+            const scores = unwrapApiResult(
+              await getGolferScores({
+                client: apiClient,
+                path: { accountId: accountIdStr },
+                query: { limit: 20 },
+                signal: controller.signal,
+                throwOnError: false,
+              }),
+              'Failed to load scores',
+            );
+            if (!controller.signal.aborted) {
+              setRecentScores(scores);
+            }
+          } catch {
+            // Non-critical — page still renders without scores
           }
         }
 
-        const liveStatus = await checkSessionStatus(accountIdStr);
-        if (!controller.signal.aborted && liveStatus?.hasActiveSession) {
-          const sessionState = await getSessionState(accountIdStr);
-          if (!controller.signal.aborted && sessionState) {
-            setLiveSession(sessionState);
+        try {
+          const liveStatus = unwrapApiResult(
+            await getIndividualLiveSessionStatus({
+              client: apiClient,
+              path: { accountId: accountIdStr },
+              signal: controller.signal,
+              throwOnError: false,
+            }),
+            'Failed to load live session status',
+          );
+          if (!controller.signal.aborted && liveStatus?.hasActiveSession) {
+            const sessionState = unwrapApiResult(
+              await getIndividualLiveScoringState({
+                client: apiClient,
+                path: { accountId: accountIdStr },
+                signal: controller.signal,
+                throwOnError: false,
+              }),
+              'Failed to load live session state',
+            );
+            if (!controller.signal.aborted) {
+              setLiveSession(sessionState);
+            }
           }
+        } catch {
+          // Non-critical — page still renders without live session
         }
       } catch (err) {
         if (controller.signal.aborted) return;
@@ -160,16 +221,7 @@ const IndividualGolfAccountHome: React.FC = () => {
     return () => {
       controller.abort();
     };
-  }, [
-    accountIdStr,
-    apiClient,
-    getGolfer,
-    getGolferSummary,
-    getScores,
-    user?.userId,
-    checkSessionStatus,
-    getSessionState,
-  ]);
+  }, [accountIdStr, user?.userId, apiClient]);
 
   const handleRoundEntered = async (score: GolfScoreWithDetails) => {
     setRecentScores((prev) => [score, ...prev.slice(0, 19)]);
