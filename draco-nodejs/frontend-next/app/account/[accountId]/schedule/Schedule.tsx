@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMediaQuery } from '@mui/material';
 import { useAuth } from '../../../../context/AuthContext';
 import { useCurrentSeason } from '../../../../hooks/useCurrentSeason';
@@ -32,16 +32,11 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   const { currentAccount } = useAccount();
   const accountType = currentAccount?.accountType;
 
-  const fetchCurrentSeasonRef = useRef(fetchCurrentSeason);
-  useEffect(() => {
-    fetchCurrentSeasonRef.current = fetchCurrentSeason;
-  }, [fetchCurrentSeason]);
-
   useEffect(() => {
     if (accountId) {
-      fetchCurrentSeasonRef.current().catch(console.error);
+      void fetchCurrentSeason();
     }
-  }, [accountId]);
+  }, [accountId, fetchCurrentSeason]);
 
   const [filterType, setFilterType] = useState<FilterType>('month');
   const [filterDate, setFilterDate] = useState<Date>(new Date());

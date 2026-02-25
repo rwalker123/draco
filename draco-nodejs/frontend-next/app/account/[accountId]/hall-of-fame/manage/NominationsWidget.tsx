@@ -109,25 +109,33 @@ const NominationsWidget: React.FC<NominationsWidgetProps> = ({
   };
 
   React.useEffect(() => {
+    const controller = new AbortController();
     const load = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response: HofNominationListType = await listNominations({
-          page,
-          pageSize: PAGE_SIZE,
-        });
+        const response: HofNominationListType = await listNominations(
+          { page, pageSize: PAGE_SIZE },
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
         setNominations(response.nominations);
         setTotal(response.total ?? response.nominations.length);
       } catch (err) {
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load nominations.';
         setError(message);
         setNominations([]);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
     void load();
+    return () => {
+      controller.abort();
+    };
   }, [page, listNominations]);
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {

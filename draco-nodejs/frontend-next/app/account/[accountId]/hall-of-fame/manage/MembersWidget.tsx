@@ -191,19 +191,25 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
   };
 
   React.useEffect(() => {
+    const controller = new AbortController();
     const load = async () => {
       dispatch({ type: 'setLoadingClasses', value: true });
       try {
-        const classes = await fetchClasses();
+        const classes = await fetchClasses(controller.signal);
+        if (controller.signal.aborted) return;
         dispatch({ type: 'setClasses', classes });
         if (classes.length === 0) {
           dispatch({ type: 'setMembersForYear', year: 0, members: [] });
         }
       } catch (error) {
+        if (controller.signal.aborted) return;
         handleError(error, 'Failed to load Hall of Fame classes.');
       }
     };
     void load();
+    return () => {
+      controller.abort();
+    };
   }, [fetchClasses, refreshKey]);
 
   const loadMembersForYear = async (year: number) => {
@@ -218,16 +224,22 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
 
   React.useEffect(() => {
     if (selectedYear == null) return;
+    const controller = new AbortController();
     const load = async () => {
       dispatch({ type: 'setLoadingMembers', value: true });
       try {
-        const data = await fetchClassMembers(selectedYear);
+        const data = await fetchClassMembers(selectedYear, controller.signal);
+        if (controller.signal.aborted) return;
         dispatch({ type: 'setMembersForYear', year: selectedYear, members: data.members });
       } catch (error) {
+        if (controller.signal.aborted) return;
         handleError(error, 'Failed to load Hall of Fame members.');
       }
     };
     void load();
+    return () => {
+      controller.abort();
+    };
   }, [selectedYear, fetchClassMembers]);
 
   React.useEffect(() => {

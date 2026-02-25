@@ -64,6 +64,7 @@ export default function StatisticsFilters({
   onChangeRef.current = onChange;
 
   useEffect(() => {
+    const controller = new AbortController();
     const loadSeasons = async () => {
       setLoading((prev) => ({ ...prev, seasons: true }));
       try {
@@ -71,9 +72,11 @@ export default function StatisticsFilters({
           client: apiClient,
           path: { accountId },
           query: { includeDivisions: true },
+          signal: controller.signal,
           throwOnError: false,
         });
 
+        if (controller.signal.aborted) return;
         const seasonsResponse = unwrapApiResult(result, 'Failed to load seasons');
         const mappedSeasons = mapSeasonsWithDivisions(seasonsResponse);
 
@@ -95,13 +98,19 @@ export default function StatisticsFilters({
           onChangeRef.current({ seasonId: currentSeason.id });
         }
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error('Error loading seasons:', error);
       } finally {
-        setLoading((prev) => ({ ...prev, seasons: false }));
+        if (!controller.signal.aborted) {
+          setLoading((prev) => ({ ...prev, seasons: false }));
+        }
       }
     };
 
     void loadSeasons();
+    return () => {
+      controller.abort();
+    };
   }, [accountId, apiClient]);
 
   useEffect(() => {
@@ -111,6 +120,7 @@ export default function StatisticsFilters({
       return;
     }
 
+    const controller = new AbortController();
     const loadLeagues = async () => {
       setLoading((prev) => ({ ...prev, leagues: true }));
       try {
@@ -120,9 +130,11 @@ export default function StatisticsFilters({
           const result = await listAllTimeLeagues({
             client: apiClient,
             path: { accountId },
+            signal: controller.signal,
             throwOnError: false,
           });
 
+          if (controller.signal.aborted) return;
           const leagues = unwrapApiResult(result, 'Failed to load leagues') as
             | LeagueType[]
             | undefined;
@@ -141,19 +153,26 @@ export default function StatisticsFilters({
           }));
         }
 
+        if (controller.signal.aborted) return;
         setLeagues(formattedLeagues);
 
         if (formattedLeagues.length > 0) {
           onChangeRef.current({ leagueId: formattedLeagues[0].id });
         }
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error('Error loading leagues:', error);
       } finally {
-        setLoading((prev) => ({ ...prev, leagues: false }));
+        if (!controller.signal.aborted) {
+          setLoading((prev) => ({ ...prev, leagues: false }));
+        }
       }
     };
 
     void loadLeagues();
+    return () => {
+      controller.abort();
+    };
   }, [filters.seasonId, filters.isHistorical, seasonsData, accountId, apiClient]);
 
   useEffect(() => {
