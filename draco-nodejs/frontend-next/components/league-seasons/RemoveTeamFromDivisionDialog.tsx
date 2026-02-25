@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -45,12 +45,12 @@ const RemoveTeamFromDivisionDialog: React.FC<RemoveTeamFromDivisionDialogProps> 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     setError(null);
     onClose();
-  }, [onClose]);
+  };
 
-  const handleRemove = useCallback(async () => {
+  const handleRemove = async () => {
     if (!teamSeason || !leagueSeason) return;
 
     const divisionSeason = leagueSeason.divisions?.find((div) =>
@@ -96,7 +96,7 @@ const RemoveTeamFromDivisionDialog: React.FC<RemoveTeamFromDivisionDialogProps> 
     } finally {
       setLoading(false);
     }
-  }, [teamSeason, leagueSeason, accountId, seasonId, apiClient, onSuccess, handleClose]);
+  };
 
   const divisionName =
     leagueSeason?.divisions?.find((div) => div.teams?.some((team) => team.id === teamSeason?.id))

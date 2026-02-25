@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Box, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import { Game } from '@/types/schedule';
@@ -45,7 +45,7 @@ const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
     }
   }, [open, resetError]);
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     if (loading) {
       return;
     }
@@ -54,7 +54,7 @@ const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
     setForceDeleteOffered(false);
     setDeleteError(null);
     onClose();
-  }, [loading, onClose, resetError]);
+  };
 
   const currentGameId = selectedGame?.id ?? null;
   if (currentGameId !== prevGameIdRef.current) {
@@ -65,7 +65,7 @@ const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
     }
   }
 
-  const handleConfirm = useCallback(async () => {
+  const handleConfirm = async () => {
     if (!selectedGame) {
       return;
     }
@@ -94,16 +94,7 @@ const DeleteGameDialog: React.FC<DeleteGameDialogProps> = ({
         onError?.(message);
       }
     }
-  }, [
-    defaultDeleteGame,
-    forceDeleteOffered,
-    onClose,
-    onDelete,
-    onError,
-    onSuccess,
-    resetError,
-    selectedGame,
-  ]);
+  };
 
   if (!selectedGame) return null;
 

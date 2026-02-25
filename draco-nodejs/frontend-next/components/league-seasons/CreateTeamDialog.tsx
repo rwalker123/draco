@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -52,17 +52,17 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     setTeamName('');
     setError(null);
-  }, []);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     resetForm();
     onClose();
-  }, [resetForm, onClose]);
+  };
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     if (!leagueSeason || !teamName.trim()) return;
 
     setLoading(true);
@@ -79,7 +79,6 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
       const mappedTeam = unwrapApiResult(createResult, 'Failed to create team');
       const leagueSeasonId = leagueSeason.id;
 
-      // If a division was specified, auto-assign the team to it
       if (division) {
         try {
           const assignResult = await apiAssignLeagueSeasonTeamDivision({
@@ -129,17 +128,7 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [
-    leagueSeason,
-    division,
-    teamName,
-    accountId,
-    seasonId,
-    apiClient,
-    onSuccess,
-    onError,
-    handleClose,
-  ]);
+  };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

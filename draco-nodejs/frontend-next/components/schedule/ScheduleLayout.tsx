@@ -47,7 +47,6 @@ export interface ScheduleLayoutProps {
   setFilterLeagueSeasonId: (id: string) => void;
   setFilterTeamSeasonId: (id: string) => void;
   onViewModeChange: (mode: ViewMode) => void;
-  loadLeagueTeams: (leagueId: string) => void;
   clearLeagueTeams: () => void;
   startDate: Date;
   endDate: Date;
@@ -91,7 +90,6 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
   setFilterLeagueSeasonId,
   setFilterTeamSeasonId,
   onViewModeChange,
-  loadLeagueTeams,
   clearLeagueTeams,
   startDate,
   endDate,
@@ -201,10 +199,7 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
                     onChange={(e) => {
                       const leagueId = e.target.value;
                       setFilterLeagueSeasonId(leagueId);
-                      setFilterTeamSeasonId('');
-                      if (leagueId) {
-                        loadLeagueTeams(leagueId);
-                      } else {
+                      if (!leagueId) {
                         clearLeagueTeams();
                       }
                     }}

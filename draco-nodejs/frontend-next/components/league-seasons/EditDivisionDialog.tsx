@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -64,100 +64,86 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
     }
   }, [divisionSeason]);
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     setDivisionName('');
     setPriority(0);
     setError(null);
     setConflict(null);
-  }, []);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     resetForm();
     onClose();
-  }, [resetForm, onClose]);
+  };
 
-  const performUpdate = useCallback(
-    async (switchToExisting: boolean) => {
-      if (!divisionSeason || !leagueSeason || !divisionName.trim()) return;
+  const performUpdate = async (switchToExisting: boolean) => {
+    if (!divisionSeason || !leagueSeason || !divisionName.trim()) return;
 
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      try {
-        const result = await apiUpdateLeagueSeasonDivision({
-          client: apiClient,
-          path: {
-            accountId,
-            seasonId,
+    try {
+      const result = await apiUpdateLeagueSeasonDivision({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId,
+          leagueSeasonId: leagueSeason.id,
+          divisionSeasonId: divisionSeason.id,
+        },
+        body: {
+          name: divisionName.trim(),
+          priority,
+          switchToExistingDivision: switchToExisting,
+        },
+        throwOnError: false,
+      });
+
+      const response = unwrapApiResult(result, 'Failed to update division');
+
+      if (response.conflict) {
+        setConflict(response.conflict);
+        setLoading(false);
+        return;
+      }
+
+      if (response.success) {
+        onSuccess(
+          {
             leagueSeasonId: leagueSeason.id,
             divisionSeasonId: divisionSeason.id,
-          },
-          body: {
             name: divisionName.trim(),
             priority,
-            switchToExistingDivision: switchToExisting,
           },
-          throwOnError: false,
-        });
-
-        const response = unwrapApiResult(result, 'Failed to update division');
-
-        if (response.conflict) {
-          setConflict(response.conflict);
-          setLoading(false);
-          return;
-        }
-
-        if (response.success) {
-          onSuccess(
-            {
-              leagueSeasonId: leagueSeason.id,
-              divisionSeasonId: divisionSeason.id,
-              name: divisionName.trim(),
-              priority,
-            },
-            switchToExisting
-              ? `Switched to existing division "${divisionName.trim()}"`
-              : 'Division updated successfully',
-          );
-          handleClose();
-        } else {
-          setError('Failed to update division');
-        }
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to update division';
-        setError(errorMessage);
-        onError?.(errorMessage);
-      } finally {
-        setLoading(false);
+          switchToExisting
+            ? `Switched to existing division "${divisionName.trim()}"`
+            : 'Division updated successfully',
+        );
+        handleClose();
+      } else {
+        setError('Failed to update division');
       }
-    },
-    [
-      divisionSeason,
-      leagueSeason,
-      divisionName,
-      priority,
-      accountId,
-      seasonId,
-      apiClient,
-      onSuccess,
-      onError,
-      handleClose,
-    ],
-  );
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update division';
+      setError(errorMessage);
+      onError?.(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = () => {
     setConflict(null);
     performUpdate(false);
-  }, [performUpdate]);
+  };
 
-  const handleSwitchToExisting = useCallback(() => {
+  const handleSwitchToExisting = () => {
     performUpdate(true);
-  }, [performUpdate]);
+  };
 
-  const handleCancelConflict = useCallback(() => {
+  const handleCancelConflict = () => {
     setConflict(null);
-  }, []);
+  };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

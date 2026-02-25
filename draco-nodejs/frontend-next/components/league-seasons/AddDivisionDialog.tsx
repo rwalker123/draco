@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -60,20 +60,20 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     setCreateMode(false);
     setSelectedDivision(null);
     setNewDivisionName('');
     setPriority(0);
     setError(null);
-  }, []);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     resetForm();
     onClose();
-  }, [resetForm, onClose]);
+  };
 
-  const handleAddExistingDivision = useCallback(async () => {
+  const handleAddExistingDivision = async () => {
     if (!leagueSeason || !selectedDivision) return;
 
     setLoading(true);
@@ -118,19 +118,9 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [
-    leagueSeason,
-    selectedDivision,
-    priority,
-    accountId,
-    seasonId,
-    apiClient,
-    onSuccess,
-    onError,
-    handleClose,
-  ]);
+  };
 
-  const handleCreateDivision = useCallback(async () => {
+  const handleCreateDivision = async () => {
     if (!leagueSeason || !newDivisionName.trim()) return;
 
     setLoading(true);
@@ -175,17 +165,7 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [
-    leagueSeason,
-    newDivisionName,
-    priority,
-    accountId,
-    seasonId,
-    apiClient,
-    onSuccess,
-    onError,
-    handleClose,
-  ]);
+  };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

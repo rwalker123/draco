@@ -5,15 +5,17 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FieldType } from '@draco/shared-schemas';
 import { dracoTheme } from '../../../theme';
-import type { FieldService } from '../../../hooks/useFieldService';
 import { FieldsView, type FieldsViewRef } from '../FieldsView';
 
-const listFieldsMock = vi.fn();
+const listAccountFieldsMock = vi.fn();
 
-vi.mock('../../../hooks/useFieldService', () => ({
-  useFieldService: (): Pick<FieldService, 'listFields'> => ({
-    listFields: listFieldsMock,
-  }),
+vi.mock('@draco/shared-api-client', () => ({
+  listAccountFields: (...args: unknown[]) => listAccountFieldsMock(...args),
+}));
+
+const mockApiClient = {};
+vi.mock('../../../hooks/useApiClient', () => ({
+  useApiClient: () => mockApiClient,
 }));
 
 vi.mock('../FieldDetailsCard', () => ({
@@ -92,17 +94,15 @@ describe('FieldsView', () => {
   ];
 
   const successResponse = {
-    success: true as const,
     data: {
       fields: mockFields,
       pagination: { page: 1, limit: 10, total: 3, hasNext: false, hasPrev: false },
     },
-    message: 'Fields loaded successfully',
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    listFieldsMock.mockResolvedValue(successResponse);
+    listAccountFieldsMock.mockResolvedValue(successResponse);
   });
 
   describe('initial render and data loading', () => {
@@ -117,17 +117,22 @@ describe('FieldsView', () => {
       expect(screen.getByText('Sunset Field')).toBeInTheDocument();
     });
 
-    it('calls listFields with default parameters', async () => {
+    it('calls listAccountFields with default parameters', async () => {
       renderFieldsView();
 
       await waitFor(() => {
-        expect(listFieldsMock).toHaveBeenCalledWith({
-          page: 1,
-          limit: 10,
-          sortBy: 'name',
-          sortOrder: 'asc',
-          search: undefined,
-        });
+        expect(listAccountFieldsMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            path: { accountId: 'account-123' },
+            query: expect.objectContaining({
+              page: 1,
+              limit: 10,
+              sortBy: 'name',
+              sortOrder: 'asc',
+              search: undefined,
+            }),
+          }),
+        );
       });
     });
 
@@ -142,13 +147,11 @@ describe('FieldsView', () => {
     });
 
     it('displays empty state when no fields exist', async () => {
-      listFieldsMock.mockResolvedValue({
-        success: true,
+      listAccountFieldsMock.mockResolvedValue({
         data: {
           fields: [],
           pagination: { page: 1, limit: 10, total: 0, hasNext: false, hasPrev: false },
         },
-        message: 'Fields loaded successfully',
       });
 
       renderFieldsView();
@@ -159,10 +162,7 @@ describe('FieldsView', () => {
     });
 
     it('displays error alert when loading fails', async () => {
-      listFieldsMock.mockResolvedValue({
-        success: false,
-        error: 'Network error occurred',
-      });
+      listAccountFieldsMock.mockRejectedValue(new Error('Network error occurred'));
 
       renderFieldsView();
 
@@ -206,13 +206,11 @@ describe('FieldsView', () => {
     });
 
     it('displays dash for missing optional fields', async () => {
-      listFieldsMock.mockResolvedValue({
-        success: true,
+      listAccountFieldsMock.mockResolvedValue({
         data: {
           fields: [createMockField({ city: null, state: null, rainoutNumber: null })],
           pagination: { page: 1, limit: 10, total: 1, hasNext: false, hasPrev: false },
         },
-        message: 'Fields loaded successfully',
       });
 
       renderFieldsView();
@@ -271,17 +269,19 @@ describe('FieldsView', () => {
         expect(screen.getByText('Central Park Field')).toBeInTheDocument();
       });
 
-      listFieldsMock.mockClear();
+      listAccountFieldsMock.mockClear();
 
       const citySortLabel = screen.getByRole('button', { name: /City/i });
       await user.click(citySortLabel);
 
       await waitFor(() => {
-        expect(listFieldsMock).toHaveBeenCalledWith(
+        expect(listAccountFieldsMock).toHaveBeenCalledWith(
           expect.objectContaining({
-            sortBy: 'city',
-            sortOrder: 'asc',
-            page: 1,
+            query: expect.objectContaining({
+              sortBy: 'city',
+              sortOrder: 'asc',
+              page: 1,
+            }),
           }),
         );
       });
@@ -301,10 +301,12 @@ describe('FieldsView', () => {
       await user.click(nameSortLabel);
 
       await waitFor(() => {
-        expect(listFieldsMock).toHaveBeenCalledWith(
+        expect(listAccountFieldsMock).toHaveBeenCalledWith(
           expect.objectContaining({
-            sortBy: 'name',
-            sortOrder: 'desc',
+            query: expect.objectContaining({
+              sortBy: 'name',
+              sortOrder: 'desc',
+            }),
           }),
         );
       });
@@ -312,13 +314,11 @@ describe('FieldsView', () => {
 
     it('resets to page 1 when sorting changes', async () => {
       const user = userEvent.setup();
-      listFieldsMock.mockResolvedValue({
-        success: true,
+      listAccountFieldsMock.mockResolvedValue({
         data: {
           fields: mockFields,
           pagination: { page: 2, limit: 10, total: 25, hasNext: true, hasPrev: true },
         },
-        message: 'Fields loaded successfully',
       });
 
       renderFieldsView();
@@ -327,15 +327,17 @@ describe('FieldsView', () => {
         expect(screen.getByText('Central Park Field')).toBeInTheDocument();
       });
 
-      listFieldsMock.mockClear();
+      listAccountFieldsMock.mockClear();
 
       const stateSortLabel = screen.getByRole('button', { name: /State/i });
       await user.click(stateSortLabel);
 
       await waitFor(() => {
-        expect(listFieldsMock).toHaveBeenCalledWith(
+        expect(listAccountFieldsMock).toHaveBeenCalledWith(
           expect.objectContaining({
-            page: 1,
+            query: expect.objectContaining({
+              page: 1,
+            }),
           }),
         );
       });
@@ -351,16 +353,18 @@ describe('FieldsView', () => {
         expect(screen.getByText('Central Park Field')).toBeInTheDocument();
       });
 
-      listFieldsMock.mockClear();
+      listAccountFieldsMock.mockClear();
 
       const searchInput = screen.getByPlaceholderText('Search fields');
       await user.type(searchInput, 'Riverside');
 
       await waitFor(() => {
-        expect(listFieldsMock).toHaveBeenCalledWith(
+        expect(listAccountFieldsMock).toHaveBeenCalledWith(
           expect.objectContaining({
-            search: 'Riverside',
-            page: 1,
+            query: expect.objectContaining({
+              search: 'Riverside',
+              page: 1,
+            }),
           }),
         );
       });
@@ -381,13 +385,15 @@ describe('FieldsView', () => {
         expect(screen.getByRole('button', { name: 'Clear search' })).toBeInTheDocument();
       });
 
-      listFieldsMock.mockClear();
+      listAccountFieldsMock.mockClear();
       await user.click(screen.getByRole('button', { name: 'Clear search' }));
 
       await waitFor(() => {
-        expect(listFieldsMock).toHaveBeenCalledWith(
+        expect(listAccountFieldsMock).toHaveBeenCalledWith(
           expect.objectContaining({
-            search: undefined,
+            query: expect.objectContaining({
+              search: undefined,
+            }),
           }),
         );
       });
@@ -401,15 +407,17 @@ describe('FieldsView', () => {
         expect(screen.getByText('Central Park Field')).toBeInTheDocument();
       });
 
-      listFieldsMock.mockClear();
+      listAccountFieldsMock.mockClear();
 
       const searchInput = screen.getByPlaceholderText('Search fields');
       await user.type(searchInput, 'test');
 
       await waitFor(() => {
-        expect(listFieldsMock).toHaveBeenCalledWith(
+        expect(listAccountFieldsMock).toHaveBeenCalledWith(
           expect.objectContaining({
-            page: 1,
+            query: expect.objectContaining({
+              page: 1,
+            }),
           }),
         );
       });
@@ -418,13 +426,11 @@ describe('FieldsView', () => {
 
   describe('pagination', () => {
     it('displays pagination controls', async () => {
-      listFieldsMock.mockResolvedValue({
-        success: true,
+      listAccountFieldsMock.mockResolvedValue({
         data: {
           fields: mockFields,
           pagination: { page: 1, limit: 10, total: 25, hasNext: true, hasPrev: false },
         },
-        message: 'Fields loaded successfully',
       });
 
       renderFieldsView();
@@ -440,13 +446,11 @@ describe('FieldsView', () => {
 
     it('changes page when next button is clicked', async () => {
       const user = userEvent.setup();
-      listFieldsMock.mockResolvedValue({
-        success: true,
+      listAccountFieldsMock.mockResolvedValue({
         data: {
           fields: mockFields,
           pagination: { page: 1, limit: 10, total: 25, hasNext: true, hasPrev: false },
         },
-        message: 'Fields loaded successfully',
       });
 
       renderFieldsView();
@@ -455,14 +459,16 @@ describe('FieldsView', () => {
         expect(screen.getByText('Central Park Field')).toBeInTheDocument();
       });
 
-      listFieldsMock.mockClear();
+      listAccountFieldsMock.mockClear();
 
       await user.click(screen.getByRole('button', { name: 'Go to next page' }));
 
       await waitFor(() => {
-        expect(listFieldsMock).toHaveBeenCalledWith(
+        expect(listAccountFieldsMock).toHaveBeenCalledWith(
           expect.objectContaining({
-            page: 2,
+            query: expect.objectContaining({
+              page: 2,
+            }),
           }),
         );
       });
@@ -476,17 +482,19 @@ describe('FieldsView', () => {
         expect(screen.getByText('Central Park Field')).toBeInTheDocument();
       });
 
-      listFieldsMock.mockClear();
+      listAccountFieldsMock.mockClear();
 
       const rowsPerPageSelect = screen.getByRole('combobox');
       await user.click(rowsPerPageSelect);
       await user.click(screen.getByRole('option', { name: '25' }));
 
       await waitFor(() => {
-        expect(listFieldsMock).toHaveBeenCalledWith(
+        expect(listAccountFieldsMock).toHaveBeenCalledWith(
           expect.objectContaining({
-            limit: 25,
-            page: 1,
+            query: expect.objectContaining({
+              limit: 25,
+              page: 1,
+            }),
           }),
         );
       });
@@ -598,12 +606,12 @@ describe('FieldsView', () => {
         expect(screen.getByText('Central Park Field')).toBeInTheDocument();
       });
 
-      expect(listFieldsMock).toHaveBeenCalledTimes(1);
+      expect(listAccountFieldsMock).toHaveBeenCalledTimes(1);
 
       ref.current?.refresh();
 
       await waitFor(() => {
-        expect(listFieldsMock).toHaveBeenCalledTimes(2);
+        expect(listAccountFieldsMock).toHaveBeenCalledTimes(2);
       });
     });
 
@@ -629,7 +637,7 @@ describe('FieldsView', () => {
       ref.current?.refresh();
 
       await waitFor(() => {
-        expect(listFieldsMock).toHaveBeenCalledTimes(2);
+        expect(listAccountFieldsMock).toHaveBeenCalledTimes(2);
       });
 
       expect(screen.getByTestId('field-details-card')).toHaveTextContent(
@@ -656,13 +664,11 @@ describe('FieldsView', () => {
         'Selected: Riverside Field',
       );
 
-      listFieldsMock.mockResolvedValue({
-        success: true,
+      listAccountFieldsMock.mockResolvedValue({
         data: {
           fields: [mockFields[0], mockFields[2]],
           pagination: { page: 1, limit: 10, total: 2, hasNext: false, hasPrev: false },
         },
-        message: 'Fields loaded successfully',
       });
 
       ref.current?.refresh();

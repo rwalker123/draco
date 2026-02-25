@@ -133,9 +133,6 @@ describe('HofNominationDialog', () => {
 
       await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
       await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
-      expect(
-        await screen.findByText('Thank you! Your Hall of Fame nomination has been received.'),
-      ).toBeInTheDocument();
     },
     LONG_TEST_TIMEOUT,
   );

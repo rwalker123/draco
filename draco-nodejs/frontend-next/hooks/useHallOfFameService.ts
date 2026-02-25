@@ -146,15 +146,18 @@ export interface ListNominationsParams {
 }
 
 export interface HallOfFameService {
-  fetchClasses: () => Promise<HofClassSummaryType[]>;
-  fetchClassMembers: (year: number) => Promise<HofClassWithMembersType>;
+  fetchClasses: (signal?: AbortSignal) => Promise<HofClassSummaryType[]>;
+  fetchClassMembers: (year: number, signal?: AbortSignal) => Promise<HofClassWithMembersType>;
   listEligibleContacts: (
     params: ListEligibleContactsParams,
   ) => Promise<HofEligibleContactsResponseType>;
   createMember: (payload: CreateHofMemberType) => Promise<HofMemberType>;
   updateMember: (memberId: string, payload: UpdateHofMemberType) => Promise<HofMemberType>;
   deleteMember: (memberId: string) => Promise<void>;
-  listNominations: (params: ListNominationsParams) => Promise<HofNominationListType>;
+  listNominations: (
+    params: ListNominationsParams,
+    signal?: AbortSignal,
+  ) => Promise<HofNominationListType>;
   updateNomination: (
     nominationId: string,
     payload: UpdateHofNominationType,
@@ -171,10 +174,11 @@ export interface HallOfFameService {
 export function useHallOfFameService(accountId: string): HallOfFameService {
   const apiClient = useApiClient();
 
-  const fetchClasses = async (): Promise<HofClassSummaryType[]> => {
+  const fetchClasses = async (signal?: AbortSignal): Promise<HofClassSummaryType[]> => {
     const result = await listAccountHallOfFameClasses({
       client: apiClient,
       path: { accountId },
+      signal,
       throwOnError: false,
     });
 
@@ -183,10 +187,14 @@ export function useHallOfFameService(accountId: string): HallOfFameService {
     return list.map((cls) => normalizeClassSummary(cls));
   };
 
-  const fetchClassMembers = async (year: number): Promise<HofClassWithMembersType> => {
+  const fetchClassMembers = async (
+    year: number,
+    signal?: AbortSignal,
+  ): Promise<HofClassWithMembersType> => {
     const result = await getAccountHallOfFameClass({
       client: apiClient,
       path: { accountId, year },
+      signal,
       throwOnError: false,
     });
 
@@ -265,10 +273,10 @@ export function useHallOfFameService(accountId: string): HallOfFameService {
     assertNoApiError(result, 'Failed to delete Hall of Fame member.');
   };
 
-  const listNominations = async ({
-    page = 1,
-    pageSize = 10,
-  }: ListNominationsParams): Promise<HofNominationListType> => {
+  const listNominations = async (
+    { page = 1, pageSize = 10 }: ListNominationsParams,
+    signal?: AbortSignal,
+  ): Promise<HofNominationListType> => {
     const result = await listAccountHallOfFameNominations({
       client: apiClient,
       path: { accountId },
@@ -276,6 +284,7 @@ export function useHallOfFameService(accountId: string): HallOfFameService {
         page,
         pageSize,
       },
+      signal,
       throwOnError: false,
     });
 

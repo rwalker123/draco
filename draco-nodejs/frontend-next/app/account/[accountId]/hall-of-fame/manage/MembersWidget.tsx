@@ -171,13 +171,13 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
   const selectedYear = state.selectedYear;
   const members = selectedYear ? (state.membersByYear[selectedYear] ?? []) : [];
 
-  const handleError = React.useCallback((error: unknown, fallbackMessage: string) => {
+  const handleError = (error: unknown, fallbackMessage: string) => {
     const message = error instanceof Error ? error.message : fallbackMessage;
     setActionError(message);
     dispatch({ type: 'setError', error: message });
-  }, []);
+  };
 
-  const loadClasses = React.useCallback(async () => {
+  const loadClasses = async () => {
     dispatch({ type: 'setLoadingClasses', value: true });
     try {
       const classes = await fetchClasses();
@@ -188,31 +188,59 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
     } catch (error) {
       handleError(error, 'Failed to load Hall of Fame classes.');
     }
-  }, [fetchClasses, handleError]);
+  };
 
   React.useEffect(() => {
-    void loadClasses();
-  }, [loadClasses, refreshKey]);
+    const controller = new AbortController();
+    const load = async () => {
+      dispatch({ type: 'setLoadingClasses', value: true });
+      try {
+        const classes = await fetchClasses(controller.signal);
+        if (controller.signal.aborted) return;
+        dispatch({ type: 'setClasses', classes });
+        if (classes.length === 0) {
+          dispatch({ type: 'setMembersForYear', year: 0, members: [] });
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        handleError(error, 'Failed to load Hall of Fame classes.');
+      }
+    };
+    void load();
+    return () => {
+      controller.abort();
+    };
+  }, [fetchClasses, refreshKey]);
 
-  const loadMembersForYear = React.useCallback(
-    async (year: number) => {
+  const loadMembersForYear = async (year: number) => {
+    dispatch({ type: 'setLoadingMembers', value: true });
+    try {
+      const data = await fetchClassMembers(year);
+      dispatch({ type: 'setMembersForYear', year, members: data.members });
+    } catch (error) {
+      handleError(error, 'Failed to load Hall of Fame members.');
+    }
+  };
+
+  React.useEffect(() => {
+    if (selectedYear == null) return;
+    const controller = new AbortController();
+    const load = async () => {
       dispatch({ type: 'setLoadingMembers', value: true });
       try {
-        const data = await fetchClassMembers(year);
-        dispatch({ type: 'setMembersForYear', year, members: data.members });
+        const data = await fetchClassMembers(selectedYear, controller.signal);
+        if (controller.signal.aborted) return;
+        dispatch({ type: 'setMembersForYear', year: selectedYear, members: data.members });
       } catch (error) {
+        if (controller.signal.aborted) return;
         handleError(error, 'Failed to load Hall of Fame members.');
       }
-    },
-    [fetchClassMembers, handleError],
-  );
-
-  React.useEffect(() => {
-    if (selectedYear == null) {
-      return;
-    }
-    void loadMembersForYear(selectedYear);
-  }, [selectedYear, loadMembersForYear]);
+    };
+    void load();
+    return () => {
+      controller.abort();
+    };
+  }, [selectedYear, fetchClassMembers]);
 
   React.useEffect(() => {
     if (createRequestKey > 0) {
@@ -220,23 +248,17 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
     }
   }, [createRequestKey]);
 
-  const handleTabChange = React.useCallback(
-    (_: React.SyntheticEvent, newIndex: number) => {
-      const cls = state.classes[newIndex];
-      dispatch({ type: 'setSelectedYear', year: cls?.year ?? null });
-    },
-    [state.classes],
-  );
+  const handleTabChange = (_: React.SyntheticEvent, newIndex: number) => {
+    const cls = state.classes[newIndex];
+    dispatch({ type: 'setSelectedYear', year: cls?.year ?? null });
+  };
 
-  const refreshMembersAndClasses = React.useCallback(
-    async (targetYear: number | null) => {
-      await loadClasses();
-      if (targetYear != null) {
-        await loadMembersForYear(targetYear);
-      }
-    },
-    [loadClasses, loadMembersForYear],
-  );
+  const refreshMembersAndClasses = async (targetYear: number | null) => {
+    await loadClasses();
+    if (targetYear != null) {
+      await loadMembersForYear(targetYear);
+    }
+  };
 
   const handleCreateMember = async (values: CreateMemberFormValues) => {
     try {
@@ -472,12 +494,15 @@ const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
   const debouncedSearch = useDebouncedValue(inputValue, 300);
   const [contactsLoading, setContactsLoading] = React.useState(false);
 
-  const loadContacts = React.useCallback(
-    async (search?: string) => {
+  React.useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const loadContacts = async () => {
       setContactsLoading(true);
       try {
         const response = await listEligibleContacts({
-          search,
+          search: debouncedSearch,
           page: 1,
           pageSize: 20,
         });
@@ -487,16 +512,9 @@ const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
       } finally {
         setContactsLoading(false);
       }
-    },
-    [listEligibleContacts],
-  );
-
-  React.useEffect(() => {
-    if (!open) {
-      return;
-    }
-    void loadContacts(debouncedSearch);
-  }, [debouncedSearch, open, loadContacts]);
+    };
+    void loadContacts();
+  }, [debouncedSearch, open, listEligibleContacts]);
 
   React.useEffect(() => {
     if (open) {

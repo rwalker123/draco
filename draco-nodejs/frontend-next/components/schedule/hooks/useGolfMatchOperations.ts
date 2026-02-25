@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { formatGameDateTime } from '../../../utils/dateUtils';
@@ -111,75 +111,72 @@ export const useGolfMatchOperations = ({ accountId, timeZone }: UseGolfMatchOper
   const apiClient = useApiClient();
   const [loading, setLoading] = useState(false);
 
-  const createMatch = useCallback(
-    async (values: GolfMatchFormValues): Promise<GolfMatchOperationResult> => {
-      setLoading(true);
-      try {
-        const currentSeasonId = await fetchCurrentSeason();
-        const matchDateTime = formatGameDateTime(values.matchDate, values.matchTime, timeZone);
+  const createMatch = async (values: GolfMatchFormValues): Promise<GolfMatchOperationResult> => {
+    setLoading(true);
+    try {
+      const currentSeasonId = await fetchCurrentSeason();
+      const matchDateTime = formatGameDateTime(values.matchDate, values.matchTime, timeZone);
 
-        const result = await createGolfMatch({
-          client: apiClient,
-          path: { accountId, seasonId: currentSeasonId },
-          body: {
-            leagueSeasonId: values.leagueSeasonId,
-            team1Id: values.team1Id,
-            team2Id: values.team2Id,
-            matchDateTime,
-            courseId: values.courseId || undefined,
-            teeId: values.teeId || undefined,
-            matchType: values.matchType,
-            comment: values.comment ?? '',
-          },
-          throwOnError: false,
-        });
+      const result = await createGolfMatch({
+        client: apiClient,
+        path: { accountId, seasonId: currentSeasonId },
+        body: {
+          leagueSeasonId: values.leagueSeasonId,
+          team1Id: values.team1Id,
+          team2Id: values.team2Id,
+          matchDateTime,
+          courseId: values.courseId || undefined,
+          teeId: values.teeId || undefined,
+          matchType: values.matchType,
+          comment: values.comment ?? '',
+        },
+        throwOnError: false,
+      });
 
-        const createdMatch = unwrapApiResult(result, 'Failed to create match');
+      const createdMatch = unwrapApiResult(result, 'Failed to create match');
 
-        return {
-          message: 'Match created successfully',
-          game: mapGolfMatchToGame(createdMatch),
-        };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, apiClient, fetchCurrentSeason, timeZone],
-  );
+      return {
+        message: 'Match created successfully',
+        game: mapGolfMatchToGame(createdMatch),
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const updateMatch = useCallback(
-    async (matchId: string, values: GolfMatchFormValues): Promise<GolfMatchOperationResult> => {
-      setLoading(true);
-      try {
-        const matchDateTime = formatGameDateTime(values.matchDate, values.matchTime, timeZone);
+  const updateMatch = async (
+    matchId: string,
+    values: GolfMatchFormValues,
+  ): Promise<GolfMatchOperationResult> => {
+    setLoading(true);
+    try {
+      const matchDateTime = formatGameDateTime(values.matchDate, values.matchTime, timeZone);
 
-        const result = await updateGolfMatch({
-          client: apiClient,
-          path: { accountId, matchId },
-          body: {
-            team1Id: values.team1Id,
-            team2Id: values.team2Id,
-            matchDateTime,
-            courseId: values.courseId || undefined,
-            teeId: values.teeId || undefined,
-            matchType: values.matchType,
-            comment: values.comment ?? '',
-          },
-          throwOnError: false,
-        });
+      const result = await updateGolfMatch({
+        client: apiClient,
+        path: { accountId, matchId },
+        body: {
+          team1Id: values.team1Id,
+          team2Id: values.team2Id,
+          matchDateTime,
+          courseId: values.courseId || undefined,
+          teeId: values.teeId || undefined,
+          matchType: values.matchType,
+          comment: values.comment ?? '',
+        },
+        throwOnError: false,
+      });
 
-        const updatedMatch = unwrapApiResult(result, 'Failed to update match');
+      const updatedMatch = unwrapApiResult(result, 'Failed to update match');
 
-        return {
-          message: 'Match updated successfully',
-          game: mapGolfMatchToGame(updatedMatch),
-        };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, apiClient, timeZone],
-  );
+      return {
+        message: 'Match updated successfully',
+        game: mapGolfMatchToGame(updatedMatch),
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const changeMatchSeason = async (
     matchId: string,

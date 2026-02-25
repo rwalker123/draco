@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -52,20 +52,19 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
 
   const isConfirmed = confirmationText.toLowerCase() === 'yes';
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     setError(null);
     setConfirmationText('');
     onClose();
-  }, [onClose]);
+  };
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     if (!teamSeason || !leagueSeason) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      // First, delete the team-season relationship
       const deleteSeasonTeamResult = await apiDeleteSeasonTeam({
         path: { accountId, seasonId, teamSeasonId: teamSeason.id },
         client: apiClient,
@@ -74,7 +73,6 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
 
       unwrapApiResult(deleteSeasonTeamResult, 'Failed to remove team from season');
 
-      // Then try to delete the team definition
       let deletedTeamDefinition = false;
       const deleteResult = await apiDeleteAccountTeam({
         path: { accountId, teamId: teamSeason.team.id },
@@ -123,7 +121,7 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [teamSeason, leagueSeason, accountId, seasonId, apiClient, onSuccess, onError, handleClose]);
+  };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

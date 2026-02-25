@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   Box,
   TextField,
@@ -50,31 +50,13 @@ export function HoleScoreGrid({
     return score && score > 0 ? String(score) : '';
   };
 
-  const { front9Total, back9Total, totalScore } = useMemo(() => {
-    let front9 = 0;
-    let back9 = 0;
+  const front9Total = holeScores.slice(0, 9).reduce((sum, score) => sum + (score || 0), 0);
+  const back9Total = holeScores.slice(9).reduce((sum, score) => sum + (score || 0), 0);
+  const totalScore = front9Total + back9Total;
 
-    holeScores.forEach((score, index) => {
-      if (index < 9) {
-        front9 += score || 0;
-      } else {
-        back9 += score || 0;
-      }
-    });
-
-    return {
-      front9Total: front9,
-      back9Total: back9,
-      totalScore: front9 + back9,
-    };
-  }, [holeScores]);
-
-  const { front9Par, back9Par, totalPar } = useMemo(() => {
-    if (!par) return { front9Par: 0, back9Par: 0, totalPar: 0 };
-    const front = par.slice(0, 9).reduce((sum, p) => sum + (p || 0), 0);
-    const back = par.slice(9, 18).reduce((sum, p) => sum + (p || 0), 0);
-    return { front9Par: front, back9Par: back, totalPar: front + back };
-  }, [par]);
+  const front9Par = par ? par.slice(0, 9).reduce((sum, p) => sum + (p || 0), 0) : 0;
+  const back9Par = par ? par.slice(9, 18).reduce((sum, p) => sum + (p || 0), 0) : 0;
+  const totalPar = front9Par + back9Par;
 
   const frontNineHoles = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   const backNineHoles = [10, 11, 12, 13, 14, 15, 16, 17, 18];

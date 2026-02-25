@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMediaQuery } from '@mui/material';
 import { useAuth } from '../../../../context/AuthContext';
 import { useCurrentSeason } from '../../../../hooks/useCurrentSeason';
@@ -34,7 +34,7 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
 
   useEffect(() => {
     if (accountId) {
-      fetchCurrentSeason().catch(console.error);
+      void fetchCurrentSeason();
     }
   }, [accountId, fetchCurrentSeason]);
 
@@ -55,28 +55,26 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
     message: string;
   } | null>(null);
 
-  const handleFeedbackClose = useCallback(() => {
+  const handleFeedbackClose = () => {
     setFeedback(null);
-  }, []);
+  };
 
-  const setError = useCallback((message: string | null) => {
+  const setError = (message: string | null) => {
     if (message) {
       setFeedback({ severity: 'error', message });
     } else {
       setFeedback((prev) => (prev?.severity === 'error' ? null : prev));
     }
-  }, []);
+  };
 
   const {
     games,
     teams,
     locations,
     leagues,
-    leagueTeams,
     leagueTeamsCache,
     loadingGames,
     loadingStaticData,
-    loadLeagueTeams,
     clearLeagueTeams,
     startDate,
     endDate,
@@ -100,47 +98,39 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
     filteredGames,
   } = useScheduleFilters({
     games,
-    leagues,
-    leagueTeams,
-    loadLeagueTeams,
     filterDate,
     setFilterDate,
   });
 
-  const convertGameToGameCardDataWithTeams = useCallback(
-    (game: Game): GameCardData => {
-      return convertGameToGameCardData(game, teams, locations);
-    },
-    [teams, locations],
-  );
+  const leagueTeams = filterLeagueSeasonId
+    ? (leagueTeamsCache.get(filterLeagueSeasonId) ?? [])
+    : [];
 
-  const getTeamName = useCallback(
-    (teamId: string): string => {
-      const team = teams.find((t) => t.id === teamId);
-      return team?.name || 'Unknown Team';
-    },
-    [teams],
-  );
+  const convertGameToGameCardDataWithTeams = (game: Game): GameCardData => {
+    return convertGameToGameCardData(game, teams, locations);
+  };
 
-  const fetchRecapForTeam = useCallback(
-    async (game: Game, teamSeasonId: string): Promise<string | null> => {
-      const seasonId = game.season?.id;
-      if (!seasonId) {
-        throw new Error('Missing season information for the selected game.');
-      }
+  const getTeamName = (teamId: string): string => {
+    const team = teams.find((t) => t.id === teamId);
+    return team?.name || 'Unknown Team';
+  };
 
-      const recap = await getGameSummary({
-        accountId,
-        seasonId,
-        gameId: game.id,
-        teamSeasonId,
-        token: token ?? undefined,
-      });
+  const fetchRecapForTeam = async (game: Game, teamSeasonId: string): Promise<string | null> => {
+    const seasonId = game.season?.id;
+    if (!seasonId) {
+      throw new Error('Missing season information for the selected game.');
+    }
 
-      return recap ?? null;
-    },
-    [accountId, token],
-  );
+    const recap = await getGameSummary({
+      accountId,
+      seasonId,
+      gameId: game.id,
+      teamSeasonId,
+      token: token ?? undefined,
+    });
+
+    return recap ?? null;
+  };
 
   const {
     openViewRecap,
@@ -154,33 +144,27 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
     getTeamName: (_game, teamId) => getTeamName(teamId),
   });
 
-  const handleViewModeChange = useCallback(
-    (mode: ViewMode) => {
-      setManualViewMode(mode === defaultViewMode ? null : mode);
-    },
-    [defaultViewMode],
-  );
+  const handleViewModeChange = (mode: ViewMode) => {
+    setManualViewMode(mode === defaultViewMode ? null : mode);
+  };
 
-  const handleGameClick = useCallback(
-    (game: Game) => {
-      if (isGolfLeague) {
-        setSelectedMatchId(game.id);
-      } else {
-        setSelectedGame(game);
-        setViewDialogOpen(true);
-      }
-    },
-    [isGolfLeague],
-  );
+  const handleGameClick = (game: Game) => {
+    if (isGolfLeague) {
+      setSelectedMatchId(game.id);
+    } else {
+      setSelectedGame(game);
+      setViewDialogOpen(true);
+    }
+  };
 
-  const handleViewDialogClose = useCallback(() => {
+  const handleViewDialogClose = () => {
     setViewDialogOpen(false);
     setSelectedGame(null);
-  }, []);
+  };
 
-  const handleScorecardClose = useCallback(() => {
+  const handleScorecardClose = () => {
     setSelectedMatchId(null);
-  }, []);
+  };
 
   return (
     <ScheduleLayout
@@ -203,7 +187,6 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
       setFilterLeagueSeasonId={setFilterLeagueSeasonId}
       setFilterTeamSeasonId={setFilterTeamSeasonId}
       onViewModeChange={handleViewModeChange}
-      loadLeagueTeams={loadLeagueTeams}
       clearLeagueTeams={clearLeagueTeams}
       startDate={startDate}
       endDate={endDate}

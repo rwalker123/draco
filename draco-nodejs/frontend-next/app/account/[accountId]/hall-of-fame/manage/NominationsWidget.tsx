@@ -89,31 +89,54 @@ const NominationsWidget: React.FC<NominationsWidgetProps> = ({
   const [inductNominationTarget, setInductNominationTarget] =
     React.useState<HofNominationType | null>(null);
 
-  const loadNominations = React.useCallback(
-    async (pageNumber: number) => {
+  const loadNominations = async (pageNumber: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response: HofNominationListType = await listNominations({
+        page: pageNumber,
+        pageSize: PAGE_SIZE,
+      });
+      setNominations(response.nominations);
+      setTotal(response.total ?? response.nominations.length);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load nominations.';
+      setError(message);
+      setNominations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    const controller = new AbortController();
+    const load = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response: HofNominationListType = await listNominations({
-          page: pageNumber,
-          pageSize: PAGE_SIZE,
-        });
+        const response: HofNominationListType = await listNominations(
+          { page, pageSize: PAGE_SIZE },
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
         setNominations(response.nominations);
         setTotal(response.total ?? response.nominations.length);
       } catch (err) {
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load nominations.';
         setError(message);
         setNominations([]);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-    },
-    [listNominations],
-  );
-
-  React.useEffect(() => {
-    void loadNominations(page);
-  }, [page, loadNominations]);
+    };
+    void load();
+    return () => {
+      controller.abort();
+    };
+  }, [page, listNominations]);
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
@@ -581,25 +604,6 @@ const NominationInductDialog: React.FC<NominationInductDialogProps> = ({
   const [contactsLoading, setContactsLoading] = React.useState(false);
   const debouncedSearch = useDebouncedValue(inputValue, 300);
 
-  const loadContacts = React.useCallback(
-    async (search?: string) => {
-      setContactsLoading(true);
-      try {
-        const response = await listEligibleContacts({
-          search,
-          page: 1,
-          pageSize: 20,
-        });
-        setContacts(response.contacts);
-      } catch {
-        setContacts([]);
-      } finally {
-        setContactsLoading(false);
-      }
-    },
-    [listEligibleContacts],
-  );
-
   React.useEffect(() => {
     if (!nomination) {
       return;
@@ -611,12 +615,42 @@ const NominationInductDialog: React.FC<NominationInductDialogProps> = ({
     });
     setSelectedContact(null);
     setInputValue('');
-    void loadContacts('');
-  }, [nomination, reset, loadContacts]);
+    const loadInitialContacts = async () => {
+      setContactsLoading(true);
+      try {
+        const response = await listEligibleContacts({
+          search: '',
+          page: 1,
+          pageSize: 20,
+        });
+        setContacts(response.contacts);
+      } catch {
+        setContacts([]);
+      } finally {
+        setContactsLoading(false);
+      }
+    };
+    void loadInitialContacts();
+  }, [nomination, reset, listEligibleContacts]);
 
   React.useEffect(() => {
-    void loadContacts(debouncedSearch);
-  }, [debouncedSearch, loadContacts]);
+    const loadContacts = async () => {
+      setContactsLoading(true);
+      try {
+        const response = await listEligibleContacts({
+          search: debouncedSearch,
+          page: 1,
+          pageSize: 20,
+        });
+        setContacts(response.contacts);
+      } catch {
+        setContacts([]);
+      } finally {
+        setContactsLoading(false);
+      }
+    };
+    void loadContacts();
+  }, [debouncedSearch, listEligibleContacts]);
 
   React.useEffect(() => {
     if (!contactIdValue) {
@@ -629,16 +663,11 @@ const NominationInductDialog: React.FC<NominationInductDialogProps> = ({
     }
   }, [contactIdValue, contacts]);
 
-  const autocompleteOptions = React.useMemo(() => {
-    if (!selectedContact) {
-      return contacts;
-    }
-    const exists = contacts.some((option) => option.id === selectedContact.id);
-    if (exists) {
-      return contacts;
-    }
-    return [selectedContact, ...contacts];
-  }, [contacts, selectedContact]);
+  const autocompleteOptions = !selectedContact
+    ? contacts
+    : contacts.some((option) => option.id === selectedContact.id)
+      ? contacts
+      : [selectedContact, ...contacts];
 
   const handleFormSubmit = async (values: HofNominationInductType) => {
     await onSubmit(nomination.id, values);

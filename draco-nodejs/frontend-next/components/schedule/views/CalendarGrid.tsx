@@ -46,6 +46,17 @@ export interface CalendarGridProps {
   timeZone: string;
 }
 
+function buildGamesByDateKey(games: Game[], tz: string): Map<string, Game[]> {
+  const map = new Map<string, Game[]>();
+  games.forEach((game) => {
+    const key = getDateKeyInTimezone(game.gameDate, tz);
+    if (!key) return;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(game);
+  });
+  return map;
+}
+
 const CalendarGrid: React.FC<CalendarGridProps> = ({
   gridType: _gridType,
   showZoomColumn = false,
@@ -124,42 +135,22 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
       : {},
   };
 
-  const gamesByDateKey = React.useMemo(() => {
-    const map = new Map<string, Game[]>();
-    filteredGames.forEach((game) => {
-      const key = getDateKeyInTimezone(game.gameDate, timeZone);
-      if (!key) {
-        return;
-      }
-      if (!map.has(key)) {
-        map.set(key, []);
-      }
-      map.get(key)!.push(game);
-    });
-    return map;
-  }, [filteredGames, timeZone]);
+  const gamesByDateKey = buildGamesByDateKey(filteredGames, timeZone);
 
-  const monthReference = React.useMemo(() => {
-    if (!currentMonthDate) {
-      return null;
+  const monthReference = currentMonthDate
+    ? {
+        month: currentMonthDate.getMonth(),
+        year: currentMonthDate.getFullYear(),
+      }
+    : null;
+
+  const isInCurrentMonth = (day: Date) => {
+    if (!monthReference) {
+      return true;
     }
 
-    return {
-      month: currentMonthDate.getMonth(),
-      year: currentMonthDate.getFullYear(),
-    };
-  }, [currentMonthDate]);
-
-  const isInCurrentMonth = React.useCallback(
-    (day: Date) => {
-      if (!monthReference) {
-        return true;
-      }
-
-      return day.getMonth() === monthReference.month && day.getFullYear() === monthReference.year;
-    },
-    [monthReference],
-  );
+    return day.getMonth() === monthReference.month && day.getFullYear() === monthReference.year;
+  };
 
   const getGamesForDay = (day: Date) => {
     const dayKey = getDateKeyInTimezone(day, timeZone);

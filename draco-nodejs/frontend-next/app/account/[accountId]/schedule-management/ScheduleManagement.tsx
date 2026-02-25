@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Fab } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { useRole } from '../../../../context/RoleContext';
@@ -39,16 +39,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const { currentAccount } = useAccount();
   const accountType = currentAccount?.accountType;
 
-  const fetchCurrentSeasonRef = useRef(fetchCurrentSeason);
-  useEffect(() => {
-    fetchCurrentSeasonRef.current = fetchCurrentSeason;
-  }, [fetchCurrentSeason]);
-
   useEffect(() => {
     if (accountId) {
-      fetchCurrentSeasonRef.current().catch(console.error);
+      void fetchCurrentSeason();
     }
-  }, [accountId]);
+  }, [accountId, fetchCurrentSeason]);
 
   const [filterType, setFilterType] = useState<FilterType>('month');
   const [filterDate, setFilterDate] = useState<Date>(new Date());
@@ -62,25 +57,25 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     message: string;
   } | null>(null);
 
-  const handleFeedbackClose = useCallback(() => {
+  const handleFeedbackClose = () => {
     setFeedback(null);
-  }, []);
+  };
 
-  const setSuccess = useCallback((message: string | null) => {
+  const setSuccess = (message: string | null) => {
     if (message) {
       setFeedback({ severity: 'success', message });
     } else {
       setFeedback((prev) => (prev?.severity === 'success' ? null : prev));
     }
-  }, []);
+  };
 
-  const setError = useCallback((message: string | null) => {
+  const setError = (message: string | null) => {
     if (message) {
       setFeedback({ severity: 'error', message });
     } else {
       setFeedback((prev) => (prev?.severity === 'error' ? null : prev));
     }
-  }, []);
+  };
 
   const {
     games,
@@ -89,11 +84,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     officials,
     hasOfficials,
     leagues,
-    leagueTeams,
     leagueTeamsCache,
     loadingGames,
     loadingStaticData,
-    loadLeagueTeams,
     loadOfficials,
     loadGamesData,
     clearLeagueTeams,
@@ -123,12 +116,13 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     filteredGames,
   } = useScheduleFilters({
     games,
-    leagues,
-    leagueTeams,
-    loadLeagueTeams,
     filterDate,
     setFilterDate,
   });
+
+  const leagueTeams = filterLeagueSeasonId
+    ? (leagueTeamsCache.get(filterLeagueSeasonId) ?? [])
+    : [];
 
   const {
     createDialogOpen,
@@ -162,14 +156,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     gameDate: Date;
   } | null>(null);
 
-  const convertGameToGameCardDataWithTeams = useCallback(
-    (game: Game): GameCardData => {
-      return convertGameToGameCardData(game, teams, locations);
-    },
-    [teams, locations],
-  );
+  const convertGameToGameCardDataWithTeams = (game: Game): GameCardData => {
+    return convertGameToGameCardData(game, teams, locations);
+  };
 
-  const computeInitialGameDate = useCallback((): Date => {
+  const computeInitialGameDate = (): Date => {
     switch (filterType) {
       case 'day':
         return new Date(filterDate);
@@ -180,9 +171,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       default:
         return new Date();
     }
-  }, [filterType, filterDate, startDate]);
+  };
 
-  const handleAddGameClick = useCallback(() => {
+  const handleAddGameClick = () => {
     const initialDate = computeInitialGameDate();
     setCreateDialogDefaults({
       leagueSeasonId: filterLeagueSeasonId || undefined,
@@ -192,90 +183,71 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       loadOfficials().catch(console.error);
     }
     openCreateDialog();
-  }, [computeInitialGameDate, filterLeagueSeasonId, hasOfficials, loadOfficials, openCreateDialog]);
+  };
 
-  const handleEditGame = useCallback(
-    (game: Game) => {
-      if (hasOfficials) {
-        loadOfficials().catch(console.error);
-      }
-      openEditDialog(game);
-    },
-    [hasOfficials, loadOfficials, openEditDialog],
-  );
+  const handleEditGame = (game: Game) => {
+    if (hasOfficials) {
+      loadOfficials().catch(console.error);
+    }
+    openEditDialog(game);
+  };
 
-  const handleGameResults = useCallback(
-    (game: Game) => {
-      openGameResultsDialog(game);
-    },
-    [openGameResultsDialog],
-  );
+  const handleGameResults = (game: Game) => {
+    openGameResultsDialog(game);
+  };
 
-  const getTeamName = useCallback(
-    (teamId: string): string => {
-      const team = teams.find((t) => t.id === teamId);
-      return team?.name || 'Unknown Team';
-    },
-    [teams],
-  );
+  const getTeamName = (teamId: string): string => {
+    const team = teams.find((t) => t.id === teamId);
+    return team?.name || 'Unknown Team';
+  };
 
-  const canEditRecapForGameCard = useCallback(
-    (game: GameCardData): boolean => {
-      if (game.gameStatus !== GameStatus.Completed) {
-        return false;
-      }
+  const canEditRecapForGameCard = (game: GameCardData): boolean => {
+    if (game.gameStatus !== GameStatus.Completed) {
+      return false;
+    }
 
-      if (hasRole('Administrator')) {
-        return true;
-      }
+    if (hasRole('Administrator')) {
+      return true;
+    }
 
-      if (hasRoleInAccount('AccountAdmin', accountId)) {
-        return true;
-      }
+    if (hasRoleInAccount('AccountAdmin', accountId)) {
+      return true;
+    }
 
-      const canEditHome =
-        hasRoleInTeam('TeamAdmin', game.homeTeamId) ||
-        hasRoleInTeam('TeamManager', game.homeTeamId);
-      const canEditVisitor =
-        hasRoleInTeam('TeamAdmin', game.visitorTeamId) ||
-        hasRoleInTeam('TeamManager', game.visitorTeamId);
+    const canEditHome =
+      hasRoleInTeam('TeamAdmin', game.homeTeamId) || hasRoleInTeam('TeamManager', game.homeTeamId);
+    const canEditVisitor =
+      hasRoleInTeam('TeamAdmin', game.visitorTeamId) ||
+      hasRoleInTeam('TeamManager', game.visitorTeamId);
 
-      return canEditHome || canEditVisitor;
-    },
-    [accountId, hasRole, hasRoleInAccount, hasRoleInTeam],
-  );
+    return canEditHome || canEditVisitor;
+  };
 
-  const fetchRecapForTeam = useCallback(
-    async (game: Game, teamSeasonId: string): Promise<string | null> => {
-      const seasonId = game.season?.id;
-      if (!seasonId) {
-        throw new Error('Missing season information for the selected game.');
-      }
+  const fetchRecapForTeam = async (game: Game, teamSeasonId: string): Promise<string | null> => {
+    const seasonId = game.season?.id;
+    if (!seasonId) {
+      throw new Error('Missing season information for the selected game.');
+    }
 
-      const recap = await getGameSummary({
-        accountId,
-        seasonId,
-        gameId: game.id,
-        teamSeasonId,
-        token: token ?? undefined,
-      });
+    const recap = await getGameSummary({
+      accountId,
+      seasonId,
+      gameId: game.id,
+      teamSeasonId,
+      token: token ?? undefined,
+    });
 
-      return recap ?? null;
-    },
-    [accountId, token],
-  );
+    return recap ?? null;
+  };
 
-  const handleRecapSaved = useCallback(
-    (game: Game, _teamSeasonId: string, _recap: string) => {
-      const updatedGame: Game = {
-        ...game,
-        hasGameRecap: true,
-      };
+  const handleRecapSaved = (game: Game, _teamSeasonId: string, _recap: string) => {
+    const updatedGame: Game = {
+      ...game,
+      hasGameRecap: true,
+    };
 
-      upsertGameInCache(updatedGame);
-    },
-    [upsertGameInCache],
-  );
+    upsertGameInCache(updatedGame);
+  };
 
   const {
     openEditRecap,
@@ -291,12 +263,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     onRecapSaved: handleRecapSaved,
   });
 
-  const handleViewModeChange = useCallback(
-    (mode: ViewMode) => {
-      setManualViewMode(mode === defaultViewMode ? null : mode);
-    },
-    [defaultViewMode],
-  );
+  const handleViewModeChange = (mode: ViewMode) => {
+    setManualViewMode(mode === defaultViewMode ? null : mode);
+  };
 
   return (
     <ScheduleLayout
@@ -327,7 +296,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       setFilterLeagueSeasonId={setFilterLeagueSeasonId}
       setFilterTeamSeasonId={setFilterTeamSeasonId}
       onViewModeChange={handleViewModeChange}
-      loadLeagueTeams={loadLeagueTeams}
       clearLeagueTeams={clearLeagueTeams}
       startDate={startDate}
       endDate={endDate}
