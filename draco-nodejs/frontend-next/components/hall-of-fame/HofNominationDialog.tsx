@@ -9,14 +9,13 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Snackbar,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import { Controller, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { SubmitHofNominationSchema } from '@draco/shared-schemas';
+import { SubmitHofNominationSchema, type ContactType } from '@draco/shared-schemas';
 import { submitAccountHallOfFameNomination } from '@draco/shared-api-client';
 import { z } from 'zod';
 import { useAccountMembership } from '@/hooks/useAccountMembership';
@@ -47,7 +46,38 @@ interface HofNominationDialogProps {
   onSubmitted?: () => void;
 }
 
-const NOMINATION_SUCCESS_MESSAGE = 'Thank you! Your Hall of Fame nomination has been received.';
+const EMPTY_DEFAULTS: FormValues = {
+  nominator: '',
+  phoneNumber: '',
+  email: '',
+  nominee: '',
+  reason: '',
+};
+
+function buildContactDefaults(contact: ContactType | null): FormValues {
+  if (!contact) return EMPTY_DEFAULTS;
+
+  const firstName = contact.firstName?.trim() ?? '';
+  const lastName = contact.lastName?.trim() ?? '';
+  const computedName = [firstName, lastName].filter(Boolean).join(' ').trim();
+  const email = contact.email?.trim() ?? '';
+  const phoneCandidates = [
+    contact.contactDetails?.phone1,
+    contact.contactDetails?.phone2,
+    contact.contactDetails?.phone3,
+  ];
+  const firstPhone = phoneCandidates.find((value): value is string =>
+    Boolean(value && value.trim().length > 0),
+  );
+
+  return {
+    nominator: computedName || email,
+    phoneNumber: firstPhone ? formatPhoneNumber(firstPhone) : '',
+    email,
+    nominee: '',
+    reason: '',
+  };
+}
 
 const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
   accountId,
@@ -58,43 +88,6 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
 }) => {
   const { contact } = useAccountMembership(accountId);
   const apiClient = useApiClient();
-  const contactDefaults = React.useMemo<FormValues>(() => {
-    const base: FormValues = {
-      nominator: '',
-      phoneNumber: '',
-      email: '',
-      nominee: '',
-      reason: '',
-    };
-
-    if (!contact) {
-      return base;
-    }
-
-    const firstName = contact.firstName?.trim() ?? '';
-    const lastName = contact.lastName?.trim() ?? '';
-    const computedName = [firstName, lastName].filter(Boolean).join(' ').trim();
-    const email = contact.email?.trim() ?? '';
-    const phoneCandidates = [
-      contact.contactDetails?.phone1,
-      contact.contactDetails?.phone2,
-      contact.contactDetails?.phone3,
-    ];
-    const firstPhone = phoneCandidates.find((value): value is string =>
-      Boolean(value && value.trim().length > 0),
-    );
-
-    return {
-      ...base,
-      nominator: computedName || email,
-      phoneNumber: firstPhone ? formatPhoneNumber(firstPhone) : '',
-      email,
-    };
-  }, [contact]);
-  const formResolver = React.useMemo(
-    () => zodResolver(FormSchema) as Resolver<FormValues, Record<string, never>, FormValues>,
-    [],
-  );
   const {
     register,
     handleSubmit,
@@ -103,30 +96,26 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
     formState: { errors, isDirty },
     watch,
   } = useForm<FormValues>({
-    resolver: formResolver,
-    defaultValues: contactDefaults,
+    resolver: zodResolver(FormSchema) as Resolver<FormValues, Record<string, never>, FormValues>,
+    defaultValues: EMPTY_DEFAULTS,
   });
   const reasonValue = watch('reason');
 
   const [submitting, setSubmitting] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
-  const [snackbarOpen, setSnackbarOpen] = React.useState(false);
+
   const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
   const [captchaResetKey, setCaptchaResetKey] = React.useState(0);
 
   const hasTurnstile = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
   const submitDisabled = submitting;
 
-  const handleDialogClose = React.useCallback(() => {
+  const handleDialogClose = () => {
     setSubmitError(null);
     setCaptchaToken(null);
     setCaptchaResetKey((key) => key + 1);
-    reset(contactDefaults);
+    reset(buildContactDefaults(contact));
     onClose();
-  }, [contactDefaults, onClose, reset]);
-
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
   };
 
   const onSubmit = async (values: FormValues) => {
@@ -159,7 +148,6 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
 
       assertNoApiError(result, 'Unable to submit Hall of Fame nomination');
 
-      setSnackbarOpen(true);
       onSubmitted?.();
       handleDialogClose();
     } catch (error) {
@@ -175,14 +163,8 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
     }
   };
 
-  const sanitizedCriteria = React.useMemo(() => {
-    if (!criteriaText) {
-      return null;
-    }
-
-    const sanitized = sanitizeRichContent(criteriaText);
-    return sanitized.length > 0 ? sanitized : null;
-  }, [criteriaText]);
+  const rawSanitized = criteriaText ? sanitizeRichContent(criteriaText) : '';
+  const sanitizedCriteria = rawSanitized.length > 0 ? rawSanitized : null;
 
   React.useEffect(() => {
     setSubmitError(null);
@@ -191,15 +173,16 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
   }, [open]);
 
   React.useEffect(() => {
+    const defaults = buildContactDefaults(contact);
     if (!open) {
-      reset(contactDefaults);
+      reset(defaults);
       return;
     }
 
     if (!isDirty) {
-      reset(contactDefaults);
+      reset(defaults);
     }
-  }, [open, contactDefaults, reset, isDirty]);
+  }, [open, contact, reset, isDirty]);
 
   return (
     <>
@@ -322,12 +305,6 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
           </DialogActions>
         </form>
       </Dialog>
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-        message={NOMINATION_SUCCESS_MESSAGE}
-      />
     </>
   );
 };

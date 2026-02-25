@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
 import L from 'leaflet';
@@ -237,13 +237,8 @@ export const FieldLocationMap: React.FC<FieldLocationMapProps> = ({
   readOnly = false,
 }) => {
   const hasLocation = typeof latitude === 'number' && typeof longitude === 'number';
-  const center = useMemo<LatLngExpression>(() => {
-    if (hasLocation && latitude !== null && longitude !== null) {
-      return [latitude, longitude];
-    }
-
-    return DEFAULT_CENTER;
-  }, [hasLocation, latitude, longitude]);
+  const center: LatLngExpression =
+    hasLocation && latitude !== null && longitude !== null ? [latitude, longitude] : DEFAULT_CENTER;
 
   const zoom = hasLocation ? LOCATION_ZOOM : DEFAULT_ZOOM;
 

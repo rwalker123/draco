@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   FormControl,
@@ -63,87 +63,105 @@ export default function StatisticsFilters({
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  // Data loading callbacks - defined before effects that use them
-  const loadSeasons = useCallback(async () => {
-    setLoading((prev) => ({ ...prev, seasons: true }));
-    try {
-      const result = await listAccountSeasons({
-        client: apiClient,
-        path: { accountId },
-        query: { includeDivisions: true },
-        throwOnError: false,
-      });
-
-      const seasonsResponse = unwrapApiResult(result, 'Failed to load seasons');
-      const mappedSeasons = mapSeasonsWithDivisions(seasonsResponse);
-
-      setSeasonsData(mappedSeasons);
-
-      const allTimeOption: Season = {
-        id: '0',
-        name: 'All Time',
-        accountId,
-        isCurrent: false,
-        leagues: [],
-      };
-
-      const allSeasons = [allTimeOption, ...mappedSeasons];
-      setSeasons(allSeasons);
-
-      if (mappedSeasons.length > 0) {
-        const currentSeason = mappedSeasons.find((s) => s.isCurrent) ?? mappedSeasons[0];
-        onChangeRef.current({ seasonId: currentSeason.id });
-      }
-    } catch (error) {
-      console.error('Error loading seasons:', error);
-    } finally {
-      setLoading((prev) => ({ ...prev, seasons: false }));
-    }
-  }, [accountId, apiClient]);
-
-  const loadLeagues = useCallback(async () => {
-    setLoading((prev) => ({ ...prev, leagues: true }));
-    try {
-      let formattedLeagues: League[] = [];
-
-      if (filters.isHistorical) {
-        const result = await listAllTimeLeagues({
+  useEffect(() => {
+    const loadSeasons = async () => {
+      setLoading((prev) => ({ ...prev, seasons: true }));
+      try {
+        const result = await listAccountSeasons({
           client: apiClient,
           path: { accountId },
+          query: { includeDivisions: true },
           throwOnError: false,
         });
 
-        const leagues = unwrapApiResult(result, 'Failed to load leagues') as
-          | LeagueType[]
-          | undefined;
+        const seasonsResponse = unwrapApiResult(result, 'Failed to load seasons');
+        const mappedSeasons = mapSeasonsWithDivisions(seasonsResponse);
 
-        formattedLeagues = (leagues ?? []).map((league) => ({
-          id: league.id,
-          name: league.name,
-        }));
-      } else {
-        const selectedSeason = seasonsData.find((s) => s.id === filters.seasonId);
-        const leaguesData = selectedSeason?.leagues || [];
+        setSeasonsData(mappedSeasons);
 
-        formattedLeagues = leaguesData.map((league) => ({
-          id: league.id,
-          name: league.leagueName,
-        }));
+        const allTimeOption: Season = {
+          id: '0',
+          name: 'All Time',
+          accountId,
+          isCurrent: false,
+          leagues: [],
+        };
+
+        const allSeasons = [allTimeOption, ...mappedSeasons];
+        setSeasons(allSeasons);
+
+        if (mappedSeasons.length > 0) {
+          const currentSeason = mappedSeasons.find((s) => s.isCurrent) ?? mappedSeasons[0];
+          onChangeRef.current({ seasonId: currentSeason.id });
+        }
+      } catch (error) {
+        console.error('Error loading seasons:', error);
+      } finally {
+        setLoading((prev) => ({ ...prev, seasons: false }));
       }
+    };
 
-      setLeagues(formattedLeagues);
+    void loadSeasons();
+  }, [accountId, apiClient]);
 
-      if (formattedLeagues.length > 0) {
-        onChangeRef.current({ leagueId: formattedLeagues[0].id });
-      }
-    } catch (error) {
-      console.error('Error loading leagues:', error);
-    } finally {
-      setLoading((prev) => ({ ...prev, leagues: false }));
+  useEffect(() => {
+    if (!filters.seasonId || seasonsData.length === 0) {
+      setLeagues([]);
+      setDivisions([]);
+      return;
     }
-  }, [accountId, apiClient, seasonsData, filters.seasonId, filters.isHistorical]);
 
-  const loadDivisions = useCallback(() => {
+    const loadLeagues = async () => {
+      setLoading((prev) => ({ ...prev, leagues: true }));
+      try {
+        let formattedLeagues: League[] = [];
+
+        if (filters.isHistorical) {
+          const result = await listAllTimeLeagues({
+            client: apiClient,
+            path: { accountId },
+            throwOnError: false,
+          });
+
+          const leagues = unwrapApiResult(result, 'Failed to load leagues') as
+            | LeagueType[]
+            | undefined;
+
+          formattedLeagues = (leagues ?? []).map((league) => ({
+            id: league.id,
+            name: league.name,
+          }));
+        } else {
+          const selectedSeason = seasonsData.find((s) => s.id === filters.seasonId);
+          const leaguesData = selectedSeason?.leagues || [];
+
+          formattedLeagues = leaguesData.map((league) => ({
+            id: league.id,
+            name: league.leagueName,
+          }));
+        }
+
+        setLeagues(formattedLeagues);
+
+        if (formattedLeagues.length > 0) {
+          onChangeRef.current({ leagueId: formattedLeagues[0].id });
+        }
+      } catch (error) {
+        console.error('Error loading leagues:', error);
+      } finally {
+        setLoading((prev) => ({ ...prev, leagues: false }));
+      }
+    };
+
+    void loadLeagues();
+  }, [filters.seasonId, filters.isHistorical, seasonsData, accountId, apiClient]);
+
+  useEffect(() => {
+    if (!filters.leagueId || filters.leagueId === '0' || seasonsData.length === 0) {
+      setDivisions([]);
+      return;
+    }
+
     setLoading((prev) => ({ ...prev, divisions: true }));
     try {
       const selectedSeason = seasonsData.find((s) => s.id === filters.seasonId);
@@ -159,31 +177,7 @@ export default function StatisticsFilters({
     } finally {
       setLoading((prev) => ({ ...prev, divisions: false }));
     }
-  }, [seasonsData, filters.seasonId, filters.leagueId]);
-
-  // Load seasons on component mount
-  useEffect(() => {
-    loadSeasons();
-  }, [loadSeasons]);
-
-  // Load leagues when season changes or data is loaded
-  useEffect(() => {
-    if (filters.seasonId && seasonsData.length > 0) {
-      loadLeagues();
-    } else {
-      setLeagues([]);
-      setDivisions([]);
-    }
-  }, [filters.seasonId, filters.isHistorical, seasonsData, loadLeagues]);
-
-  // Load divisions when league changes
-  useEffect(() => {
-    if (filters.leagueId && filters.leagueId !== '0' && seasonsData.length > 0) {
-      loadDivisions();
-    } else {
-      setDivisions([]);
-    }
-  }, [filters.leagueId, seasonsData, loadDivisions]);
+  }, [filters.leagueId, filters.seasonId, seasonsData]);
 
   const handleSeasonChange = (event: SelectChangeEvent) => {
     const seasonId = event.target.value;

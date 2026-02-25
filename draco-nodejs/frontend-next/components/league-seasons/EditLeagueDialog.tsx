@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -44,17 +44,17 @@ const EditLeagueDialog: React.FC<EditLeagueDialogProps> = ({
     }
   }, [leagueSeason]);
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     setLeagueName('');
     setError(null);
-  }, []);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     resetForm();
     onClose();
-  }, [resetForm, onClose]);
+  };
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     if (!leagueSeason || !leagueName.trim()) return;
 
     setLoading(true);
@@ -83,7 +83,7 @@ const EditLeagueDialog: React.FC<EditLeagueDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [leagueSeason, leagueName, accountId, apiClient, onSuccess, onError, handleClose]);
+  };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

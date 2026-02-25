@@ -20,12 +20,15 @@ import {
   Typography,
   TextField,
   InputAdornment,
+  alpha,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import type { FieldType, PaginationWithTotalType } from '@draco/shared-schemas';
+import { listAccountFields } from '@draco/shared-api-client';
+import type { FieldType, FieldsType, PaginationWithTotalType } from '@draco/shared-schemas';
 import AccountPageHeader from '../AccountPageHeader';
-import { useFieldService } from '../../hooks/useFieldService';
+import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
 import FieldDetailsCard from './FieldDetailsCard';
 import PageSectionHeader from '../common/PageSectionHeader';
 
@@ -56,7 +59,7 @@ const COLUMNS: ColumnDefinition[] = [
 
 export const FieldsView = forwardRef<FieldsViewRef, FieldsViewProps>(
   ({ accountId, renderRowActions, breadcrumbs }, ref) => {
-    const { listFields } = useFieldService(accountId);
+    const apiClient = useApiClient();
     const hasActionsColumn = Boolean(renderRowActions);
 
     const [fields, setFields] = useState<FieldType[]>([]);
@@ -76,49 +79,65 @@ export const FieldsView = forwardRef<FieldsViewRef, FieldsViewProps>(
     const [refreshCounter, setRefreshCounter] = useState(0);
 
     useEffect(() => {
+      const controller = new AbortController();
+
       const loadFields = async () => {
         setLoading(true);
         setFetchError(null);
 
         try {
-          const result = await listFields({
-            page: page + 1,
-            limit: rowsPerPage,
-            sortBy,
-            sortOrder,
-            search: trimmedSearch || undefined,
+          const apiPage = page + 1;
+          const result = await listAccountFields({
+            client: apiClient,
+            path: { accountId },
+            query: {
+              page: apiPage,
+              limit: rowsPerPage,
+              skip: (apiPage - 1) * rowsPerPage,
+              sortBy,
+              sortOrder,
+              search: trimmedSearch || undefined,
+            },
+            signal: controller.signal,
+            throwOnError: false,
           });
 
-          if (result.success) {
-            const { fields: fetchedFields, pagination: pageInfo } = result.data;
-            setFields(fetchedFields);
-            setPagination(pageInfo ?? null);
+          if (controller.signal.aborted) return;
 
-            setSelectedField((previous) => {
-              if (!previous) {
-                return fetchedFields[0] ?? null;
-              }
+          const data = unwrapApiResult(result, 'Failed to load fields') as FieldsType;
+          const fetchedFields = data.fields;
+          const pageInfo = data.pagination;
 
-              const match = fetchedFields.find((item) => item.id === previous.id);
-              return match ?? fetchedFields[0] ?? null;
-            });
-          } else {
-            setFields([]);
-            setPagination(null);
-            setFetchError(result.error);
-          }
+          setFields(fetchedFields);
+          setPagination(pageInfo ?? null);
+
+          setSelectedField((previous) => {
+            if (!previous) {
+              return fetchedFields[0] ?? null;
+            }
+
+            const match = fetchedFields.find((item) => item.id === previous.id);
+            return match ?? fetchedFields[0] ?? null;
+          });
         } catch (error) {
+          if (controller.signal.aborted) return;
           const message = error instanceof Error ? error.message : 'Failed to load fields';
           setFields([]);
           setPagination(null);
           setFetchError(message);
         } finally {
-          setLoading(false);
+          if (!controller.signal.aborted) {
+            setLoading(false);
+          }
         }
       };
 
       void loadFields();
-    }, [listFields, page, rowsPerPage, sortBy, sortOrder, trimmedSearch, refreshCounter]);
+
+      return () => {
+        controller.abort();
+      };
+    }, [accountId, apiClient, page, rowsPerPage, sortBy, sortOrder, trimmedSearch, refreshCounter]);
 
     useImperativeHandle(
       ref,
@@ -231,7 +250,7 @@ export const FieldsView = forwardRef<FieldsViewRef, FieldsViewProps>(
                         alignItems: 'center',
                         justifyContent: 'center',
                         backdropFilter: 'blur(1px)',
-                        backgroundColor: 'rgba(255,255,255,0.4)',
+                        backgroundColor: (theme) => alpha(theme.palette.background.default, 0.4),
                         pointerEvents: 'none',
                         zIndex: 1,
                       }}

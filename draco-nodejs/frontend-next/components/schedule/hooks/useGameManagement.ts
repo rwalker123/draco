@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Game } from '@/types/schedule';
 import type { DeleteGameResult } from './useGameDeletion';
 
@@ -53,63 +53,57 @@ export const useGameManagement = ({
 
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [selectedGameForResults, setSelectedGameForResults] = useState<Game | null>(null);
-  const handleDeleteSuccess = useCallback(
-    ({ message, gameId }: DeleteGameResult) => {
-      setSuccess(message);
-      setError(null);
-      setEditDialogOpen(false);
-      setDeleteDialogOpen(false);
+  const handleDeleteSuccess = ({ message, gameId }: DeleteGameResult) => {
+    setSuccess(message);
+    setError(null);
+    setEditDialogOpen(false);
+    setDeleteDialogOpen(false);
 
-      if (selectedGame?.id === gameId) {
-        setSelectedGame(null);
-      }
+    if (selectedGame?.id === gameId) {
+      setSelectedGame(null);
+    }
 
-      if (selectedGameForResults?.id === gameId) {
-        setGameResultsDialogOpen(false);
-        setSelectedGameForResults(null);
-      }
-
-      removeGameFromCache(gameId);
-    },
-    [removeGameFromCache, selectedGame, selectedGameForResults, setSuccess, setError],
-  );
-
-  const handleGameResultsSuccess = useCallback(
-    (payload: ScoreEntrySuccessPayload) => {
-      const { game: updatedGame, message } = payload;
-
-      upsertGameInCache(updatedGame);
-      setSelectedGameForResults(updatedGame);
-      if (selectedGame && selectedGame.id === updatedGame.id) {
-        setSelectedGame(updatedGame);
-      }
-
-      setSuccess(message);
+    if (selectedGameForResults?.id === gameId) {
       setGameResultsDialogOpen(false);
       setSelectedGameForResults(null);
-    },
-    [selectedGame, upsertGameInCache, setSuccess],
-  );
+    }
 
-  const openCreateDialog = useCallback(() => {
+    removeGameFromCache(gameId);
+  };
+
+  const handleGameResultsSuccess = (payload: ScoreEntrySuccessPayload) => {
+    const { game: updatedGame, message } = payload;
+
+    upsertGameInCache(updatedGame);
+    setSelectedGameForResults(updatedGame);
+    if (selectedGame && selectedGame.id === updatedGame.id) {
+      setSelectedGame(updatedGame);
+    }
+
+    setSuccess(message);
+    setGameResultsDialogOpen(false);
+    setSelectedGameForResults(null);
+  };
+
+  const openCreateDialog = () => {
     setSelectedGame(null);
     setCreateDialogOpen(true);
-  }, []);
+  };
 
-  const openEditDialog = useCallback((game: Game) => {
+  const openEditDialog = (game: Game) => {
     setSelectedGame(game);
     setEditDialogOpen(true);
-  }, []);
+  };
 
-  const openDeleteDialog = useCallback((game: Game) => {
+  const openDeleteDialog = (game: Game) => {
     setSelectedGame(game);
     setDeleteDialogOpen(true);
-  }, []);
+  };
 
-  const openGameResultsDialog = useCallback((game: Game) => {
+  const openGameResultsDialog = (game: Game) => {
     setSelectedGameForResults(game);
     setGameResultsDialogOpen(true);
-  }, []);
+  };
 
   return {
     createDialogOpen,

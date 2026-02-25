@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -43,12 +43,12 @@ const DeleteLeagueDialog: React.FC<DeleteLeagueDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     setError(null);
     onClose();
-  }, [onClose]);
+  };
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     if (!leagueSeason) return;
 
     setLoading(true);
@@ -63,7 +63,6 @@ const DeleteLeagueDialog: React.FC<DeleteLeagueDialogProps> = ({
 
       unwrapApiResult(removeResult, 'Failed to remove league from season');
 
-      // Try to delete the league definition (it may fail if used in other seasons)
       try {
         await deleteLeague({
           client: apiClient,
@@ -83,7 +82,7 @@ const DeleteLeagueDialog: React.FC<DeleteLeagueDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [leagueSeason, accountId, seasonId, apiClient, onSuccess, onError, handleClose]);
+  };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

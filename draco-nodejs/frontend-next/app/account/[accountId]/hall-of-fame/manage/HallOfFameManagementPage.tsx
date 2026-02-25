@@ -40,21 +40,18 @@ const HallOfFameManagementPage: React.FC<HallOfFameManagementPageProps> = ({ acc
     updatingKey: settingsUpdatingKey,
     updateSetting,
   } = useAccountSettings(accountId, { requireManage: true });
-  const hofSetting = React.useMemo(
-    () => accountSettings?.find((setting) => setting.definition.key === 'ShowHOF'),
-    [accountSettings],
-  );
+  const hofSetting = accountSettings?.find((setting) => setting.definition.key === 'ShowHOF');
   const [availabilityError, setAvailabilityError] = React.useState<string | null>(null);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: TabId) => {
     setActiveTab(newValue);
   };
 
-  const handleMembersChanged = React.useCallback(() => {
+  const handleMembersChanged = () => {
     setMembersRefreshKey((key) => key + 1);
-  }, []);
+  };
 
-  const handleOpenCreateMember = React.useCallback(() => {
+  const handleOpenCreateMember = () => {
     setActiveTab((prev) => {
       if (prev !== 'members') {
         return 'members';
@@ -62,21 +59,21 @@ const HallOfFameManagementPage: React.FC<HallOfFameManagementPageProps> = ({ acc
       return prev;
     });
     setCreateRequestKey((key) => key + 1);
-  }, []);
+  };
 
-  const handleAvailabilityToggle = React.useCallback(
-    async (_event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
-      try {
-        await updateSetting('ShowHOF', checked);
-        setAvailabilityError(null);
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Unable to update Hall of Fame availability.';
-        setAvailabilityError(message);
-      }
-    },
-    [updateSetting],
-  );
+  const handleAvailabilityToggle = async (
+    _event: React.ChangeEvent<HTMLInputElement>,
+    checked: boolean,
+  ) => {
+    try {
+      await updateSetting('ShowHOF', checked);
+      setAvailabilityError(null);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unable to update Hall of Fame availability.';
+      setAvailabilityError(message);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-background">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useCallback } from 'react';
+import React from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -62,47 +62,39 @@ export function TeamScoresSection({
 }: TeamScoresSectionProps) {
   const theme = useTheme();
 
-  const teamTotal = useMemo(() => {
-    return Object.values(scores).reduce((sum, score) => {
-      if (score.isAbsent && !score.substituteGolferId) return sum;
-      return sum + (score.totalScore || 0);
-    }, 0);
-  }, [scores]);
+  const teamTotal = Object.values(scores).reduce((sum, score) => {
+    if (score.isAbsent && !score.substituteGolferId) return sum;
+    return sum + (score.totalScore || 0);
+  }, 0);
 
-  const activePlayerCount = useMemo(() => {
-    return Object.values(scores).filter((score) => !score.isAbsent || score.substituteGolferId)
-      .length;
-  }, [scores]);
+  const activePlayerCount = Object.values(scores).filter(
+    (score) => !score.isAbsent || score.substituteGolferId,
+  ).length;
 
   const hasMorePlayersThanAllowed = players.length > teamSize;
   const hasFewerPlayersThanRequired = players.length < teamSize;
   const missingPlayerCount = hasFewerPlayersThanRequired ? teamSize - players.length : 0;
 
-  const selectedPlayerIds = useMemo(() => {
-    return Object.entries(scores)
-      .filter(([, score]) => !score.isAbsent)
-      .map(([rosterId]) => rosterId);
-  }, [scores]);
+  const selectedPlayerIds = Object.entries(scores)
+    .filter(([, score]) => !score.isAbsent)
+    .map(([rosterId]) => rosterId);
 
   const selectedCount = selectedPlayerIds.length;
   const canSelectMore = selectedCount < teamSize;
 
-  const handlePlayerSelectionChange = useCallback(
-    (rosterId: string, isSelected: boolean) => {
-      const currentScore = scores[rosterId];
-      if (!currentScore) return;
+  const handlePlayerSelectionChange = (rosterId: string, isSelected: boolean) => {
+    const currentScore = scores[rosterId];
+    if (!currentScore) return;
 
-      if (isSelected && !canSelectMore) {
-        return;
-      }
+    if (isSelected && !canSelectMore) {
+      return;
+    }
 
-      onScoreChange(rosterId, {
-        ...currentScore,
-        isAbsent: !isSelected,
-      });
-    },
-    [scores, onScoreChange, canSelectMore],
-  );
+    onScoreChange(rosterId, {
+      ...currentScore,
+      isAbsent: !isSelected,
+    });
+  };
 
   return (
     <Accordion defaultExpanded={defaultExpanded} sx={{ mb: 2 }}>

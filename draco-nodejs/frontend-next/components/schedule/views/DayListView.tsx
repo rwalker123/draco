@@ -111,15 +111,9 @@ const DayListView: React.FC<DayListViewProps> = ({
   const gamesByDate = isDayView ? null : getGamesByDate();
   const sortedDates = isDayView ? null : Object.keys(gamesByDate!).sort();
   const isToday = isDayView ? isSameDayInTimezone(currentDate, new Date(), timeZone) : false;
-  const todayKey = React.useMemo(() => getDateKeyInTimezone(new Date(), timeZone), [timeZone]);
-  const computedWeekStart = React.useMemo(
-    () => (isDayView ? startOfWeek(currentDate) : _startDate),
-    [isDayView, currentDate, _startDate],
-  );
-  const computedWeekEnd = React.useMemo(
-    () => (isDayView ? endOfWeek(currentDate) : _endDate),
-    [isDayView, currentDate, _endDate],
-  );
+  const todayKey = getDateKeyInTimezone(new Date(), timeZone);
+  const computedWeekStart = isDayView ? startOfWeek(currentDate) : _startDate;
+  const computedWeekEnd = isDayView ? endOfWeek(currentDate) : _endDate;
 
   const renderDayContent = () => {
     if (dayGames.length === 0) {

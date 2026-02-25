@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { formatGameDateTime } from '../../../utils/dateUtils';
@@ -90,93 +90,90 @@ export const useGameOperations = ({ accountId, timeZone }: UseGameOperationsArgs
   const apiClient = useApiClient();
   const [loading, setLoading] = useState(false);
 
-  const createGameOperation = useCallback(
-    async (values: GameFormValues): Promise<GameOperationResult> => {
-      setLoading(true);
-      try {
-        const currentSeasonId = await fetchCurrentSeason();
-        const formattedDate = formatGameDateTime(values.gameDate, values.gameTime, timeZone);
+  const createGameOperation = async (values: GameFormValues): Promise<GameOperationResult> => {
+    setLoading(true);
+    try {
+      const currentSeasonId = await fetchCurrentSeason();
+      const formattedDate = formatGameDateTime(values.gameDate, values.gameTime, timeZone);
 
-        const payload = buildUpsertGamePayload({
-          leagueSeasonId: values.leagueSeasonId,
-          gameDate: formattedDate,
-          homeTeamId: values.homeTeamId,
-          visitorTeamId: values.visitorTeamId,
-          fieldId: values.fieldId,
-          comment: values.comment,
-          gameType: values.gameType,
-          gameStatus: GameStatus.Scheduled,
-          umpire1: values.umpire1,
-          umpire2: values.umpire2,
-          umpire3: values.umpire3,
-          umpire4: values.umpire4,
-        });
+      const payload = buildUpsertGamePayload({
+        leagueSeasonId: values.leagueSeasonId,
+        gameDate: formattedDate,
+        homeTeamId: values.homeTeamId,
+        visitorTeamId: values.visitorTeamId,
+        fieldId: values.fieldId,
+        comment: values.comment,
+        gameType: values.gameType,
+        gameStatus: GameStatus.Scheduled,
+        umpire1: values.umpire1,
+        umpire2: values.umpire2,
+        umpire3: values.umpire3,
+        umpire4: values.umpire4,
+      });
 
-        const result = await createGame({
-          client: apiClient,
-          path: { accountId, seasonId: currentSeasonId },
-          body: payload,
-          throwOnError: false,
-        });
+      const result = await createGame({
+        client: apiClient,
+        path: { accountId, seasonId: currentSeasonId },
+        body: payload,
+        throwOnError: false,
+      });
 
-        const createdGame = unwrapApiResult(result, 'Failed to create game');
+      const createdGame = unwrapApiResult(result, 'Failed to create game');
 
-        return {
-          message: 'Game created successfully',
-          game: mapGameResponseToScheduleGame(createdGame),
-        };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, apiClient, fetchCurrentSeason, timeZone],
-  );
+      return {
+        message: 'Game created successfully',
+        game: mapGameResponseToScheduleGame(createdGame),
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const updateGameOperation = useCallback(
-    async (game: Game, values: GameFormValues): Promise<GameOperationResult> => {
-      setLoading(true);
-      try {
-        const formattedDate = formatGameDateTime(values.gameDate, values.gameTime, timeZone);
-        const leagueSeasonId = values.leagueSeasonId || game.league.id;
+  const updateGameOperation = async (
+    game: Game,
+    values: GameFormValues,
+  ): Promise<GameOperationResult> => {
+    setLoading(true);
+    try {
+      const formattedDate = formatGameDateTime(values.gameDate, values.gameTime, timeZone);
+      const leagueSeasonId = values.leagueSeasonId || game.league.id;
 
-        const payload = buildUpsertGamePayload({
-          leagueSeasonId,
-          gameDate: formattedDate,
-          homeTeamId: values.homeTeamId,
-          visitorTeamId: values.visitorTeamId,
-          fieldId: values.fieldId,
-          comment: values.comment,
-          gameType: values.gameType,
-          gameStatus: game.gameStatus,
-          umpire1: values.umpire1,
-          umpire2: values.umpire2,
-          umpire3: values.umpire3,
-          umpire4: values.umpire4,
-        });
+      const payload = buildUpsertGamePayload({
+        leagueSeasonId,
+        gameDate: formattedDate,
+        homeTeamId: values.homeTeamId,
+        visitorTeamId: values.visitorTeamId,
+        fieldId: values.fieldId,
+        comment: values.comment,
+        gameType: values.gameType,
+        gameStatus: game.gameStatus,
+        umpire1: values.umpire1,
+        umpire2: values.umpire2,
+        umpire3: values.umpire3,
+        umpire4: values.umpire4,
+      });
 
-        const result = await updateGame({
-          client: apiClient,
-          path: {
-            accountId,
-            seasonId: game.season.id,
-            gameId: game.id,
-          },
-          body: payload,
-          throwOnError: false,
-        });
+      const result = await updateGame({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: game.season.id,
+          gameId: game.id,
+        },
+        body: payload,
+        throwOnError: false,
+      });
 
-        const updatedGame = unwrapApiResult(result, 'Failed to update game');
+      const updatedGame = unwrapApiResult(result, 'Failed to update game');
 
-        return {
-          message: 'Game updated successfully',
-          game: mapGameResponseToScheduleGame(updatedGame),
-        };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, apiClient, timeZone],
-  );
+      return {
+        message: 'Game updated successfully',
+        game: mapGameResponseToScheduleGame(updatedGame),
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
     createGame: createGameOperation,

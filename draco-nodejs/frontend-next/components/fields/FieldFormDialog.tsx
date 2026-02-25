@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import {
   Alert,
@@ -102,38 +102,6 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const { createField, updateField } = useFieldService(accountId);
 
-  const initialValues = useMemo<FieldFormValues>(() => {
-    if (!field) {
-      return DEFAULT_VALUES;
-    }
-
-    return {
-      name: field.name ?? '',
-      shortName: field.shortName ?? field.name?.slice(0, 5) ?? '',
-      hasLights: field.hasLights ?? false,
-      schedulerStartIncrementMinutes: field.schedulerStartIncrementMinutes ?? 165,
-      address: field.address ?? '',
-      city: field.city ?? '',
-      state: field.state ?? '',
-      zip: field.zip ?? '',
-      comment: field.comment ?? '',
-      directions: field.directions ?? '',
-      rainoutNumber: field.rainoutNumber ?? '',
-      latitude: field.latitude ?? '',
-      longitude: field.longitude ?? '',
-    };
-  }, [field]);
-
-  const formResolver = useMemo(
-    () =>
-      zodResolver(UpsertFieldSchema) as Resolver<
-        FieldFormValues,
-        Record<string, never>,
-        FieldFormValues
-      >,
-    [],
-  );
-
   const {
     register,
     control,
@@ -145,24 +113,45 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
     watch,
     formState: { errors, isSubmitting },
   } = useForm<FieldFormValues>({
-    resolver: formResolver,
+    resolver: zodResolver(UpsertFieldSchema) as Resolver<
+      FieldFormValues,
+      Record<string, never>,
+      FieldFormValues
+    >,
     defaultValues: DEFAULT_VALUES,
   });
 
   useEffect(() => {
     if (open) {
-      reset(initialValues);
+      const values: FieldFormValues = field
+        ? {
+            name: field.name ?? '',
+            shortName: field.shortName ?? field.name?.slice(0, 5) ?? '',
+            hasLights: field.hasLights ?? false,
+            schedulerStartIncrementMinutes: field.schedulerStartIncrementMinutes ?? 165,
+            address: field.address ?? '',
+            city: field.city ?? '',
+            state: field.state ?? '',
+            zip: field.zip ?? '',
+            comment: field.comment ?? '',
+            directions: field.directions ?? '',
+            rainoutNumber: field.rainoutNumber ?? '',
+            latitude: field.latitude ?? '',
+            longitude: field.longitude ?? '',
+          }
+        : DEFAULT_VALUES;
+      reset(values);
       setSubmitError(null);
       setGeocodeError(null);
     }
-  }, [open, initialValues, reset]);
+  }, [open, field, reset]);
 
   const latitudeValue = watch('latitude');
   const longitudeValue = watch('longitude');
   const latitude = parseCoordinate(latitudeValue);
   const longitude = parseCoordinate(longitudeValue);
 
-  const handleLocateAddress = useCallback(async () => {
+  const handleLocateAddress = async () => {
     const { address, city, state, zip } = getValues();
     const components = [address, city, state, zip].filter(
       (part): part is string => typeof part === 'string' && part.trim().length > 0,
@@ -217,16 +206,13 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
     } finally {
       setGeocodeLoading(false);
     }
-  }, [getValues, setValue, trigger]);
+  };
 
-  const handleMapLocationChange = useCallback(
-    (lat: number, lng: number) => {
-      setValue('latitude', lat.toFixed(6));
-      setValue('longitude', lng.toFixed(6));
-      void trigger(['latitude', 'longitude']);
-    },
-    [setValue, trigger],
-  );
+  const handleMapLocationChange = (lat: number, lng: number) => {
+    setValue('latitude', lat.toFixed(6));
+    setValue('longitude', lng.toFixed(6));
+    void trigger(['latitude', 'longitude']);
+  };
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
