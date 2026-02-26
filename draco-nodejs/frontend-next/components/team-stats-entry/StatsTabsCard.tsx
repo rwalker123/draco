@@ -1,13 +1,6 @@
 'use client';
 
-import React, {
-  forwardRef,
-  useCallback,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Alert, Box, Button, Card, CardContent, Tab, Tabs } from '@mui/material';
 import type {
   CreateGameBattingStatType,
@@ -139,135 +132,118 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
     const showAttendanceTab = enableAttendanceTracking && canManageStats && Boolean(selectedGameId);
     const showRecapTab = Boolean(selectedGameId);
 
-    const availableTabs: TabKey[] = useMemo(() => {
-      const tabs: TabKey[] = ['batting', 'pitching'];
-      if (showRecapTab) {
-        tabs.push('recap');
-      }
-      if (showAttendanceTab) {
-        tabs.push('attendance');
-      }
-      return tabs;
-    }, [showRecapTab, showAttendanceTab]);
+    const tabs: TabKey[] = ['batting', 'pitching'];
+    if (showRecapTab) {
+      tabs.push('recap');
+    }
+    if (showAttendanceTab) {
+      tabs.push('attendance');
+    }
+    const availableTabs: TabKey[] = tabs;
 
     const currentTab = availableTabs.includes(tab) ? tab : 'batting';
 
-    const requestUnsavedDecision = useCallback(
-      (prompt: UnsavedChangesPrompt) =>
-        new Promise<UnsavedChangesDecision>((resolve) => {
-          unsavedResolverRef.current = resolve;
-          setUnsavedPrompt(prompt);
-        }),
-      [],
-    );
+    const requestUnsavedDecision = (prompt: UnsavedChangesPrompt) =>
+      new Promise<UnsavedChangesDecision>((resolve) => {
+        unsavedResolverRef.current = resolve;
+        setUnsavedPrompt(prompt);
+      });
 
-    const handleUnsavedDecision = useCallback((decision: UnsavedChangesDecision) => {
+    const handleUnsavedDecision = (decision: UnsavedChangesDecision) => {
       const resolver = unsavedResolverRef.current;
       unsavedResolverRef.current = null;
       setUnsavedPrompt(null);
       resolver?.(decision);
-    }, []);
+    };
 
-    const resolveGridDirtyRows = useCallback(
-      async (
-        gridRef: React.RefObject<EditableGridHandle | null>,
-        reason: UnsavedChangesReason,
-        tabKey: 'batting' | 'pitching',
-      ): Promise<boolean> => {
-        const handle = gridRef.current;
-        if (!handle || !handle.hasDirtyRow()) {
-          return true;
-        }
+    const resolveGridDirtyRows = async (
+      gridRef: React.RefObject<EditableGridHandle | null>,
+      reason: UnsavedChangesReason,
+      tabKey: 'batting' | 'pitching',
+    ): Promise<boolean> => {
+      const handle = gridRef.current;
+      if (!handle || !handle.hasDirtyRow()) {
+        return true;
+      }
 
-        const info = handle.getDirtyRowInfo();
-        if (!info) {
+      const info = handle.getDirtyRowInfo();
+      if (!info) {
+        return true;
+      }
+
+      const decision = await requestUnsavedDecision({
+        reason,
+        playerName: info.playerName,
+        tab: tabKey,
+      });
+
+      if (decision === 'save') {
+        return handle.saveDirtyRow();
+      }
+
+      if (decision === 'discard') {
+        handle.discardDirtyRow();
+        return true;
+      }
+
+      return false;
+    };
+
+    const ensureTabClean = async (tabKey: TabKey, reason: UnsavedChangesReason) => {
+      if (tabKey === 'batting') {
+        return resolveGridDirtyRows(battingGridRef, reason, 'batting');
+      }
+      if (tabKey === 'pitching') {
+        return resolveGridDirtyRows(pitchingGridRef, reason, 'pitching');
+      }
+      if (tabKey === 'recap') {
+        const handle = recapSectionRef.current;
+        if (!handle || !handle.hasDirtyContent()) {
           return true;
         }
 
         const decision = await requestUnsavedDecision({
           reason,
-          playerName: info.playerName,
-          tab: tabKey,
+          playerName: 'Game Recap',
+          tab: 'recap',
         });
 
         if (decision === 'save') {
-          return handle.saveDirtyRow();
+          return handle.saveContent();
         }
-
         if (decision === 'discard') {
-          handle.discardDirtyRow();
+          handle.discardContent();
           return true;
         }
-
         return false;
-      },
-      [requestUnsavedDecision],
-    );
+      }
+      return true;
+    };
 
-    const ensureTabClean = useCallback(
-      async (tabKey: TabKey, reason: UnsavedChangesReason) => {
-        if (tabKey === 'batting') {
-          return resolveGridDirtyRows(battingGridRef, reason, 'batting');
-        }
-        if (tabKey === 'pitching') {
-          return resolveGridDirtyRows(pitchingGridRef, reason, 'pitching');
-        }
-        if (tabKey === 'recap') {
-          const handle = recapSectionRef.current;
-          if (!handle || !handle.hasDirtyContent()) {
-            return true;
-          }
+    const attemptTabChange = async (nextTab: TabKey) => {
+      if (nextTab === currentTab) {
+        return;
+      }
 
-          const decision = await requestUnsavedDecision({
-            reason,
-            playerName: 'Game Recap',
-            tab: 'recap',
-          });
-
-          if (decision === 'save') {
-            return handle.saveContent();
-          }
-          if (decision === 'discard') {
-            handle.discardContent();
-            return true;
-          }
-          return false;
-        }
-        return true;
-      },
-      [requestUnsavedDecision, resolveGridDirtyRows],
-    );
-
-    const attemptTabChange = useCallback(
-      async (nextTab: TabKey) => {
-        if (nextTab === currentTab) {
+      if (
+        editMode &&
+        (currentTab === 'batting' || currentTab === 'pitching' || currentTab === 'recap')
+      ) {
+        const ok = await ensureTabClean(currentTab, 'tab-change');
+        if (!ok) {
           return;
         }
+      }
 
-        if (
-          editMode &&
-          (currentTab === 'batting' || currentTab === 'pitching' || currentTab === 'recap')
-        ) {
-          const ok = await ensureTabClean(currentTab, 'tab-change');
-          if (!ok) {
-            return;
-          }
-        }
+      onTabChange(nextTab);
+    };
 
-        onTabChange(nextTab);
-      },
-      [currentTab, editMode, ensureTabClean, onTabChange],
-    );
+    const handleTabsChange = (_event: React.SyntheticEvent, newIndex: number) => {
+      const nextTab = availableTabs[newIndex] ?? 'batting';
+      void attemptTabChange(nextTab);
+    };
 
-    const handleTabsChange = useCallback(
-      (_event: React.SyntheticEvent, newIndex: number) => {
-        const nextTab = availableTabs[newIndex] ?? 'batting';
-        void attemptTabChange(nextTab);
-      },
-      [attemptTabChange, availableTabs],
-    );
-
-    const handleToggleEditMode = useCallback(async () => {
+    const handleToggleEditMode = async () => {
       if (!canManageStats || !selectedGameId) {
         return;
       }
@@ -296,16 +272,9 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
         console.error('Unable to toggle edit mode', error);
         onProcessError(error instanceof Error ? error : new Error('Unable to toggle edit mode.'));
       }
-    }, [
-      canManageStats,
-      editMode,
-      ensureTabClean,
-      onProcessError,
-      resolveGridDirtyRows,
-      selectedGameId,
-    ]);
+    };
 
-    const handleViewSeason = useCallback(async () => {
+    const handleViewSeason = async () => {
       if (!onClearGameSelection) {
         return;
       }
@@ -324,7 +293,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       }
 
       onClearGameSelection();
-    }, [ensureTabClean, onClearGameSelection, resolveGridDirtyRows]);
+    };
 
     useImperativeHandle(
       ref,
@@ -334,22 +303,63 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
           return battingDirty || pitchingDirty || recapDirty;
         },
         resolvePendingEdits: async (reason: UnsavedChangesReason) => {
-          const battingOk = await resolveGridDirtyRows(battingGridRef, reason, 'batting');
+          const resolveGrid = async (
+            gridRef: React.RefObject<EditableGridHandle | null>,
+            tabKey: 'batting' | 'pitching',
+          ): Promise<boolean> => {
+            const handle = gridRef.current;
+            if (!handle || !handle.hasDirtyRow()) {
+              return true;
+            }
+            const info = handle.getDirtyRowInfo();
+            if (!info) {
+              return true;
+            }
+            const decision = await new Promise<UnsavedChangesDecision>((resolve) => {
+              unsavedResolverRef.current = resolve;
+              setUnsavedPrompt({ reason, playerName: info.playerName, tab: tabKey });
+            });
+            if (decision === 'save') {
+              return handle.saveDirtyRow();
+            }
+            if (decision === 'discard') {
+              handle.discardDirtyRow();
+              return true;
+            }
+            return false;
+          };
+
+          const battingOk = await resolveGrid(battingGridRef, 'batting');
           if (!battingOk) {
             return false;
           }
-          const pitchingOk = await resolveGridDirtyRows(pitchingGridRef, reason, 'pitching');
+          const pitchingOk = await resolveGrid(pitchingGridRef, 'pitching');
           if (!pitchingOk) {
             return false;
           }
-          const recapOk = await ensureTabClean('recap', reason);
-          if (!recapOk) {
-            return false;
+
+          const recapHandle = recapSectionRef.current;
+          if (recapHandle && recapHandle.hasDirtyContent()) {
+            const recapDecision = await new Promise<UnsavedChangesDecision>((resolve) => {
+              unsavedResolverRef.current = resolve;
+              setUnsavedPrompt({ reason, playerName: 'Game Recap', tab: 'recap' });
+            });
+            if (recapDecision === 'save') {
+              const saved = await recapHandle.saveContent();
+              if (!saved) {
+                return false;
+              }
+            } else if (recapDecision === 'discard') {
+              recapHandle.discardContent();
+            } else {
+              return false;
+            }
           }
+
           return true;
         },
       }),
-      [battingDirty, pitchingDirty, ensureTabClean, resolveGridDirtyRows],
+      [battingDirty, pitchingDirty],
     );
 
     return (

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Alert, List, ListItemButton, Stack, Switch, Tooltip, Typography } from '@mui/material';
 import type { TeamStatsPlayerSummaryType } from '@draco/shared-schemas';
 
@@ -27,11 +27,11 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
   error,
   canEdit,
 }) => {
-  const selectionSet = useMemo(() => new Set(selection), [selection]);
-  const lockedSet = useMemo(() => new Set(lockedRosterIds), [lockedRosterIds]);
-  const sortedPlayers = useMemo(() => {
-    return [...options].sort((a, b) => buildPlayerLabel(a).localeCompare(buildPlayerLabel(b)));
-  }, [options]);
+  const selectionSet = new Set(selection);
+  const lockedSet = new Set(lockedRosterIds);
+  const sortedPlayers = [...options].sort((a, b) =>
+    buildPlayerLabel(a).localeCompare(buildPlayerLabel(b)),
+  );
   const presentCount = selectionSet.size;
   const totalCount = options.length;
 

@@ -64,104 +64,116 @@ const AccountVideosPage: React.FC = () => {
     void fetchCurrentSeason();
   }, [accountId, fetchCurrentSeason]);
 
-  const loadVideos = React.useCallback(
-    async (limitValue: number, currentFilter?: string | null) => {
-      if (!accountId || !currentSeasonId) {
-        return;
-      }
-      setLoading(true);
-      setError(null);
-      try {
-        const filterValue = currentFilter ?? FILTER_ALL;
-        const query =
-          filterValue !== FILTER_ALL && filterValue !== FILTER_ACCOUNT_ONLY
-            ? { limit: limitValue, teamId: filterValue }
-            : filterValue === FILTER_ACCOUNT_ONLY
-              ? { limit: limitValue, accountOnly: true }
-              : { limit: limitValue };
-        const result = await fetchVideos(query);
-        setVideos(result);
-        setHasMore(result.length === limitValue);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unable to load videos.';
-        setError(message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, currentSeasonId, fetchVideos],
-  );
-
-  const buildTeamOptions = React.useCallback(async () => {
+  React.useEffect(() => {
     if (!accountId || !currentSeasonId) {
       return;
     }
-    try {
-      const [videoResponse, teamsResponse] = await Promise.all([
-        listSocialVideos({
-          client: apiClient,
-          path: { accountId, seasonId: currentSeasonId },
-          query: { limit: 100 },
-          throwOnError: false,
-        }),
-        listSeasonTeams({
-          client: apiClient,
-          path: { accountId, seasonId: currentSeasonId },
-          throwOnError: false,
-        }),
-      ]);
 
-      const videoPayload = unwrapApiResult<{ videos: SocialVideoType[] }>(
-        videoResponse,
-        'Failed to load social videos',
-      );
-      const teamsPayload = unwrapApiResult(teamsResponse, 'Failed to load season teams');
+    const controller = new AbortController();
 
-      const teamIdsWithVideos = new Set(
-        (videoPayload?.videos ?? [])
-          .map((video) => video.teamId)
-          .filter((value): value is string => Boolean(value)),
-      );
+    const buildTeamOptions = async () => {
+      try {
+        const [videoResponse, teamsResponse] = await Promise.all([
+          listSocialVideos({
+            client: apiClient,
+            path: { accountId, seasonId: currentSeasonId },
+            query: { limit: 100 },
+            signal: controller.signal,
+            throwOnError: false,
+          }),
+          listSeasonTeams({
+            client: apiClient,
+            path: { accountId, seasonId: currentSeasonId },
+            signal: controller.signal,
+            throwOnError: false,
+          }),
+        ]);
 
-      if (!teamIdsWithVideos.size) {
-        setTeamOptions([]);
-        return;
-      }
+        if (controller.signal.aborted) return;
 
-      const optionEntries: Array<{ id: string; name: string }> = [];
-      const seen = new Set<string>();
-      (teamsPayload ?? []).forEach((team) => {
-        const id = team.team?.id;
-        if (!id || !teamIdsWithVideos.has(id) || seen.has(id)) {
+        const videoPayload = unwrapApiResult<{ videos: SocialVideoType[] }>(
+          videoResponse,
+          'Failed to load social videos',
+        );
+        const teamsPayload = unwrapApiResult(teamsResponse, 'Failed to load season teams');
+
+        const teamIdsWithVideos = new Set(
+          (videoPayload?.videos ?? [])
+            .map((video) => video.teamId)
+            .filter((value): value is string => Boolean(value)),
+        );
+
+        if (!teamIdsWithVideos.size) {
+          setTeamOptions([]);
           return;
         }
-        seen.add(id);
-        optionEntries.push({
-          id,
-          name: team.name ?? 'Team',
-        });
-      });
-      setTeamOptions(optionEntries);
-    } catch {
-      setTeamOptions([]);
-    }
-  }, [accountId, apiClient, currentSeasonId]);
 
-  React.useEffect(() => {
-    if (currentSeasonId) {
-      void buildTeamOptions();
-    }
-  }, [currentSeasonId, buildTeamOptions]);
+        const optionEntries: Array<{ id: string; name: string }> = [];
+        const seen = new Set<string>();
+        (teamsPayload ?? []).forEach((team) => {
+          const id = team.team?.id;
+          if (!id || !teamIdsWithVideos.has(id) || seen.has(id)) {
+            return;
+          }
+          seen.add(id);
+          optionEntries.push({
+            id,
+            name: team.name ?? 'Team',
+          });
+        });
+        setTeamOptions(optionEntries);
+      } catch {
+        if (controller.signal.aborted) return;
+        setTeamOptions([]);
+      }
+    };
+
+    void buildTeamOptions();
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient, currentSeasonId]);
 
   React.useEffect(() => {
     setLimit(PAGE_SIZE);
   }, [selectedFilter]);
 
   React.useEffect(() => {
-    if (currentSeasonId) {
-      void loadVideos(limit, selectedFilter);
+    if (!accountId || !currentSeasonId) {
+      return;
     }
-  }, [currentSeasonId, limit, selectedFilter, loadVideos]);
+
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+
+    const loadVideos = async () => {
+      try {
+        const filterValue = selectedFilter ?? FILTER_ALL;
+        const query =
+          filterValue !== FILTER_ALL && filterValue !== FILTER_ACCOUNT_ONLY
+            ? { limit, teamId: filterValue }
+            : filterValue === FILTER_ACCOUNT_ONLY
+              ? { limit, accountOnly: true }
+              : { limit };
+        const result = await fetchVideos(query, controller.signal);
+        if (controller.signal.aborted) return;
+        setVideos(result);
+        setHasMore(result.length === limit);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Unable to load videos.';
+        setError(message);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
+    void loadVideos();
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, currentSeasonId, limit, selectedFilter, fetchVideos]);
 
   if (!accountId) {
     return null;

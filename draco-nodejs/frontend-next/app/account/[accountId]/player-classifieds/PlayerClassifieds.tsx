@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Box, Typography, Tabs, Tab } from '@mui/material';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
@@ -87,11 +87,10 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
   };
 
   useEffect(() => {
-    // Clean up any stale verification data once we've initialized state
     localStorage.removeItem('teamsWantedVerification');
   }, []);
 
-  const handleVerificationProcessed = useCallback(() => {
+  const handleVerificationProcessed = () => {
     setVerificationData(null);
     setTabValue(1);
     setMountedTabs((prev) => {
@@ -102,20 +101,7 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
       next.add(1);
       return next;
     });
-  }, []);
-
-  const playersTabContent = useMemo(() => <PlayersWanted accountId={accountId} />, [accountId]);
-
-  const teamsTabContent = useMemo(
-    () => (
-      <TeamsWanted
-        accountId={accountId}
-        autoVerificationData={verificationData}
-        onVerificationProcessed={handleVerificationProcessed}
-      />
-    ),
-    [accountId, handleVerificationProcessed, verificationData],
-  );
+  };
 
   const effectiveTabValue = verificationData ? 1 : tabValue;
 
@@ -162,7 +148,7 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
 
       {/* Tab Content */}
       <TabPanel value={effectiveTabValue} index={0} isMounted={mountedTabs.has(0)}>
-        {playersTabContent}
+        <PlayersWanted accountId={accountId} />
       </TabPanel>
       <TabPanel
         value={effectiveTabValue}
@@ -170,7 +156,11 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
         data-testid="teams-wanted-tabpanel"
         isMounted={mountedTabs.has(1)}
       >
-        {teamsTabContent}
+        <TeamsWanted
+          accountId={accountId}
+          autoVerificationData={verificationData}
+          onVerificationProcessed={handleVerificationProcessed}
+        />
       </TabPanel>
     </main>
   );

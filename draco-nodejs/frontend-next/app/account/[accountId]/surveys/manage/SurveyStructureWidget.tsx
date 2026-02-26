@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -97,7 +97,7 @@ const SurveyCategoryManager: React.FC<SurveyCategoryManagerProps> = ({
     setQuestionDrafts(drafts);
   }, [categories]);
 
-  const handleCreateCategory = useCallback(async () => {
+  const handleCreateCategory = async () => {
     const trimmedName = newCategoryName.trim();
     const priorityValue = newCategoryPriority.trim();
     const parsedPriority = priorityValue ? Number(priorityValue) : categories.length + 1;
@@ -145,214 +145,196 @@ const SurveyCategoryManager: React.FC<SurveyCategoryManagerProps> = ({
     } finally {
       setCreatingCategory(false);
     }
-  }, [
-    accountId,
-    apiClient,
-    categories.length,
-    newCategoryName,
-    newCategoryPriority,
-    onCategoriesChange,
-    onError,
-    onSuccess,
-  ]);
+  };
 
-  const handleSaveCategory = useCallback(
-    async (categoryId: string, updates: { categoryName?: string; priority?: number }) => {
-      setCategorySavingIds((prev) => ({ ...prev, [categoryId]: true }));
+  const handleSaveCategory = async (
+    categoryId: string,
+    updates: { categoryName?: string; priority?: number },
+  ) => {
+    setCategorySavingIds((prev) => ({ ...prev, [categoryId]: true }));
 
-      try {
-        const response = await updatePlayerSurveyCategory({
-          client: apiClient,
-          path: { accountId, categoryId },
-          body: updates,
-          throwOnError: false,
-        });
+    try {
+      const response = await updatePlayerSurveyCategory({
+        client: apiClient,
+        path: { accountId, categoryId },
+        body: updates,
+        throwOnError: false,
+      });
 
-        const updated = unwrapApiResult(response, 'Failed to update category');
-        if (!updated) {
-          throw new Error('Failed to update category');
-        }
-
-        const normalized = {
-          ...updated,
-          questions: updated.questions ?? [],
-        };
-
-        onCategoriesChange((prev) =>
-          prev.map((category) => (category.id === categoryId ? normalized : category)),
-        );
-        onSuccess('Category updated.');
-      } catch (err) {
-        console.error('Failed to update category', err);
-        onError('Failed to update category.');
-      } finally {
-        setCategorySavingIds((prev) => ({ ...prev, [categoryId]: false }));
-      }
-    },
-    [accountId, apiClient, onCategoriesChange, onError, onSuccess],
-  );
-
-  const handleDeleteCategory = useCallback(
-    async (categoryId: string) => {
-      setCategoryDeletingId(categoryId);
-
-      try {
-        await deletePlayerSurveyCategory({
-          client: apiClient,
-          path: { accountId, categoryId },
-        });
-
-        onCategoriesChange((prev) => prev.filter((category) => category.id !== categoryId));
-        onSuccess('Category deleted.');
-      } catch (err) {
-        console.error('Failed to delete category', err);
-        onError('Failed to delete category.');
-      } finally {
-        setCategoryDeletingId(null);
-        setCategoryToDelete(null);
-      }
-    },
-    [accountId, apiClient, onCategoriesChange, onError, onSuccess],
-  );
-
-  const handleCreateQuestion = useCallback(
-    async (categoryId: string) => {
-      const draft = questionDrafts[categoryId] ?? { question: '', questionNumber: '' };
-      const trimmedQuestion = draft.question.trim();
-      const questionNumberValue = draft.questionNumber.trim();
-      const parsedNumber = questionNumberValue ? Number(questionNumberValue) : undefined;
-
-      if (!trimmedQuestion) {
-        onError('Question text is required.');
-        return;
+      const updated = unwrapApiResult(response, 'Failed to update category');
+      if (!updated) {
+        throw new Error('Failed to update category');
       }
 
-      if (parsedNumber !== undefined && Number.isNaN(parsedNumber)) {
-        onError('Question number must be a valid number.');
-        return;
+      const normalized = {
+        ...updated,
+        questions: updated.questions ?? [],
+      };
+
+      onCategoriesChange((prev) =>
+        prev.map((category) => (category.id === categoryId ? normalized : category)),
+      );
+      onSuccess('Category updated.');
+    } catch (err) {
+      console.error('Failed to update category', err);
+      onError('Failed to update category.');
+    } finally {
+      setCategorySavingIds((prev) => ({ ...prev, [categoryId]: false }));
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    setCategoryDeletingId(categoryId);
+
+    try {
+      await deletePlayerSurveyCategory({
+        client: apiClient,
+        path: { accountId, categoryId },
+      });
+
+      onCategoriesChange((prev) => prev.filter((category) => category.id !== categoryId));
+      onSuccess('Category deleted.');
+    } catch (err) {
+      console.error('Failed to delete category', err);
+      onError('Failed to delete category.');
+    } finally {
+      setCategoryDeletingId(null);
+      setCategoryToDelete(null);
+    }
+  };
+
+  const handleCreateQuestion = async (categoryId: string) => {
+    const draft = questionDrafts[categoryId] ?? { question: '', questionNumber: '' };
+    const trimmedQuestion = draft.question.trim();
+    const questionNumberValue = draft.questionNumber.trim();
+    const parsedNumber = questionNumberValue ? Number(questionNumberValue) : undefined;
+
+    if (!trimmedQuestion) {
+      onError('Question text is required.');
+      return;
+    }
+
+    if (parsedNumber !== undefined && Number.isNaN(parsedNumber)) {
+      onError('Question number must be a valid number.');
+      return;
+    }
+
+    setQuestionAddingCategoryId(categoryId);
+
+    try {
+      const response = await createPlayerSurveyQuestion({
+        client: apiClient,
+        path: { accountId, categoryId },
+        body: {
+          categoryId,
+          question: trimmedQuestion,
+          questionNumber:
+            parsedNumber ??
+            (categories.find((c) => c.id === categoryId)?.questions ?? []).length + 1,
+        },
+        throwOnError: false,
+      });
+
+      const created = unwrapApiResult(response, 'Failed to create question');
+      if (!created) {
+        throw new Error('Failed to create question');
       }
 
-      setQuestionAddingCategoryId(categoryId);
+      onCategoriesChange((prev) =>
+        prev.map((category) =>
+          category.id === categoryId
+            ? {
+                ...category,
+                questions: sortQuestions([...(category.questions ?? []), created]),
+              }
+            : category,
+        ),
+      );
+      setQuestionDrafts((prev) => ({
+        ...prev,
+        [categoryId]: { question: '', questionNumber: '' },
+      }));
+      onSuccess('Question created.');
+    } catch (err) {
+      console.error('Failed to create question', err);
+      onError('Failed to create question.');
+    } finally {
+      setQuestionAddingCategoryId(null);
+    }
+  };
 
-      try {
-        const response = await createPlayerSurveyQuestion({
-          client: apiClient,
-          path: { accountId, categoryId },
-          body: {
-            categoryId,
-            question: trimmedQuestion,
-            questionNumber:
-              parsedNumber ??
-              (categories.find((c) => c.id === categoryId)?.questions ?? []).length + 1,
-          },
-          throwOnError: false,
-        });
+  const handleUpdateQuestion = async (
+    questionId: string,
+    updates: { question?: string; questionNumber?: number },
+  ) => {
+    setQuestionSavingIds((prev) => ({ ...prev, [questionId]: true }));
 
-        const created = unwrapApiResult(response, 'Failed to create question');
-        if (!created) {
-          throw new Error('Failed to create question');
-        }
+    try {
+      const response = await updatePlayerSurveyQuestion({
+        client: apiClient,
+        path: { accountId, questionId },
+        body: updates,
+        throwOnError: false,
+      });
 
-        onCategoriesChange((prev) =>
-          prev.map((category) =>
-            category.id === categoryId
-              ? {
-                  ...category,
-                  questions: sortQuestions([...(category.questions ?? []), created]),
-                }
-              : category,
-          ),
-        );
-        setQuestionDrafts((prev) => ({
-          ...prev,
-          [categoryId]: { question: '', questionNumber: '' },
-        }));
-        onSuccess('Question created.');
-      } catch (err) {
-        console.error('Failed to create question', err);
-        onError('Failed to create question.');
-      } finally {
-        setQuestionAddingCategoryId(null);
+      const updated = unwrapApiResult(response, 'Failed to update question');
+      if (!updated) {
+        throw new Error('Failed to update question');
       }
-    },
-    [accountId, apiClient, categories, questionDrafts, onCategoriesChange, onError, onSuccess],
-  );
 
-  const handleUpdateQuestion = useCallback(
-    async (questionId: string, updates: { question?: string; questionNumber?: number }) => {
-      setQuestionSavingIds((prev) => ({ ...prev, [questionId]: true }));
-
-      try {
-        const response = await updatePlayerSurveyQuestion({
-          client: apiClient,
-          path: { accountId, questionId },
-          body: updates,
-          throwOnError: false,
-        });
-
-        const updated = unwrapApiResult(response, 'Failed to update question');
-        if (!updated) {
-          throw new Error('Failed to update question');
-        }
-
-        onCategoriesChange((prev) =>
-          prev.map((category) =>
-            category.id === updated.categoryId
-              ? {
-                  ...category,
-                  questions: sortQuestions(
-                    (category.questions ?? []).map((question) =>
-                      question.id === updated.id ? updated : question,
-                    ),
+      onCategoriesChange((prev) =>
+        prev.map((category) =>
+          category.id === updated.categoryId
+            ? {
+                ...category,
+                questions: sortQuestions(
+                  (category.questions ?? []).map((question) =>
+                    question.id === updated.id ? updated : question,
                   ),
-                }
-              : category,
-          ),
-        );
-        onSuccess('Question updated.');
-      } catch (err) {
-        console.error('Failed to update question', err);
-        onError('Failed to update question.');
-      } finally {
-        setQuestionSavingIds((prev) => ({ ...prev, [questionId]: false }));
-      }
-    },
-    [accountId, apiClient, onCategoriesChange, onError, onSuccess],
-  );
+                ),
+              }
+            : category,
+        ),
+      );
+      onSuccess('Question updated.');
+    } catch (err) {
+      console.error('Failed to update question', err);
+      onError('Failed to update question.');
+    } finally {
+      setQuestionSavingIds((prev) => ({ ...prev, [questionId]: false }));
+    }
+  };
 
-  const handleDeleteQuestion = useCallback(
-    async (categoryId: string, questionId: string) => {
-      setQuestionDeletingId(questionId);
+  const handleDeleteQuestion = async (categoryId: string, questionId: string) => {
+    setQuestionDeletingId(questionId);
 
-      try {
-        await deletePlayerSurveyQuestion({
-          client: apiClient,
-          path: { accountId, questionId },
-        });
+    try {
+      await deletePlayerSurveyQuestion({
+        client: apiClient,
+        path: { accountId, questionId },
+      });
 
-        onCategoriesChange((prev) =>
-          prev.map((category) =>
-            category.id === categoryId
-              ? {
-                  ...category,
-                  questions: (category.questions ?? []).filter(
-                    (question) => question.id !== questionId,
-                  ),
-                }
-              : category,
-          ),
-        );
-        onSuccess('Question deleted.');
-      } catch (err) {
-        console.error('Failed to delete question', err);
-        onError('Failed to delete question.');
-      } finally {
-        setQuestionDeletingId(null);
-        setQuestionToDelete(null);
-      }
-    },
-    [accountId, apiClient, onCategoriesChange, onError, onSuccess],
-  );
+      onCategoriesChange((prev) =>
+        prev.map((category) =>
+          category.id === categoryId
+            ? {
+                ...category,
+                questions: (category.questions ?? []).filter(
+                  (question) => question.id !== questionId,
+                ),
+              }
+            : category,
+        ),
+      );
+      onSuccess('Question deleted.');
+    } catch (err) {
+      console.error('Failed to delete question', err);
+      onError('Failed to delete question.');
+    } finally {
+      setQuestionDeletingId(null);
+      setQuestionToDelete(null);
+    }
+  };
 
   return (
     <Paper sx={{ p: 3 }}>
@@ -527,7 +509,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   const [priority, setPriority] = useState<string>(String(category.priority));
   const [isDirty, setIsDirty] = useState(false);
 
-  const handleSave = useCallback(() => {
+  const handleSave = () => {
     const trimmedName = name.trim();
     const parsedPriority = Number(priority);
 
@@ -544,7 +526,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
       categoryName: trimmedName,
       priority: parsedPriority,
     });
-  }, [category.id, name, priority, onSaveCategory]);
+  };
 
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
@@ -684,7 +666,7 @@ const QuestionRow: React.FC<QuestionRowProps> = ({
   const [numberValue, setNumberValue] = useState<string>(String(question.questionNumber));
   const [dirty, setDirty] = useState(false);
 
-  const handleSave = useCallback(() => {
+  const handleSave = () => {
     const trimmed = label.trim();
     const parsedNumber = Number(numberValue);
 
@@ -697,7 +679,7 @@ const QuestionRow: React.FC<QuestionRowProps> = ({
       question: trimmed,
       questionNumber: parsedNumber,
     });
-  }, [label, numberValue, onSave, question.id]);
+  };
 
   return (
     <Paper variant="outlined" sx={{ p: 1.5 }}>

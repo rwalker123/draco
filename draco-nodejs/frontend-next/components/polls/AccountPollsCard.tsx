@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Typography,
   CircularProgress,
@@ -34,24 +34,9 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submittingPollId, setSubmittingPollId] = useState<string | null>(null);
-  const hasToken = Boolean(token);
-  const canViewPolls = useMemo(
-    () => hasToken && (isAuthorizedForAccount ?? true),
-    [hasToken, isAuthorizedForAccount],
-  );
+  const canViewPolls = Boolean(token) && (isAuthorizedForAccount ?? true);
 
-  const widgetSx = useMemo(
-    () => [
-      {
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      },
-    ],
-    [],
-  );
-
-  const fetchPolls = useCallback(async () => {
+  useEffect(() => {
     if (!canViewPolls) {
       setPolls([]);
       setError(null);
@@ -59,56 +44,65 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    const controller = new AbortController();
 
-    try {
-      const result = await listActiveAccountPolls({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
-
-      const polls = unwrapApiResult(result, 'Failed to load poll list');
-      setPolls(polls ?? []);
-    } catch (err) {
-      console.error('Failed to load polls:', err);
-      setError('Failed to load polls.');
-      setPolls([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, apiClient, canViewPolls]);
-
-  useEffect(() => {
-    void fetchPolls();
-  }, [fetchPolls]);
-
-  const handleVote = useCallback(
-    async (pollId: string, optionId: string) => {
-      if (!canViewPolls) return;
-
-      setSubmittingPollId(pollId);
+    const fetchPolls = async () => {
+      setLoading(true);
       setError(null);
 
       try {
-        const result = await voteOnAccountPoll({
+        const result = await listActiveAccountPolls({
           client: apiClient,
-          path: { accountId, pollId },
-          body: { optionId },
+          path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
-        const updatedPoll = unwrapApiResult(result, 'Failed to submit vote');
-        setPolls((prev) => prev.map((poll) => (poll.id === updatedPoll.id ? updatedPoll : poll)));
+
+        if (controller.signal.aborted) return;
+
+        const loaded = unwrapApiResult(result, 'Failed to load poll list');
+        setPolls(loaded ?? []);
       } catch (err) {
-        console.error('Failed to submit vote:', err);
-        setError('Failed to submit vote.');
+        if (controller.signal.aborted) return;
+        console.error('Failed to load polls:', err);
+        setError('Failed to load polls.');
+        setPolls([]);
       } finally {
-        setSubmittingPollId(null);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-    },
-    [accountId, apiClient, canViewPolls],
-  );
+    };
+
+    void fetchPolls();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient, canViewPolls]);
+
+  const handleVote = async (pollId: string, optionId: string) => {
+    if (!canViewPolls) return;
+
+    setSubmittingPollId(pollId);
+    setError(null);
+
+    try {
+      const result = await voteOnAccountPoll({
+        client: apiClient,
+        path: { accountId, pollId },
+        body: { optionId },
+        throwOnError: false,
+      });
+      const updatedPoll = unwrapApiResult(result, 'Failed to submit vote');
+      setPolls((prev) => prev.map((poll) => (poll.id === updatedPoll.id ? updatedPoll : poll)));
+    } catch (err) {
+      console.error('Failed to submit vote:', err);
+      setError('Failed to submit vote.');
+    } finally {
+      setSubmittingPollId(null);
+    }
+  };
 
   const shouldRenderCard = canViewPolls && (polls.length > 0 || Boolean(error));
 
@@ -121,7 +115,13 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({
       title="Polls"
       subtitle="Share your voice with the organization"
       accent="secondary"
-      sx={widgetSx}
+      sx={[
+        {
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      ]}
     >
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -157,7 +157,7 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({
                 </Typography>
                 <RadioGroup
                   value={selectedOptionId}
-                  onChange={(event) => handleVote(poll.id, event.target.value)}
+                  onChange={(event) => void handleVote(poll.id, event.target.value)}
                 >
                   {poll.options.map((option) => {
                     const voteCount = option.voteCount;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import { Alert, Box } from '@mui/material';
 import type { GameBattingStatLineType, GameBattingStatsType } from '@draco/shared-schemas';
 
@@ -18,75 +18,64 @@ type BattingTableRow = StatsRowBase & { id: string };
 const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, totals }) => {
   const hasStats = Boolean(stats && stats.stats.length > 0);
 
-  const getValue = useCallback(
-    (row: GameBattingStatLineType, field: BattingViewField) =>
-      row[field as keyof GameBattingStatLineType],
-    [],
-  );
+  const getValue = (row: GameBattingStatLineType, field: BattingViewField) =>
+    row[field as keyof GameBattingStatLineType];
 
   const { sortedRows, sortConfig, handleSort } = useSortableRows(stats?.stats ?? [], getValue);
 
-  const tableRows = useMemo<BattingTableRow[]>(() => {
-    const rows = sortedRows.map((stat) => {
-      const row: BattingTableRow = {
-        id: stat.statId,
-        playerName: stat.playerName ?? null,
-        playerNumber: stat.playerNumber ?? null,
-        playerId: stat.playerId ?? null,
-        contactId: stat.contactId ?? null,
-      };
+  const tableRows: BattingTableRow[] = sortedRows.map((stat) => {
+    const row: BattingTableRow = {
+      id: stat.statId,
+      playerName: stat.playerName ?? null,
+      playerNumber: stat.playerNumber ?? null,
+      playerId: stat.playerId ?? null,
+      contactId: stat.contactId ?? null,
+    };
 
-      battingViewFieldOrder.forEach((field) => {
-        if (field === 'playerNumber') {
-          row.playerNumber = stat.playerNumber ?? null;
-        } else if (field === 'playerName') {
-          row.playerName = stat.playerName ?? null;
-        } else {
-          row[field] = ((stat as Record<string, number | string | null | undefined>)[field] ??
-            null) as number | string | null;
-        }
-      });
-
-      return row;
+    battingViewFieldOrder.forEach((field) => {
+      if (field === 'playerNumber') {
+        row.playerNumber = stat.playerNumber ?? null;
+      } else if (field === 'playerName') {
+        row.playerName = stat.playerName ?? null;
+      } else {
+        row[field] = ((stat as Record<string, number | string | null | undefined>)[field] ??
+          null) as number | string | null;
+      }
     });
 
-    if (totals) {
-      const totalsRow: BattingTableRow = {
-        id: 'totals',
-        playerName: 'Totals',
-        playerNumber: null,
-        isTotals: true,
-        playerId: null,
-        contactId: null,
-      };
+    return row;
+  });
 
-      battingViewFieldOrder.forEach((field) => {
-        if (field === 'playerNumber') {
-          totalsRow.playerNumber = null;
-        } else if (field === 'playerName') {
-          totalsRow.playerName = 'Totals';
-        } else {
-          totalsRow[field] = ((totals as Record<string, number | string | null | undefined>)[
-            field
-          ] ?? null) as number | string | null;
-        }
-      });
+  if (totals) {
+    const totalsRow: BattingTableRow = {
+      id: 'totals',
+      playerName: 'Totals',
+      playerNumber: null,
+      isTotals: true,
+      playerId: null,
+      contactId: null,
+    };
 
-      rows.push(totalsRow);
-    }
+    battingViewFieldOrder.forEach((field) => {
+      if (field === 'playerNumber') {
+        totalsRow.playerNumber = null;
+      } else if (field === 'playerName') {
+        totalsRow.playerName = 'Totals';
+      } else {
+        totalsRow[field] = ((totals as Record<string, number | string | null | undefined>)[field] ??
+          null) as number | string | null;
+      }
+    });
 
-    return rows;
-  }, [sortedRows, totals]);
+    tableRows.push(totalsRow);
+  }
 
   const sortField = sortConfig?.key as keyof BattingTableRow | undefined;
   const sortOrder = sortConfig?.direction ?? 'asc';
 
-  const handleTableSort = useCallback(
-    (field: keyof BattingTableRow) => {
-      handleSort(field as BattingViewField);
-    },
-    [handleSort],
-  );
+  const handleTableSort = (field: keyof BattingTableRow) => {
+    handleSort(field as BattingViewField);
+  };
 
   return (
     <Box>

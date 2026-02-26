@@ -102,33 +102,25 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
     return scope.defaultTeamSeasonId ?? scope.teamOptions[0]?.teamSeasonId ?? '';
   });
 
-  const availableTeams: InformationMessageTeamOption[] = React.useMemo(() => {
-    if (scope.type === 'team') {
-      if (scope.teamId) {
-        return [
-          {
-            teamSeasonId: scope.teamSeasonId,
-            teamId: scope.teamId,
-            label: scope.teamLabel ?? 'Team',
-          },
-        ];
-      }
-      return [];
-    }
-    return scope.teamOptions;
-  }, [scope]);
+  const availableTeams: InformationMessageTeamOption[] =
+    scope.type === 'team'
+      ? scope.teamId
+        ? [
+            {
+              teamSeasonId: scope.teamSeasonId,
+              teamId: scope.teamId,
+              label: scope.teamLabel ?? 'Team',
+            },
+          ]
+        : []
+      : scope.teamOptions;
 
-  const operationsScope: WelcomeMessageScope = React.useMemo(() => {
-    if (scope.type === 'team') {
-      return { type: 'team', accountId: scope.accountId, teamSeasonId: scope.teamSeasonId };
-    }
-
-    if (activeScope === 'team' && selectedTeamSeasonId) {
-      return { type: 'team', accountId: scope.accountId, teamSeasonId: selectedTeamSeasonId };
-    }
-
-    return { type: 'account', accountId: scope.accountId };
-  }, [scope, activeScope, selectedTeamSeasonId]);
+  const operationsScope: WelcomeMessageScope =
+    scope.type === 'team'
+      ? { type: 'team', accountId: scope.accountId, teamSeasonId: scope.teamSeasonId }
+      : activeScope === 'team' && selectedTeamSeasonId
+        ? { type: 'team', accountId: scope.accountId, teamSeasonId: selectedTeamSeasonId }
+        : { type: 'account', accountId: scope.accountId };
 
   const {
     listMessages,
@@ -349,7 +341,7 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
 
   const disabledCreateButton = mutationLoading || (effectiveScope === 'team' && !hasTeams);
 
-  const managerTitle = React.useMemo(() => {
+  const resolveManagerTitle = (): string => {
     if (scope.type === 'team') {
       return scope.teamLabel ? `${scope.teamLabel} Information Messages` : title;
     }
@@ -362,7 +354,32 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
       }
     }
     return title;
-  }, [scope, title, activeScope, availableTeams, selectedTeamSeasonId]);
+  };
+
+  const managerTitle = resolveManagerTitle();
+
+  const resolveDialogTeamSeasonId = (): string | undefined => {
+    if (!dialogState.open) {
+      return scope.type === 'team' ? scope.teamSeasonId : selectedTeamSeasonId;
+    }
+
+    if (dialogState.scope === 'team') {
+      if (dialogState.message?.teamId) {
+        const mapped = availableTeams.find((team) => team.teamId === dialogState.message?.teamId);
+        if (mapped) {
+          return mapped.teamSeasonId;
+        }
+      }
+
+      if (scope.type === 'team') {
+        return scope.teamSeasonId;
+      }
+
+      return selectedTeamSeasonId || availableTeams[0]?.teamSeasonId;
+    }
+
+    return scope.type === 'team' ? scope.teamSeasonId : selectedTeamSeasonId;
+  };
 
   return (
     <WidgetShell title={managerTitle} subtitle={description} accent={accent}>
@@ -462,30 +479,7 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
         mode={dialogState.open ? dialogState.mode : 'create'}
         initialMessage={dialogState.open ? (dialogState.message ?? undefined) : undefined}
         initialScope={dialogState.open ? dialogState.scope : effectiveScope}
-        initialTeamSeasonId={(() => {
-          if (!dialogState.open) {
-            return scope.type === 'team' ? scope.teamSeasonId : selectedTeamSeasonId;
-          }
-
-          if (dialogState.scope === 'team') {
-            if (dialogState.message?.teamId) {
-              const mapped = availableTeams.find(
-                (team) => team.teamId === dialogState.message?.teamId,
-              );
-              if (mapped) {
-                return mapped.teamSeasonId;
-              }
-            }
-
-            if (scope.type === 'team') {
-              return scope.teamSeasonId;
-            }
-
-            return selectedTeamSeasonId || availableTeams[0]?.teamSeasonId;
-          }
-
-          return scope.type === 'team' ? scope.teamSeasonId : selectedTeamSeasonId;
-        })()}
+        initialTeamSeasonId={resolveDialogTeamSeasonId()}
         availableTeams={availableTeams}
         onClose={handleDialogClose}
         onSubmit={handleDialogSubmit}

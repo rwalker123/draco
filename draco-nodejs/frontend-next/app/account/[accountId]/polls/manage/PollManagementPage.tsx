@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -46,96 +46,101 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletePoll, setDeletePoll] = useState<AccountPollType | null>(null);
 
-  const canManage = useMemo(() => Boolean(token), [token]);
+  const canManage = Boolean(token);
 
-  const loadPolls = useCallback(async () => {
+  useEffect(() => {
     if (!canManage) {
       setPolls([]);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    const controller = new AbortController();
 
-    try {
-      const result = await listAccountPolls({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
+    const loadPolls = async () => {
+      setLoading(true);
+      setError(null);
 
-      const polls = unwrapApiResult(result, 'Failed to load poll list');
+      try {
+        const result = await listAccountPolls({
+          client: apiClient,
+          path: { accountId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
 
-      setPolls(polls ?? []);
-    } catch (err) {
-      console.error('Failed to load polls:', err);
-      setError('Failed to load polls.');
-      setPolls([]);
-    } finally {
-      setLoading(false);
-    }
+        if (controller.signal.aborted) return;
+
+        const loaded = unwrapApiResult(result, 'Failed to load poll list');
+        setPolls(loaded ?? []);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load polls:', err);
+        setError('Failed to load polls.');
+        setPolls([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadPolls();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, apiClient, canManage]);
 
-  useEffect(() => {
-    void loadPolls();
-  }, [loadPolls]);
-
-  const handleOpenCreate = useCallback(() => {
+  const handleOpenCreate = () => {
     setEditorPoll(null);
     setEditorOpen(true);
-  }, []);
+  };
 
-  const handleOpenEdit = useCallback((poll: AccountPollType) => {
+  const handleOpenEdit = (poll: AccountPollType) => {
     setEditorPoll(poll);
     setEditorOpen(true);
-  }, []);
+  };
 
-  const handleCloseEditor = useCallback(() => {
+  const handleCloseEditor = () => {
     setEditorOpen(false);
     setEditorPoll(null);
-  }, []);
+  };
 
-  const handleEditorSuccess = useCallback(
-    ({ message, poll }: { message: string; poll: AccountPollType }) => {
-      setPolls((prev) => {
-        const exists = prev.some((item) => item.id === poll.id);
-        return exists ? prev.map((item) => (item.id === poll.id ? poll : item)) : [...prev, poll];
-      });
-      setSuccess(message);
-      setError(null);
-    },
-    [],
-  );
+  const handleEditorSuccess = ({ message, poll }: { message: string; poll: AccountPollType }) => {
+    setPolls((prev) => {
+      const exists = prev.some((item) => item.id === poll.id);
+      return exists ? prev.map((item) => (item.id === poll.id ? poll : item)) : [...prev, poll];
+    });
+    setSuccess(message);
+    setError(null);
+  };
 
-  const handleEditorError = useCallback((message: string) => {
+  const handleEditorError = (message: string) => {
     setError(message);
     setSuccess(null);
-  }, []);
+  };
 
-  const handleConfirmDelete = useCallback((poll: AccountPollType) => {
+  const handleConfirmDelete = (poll: AccountPollType) => {
     setDeletePoll(poll);
     setDeleteOpen(true);
-  }, []);
+  };
 
-  const handleCloseDelete = useCallback(() => {
+  const handleCloseDelete = () => {
     setDeleteOpen(false);
     setDeletePoll(null);
-  }, []);
+  };
 
-  const handleDeleteSuccess = useCallback(
-    ({ message, pollId }: { message: string; pollId: string }) => {
-      setPolls((prev) => prev.filter((poll) => poll.id !== pollId));
-      setSuccess(message);
-      setError(null);
-    },
-    [],
-  );
+  const handleDeleteSuccess = ({ message, pollId }: { message: string; pollId: string }) => {
+    setPolls((prev) => prev.filter((poll) => poll.id !== pollId));
+    setSuccess(message);
+    setError(null);
+  };
 
-  const handleDeleteError = useCallback((message: string) => {
+  const handleDeleteError = (message: string) => {
     setError(message);
     setSuccess(null);
-  }, []);
+  };
 
   if (!canManage) {
     return (

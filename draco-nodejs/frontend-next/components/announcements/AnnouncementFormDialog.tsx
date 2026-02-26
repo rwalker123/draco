@@ -98,9 +98,9 @@ const AnnouncementFormDialog: React.FC<AnnouncementFormDialogProps> = ({
   const [plainTextLength, setPlainTextLength] = React.useState<number>(0);
   const [editorKey, setEditorKey] = React.useState<number>(0);
 
-  const computePlainTextLength = React.useCallback<(html: string) => number>((html) => {
+  const computePlainTextLength = (html: string): number => {
     return sanitizeDisplayText(html ?? '').trim().length;
-  }, []);
+  };
 
   React.useEffect(() => {
     if (!open) {
@@ -129,7 +129,7 @@ const AnnouncementFormDialog: React.FC<AnnouncementFormDialogProps> = ({
       setPlainTextLength(0);
       setEditorKey((key) => key + 1);
     }
-  }, [open, mode, initialAnnouncement, reset, setValue, computePlainTextLength]);
+  }, [open, mode, initialAnnouncement, reset, setValue]);
 
   const dialogTitle = mode === 'create' ? 'Create Announcement' : 'Edit Announcement';
 
@@ -143,7 +143,7 @@ const AnnouncementFormDialog: React.FC<AnnouncementFormDialogProps> = ({
 
     await onSubmit(payload);
   });
-  const syncEditorContent = React.useCallback(() => {
+  const syncEditorContent = () => {
     if (!editorRef.current) {
       return;
     }
@@ -154,7 +154,7 @@ const AnnouncementFormDialog: React.FC<AnnouncementFormDialogProps> = ({
       shouldValidate: true,
     });
     setPlainTextLength(computePlainTextLength(sanitizedHtml));
-  }, [setValue, computePlainTextLength]);
+  };
 
   const handleFormSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     syncEditorContent();

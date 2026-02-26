@@ -14,15 +14,15 @@ export const SocialVideoCard: React.FC<SocialVideoCardProps> = ({ video }) => {
   const publishedLabel = formatRelativeTime(video.publishedAt);
   const durationLabel = video.isLive ? 'LIVE' : formatDuration(video.durationSeconds);
   const [isPlaying, setIsPlaying] = React.useState(false);
-  const videoId = React.useMemo(() => extractYouTubeId(video.videoUrl), [video.videoUrl]);
+  const videoId = extractYouTubeId(video.videoUrl);
 
-  const handleInlinePlay = React.useCallback(() => {
+  const handleInlinePlay = () => {
     if (videoId) {
       setIsPlaying(true);
     } else {
       window.open(video.videoUrl, '_blank', 'noreferrer');
     }
-  }, [video.videoUrl, videoId]);
+  };
 
   return (
     <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

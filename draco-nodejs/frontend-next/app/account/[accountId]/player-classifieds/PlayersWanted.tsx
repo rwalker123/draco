@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useCallback } from 'react';
+import React from 'react';
 import { Box, Typography, CircularProgress, Alert, Fab } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
@@ -31,12 +31,10 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
     token || undefined,
   );
 
-  // Get permission functions for edit/delete controls
   const { canEditPlayersWantedById, canDeletePlayersWantedById } = useClassifiedsPermissions({
     accountId,
   });
 
-  // Dialog state management using custom hook
   const {
     createDialogOpen,
     editDialogOpen,
@@ -56,111 +54,70 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
     clearSuccess,
   } = usePlayersWantedDialogs();
 
-  // Handle edit
-  const handleEdit = useCallback(
-    (id: string) => {
-      const classified = playersWanted.find((c) => c.id.toString() === id);
-      if (!classified) return;
+  const handleEdit = (id: string) => {
+    const classified = playersWanted.find((c) => c.id.toString() === id);
+    if (!classified) return;
 
-      openEditDialog(classified);
-    },
-    [playersWanted, openEditDialog],
-  );
+    openEditDialog(classified);
+  };
 
-  // Handle delete
-  const handleDelete = useCallback(
-    (id: string) => {
-      const classified = playersWanted.find((c) => c.id.toString() === id);
-      if (!classified) return;
+  const handleDelete = (id: string) => {
+    const classified = playersWanted.find((c) => c.id.toString() === id);
+    if (!classified) return;
 
-      openDeleteDialog(classified);
-    },
-    [playersWanted, openDeleteDialog],
-  );
+    openDeleteDialog(classified);
+  };
 
-  const handleCreateDialogSuccess = useCallback(
-    async (_event: PlayersWantedDialogSuccessEvent) => {
-      await refreshData();
-      showSuccessMessage(_event.message);
-    },
-    [refreshData, showSuccessMessage],
-  );
+  const handleCreateDialogSuccess = async (_event: PlayersWantedDialogSuccessEvent) => {
+    await refreshData();
+    showSuccessMessage(_event.message);
+  };
 
-  const handleEditDialogSuccess = useCallback(
-    async (_event: PlayersWantedDialogSuccessEvent) => {
-      await refreshData();
-      showSuccessMessage(_event.message);
-    },
-    [refreshData, showSuccessMessage],
-  );
+  const handleEditDialogSuccess = async (_event: PlayersWantedDialogSuccessEvent) => {
+    await refreshData();
+    showSuccessMessage(_event.message);
+  };
 
-  const handleDeleteSuccess = useCallback(
-    async (_event: DeletePlayersWantedSuccessEvent) => {
-      await refreshData();
-      showSuccessMessage(_event.message);
-    },
-    [refreshData, showSuccessMessage],
-  );
+  const handleDeleteSuccess = async (_event: DeletePlayersWantedSuccessEvent) => {
+    await refreshData();
+    showSuccessMessage(_event.message);
+  };
 
-  const handleDialogError = useCallback(
-    (message: string) => {
-      setLocalError(message);
-    },
-    [setLocalError],
-  );
+  const handleDialogError = (message: string) => {
+    setLocalError(message);
+  };
 
-  // Memoized function to render dialogs (DRY principle)
-  const renderDialogs = useMemo(
-    () => (
-      <>
-        {/* Create Players Wanted Dialog */}
+  const renderDialogs = (
+    <>
+      <CreatePlayersWantedDialog
+        accountId={accountId}
+        open={createDialogOpen}
+        onClose={closeCreateDialog}
+        onSuccess={handleCreateDialogSuccess}
+        onError={handleDialogError}
+      />
+
+      {editingClassified && (
         <CreatePlayersWantedDialog
           accountId={accountId}
-          open={createDialogOpen}
-          onClose={closeCreateDialog}
-          onSuccess={handleCreateDialogSuccess}
+          open={editDialogOpen}
+          onClose={closeEditDialog}
+          editMode={true}
+          initialData={editingClassified}
+          onSuccess={handleEditDialogSuccess}
           onError={handleDialogError}
         />
+      )}
 
-        {/* Edit Players Wanted Dialog */}
-        {editingClassified && (
-          <CreatePlayersWantedDialog
-            accountId={accountId}
-            open={editDialogOpen}
-            onClose={closeEditDialog}
-            editMode={true}
-            initialData={editingClassified}
-            onSuccess={handleEditDialogSuccess}
-            onError={handleDialogError}
-          />
-        )}
-
-        {/* Delete Players Wanted Dialog */}
-        <DeletePlayersWantedDialog
-          accountId={accountId}
-          open={deleteDialogOpen}
-          classified={deletingClassified}
-          onClose={closeDeleteDialog}
-          onSuccess={handleDeleteSuccess}
-          onError={handleDialogError}
-        />
-      </>
-    ),
-    [
-      accountId,
-      createDialogOpen,
-      closeCreateDialog,
-      editingClassified,
-      editDialogOpen,
-      closeEditDialog,
-      deleteDialogOpen,
-      deletingClassified,
-      closeDeleteDialog,
-      handleCreateDialogSuccess,
-      handleEditDialogSuccess,
-      handleDeleteSuccess,
-      handleDialogError,
-    ],
+      <DeletePlayersWantedDialog
+        accountId={accountId}
+        open={deleteDialogOpen}
+        classified={deletingClassified}
+        onClose={closeDeleteDialog}
+        onSuccess={handleDeleteSuccess}
+        onError={handleDialogError}
+      />
+    </>
   );
 
   if (loading) {

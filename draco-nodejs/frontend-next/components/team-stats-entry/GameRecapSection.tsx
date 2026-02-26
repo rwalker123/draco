@@ -1,13 +1,6 @@
 'use client';
 
-import React, {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 import { UpsertGameRecapSchema } from '@draco/shared-schemas';
@@ -62,16 +55,56 @@ const GameRecapSection = forwardRef<GameRecapSectionHandle, GameRecapSectionProp
       initialPlainTextRef.current = extractPlainText(sanitizeRichContent(initialContent ?? ''));
     }, [initialContent]);
 
-    const hasRealChanges = useCallback(() => {
-      if (!editorRef.current) {
-        return false;
-      }
-      const currentContent = editorRef.current.getSanitizedContent();
-      const currentPlainText = extractPlainText(currentContent);
-      return currentPlainText !== initialPlainTextRef.current;
-    }, []);
+    useImperativeHandle(
+      ref,
+      () => ({
+        hasDirtyContent: () => {
+          if (!editorRef.current) {
+            return false;
+          }
+          const currentContent = editorRef.current.getSanitizedContent();
+          const currentPlainText = extractPlainText(currentContent);
+          return currentPlainText !== initialPlainTextRef.current;
+        },
+        saveContent: async (): Promise<boolean> => {
+          setSaveError(null);
 
-    const handleSave = useCallback(async (): Promise<boolean> => {
+          const content = editorRef.current?.getSanitizedContent() ?? '';
+          const plainText = extractPlainText(content);
+
+          if (!plainText.length) {
+            setSaveError('Game recap cannot be empty.');
+            return false;
+          }
+
+          try {
+            UpsertGameRecapSchema.parse({ recap: content });
+          } catch (err) {
+            setSaveError(err instanceof Error ? err.message : 'Invalid recap content.');
+            return false;
+          }
+
+          setIsSaving(true);
+          try {
+            await onSave(content);
+            initialPlainTextRef.current = plainText;
+            return true;
+          } catch (err) {
+            setSaveError(err instanceof Error ? err.message : 'Failed to save recap.');
+            return false;
+          } finally {
+            setIsSaving(false);
+          }
+        },
+        discardContent: () => {
+          setEditorKey((k) => k + 1);
+          setSaveError(null);
+        },
+      }),
+      [onSave],
+    );
+
+    const handleSave = async (): Promise<boolean> => {
       setSaveError(null);
 
       const content = editorRef.current?.getSanitizedContent() ?? '';
@@ -100,22 +133,12 @@ const GameRecapSection = forwardRef<GameRecapSectionHandle, GameRecapSectionProp
       } finally {
         setIsSaving(false);
       }
-    }, [onSave]);
+    };
 
-    const handleDiscard = useCallback(() => {
+    const handleDiscard = () => {
       setEditorKey((k) => k + 1);
       setSaveError(null);
-    }, []);
-
-    useImperativeHandle(
-      ref,
-      () => ({
-        hasDirtyContent: hasRealChanges,
-        saveContent: handleSave,
-        discardContent: handleDiscard,
-      }),
-      [hasRealChanges, handleSave, handleDiscard],
-    );
+    };
 
     if (loading) {
       return (

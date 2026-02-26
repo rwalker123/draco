@@ -3,7 +3,7 @@
 // TeamsWantedStateManager Component
 // Centralized logic for determining UI state based on user authentication
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Alert, Stack, Divider, CircularProgress } from '@mui/material';
 import {
   PersonAdd as PersonAddIcon,
@@ -151,39 +151,36 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
     return null;
   };
 
-  // Determine current user state
-  const userState: UserState | 'pending' = React.useMemo(() => {
-    if (!authInitialized || authLoading) return 'pending';
-    if (!user) return 'unauthenticated';
-    if (membershipLoading || isMember === null) return 'pending';
-    if (isMember) return 'authenticated_member';
-    return 'authenticated_non_member';
-  }, [authInitialized, authLoading, user, isMember, membershipLoading]);
+  const userState: UserState | 'pending' =
+    !authInitialized || authLoading
+      ? 'pending'
+      : !user
+        ? 'unauthenticated'
+        : membershipLoading || isMember === null
+          ? 'pending'
+          : isMember
+            ? 'authenticated_member'
+            : 'authenticated_non_member';
 
-  // Handle access code verification
-  const handleAccessCodeSubmit = useCallback(
-    async (accessCode: string) => {
-      setIsVerifyingAccessCode(true);
-      setAccessCodeError(null);
+  const handleAccessCodeSubmit = async (accessCode: string) => {
+    setIsVerifyingAccessCode(true);
+    setAccessCodeError(null);
 
-      try {
-        const result = await accessCodeService.verifyAccessCode(accountId, accessCode);
-        setAccessCodeResult(result);
+    try {
+      const result = await accessCodeService.verifyAccessCode(accountId, accessCode);
+      setAccessCodeResult(result);
 
-        if (result.success) {
-          // Store the verified access code for later use in edit/delete operations
-          setVerifiedAccessCode(accessCode);
-        } else {
-          setAccessCodeError(result.message || 'Access code verification failed');
-        }
-      } catch (error) {
-        setAccessCodeError(error instanceof Error ? error.message : 'An unexpected error occurred');
-      } finally {
-        setIsVerifyingAccessCode(false);
+      if (result.success) {
+        setVerifiedAccessCode(accessCode);
+      } else {
+        setAccessCodeError(result.message || 'Access code verification failed');
       }
-    },
-    [accountId],
-  );
+    } catch (error) {
+      setAccessCodeError(error instanceof Error ? error.message : 'An unexpected error occurred');
+    } finally {
+      setIsVerifyingAccessCode(false);
+    }
+  };
 
   // Handle access code cancellation
   const handleAccessCodeCancel = () => {
@@ -204,12 +201,32 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
         });
         setVerifiedAccessCode(data.accessCode);
       } else if (data?.accessCode) {
-        handleAccessCodeSubmit(data.accessCode);
+        const code = data.accessCode;
+        setIsVerifyingAccessCode(true);
+        setAccessCodeError(null);
+        accessCodeService
+          .verifyAccessCode(accountId, code)
+          .then((result) => {
+            setAccessCodeResult(result);
+            if (result.success) {
+              setVerifiedAccessCode(code);
+            } else {
+              setAccessCodeError(result.message || 'Access code verification failed');
+            }
+          })
+          .catch((error: unknown) => {
+            setAccessCodeError(
+              error instanceof Error ? error.message : 'An unexpected error occurred',
+            );
+          })
+          .finally(() => {
+            setIsVerifyingAccessCode(false);
+          });
       }
 
       pendingAutoVerificationRef.current = null;
     }
-  }, [accessCodeResult, handleAccessCodeSubmit]);
+  }, [accessCodeResult, accountId]);
 
   useEffect(() => {
     if (accessCodeResult && shouldNotifyVerificationRef.current) {

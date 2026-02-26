@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Box,
@@ -90,40 +90,37 @@ const PollEditorDialogInner: React.FC<PollEditorDialogInnerProps> = ({
   onError,
 }) => {
   const { createPoll, updatePoll, loading, resetError } = usePollsService(accountId);
-  const baseState = useMemo(
-    () => (poll ? buildStateFromPoll(poll) : createDefaultFormState()),
-    [poll],
-  );
+  const baseState = poll ? buildStateFromPoll(poll) : createDefaultFormState();
   const [formState, setFormState] = useState<PollFormState>(() => cloneFormState(baseState));
   const [removedOptionIds, setRemovedOptionIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
   const isEditMode = Boolean(poll);
 
-  const resetFormState = useCallback(() => {
+  const resetFormState = () => {
     setFormState(cloneFormState(baseState));
     setRemovedOptionIds([]);
     setFormError(null);
     resetError();
-  }, [baseState, resetError]);
+  };
 
-  const handleAddOption = useCallback(() => {
+  const handleAddOption = () => {
     setFormState((prev) => ({
       ...prev,
       options: [...prev.options, createEmptyOption(prev.options.length)],
     }));
-  }, []);
+  };
 
-  const handleOptionTextChange = useCallback((tempId: string, value: string) => {
+  const handleOptionTextChange = (tempId: string, value: string) => {
     setFormState((prev) => ({
       ...prev,
       options: prev.options.map((option) =>
         option.tempId === tempId ? { ...option, optionText: value } : option,
       ),
     }));
-  }, []);
+  };
 
-  const handleOptionPriorityChange = useCallback((tempId: string, value: string) => {
+  const handleOptionPriorityChange = (tempId: string, value: string) => {
     const parsed = Number.parseInt(value, 10);
     setFormState((prev) => ({
       ...prev,
@@ -133,9 +130,9 @@ const PollEditorDialogInner: React.FC<PollEditorDialogInnerProps> = ({
           : option,
       ),
     }));
-  }, []);
+  };
 
-  const handleRemoveOption = useCallback((option: PollOptionForm) => {
+  const handleRemoveOption = (option: PollOptionForm) => {
     setFormError(null);
     setFormState((prev) => {
       const nextOptions = prev.options.filter((item) => item.tempId !== option.tempId);
@@ -164,14 +161,14 @@ const PollEditorDialogInner: React.FC<PollEditorDialogInnerProps> = ({
         options: nextOptions,
       };
     });
-  }, []);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     resetFormState();
     onClose();
-  }, [onClose, resetFormState]);
+  };
 
-  const handleSave = useCallback(async () => {
+  const handleSave = async () => {
     setFormError(null);
 
     const sanitizedOptions = formState.options.map((option, index) => ({
@@ -232,17 +229,7 @@ const PollEditorDialogInner: React.FC<PollEditorDialogInnerProps> = ({
       setFormError(message);
       onError?.(message);
     }
-  }, [
-    formState,
-    isEditMode,
-    handleClose,
-    onError,
-    onSuccess,
-    poll,
-    removedOptionIds,
-    createPoll,
-    updatePoll,
-  ]);
+  };
 
   return (
     <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
@@ -307,7 +294,7 @@ const PollEditorDialogInner: React.FC<PollEditorDialogInnerProps> = ({
         <Button onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
-        <Button onClick={handleSave} variant="contained" disabled={loading}>
+        <Button onClick={() => void handleSave()} variant="contained" disabled={loading}>
           {loading ? 'Saving…' : 'Save'}
         </Button>
       </DialogActions>
