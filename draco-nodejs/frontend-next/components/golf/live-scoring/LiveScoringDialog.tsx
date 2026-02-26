@@ -94,6 +94,8 @@ function LiveScoringDialogContent({
   } | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const loadTeamRosters = async () => {
       setLoadingGolfers(true);
       try {
@@ -101,14 +103,18 @@ function LiveScoringDialogContent({
           getGolfTeamWithRoster({
             client: apiClient,
             path: { accountId, seasonId, teamSeasonId: team1Id },
+            signal: controller.signal,
             throwOnError: false,
           }),
           getGolfTeamWithRoster({
             client: apiClient,
             path: { accountId, seasonId, teamSeasonId: team2Id },
+            signal: controller.signal,
             throwOnError: false,
           }),
         ]);
+
+        if (controller.signal.aborted) return;
 
         const allGolfers: GolferInfo[] = [];
 
@@ -138,13 +144,20 @@ function LiveScoringDialogContent({
 
         setGolfers(allGolfers);
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error('Failed to load team rosters:', err);
       } finally {
-        setLoadingGolfers(false);
+        if (!controller.signal.aborted) {
+          setLoadingGolfers(false);
+        }
       }
     };
 
     loadTeamRosters();
+
+    return () => {
+      controller.abort();
+    };
   }, [apiClient, accountId, seasonId, team1Id, team2Id]);
 
   useEffect(() => {

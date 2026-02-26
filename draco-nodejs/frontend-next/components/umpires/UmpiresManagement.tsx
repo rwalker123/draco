@@ -80,6 +80,8 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
   const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const loadUmpires = async () => {
       setLoading(true);
       setFetchError(null);
@@ -92,6 +94,8 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
           sortOrder,
         });
 
+        if (controller.signal.aborted) return;
+
         if (result.success) {
           setUmpires(result.data.umpires);
           setPagination(result.data.pagination ?? null);
@@ -101,16 +105,23 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
           setFetchError(result.error);
         }
       } catch (error) {
+        if (controller.signal.aborted) return;
         const message = error instanceof Error ? error.message : 'Failed to load umpires';
         setUmpires([]);
         setPagination(null);
         setFetchError(message);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     void loadUmpires();
+
+    return () => {
+      controller.abort();
+    };
   }, [listUmpires, page, rowsPerPage, sortBy, sortOrder, refreshTrigger]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {

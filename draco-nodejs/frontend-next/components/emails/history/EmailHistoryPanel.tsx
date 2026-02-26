@@ -89,6 +89,8 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
   useEffect(() => {
     if (!accountId || !token) return;
 
+    const controller = new AbortController();
+
     const loadEmails = async () => {
       try {
         setLoading(true);
@@ -105,7 +107,10 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
             status: statusQuery,
           },
           throwOnError: false,
+          signal: controller.signal,
         });
+
+        if (controller.signal.aborted) return;
 
         const data = unwrapApiResult(result, 'Failed to load email history');
 
@@ -135,14 +140,21 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
         setEmails(transformedEmails);
         setPaginationInfo(paginationWithTotalPages);
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error('Failed to load email history:', err);
         setLoadError('Unable to load email history. Please try again.');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     void loadEmails();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, token, apiClient, page, pageSize, statusFilter, refreshKey]);
 
   useEffect(() => {

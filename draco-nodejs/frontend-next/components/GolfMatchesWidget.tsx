@@ -90,12 +90,16 @@ export default function GolfMatchesWidget({
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const loadActiveSessions = async () => {
       try {
         const result = await getActiveLiveScoringSessions({
           client: apiClientRef.current,
           path: { accountId },
+          signal: controller.signal,
         });
+        if (controller.signal.aborted) return;
         const sessions = unwrapApiResult(result, 'Failed to get active sessions') as {
           matchId: string;
           sessionId: string;
@@ -104,7 +108,7 @@ export default function GolfMatchesWidget({
           setActiveSessions(new Set(sessions.map((s) => s.matchId)));
         }
       } catch {
-        // Non-critical — don't block match loading
+        if (controller.signal.aborted) return;
       }
     };
 
@@ -132,7 +136,10 @@ export default function GolfMatchesWidget({
             endDate: endDate.toISOString(),
           },
           throwOnError: false,
+          signal: controller.signal,
         });
+
+        if (controller.signal.aborted) return;
 
         const matches = unwrapApiResult<GolfMatch[]>(matchesResult, 'Failed to load matches');
 
@@ -147,10 +154,14 @@ export default function GolfMatchesWidget({
             client: apiClientRef.current,
             path: { accountId, seasonId, teamSeasonId },
             throwOnError: false,
+            signal: controller.signal,
           }),
         );
 
         const teamResults = await Promise.all(teamPromises);
+
+        if (controller.signal.aborted) return;
+
         const teamsMap = new Map<string, GolfTeamWithRoster>();
         teamResults.forEach((result) => {
           if (result.data) {
@@ -163,6 +174,7 @@ export default function GolfMatchesWidget({
         const matchesWithTees = matches.filter((m) => m.tee?.id);
 
         for (const match of matchesWithTees) {
+          if (controller.signal.aborted) return;
           if (!match.tee?.id) continue;
 
           const team1 = teamsMap.get(match.team1.id);
@@ -186,7 +198,10 @@ export default function GolfMatchesWidget({
                 holesPlayed: 18,
               },
               throwOnError: false,
+              signal: controller.signal,
             });
+
+            if (controller.signal.aborted) return;
 
             if (handicapResult.data) {
               const response = handicapResult.data as BatchCourseHandicapResponse;
@@ -199,6 +214,9 @@ export default function GolfMatchesWidget({
             }
           }
         }
+
+        if (controller.signal.aborted) return;
+
         setCourseHandicaps(handicapsMap);
 
         const now = new Date();
@@ -223,15 +241,22 @@ export default function GolfMatchesWidget({
         setRecentMatches(recent.slice(0, 25));
         setUpcomingMatches(upcoming.slice(0, 25));
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error('Error loading golf matches:', err);
         setError('Failed to load matches');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     loadMatches();
     loadActiveSessions();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, seasonId, refreshTrigger]);
 
   const getTeamName = (teamId: string, teamName: string | undefined): string => {

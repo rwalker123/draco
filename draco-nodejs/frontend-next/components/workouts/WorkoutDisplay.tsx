@@ -54,16 +54,22 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
   const apiClient = useApiClient();
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchWorkout = async () => {
       try {
         setLoading(true);
         const data = await getWorkout(accountId, workoutId, token);
+        if (controller.signal.aborted) return;
         setWorkout(data);
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error('Failed to fetch workout:', error);
         setError('Failed to load workout');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -72,8 +78,11 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
         const result = await listAccountFields({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
+
+        if (controller.signal.aborted) return;
 
         const data = unwrapApiResult(result, 'Failed to load fields');
         const mappedFields: Record<string, FieldDetails> = {};
@@ -101,12 +110,17 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
 
         setFields(mappedFields);
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error('Error fetching fields:', err);
       }
     };
 
     void fetchWorkout();
     void fetchFields();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, workoutId, token, apiClient]);
 
   useEffect(() => {

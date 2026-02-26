@@ -192,6 +192,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   useEffect(() => {
     if (!accessCodeResult && pendingAutoVerificationRef.current) {
       const data = pendingAutoVerificationRef.current;
+      const controller = new AbortController();
 
       if (data?.classifiedData) {
         setAccessCodeResult({
@@ -207,6 +208,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
         accessCodeService
           .verifyAccessCode(accountId, code)
           .then((result) => {
+            if (controller.signal.aborted) return;
             setAccessCodeResult(result);
             if (result.success) {
               setVerifiedAccessCode(code);
@@ -215,16 +217,22 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
             }
           })
           .catch((error: unknown) => {
+            if (controller.signal.aborted) return;
             setAccessCodeError(
               error instanceof Error ? error.message : 'An unexpected error occurred',
             );
           })
           .finally(() => {
+            if (controller.signal.aborted) return;
             setIsVerifyingAccessCode(false);
           });
       }
 
       pendingAutoVerificationRef.current = null;
+
+      return () => {
+        controller.abort();
+      };
     }
   }, [accessCodeResult, accountId]);
 

@@ -45,9 +45,11 @@ export default function GolfStandings({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadStandings = async () => {
-      if (!seasonId || seasonId === '0') return;
+    if (!seasonId || seasonId === '0') return;
 
+    const controller = new AbortController();
+
+    const loadStandings = async () => {
       setLoading(true);
       setError(null);
 
@@ -56,20 +58,30 @@ export default function GolfStandings({
           client: apiClient,
           throwOnError: false,
           path: { accountId, seasonId },
+          signal: controller.signal,
         });
+
+        if (controller.signal.aborted) return;
 
         const data = unwrapApiResult<GolfLeagueStandings>(result, 'Failed to load standings');
         setStandings(data);
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error('Error loading golf standings:', err);
         setError('Failed to load standings');
         setStandings(null);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     loadStandings();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, apiClient, seasonId]);
 
   const sortTeams = (teams: GolfTeamStanding[]): GolfTeamStanding[] => {

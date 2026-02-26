@@ -163,10 +163,10 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
     }
   }, [value, initialContact]);
 
-  // Fetch initial contact information if value is provided
   useEffect(() => {
-    // Only fetch if we have a valid UUID-like contact ID (not empty, not a number like "3")
     if (value && value.trim() !== '' && value.length > 10 && !initialContact) {
+      const controller = new AbortController();
+
       const fetchInitialContact = async () => {
         try {
           if (!token || !accountId) {
@@ -175,6 +175,8 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
 
           const userService = createUserManagementService(token);
           const contact = await userService.getContact(accountId, value);
+
+          if (controller.signal.aborted) return;
 
           const normalizedContact: SearchContact = {
             id: contact.id,
@@ -190,11 +192,16 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
           setInputValue(normalizedContact.displayName || normalizedContact.searchText || '');
           setSelectedContact(normalizedContact);
         } catch (error) {
+          if (controller.signal.aborted) return;
           console.error('Error fetching initial contact:', error);
         }
       };
 
-      fetchInitialContact();
+      void fetchInitialContact();
+
+      return () => {
+        controller.abort();
+      };
     }
   }, [value, token, initialContact, accountId]);
 

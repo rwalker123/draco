@@ -518,17 +518,17 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
    * This typically happens when navigating from template selection to compose
    */
   useEffect(() => {
+    const controller = new AbortController();
+
     const loadInitialTemplate = async () => {
       if (!initialData?.templateId || !emailServiceRef.current || !token) {
         return;
       }
 
-      // Skip if this templateId has already been loaded by this effect
       if (initialTemplateLoadedRef.current === initialData.templateId) {
         return;
       }
 
-      // Mark as loading this template (prevents concurrent loads)
       initialTemplateLoadedRef.current = initialData.templateId;
 
       dispatch({ type: 'SET_LOADING', payload: true });
@@ -548,12 +548,13 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
         },
       );
 
+      if (controller.signal.aborted) return;
+
       dispatch({ type: 'SET_LOADING', payload: false });
 
       if (result.success) {
         dispatch({ type: 'SELECT_TEMPLATE', payload: result.data.template });
       } else {
-        // Clear the ref on failure so retry is possible
         initialTemplateLoadedRef.current = null;
         logError(result.error, 'loadInitialTemplate');
         dispatch({
@@ -572,6 +573,10 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     };
 
     loadInitialTemplate();
+
+    return () => {
+      controller.abort();
+    };
   }, [initialData?.templateId, accountId, token, onError]);
 
   // Actions

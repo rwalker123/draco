@@ -145,21 +145,31 @@ const AdminDashboard: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const loadSummary = async () => {
       setLoading(true);
       setError(null);
 
       try {
         const data = await fetchAdminAnalyticsSummary(apiClient);
+        if (controller.signal.aborted) return;
         setSummary(data);
       } catch (err) {
+        if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : 'Unable to load administrator analytics.');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     void loadSummary();
+
+    return () => {
+      controller.abort();
+    };
   }, [apiClient]);
 
   const handleRefresh = async () => {

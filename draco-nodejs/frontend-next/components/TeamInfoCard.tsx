@@ -51,6 +51,8 @@ export default function TeamInfoCard({
       return;
     }
 
+    const controller = new AbortController();
+
     const fetchTeam = async () => {
       setLoading(true);
       setRecordLoading(true);
@@ -61,8 +63,11 @@ export default function TeamInfoCard({
         const result = await apiGetTeamSeasonDetails({
           client: apiClient,
           path: { accountId, seasonId, teamSeasonId },
+          signal: controller.signal,
           throwOnError: false,
         });
+
+        if (controller.signal.aborted) return;
 
         const data = unwrapApiResult<TeamSeasonRecordType>(
           result,
@@ -92,37 +97,55 @@ export default function TeamInfoCard({
           ties: data.record.t,
         });
       } catch (err: unknown) {
+        if (controller.signal.aborted) return;
         setTeam(null);
         setRecord(null);
         const message = err instanceof Error ? err.message : 'Unknown error';
         setError(message);
         setRecordError(message);
       } finally {
-        setLoading(false);
-        setRecordLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+          setRecordLoading(false);
+        }
       }
     };
 
-    fetchTeam();
+    void fetchTeam();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, apiClient, seasonId, teamSeasonId]);
 
   useEffect(() => {
-    async function fetchAccountName() {
-      if (!accountId) return;
+    if (!accountId) return;
+
+    const controller = new AbortController();
+
+    const fetchAccountName = async () => {
       try {
         const result = await apiGetAccountName({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
+        if (controller.signal.aborted) return;
         const data = unwrapApiResult(result, 'Failed to fetch account name');
         setAccountName(data.name ?? '');
       } catch {
+        if (controller.signal.aborted) return;
         setAccountName('');
       }
-    }
-    fetchAccountName();
+    };
+
+    void fetchAccountName();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, apiClient]);
 
   // Call onTeamDataLoaded when all data is available

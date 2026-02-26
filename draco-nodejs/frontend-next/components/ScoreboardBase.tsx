@@ -227,20 +227,30 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
   React.useEffect(() => {
     if (!accountId) return;
 
+    const controller = new AbortController();
+
     setLoading(true);
     setError(null);
 
     loadGames()
       .then((newGames) => {
+        if (controller.signal.aborted) return;
         setGames(newGames);
         if (onGamesLoaded) onGamesLoaded(newGames);
       })
       .catch((loadError: unknown) => {
+        if (controller.signal.aborted) return;
         setError(loadError instanceof Error ? loadError.message : String(loadError));
       })
       .finally(() => {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       });
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, teamId, currentSeasonId, loadGames, onGamesLoaded, refreshTrigger]);
 
   const sections: GameListSection[] = [{ title, games }];

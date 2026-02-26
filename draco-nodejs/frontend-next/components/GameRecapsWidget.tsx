@@ -102,6 +102,8 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
   useEffect(() => {
     if (!accountId || !seasonId) return;
 
+    const controller = new AbortController();
+
     const fetchRecaps = async () => {
       setLoading(true);
       setError(null);
@@ -124,7 +126,10 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
             sortOrder: 'desc',
           },
           throwOnError: false,
+          signal: controller.signal,
         });
+
+        if (controller.signal.aborted) return;
 
         const data = unwrapApiResult(result, 'Failed to load game recaps');
 
@@ -175,13 +180,20 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
 
         setRecapList(flatRecaps);
       } catch (err) {
+        if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : 'Error loading game recaps');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     void fetchRecaps();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, apiClient, seasonId, teamSeasonId, maxRecaps]);
 
   const sanitizedRecapHtml = (() => {

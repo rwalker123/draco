@@ -309,26 +309,31 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
   // Initialize data
   useEffect(() => {
-    if (token && accountId && !initialized) {
-      // Fetch current season first, then load users and roles
-      fetchCurrentSeasonRef
-        .current()
-        .then((seasonId) => {
-          // Load users with the fetched season ID
-          loadUsersWithSeasonRef.current(seasonId);
-          loadRolesRef.current();
-          loadAutomaticRoleHoldersRef.current();
-          setInitialized(true);
-        })
-        .catch((err) => {
-          console.error('Failed to fetch current season:', err);
-          // Still load users and roles even if season fetch fails
-          loadUsersWithSeasonRef.current(null);
-          loadRolesRef.current();
-          loadAutomaticRoleHoldersRef.current();
-          setInitialized(true);
-        });
-    }
+    if (!token || !accountId || initialized) return;
+
+    const controller = new AbortController();
+
+    fetchCurrentSeasonRef
+      .current()
+      .then((seasonId) => {
+        if (controller.signal.aborted) return;
+        loadUsersWithSeasonRef.current(seasonId);
+        loadRolesRef.current();
+        loadAutomaticRoleHoldersRef.current();
+        setInitialized(true);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        console.error('Failed to fetch current season:', err);
+        loadUsersWithSeasonRef.current(null);
+        loadRolesRef.current();
+        loadAutomaticRoleHoldersRef.current();
+        setInitialized(true);
+      });
+
+    return () => {
+      controller.abort();
+    };
   }, [token, accountId, initialized]);
 
   // Search handler - preserves advanced filter if active
