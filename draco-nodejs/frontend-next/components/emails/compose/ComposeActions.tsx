@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -48,15 +48,12 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
   const [sendMenuAnchor, setSendMenuAnchor] = useState<null | HTMLElement>(null);
   const [showEmptyContentWarning, setShowEmptyContentWarning] = useState(false);
 
-  // Handle send email
-  const handleSend = useCallback(async () => {
+  const handleSend = async () => {
     try {
-      // Sync editor content before validation to avoid race condition
       if (onBeforeSend) {
         onBeforeSend();
       }
 
-      // Check for empty content directly from editor to avoid React state batching race condition
       const currentContent = editorRef?.current?.getSanitizedContent?.() || '';
       if (!currentContent || !currentContent.trim()) {
         setShowEmptyContentWarning(true);
@@ -64,46 +61,37 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
       }
       const success = await actions.sendEmail();
       if (success) {
-        // Email sent successfully - any additional UI feedback would be handled by parent
       }
-      // Error cases are handled by EmailComposeProvider through state management
     } catch (error) {
-      // Catch any unexpected errors that might bubble up
-      // The EmailComposeProvider should handle all email sending errors through state
       console.warn('Unexpected error in handleSend:', error);
     }
-  }, [actions, onBeforeSend, editorRef]);
+  };
 
-  // Handle confirmed send with empty content
-  const handleConfirmEmptySend = useCallback(async () => {
+  const handleConfirmEmptySend = async () => {
     setShowEmptyContentWarning(false);
-    // Sync editor content before sending
     if (onBeforeSend) {
       onBeforeSend();
     }
     const success = await actions.sendEmail();
     if (success) {
-      // Email sent successfully - any additional UI feedback would be handled by parent
     }
-  }, [actions, onBeforeSend]);
+  };
 
-  // Handle schedule
-  const handleSchedule = useCallback(() => {
+  const handleSchedule = () => {
     if (onScheduleClick) {
       onScheduleClick();
     }
-  }, [onScheduleClick]);
+  };
 
-  const handleSendMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
+  const handleSendMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setSendMenuAnchor(event.currentTarget);
-  }, []);
+  };
 
-  const handleSendMenuClose = useCallback(() => {
+  const handleSendMenuClose = () => {
     setSendMenuAnchor(null);
-  }, []);
+  };
 
-  // Determine if send is disabled (pure validation to avoid dispatch in render)
-  const validation = useMemo(() => validateComposeData(state, state.config), [state]);
+  const validation = validateComposeData(state, state.config);
   const canSend = validation.isValid && !state.isSending && !state.isLoading;
 
   // Get recipient count
@@ -247,5 +235,4 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
   );
 };
 
-export const ComposeActions = React.memo(ComposeActionsComponent);
-ComposeActions.displayName = 'ComposeActions';
+export const ComposeActions = ComposeActionsComponent;

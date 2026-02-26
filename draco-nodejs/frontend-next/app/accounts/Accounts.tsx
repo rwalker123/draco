@@ -109,11 +109,6 @@ const Accounts: FC = () => {
     router.push('/signup');
   };
 
-  // handleContact commented out - see TODO for FinalCtaSection below
-  // const handleContact = useCallback(() => {
-  //   router.push('/contact');
-  // }, [router]);
-
   const scrollToSearch = () => {
     document.getElementById('organization-search')?.scrollIntoView({
       behavior: 'smooth',

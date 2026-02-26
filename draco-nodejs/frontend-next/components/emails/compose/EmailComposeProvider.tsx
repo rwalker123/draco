@@ -1,14 +1,6 @@
 'use client';
 
-import React, {
-  createContext,
-  useContext,
-  useReducer,
-  useCallback,
-  useEffect,
-  useRef,
-  useMemo,
-} from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useRef } from 'react';
 import {
   EmailComposeState,
   EmailComposeActions,
@@ -505,7 +497,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
 }) => {
   const { token } = useAuth();
   const apiClient = useApiClient();
-  const config = useMemo(() => ({ ...DEFAULT_COMPOSE_CONFIG, ...userConfig }), [userConfig]);
+  const config = { ...DEFAULT_COMPOSE_CONFIG, ...userConfig };
   const [state, dispatch] = useReducer(composeReducer, createInitialState(config, initialData));
 
   // Refs for service
@@ -583,53 +575,53 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
   }, [initialData?.templateId, accountId, token, onError]);
 
   // Actions
-  const setSubject = useCallback((subject: string) => {
+  const setSubject = (subject: string) => {
     dispatch({ type: 'SET_SUBJECT', payload: subject });
-  }, []);
+  };
 
-  const setContent = useCallback((content: string) => {
+  const setContent = (content: string) => {
     dispatch({ type: 'SET_CONTENT', payload: content });
-  }, []);
+  };
 
-  const selectTemplate = useCallback((template: EmailTemplate | undefined) => {
+  const selectTemplate = (template: EmailTemplate | undefined) => {
     dispatch({ type: 'SELECT_TEMPLATE', payload: template });
-  }, []);
+  };
 
-  const clearTemplate = useCallback(() => {
+  const clearTemplate = () => {
     dispatch({ type: 'CLEAR_TEMPLATE' });
-  }, []);
+  };
 
-  const addAttachments = useCallback((attachments: EmailAttachment[]) => {
+  const addAttachments = (attachments: EmailAttachment[]) => {
     dispatch({ type: 'ADD_ATTACHMENTS', payload: attachments });
-  }, []);
+  };
 
-  const updateAttachments = useCallback((attachments: EmailAttachment[]) => {
+  const updateAttachments = (attachments: EmailAttachment[]) => {
     dispatch({ type: 'UPDATE_ATTACHMENTS', payload: attachments });
-  }, []);
+  };
 
-  const removeAttachment = useCallback((attachmentId: string) => {
+  const removeAttachment = (attachmentId: string) => {
     dispatch({ type: 'REMOVE_ATTACHMENT', payload: attachmentId });
-  }, []);
+  };
 
-  const clearAttachments = useCallback(() => {
+  const clearAttachments = () => {
     dispatch({ type: 'CLEAR_ATTACHMENTS' });
-  }, []);
+  };
 
-  const setScheduled = useCallback((scheduled: boolean, date?: Date) => {
+  const setScheduled = (scheduled: boolean, date?: Date) => {
     dispatch({ type: 'SET_SCHEDULED', payload: { scheduled, date } });
-  }, []);
+  };
 
-  const clearSchedule = useCallback(() => {
+  const clearSchedule = () => {
     dispatch({ type: 'CLEAR_SCHEDULE' });
-  }, []);
+  };
 
-  const validateCompose = useCallback((): ComposeValidationResult => {
+  const validateCompose = (): ComposeValidationResult => {
     const result = validateComposeData(state, config);
     dispatch({ type: 'SET_ERRORS', payload: result.errors });
     return result;
-  }, [state, config]);
+  };
 
-  const sendEmail = useCallback(async (): Promise<boolean> => {
+  const sendEmail = async (): Promise<boolean> => {
     if (!emailServiceRef.current || !token) return false;
 
     // Validate before sending
@@ -812,79 +804,72 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
       dispatch({ type: 'SET_SENDING', payload: { isSending: false, progress: undefined } });
       return false;
     }
-  }, [state, accountId, token, validateCompose, onSendComplete, editorRef, seasonId]);
+  };
 
-  const reset = useCallback(() => {
+  const reset = () => {
     dispatch({ type: 'RESET' });
-  }, []);
+  };
 
-  const setError = useCallback((error: ComposeValidationError) => {
+  const setError = (error: ComposeValidationError) => {
     dispatch({ type: 'ADD_ERROR', payload: error });
-  }, []);
+  };
 
-  const clearErrors = useCallback(() => {
+  const clearErrors = () => {
     dispatch({ type: 'CLEAR_ERRORS' });
-  }, []);
+  };
 
-  // Unified group-based recipient actions
-  const updateRecipientState = useCallback((recipientState: RecipientSelectionState) => {
+  const updateRecipientState = (recipientState: RecipientSelectionState) => {
     dispatch({ type: 'UPDATE_RECIPIENT_STATE', payload: recipientState });
-  }, []);
+  };
 
-  const updateSelectedGroups = useCallback(
-    (
-      groups: Map<GroupType, ContactGroup[]>,
-      workoutRecipients?: WorkoutRecipientSelection[],
-      teamsWantedRecipients?: TeamsWantedRecipientSelection[],
-      umpireRecipients?: UmpireRecipientSelection[],
-    ) => {
-      dispatch({
-        type: 'UPDATE_SELECTED_GROUPS',
-        payload: groups,
-        workoutRecipients,
-        teamsWantedRecipients,
-        umpireRecipients,
-      });
-    },
-    [],
-  );
+  const updateSelectedGroups = (
+    groups: Map<GroupType, ContactGroup[]>,
+    workoutRecipients?: WorkoutRecipientSelection[],
+    teamsWantedRecipients?: TeamsWantedRecipientSelection[],
+    umpireRecipients?: UmpireRecipientSelection[],
+  ) => {
+    dispatch({
+      type: 'UPDATE_SELECTED_GROUPS',
+      payload: groups,
+      workoutRecipients,
+      teamsWantedRecipients,
+      umpireRecipients,
+    });
+  };
 
-  const clearAllRecipients = useCallback(() => {
+  const clearAllRecipients = () => {
     dispatch({ type: 'CLEAR_ALL_RECIPIENTS' });
-  }, []);
+  };
 
-  const removeSpecificGroup = useCallback((groupType: GroupType, groupIndex: number) => {
+  const removeSpecificGroup = (groupType: GroupType, groupIndex: number) => {
     dispatch({ type: 'REMOVE_SPECIFIC_GROUP', payload: { groupType, groupIndex } });
-  }, []);
+  };
 
-  const setRecipientSearchQuery = useCallback((query: string) => {
+  const setRecipientSearchQuery = (query: string) => {
     dispatch({ type: 'SET_RECIPIENT_SEARCH_QUERY', payload: query });
-  }, []);
+  };
 
-  const setRecipientActiveTab = useCallback((tab: RecipientSelectionTab) => {
+  const setRecipientActiveTab = (tab: RecipientSelectionTab) => {
     dispatch({ type: 'SET_RECIPIENT_ACTIVE_TAB', payload: tab });
-  }, []);
+  };
 
-  const convertGroupToIndividuals = useCallback(
-    (
-      originalGroup: ContactGroup,
-      selectedContactIds: Set<string>,
-      contacts: Array<{
-        id: string;
-        firstName: string;
-        lastName: string;
-        email: string | null;
-        hasValidEmail: boolean;
-        isManager: boolean;
-      }>,
-    ) => {
-      dispatch({
-        type: 'CONVERT_GROUP_TO_INDIVIDUALS',
-        payload: { originalGroup, selectedContactIds, contacts },
-      });
-    },
-    [],
-  );
+  const convertGroupToIndividuals = (
+    originalGroup: ContactGroup,
+    selectedContactIds: Set<string>,
+    contacts: Array<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string | null;
+      hasValidEmail: boolean;
+      isManager: boolean;
+    }>,
+  ) => {
+    dispatch({
+      type: 'CONVERT_GROUP_TO_INDIVIDUALS',
+      payload: { originalGroup, selectedContactIds, contacts },
+    });
+  };
 
   // Create actions object
   const actions: EmailComposeActions = {

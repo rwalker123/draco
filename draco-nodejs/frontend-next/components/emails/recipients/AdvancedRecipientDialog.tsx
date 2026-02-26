@@ -530,11 +530,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
 
-  // TODO: Remove this callback when legacy state is fully removed
-  // const handleRecipientSelectionChange = useCallback((newState: RecipientSelectionState) => {
-  //   console.log('handleRecipientSelectionChange:', newState);
-  // }, []);
-
   // Unified group actions
   const unifiedActions = {
     toggleContact: (contactId: string) => {

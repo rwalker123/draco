@@ -4,15 +4,7 @@ import { ThemeProvider, Theme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { dracoTheme, darkTheme } from '../theme';
 import Layout from './Layout';
-import React, {
-  createContext,
-  useContext,
-  Suspense,
-  useMemo,
-  useCallback,
-  useEffect,
-  useSyncExternalStore,
-} from 'react';
+import React, { createContext, useContext, Suspense, useEffect, useSyncExternalStore } from 'react';
 import EmotionCacheProvider from './EmotionCacheProvider';
 
 const THEME_STORAGE_KEY = 'draco-theme';
@@ -189,14 +181,8 @@ export default function ThemeClientProvider({
   children,
   initialThemeName = 'light',
 }: ThemeClientProviderProps) {
-  const clientSnapshot = useMemo(
-    () => getClientSnapshotFactory(initialThemeName),
-    [initialThemeName],
-  );
-  const serverSnapshot = useMemo(
-    () => getServerSnapshotFactory(initialThemeName),
-    [initialThemeName],
-  );
+  const clientSnapshot = getClientSnapshotFactory(initialThemeName);
+  const serverSnapshot = getServerSnapshotFactory(initialThemeName);
 
   const themeName = useSyncExternalStore(subscribeThemeStore, clientSnapshot, serverSnapshot);
 
@@ -204,11 +190,11 @@ export default function ThemeClientProvider({
     applyThemeToDocument(themeName);
   }, [themeName]);
 
-  const setCurrentThemeName = useCallback((name: ThemeName) => {
+  const setCurrentThemeName = (name: ThemeName) => {
     setThemePreference(name);
-  }, []);
+  };
 
-  const currentTheme = useMemo(() => themesByName[themeName], [themeName]);
+  const currentTheme = themesByName[themeName];
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -221,14 +207,11 @@ export default function ThemeClientProvider({
     }
   }, []);
 
-  const value = useMemo(
-    () => ({
-      currentTheme,
-      currentThemeName: themeName,
-      setCurrentThemeName,
-    }),
-    [currentTheme, setCurrentThemeName, themeName],
-  );
+  const value = {
+    currentTheme,
+    currentThemeName: themeName,
+    setCurrentThemeName,
+  };
 
   return (
     <EmotionCacheProvider>

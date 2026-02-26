@@ -346,8 +346,7 @@ const GroupBadgeEditDialogComponent: React.FC<GroupBadgeEditDialogProps> = ({
   );
 };
 
-export const GroupBadgeEditDialog = React.memo(GroupBadgeEditDialogComponent);
-GroupBadgeEditDialog.displayName = 'GroupBadgeEditDialog';
+export const GroupBadgeEditDialog = GroupBadgeEditDialogComponent;
 
 export const isGroupEditable = (group: ContactGroup): boolean => {
   return group.groupType !== 'individuals' && group.totalCount <= MAX_EDITABLE_COUNT;
