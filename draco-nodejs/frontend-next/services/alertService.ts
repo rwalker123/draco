@@ -1,7 +1,6 @@
 import {
   createAlert as apiCreateAlert,
   deleteAlert as apiDeleteAlert,
-  getAlert as apiGetAlert,
   listActiveAlerts,
   listAllAlerts,
   updateAlert as apiUpdateAlert,
@@ -36,16 +35,6 @@ export const fetchAllAlerts = async (
   const result = await listAllAlerts({ client, throwOnError: false, signal });
   const data = unwrapApiResult(result, 'Unable to fetch alerts');
   return mapList(data as AlertListType);
-};
-
-export const fetchAlertById = async (alertId: string, client: Client): Promise<AlertType> => {
-  const result = await apiGetAlert({
-    client,
-    throwOnError: false,
-    path: { alertId },
-  });
-  const data = unwrapApiResult(result, 'Unable to fetch alert');
-  return mapAlert(data as AlertType);
 };
 
 export const createAlert = async (payload: UpsertAlertType, client: Client): Promise<AlertType> => {

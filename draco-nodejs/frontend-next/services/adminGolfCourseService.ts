@@ -13,10 +13,6 @@ export interface AdminGolfCoursesListResponse {
   pagination: PaginationWithTotalType;
 }
 
-export interface AdminGolfCourseCountResponse {
-  count: number;
-}
-
 export interface FetchAdminGolfCoursesOptions {
   page?: number;
   limit?: number;
@@ -46,19 +42,6 @@ export const fetchAdminGolfCourses = async (
   });
 
   return unwrapApiResult(result, 'Failed to fetch golf courses') as AdminGolfCoursesListResponse;
-};
-
-export const fetchAdminGolfCourseCount = async (client: Client): Promise<number> => {
-  const result = await client.get({
-    url: '/api/admin/golf/courses/count',
-    security: [{ scheme: 'bearer', type: 'http' }],
-  });
-
-  const data = unwrapApiResult(
-    result,
-    'Failed to fetch golf course count',
-  ) as AdminGolfCourseCountResponse;
-  return data.count;
 };
 
 export const fetchAdminGolfCourse = async (

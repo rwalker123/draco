@@ -322,14 +322,6 @@ export async function findWorkoutRegistrationByAccessCode(
   return unwrapApiResult(result, 'Failed to locate registration by access code');
 }
 
-export async function listRegistrations(
-  accountId: string,
-  workoutId: string,
-  token?: string,
-): Promise<WorkoutRegistrationType[]> {
-  return listWorkoutRegistrations(accountId, workoutId, token);
-}
-
 export async function createRegistration(
   accountId: string,
   workoutId: string,

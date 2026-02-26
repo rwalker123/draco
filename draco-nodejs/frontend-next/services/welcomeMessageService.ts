@@ -207,5 +207,3 @@ export class WelcomeMessageService {
     assertNoApiError(result, 'Failed to delete team information message');
   }
 }
-
-export type WelcomeMessageTeamScope = TeamScope;
