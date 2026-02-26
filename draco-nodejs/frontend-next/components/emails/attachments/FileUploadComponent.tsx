@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import {
   Box,
   Stack,
@@ -33,7 +33,6 @@ import {
   EmailAttachment,
 } from '../../../types/emails/attachments';
 
-// Memoized AttachmentItem component to prevent unnecessary re-renders
 interface AttachmentItemProps {
   attachment: EmailAttachment;
   onRetry: (id: string) => void;
@@ -41,78 +40,65 @@ interface AttachmentItemProps {
   onRemove: (id: string) => void;
 }
 
-const AttachmentItem = React.memo<AttachmentItemProps>(
-  ({ attachment, onRetry, onCancel, onRemove }) => {
-    const theme = useTheme();
-    const isUploading = attachment.status === 'uploading';
-    const isError = attachment.status === 'error';
-    const isUploaded = attachment.status === 'uploaded';
-    const errorBg = alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.18 : 0.08);
-    const removeHoverBg = alpha(
-      theme.palette.error.main,
-      theme.palette.mode === 'dark' ? 0.2 : 0.1,
-    );
+const AttachmentItem: React.FC<AttachmentItemProps> = ({
+  attachment,
+  onRetry,
+  onCancel,
+  onRemove,
+}) => {
+  const theme = useTheme();
+  const isUploading = attachment.status === 'uploading';
+  const isError = attachment.status === 'error';
+  const isUploaded = attachment.status === 'uploaded';
+  const errorBg = alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.18 : 0.08);
+  const removeHoverBg = alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.2 : 0.1);
 
-    return (
-      <Box
-        sx={{
-          p: 1.5,
-          border: 1,
-          borderColor: isError ? 'error.main' : 'divider',
-          borderRadius: 1,
-          bgcolor: isError ? errorBg : 'background.paper',
-        }}
-      >
-        {/* File info row */}
-        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: isUploading ? 1 : 0 }}>
-          {/* Status icon */}
-          <Box sx={{ minWidth: 20 }}>
-            {isUploaded && <SuccessIcon fontSize="small" color="success" />}
-            {isError && <ErrorIcon fontSize="small" color="error" />}
-            {isUploading && <UploadingIcon fontSize="small" color="primary" />}
-          </Box>
+  return (
+    <Box
+      sx={{
+        p: 1.5,
+        border: 1,
+        borderColor: isError ? 'error.main' : 'divider',
+        borderRadius: 1,
+        bgcolor: isError ? errorBg : 'background.paper',
+      }}
+    >
+      {/* File info row */}
+      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: isUploading ? 1 : 0 }}>
+        {/* Status icon */}
+        <Box sx={{ minWidth: 20 }}>
+          {isUploaded && <SuccessIcon fontSize="small" color="success" />}
+          {isError && <ErrorIcon fontSize="small" color="error" />}
+          {isUploading && <UploadingIcon fontSize="small" color="primary" />}
+        </Box>
 
-          {/* File name */}
-          <Typography
-            variant="body2"
-            sx={{
-              flex: 1,
-              minWidth: 0,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              fontWeight: isUploading ? 'medium' : 'normal',
-            }}
-          >
-            {attachment.name}
-          </Typography>
+        {/* File name */}
+        <Typography
+          variant="body2"
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontWeight: isUploading ? 'medium' : 'normal',
+          }}
+        >
+          {attachment.name}
+        </Typography>
 
-          {/* File size */}
-          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-            {(attachment.size / 1024 / 1024).toFixed(1)} MB
-          </Typography>
+        {/* File size */}
+        <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+          {(attachment.size / 1024 / 1024).toFixed(1)} MB
+        </Typography>
 
-          {/* Action buttons */}
-          <Stack direction="row" spacing={0.5}>
-            {isError && (
-              <>
-                <IconButton
-                  size="small"
-                  onClick={() => onRetry(attachment.id)}
-                  title="Retry upload"
-                >
-                  <RetryIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  onClick={() => onCancel(attachment.id)}
-                  title="Cancel upload"
-                >
-                  <CancelIcon fontSize="small" />
-                </IconButton>
-              </>
-            )}
-            {isUploading && (
+        {/* Action buttons */}
+        <Stack direction="row" spacing={0.5}>
+          {isError && (
+            <>
+              <IconButton size="small" onClick={() => onRetry(attachment.id)} title="Retry upload">
+                <RetryIcon fontSize="small" />
+              </IconButton>
               <IconButton
                 size="small"
                 onClick={() => onCancel(attachment.id)}
@@ -120,56 +106,58 @@ const AttachmentItem = React.memo<AttachmentItemProps>(
               >
                 <CancelIcon fontSize="small" />
               </IconButton>
-            )}
-            {/* Remove button - available for all attachments */}
-            <IconButton
-              size="small"
-              onClick={() => onRemove(attachment.id)}
-              title="Remove attachment"
-              sx={{
-                color: 'text.secondary',
-                '&:hover': {
-                  color: 'error.main',
-                  bgcolor: removeHoverBg,
-                },
-              }}
-            >
-              <RemoveIcon fontSize="small" />
+            </>
+          )}
+          {isUploading && (
+            <IconButton size="small" onClick={() => onCancel(attachment.id)} title="Cancel upload">
+              <CancelIcon fontSize="small" />
             </IconButton>
-          </Stack>
+          )}
+          {/* Remove button - available for all attachments */}
+          <IconButton
+            size="small"
+            onClick={() => onRemove(attachment.id)}
+            title="Remove attachment"
+            sx={{
+              color: 'text.secondary',
+              '&:hover': {
+                color: 'error.main',
+                bgcolor: removeHoverBg,
+              },
+            }}
+          >
+            <RemoveIcon fontSize="small" />
+          </IconButton>
         </Stack>
+      </Stack>
 
-        {/* Progress bar for uploading files */}
-        {isUploading && (
-          <Box>
-            <LinearProgress
-              variant="determinate"
-              value={attachment.uploadProgress || 0}
-              sx={{
-                height: 6,
-                borderRadius: 3,
-                bgcolor: 'action.hover',
-              }}
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-              Uploading... {Math.round(attachment.uploadProgress || 0)}%
-            </Typography>
-          </Box>
-        )}
-
-        {/* Error message */}
-        {isError && attachment.error && (
-          <Typography variant="caption" color="error.main" sx={{ mt: 0.5, display: 'block' }}>
-            {attachment.error}
+      {/* Progress bar for uploading files */}
+      {isUploading && (
+        <Box>
+          <LinearProgress
+            variant="determinate"
+            value={attachment.uploadProgress || 0}
+            sx={{
+              height: 6,
+              borderRadius: 3,
+              bgcolor: 'action.hover',
+            }}
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+            Uploading... {Math.round(attachment.uploadProgress || 0)}%
           </Typography>
-        )}
-      </Box>
-    );
-  },
-);
+        </Box>
+      )}
 
-// Set display name for React DevTools
-AttachmentItem.displayName = 'AttachmentItem';
+      {/* Error message */}
+      {isError && attachment.error && (
+        <Typography variant="caption" color="error.main" sx={{ mt: 0.5, display: 'block' }}>
+          {attachment.error}
+        </Typography>
+      )}
+    </Box>
+  );
+};
 
 export interface FileUploadComponentProps {
   accountId: string;
@@ -207,49 +195,29 @@ export const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
     cancelUpload,
   } = useFileUpload({
     config,
-    onAttachmentsChange: useCallback(
-      (newAttachments: EmailAttachment[]) => {
-        // Update EmailCompose context
-        actions.updateAttachments(newAttachments);
-        onAttachmentsChange?.(newAttachments);
-      },
-      [actions, onAttachmentsChange],
-    ),
+    onAttachmentsChange: (newAttachments: EmailAttachment[]) => {
+      actions.updateAttachments(newAttachments);
+      onAttachmentsChange?.(newAttachments);
+    },
     onError,
   });
 
-  // Handle file selection
-  const handleFilesSelected = useCallback(
-    async (files: File[]) => {
-      if (disabled) return;
-      await addFiles(files);
-    },
-    [disabled, addFiles],
-  );
+  const handleFilesSelected = async (files: File[]) => {
+    if (disabled) return;
+    await addFiles(files);
+  };
 
-  // Handle retry
-  const handleRetryUpload = useCallback(
-    async (id: string) => {
-      await retryUpload(id);
-    },
-    [retryUpload],
-  );
+  const handleRetryUpload = async (id: string) => {
+    await retryUpload(id);
+  };
 
-  // Handle cancel
-  const handleCancelUpload = useCallback(
-    (id: string) => {
-      cancelUpload(id);
-    },
-    [cancelUpload],
-  );
+  const handleCancelUpload = (id: string) => {
+    cancelUpload(id);
+  };
 
-  // Handle remove attachment
-  const handleRemoveAttachment = useCallback(
-    (id: string) => {
-      removeAttachment(id);
-    },
-    [removeAttachment],
-  );
+  const handleRemoveAttachment = (id: string) => {
+    removeAttachment(id);
+  };
 
   const hasAttachments = attachments.length > 0;
 

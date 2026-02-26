@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState } from 'react';
 
 export interface PaginationState {
   hasNext: boolean;
@@ -62,81 +62,58 @@ export function useContactPagination({
   const [hasSearched, setHasSearched] = useState(false);
   const [lastSearchQuery, setLastSearchQuery] = useState('');
 
-  const isInSearchMode = useCallback(() => {
+  const isInSearchMode = () => {
     return Boolean(lastSearchQuery?.trim() && hasSearched);
-  }, [lastSearchQuery, hasSearched]);
+  };
 
-  const paginationState = useMemo(() => {
-    if (isInSearchMode()) {
-      return {
+  const paginationState = isInSearchMode()
+    ? {
         hasNext: searchPaginationState.hasNext,
         hasPrev: searchPaginationState.hasPrev,
         totalContacts: searchPaginationState.totalContacts,
         currentPage: searchCurrentPage,
         totalPages: 0,
+      }
+    : {
+        hasNext: serverPaginationState.hasNext,
+        hasPrev: serverPaginationState.hasPrev,
+        totalContacts: serverPaginationState.totalContacts,
+        currentPage: currentPage,
+        totalPages: 0,
       };
-    }
 
-    return {
-      hasNext: serverPaginationState.hasNext,
-      hasPrev: serverPaginationState.hasPrev,
-      totalContacts: serverPaginationState.totalContacts,
-      currentPage: currentPage,
-      totalPages: 0,
-    };
-  }, [
-    serverPaginationState,
-    searchPaginationState,
-    searchCurrentPage,
-    currentPage,
-    isInSearchMode,
-  ]);
-
-  const paginationHandlers = useMemo(
-    () => ({
-      handleNextPage: () => {
-        if (isInSearchMode()) {
-          if (searchPaginationState.hasNext && onSearchFetch) {
-            void onSearchFetch(lastSearchQuery, searchCurrentPage + 1, rowsPerPage);
-          }
-        } else {
-          if (serverPaginationState.hasNext) {
-            void onFetchPage(currentPage + 1, rowsPerPage);
-          }
+  const paginationHandlers = {
+    handleNextPage: () => {
+      if (isInSearchMode()) {
+        if (searchPaginationState.hasNext && onSearchFetch) {
+          void onSearchFetch(lastSearchQuery, searchCurrentPage + 1, rowsPerPage);
         }
-      },
-      handlePrevPage: () => {
-        if (isInSearchMode()) {
-          if (searchPaginationState.hasPrev && searchCurrentPage > 1 && onSearchFetch) {
-            void onSearchFetch(lastSearchQuery, searchCurrentPage - 1, rowsPerPage);
-          }
-        } else {
-          if (serverPaginationState.hasPrev && currentPage > 1) {
-            void onFetchPage(currentPage - 1, rowsPerPage);
-          }
+      } else {
+        if (serverPaginationState.hasNext) {
+          void onFetchPage(currentPage + 1, rowsPerPage);
         }
-      },
-      handleRowsPerPageChange: (newRowsPerPage: number) => {
-        setRowsPerPage(newRowsPerPage);
-        if (isInSearchMode() && onSearchFetch) {
-          void onSearchFetch(lastSearchQuery, 1, newRowsPerPage);
-        } else {
-          void onFetchPage(1, newRowsPerPage);
+      }
+    },
+    handlePrevPage: () => {
+      if (isInSearchMode()) {
+        if (searchPaginationState.hasPrev && searchCurrentPage > 1 && onSearchFetch) {
+          void onSearchFetch(lastSearchQuery, searchCurrentPage - 1, rowsPerPage);
         }
-      },
-    }),
-    [
-      currentPage,
-      rowsPerPage,
-      serverPaginationState,
-      searchPaginationState,
-      searchCurrentPage,
-      lastSearchQuery,
-      isInSearchMode,
-      onFetchPage,
-      onSearchFetch,
-    ],
-  );
+      } else {
+        if (serverPaginationState.hasPrev && currentPage > 1) {
+          void onFetchPage(currentPage - 1, rowsPerPage);
+        }
+      }
+    },
+    handleRowsPerPageChange: (newRowsPerPage: number) => {
+      setRowsPerPage(newRowsPerPage);
+      if (isInSearchMode() && onSearchFetch) {
+        void onSearchFetch(lastSearchQuery, 1, newRowsPerPage);
+      } else {
+        void onFetchPage(1, newRowsPerPage);
+      }
+    },
+  };
 
   return {
     currentPage,

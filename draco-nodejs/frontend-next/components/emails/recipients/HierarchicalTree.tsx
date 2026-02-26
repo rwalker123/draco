@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Box } from '@mui/material';
 import { HierarchicalSeason, HierarchicalSelectionItem } from '../../../types/emails/recipients';
 import { HierarchyMaps } from '../../../hooks/useHierarchicalMaps';
@@ -42,8 +42,7 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
     return divisionIds;
   });
 
-  // Toggle expansion handlers
-  const toggleLeagueExpansion = useCallback((leagueId: string) => {
+  const toggleLeagueExpansion = (leagueId: string) => {
     setExpandedLeagues((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(leagueId)) {
@@ -53,9 +52,9 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
       }
       return newSet;
     });
-  }, []);
+  };
 
-  const toggleDivisionExpansion = useCallback((divisionId: string) => {
+  const toggleDivisionExpansion = (divisionId: string) => {
     setExpandedDivisions((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(divisionId)) {
@@ -65,88 +64,68 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
       }
       return newSet;
     });
-  }, []);
+  };
 
-  // Checkbox state calculator
-  const getCheckboxState = useCallback(
-    (itemId: string) => {
-      const stateObj = itemSelectedState.get(itemId) || { state: 'unselected', playerCount: 0 };
-      return {
-        checked: stateObj.state === 'selected',
-        indeterminate: stateObj.state === 'intermediate',
-      };
-    },
-    [itemSelectedState],
-  );
+  const getCheckboxState = (itemId: string) => {
+    const stateObj = itemSelectedState.get(itemId) || { state: 'unselected', playerCount: 0 };
+    return {
+      checked: stateObj.state === 'selected',
+      indeterminate: stateObj.state === 'intermediate',
+    };
+  };
 
-  // Render teams
-  const renderTeams = useCallback(
-    (teams: Array<TeamSeasonWithPlayerCountType>) => {
-      return teams.map((team) => {
-        const { checked, indeterminate } = getCheckboxState(team.id);
-        return (
-          <HierarchicalTreeItem
-            key={team.id}
-            id={team.id}
-            title={team.name || 'Team'}
-            playerCount={team.playerCount}
-            managerCount={team.managerCount}
-            managersOnly={managersOnly}
-            level={3}
-            isExpandable={false}
-            isExpanded={false}
-            isChecked={checked}
-            isIndeterminate={indeterminate}
-            onToggleExpanded={() => {}}
-            onToggleSelected={onSelectionChange}
-          />
-        );
-      });
-    },
-    [getCheckboxState, onSelectionChange, managersOnly],
-  );
+  const renderTeams = (teams: Array<TeamSeasonWithPlayerCountType>) => {
+    return teams.map((team) => {
+      const { checked, indeterminate } = getCheckboxState(team.id);
+      return (
+        <HierarchicalTreeItem
+          key={team.id}
+          id={team.id}
+          title={team.name || 'Team'}
+          playerCount={team.playerCount}
+          managerCount={team.managerCount}
+          managersOnly={managersOnly}
+          level={3}
+          isExpandable={false}
+          isExpanded={false}
+          isChecked={checked}
+          isIndeterminate={indeterminate}
+          onToggleExpanded={() => {}}
+          onToggleSelected={onSelectionChange}
+        />
+      );
+    });
+  };
 
-  // Render divisions
-  const renderDivisions = useCallback(
-    (divisions: HierarchicalSeason['leagues'][0]['divisions']) => {
-      return divisions?.map((division) => {
-        const { checked, indeterminate } = getCheckboxState(division.id);
-        const isExpanded = expandedDivisions.has(division.id);
-        const hasTeams = division.teams.length > 0;
+  const renderDivisions = (divisions: HierarchicalSeason['leagues'][0]['divisions']) => {
+    return divisions?.map((division) => {
+      const { checked, indeterminate } = getCheckboxState(division.id);
+      const isExpanded = expandedDivisions.has(division.id);
+      const hasTeams = division.teams.length > 0;
 
-        return (
-          <HierarchicalTreeItem
-            key={division.id}
-            id={division.id}
-            title={division.division.name}
-            playerCount={division.totalPlayers}
-            managerCount={division.totalManagers}
-            managersOnly={managersOnly}
-            level={2}
-            isExpandable={hasTeams}
-            isExpanded={isExpanded}
-            isChecked={checked}
-            isIndeterminate={indeterminate}
-            onToggleExpanded={toggleDivisionExpansion}
-            onToggleSelected={onSelectionChange}
-          >
-            {hasTeams && renderTeams(division.teams)}
-          </HierarchicalTreeItem>
-        );
-      });
-    },
-    [
-      getCheckboxState,
-      expandedDivisions,
-      toggleDivisionExpansion,
-      onSelectionChange,
-      renderTeams,
-      managersOnly,
-    ],
-  );
+      return (
+        <HierarchicalTreeItem
+          key={division.id}
+          id={division.id}
+          title={division.division.name}
+          playerCount={division.totalPlayers}
+          managerCount={division.totalManagers}
+          managersOnly={managersOnly}
+          level={2}
+          isExpandable={hasTeams}
+          isExpanded={isExpanded}
+          isChecked={checked}
+          isIndeterminate={indeterminate}
+          onToggleExpanded={toggleDivisionExpansion}
+          onToggleSelected={onSelectionChange}
+        >
+          {hasTeams && renderTeams(division.teams)}
+        </HierarchicalTreeItem>
+      );
+    });
+  };
 
-  // Render leagues
-  const renderLeagues = useCallback(() => {
+  const renderLeagues = () => {
     return hierarchicalData.leagues.map((league) => {
       const { checked, indeterminate } = getCheckboxState(league.id);
       const isExpanded = expandedLeagues.has(league.id);
@@ -180,22 +159,9 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
         </HierarchicalTreeItem>
       );
     });
-  }, [
-    hierarchicalData.leagues,
-    getCheckboxState,
-    expandedLeagues,
-    toggleLeagueExpansion,
-    onSelectionChange,
-    renderDivisions,
-    renderTeams,
-    managersOnly,
-  ]);
+  };
 
-  // Season checkbox state
-  const seasonCheckboxState = useMemo(
-    () => getCheckboxState(seasonId),
-    [getCheckboxState, seasonId],
-  );
+  const seasonCheckboxState = getCheckboxState(seasonId);
 
   return (
     <Box>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Box, Stack, Typography, Alert, Button } from '@mui/material';
 import { RecipientContact, GroupType, ContactGroup } from '../../../../types/emails/recipients';
 import { EmailRecipientError } from '../../../../types/errors';
@@ -73,40 +73,36 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const triggerSearch = useCallback(
-    (query: string) => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-        searchTimeoutRef.current = null;
+  const triggerSearch = (query: string) => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = null;
+    }
+
+    const trimmedQuery = query.trim();
+
+    if (!trimmedQuery) {
+      setSearchContacts([]);
+      setSearchError(null);
+      if (onSearch) {
+        void onSearch('');
       }
+      return;
+    }
 
-      const trimmedQuery = query.trim();
+    if (!onSearch) {
+      return;
+    }
 
-      if (!trimmedQuery) {
-        setSearchContacts([]);
-        setSearchError(null);
-        // Notify parent hook that search was cleared so it resets search state
-        if (onSearch) {
-          void onSearch('');
-        }
-        return;
-      }
+    searchTimeoutRef.current = setTimeout(() => {
+      onSearch(trimmedQuery).catch((error) => {
+        console.error('Search failed:', error);
+        setSearchError(error instanceof Error ? error.message : 'Search failed');
+      });
+    }, 300);
+  };
 
-      if (!onSearch) {
-        return;
-      }
-
-      searchTimeoutRef.current = setTimeout(() => {
-        onSearch(trimmedQuery).catch((error) => {
-          console.error('Search failed:', error);
-          setSearchError(error instanceof Error ? error.message : 'Search failed');
-        });
-      }, 300);
-    },
-    [onSearch, setSearchContacts],
-  );
-
-  const handleClearSearch = useCallback(() => {
+  const handleClearSearch = () => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
       searchTimeoutRef.current = null;
@@ -114,19 +110,15 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
     setSearchContacts([]);
     setSearchError(null);
     setSearchQuery('');
-    // Notify parent hook that search was cleared so it resets search state
     if (onSearch) {
       void onSearch('');
     }
-  }, [setSearchContacts, onSearch]);
+  };
 
-  const handleSearchChange = useCallback(
-    (query: string) => {
-      setSearchQuery(query);
-      triggerSearch(query);
-    },
-    [triggerSearch],
-  );
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    triggerSearch(query);
+  };
 
   useEffect(() => {
     return () => {
@@ -136,19 +128,15 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
     };
   }, []);
 
-  const displayContacts = useMemo(() => {
-    if (showSelectedOnly) {
-      return selectedContactsFromCache;
-    }
-    if (searchQuery?.trim() && searchContacts.length > 0) {
-      return searchContacts;
-    }
-    return contacts;
-  }, [showSelectedOnly, selectedContactsFromCache, searchQuery, searchContacts, contacts]);
+  const displayContacts = showSelectedOnly
+    ? selectedContactsFromCache
+    : searchQuery?.trim() && searchContacts.length > 0
+      ? searchContacts
+      : contacts;
 
   const hasSearchResults = Boolean(searchQuery?.trim() && searchContacts.length > 0);
 
-  const handleToggleShowSelected = useCallback(() => {
+  const handleToggleShowSelected = () => {
     setShowSelectedOnly((prev) => !prev);
     if (!showSelectedOnly) {
       setSearchQuery('');
@@ -157,7 +145,7 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
         void onSearch('');
       }
     }
-  }, [showSelectedOnly, setSearchContacts, onSearch]);
+  };
 
   return (
     <Box sx={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>

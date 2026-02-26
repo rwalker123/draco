@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Box, Stack, Typography, Alert, CircularProgress, Checkbox, Chip } from '@mui/material';
 import { Person as PersonIcon, Gavel as GavelIcon } from '@mui/icons-material';
 import { UmpireType } from '@draco/shared-schemas';
@@ -22,10 +22,7 @@ const UmpiresTabContent: React.FC<UmpiresTabContentProps> = ({
   loading,
   error,
 }) => {
-  const umpiresWithEmail = useMemo(
-    () => umpires.filter((umpire) => umpire.email?.trim()),
-    [umpires],
-  );
+  const umpiresWithEmail = umpires.filter((umpire) => umpire.email?.trim());
   const selectableCount = umpiresWithEmail.length;
   const selectedCount = selectedIds.size;
   const allSelected = selectableCount > 0 && selectedCount === selectableCount;

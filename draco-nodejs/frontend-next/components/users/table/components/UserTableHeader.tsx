@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo } from 'react';
+import React from 'react';
 import { Box, Tooltip, IconButton } from '@mui/material';
 import { ViewModule as ViewModuleIcon, TableChart as TableChartIcon } from '@mui/icons-material';
 import { UserTableHeaderProps } from '../../../../types/userTable';
@@ -51,19 +51,4 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({ viewMode, onViewModeC
   );
 };
 
-// Custom comparison function for UserTableHeader
-const areHeaderPropsEqual = (prevProps: UserTableHeaderProps, nextProps: UserTableHeaderProps) => {
-  // Re-render only if these specific props change
-  return (
-    prevProps.viewMode === nextProps.viewMode &&
-    prevProps.sortField === nextProps.sortField &&
-    prevProps.sortDirection === nextProps.sortDirection &&
-    prevProps.selectionMode === nextProps.selectionMode &&
-    prevProps.canManageUsers === nextProps.canManageUsers &&
-    prevProps.users.length === nextProps.users.length && // Only compare length for selection state
-    prevProps.onSortChange === nextProps.onSortChange &&
-    prevProps.onViewModeChange === nextProps.onViewModeChange
-  );
-};
-
-export default memo(UserTableHeader, areHeaderPropsEqual);
+export default UserTableHeader;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   Box,
   Stack,
@@ -40,6 +40,8 @@ import UserAvatar from '../../users/UserAvatar';
 
 import { hasValidEmail } from '../common/mailtoUtils';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
+
+const noop = () => {};
 
 export interface ContactSelectionPanelProps {
   selectedContactIds: Set<string>;
@@ -110,17 +112,9 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
   showSelectedOnly = false,
   onToggleShowSelected,
 }) => {
-  // const theme = useTheme(); // Available for future styling needs
-
   const listContainerRef = useRef<HTMLDivElement>(null);
 
-  // Stable fallback functions to prevent pagination control flashing
-  const stableOnNextPage = useCallback(() => {}, []);
-  const stableOnPrevPage = useCallback(() => {}, []);
-  const stableOnRowsPerPageChange = useCallback(() => {}, []);
-
-  // Use contacts from props if provided, otherwise empty array (provider-independent)
-  const contactsToUse = useMemo(() => propContacts || [], [propContacts]);
+  const contactsToUse = propContacts || [];
   const previousContactCountRef = useRef(contactsToUse?.length || 0);
 
   // Auto-scroll to show new contacts when they're loaded
@@ -147,14 +141,7 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
     previousContactCountRef.current = currentContactCount;
   }, [contactsToUse?.length, compact]);
 
-  // Display contacts without filtering
-  const displayContacts = useMemo(() => {
-    const contacts = contactsToUse || [];
-
-    // Force List re-render by creating new array reference with timestamp
-    const resultArray = [...contacts];
-    return resultArray;
-  }, [contactsToUse]);
+  const displayContacts = [...(contactsToUse || [])];
 
   // Disable virtualization completely to prevent pagination conflicts
   const { virtualizedItems, containerProps, scrollProps, isVirtualized } = useContactVirtualization(
@@ -497,9 +484,9 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
               rowsPerPage={rowsPerPage}
               hasNext={hasNext}
               hasPrev={hasPrev}
-              onNextPage={onNextPage || stableOnNextPage}
-              onPrevPage={onPrevPage || stableOnPrevPage}
-              onRowsPerPageChange={onRowsPerPageChange || stableOnRowsPerPageChange}
+              onNextPage={onNextPage || noop}
+              onPrevPage={onPrevPage || noop}
+              onRowsPerPageChange={onRowsPerPageChange || noop}
               currentItems={displayContacts.length}
               itemLabel="contacts"
               loading={loading}

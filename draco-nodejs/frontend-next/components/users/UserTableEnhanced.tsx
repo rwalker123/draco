@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo } from 'react';
+import React from 'react';
 import UserTableContainer from './table/UserTableContainer';
 import { UserTableEnhancedProps, SelectionMode } from '../../types/userTable';
 
@@ -108,23 +108,4 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
   );
 };
 
-// Memoize to prevent re-renders during state updates
-export default memo(UserTableEnhanced, (prevProps, nextProps) => {
-  // Only re-render if essential props change
-  return (
-    prevProps.users === nextProps.users &&
-    prevProps.loading === nextProps.loading &&
-    prevProps.isInitialLoad === nextProps.isInitialLoad &&
-    prevProps.page === nextProps.page &&
-    prevProps.hasNext === nextProps.hasNext &&
-    prevProps.hasPrev === nextProps.hasPrev &&
-    prevProps.searchTerm === nextProps.searchTerm &&
-    prevProps.searchLoading === nextProps.searchLoading &&
-    prevProps.canManageUsers === nextProps.canManageUsers &&
-    prevProps.rowsPerPage === nextProps.rowsPerPage &&
-    prevProps.accountId === nextProps.accountId &&
-    prevProps.hasActiveFilter === nextProps.hasActiveFilter &&
-    prevProps.filter === nextProps.filter &&
-    prevProps.sort === nextProps.sort
-  );
-});
+export default UserTableEnhanced;
