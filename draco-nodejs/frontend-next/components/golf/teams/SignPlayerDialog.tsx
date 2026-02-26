@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Alert,
   Autocomplete,
@@ -30,6 +30,14 @@ interface SignPlayerDialogProps {
   teamName?: string;
 }
 
+const formatPlayerName = (player: AvailablePlayerType): string => {
+  const { firstName, lastName, middleName } = player;
+  if (middleName) {
+    return `${firstName} ${middleName} ${lastName}`;
+  }
+  return `${firstName} ${lastName}`;
+};
+
 const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
   open,
   onClose,
@@ -53,15 +61,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
     }
   }, [open]);
 
-  const formatPlayerName = useCallback((player: AvailablePlayerType): string => {
-    const { firstName, lastName, middleName } = player;
-    if (middleName) {
-      return `${firstName} ${middleName} ${lastName}`;
-    }
-    return `${firstName} ${lastName}`;
-  }, []);
-
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     if (!selectedPlayer) {
       setError('Please select a player');
       return;
@@ -83,13 +83,13 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [selectedPlayer, initialDifferential, isSub, onSign, onClose]);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     if (!isSubmitting) {
       onClose();
     }
-  }, [isSubmitting, onClose]);
+  };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

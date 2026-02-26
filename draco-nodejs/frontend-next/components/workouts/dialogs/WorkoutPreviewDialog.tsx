@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -29,7 +29,7 @@ export const WorkoutPreviewDialog: React.FC<WorkoutPreviewDialogProps> = ({
 }) => {
   const { token } = useAuth();
 
-  const canRenderWorkout = useMemo(() => Boolean(workoutId), [workoutId]);
+  const canRenderWorkout = Boolean(workoutId);
 
   return (
     <Dialog

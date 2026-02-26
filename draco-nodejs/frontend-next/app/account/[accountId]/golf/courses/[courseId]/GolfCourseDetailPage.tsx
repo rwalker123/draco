@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Box, Button, CircularProgress, Container, Typography } from '@mui/material';
 import { ArrowBack as BackIcon } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
@@ -25,33 +25,58 @@ const GolfCourseDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadCourse = useCallback(async () => {
+  useEffect(() => {
     if (!accountId || !courseId) return;
 
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await getCourse(courseId);
+    const controller = new AbortController();
 
-      if (result.success) {
-        setCourse(result.data);
-      } else {
-        setError(result.error);
+    const loadCourse = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await getCourse(courseId, controller.signal);
+
+        if (controller.signal.aborted) return;
+
+        if (result.success) {
+          setCourse(result.data);
+        } else {
+          setError(result.error);
+        }
+      } catch {
+        if (controller.signal.aborted) return;
+        setError('Failed to load course');
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    void loadCourse();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, courseId, getCourse]);
 
-  useEffect(() => {
-    if (accountId && courseId) {
-      loadCourse();
+  const handleRetry = async () => {
+    if (!accountId || !courseId) return;
+    setLoading(true);
+    setError(null);
+    const result = await getCourse(courseId);
+    if (result.success) {
+      setCourse(result.data);
+    } else {
+      setError(result.error);
     }
-  }, [accountId, courseId, loadCourse]);
+    setLoading(false);
+  };
 
-  const handleBack = useCallback(() => {
+  const handleBack = () => {
     router.push(`/account/${accountId}/golf/courses`);
-  }, [accountId, router]);
+  };
 
   if (!accountId || !courseId) {
     return (
@@ -97,7 +122,7 @@ const GolfCourseDetailPage: React.FC = () => {
           <Alert
             severity="error"
             action={
-              <Button color="inherit" size="small" onClick={loadCourse}>
+              <Button color="inherit" size="small" onClick={handleRetry}>
                 Retry
               </Button>
             }

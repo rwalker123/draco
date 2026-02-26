@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -45,17 +45,17 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
     }
   }, [team]);
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     setTeamName(team?.name ?? '');
     setError(null);
-  }, [team]);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     resetForm();
     onClose();
-  }, [resetForm, onClose]);
+  };
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     if (!teamName.trim() || !team || !seasonId) return;
 
     setLoading(true);
@@ -81,7 +81,7 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [teamName, team, seasonId, teamService, onSuccess, onError, handleClose]);
+  };
 
   const hasChanges = team && teamName.trim() !== team.name;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -38,12 +38,12 @@ const DeleteGolfTeamDialog: React.FC<DeleteGolfTeamDialogProps> = ({
 
   const teamService = useGolfTeams(accountId);
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     setError(null);
     onClose();
-  }, [onClose]);
+  };
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     if (!team || !seasonId) return;
 
     setLoading(true);
@@ -66,7 +66,7 @@ const DeleteGolfTeamDialog: React.FC<DeleteGolfTeamDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [team, seasonId, teamService, onSuccess, onError, handleClose]);
+  };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

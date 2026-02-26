@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -111,25 +111,87 @@ const GolfTeamDetailPage: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const loadTeam = useCallback(async () => {
+  useEffect(() => {
     if (!teamSeasonId || !seasonId) return;
 
-    setTeamLoading(true);
-    setError(null);
+    const controller = new AbortController();
 
-    try {
-      const result = await getTeamWithRoster(seasonId, teamSeasonId);
-      if (result.success) {
-        setTeam(result.data);
-      } else {
-        setError(result.error);
+    const loadTeamAndRoster = async () => {
+      setTeamLoading(true);
+      setRosterLoading(true);
+      setError(null);
+
+      try {
+        const [teamResult, rosterResult] = await Promise.all([
+          getTeamWithRoster(seasonId, teamSeasonId, controller.signal),
+          getTeamRoster(seasonId, teamSeasonId, controller.signal),
+        ]);
+
+        if (controller.signal.aborted) return;
+
+        if (teamResult.success) {
+          setTeam(teamResult.data);
+        } else {
+          setError(teamResult.error);
+        }
+
+        if (rosterResult.success) {
+          setRoster(rosterResult.data);
+        } else {
+          setError(rosterResult.error);
+        }
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : 'Failed to load team');
+      } finally {
+        if (!controller.signal.aborted) {
+          setTeamLoading(false);
+          setRosterLoading(false);
+        }
       }
-    } finally {
-      setTeamLoading(false);
-    }
-  }, [teamSeasonId, seasonId, getTeamWithRoster]);
+    };
 
-  const loadRoster = useCallback(async () => {
+    void loadTeamAndRoster();
+
+    return () => {
+      controller.abort();
+    };
+  }, [teamSeasonId, seasonId, getTeamWithRoster, getTeamRoster]);
+
+  useEffect(() => {
+    if (!accountId || !seasonId) return;
+
+    const controller = new AbortController();
+
+    const loadSeason = async () => {
+      try {
+        const result = await getAccountSeason({
+          client: apiClient,
+          path: { accountId, seasonId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+
+        const seasonData = unwrapApiResult(result, 'Failed to load season');
+
+        if (seasonData.leagues && seasonData.leagues.length > 0) {
+          setLeagueSeasonId(seasonData.leagues[0].id);
+        }
+      } catch {
+        if (controller.signal.aborted) return;
+      }
+    };
+
+    void loadSeason();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, seasonId, apiClient]);
+
+  const refreshRoster = async () => {
     if (!teamSeasonId || !seasonId) return;
 
     setRosterLoading(true);
@@ -143,9 +205,9 @@ const GolfTeamDetailPage: React.FC = () => {
     } finally {
       setRosterLoading(false);
     }
-  }, [teamSeasonId, seasonId, getTeamRoster]);
+  };
 
-  const loadAvailablePlayers = useCallback(async () => {
+  const refreshAvailablePlayers = async () => {
     if (!seasonId) return;
 
     setAvailableLoading(true);
@@ -157,176 +219,128 @@ const GolfTeamDetailPage: React.FC = () => {
     } finally {
       setAvailableLoading(false);
     }
-  }, [seasonId, listAvailablePlayers]);
+  };
 
-  const loadSeason = useCallback(async () => {
-    if (!accountId || !seasonId) return;
-
-    try {
-      const result = await getAccountSeason({
-        client: apiClient,
-        path: { accountId, seasonId },
-        throwOnError: false,
-      });
-
-      const seasonData = unwrapApiResult(result, 'Failed to load season');
-
-      if (seasonData.leagues && seasonData.leagues.length > 0) {
-        setLeagueSeasonId(seasonData.leagues[0].id);
-      }
-    } catch {
-      // Silently fail - team size just won't display
-    }
-  }, [accountId, seasonId, apiClient]);
-
-  useEffect(() => {
-    if (teamSeasonId && seasonId) {
-      loadTeam();
-      loadRoster();
-    }
-  }, [teamSeasonId, seasonId, loadTeam, loadRoster]);
-
-  useEffect(() => {
-    if (accountId && seasonId) {
-      loadSeason();
-    }
-  }, [accountId, seasonId, loadSeason]);
-
-  const handleBack = useCallback(() => {
+  const handleBack = () => {
     router.push(`/account/${accountId}/seasons/${seasonId}/golf/flights`);
-  }, [accountId, seasonId, router]);
+  };
 
-  const handleAddMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
+  const handleAddMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAddMenuAnchor(event.currentTarget);
-  }, []);
+  };
 
-  const handleAddMenuClose = useCallback(() => {
+  const handleAddMenuClose = () => {
     setAddMenuAnchor(null);
-  }, []);
+  };
 
-  const handleOpenCreatePlayer = useCallback(() => {
+  const handleOpenCreatePlayer = () => {
     handleAddMenuClose();
     setCreatePlayerOpen(true);
-  }, [handleAddMenuClose]);
+  };
 
-  const handleOpenSignPlayer = useCallback(async () => {
+  const handleOpenSignPlayer = async () => {
     handleAddMenuClose();
-    await loadAvailablePlayers();
+    await refreshAvailablePlayers();
     setSignPlayerOpen(true);
-  }, [handleAddMenuClose, loadAvailablePlayers]);
+  };
 
-  const handleEditPlayer = useCallback((entry: GolfRosterEntryType) => {
+  const handleEditPlayer = (entry: GolfRosterEntryType) => {
     setEditingPlayer(entry);
     setEditPlayerOpen(true);
-  }, []);
+  };
 
-  const handleCreatePlayer = useCallback(
-    async (data: CreateGolfPlayerType) => {
-      if (!teamSeasonId || !seasonId) return;
+  const handleCreatePlayer = async (data: CreateGolfPlayerType) => {
+    if (!teamSeasonId || !seasonId) return;
 
-      setFormLoading(true);
-      try {
-        const result = await createAndSignPlayer(seasonId, teamSeasonId, data);
-        if (result.success) {
-          setSuccessMessage('Player added to roster');
-          setCreatePlayerOpen(false);
-          await loadRoster();
-        } else {
-          throw new Error(result.error);
-        }
-      } finally {
-        setFormLoading(false);
+    setFormLoading(true);
+    try {
+      const result = await createAndSignPlayer(seasonId, teamSeasonId, data);
+      if (result.success) {
+        setSuccessMessage('Player added to roster');
+        setCreatePlayerOpen(false);
+        await refreshRoster();
+      } else {
+        throw new Error(result.error);
       }
-    },
-    [teamSeasonId, seasonId, createAndSignPlayer, loadRoster],
-  );
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
-  const handleSignPlayer = useCallback(
-    async (data: SignPlayerType) => {
-      if (!teamSeasonId || !seasonId) return;
+  const handleSignPlayer = async (data: SignPlayerType) => {
+    if (!teamSeasonId || !seasonId) return;
 
-      setFormLoading(true);
-      try {
-        const result = await signPlayer(seasonId, teamSeasonId, data);
-        if (result.success) {
-          setSuccessMessage('Player signed to roster');
-          setSignPlayerOpen(false);
-          await loadRoster();
-          await loadAvailablePlayers();
-        } else {
-          throw new Error(result.error);
-        }
-      } finally {
-        setFormLoading(false);
+    setFormLoading(true);
+    try {
+      const result = await signPlayer(seasonId, teamSeasonId, data);
+      if (result.success) {
+        setSuccessMessage('Player signed to roster');
+        setSignPlayerOpen(false);
+        await refreshRoster();
+        await refreshAvailablePlayers();
+      } else {
+        throw new Error(result.error);
       }
-    },
-    [teamSeasonId, seasonId, signPlayer, loadRoster, loadAvailablePlayers],
-  );
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
-  const handleUpdatePlayer = useCallback(
-    async (data: UpdateGolfPlayerType) => {
-      if (!editingPlayer || !seasonId) return;
+  const handleUpdatePlayer = async (data: UpdateGolfPlayerType) => {
+    if (!editingPlayer || !seasonId) return;
 
-      setFormLoading(true);
-      try {
-        const result = await updatePlayer(seasonId, editingPlayer.id, data);
-        if (result.success) {
-          setSuccessMessage('Player updated');
-          setEditPlayerOpen(false);
-          setEditingPlayer(null);
-          await loadRoster();
-        } else {
-          throw new Error(result.error);
-        }
-      } finally {
-        setFormLoading(false);
+    setFormLoading(true);
+    try {
+      const result = await updatePlayer(seasonId, editingPlayer.id, data);
+      if (result.success) {
+        setSuccessMessage('Player updated');
+        setEditPlayerOpen(false);
+        setEditingPlayer(null);
+        await refreshRoster();
+      } else {
+        throw new Error(result.error);
       }
-    },
-    [editingPlayer, seasonId, updatePlayer, loadRoster],
-  );
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
-  const handleReleasePlayer = useCallback(
-    async (entry: GolfRosterEntryType) => {
-      if (!seasonId) return;
+  const handleReleasePlayer = async (entry: GolfRosterEntryType) => {
+    if (!seasonId) return;
 
-      setFormLoading(true);
-      try {
-        const releaseData: ReleasePlayerType = {
-          releaseAsSub: false,
-        };
-        const result = await releasePlayer(seasonId, entry.id, releaseData);
-        if (result.success) {
-          setSuccessMessage('Player released');
-          await loadRoster();
-        } else {
-          setError(result.error);
-        }
-      } finally {
-        setFormLoading(false);
+    setFormLoading(true);
+    try {
+      const releaseData: ReleasePlayerType = {
+        releaseAsSub: false,
+      };
+      const result = await releasePlayer(seasonId, entry.id, releaseData);
+      if (result.success) {
+        setSuccessMessage('Player released');
+        await refreshRoster();
+      } else {
+        setError(result.error);
       }
-    },
-    [seasonId, releasePlayer, loadRoster],
-  );
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
-  const handleDeletePlayer = useCallback(
-    async (entry: GolfRosterEntryType) => {
-      if (!seasonId) return;
+  const handleDeletePlayer = async (entry: GolfRosterEntryType) => {
+    if (!seasonId) return;
 
-      setFormLoading(true);
-      try {
-        const result = await deletePlayer(seasonId, entry.id);
-        if (result.success) {
-          setSuccessMessage('Player removed from roster');
-          await loadRoster();
-        } else {
-          setError(result.error);
-        }
-      } finally {
-        setFormLoading(false);
+    setFormLoading(true);
+    try {
+      const result = await deletePlayer(seasonId, entry.id);
+      if (result.success) {
+        setSuccessMessage('Player removed from roster');
+        await refreshRoster();
+      } else {
+        setError(result.error);
       }
-    },
-    [seasonId, deletePlayer, loadRoster],
-  );
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
   if (!accountId || !teamSeasonId || !seasonId) {
     return (
@@ -436,7 +450,7 @@ const GolfTeamDetailPage: React.FC = () => {
         <GolfRoster
           roster={roster}
           error={error}
-          onRetry={loadRoster}
+          onRetry={refreshRoster}
           onEdit={canManage ? handleEditPlayer : undefined}
           onRelease={canManage ? handleReleasePlayer : undefined}
           onDelete={canManage ? handleDeletePlayer : undefined}

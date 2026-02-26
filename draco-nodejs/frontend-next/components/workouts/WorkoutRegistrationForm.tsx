@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   TextField,
@@ -95,8 +95,6 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
   const isEditMode = !!registration;
   const shouldAutoClose = closeOnSuccess ?? !isEditMode;
 
-  const formResolver = useMemo(() => zodResolver<FormValues, unknown, FormValues>(formSchema), []);
-
   const {
     register,
     handleSubmit,
@@ -107,7 +105,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
     setError,
     clearErrors,
   } = useForm<FormValues>({
-    resolver: formResolver,
+    resolver: zodResolver<FormValues, unknown, FormValues>(formSchema),
     defaultValues: {
       name: '',
       email: '',
@@ -142,29 +140,34 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
   }, [registration, reset]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchSources = async () => {
       try {
         setLoadingSources(true);
         const sourcesData = await getSources(accountId);
+        if (controller.signal.aborted) return;
         setSources(sourcesData);
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error('Error fetching sources:', err);
         setError('root', { type: 'manual', message: 'Failed to load "where heard" options' });
       } finally {
-        setLoadingSources(false);
+        if (!controller.signal.aborted) setLoadingSources(false);
       }
     };
 
-    fetchSources();
+    void fetchSources();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, setError]);
 
-  const handlePhoneChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const formattedValue = formatPhoneInput(event.target.value);
-      setValue('phone1', formattedValue, { shouldDirty: true });
-    },
-    [setValue],
-  );
+  const handlePhoneChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatPhoneInput(event.target.value);
+    setValue('phone1', formattedValue, { shouldDirty: true });
+  };
 
   const onSubmitHandler = handleSubmit(async (data) => {
     clearErrors('root');
@@ -241,7 +244,6 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
             gap: 2,
           }}
         >
-          {/* Name and Email */}
           <Box>
             <TextField
               fullWidth
@@ -266,7 +268,6 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
             />
           </Box>
 
-          {/* Age and Positions */}
           <Box>
             <TextField
               fullWidth
@@ -294,7 +295,6 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
             />
           </Box>
 
-          {/* Phone Number */}
           <Box>
             <TextField
               fullWidth
@@ -309,7 +309,6 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
             />
           </Box>
 
-          {/* Where Heard */}
           <Box>
             <TextField
               fullWidth
@@ -335,7 +334,6 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
             </TextField>
           </Box>
 
-          {/* Is Manager Toggle */}
           <Box>
             <FormControl>
               <FormControlLabel
@@ -348,7 +346,6 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
           </Box>
         </Box>
 
-        {/* Action Buttons */}
         <Box
           sx={{
             display: 'flex',

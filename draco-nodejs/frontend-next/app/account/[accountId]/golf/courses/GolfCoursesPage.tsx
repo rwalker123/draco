@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Box, CircularProgress, Container, Fab, Snackbar, Typography } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
 import type { GolfLeagueCourseType } from '@draco/shared-schemas';
+import { listGolfLeagueCourses } from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
 import { AdminBreadcrumbs } from '../../../../../components/admin';
 import { CourseList, CourseSearchDialog } from '../../../../../components/golf/courses';
 import { useGolfCourses } from '../../../../../hooks/useGolfCourses';
+import { useApiClient } from '../../../../../hooks/useApiClient';
+import { unwrapApiResult } from '../../../../../utils/apiResult';
 import { useRole } from '../../../../../context/RoleContext';
 
 const GolfCoursesPage: React.FC = () => {
@@ -17,10 +20,11 @@ const GolfCoursesPage: React.FC = () => {
   const accountIdParam = params?.accountId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
   const { hasPermission } = useRole();
+  const apiClient = useApiClient();
 
   const canManage = accountId ? hasPermission('account.manage', { accountId }) : false;
 
-  const { listCourses, removeCourseFromLeague, addCourseToLeague, importExternalCourse } =
+  const { removeCourseFromLeague, addCourseToLeague, importExternalCourse, listCourses } =
     useGolfCourses(accountId || '');
 
   const [courses, setCourses] = useState<GolfLeagueCourseType[]>([]);
@@ -30,93 +34,124 @@ const GolfCoursesPage: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const loadCourses = useCallback(async () => {
+  useEffect(() => {
     if (!accountId) return;
 
+    const controller = new AbortController();
+
+    const loadCourses = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await listGolfLeagueCourses({
+          client: apiClient,
+          path: { accountId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+
+        const data = unwrapApiResult(result, 'Failed to load courses') as GolfLeagueCourseType[];
+        setCourses(data);
+      } catch {
+        if (controller.signal.aborted) return;
+        setError('Failed to load courses');
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadCourses();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient]);
+
+  const handleRetry = async () => {
+    if (!accountId) return;
     setLoading(true);
     setError(null);
-    try {
-      const result = await listCourses();
-
-      if (result.success) {
-        setCourses(result.data);
-      } else {
-        setError(result.error);
-      }
-    } finally {
-      setLoading(false);
+    const result = await listCourses();
+    if (result.success) {
+      setCourses(result.data);
+    } else {
+      setError(result.error);
     }
-  }, [accountId, listCourses]);
+    setLoading(false);
+  };
 
-  useEffect(() => {
-    if (accountId) {
-      loadCourses();
-    }
-  }, [accountId, loadCourses]);
-
-  const handleOpenSearch = useCallback(() => {
+  const handleOpenSearch = () => {
     setSearchOpen(true);
-  }, []);
+  };
 
-  const handleCloseSearch = useCallback(() => {
+  const handleCloseSearch = () => {
     setSearchOpen(false);
-  }, []);
+  };
 
-  const handleSelectCourse = useCallback(
-    async (course: { externalId: string; isCustom: boolean; courseId?: string }) => {
-      if (course.isCustom && course.courseId) {
-        const addResult = await addCourseToLeague(course.courseId);
+  const handleSelectCourse = async (course: {
+    externalId: string;
+    isCustom: boolean;
+    courseId?: string;
+  }) => {
+    if (course.isCustom && course.courseId) {
+      const addResult = await addCourseToLeague(course.courseId);
 
-        if (addResult.success) {
-          setSuccessMessage('Course added to league');
-          await loadCourses();
-          return { success: true };
-        } else {
-          return { success: false, error: addResult.error };
+      if (addResult.success) {
+        setSuccessMessage('Course added to league');
+        const refreshResult = await listCourses();
+        if (refreshResult.success) {
+          setCourses(refreshResult.data);
         }
+        return { success: true };
+      } else {
+        return { success: false, error: addResult.error };
       }
+    }
 
-      const result = await importExternalCourse(course.externalId);
+    const result = await importExternalCourse(course.externalId);
 
-      if (result.success) {
-        const addResult = await addCourseToLeague(result.data.id);
+    if (result.success) {
+      const addResult = await addCourseToLeague(result.data.id);
 
-        if (addResult.success) {
-          setSuccessMessage('Course imported and added to league');
-          await loadCourses();
-          return { success: true, data: result.data };
-        } else {
-          return { success: false, error: addResult.error };
+      if (addResult.success) {
+        setSuccessMessage('Course imported and added to league');
+        const refreshResult = await listCourses();
+        if (refreshResult.success) {
+          setCourses(refreshResult.data);
         }
+        return { success: true, data: result.data };
       } else {
-        return { success: false, error: result.error };
+        return { success: false, error: addResult.error };
       }
-    },
-    [importExternalCourse, addCourseToLeague, loadCourses],
-  );
+    } else {
+      return { success: false, error: result.error };
+    }
+  };
 
-  const handleView = useCallback(
-    (leagueCourse: GolfLeagueCourseType) => {
-      router.push(`/account/${accountId}/golf/courses/${leagueCourse.course.id}`);
-    },
-    [accountId, router],
-  );
+  const handleView = (leagueCourse: GolfLeagueCourseType) => {
+    router.push(`/account/${accountId}/golf/courses/${leagueCourse.course.id}`);
+  };
 
-  const handleDelete = useCallback(
-    async (leagueCourse: GolfLeagueCourseType) => {
-      setActionLoading(true);
-      const result = await removeCourseFromLeague(leagueCourse.course.id);
+  const handleDelete = async (leagueCourse: GolfLeagueCourseType) => {
+    setActionLoading(true);
+    const result = await removeCourseFromLeague(leagueCourse.course.id);
 
-      if (result.success) {
-        setSuccessMessage('Course removed from league');
-        await loadCourses();
-      } else {
-        setError(result.error);
+    if (result.success) {
+      setSuccessMessage('Course removed from league');
+      const refreshResult = await listCourses();
+      if (refreshResult.success) {
+        setCourses(refreshResult.data);
       }
-      setActionLoading(false);
-    },
-    [removeCourseFromLeague, loadCourses],
-  );
+    } else {
+      setError(result.error);
+    }
+    setActionLoading(false);
+  };
 
   if (!accountId) {
     return (
@@ -152,7 +187,7 @@ const GolfCoursesPage: React.FC = () => {
             courses={courses}
             loading={actionLoading}
             error={error}
-            onRetry={loadCourses}
+            onRetry={handleRetry}
             onView={handleView}
             onDelete={canManage ? handleDelete : undefined}
             emptyMessage="No courses have been added to this league yet."

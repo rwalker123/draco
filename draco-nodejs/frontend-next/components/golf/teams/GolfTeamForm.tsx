@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Alert,
   Box,
@@ -61,20 +61,17 @@ const GolfTeamForm: React.FC<GolfTeamFormProps> = ({
     }
   }, [team, reset]);
 
-  const handleFormSubmit = useCallback(
-    async (data: CreateGolfTeamType) => {
-      setError(null);
-      setIsSubmitting(true);
-      try {
-        await onSubmit(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save team');
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [onSubmit],
-  );
+  const handleFormSubmit = async (data: CreateGolfTeamType) => {
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await onSubmit(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save team');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Box component="form" onSubmit={handleSubmit(handleFormSubmit)} noValidate>

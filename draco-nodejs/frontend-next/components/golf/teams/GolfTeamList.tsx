@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Box,
@@ -60,6 +60,34 @@ const isTeamWithRoster = (
   return 'playerCount' in team;
 };
 
+const getPlayerCount = (team: GolfTeamType | GolfTeamWithRosterType): number | null => {
+  if (isTeamWithRoster(team)) {
+    return team.playerCount;
+  }
+  return null;
+};
+
+const formatTeamSubtitle = (
+  team: GolfTeamType | GolfTeamWithRosterType,
+  showFlightInfo: boolean,
+  showPlayerCount: boolean,
+): string => {
+  const parts: string[] = [];
+
+  if (showFlightInfo && team.flight) {
+    parts.push(`Flight: ${team.flight.name}`);
+  }
+
+  if (showPlayerCount) {
+    const playerCount = getPlayerCount(team);
+    if (playerCount !== null) {
+      parts.push(`${playerCount} player${playerCount !== 1 ? 's' : ''}`);
+    }
+  }
+
+  return parts.join(' · ');
+};
+
 const GolfTeamList: React.FC<GolfTeamListProps> = ({
   teams,
   flights = [],
@@ -85,76 +113,43 @@ const GolfTeamList: React.FC<GolfTeamListProps> = ({
     null,
   );
 
-  const handleDeleteClick = useCallback((team: GolfTeamType | GolfTeamWithRosterType) => {
+  const handleDeleteClick = (team: GolfTeamType | GolfTeamWithRosterType) => {
     setTeamToDelete(team);
     setDeleteDialogOpen(true);
-  }, []);
+  };
 
-  const handleDeleteConfirm = useCallback(() => {
+  const handleDeleteConfirm = () => {
     if (teamToDelete && onDelete) {
       onDelete(teamToDelete);
     }
     setDeleteDialogOpen(false);
     setTeamToDelete(null);
-  }, [teamToDelete, onDelete]);
+  };
 
-  const handleDeleteCancel = useCallback(() => {
+  const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
     setTeamToDelete(null);
-  }, []);
+  };
 
-  const handleAssignClick = useCallback(
-    (event: React.MouseEvent<HTMLElement>, team: GolfTeamType | GolfTeamWithRosterType) => {
-      setFlightMenuAnchor(event.currentTarget);
-      setTeamToAssign(team);
-    },
-    [],
-  );
+  const handleAssignClick = (
+    event: React.MouseEvent<HTMLElement>,
+    team: GolfTeamType | GolfTeamWithRosterType,
+  ) => {
+    setFlightMenuAnchor(event.currentTarget);
+    setTeamToAssign(team);
+  };
 
-  const handleFlightMenuClose = useCallback(() => {
+  const handleFlightMenuClose = () => {
     setFlightMenuAnchor(null);
     setTeamToAssign(null);
-  }, []);
+  };
 
-  const handleFlightSelect = useCallback(
-    (flightId: string) => {
-      if (teamToAssign && onAssignToFlight) {
-        onAssignToFlight(teamToAssign, flightId);
-      }
-      handleFlightMenuClose();
-    },
-    [teamToAssign, onAssignToFlight, handleFlightMenuClose],
-  );
-
-  const getPlayerCount = useCallback(
-    (team: GolfTeamType | GolfTeamWithRosterType): number | null => {
-      if (isTeamWithRoster(team)) {
-        return team.playerCount;
-      }
-      return null;
-    },
-    [],
-  );
-
-  const formatTeamSubtitle = useCallback(
-    (team: GolfTeamType | GolfTeamWithRosterType): string => {
-      const parts: string[] = [];
-
-      if (showFlightInfo && team.flight) {
-        parts.push(`Flight: ${team.flight.name}`);
-      }
-
-      if (showPlayerCount) {
-        const playerCount = getPlayerCount(team);
-        if (playerCount !== null) {
-          parts.push(`${playerCount} player${playerCount !== 1 ? 's' : ''}`);
-        }
-      }
-
-      return parts.join(' · ');
-    },
-    [showFlightInfo, showPlayerCount, getPlayerCount],
-  );
+  const handleFlightSelect = (flightId: string) => {
+    if (teamToAssign && onAssignToFlight) {
+      onAssignToFlight(teamToAssign, flightId);
+    }
+    handleFlightMenuClose();
+  };
 
   if (loading) {
     return (
@@ -196,7 +191,7 @@ const GolfTeamList: React.FC<GolfTeamListProps> = ({
     <>
       <List disablePadding sx={{ width: '100%' }}>
         {teams.map((team) => {
-          const subtitle = formatTeamSubtitle(team);
+          const subtitle = formatTeamSubtitle(team, showFlightInfo, showPlayerCount);
           const hasNoFlight = !team.flight;
 
           return (

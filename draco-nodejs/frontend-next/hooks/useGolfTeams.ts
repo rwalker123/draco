@@ -32,6 +32,7 @@ export interface GolfTeamService {
   getTeamWithRoster: (
     seasonId: string,
     teamSeasonId: string,
+    signal?: AbortSignal,
   ) => Promise<GolfTeamServiceResult<GolfTeamWithRosterType>>;
   createTeam: (
     flightId: string,
@@ -114,11 +115,13 @@ export function useGolfTeams(accountId: string): GolfTeamService {
   const getTeamWithRoster: GolfTeamService['getTeamWithRoster'] = async (
     seasonId,
     teamSeasonId,
+    signal,
   ) => {
     try {
       const result = await getGolfTeamWithRoster({
         client: apiClient,
         path: { accountId, seasonId, teamSeasonId },
+        signal,
         throwOnError: false,
       });
 

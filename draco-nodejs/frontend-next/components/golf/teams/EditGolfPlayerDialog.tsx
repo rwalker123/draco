@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Alert,
   Button,
@@ -43,7 +43,7 @@ const EditGolfPlayerDialog: React.FC<EditGolfPlayerDialogProps> = ({
     }
   }, [open, player]);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     if (!player) return;
 
     setError(null);
@@ -61,13 +61,13 @@ const EditGolfPlayerDialog: React.FC<EditGolfPlayerDialogProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [player, initialDifferential, onSubmit, onClose]);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     if (!isSubmitting) {
       onClose();
     }
-  }, [isSubmitting, onClose]);
+  };
 
   if (!player) {
     return null;

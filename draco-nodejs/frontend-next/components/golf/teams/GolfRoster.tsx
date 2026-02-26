@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Avatar,
@@ -39,6 +39,26 @@ interface GolfRosterProps {
   showDifferential?: boolean;
 }
 
+const formatPlayerName = (entry: GolfRosterEntryType): string => {
+  const { firstName, lastName, middleName } = entry.player;
+  if (middleName) {
+    return `${firstName} ${middleName} ${lastName}`;
+  }
+  return `${firstName} ${lastName}`;
+};
+
+const getPlayerInitials = (entry: GolfRosterEntryType): string => {
+  const { firstName, lastName } = entry.player;
+  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+};
+
+const formatDifferential = (differential: number | null | undefined): string => {
+  if (differential === null || differential === undefined) {
+    return 'N/A';
+  }
+  return differential >= 0 ? `+${differential.toFixed(1)}` : differential.toFixed(1);
+};
+
 const GolfRoster: React.FC<GolfRosterProps> = ({
   roster,
   loading = false,
@@ -55,57 +75,37 @@ const GolfRoster: React.FC<GolfRosterProps> = ({
   const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<GolfRosterEntryType | null>(null);
 
-  const handleDeleteClick = useCallback((entry: GolfRosterEntryType) => {
+  const handleDeleteClick = (entry: GolfRosterEntryType) => {
     setSelectedEntry(entry);
     setDeleteDialogOpen(true);
-  }, []);
+  };
 
-  const handleReleaseClick = useCallback((entry: GolfRosterEntryType) => {
+  const handleReleaseClick = (entry: GolfRosterEntryType) => {
     setSelectedEntry(entry);
     setReleaseDialogOpen(true);
-  }, []);
+  };
 
-  const handleDeleteConfirm = useCallback(() => {
+  const handleDeleteConfirm = () => {
     if (selectedEntry && onDelete) {
       onDelete(selectedEntry);
     }
     setDeleteDialogOpen(false);
     setSelectedEntry(null);
-  }, [selectedEntry, onDelete]);
+  };
 
-  const handleReleaseConfirm = useCallback(() => {
+  const handleReleaseConfirm = () => {
     if (selectedEntry && onRelease) {
       onRelease(selectedEntry);
     }
     setReleaseDialogOpen(false);
     setSelectedEntry(null);
-  }, [selectedEntry, onRelease]);
+  };
 
-  const handleDialogCancel = useCallback(() => {
+  const handleDialogCancel = () => {
     setDeleteDialogOpen(false);
     setReleaseDialogOpen(false);
     setSelectedEntry(null);
-  }, []);
-
-  const formatPlayerName = useCallback((entry: GolfRosterEntryType): string => {
-    const { firstName, lastName, middleName } = entry.player;
-    if (middleName) {
-      return `${firstName} ${middleName} ${lastName}`;
-    }
-    return `${firstName} ${lastName}`;
-  }, []);
-
-  const getPlayerInitials = useCallback((entry: GolfRosterEntryType): string => {
-    const { firstName, lastName } = entry.player;
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  }, []);
-
-  const formatDifferential = useCallback((differential: number | null | undefined): string => {
-    if (differential === null || differential === undefined) {
-      return 'N/A';
-    }
-    return differential >= 0 ? `+${differential.toFixed(1)}` : differential.toFixed(1);
-  }, []);
+  };
 
   if (loading) {
     return (

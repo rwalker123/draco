@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -103,16 +103,6 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [editorKey, setEditorKey] = useState(0);
 
-  const formResolver = useMemo(
-    () =>
-      zodResolver(WorkoutFormSchema) as Resolver<
-        WorkoutFormValues,
-        Record<string, never>,
-        WorkoutFormValues
-      >,
-    [],
-  );
-
   const {
     control,
     register,
@@ -122,73 +112,20 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
     watch,
     formState: { errors, isSubmitting },
   } = useForm<WorkoutFormValues>({
-    resolver: formResolver,
+    resolver: zodResolver(WorkoutFormSchema) as Resolver<
+      WorkoutFormValues,
+      Record<string, never>,
+      WorkoutFormValues
+    >,
     defaultValues: getDefaultValues(),
   });
 
   const editorRef = React.useRef<RichTextEditorHandle | null>(null);
 
-  const dialogTitle = useMemo(
-    () => (mode === 'create' ? 'Create Workout' : 'Edit Workout'),
-    [mode],
-  );
-
-  const dialogActionLabel = useMemo(
-    () => (mode === 'create' ? 'Create Workout' : 'Update Workout'),
-    [mode],
-  );
+  const dialogTitle = mode === 'create' ? 'Create Workout' : 'Edit Workout';
+  const dialogActionLabel = mode === 'create' ? 'Create Workout' : 'Update Workout';
 
   const commentsValue = watch('comments');
-
-  const loadFields = useCallback(async () => {
-    const result = await listAccountFields({
-      client: apiClient,
-      path: { accountId },
-      throwOnError: false,
-    });
-
-    const data = unwrapApiResult(result, 'Failed to load fields');
-    return (data.fields ?? []).map((field) => ({
-      id: field.id,
-      name: field.name ?? field.shortName,
-    }));
-  }, [accountId, apiClient]);
-
-  const initializeDialog = useCallback(async () => {
-    setInitialLoading(true);
-    setSubmitError(null);
-
-    try {
-      const [fieldOptions, workoutDetails] = await Promise.all([
-        loadFields(),
-        mode === 'edit' && workoutId
-          ? getWorkout(accountId, workoutId, token ?? undefined)
-          : Promise.resolve(null),
-      ]);
-
-      setFields(fieldOptions);
-
-      if (mode === 'edit' && workoutDetails) {
-        reset({
-          workoutDesc: workoutDetails.workoutDesc,
-          workoutDate: new Date(workoutDetails.workoutDate),
-          fieldId: workoutDetails.field?.id ?? null,
-          comments: workoutDetails.comments ?? '',
-          publishToSocial: false,
-        });
-        setEditorKey((value) => value + 1);
-      } else {
-        reset(getDefaultValues());
-        setEditorKey((value) => value + 1);
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load workout data';
-      setSubmitError(message);
-      onError?.(message);
-    } finally {
-      setInitialLoading(false);
-    }
-  }, [accountId, loadFields, mode, onError, reset, token, workoutId]);
 
   useEffect(() => {
     if (!open) {
@@ -197,17 +134,73 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
       return;
     }
 
-    void initializeDialog();
-  }, [initializeDialog, open, reset]);
+    const controller = new AbortController();
 
-  const handleClose = useCallback(() => {
+    const initializeDialog = async () => {
+      setInitialLoading(true);
+      setSubmitError(null);
+
+      try {
+        const fieldsResult = await listAccountFields({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+
+        const fieldsData = unwrapApiResult(fieldsResult, 'Failed to load fields');
+        const fieldOptions = (fieldsData.fields ?? []).map((field) => ({
+          id: field.id,
+          name: field.name ?? field.shortName,
+        }));
+
+        let workoutDetails = null;
+        if (mode === 'edit' && workoutId) {
+          workoutDetails = await getWorkout(accountId, workoutId, token ?? undefined);
+          if (controller.signal.aborted) return;
+        }
+
+        setFields(fieldOptions);
+
+        if (mode === 'edit' && workoutDetails) {
+          reset({
+            workoutDesc: workoutDetails.workoutDesc,
+            workoutDate: new Date(workoutDetails.workoutDate),
+            fieldId: workoutDetails.field?.id ?? null,
+            comments: workoutDetails.comments ?? '',
+            publishToSocial: false,
+          });
+          setEditorKey((value) => value + 1);
+        } else {
+          reset(getDefaultValues());
+          setEditorKey((value) => value + 1);
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        const message = error instanceof Error ? error.message : 'Failed to load workout data';
+        setSubmitError(message);
+        onError?.(message);
+      } finally {
+        if (!controller.signal.aborted) setInitialLoading(false);
+      }
+    };
+
+    void initializeDialog();
+
+    return () => {
+      controller.abort();
+    };
+  }, [open, accountId, apiClient, mode, workoutId, token, reset, onError]);
+
+  const handleClose = () => {
     if (isSubmitting) {
       return;
     }
     onClose();
-  }, [isSubmitting, onClose]);
+  };
 
-  const syncComments = useCallback(() => {
+  const syncComments = () => {
     if (!editorRef.current) {
       return;
     }
@@ -217,7 +210,7 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
       shouldTouch: true,
       shouldValidate: true,
     });
-  }, [setValue]);
+  };
 
   const submitHandler = handleSubmit(async (values) => {
     if (mode === 'edit' && !workoutId) {

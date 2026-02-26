@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Alert,
   Button,
@@ -56,7 +56,7 @@ const CreateGolfPlayerDialog: React.FC<CreateGolfPlayerDialogProps> = ({
     }
   }, [open]);
 
-  const validateForm = useCallback((): boolean => {
+  const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
     if (!firstName.trim()) {
@@ -74,9 +74,9 @@ const CreateGolfPlayerDialog: React.FC<CreateGolfPlayerDialogProps> = ({
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-  }, [firstName, lastName, email]);
+  };
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     if (!validateForm()) {
       return;
     }
@@ -101,23 +101,13 @@ const CreateGolfPlayerDialog: React.FC<CreateGolfPlayerDialogProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [
-    firstName,
-    lastName,
-    middleName,
-    email,
-    initialDifferential,
-    isSub,
-    validateForm,
-    onSubmit,
-    onClose,
-  ]);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     if (!isSubmitting) {
       onClose();
     }
-  }, [isSubmitting, onClose]);
+  };
 
   const isValid = firstName.trim() && lastName.trim();
 

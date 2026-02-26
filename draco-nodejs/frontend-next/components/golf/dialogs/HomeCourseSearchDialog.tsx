@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -47,7 +47,7 @@ export const HomeCourseSearchDialog: React.FC<HomeCourseSearchDialogProps> = ({
   const { search, loading } = useExternalCourseSearch(accountId);
   const { importExternalCourse } = useGolfCourses(accountId);
 
-  const handleSearch = useCallback(async () => {
+  const handleSearch = async () => {
     if (searchQuery.length < 2) {
       setError('Please enter at least 2 characters to search');
       return;
@@ -67,34 +67,30 @@ export const HomeCourseSearchDialog: React.FC<HomeCourseSearchDialogProps> = ({
     } else {
       setError(searchResult.error);
     }
-  }, [search, searchQuery]);
+  };
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && searchQuery.length >= 2) {
-        handleSearch();
-      }
-    },
-    [handleSearch, searchQuery],
-  );
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchQuery.length >= 2) {
+      void handleSearch();
+    }
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     setSearchQuery('');
     setResults([]);
     setError(null);
     setSelectedCourse(null);
     setSaving(false);
     onClose();
-  }, [onClose]);
+  };
 
-  const handleSelectCourse = useCallback(async () => {
+  const handleSelectCourse = async () => {
     if (!selectedCourse) return;
 
     setError(null);
     setSaving(true);
 
     try {
-      // Custom course: already exists in database, use courseId directly
       if (selectedCourse.courseId && selectedCourse.externalId === '') {
         const result = await onSelectCourse(selectedCourse.courseId);
         if (result.success) {
@@ -105,7 +101,6 @@ export const HomeCourseSearchDialog: React.FC<HomeCourseSearchDialogProps> = ({
         return;
       }
 
-      // External course: need to import first
       const importResult = await importExternalCourse(selectedCourse.externalId);
 
       if (!importResult.success) {
@@ -124,7 +119,7 @@ export const HomeCourseSearchDialog: React.FC<HomeCourseSearchDialogProps> = ({
     } finally {
       setSaving(false);
     }
-  }, [selectedCourse, importExternalCourse, onSelectCourse, handleClose]);
+  };
 
   return (
     <Dialog
@@ -168,7 +163,7 @@ export const HomeCourseSearchDialog: React.FC<HomeCourseSearchDialogProps> = ({
                   <InputAdornment position="end">
                     <Button
                       variant="contained"
-                      onClick={handleSearch}
+                      onClick={() => void handleSearch()}
                       disabled={loading || searchQuery.length < 2}
                       startIcon={loading ? <CircularProgress size={16} /> : <SearchIcon />}
                       size="small"
@@ -236,7 +231,7 @@ export const HomeCourseSearchDialog: React.FC<HomeCourseSearchDialogProps> = ({
         </Button>
         <Button
           variant="contained"
-          onClick={handleSelectCourse}
+          onClick={() => void handleSelectCourse()}
           disabled={!selectedCourse || saving}
           startIcon={saving ? <CircularProgress size={16} /> : null}
         >
