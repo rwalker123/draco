@@ -29,8 +29,11 @@ export const fetchActiveAlerts = async (
   return mapList(data as AlertListType);
 };
 
-export const fetchAllAlerts = async (client: Client): Promise<AlertType[]> => {
-  const result = await listAllAlerts({ client, throwOnError: false });
+export const fetchAllAlerts = async (
+  client: Client,
+  signal?: AbortSignal,
+): Promise<AlertType[]> => {
+  const result = await listAllAlerts({ client, throwOnError: false, signal });
   const data = unwrapApiResult(result, 'Unable to fetch alerts');
   return mapList(data as AlertListType);
 };

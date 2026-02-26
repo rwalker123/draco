@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Alert as MuiAlert,
@@ -57,98 +57,95 @@ const AdminGolfCoursesPage: React.FC = () => {
   const [searchInput, setSearchInput] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [mutatingId, setMutatingId] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const isAdministrator = hasRole('Administrator');
 
-  const loadCourses = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const data = await fetchAdminGolfCourses(apiClient, {
-        page,
-        limit: PAGE_SIZE,
-        search: searchQuery || undefined,
-      });
-      setCoursesData(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load courses');
-    } finally {
-      setLoading(false);
-    }
-  }, [apiClient, page, searchQuery]);
-
   useEffect(() => {
+    const controller = new AbortController();
+    const loadCourses = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchAdminGolfCourses(
+          apiClient,
+          {
+            page,
+            limit: PAGE_SIZE,
+            search: searchQuery || undefined,
+          },
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        setCoursesData(data);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : 'Unable to load courses');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
     void loadCourses();
-  }, [loadCourses]);
+    return () => {
+      controller.abort();
+    };
+  }, [apiClient, page, searchQuery, refreshKey]);
 
-  const handleSearch = useCallback(() => {
+  const handleSearch = () => {
     setPage(1);
     setSearchQuery(searchInput.trim());
-  }, [searchInput]);
+  };
 
-  const handleSearchKeyPress = useCallback(
-    (event: React.KeyboardEvent) => {
-      if (event.key === 'Enter') {
-        handleSearch();
-      }
-    },
-    [handleSearch],
-  );
+  const handleSearchKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
-  const handlePageChange = useCallback((_event: React.ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
-  }, []);
+  };
 
-  const handleCreate = useCallback(() => {
+  const handleCreate = () => {
     setCreateDialogOpen(true);
-  }, []);
+  };
 
-  const handleView = useCallback(
-    (course: GolfCourseSlimType) => {
-      router.push(`/admin/golf/courses/${course.id}`);
-    },
-    [router],
-  );
+  const handleView = (course: GolfCourseSlimType) => {
+    router.push(`/admin/golf/courses/${course.id}`);
+  };
 
-  const handleCreateSubmit = useCallback(
-    async (data: CreateGolfCourseType) => {
-      try {
-        const newCourse = await createAdminGolfCourse(apiClient, data);
-        setCreateDialogOpen(false);
-        router.push(`/admin/golf/courses/${newCourse.id}`);
-      } catch (err) {
-        throw err;
-      }
-    },
-    [apiClient, router],
-  );
+  const handleCreateSubmit = async (data: CreateGolfCourseType) => {
+    try {
+      const newCourse = await createAdminGolfCourse(apiClient, data);
+      setCreateDialogOpen(false);
+      router.push(`/admin/golf/courses/${newCourse.id}`);
+    } catch (err) {
+      throw err;
+    }
+  };
 
-  const handleDelete = useCallback(
-    async (course: GolfCourseSlimType) => {
-      const confirmed = window.confirm(
-        `Delete "${course.name}"? This cannot be undone and will fail if the course is in use.`,
-      );
-      if (!confirmed) {
-        return;
-      }
+  const handleDelete = async (course: GolfCourseSlimType) => {
+    const confirmed = window.confirm(
+      `Delete "${course.name}"? This cannot be undone and will fail if the course is in use.`,
+    );
+    if (!confirmed) {
+      return;
+    }
 
-      setMutatingId(course.id);
-      try {
-        await deleteAdminGolfCourse(apiClient, course.id);
-        void loadCourses();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unable to delete course');
-      } finally {
-        setMutatingId(null);
-      }
-    },
-    [apiClient, loadCourses],
-  );
+    setMutatingId(course.id);
+    try {
+      await deleteAdminGolfCourse(apiClient, course.id);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to delete course');
+    } finally {
+      setMutatingId(null);
+    }
+  };
 
-  const handleBackToDashboard = useCallback(() => {
+  const handleBackToDashboard = () => {
     router.push('/admin');
-  }, [router]);
+  };
 
   if (!isAdministrator) {
     return (

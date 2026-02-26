@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -52,8 +52,8 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // Use ref to store the callback to avoid dependency issues
   const onUrlsChangeRef = useRef(onUrlsChange);
   onUrlsChangeRef.current = onUrlsChange;
 
@@ -63,66 +63,55 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
 
   const canManageUrls = isAccountAdministrator(hasRole, accountId);
 
-  const loadUrls = useCallback(async () => {
-    if (!accountId || !token) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const result = await getAccountUrls({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
-
-      const urlList = unwrapApiResult(result, 'Failed to load URLs') ?? [];
-      setUrls(urlList);
-      onUrlsChangeRef.current?.(urlList);
-    } catch (err) {
-      console.error('Failed to load URLs', err);
-      setError('Failed to load URLs');
-      setUrls([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, apiClient, token]);
-
   useEffect(() => {
+    if (!accountId || !token) return;
+    const controller = new AbortController();
+    const loadUrls = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const result = await getAccountUrls({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        const urlList = unwrapApiResult(result, 'Failed to load URLs') ?? [];
+        setUrls(urlList);
+        onUrlsChangeRef.current?.(urlList);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load URLs', err);
+        setError('Failed to load URLs');
+        setUrls([]);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
     void loadUrls();
-  }, [loadUrls]);
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient, token, refreshKey]);
 
-  const handleDialogSuccess = useCallback(
-    async (message: string) => {
-      setSuccess(message);
-      setError(null);
-      await loadUrls();
-    },
-    [loadUrls],
-  );
+  const handleDialogSuccess = (message: string) => {
+    setSuccess(message);
+    setError(null);
+    setRefreshKey((k) => k + 1);
+  };
 
-  const handleCreateSuccess = useCallback(
-    (result: AccountUrlCreateResult) => {
-      void handleDialogSuccess(result.message);
-    },
-    [handleDialogSuccess],
-  );
+  const handleCreateSuccess = (result: AccountUrlCreateResult) => {
+    handleDialogSuccess(result.message);
+  };
 
-  const handleUpdateSuccess = useCallback(
-    (result: AccountUrlUpdateResult) => {
-      void handleDialogSuccess(result.message);
-    },
-    [handleDialogSuccess],
-  );
+  const handleUpdateSuccess = (result: AccountUrlUpdateResult) => {
+    handleDialogSuccess(result.message);
+  };
 
-  const handleDeleteSuccess = useCallback(
-    (result: AccountUrlDeleteResult) => {
-      void handleDialogSuccess(result.message);
-    },
-    [handleDialogSuccess],
-  );
+  const handleDeleteSuccess = (result: AccountUrlDeleteResult) => {
+    handleDialogSuccess(result.message);
+  };
 
   useEffect(() => {
     if (!success) {

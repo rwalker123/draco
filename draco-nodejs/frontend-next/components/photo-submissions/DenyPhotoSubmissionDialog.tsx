@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -41,20 +41,20 @@ const DenyPhotoSubmissionDialog: React.FC<DenyPhotoSubmissionDialogProps> = ({
   const [reason, setReason] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     setReason('');
     setValidationError(null);
-  }, []);
+  };
 
-  const normalizedTitle = useMemo(() => normalizeTitle(submissionTitle), [submissionTitle]);
+  const normalizedTitle = normalizeTitle(submissionTitle);
 
-  const handleDialogClose = useCallback(() => {
+  const handleDialogClose = () => {
     if (loading) {
       return;
     }
     resetForm();
     onClose();
-  }, [loading, onClose, resetForm]);
+  };
 
   const handleConfirm = async () => {
     const trimmedReason = reason.trim();

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Button,
@@ -82,7 +82,7 @@ export const LeagueFaqFormDialog: React.FC<LeagueFaqFormDialogProps> = ({
   const [editorKey, setEditorKey] = useState(0);
   const editorRef = useRef<RichTextEditorHandle | null>(null);
 
-  const defaultValues = useMemo(() => buildDefaultValues(faq), [faq]);
+  const defaultValues = buildDefaultValues(faq);
 
   const {
     control,

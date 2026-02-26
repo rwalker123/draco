@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -54,104 +54,98 @@ const AdminGolfCourseDetailPage: React.FC = () => {
   const [editingTee, setEditingTee] = useState<GolfCourseTeeType | null>(null);
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const isExternal = Boolean(course?.externalId);
 
-  const loadCourse = useCallback(async () => {
-    if (!courseId) return;
-
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchAdminGolfCourse(apiClient, courseId);
-      setCourse(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load course');
-    } finally {
-      setLoading(false);
-    }
-  }, [apiClient, courseId]);
-
   useEffect(() => {
-    if (courseId) {
-      void loadCourse();
-    }
-  }, [courseId, loadCourse]);
-
-  const handleBack = useCallback(() => {
-    router.push('/admin/golf/courses');
-  }, [router]);
-
-  const handleCourseSave = useCallback(
-    async (data: UpdateGolfCourseType) => {
-      if (!course) return;
-
+    if (!courseId) return;
+    const controller = new AbortController();
+    const loadCourse = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        await updateAdminGolfCourse(apiClient, course.id, data);
-        setSuccessMessage('Course updated successfully');
-        await loadCourse();
+        const data = await fetchAdminGolfCourse(apiClient, courseId, controller.signal);
+        if (controller.signal.aborted) return;
+        setCourse(data);
       } catch (err) {
-        throw err;
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : 'Unable to load course');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
-    },
-    [apiClient, course, loadCourse],
-  );
+    };
+    void loadCourse();
+    return () => {
+      controller.abort();
+    };
+  }, [apiClient, courseId, refreshKey]);
 
-  const handleAddTee = useCallback(() => {
+  const handleBack = () => {
+    router.push('/admin/golf/courses');
+  };
+
+  const handleCourseSave = async (data: UpdateGolfCourseType) => {
+    if (!course) return;
+
+    try {
+      await updateAdminGolfCourse(apiClient, course.id, data);
+      setSuccessMessage('Course updated successfully');
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleAddTee = () => {
     setTeeFormMode('create');
     setEditingTee(null);
     setTeeFormOpen(true);
-  }, []);
+  };
 
-  const handleEditTee = useCallback((tee: GolfCourseTeeType) => {
+  const handleEditTee = (tee: GolfCourseTeeType) => {
     setTeeFormMode('edit');
     setEditingTee(tee);
     setTeeFormOpen(true);
-  }, []);
+  };
 
-  const handleDeleteTee = useCallback(
-    async (tee: GolfCourseTeeType) => {
-      if (!courseId) return;
+  const handleDeleteTee = async (tee: GolfCourseTeeType) => {
+    if (!courseId) return;
 
-      const confirmed = window.confirm(`Delete tee "${tee.teeName}"? This cannot be undone.`);
-      if (!confirmed) return;
+    const confirmed = window.confirm(`Delete tee "${tee.teeName}"? This cannot be undone.`);
+    if (!confirmed) return;
 
-      try {
-        await deleteAdminGolfTee(apiClient, courseId, tee.id);
-        setSuccessMessage('Tee deleted successfully');
-        await loadCourse();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unable to delete tee');
+    try {
+      await deleteAdminGolfTee(apiClient, courseId, tee.id);
+      setSuccessMessage('Tee deleted successfully');
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to delete tee');
+    }
+  };
+
+  const handleTeeFormSubmit = async (data: CreateGolfCourseTeeType | UpdateGolfCourseTeeType) => {
+    if (!courseId) return;
+
+    try {
+      if (teeFormMode === 'create') {
+        await createAdminGolfTee(apiClient, courseId, data as CreateGolfCourseTeeType);
+        setSuccessMessage('Tee added successfully');
+      } else if (editingTee) {
+        await updateAdminGolfTee(
+          apiClient,
+          courseId,
+          editingTee.id,
+          data as UpdateGolfCourseTeeType,
+        );
+        setSuccessMessage('Tee updated successfully');
       }
-    },
-    [apiClient, courseId, loadCourse],
-  );
-
-  const handleTeeFormSubmit = useCallback(
-    async (data: CreateGolfCourseTeeType | UpdateGolfCourseTeeType) => {
-      if (!courseId) return;
-
-      try {
-        if (teeFormMode === 'create') {
-          await createAdminGolfTee(apiClient, courseId, data as CreateGolfCourseTeeType);
-          setSuccessMessage('Tee added successfully');
-        } else if (editingTee) {
-          await updateAdminGolfTee(
-            apiClient,
-            courseId,
-            editingTee.id,
-            data as UpdateGolfCourseTeeType,
-          );
-          setSuccessMessage('Tee updated successfully');
-        }
-        setTeeFormOpen(false);
-        await loadCourse();
-      } catch (err) {
-        throw err;
-      }
-    },
-    [apiClient, courseId, teeFormMode, editingTee, loadCourse],
-  );
+      setTeeFormOpen(false);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      throw err;
+    }
+  };
 
   if (!isAdministrator) {
     return (

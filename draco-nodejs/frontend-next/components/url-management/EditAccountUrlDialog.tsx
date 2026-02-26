@@ -49,10 +49,7 @@ const EditAccountUrlDialog: React.FC<EditAccountUrlDialogProps> = ({
     clearErrorRef.current = clearError;
   }, [clearError]);
 
-  const urlPreview = React.useMemo(
-    () => buildAccountUrlPreview(protocol, domain),
-    [protocol, domain],
-  );
+  const urlPreview = buildAccountUrlPreview(protocol, domain);
 
   const resetState = () => {
     setProtocol('https://');

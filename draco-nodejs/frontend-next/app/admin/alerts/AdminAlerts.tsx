@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert as MuiAlert,
   Box,
@@ -51,109 +51,102 @@ const AdminAlerts: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [dialogState, setDialogState] = useState<DialogState | null>(null);
   const [mutatingId, setMutatingId] = useState<string | null>(null);
+  const [refreshKey] = useState(0);
 
   const isAdministrator = hasRole('Administrator');
 
-  const loadAlerts = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    const loadAlerts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchAllAlerts(apiClient, controller.signal);
+        if (controller.signal.aborted) return;
+        setAlerts(sortAlerts(data));
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : 'Unable to load alerts');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+    void loadAlerts();
+    return () => {
+      controller.abort();
+    };
+  }, [apiClient, refreshKey]);
+
+  const handleCreate = () => {
+    setDialogState({ mode: 'create' });
+  };
+
+  const handleEdit = (alert: AlertType) => {
+    setDialogState({ mode: 'edit', alert });
+  };
+
+  const closeDialog = () => {
+    setDialogState(null);
+  };
+
+  const upsertAlert = async (payload: UpsertAlertType) => {
+    const targetId =
+      dialogState?.mode === 'edit' && dialogState.alert ? dialogState.alert.id : 'new';
+    setMutatingId(targetId);
 
     try {
-      const data = await fetchAllAlerts(apiClient);
-      setAlerts(sortAlerts(data));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load alerts');
-    } finally {
-      setLoading(false);
-    }
-  }, [apiClient]);
-
-  useEffect(() => {
-    void loadAlerts();
-  }, [loadAlerts]);
-
-  const handleCreate = useCallback(() => {
-    setDialogState({ mode: 'create' });
-  }, []);
-
-  const handleEdit = useCallback((alert: AlertType) => {
-    setDialogState({ mode: 'edit', alert });
-  }, []);
-
-  const closeDialog = useCallback(() => {
-    setDialogState(null);
-  }, []);
-
-  const upsertAlert = useCallback(
-    async (payload: UpsertAlertType) => {
-      const targetId =
-        dialogState?.mode === 'edit' && dialogState.alert ? dialogState.alert.id : 'new';
-      setMutatingId(targetId);
-
-      try {
-        if (dialogState?.mode === 'edit' && dialogState.alert) {
-          const updated = await updateAlert(dialogState.alert.id, payload, apiClient);
-          setAlerts((prev) =>
-            sortAlerts(prev.map((item) => (item.id === updated.id ? updated : item))),
-          );
-        } else {
-          const created = await createAlert(payload, apiClient);
-          setAlerts((prev) => sortAlerts([created, ...prev]));
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unable to save alert');
-      } finally {
-        setMutatingId(null);
-      }
-    },
-    [dialogState, apiClient],
-  );
-
-  const handleDelete = useCallback(
-    async (alert: AlertType) => {
-      const confirmed = window.confirm('Delete this alert? This cannot be undone.');
-      if (!confirmed) {
-        return;
-      }
-
-      setMutatingId(alert.id);
-      try {
-        await deleteAlert(alert.id, apiClient);
-        setAlerts((prev) => prev.filter((item) => item.id !== alert.id));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unable to delete alert');
-      } finally {
-        setMutatingId(null);
-      }
-    },
-    [apiClient],
-  );
-
-  const handleToggleActive = useCallback(
-    async (alert: AlertType) => {
-      setMutatingId(alert.id);
-      try {
-        const updated = await updateAlert(
-          alert.id,
-          { message: alert.message, isActive: !alert.isActive },
-          apiClient,
-        );
+      if (dialogState?.mode === 'edit' && dialogState.alert) {
+        const updated = await updateAlert(dialogState.alert.id, payload, apiClient);
         setAlerts((prev) =>
           sortAlerts(prev.map((item) => (item.id === updated.id ? updated : item))),
         );
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unable to update alert');
-      } finally {
-        setMutatingId(null);
+      } else {
+        const created = await createAlert(payload, apiClient);
+        setAlerts((prev) => sortAlerts([created, ...prev]));
       }
-    },
-    [apiClient],
-  );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to save alert');
+    } finally {
+      setMutatingId(null);
+    }
+  };
 
-  const pageDescription = useMemo(
-    () => 'Create, update, and retire system-wide alerts shown to all accounts.',
-    [],
-  );
+  const handleDelete = async (alert: AlertType) => {
+    const confirmed = window.confirm('Delete this alert? This cannot be undone.');
+    if (!confirmed) {
+      return;
+    }
+
+    setMutatingId(alert.id);
+    try {
+      await deleteAlert(alert.id, apiClient);
+      setAlerts((prev) => prev.filter((item) => item.id !== alert.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to delete alert');
+    } finally {
+      setMutatingId(null);
+    }
+  };
+
+  const handleToggleActive = async (alert: AlertType) => {
+    setMutatingId(alert.id);
+    try {
+      const updated = await updateAlert(
+        alert.id,
+        { message: alert.message, isActive: !alert.isActive },
+        apiClient,
+      );
+      setAlerts((prev) =>
+        sortAlerts(prev.map((item) => (item.id === updated.id ? updated : item))),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to update alert');
+    } finally {
+      setMutatingId(null);
+    }
+  };
+
+  const pageDescription = 'Create, update, and retire system-wide alerts shown to all accounts.';
 
   if (!isAdministrator) {
     return (

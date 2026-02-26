@@ -32,26 +32,10 @@ const PhotoSubmissionPanel: React.FC<PhotoSubmissionPanelProps> = ({
   albumOptions,
   containerSx,
 }) => {
-  const widgetSx = React.useMemo(() => {
-    const extras = Array.isArray(containerSx) ? containerSx : containerSx ? [containerSx] : [];
-    return [{ height: '100%' }, ...extras] as SxProps<Theme>;
-  }, [containerSx]);
+  const extras = Array.isArray(containerSx) ? containerSx : containerSx ? [containerSx] : [];
+  const widgetSx = [{ height: '100%' }, ...extras] as SxProps<Theme>;
 
-  const shouldHide = React.useMemo(() => {
-    if (!enabled) {
-      return true;
-    }
-
-    if (isLoading) {
-      return false;
-    }
-
-    if (error) {
-      return true;
-    }
-
-    return !canSubmit;
-  }, [enabled, error, isLoading, canSubmit]);
+  const shouldHide = !enabled || (!isLoading && (Boolean(error) || !canSubmit));
 
   if (shouldHide) {
     return null;
