@@ -37,33 +37,23 @@ const TemplateRichTextEditor = React.forwardRef<
   ) => {
     const editorRef = React.useRef<RichTextEditorHandle | null>(null);
 
-    // Function to insert a template variable
-    const insertVariable = React.useCallback(
-      (variable: string) => {
-        const variableText = `{{${variable}}}`;
-        if (editorRef.current) {
-          editorRef.current.insertText(variableText);
-        }
-        // Call the onVariableInsert callback if provided
-        if (onVariableInsert) {
-          onVariableInsert(variable);
-        }
-      },
-      [onVariableInsert],
-    );
+    const insertVariable = (variable: string) => {
+      const variableText = `{{${variable}}}`;
+      if (editorRef.current) {
+        editorRef.current.insertText(variableText);
+      }
+      if (onVariableInsert) {
+        onVariableInsert(variable);
+      }
+    };
 
-    // Expose methods to parent component
-    React.useImperativeHandle(
-      ref,
-      () => ({
-        getCurrentContent: () => editorRef.current?.getSanitizedContent() || '',
-        getSanitizedContent: () => editorRef.current?.getSanitizedContent() || '',
-        getTextContent: () => editorRef.current?.getTextContent() || '',
-        insertText: (text: string) => editorRef.current?.insertText(text),
-        insertVariable,
-      }),
-      [insertVariable],
-    );
+    React.useImperativeHandle(ref, () => ({
+      getCurrentContent: () => editorRef.current?.getSanitizedContent() || '',
+      getSanitizedContent: () => editorRef.current?.getSanitizedContent() || '',
+      getTextContent: () => editorRef.current?.getTextContent() || '',
+      insertText: (text: string) => editorRef.current?.insertText(text),
+      insertVariable,
+    }));
     return (
       <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box

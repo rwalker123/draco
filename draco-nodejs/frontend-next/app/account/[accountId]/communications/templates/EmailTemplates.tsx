@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -43,10 +43,9 @@ export default function EmailTemplates() {
   );
 
   const apiClient = useApiClient();
-  const emailService = useMemo(() => createEmailService(token, apiClient), [token, apiClient]);
+  const emailService = createEmailService(token, apiClient);
 
-  // Load templates
-  const loadTemplates = useCallback(async () => {
+  const loadTemplates = async () => {
     if (!accountId || !token) return;
 
     try {
@@ -60,11 +59,38 @@ export default function EmailTemplates() {
     } finally {
       setLoading(false);
     }
-  }, [accountId, token, emailService]);
+  };
 
   useEffect(() => {
-    loadTemplates();
-  }, [loadTemplates]);
+    if (!accountId || !token) return;
+
+    const controller = new AbortController();
+    const service = createEmailService(token, apiClient);
+
+    const fetchTemplates = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const templatesData = await service.listTemplates(accountId as string);
+        if (controller.signal.aborted) return;
+        setTemplates(templatesData);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load templates:', err);
+        setError('Failed to load email templates. Please try again.');
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void fetchTemplates();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, token, apiClient]);
 
   const handleBack = () => {
     router.push(`/account/${accountId}/communications`);

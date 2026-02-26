@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useCallback } from 'react';
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -56,20 +56,17 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
   sort,
   onSortChange,
 }) => {
-  const handleSortClick = useCallback(
-    (column: SortableColumn) => {
-      if (!onSortChange) return;
+  const handleSortClick = (column: SortableColumn) => {
+    if (!onSortChange) return;
 
-      const isCurrentSort = sort?.sortBy === column;
-      const newDirection = isCurrentSort && sort?.sortDirection === 'asc' ? 'desc' : 'asc';
+    const isCurrentSort = sort?.sortBy === column;
+    const newDirection = isCurrentSort && sort?.sortDirection === 'asc' ? 'desc' : 'asc';
 
-      onSortChange({
-        sortBy: column,
-        sortDirection: newDirection,
-      });
-    },
-    [sort, onSortChange],
-  );
+    onSortChange({
+      sortBy: column,
+      sortDirection: newDirection,
+    });
+  };
 
   const renderSortableHeader = (column: SortableColumn, label: string) => {
     if (!onSortChange) {
@@ -156,14 +153,4 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
   );
 };
 
-// Memoize to prevent unnecessary re-renders
-export default memo(UserTableContent, (prevProps, nextProps) => {
-  // Only re-render if users array reference changes or essential props change
-  return (
-    prevProps.users === nextProps.users &&
-    prevProps.canManageUsers === nextProps.canManageUsers &&
-    prevProps.searchTerm === nextProps.searchTerm &&
-    prevProps.hasFilters === nextProps.hasFilters &&
-    prevProps.sort === nextProps.sort
-  );
-});
+export default UserTableContent;

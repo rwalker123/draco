@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -37,11 +37,9 @@ const RevokeRegistrationDialog: React.FC<RevokeRegistrationDialogProps> = ({
   const [error, setError] = useState<string | null>(null);
   const { revokeRegistration, loading } = useRegistrationOperations(accountId);
 
-  // Handle registration revocation with internal error handling
-  const handleRevokeRegistration = useCallback(async () => {
+  const handleRevokeRegistration = async () => {
     if (!contactId) return;
 
-    // Clear any previous errors
     setError(null);
 
     const result = await revokeRegistration(contactId);
@@ -51,12 +49,11 @@ const RevokeRegistrationDialog: React.FC<RevokeRegistrationDialogProps> = ({
         message: result.message || 'Registration revoked successfully',
         contactId: result.contactId!,
       });
-      onClose(); // Close dialog on success
+      onClose();
     } else {
-      // Handle error internally
       setError(result.error || 'Failed to revoke registration');
     }
-  }, [contactId, revokeRegistration, onSuccess, onClose]);
+  };
 
   // Clear error when dialog opens
   React.useEffect(() => {

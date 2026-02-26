@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   TextField,
   Box,
@@ -56,43 +56,38 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    async (query: string) => {
-      if (!query.trim() || !accountId || !token) {
-        setSearchResults([]);
-        setIsOpen(false);
-        return;
-      }
+  const debouncedSearch = async (query: string) => {
+    if (!query.trim() || !accountId || !token) {
+      setSearchResults([]);
+      setIsOpen(false);
+      return;
+    }
 
-      setIsSearching(true);
-      setIsOpen(true);
+    setIsSearching(true);
+    setIsOpen(true);
 
-      try {
-        const userService = createUserManagementService(token);
-        const results = await userService.searchUsers(accountId, query, undefined, undefined);
+    try {
+      const userService = createUserManagementService(token);
+      const results = await userService.searchUsers(accountId, query, undefined, undefined);
 
-        // Transform users to contacts format for consistency
-        const contacts: SearchContact[] = results.users.map((user) => ({
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email || undefined,
-          userId: user.userId || undefined,
-          displayName: `${user.firstName} ${user.lastName}`,
-          searchText: `${user.firstName} ${user.lastName} ${user.email ?? ''}`.trim(),
-        }));
+      const contacts: SearchContact[] = results.users.map((user) => ({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email || undefined,
+        userId: user.userId || undefined,
+        displayName: `${user.firstName} ${user.lastName}`,
+        searchText: `${user.firstName} ${user.lastName} ${user.email ?? ''}`.trim(),
+      }));
 
-        setSearchResults(contacts);
-      } catch (error) {
-        console.error('Error searching contacts:', error);
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    [token, accountId],
-  );
+      setSearchResults(contacts);
+    } catch (error) {
+      console.error('Error searching contacts:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   // Handle input change with debouncing
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
