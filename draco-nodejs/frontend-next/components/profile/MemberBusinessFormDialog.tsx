@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -69,10 +69,6 @@ const MemberBusinessFormDialog: React.FC<MemberBusinessFormDialogProps> = ({
   onError,
 }) => {
   const apiClient = useApiClient();
-  const defaultValues = useMemo(
-    () => buildDefaultValues(contactId, memberBusiness),
-    [contactId, memberBusiness],
-  );
 
   const {
     register,
@@ -83,7 +79,7 @@ const MemberBusinessFormDialog: React.FC<MemberBusinessFormDialogProps> = ({
     formState: { errors },
   } = useForm<MemberBusinessFormValues>({
     resolver: zodResolver(CreateMemberBusinessSchema),
-    defaultValues,
+    defaultValues: buildDefaultValues(contactId, memberBusiness),
   });
 
   const descriptionValue = watch('description') ?? '';
@@ -95,9 +91,9 @@ const MemberBusinessFormDialog: React.FC<MemberBusinessFormDialogProps> = ({
     if (!open) {
       return;
     }
-    reset(defaultValues);
+    reset(buildDefaultValues(contactId, memberBusiness));
     setSubmitError(null);
-  }, [open, defaultValues, reset]);
+  }, [open, contactId, memberBusiness, reset]);
 
   const handleDialogError = (message: string) => {
     setSubmitError(message);

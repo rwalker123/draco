@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -98,7 +98,7 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     }
   }, [open, albums, albumPhotoCounts, defaultAlbumPhotoCount]);
 
-  const handleCreate = useCallback(async () => {
+  const handleCreate = async () => {
     const title = newAlbumTitle.trim();
     if (!title) {
       setOperationMessage('Album title is required');
@@ -137,9 +137,9 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     } finally {
       setSubmitting(false);
     }
-  }, [accountId, newAlbumTitle, onError, onSuccess, token]);
+  };
 
-  const handleStartEdit = useCallback((album: EditableAlbum) => {
+  const handleStartEdit = (album: EditableAlbum) => {
     if (album.isDefault) {
       setOperationMessage('The default album cannot be renamed.');
       return;
@@ -148,14 +148,14 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     setEditingAlbumId(album.id);
     setEditingTitle(album.title);
     setOperationMessage(null);
-  }, []);
+  };
 
-  const handleCancelEdit = useCallback(() => {
+  const handleCancelEdit = () => {
     setEditingAlbumId(null);
     setEditingTitle('');
-  }, []);
+  };
 
-  const handleSaveEdit = useCallback(async () => {
+  const handleSaveEdit = async () => {
     if (!editingAlbumId) {
       return;
     }
@@ -199,9 +199,9 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     } finally {
       setSubmitting(false);
     }
-  }, [accountId, editingAlbumId, editingTitle, onError, onSuccess, token]);
+  };
 
-  const handleConfirmDelete = useCallback((album: EditableAlbum) => {
+  const handleConfirmDelete = (album: EditableAlbum) => {
     if (album.isDefault) {
       setOperationMessage('The default album cannot be deleted.');
       return;
@@ -212,9 +212,9 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
       return;
     }
     setPendingDelete(album);
-  }, []);
+  };
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     if (!pendingDelete) {
       return;
     }
@@ -239,14 +239,14 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     } finally {
       setSubmitting(false);
     }
-  }, [accountId, onError, onSuccess, pendingDelete, token]);
+  };
 
-  const handleCloseDeleteDialog = useCallback(() => {
+  const handleCloseDeleteDialog = () => {
     if (submitting) {
       return;
     }
     setPendingDelete(null);
-  }, [submitting]);
+  };
 
   return (
     <>

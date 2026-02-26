@@ -8,8 +8,8 @@ export const useDiscordIntegration = () => {
   const apiClient = useApiClient();
   const service = new DiscordIntegrationService(apiClient);
 
-  const getLinkStatus = (accountId: string): Promise<DiscordLinkStatusType> =>
-    service.getLinkStatus(accountId);
+  const getLinkStatus = (accountId: string, signal?: AbortSignal): Promise<DiscordLinkStatusType> =>
+    service.getLinkStatus(accountId, signal);
 
   const startLink = (accountId: string): Promise<DiscordOAuthStartResponseType> =>
     service.startLink(accountId);

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -65,47 +65,41 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
   const [submitting, setSubmitting] = useState(false);
   const previewUrlRef = useRef<string | null>(null);
 
-  const albumSections = useMemo(() => {
-    const accountAlbums: Array<{ id: string; title: string }> = [];
-    const teamAlbums: Array<{ id: string; title: string }> = [];
+  const accountAlbums: Array<{ id: string; title: string }> = [];
+  const teamAlbums: Array<{ id: string; title: string }> = [];
 
-    albums.forEach((album) => {
-      if (!album.id) {
-        return;
-      }
+  albums.forEach((album) => {
+    if (!album.id) {
+      return;
+    }
 
-      const normalizedTeamId = normalizeEntityId(album.teamId ?? null);
-      const albumAccountId = album.accountId ?? null;
-      const title = album.title?.trim() || 'Untitled Album';
+    const normalizedTeamId = normalizeEntityId(album.teamId ?? null);
+    const albumAccountId = album.accountId ?? null;
+    const albumTitle = album.title?.trim() || 'Untitled Album';
 
-      const belongsToAccount = normalizedTeamId === null && albumAccountId === accountId;
-      const belongsToTeam = normalizedTeamId !== null && albumAccountId === accountId;
+    const belongsToAccount = normalizedTeamId === null && albumAccountId === accountId;
+    const belongsToTeam = normalizedTeamId !== null && albumAccountId === accountId;
 
-      // Skip the global default album (accountId === '0'); the explicit default option maps to null.
-      const isGlobalDefault = albumAccountId === '0';
+    const isGlobalDefault = albumAccountId === '0';
 
-      if (belongsToAccount && !isGlobalDefault) {
-        accountAlbums.push({ id: String(album.id), title });
-        return;
-      }
+    if (belongsToAccount && !isGlobalDefault) {
+      accountAlbums.push({ id: String(album.id), title: albumTitle });
+      return;
+    }
 
-      if (belongsToTeam) {
-        teamAlbums.push({ id: String(album.id), title });
-      }
-    });
+    if (belongsToTeam) {
+      teamAlbums.push({ id: String(album.id), title: albumTitle });
+    }
+  });
 
-    accountAlbums.sort((a, b) => a.title.localeCompare(b.title));
-    teamAlbums.sort((a, b) => a.title.localeCompare(b.title));
+  accountAlbums.sort((a, b) => a.title.localeCompare(b.title));
+  teamAlbums.sort((a, b) => a.title.localeCompare(b.title));
 
-    return { accountAlbums, teamAlbums };
-  }, [accountId, albums]);
+  const albumSections = { accountAlbums, teamAlbums };
 
-  const albumTitleMap = useMemo(() => {
-    const map = new Map<string, string>();
-    albumSections.accountAlbums.forEach((album) => map.set(album.id, album.title));
-    albumSections.teamAlbums.forEach((album) => map.set(album.id, album.title));
-    return map;
-  }, [albumSections]);
+  const albumTitleMap = new Map<string, string>();
+  albumSections.accountAlbums.forEach((album) => albumTitleMap.set(album.id, album.title));
+  albumSections.teamAlbums.forEach((album) => albumTitleMap.set(album.id, album.title));
 
   useEffect(() => {
     if (!open) {
@@ -136,7 +130,7 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
     previewUrlRef.current = previewSrc;
   }, [previewSrc]);
 
-  const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = event.target.files?.[0];
     if (selected) {
       setFile(selected);
@@ -156,13 +150,12 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
         return null;
       });
     }
-  }, []);
+  };
 
-  const handleAlbumChange = useCallback((event: SelectChangeEvent<string>) => {
+  const handleAlbumChange = (event: SelectChangeEvent<string>) => {
     setAlbumId(event.target.value);
-  }, []);
+  };
 
-  // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
       const url = previewUrlRef.current;
@@ -172,7 +165,7 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
     };
   }, []);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     if (!title.trim()) {
       onError?.('Title is required');
       return;
@@ -224,7 +217,7 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
     } finally {
       setSubmitting(false);
     }
-  }, [accountId, albumId, caption, file, mode, onClose, onError, onSuccess, photo, title, token]);
+  };
 
   const dialogTitle = mode === 'create' ? 'Add Photo to Gallery' : 'Edit Photo';
 

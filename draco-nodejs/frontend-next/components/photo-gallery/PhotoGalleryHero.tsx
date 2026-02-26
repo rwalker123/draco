@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Chip, Typography, IconButton } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -19,10 +19,7 @@ const PhotoGalleryHero: React.FC<PhotoGalleryHeroProps> = ({
   onSelect,
   autoAdvanceMs = DEFAULT_INTERVAL,
 }) => {
-  const heroPhotos = useMemo(
-    () => photos.slice(0, Math.min(MAX_HERO_ITEMS, photos.length)),
-    [photos],
-  );
+  const heroPhotos = photos.slice(0, Math.min(MAX_HERO_ITEMS, photos.length));
   const [activeIndex, setActiveIndex] = useState(0);
   const effectiveActiveIndex =
     heroPhotos.length > 0
@@ -43,26 +40,20 @@ const PhotoGalleryHero: React.FC<PhotoGalleryHeroProps> = ({
     };
   }, [autoAdvanceMs, heroPhotos.length]);
 
-  const handleSelect = useCallback(
-    (index: number) => {
-      setActiveIndex(index);
-      if (onSelect) {
-        onSelect(index);
-      }
-    },
-    [onSelect],
-  );
+  const handleSelect = (index: number) => {
+    setActiveIndex(index);
+    if (onSelect) {
+      onSelect(index);
+    }
+  };
 
-  const handlePrev = useCallback(() => {
-    setActiveIndex((current) => {
-      const next = (current - 1 + heroPhotos.length) % heroPhotos.length;
-      return next;
-    });
-  }, [heroPhotos.length]);
+  const handlePrev = () => {
+    setActiveIndex((current) => (current - 1 + heroPhotos.length) % heroPhotos.length);
+  };
 
-  const handleNext = useCallback(() => {
+  const handleNext = () => {
     setActiveIndex((current) => (current + 1) % heroPhotos.length);
-  }, [heroPhotos.length]);
+  };
 
   if (heroPhotos.length === 0) {
     return null;

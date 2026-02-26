@@ -50,8 +50,10 @@ export const useAccountDiscordAdmin = () => {
   const startInstall = (accountId: string): Promise<DiscordOAuthStartResponseType> =>
     service.startBotInstall(accountId);
 
-  const fetchAvailableChannels = (accountId: string): Promise<DiscordGuildChannelType[]> =>
-    service.listAvailableChannels(accountId);
+  const fetchAvailableChannels = (
+    accountId: string,
+    signal?: AbortSignal,
+  ): Promise<DiscordGuildChannelType[]> => service.listAvailableChannels(accountId, signal);
 
   const fetchChannelMappings = (accountId: string): Promise<DiscordChannelMappingListType> =>
     service.listChannelMappings(accountId);

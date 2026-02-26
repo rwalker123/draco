@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Autocomplete,
@@ -284,6 +284,8 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
   const [teamForumOperation, setTeamForumOperation] = useState<
     'enable' | 'disable' | 'repair' | null
   >(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingMapping, setEditingMapping] = useState<DiscordRoleMappingType | null>(null);
 
   const {
     register,
@@ -300,29 +302,103 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
     },
   });
 
-  const loadRoleMappingsData = useCallback(async () => {
-    if (!accountId) {
-      setRoleMappings([]);
-      return;
-    }
+  useEffect(() => {
+    if (!accountId) return;
+
+    const controller = new AbortController();
+
+    const loadConfig = async () => {
+      const payload = await fetchConfig(accountId);
+      if (controller.signal.aborted) return;
+      setConfig(payload);
+      setGuildIdInput(payload.guildId ?? '');
+    };
+
+    const loadRoleMappingsData = async () => {
+      const payload = await fetchRoleMappings(accountId);
+      if (controller.signal.aborted) return;
+      setRoleMappings(payload.roleMappings);
+    };
+
+    const loadChannelMappings = async () => {
+      const payload = await fetchChannelMappings(accountId);
+      if (controller.signal.aborted) return;
+      setChannelMappings(payload.channels);
+    };
+
+    const loadAvailableChannelsData = async () => {
+      try {
+        const payload = await fetchAvailableChannels(accountId);
+        if (controller.signal.aborted) return;
+        setAvailableChannels(payload);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Unable to load Discord channels.';
+        setError(message);
+      }
+    };
+
+    const loadTeamForums = async () => {
+      setTeamForumsLoading(true);
+      setTeamForumsError(null);
+      try {
+        const payload = await fetchTeamForums(accountId);
+        if (controller.signal.aborted) return;
+        setTeamForums(payload.forums);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Unable to load Discord team forums.';
+        setTeamForumsError(message);
+        setTeamForums([]);
+      } finally {
+        if (!controller.signal.aborted) setTeamForumsLoading(false);
+      }
+    };
+
+    const loadAll = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        await Promise.all([loadConfig(), loadRoleMappingsData(), loadChannelMappings()]);
+        if (controller.signal.aborted) return;
+        await Promise.all([loadAvailableChannelsData(), loadTeamForums()]);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load Discord settings.';
+        setError(message);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
+    void loadAll();
+
+    return () => {
+      controller.abort();
+    };
+  }, [
+    accountId,
+    fetchConfig,
+    fetchRoleMappings,
+    fetchChannelMappings,
+    fetchAvailableChannels,
+    fetchTeamForums,
+  ]);
+
+  const refreshRoleMappings = async () => {
+    if (!accountId) return;
     const payload = await fetchRoleMappings(accountId);
     setRoleMappings(payload.roleMappings);
-  }, [accountId, fetchRoleMappings]);
+  };
 
-  const loadChannelMappings = useCallback(async () => {
-    if (!accountId) {
-      setChannelMappings([]);
-      return;
-    }
+  const refreshChannelMappings = async () => {
+    if (!accountId) return;
     const payload = await fetchChannelMappings(accountId);
     setChannelMappings(payload.channels);
-  }, [accountId, fetchChannelMappings]);
+  };
 
-  const loadAvailableChannelsData = useCallback(async () => {
-    if (!accountId) {
-      setAvailableChannels([]);
-      return;
-    }
+  const refreshAvailableChannels = async () => {
+    if (!accountId) return;
     try {
       const payload = await fetchAvailableChannels(accountId);
       setAvailableChannels(payload);
@@ -330,13 +406,17 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
       const message = err instanceof Error ? err.message : 'Unable to load Discord channels.';
       setError(message);
     }
-  }, [accountId, fetchAvailableChannels]);
+  };
 
-  const loadTeamForums = useCallback(async () => {
-    if (!accountId) {
-      setTeamForums([]);
-      return;
-    }
+  const refreshConfig = async () => {
+    if (!accountId) return;
+    const payload = await fetchConfig(accountId);
+    setConfig(payload);
+    setGuildIdInput(payload.guildId ?? '');
+  };
+
+  const refreshTeamForums = async () => {
+    if (!accountId) return;
     setTeamForumsLoading(true);
     setTeamForumsError(null);
     try {
@@ -349,99 +429,47 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
     } finally {
       setTeamForumsLoading(false);
     }
-  }, [accountId, fetchTeamForums]);
+  };
 
-  const loadConfig = useCallback(async () => {
-    if (!accountId) {
-      setConfig(null);
-      setGuildIdInput('');
-      return;
-    }
-    const payload = await fetchConfig(accountId);
-    setConfig(payload);
-    setGuildIdInput(payload.guildId ?? '');
-  }, [accountId, fetchConfig]);
-
-  const loadAll = useCallback(async () => {
-    if (!accountId) {
-      return;
-    }
-    setLoading(true);
-    setError(null);
+  const updateTeamForumSetting = async (enabled: boolean, cleanupMode?: 'retain' | 'remove') => {
+    if (!accountId) return;
+    setTeamForumActionBusy(true);
+    setTeamForumsError(null);
+    setTeamForumSuccess(null);
+    setTeamForumOperation(enabled ? 'enable' : 'disable');
     try {
-      await Promise.all([loadConfig(), loadRoleMappingsData(), loadChannelMappings()]);
-      await Promise.all([loadAvailableChannelsData(), loadTeamForums()]);
+      await updateConfig(accountId, {
+        teamForumEnabled: enabled,
+        teamForumCleanupMode: enabled ? undefined : cleanupMode,
+      });
+      await Promise.all([refreshConfig(), refreshTeamForums()]);
+      setTeamForumSuccess(
+        enabled
+          ? 'Team forums enabled. Provisioning will continue shortly.'
+          : cleanupMode === 'remove'
+            ? 'Team forums disabled and Discord channels removed.'
+            : 'Team forums disabled. Existing channels were left untouched.',
+      );
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load Discord settings.';
-      setError(message);
+      const message = err instanceof Error ? err.message : 'Unable to update team forum settings.';
+      setTeamForumsError(message);
     } finally {
-      setLoading(false);
+      setTeamForumActionBusy(false);
+      setTeamForumOperation(null);
     }
-  }, [
-    accountId,
-    loadChannelMappings,
-    loadConfig,
-    loadRoleMappingsData,
-    loadAvailableChannelsData,
-    loadTeamForums,
-  ]);
+  };
 
-  useEffect(() => {
-    if (accountId) {
-      void loadAll();
+  const handleTeamForumToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      void updateTeamForumSetting(true);
+    } else {
+      setTeamForumCleanupMode('retain');
+      setTeamForumDialogOpen(true);
     }
-  }, [accountId, loadAll]);
+  };
 
-  const updateTeamForumSetting = useCallback(
-    async (enabled: boolean, cleanupMode?: 'retain' | 'remove') => {
-      if (!accountId) {
-        return;
-      }
-      setTeamForumActionBusy(true);
-      setTeamForumsError(null);
-      setTeamForumSuccess(null);
-      setTeamForumOperation(enabled ? 'enable' : 'disable');
-      try {
-        await updateConfig(accountId, {
-          teamForumEnabled: enabled,
-          teamForumCleanupMode: enabled ? undefined : cleanupMode,
-        });
-        await Promise.all([loadConfig(), loadTeamForums()]);
-        setTeamForumSuccess(
-          enabled
-            ? 'Team forums enabled. Provisioning will continue shortly.'
-            : cleanupMode === 'remove'
-              ? 'Team forums disabled and Discord channels removed.'
-              : 'Team forums disabled. Existing channels were left untouched.',
-        );
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Unable to update team forum settings.';
-        setTeamForumsError(message);
-      } finally {
-        setTeamForumActionBusy(false);
-        setTeamForumOperation(null);
-      }
-    },
-    [accountId, loadConfig, loadTeamForums, updateConfig],
-  );
-
-  const handleTeamForumToggle = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (event.target.checked) {
-        void updateTeamForumSetting(true);
-      } else {
-        setTeamForumCleanupMode('retain');
-        setTeamForumDialogOpen(true);
-      }
-    },
-    [updateTeamForumSetting],
-  );
-
-  const handleRepairTeamForums = useCallback(async () => {
-    if (!accountId) {
-      return;
-    }
+  const handleRepairTeamForums = async () => {
+    if (!accountId) return;
     setTeamForumActionBusy(true);
     setTeamForumsError(null);
     setTeamForumSuccess(null);
@@ -451,7 +479,7 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
       if (result?.message) {
         setTeamForumSuccess(result.message);
       }
-      await Promise.all([loadTeamForums(), loadChannelMappings()]);
+      await Promise.all([refreshTeamForums(), refreshChannelMappings()]);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to repair Discord team forums.';
       setTeamForumsError(message);
@@ -459,25 +487,23 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
       setTeamForumActionBusy(false);
       setTeamForumOperation(null);
     }
-  }, [accountId, loadChannelMappings, loadTeamForums, repairTeamForums]);
+  };
 
-  const confirmDisableTeamForums = useCallback(async () => {
+  const confirmDisableTeamForums = async () => {
     setTeamForumDialogOpen(false);
     await updateTeamForumSetting(false, teamForumCleanupMode);
-  }, [teamForumCleanupMode, updateTeamForumSetting]);
+  };
 
-  const handleCloseTeamForumDialog = useCallback(() => {
+  const handleCloseTeamForumDialog = () => {
     setTeamForumDialogOpen(false);
-  }, []);
+  };
 
-  const handleTeamForumCleanupChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTeamForumCleanupChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTeamForumCleanupMode(event.target.value as 'retain' | 'remove');
-  }, []);
+  };
 
-  const handleInstall = useCallback(async () => {
-    if (!accountId) {
-      return;
-    }
+  const handleInstall = async () => {
+    if (!accountId) return;
     setInstalling(true);
     try {
       const response = await startInstall(accountId);
@@ -487,41 +513,30 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
       setError(message);
       setInstalling(false);
     }
-  }, [accountId, startInstall]);
+  };
 
-  const openDisconnectDialog = useCallback(() => {
+  const openDisconnectDialog = () => {
     setDisconnectDialogOpen(true);
-  }, []);
+  };
 
-  const closeDisconnectDialog = useCallback(() => {
+  const closeDisconnectDialog = () => {
     setDisconnectDialogOpen(false);
-  }, []);
+  };
 
-  const handleDisconnectSuccess = useCallback(
-    async (configAfterDisconnect: DiscordAccountConfigType) => {
-      setConfig(configAfterDisconnect);
-      setGuildIdInput(configAfterDisconnect.guildId ?? '');
-      onConfigUpdated?.(configAfterDisconnect);
-      await Promise.all([
-        loadRoleMappingsData(),
-        loadChannelMappings(),
-        loadAvailableChannelsData(),
-        loadTeamForums(),
-      ]);
-    },
-    [
-      loadAvailableChannelsData,
-      loadChannelMappings,
-      loadRoleMappingsData,
-      loadTeamForums,
-      onConfigUpdated,
-    ],
-  );
+  const handleDisconnectSuccess = async (configAfterDisconnect: DiscordAccountConfigType) => {
+    setConfig(configAfterDisconnect);
+    setGuildIdInput(configAfterDisconnect.guildId ?? '');
+    onConfigUpdated?.(configAfterDisconnect);
+    await Promise.all([
+      refreshRoleMappings(),
+      refreshChannelMappings(),
+      refreshAvailableChannels(),
+      refreshTeamForums(),
+    ]);
+  };
 
-  const handleGuildIdSave = useCallback(async () => {
-    if (!accountId) {
-      return;
-    }
+  const handleGuildIdSave = async () => {
+    if (!accountId) return;
     const trimmed = guildIdInput.trim();
     if (!trimmed) {
       setGuildIdError('Discord guild id is required.');
@@ -535,10 +550,10 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
       setGuildIdInput(updated.guildId ?? '');
       onConfigUpdated?.(updated);
       await Promise.all([
-        loadRoleMappingsData(),
-        loadChannelMappings(),
-        loadAvailableChannelsData(),
-        loadTeamForums(),
+        refreshRoleMappings(),
+        refreshChannelMappings(),
+        refreshAvailableChannels(),
+        refreshTeamForums(),
       ]);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to save the Discord guild id.';
@@ -546,49 +561,32 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
     } finally {
       setSavingGuildId(false);
     }
-  }, [
-    accountId,
-    guildIdInput,
-    loadAvailableChannelsData,
-    loadChannelMappings,
-    loadRoleMappingsData,
-    loadTeamForums,
-    onConfigUpdated,
-    updateConfig,
-  ]);
+  };
 
-  const openRoleDialog = useCallback(() => {
+  const openRoleDialog = () => {
     setRoleMappingError(null);
     reset({ discordRoleId: '', discordRoleName: '', dracoRoleIds: [] });
     setDialogOpen(true);
-  }, [reset]);
+  };
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const openEditRoleDialog = useCallback(
-    (mapping: DiscordRoleMappingType) => {
-      setRoleMappingError(null);
-      reset({
-        discordRoleId: mapping.discordRoleId,
-        discordRoleName: mapping.discordRoleName,
-        dracoRoleIds: convertPermissionsToRoleIds(mapping.permissions),
-      });
-      setEditingMapping(mapping);
-      setDialogOpen(true);
-    },
-    [reset],
-  );
+  const openEditRoleDialog = (mapping: DiscordRoleMappingType) => {
+    setRoleMappingError(null);
+    reset({
+      discordRoleId: mapping.discordRoleId,
+      discordRoleName: mapping.discordRoleName,
+      dracoRoleIds: convertPermissionsToRoleIds(mapping.permissions),
+    });
+    setEditingMapping(mapping);
+    setDialogOpen(true);
+  };
 
-  const [editingMapping, setEditingMapping] = useState<DiscordRoleMappingType | null>(null);
-
-  const closeRoleDialog = useCallback(() => {
+  const closeRoleDialog = () => {
     setDialogOpen(false);
     setEditingMapping(null);
-  }, []);
+  };
 
   const handleRoleSubmit = handleSubmit(async (values) => {
-    if (!accountId) {
-      return;
-    }
+    if (!accountId) return;
     setRoleMappingError(null);
 
     const payload = DiscordRoleMappingUpdateSchema.parse({
@@ -603,7 +601,7 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
       } else {
         await createRoleMapping(accountId, payload);
       }
-      await loadRoleMappingsData();
+      await refreshRoleMappings();
       setDialogOpen(false);
       setEditingMapping(null);
     } catch (err) {
@@ -612,19 +610,17 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
     }
   });
 
-  const handleDeleteRoleMapping = useCallback((mapping: DiscordRoleMappingType) => {
+  const handleDeleteRoleMapping = (mapping: DiscordRoleMappingType) => {
     setRoleMappingError(null);
     setRoleMappingToDelete(mapping);
-  }, []);
+  };
 
-  const confirmDeleteRoleMapping = useCallback(async () => {
-    if (!accountId || !roleMappingToDelete) {
-      return;
-    }
+  const confirmDeleteRoleMapping = async () => {
+    if (!accountId || !roleMappingToDelete) return;
     setRoleMappingBusyId(roleMappingToDelete.id);
     try {
       await deleteRoleMapping(accountId, roleMappingToDelete.id);
-      await loadRoleMappingsData();
+      await refreshRoleMappings();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Unable to delete the Discord role mapping.';
@@ -633,30 +629,28 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
       setRoleMappingBusyId(null);
       setRoleMappingToDelete(null);
     }
-  }, [accountId, deleteRoleMapping, loadRoleMappingsData, roleMappingToDelete]);
+  };
 
-  const openChannelDialog = useCallback(() => {
+  const openChannelDialog = () => {
     setChannelError(null);
     setChannelDialogOpen(true);
-  }, []);
+  };
 
-  const handleChannelDialogSuccess = useCallback(async () => {
-    await loadChannelMappings();
-  }, [loadChannelMappings]);
+  const handleChannelDialogSuccess = async () => {
+    await refreshChannelMappings();
+  };
 
-  const handleDeleteChannelMapping = useCallback((mapping: DiscordChannelMappingType) => {
+  const handleDeleteChannelMapping = (mapping: DiscordChannelMappingType) => {
     setChannelError(null);
     setChannelMappingToDelete(mapping);
-  }, []);
+  };
 
-  const confirmDeleteChannelMapping = useCallback(async () => {
-    if (!accountId || !channelMappingToDelete) {
-      return;
-    }
+  const confirmDeleteChannelMapping = async () => {
+    if (!accountId || !channelMappingToDelete) return;
     setChannelMappingBusyId(channelMappingToDelete.id);
     try {
       await deleteChannelMapping(accountId, channelMappingToDelete.id);
-      await loadChannelMappings();
+      await refreshChannelMappings();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to delete the channel mapping.';
       setChannelError(message);
@@ -664,14 +658,13 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
       setChannelMappingBusyId(null);
       setChannelMappingToDelete(null);
     }
-  }, [accountId, channelMappingToDelete, deleteChannelMapping, loadChannelMappings]);
+  };
 
-  const guildDisplayName = useMemo(() => {
-    if (!config?.guildId) {
-      return null;
-    }
-    return config.guildName ? `${config.guildName} (${config.guildId})` : config.guildId;
-  }, [config]);
+  const guildDisplayName = config?.guildId
+    ? config.guildName
+      ? `${config.guildName} (${config.guildId})`
+      : config.guildId
+    : null;
 
   if (!accountId) {
     return (
@@ -732,7 +725,7 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
             <Button
               variant="contained"
-              onClick={handleGuildIdSave}
+              onClick={() => void handleGuildIdSave()}
               disabled={savingGuildId || !guildIdInput.trim()}
               startIcon={savingGuildId ? <CircularProgress size={16} /> : undefined}
             >
@@ -756,7 +749,7 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
             <Button
               variant="outlined"
-              onClick={handleInstall}
+              onClick={() => void handleInstall()}
               disabled={installing}
               startIcon={installing ? <CircularProgress size={16} /> : undefined}
             >
@@ -792,7 +785,11 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
           >
             Add Channel Mapping
           </Button>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadChannelMappings}>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={() => void refreshChannelMappings()}
+          >
             Refresh
           </Button>
         </Stack>
@@ -880,7 +877,7 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
             <Button
               variant="outlined"
               startIcon={<RefreshIcon />}
-              onClick={handleRepairTeamForums}
+              onClick={() => void handleRepairTeamForums()}
               disabled={!config?.teamForumEnabled || teamForumActionBusy || teamForumsLoading}
             >
               Repair Forums
@@ -971,7 +968,11 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
           <Button variant="contained" onClick={openRoleDialog}>
             Add Role Mapping
           </Button>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadRoleMappingsData}>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={() => void refreshRoleMappings()}
+          >
             Refresh
           </Button>
         </Stack>
@@ -1149,7 +1150,7 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
         <DialogActions>
           <Button onClick={handleCloseTeamForumDialog}>Cancel</Button>
           <Button
-            onClick={confirmDisableTeamForums}
+            onClick={() => void confirmDisableTeamForums()}
             color="error"
             variant="contained"
             disabled={teamForumActionBusy}
@@ -1188,13 +1189,13 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
         accountId={accountId}
         availableChannels={availableChannels}
         onClose={() => setChannelDialogOpen(false)}
-        onSuccess={handleChannelDialogSuccess}
+        onSuccess={() => void handleChannelDialogSuccess()}
       />
       <ConfirmDiscordDisconnectDialog
         open={disconnectDialogOpen}
         accountId={accountId}
         onClose={closeDisconnectDialog}
-        onDisconnected={handleDisconnectSuccess}
+        onDisconnected={(cfg) => void handleDisconnectSuccess(cfg)}
       />
       <Backdrop
         open={teamForumActionBusy}

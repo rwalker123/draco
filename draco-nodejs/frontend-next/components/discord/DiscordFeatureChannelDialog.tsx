@@ -106,7 +106,7 @@ const DiscordFeatureChannelDialog: React.FC<DiscordFeatureChannelDialogProps> = 
   onClose,
   onSubmit,
 }) => {
-  const schema = React.useMemo(() => createSchema(channels), [channels]);
+  const schema = createSchema(channels);
   const {
     control,
     handleSubmit,
@@ -132,10 +132,7 @@ const DiscordFeatureChannelDialog: React.FC<DiscordFeatureChannelDialogProps> = 
     }
   };
 
-  const sortedChannels = React.useMemo(
-    () => [...channels].sort((a, b) => a.name.localeCompare(b.name)),
-    [channels],
-  );
+  const sortedChannels = [...channels].sort((a, b) => a.name.localeCompare(b.name));
 
   const onSubmitForm = handleSubmit(async (values) => {
     let payload: DiscordFeatureSyncChannelType;

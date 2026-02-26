@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Box, Button, Divider, Skeleton, Stack, Typography } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { listMemberBusinesses } from '@draco/shared-api-client';
@@ -54,10 +54,11 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
   const [formMode, setFormMode] = useState<DialogMode>('create');
   const [selectedBusiness, setSelectedBusiness] = useState<MemberBusinessType | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const canManage = Boolean(user && token && accountId && contactId);
 
-  const loadMemberBusinesses = useCallback(async () => {
+  useEffect(() => {
     if (!accountId || !token || !contactId) {
       setMemberBusinesses([]);
       setError(null);
@@ -65,47 +66,59 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
       return;
     }
 
-    try {
+    const controller = new AbortController();
+
+    const load = async () => {
       setLoading(true);
       setError(null);
       setInfoMessage(null);
 
-      const result = await listMemberBusinesses({
-        client: apiClient,
-        path: { accountId },
-        query: { contactId },
-        security: [{ type: 'http', scheme: 'bearer' }],
-        throwOnError: false,
-      });
+      try {
+        const result = await listMemberBusinesses({
+          client: apiClient,
+          path: { accountId },
+          query: { contactId },
+          security: [{ type: 'http', scheme: 'bearer' }],
+          signal: controller.signal,
+          throwOnError: false,
+        });
 
-      if (result.error) {
-        const status = result.response?.status;
-        if (status === 403) {
+        if (controller.signal.aborted) return;
+
+        if (result.error) {
+          const status = result.response?.status;
+          if (status === 403) {
+            setMemberBusinesses([]);
+            setInfoMessage('Not a member of this organization.');
+            return;
+          }
+
+          const message = result.error.message ?? 'Unable to load member businesses right now.';
           setMemberBusinesses([]);
-          setInfoMessage('Not a member of this organization.');
+          setError(message);
           return;
         }
 
-        const message = result.error.message ?? 'Unable to load member businesses right now.';
+        const payload = result.data;
+        setMemberBusinesses(payload?.memberBusinesses ?? []);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load member businesses', err);
+        setError('Unable to load member businesses right now.');
         setMemberBusinesses([]);
-        setError(message);
-        return;
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
+    };
 
-      const payload = result.data;
-      setMemberBusinesses(payload?.memberBusinesses ?? []);
-    } catch (err) {
-      console.error('Failed to load member businesses', err);
-      setError('Unable to load member businesses right now.');
-      setMemberBusinesses([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, apiClient, contactId, token]);
+    void load();
 
-  useEffect(() => {
-    void loadMemberBusinesses();
-  }, [loadMemberBusinesses]);
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient, contactId, token, refreshKey]);
 
   useEffect(() => {
     if (!success) {
@@ -143,7 +156,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
     setError(null);
     setInfoMessage(null);
     handleCloseForm();
-    void loadMemberBusinesses();
+    setRefreshKey((k) => k + 1);
   };
 
   const handleFormError = (message: string) => {
@@ -155,7 +168,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
     setError(null);
     setInfoMessage(null);
     handleCloseDelete();
-    void loadMemberBusinesses();
+    setRefreshKey((k) => k + 1);
   };
 
   const ownerContact = memberBusinesses[0]?.contact;

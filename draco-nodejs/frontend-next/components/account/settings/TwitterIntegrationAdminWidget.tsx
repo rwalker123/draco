@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -51,104 +51,79 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
     setHandle(account.socials?.twitterAccountName ?? '');
   }, [account.socials?.twitterAccountName]);
 
-  const hasPendingChanges = useMemo(() => {
-    const normalizedHandle = (account.socials?.twitterAccountName ?? '').trim();
-    return (
-      handle.trim() !== normalizedHandle ||
-      clientId.trim().length > 0 ||
-      clientSecret.trim().length > 0 ||
-      ingestionBearerToken.trim().length > 0 ||
-      clearCredentials
-    );
-  }, [
-    account.socials?.twitterAccountName,
-    clearCredentials,
-    clientId,
-    clientSecret,
-    handle,
-    ingestionBearerToken,
-  ]);
+  const normalizedCurrentHandle = (account.socials?.twitterAccountName ?? '').trim();
+  const hasPendingChanges =
+    handle.trim() !== normalizedCurrentHandle ||
+    clientId.trim().length > 0 ||
+    clientSecret.trim().length > 0 ||
+    ingestionBearerToken.trim().length > 0 ||
+    clearCredentials;
 
-  const handleSubmit = useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      setError(null);
-      setSuccess(null);
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
 
-      if (!hasPendingChanges) {
-        setError('Update at least one field before saving.');
-        return;
+    if (!hasPendingChanges) {
+      setError('Update at least one field before saving.');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const payload: AccountTwitterSettingsType = {};
+      const normalizedHandle = handle.trim();
+      const normalizedClientId = clientId.trim();
+      const normalizedClientSecret = clientSecret.trim();
+      const normalizedIngestionBearerToken = ingestionBearerToken.trim();
+
+      if (normalizedHandle !== normalizedCurrentHandle) {
+        payload.twitterAccountName = normalizedHandle;
       }
 
-      setSaving(true);
-
-      try {
-        const payload: AccountTwitterSettingsType = {};
-        const normalizedHandle = handle.trim();
-        const normalizedClientId = clientId.trim();
-        const normalizedClientSecret = clientSecret.trim();
-        const normalizedIngestionBearerToken = ingestionBearerToken.trim();
-        const currentHandle = (account.socials?.twitterAccountName ?? '').trim();
-
-        if (normalizedHandle !== currentHandle) {
-          payload.twitterAccountName = normalizedHandle;
+      if (clearCredentials) {
+        payload.twitterClientId = '';
+        payload.twitterClientSecret = '';
+        payload.twitterIngestionBearerToken = '';
+      } else {
+        if (normalizedClientId) {
+          payload.twitterClientId = normalizedClientId;
         }
-
-        if (clearCredentials) {
-          payload.twitterClientId = '';
-          payload.twitterClientSecret = '';
-          payload.twitterIngestionBearerToken = '';
-        } else {
-          if (normalizedClientId) {
-            payload.twitterClientId = normalizedClientId;
-          }
-          if (normalizedClientSecret) {
-            payload.twitterClientSecret = normalizedClientSecret;
-          }
-          if (normalizedIngestionBearerToken) {
-            payload.twitterIngestionBearerToken = normalizedIngestionBearerToken;
-          }
+        if (normalizedClientSecret) {
+          payload.twitterClientSecret = normalizedClientSecret;
         }
-
-        if (Object.keys(payload).length > 0) {
-          const result = await updateAccountTwitterSettings({
-            client: apiClient,
-            path: { accountId: account.id },
-            body: payload,
-            throwOnError: false,
-          });
-
-          const updated = unwrapApiResult(result, 'Unable to save Twitter settings') as AccountType;
-          onAccountUpdate?.(updated);
+        if (normalizedIngestionBearerToken) {
+          payload.twitterIngestionBearerToken = normalizedIngestionBearerToken;
         }
-
-        setSuccess('Twitter settings saved. Secrets are encrypted and never shown here.');
-        setClientId('');
-        setClientSecret('');
-        setIngestionBearerToken('');
-        setClearCredentials(false);
-      } catch (err) {
-        console.error('Failed to save Twitter settings', err);
-        setError('Unable to save Twitter settings. Please try again.');
-      } finally {
-        setSaving(false);
       }
-    },
-    [
-      account.id,
-      account.socials?.twitterAccountName,
-      apiClient,
-      clearCredentials,
-      clientId,
-      clientSecret,
-      handle,
-      hasPendingChanges,
-      ingestionBearerToken,
-      onAccountUpdate,
-    ],
-  );
 
-  const startOAuthFlow = useCallback(async () => {
+      if (Object.keys(payload).length > 0) {
+        const result = await updateAccountTwitterSettings({
+          client: apiClient,
+          path: { accountId: account.id },
+          body: payload,
+          throwOnError: false,
+        });
+
+        const updated = unwrapApiResult(result, 'Unable to save Twitter settings') as AccountType;
+        onAccountUpdate?.(updated);
+      }
+
+      setSuccess('Twitter settings saved. Secrets are encrypted and never shown here.');
+      setClientId('');
+      setClientSecret('');
+      setIngestionBearerToken('');
+      setClearCredentials(false);
+    } catch (err) {
+      console.error('Failed to save Twitter settings', err);
+      setError('Unable to save Twitter settings. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startOAuthFlow = async () => {
     setError(null);
     setSuccess(null);
     setAuthorizing(true);
@@ -174,7 +149,7 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
     } finally {
       setAuthorizing(false);
     }
-  }, [account.id, apiClient]);
+  };
 
   return (
     <WidgetShell

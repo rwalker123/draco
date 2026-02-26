@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import type { PhotoGalleryAdminAlbumType } from '@draco/shared-schemas';
 import { normalizeEntityId } from '../utils';
 
@@ -105,7 +105,7 @@ export const PhotoGalleryAlbumSections = <TAlbum extends PhotoGalleryAdminAlbumT
   renderAlbum,
   emptyState = null,
 }: PhotoGalleryAlbumSectionsProps<TAlbum>) => {
-  const sections = useMemo(() => buildSections(albums, accountId), [albums, accountId]);
+  const sections = buildSections(albums, accountId);
 
   if (sections.length === 0) {
     return <>{emptyState}</>;

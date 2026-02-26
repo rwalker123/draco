@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import type { FC } from 'react';
 import { Box, Link as MuiLink, Stack, Typography } from '@mui/material';
 import type { MemberBusinessType } from '@draco/shared-schemas';
 import UserAvatar from '@/components/users/UserAvatar';
@@ -40,34 +40,24 @@ const renderLine = (
   );
 };
 
-const MemberBusinessSummary: React.FC<MemberBusinessSummaryProps> = ({
-  business,
-  compact = false,
-}) => {
+const MemberBusinessSummary: FC<MemberBusinessSummaryProps> = ({ business, compact = false }) => {
   const titleVariant = compact ? 'subtitle2' : 'h6';
   const descriptionVariant = compact ? 'body2' : 'body1';
   const ownerNameVariant = compact ? 'body2' : 'body1';
   const avatarSize = compact ? 32 : 40;
 
-  const owner = React.useMemo(
-    () => ({
-      id: business.contact.id,
-      firstName: business.contact.firstName,
-      lastName: business.contact.lastName,
-      photoUrl: business.contact.photoUrl,
-    }),
-    [
-      business.contact.id,
-      business.contact.firstName,
-      business.contact.lastName,
-      business.contact.photoUrl,
-    ],
-  );
-
   return (
     <Stack spacing={1.25}>
       <Stack direction="row" spacing={1.5} alignItems="center">
-        <UserAvatar user={owner} size={avatarSize} />
+        <UserAvatar
+          user={{
+            id: business.contact.id,
+            firstName: business.contact.firstName,
+            lastName: business.contact.lastName,
+            photoUrl: business.contact.photoUrl,
+          }}
+          size={avatarSize}
+        />
         <Typography variant={ownerNameVariant} fontWeight={600}>
           {business.contact.firstName} {business.contact.lastName}
         </Typography>

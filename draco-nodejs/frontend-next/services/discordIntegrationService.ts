@@ -77,10 +77,11 @@ export class DiscordIntegrationService {
     return unwrapApiResult(result, 'Unable to remove Discord configuration.');
   }
 
-  async getLinkStatus(accountId: string): Promise<DiscordLinkStatusType> {
+  async getLinkStatus(accountId: string, signal?: AbortSignal): Promise<DiscordLinkStatusType> {
     const result = await getAccountDiscordLinkStatus({
       client: this.client,
       path: { accountId },
+      signal,
       throwOnError: false,
     });
     return unwrapApiResult(result, 'Unable to load Discord link status.');
@@ -211,10 +212,14 @@ export class DiscordIntegrationService {
     assertNoApiError(result, 'Unable to delete the channel mapping.');
   }
 
-  async listAvailableChannels(accountId: string): Promise<DiscordGuildChannelType[]> {
+  async listAvailableChannels(
+    accountId: string,
+    signal?: AbortSignal,
+  ): Promise<DiscordGuildChannelType[]> {
     const result = await listAccountDiscordAvailableChannels({
       client: this.client,
       path: { accountId },
+      signal,
       throwOnError: false,
     });
     return unwrapApiResult(result, 'Unable to load Discord channels.');
@@ -223,10 +228,12 @@ export class DiscordIntegrationService {
   async getFeatureSyncStatus(
     accountId: string,
     feature: DiscordFeatureSyncFeatureType,
+    signal?: AbortSignal,
   ): Promise<DiscordFeatureSyncStatusType> {
     const result = await getAccountDiscordFeatureSync({
       client: this.client,
       path: { accountId, feature },
+      signal,
       throwOnError: false,
     });
     return unwrapApiResult(result, 'Unable to load Discord sync status.');
