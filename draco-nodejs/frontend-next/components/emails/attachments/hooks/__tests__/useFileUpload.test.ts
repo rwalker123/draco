@@ -117,6 +117,35 @@ describe('useFileUpload', () => {
     expect(result.current.attachments).toHaveLength(0);
   });
 
+  it('retries a failed upload using the stored file reference', async () => {
+    const { result } = renderHook(() => useFileUpload({ config: PERMISSIVE_CONFIG }));
+
+    await act(async () => {
+      await result.current.addFiles([createMockFile('retry-me.txt')]);
+    });
+
+    const attachmentId = result.current.attachments[0].id;
+    expect(result.current.attachments[0].status).toBe('uploaded');
+
+    act(() => {
+      result.current.setAttachments(
+        result.current.attachments.map((a) => ({
+          ...a,
+          status: 'error' as const,
+          error: 'simulated failure',
+        })),
+      );
+    });
+
+    expect(result.current.attachments[0].status).toBe('error');
+
+    await act(async () => {
+      await result.current.retryUpload(attachmentId);
+    });
+
+    expect(result.current.attachments[0].status).toBe('uploaded');
+  });
+
   it('sets isUploading during upload and clears after', async () => {
     const { result } = renderHook(() => useFileUpload({ config: PERMISSIVE_CONFIG }));
 

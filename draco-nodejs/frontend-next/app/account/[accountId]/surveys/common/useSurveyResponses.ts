@@ -707,6 +707,11 @@ export const useSurveyResponses = ({
     };
   }, [accountId, apiClient]);
 
+  const paginationLoaded = pagination !== null;
+  const viewerInSummaries = viewerContact
+    ? playerSummaries.some((summary) => summary.player.id === viewerContact.id)
+    : false;
+
   useEffect(() => {
     if (!viewerContact || viewerHasFullAccess || disableViewerAutoSelect) {
       return;
@@ -716,17 +721,13 @@ export const useSurveyResponses = ({
       return;
     }
 
-    if (pagination === null) {
+    if (!paginationLoaded) {
       return;
     }
 
     if (selectedContact && selectedContact.id !== viewerContact.id) {
       return;
     }
-
-    const viewerInSummaries = playerSummaries.some(
-      (summary) => summary.player.id === viewerContact.id,
-    );
 
     if (!viewerInSummaries && !selectedContact) {
       viewerSelectionAppliedRef.current = true;
@@ -862,8 +863,8 @@ export const useSurveyResponses = ({
     viewerContact,
     viewerHasFullAccess,
     disableViewerAutoSelect,
-    pagination,
-    playerSummaries,
+    paginationLoaded,
+    viewerInSummaries,
     selectedContact,
     accountId,
     apiClient,

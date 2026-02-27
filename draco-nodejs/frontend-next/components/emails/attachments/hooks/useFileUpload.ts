@@ -194,7 +194,10 @@ export function useFileUpload({
     setIsUploading(true);
     onUploadStart?.();
 
-    const uploadQueue = files.map((file, i) => ({ file, attachment: newAttachments[i] }));
+    const uploadQueue = files.map((file, i) => {
+      fileInputRef.current.set(newAttachments[i].id, file);
+      return { file, attachment: newAttachments[i] };
+    });
 
     const processWorker = async () => {
       while (uploadQueue.length > 0) {
@@ -226,6 +229,7 @@ export function useFileUpload({
       cleanupAttachmentUrls(attachmentToRemove);
     }
 
+    fileInputRef.current.delete(id);
     const updated = attachments.filter((att) => att.id !== id);
     setAttachments(updated);
   };
