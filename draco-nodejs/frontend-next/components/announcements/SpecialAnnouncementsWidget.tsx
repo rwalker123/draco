@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import NextLink from 'next/link';
-import { Alert, Box, Button, Card, CardContent, CircularProgress, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Typography } from '@mui/material';
 import WidgetShell from '../ui/WidgetShell';
 import RichTextContent from '../common/RichTextContent';
 import { formatDateTime } from '../../utils/dateUtils';
@@ -52,21 +52,20 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
   accent = 'secondary',
   showSourceLabels = true,
 }) => {
-  const resolvedTeamIds = teamIds ?? EMPTY_TEAM_IDS;
   const resolvedTeamMetadata = teamMetadata ?? EMPTY_TEAM_METADATA;
+  const teamIdsKey = (teamIds ?? EMPTY_TEAM_IDS).join(',');
   const apiClient = useApiClient();
   const [announcements, setAnnouncements] = useState<SpecialAnnouncementCard[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accountId) return;
 
     const controller = new AbortController();
+    const currentTeamIds = teamIdsKey ? teamIdsKey.split(',') : [];
 
     const fetchAnnouncements = async () => {
       try {
-        setLoading(true);
         setError(null);
 
         let accountAnnouncementsNormalized: SpecialAnnouncementCard[] = [];
@@ -94,7 +93,7 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
             }));
         }
 
-        const teamAnnouncementPromises = resolvedTeamIds.map(async (teamId) => {
+        const teamAnnouncementPromises = currentTeamIds.map(async (teamId) => {
           const result = await listTeamAnnouncements({
             client: apiClient,
             path: { accountId, teamId },
@@ -133,10 +132,6 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
       } catch (err) {
         if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : 'Failed to load announcements');
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
       }
     };
 
@@ -145,9 +140,9 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
     return () => {
       controller.abort();
     };
-  }, [accountId, resolvedTeamIds, resolvedTeamMetadata, showAccountAnnouncements, apiClient]);
+  }, [accountId, teamIdsKey, resolvedTeamMetadata, showAccountAnnouncements, apiClient]);
 
-  if (!loading && !error && announcements.length === 0) {
+  if (announcements.length === 0 && !error) {
     return null;
   }
 
@@ -159,11 +154,7 @@ const SpecialAnnouncementsWidget: React.FC<SpecialAnnouncementsWidgetProps> = ({
 
   return (
     <WidgetShell title={title} subtitle={subtitle} accent={accent} actions={actions}>
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-          <CircularProgress size={24} />
-        </Box>
-      ) : error ? (
+      {error ? (
         <Alert severity="error">{error}</Alert>
       ) : (
         <Box
