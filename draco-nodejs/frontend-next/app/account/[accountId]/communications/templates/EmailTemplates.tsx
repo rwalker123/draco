@@ -71,7 +71,7 @@ export default function EmailTemplates() {
       try {
         setLoading(true);
         setError(null);
-        const templatesData = await service.listTemplates(accountId as string);
+        const templatesData = await service.listTemplates(accountId as string, controller.signal);
         if (controller.signal.aborted) return;
         setTemplates(templatesData);
       } catch (err) {

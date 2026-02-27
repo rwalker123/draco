@@ -21,7 +21,7 @@ interface ScoreboardBaseProps {
   currentSeasonId: string;
   onGamesLoaded?: (games: Game[]) => void;
   title: string;
-  loadGames: () => Promise<Game[]>;
+  loadGames: (signal?: AbortSignal) => Promise<Game[]>;
   renderWrapper?: (
     content: React.ReactNode,
     state: 'loading' | 'error' | 'empty' | 'content',
@@ -232,7 +232,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
     setLoading(true);
     setError(null);
 
-    loadGames()
+    loadGames(controller.signal)
       .then((newGames) => {
         if (controller.signal.aborted) return;
         setGames(newGames);

@@ -308,27 +308,27 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
     const controller = new AbortController();
 
     const loadConfig = async () => {
-      const payload = await fetchConfig(accountId);
+      const payload = await fetchConfig(accountId, controller.signal);
       if (controller.signal.aborted) return;
       setConfig(payload);
       setGuildIdInput(payload.guildId ?? '');
     };
 
     const loadRoleMappingsData = async () => {
-      const payload = await fetchRoleMappings(accountId);
+      const payload = await fetchRoleMappings(accountId, controller.signal);
       if (controller.signal.aborted) return;
       setRoleMappings(payload.roleMappings);
     };
 
     const loadChannelMappings = async () => {
-      const payload = await fetchChannelMappings(accountId);
+      const payload = await fetchChannelMappings(accountId, controller.signal);
       if (controller.signal.aborted) return;
       setChannelMappings(payload.channels);
     };
 
     const loadAvailableChannelsData = async () => {
       try {
-        const payload = await fetchAvailableChannels(accountId);
+        const payload = await fetchAvailableChannels(accountId, controller.signal);
         if (controller.signal.aborted) return;
         setAvailableChannels(payload);
       } catch (err) {
@@ -342,7 +342,7 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{
       setTeamForumsLoading(true);
       setTeamForumsError(null);
       try {
-        const payload = await fetchTeamForums(accountId);
+        const payload = await fetchTeamForums(accountId, undefined, controller.signal);
         if (controller.signal.aborted) return;
         setTeamForums(payload.forums);
       } catch (err) {

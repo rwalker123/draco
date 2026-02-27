@@ -76,13 +76,19 @@ const GolfCoursesPage: React.FC = () => {
     if (!accountId) return;
     setLoading(true);
     setError(null);
-    const result = await listCourses();
-    if (result.success) {
-      setCourses(result.data);
-    } else {
-      setError(result.error);
+    try {
+      const result = await listGolfLeagueCourses({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
+      });
+      const data = unwrapApiResult(result, 'Failed to load courses') as GolfLeagueCourseType[];
+      setCourses(data);
+    } catch {
+      setError('Failed to load courses');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleOpenSearch = () => {

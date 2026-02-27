@@ -144,6 +144,7 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
         const fieldsResult = await listAccountFields({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
@@ -157,7 +158,12 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
 
         let workoutDetails = null;
         if (mode === 'edit' && workoutId) {
-          workoutDetails = await getWorkout(accountId, workoutId, token ?? undefined);
+          workoutDetails = await getWorkout(
+            accountId,
+            workoutId,
+            token ?? undefined,
+            controller.signal,
+          );
           if (controller.signal.aborted) return;
         }
 

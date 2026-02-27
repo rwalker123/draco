@@ -71,7 +71,7 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
       try {
         setLoading(true);
         setError(null);
-        const data = await listSponsorsRef.current();
+        const data = await listSponsorsRef.current(controller.signal);
         if (controller.signal.aborted) return;
         setSponsors(data);
       } catch (err) {

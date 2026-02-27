@@ -49,6 +49,7 @@ export const accessCodeService = {
   async verifyAccessCode(
     accountId: string,
     accessCode: string,
+    signal?: AbortSignal,
   ): Promise<IAccessCodeVerificationResponse> {
     // Validate input
     const validation = validateAccessCode(accessCode);
@@ -76,6 +77,7 @@ export const accessCodeService = {
         client,
         path: { accountId },
         body: { accessCode: validation.sanitizedValue ?? '' },
+        signal,
         throwOnError: false,
       });
 

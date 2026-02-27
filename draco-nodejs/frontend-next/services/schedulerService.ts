@@ -74,10 +74,12 @@ export class SchedulerService {
   async getSeasonWindowConfig(
     accountId: string,
     seasonId: string,
+    signal?: AbortSignal,
   ): Promise<SchedulerSeasonWindowConfig | null> {
     const result = await getSchedulerSeasonWindowConfig({
       client: this.client,
       path: { accountId, seasonId },
+      signal,
       throwOnError: false,
     });
 
@@ -144,10 +146,12 @@ export class SchedulerService {
   async listFieldAvailabilityRules(
     accountId: string,
     seasonId: string,
+    signal?: AbortSignal,
   ): Promise<SchedulerFieldAvailabilityRule[]> {
     const result = await listSchedulerFieldAvailabilityRules({
       client: this.client,
       path: { accountId, seasonId },
+      signal,
       throwOnError: false,
     });
 
@@ -158,10 +162,12 @@ export class SchedulerService {
   async listSeasonExclusions(
     accountId: string,
     seasonId: string,
+    signal?: AbortSignal,
   ): Promise<SchedulerSeasonExclusion[]> {
     const result = await listSchedulerSeasonExclusions({
       client: this.client,
       path: { accountId, seasonId },
+      signal,
       throwOnError: false,
     });
 
@@ -217,10 +223,15 @@ export class SchedulerService {
     unwrapApiResult(result, 'Failed to delete season exclusion');
   }
 
-  async listTeamExclusions(accountId: string, seasonId: string): Promise<SchedulerTeamExclusion[]> {
+  async listTeamExclusions(
+    accountId: string,
+    seasonId: string,
+    signal?: AbortSignal,
+  ): Promise<SchedulerTeamExclusion[]> {
     const result = await listSchedulerTeamExclusions({
       client: this.client,
       path: { accountId, seasonId },
+      signal,
       throwOnError: false,
     });
 
@@ -279,10 +290,12 @@ export class SchedulerService {
   async listUmpireExclusions(
     accountId: string,
     seasonId: string,
+    signal?: AbortSignal,
   ): Promise<SchedulerUmpireExclusion[]> {
     const result = await listSchedulerUmpireExclusions({
       client: this.client,
       path: { accountId, seasonId },
+      signal,
       throwOnError: false,
     });
 
@@ -341,10 +354,12 @@ export class SchedulerService {
   async listFieldExclusionDates(
     accountId: string,
     seasonId: string,
+    signal?: AbortSignal,
   ): Promise<SchedulerFieldExclusionDate[]> {
     const result = await listSchedulerFieldExclusionDates({
       client: this.client,
       path: { accountId, seasonId },
+      signal,
       throwOnError: false,
     });
 

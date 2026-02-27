@@ -100,7 +100,11 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
       try {
         setTemplateLoading(true);
         setError(null);
-        const templateData = await service.getTemplate(accountId as string, templateId);
+        const templateData = await service.getTemplate(
+          accountId as string,
+          templateId,
+          controller.signal,
+        );
 
         if (controller.signal.aborted) return;
 

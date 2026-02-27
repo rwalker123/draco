@@ -176,6 +176,7 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
         const result = await listAccountFields({
           client: apiClient,
           path: { accountId },
+          signal: controller.signal,
           throwOnError: false,
         });
 

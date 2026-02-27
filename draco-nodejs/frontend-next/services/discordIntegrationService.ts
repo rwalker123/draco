@@ -46,10 +46,14 @@ import { unwrapApiResult, assertNoApiError } from '@/utils/apiResult';
 export class DiscordIntegrationService {
   constructor(private readonly client: Client) {}
 
-  async getAccountConfig(accountId: string): Promise<DiscordAccountConfigType> {
+  async getAccountConfig(
+    accountId: string,
+    signal?: AbortSignal,
+  ): Promise<DiscordAccountConfigType> {
     const result = await getAccountDiscordConfig({
       client: this.client,
       path: { accountId },
+      signal,
       throwOnError: false,
     });
     return unwrapApiResult(result, 'Unable to load Discord configuration.');
@@ -114,10 +118,14 @@ export class DiscordIntegrationService {
     return unwrapApiResult(result, 'Unable to start the Discord bot installation flow.');
   }
 
-  async listRoleMappings(accountId: string): Promise<DiscordRoleMappingListType> {
+  async listRoleMappings(
+    accountId: string,
+    signal?: AbortSignal,
+  ): Promise<DiscordRoleMappingListType> {
     const result = await listAccountDiscordRoleMappings({
       client: this.client,
       path: { accountId },
+      signal,
       throwOnError: false,
     });
     return unwrapApiResult(result, 'Unable to load Discord role mappings.');
@@ -159,10 +167,14 @@ export class DiscordIntegrationService {
     assertNoApiError(result, 'Unable to delete Discord role mapping.');
   }
 
-  async listChannelMappings(accountId: string): Promise<DiscordChannelMappingListType> {
+  async listChannelMappings(
+    accountId: string,
+    signal?: AbortSignal,
+  ): Promise<DiscordChannelMappingListType> {
     const result = await listAccountDiscordChannelMappings({
       client: this.client,
       path: { accountId },
+      signal,
       throwOnError: false,
     });
     return unwrapApiResult(result, 'Unable to load channel mappings.');
@@ -171,11 +183,13 @@ export class DiscordIntegrationService {
   async listTeamForums(
     accountId: string,
     query?: Partial<DiscordTeamForumQueryType>,
+    signal?: AbortSignal,
   ): Promise<DiscordTeamForumListType> {
     const result = await listAccountDiscordTeamForums({
       client: this.client,
       path: { accountId },
       query: this.buildQuery(query),
+      signal,
       throwOnError: false,
     });
     return unwrapApiResult(result, 'Unable to load Discord team forums.');

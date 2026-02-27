@@ -145,7 +145,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
     const fetchSources = async () => {
       try {
         setLoadingSources(true);
-        const sourcesData = await getSources(accountId);
+        const sourcesData = await getSources(accountId, undefined, controller.signal);
         if (controller.signal.aborted) return;
         setSources(sourcesData);
       } catch (err) {

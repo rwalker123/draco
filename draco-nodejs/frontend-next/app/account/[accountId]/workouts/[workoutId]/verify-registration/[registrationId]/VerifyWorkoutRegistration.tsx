@@ -108,6 +108,7 @@ export default function VerifyWorkoutRegistration({
           workoutId,
           registrationId,
           validation.sanitizedValue,
+          controller.signal,
         );
 
         if (controller.signal.aborted) return;

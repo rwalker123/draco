@@ -116,7 +116,9 @@ const TeamForumWidget: React.FC<TeamForumWidgetProps> = ({
       setError(null);
 
       try {
-        const [channels] = await Promise.all([fetchCommunityChannels({ teamSeasonId })]);
+        const [channels] = await Promise.all([
+          fetchCommunityChannels({ teamSeasonId }, controller.signal),
+        ]);
 
         if (controller.signal.aborted) return;
         const forumChannel = channels[0] ?? null;
@@ -127,10 +129,10 @@ const TeamForumWidget: React.FC<TeamForumWidgetProps> = ({
           return;
         }
 
-        const fetchedMessages = await fetchCommunityMessages({
-          teamSeasonId,
-          limit: 5,
-        });
+        const fetchedMessages = await fetchCommunityMessages(
+          { teamSeasonId, limit: 5 },
+          controller.signal,
+        );
 
         if (controller.signal.aborted) return;
         setMessages(fetchedMessages);

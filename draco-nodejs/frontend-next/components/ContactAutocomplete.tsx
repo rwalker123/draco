@@ -174,7 +174,7 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
           }
 
           const userService = createUserManagementService(token);
-          const contact = await userService.getContact(accountId, value);
+          const contact = await userService.getContact(accountId, value, controller.signal);
 
           if (controller.signal.aborted) return;
 

@@ -22,16 +22,20 @@ export const useAccountDiscordAdmin = () => {
   const apiClient = useApiClient();
   const service = new DiscordIntegrationService(apiClient);
 
-  const fetchConfig = (accountId: string): Promise<DiscordAccountConfigType> =>
-    service.getAccountConfig(accountId);
+  const fetchConfig = (
+    accountId: string,
+    signal?: AbortSignal,
+  ): Promise<DiscordAccountConfigType> => service.getAccountConfig(accountId, signal);
 
   const updateConfig = (accountId: string, payload: DiscordAccountConfigUpdateType) =>
     service.updateAccountConfig(accountId, payload);
 
   const disconnectGuild = (accountId: string) => service.disconnectAccountGuild(accountId);
 
-  const fetchRoleMappings = (accountId: string): Promise<DiscordRoleMappingListType> =>
-    service.listRoleMappings(accountId);
+  const fetchRoleMappings = (
+    accountId: string,
+    signal?: AbortSignal,
+  ): Promise<DiscordRoleMappingListType> => service.listRoleMappings(accountId, signal);
 
   const createRoleMapping = (
     accountId: string,
@@ -55,8 +59,10 @@ export const useAccountDiscordAdmin = () => {
     signal?: AbortSignal,
   ): Promise<DiscordGuildChannelType[]> => service.listAvailableChannels(accountId, signal);
 
-  const fetchChannelMappings = (accountId: string): Promise<DiscordChannelMappingListType> =>
-    service.listChannelMappings(accountId);
+  const fetchChannelMappings = (
+    accountId: string,
+    signal?: AbortSignal,
+  ): Promise<DiscordChannelMappingListType> => service.listChannelMappings(accountId, signal);
 
   const createChannelMapping = (
     accountId: string,
@@ -69,7 +75,8 @@ export const useAccountDiscordAdmin = () => {
   const fetchTeamForums = (
     accountId: string,
     query?: Partial<DiscordTeamForumQueryType>,
-  ): Promise<DiscordTeamForumListType> => service.listTeamForums(accountId, query);
+    signal?: AbortSignal,
+  ): Promise<DiscordTeamForumListType> => service.listTeamForums(accountId, query, signal);
 
   const repairTeamForums = (accountId: string): Promise<DiscordTeamForumRepairResultType> =>
     service.repairTeamForums(accountId);

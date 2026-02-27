@@ -18,6 +18,7 @@ export interface ListUmpireParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  signal?: AbortSignal;
 }
 
 export interface UmpireService {
@@ -30,7 +31,13 @@ export function useUmpireService(accountId: string): UmpireService {
   const apiClient = useApiClient();
 
   const listUmpires: UmpireService['listUmpires'] = async (params: ListUmpireParams = {}) => {
-    const { page = 1, limit = 10, sortBy = 'contacts.lastname', sortOrder = 'asc' } = params;
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'contacts.lastname',
+      sortOrder = 'asc',
+      signal,
+    } = params;
 
     try {
       const result = await listAccountUmpires({
@@ -43,6 +50,7 @@ export function useUmpireService(accountId: string): UmpireService {
           sortBy,
           sortOrder,
         },
+        signal,
         throwOnError: false,
       });
 

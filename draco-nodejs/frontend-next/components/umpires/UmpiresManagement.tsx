@@ -92,6 +92,7 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
           limit: rowsPerPage,
           sortBy,
           sortOrder,
+          signal: controller.signal,
         });
 
         if (controller.signal.aborted) return;

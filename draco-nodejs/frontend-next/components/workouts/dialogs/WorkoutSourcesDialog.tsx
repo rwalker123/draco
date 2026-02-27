@@ -62,7 +62,7 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
         setLoading(true);
         setError(null);
 
-        const data = await getSources(accountId, token ?? undefined);
+        const data = await getSources(accountId, token ?? undefined, controller.signal);
         if (controller.signal.aborted) return;
         setSources(data ?? { options: [] });
       } catch (err) {

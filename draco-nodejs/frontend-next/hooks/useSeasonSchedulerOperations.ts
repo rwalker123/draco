@@ -38,12 +38,14 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     return seasonId;
   };
 
-  const listFieldAvailabilityRules = async (): Promise<SchedulerFieldAvailabilityRule[]> => {
+  const listFieldAvailabilityRules = async (
+    signal?: AbortSignal,
+  ): Promise<SchedulerFieldAvailabilityRule[]> => {
     setLoading(true);
     setError(null);
     try {
       const resolvedSeasonId = requireSeasonId();
-      return await service.listFieldAvailabilityRules(accountId, resolvedSeasonId);
+      return await service.listFieldAvailabilityRules(accountId, resolvedSeasonId, signal);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Failed to load field availability rules';
@@ -70,12 +72,14 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     }
   };
 
-  const getSeasonWindowConfig = async (): Promise<SchedulerSeasonWindowConfig | null> => {
+  const getSeasonWindowConfig = async (
+    signal?: AbortSignal,
+  ): Promise<SchedulerSeasonWindowConfig | null> => {
     setLoading(true);
     setError(null);
     try {
       const resolvedSeasonId = requireSeasonId();
-      return await service.getSeasonWindowConfig(accountId, resolvedSeasonId);
+      return await service.getSeasonWindowConfig(accountId, resolvedSeasonId, signal);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Failed to load scheduler season window config';
@@ -104,12 +108,14 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     }
   };
 
-  const listSeasonExclusions = async (): Promise<SchedulerSeasonExclusion[]> => {
+  const listSeasonExclusions = async (
+    signal?: AbortSignal,
+  ): Promise<SchedulerSeasonExclusion[]> => {
     setLoading(true);
     setError(null);
     try {
       const resolvedSeasonId = requireSeasonId();
-      return await service.listSeasonExclusions(accountId, resolvedSeasonId);
+      return await service.listSeasonExclusions(accountId, resolvedSeasonId, signal);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load season exclusions';
       setError(message);
@@ -169,12 +175,12 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     }
   };
 
-  const listTeamExclusions = async (): Promise<SchedulerTeamExclusion[]> => {
+  const listTeamExclusions = async (signal?: AbortSignal): Promise<SchedulerTeamExclusion[]> => {
     setLoading(true);
     setError(null);
     try {
       const resolvedSeasonId = requireSeasonId();
-      return await service.listTeamExclusions(accountId, resolvedSeasonId);
+      return await service.listTeamExclusions(accountId, resolvedSeasonId, signal);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load team exclusions';
       setError(message);
@@ -234,12 +240,14 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     }
   };
 
-  const listUmpireExclusions = async (): Promise<SchedulerUmpireExclusion[]> => {
+  const listUmpireExclusions = async (
+    signal?: AbortSignal,
+  ): Promise<SchedulerUmpireExclusion[]> => {
     setLoading(true);
     setError(null);
     try {
       const resolvedSeasonId = requireSeasonId();
-      return await service.listUmpireExclusions(accountId, resolvedSeasonId);
+      return await service.listUmpireExclusions(accountId, resolvedSeasonId, signal);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load umpire exclusions';
       setError(message);
@@ -352,12 +360,14 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     }
   };
 
-  const listFieldExclusionDates = async (): Promise<SchedulerFieldExclusionDate[]> => {
+  const listFieldExclusionDates = async (
+    signal?: AbortSignal,
+  ): Promise<SchedulerFieldExclusionDate[]> => {
     setLoading(true);
     setError(null);
     try {
       const resolvedSeasonId = requireSeasonId();
-      return await service.listFieldExclusionDates(accountId, resolvedSeasonId);
+      return await service.listFieldExclusionDates(accountId, resolvedSeasonId, signal);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load field exclusion dates';
       setError(message);

@@ -538,6 +538,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
           const template = await emailServiceRef.current!.getTemplate(
             accountId,
             initialData.templateId!,
+            controller.signal,
           );
           return { template };
         },

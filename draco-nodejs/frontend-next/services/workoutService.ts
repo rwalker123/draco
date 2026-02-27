@@ -136,11 +136,13 @@ export async function getWorkout(
   accountId: string,
   workoutId: string,
   token?: string,
+  signal?: AbortSignal,
 ): Promise<WorkoutType> {
   const client = createClient(token);
   const result = await getAccountWorkout({
     client,
     path: { accountId, workoutId },
+    signal,
     throwOnError: false,
   });
 
@@ -294,12 +296,14 @@ export async function verifyWorkoutRegistrationAccess(
   workoutId: string,
   registrationId: string,
   accessCode: string,
+  signal?: AbortSignal,
 ): Promise<WorkoutRegistrationType> {
   const client = createClient();
   const result = await apiVerifyWorkoutRegistration({
     client,
     path: { accountId, workoutId, registrationId },
     body: { accessCode },
+    signal,
     throwOnError: false,
   });
 
@@ -331,11 +335,16 @@ export async function createRegistration(
   return createWorkoutRegistration(accountId, workoutId, dto, token);
 }
 
-export async function getSources(accountId: string, token?: string): Promise<WorkoutSourcesType> {
+export async function getSources(
+  accountId: string,
+  token?: string,
+  signal?: AbortSignal,
+): Promise<WorkoutSourcesType> {
   const client = createClient(token);
   const result = await apiGetWorkoutSources({
     client,
     path: { accountId },
+    signal,
     throwOnError: false,
   });
 

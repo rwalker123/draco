@@ -59,7 +59,7 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
     const fetchWorkout = async () => {
       try {
         setLoading(true);
-        const data = await getWorkout(accountId, workoutId, token);
+        const data = await getWorkout(accountId, workoutId, token, controller.signal);
         if (controller.signal.aborted) return;
         setWorkout(data);
       } catch (error) {

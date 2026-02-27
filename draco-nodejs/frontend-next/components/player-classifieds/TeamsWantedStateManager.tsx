@@ -206,7 +206,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
         setIsVerifyingAccessCode(true);
         setAccessCodeError(null);
         accessCodeService
-          .verifyAccessCode(accountId, code)
+          .verifyAccessCode(accountId, code, controller.signal)
           .then((result) => {
             if (controller.signal.aborted) return;
             setAccessCodeResult(result);

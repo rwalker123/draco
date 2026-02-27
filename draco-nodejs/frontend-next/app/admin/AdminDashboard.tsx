@@ -152,7 +152,7 @@ const AdminDashboard: React.FC = () => {
       setError(null);
 
       try {
-        const data = await fetchAdminAnalyticsSummary(apiClient);
+        const data = await fetchAdminAnalyticsSummary(apiClient, controller.signal);
         if (controller.signal.aborted) return;
         setSummary(data);
       } catch (err) {

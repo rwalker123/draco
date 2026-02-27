@@ -24,17 +24,28 @@ const DEFAULT_FALLBACK_SOURCES: WorkoutSourcesType = {
   options: ['Website', 'Friend', 'Social Media', 'Other'],
 };
 
-const buildInitialLoadPromise = (accountId: string | null) => {
-  if (!accountId) {
-    return Promise.resolve({ data: EMPTY_SOURCES, error: 'Account not found' as string | null });
-  }
+type InitialLoadResult = { data: WorkoutSourcesType; error: string | null };
 
-  return getSources(accountId)
-    .then((data) => ({ data: data ?? EMPTY_SOURCES, error: null as string | null }))
-    .catch((err) => {
-      console.error('Error fetching sources:', err);
-      return { data: DEFAULT_FALLBACK_SOURCES, error: 'Failed to load sources' as string | null };
-    });
+const initialLoadCache = new Map<string | null, Promise<InitialLoadResult>>();
+
+const getInitialLoadPromise = (accountId: string | null): Promise<InitialLoadResult> => {
+  const cached = initialLoadCache.get(accountId);
+  if (cached) return cached;
+
+  const promise = accountId
+    ? getSources(accountId)
+        .then((data) => ({ data: data ?? EMPTY_SOURCES, error: null as string | null }))
+        .catch((err) => {
+          console.error('Error fetching sources:', err);
+          return {
+            data: DEFAULT_FALLBACK_SOURCES,
+            error: 'Failed to load sources' as string | null,
+          };
+        })
+    : Promise.resolve({ data: EMPTY_SOURCES, error: 'Account not found' as string | null });
+
+  initialLoadCache.set(accountId, promise);
+  return promise;
 };
 
 export const WorkoutSourcesForm: React.FC = () => {
@@ -43,7 +54,7 @@ export const WorkoutSourcesForm: React.FC = () => {
   const resolvedAccountId = Array.isArray(accountParam) ? accountParam[0] : accountParam;
 
   const { data: initialSources, error: initialLoadError } = use(
-    buildInitialLoadPromise(resolvedAccountId ?? null),
+    getInitialLoadPromise(resolvedAccountId ?? null),
   );
 
   const [error, setError] = useState<string | null>(initialLoadError);

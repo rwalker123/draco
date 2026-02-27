@@ -114,18 +114,19 @@ const VerifyClassified: React.FC<VerifyClassifiedProps> = ({ accountId, classifi
           if (controller.signal.aborted) return;
           router.push(`/account/${accountId}/player-classifieds?tab=teams-wanted`);
         }, 3000);
-      } catch (error) {
+      } catch (err) {
         if (controller.signal.aborted) return;
-        const status = error instanceof ApiClientError ? error.status : undefined;
+        const status = err instanceof ApiClientError ? err.status : undefined;
+        let message = err instanceof Error ? err.message : 'Verification failed';
         if (status === 400) {
-          error = new Error('Invalid access code');
+          message = 'Invalid access code';
         } else if (status === 404) {
-          error = new Error('Classified not found');
+          message = 'Classified not found';
         }
         setState({
           loading: false,
           success: false,
-          error: error instanceof Error ? error.message : 'Verification failed',
+          error: message,
           classifiedData: null,
         });
       }
