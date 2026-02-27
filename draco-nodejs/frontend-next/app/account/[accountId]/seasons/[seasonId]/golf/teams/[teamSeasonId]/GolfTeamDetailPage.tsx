@@ -32,7 +32,11 @@ import type {
   UpdateGolfPlayerType,
   ReleasePlayerType,
 } from '@draco/shared-schemas';
-import { getAccountSeason } from '@draco/shared-api-client';
+import {
+  getAccountSeason,
+  getGolfTeamWithRoster,
+  getGolfTeamRoster,
+} from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
 import {
   GolfRoster,
@@ -40,7 +44,6 @@ import {
   CreateGolfPlayerDialog,
   EditGolfPlayerDialog,
 } from '../../../../../../../../components/golf/teams';
-import { useGolfTeams } from '../../../../../../../../hooks/useGolfTeams';
 import { useGolfRosters } from '../../../../../../../../hooks/useGolfRosters';
 import { useGolfLeagueSetup } from '../../../../../../../../hooks/useGolfLeagueSetup';
 import { useRole } from '../../../../../../../../context/RoleContext';
@@ -61,7 +64,6 @@ const GolfTeamDetailPage: React.FC = () => {
 
   const canManage = accountId ? hasPermission('account.manage', { accountId }) : false;
 
-  const { getTeamWithRoster } = useGolfTeams(accountId || '');
   const {
     getTeamRoster,
     listAvailablePlayers,
@@ -112,7 +114,7 @@ const GolfTeamDetailPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!teamSeasonId || !seasonId) return;
+    if (!accountId || !teamSeasonId || !seasonId) return;
 
     const controller = new AbortController();
 
@@ -123,22 +125,40 @@ const GolfTeamDetailPage: React.FC = () => {
 
       try {
         const [teamResult, rosterResult] = await Promise.all([
-          getTeamWithRoster(seasonId, teamSeasonId, controller.signal),
-          getTeamRoster(seasonId, teamSeasonId, controller.signal),
+          getGolfTeamWithRoster({
+            client: apiClient,
+            path: { accountId, seasonId, teamSeasonId },
+            signal: controller.signal,
+            throwOnError: false,
+          }),
+          getGolfTeamRoster({
+            client: apiClient,
+            path: { accountId, seasonId, teamSeasonId },
+            signal: controller.signal,
+            throwOnError: false,
+          }),
         ]);
 
         if (controller.signal.aborted) return;
 
-        if (teamResult.success) {
-          setTeam(teamResult.data);
-        } else {
-          setError(teamResult.error);
+        const errors: string[] = [];
+
+        try {
+          const teamData = unwrapApiResult(teamResult, 'Failed to load team');
+          setTeam(teamData as GolfTeamWithRosterType);
+        } catch (err) {
+          errors.push(err instanceof Error ? err.message : 'Failed to load team');
         }
 
-        if (rosterResult.success) {
-          setRoster(rosterResult.data);
-        } else {
-          setError(rosterResult.error);
+        try {
+          const rosterData = unwrapApiResult(rosterResult, 'Failed to load roster');
+          setRoster(rosterData as GolfRosterEntryType[]);
+        } catch (err) {
+          errors.push(err instanceof Error ? err.message : 'Failed to load roster');
+        }
+
+        if (errors.length > 0) {
+          setError(errors.join('; '));
         }
       } catch (err) {
         if (controller.signal.aborted) return;
@@ -156,7 +176,7 @@ const GolfTeamDetailPage: React.FC = () => {
     return () => {
       controller.abort();
     };
-  }, [teamSeasonId, seasonId, getTeamWithRoster, getTeamRoster]);
+  }, [accountId, teamSeasonId, seasonId, apiClient]);
 
   useEffect(() => {
     if (!accountId || !seasonId) return;

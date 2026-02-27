@@ -45,7 +45,7 @@ describe('adminGolfCourseService', () => {
       post: vi.fn(),
       put: vi.fn(),
       delete: vi.fn(),
-    } as unknown as Client;
+    } as never;
   });
 
   describe('fetchAdminGolfCourses', () => {

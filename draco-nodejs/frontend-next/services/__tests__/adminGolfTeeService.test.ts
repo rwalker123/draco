@@ -37,7 +37,7 @@ describe('adminGolfTeeService', () => {
       put: vi.fn(),
       delete: vi.fn(),
       get: vi.fn(),
-    } as unknown as Client;
+    } as never;
   });
 
   describe('createAdminGolfTee', () => {

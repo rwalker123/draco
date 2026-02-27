@@ -62,6 +62,32 @@ import { unwrapApiResult } from '@/utils/apiResult';
 import { downloadBlob } from '@/utils/downloadUtils';
 import { getContactDisplayName } from '../../../../../../../../utils/contactUtils';
 
+interface PlayerAvatarProps {
+  member: RosterMemberType;
+  onEdit: () => void;
+  onPhotoDelete: (contactId: string) => Promise<void>;
+}
+
+const PlayerAvatarInline: React.FC<PlayerAvatarProps> = ({ member, onEdit, onPhotoDelete }) => {
+  const user = {
+    id: member.player.contact.id,
+    firstName: member.player.contact.firstName,
+    lastName: member.player.contact.lastName,
+    photoUrl: member.player.contact.photoUrl,
+  };
+
+  return (
+    <UserAvatar
+      user={user}
+      size={32}
+      onClick={onEdit}
+      showHoverEffects={true}
+      enablePhotoActions={true}
+      onPhotoDelete={onPhotoDelete}
+    />
+  );
+};
+
 interface TeamRosterManagementProps {
   accountId: string;
   seasonId: string;
@@ -527,34 +553,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   const handlePhotoDelete = (contactId: string) => {
     return deleteContactPhotoRef.current(contactId);
-  };
-
-  const PlayerAvatarInline = ({
-    member,
-    onEdit,
-    onPhotoDelete,
-  }: {
-    member: RosterMemberType;
-    onEdit: () => void;
-    onPhotoDelete: (contactId: string) => Promise<void>;
-  }) => {
-    const user = {
-      id: member.player.contact.id,
-      firstName: member.player.contact.firstName,
-      lastName: member.player.contact.lastName,
-      photoUrl: member.player.contact.photoUrl,
-    };
-
-    return (
-      <UserAvatar
-        user={user}
-        size={32}
-        onClick={onEdit}
-        showHoverEffects={true}
-        enablePhotoActions={true}
-        onPhotoDelete={onPhotoDelete}
-      />
-    );
   };
 
   if (loading) {

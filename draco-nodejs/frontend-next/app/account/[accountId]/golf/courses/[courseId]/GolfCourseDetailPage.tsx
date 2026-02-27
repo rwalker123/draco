@@ -5,9 +5,11 @@ import { Alert, Box, Button, CircularProgress, Container, Typography } from '@mu
 import { ArrowBack as BackIcon } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
 import type { GolfCourseWithTeesType } from '@draco/shared-schemas';
+import { getGolfCourse } from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../../components/AccountPageHeader';
 import { CourseDetailView } from '../../../../../../components/golf/courses';
-import { useGolfCourses } from '../../../../../../hooks/useGolfCourses';
+import { useApiClient } from '../../../../../../hooks/useApiClient';
+import { unwrapApiResult } from '../../../../../../utils/apiResult';
 
 const GolfCourseDetailPage: React.FC = () => {
   const params = useParams();
@@ -18,8 +20,7 @@ const GolfCourseDetailPage: React.FC = () => {
 
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
   const courseId = Array.isArray(courseIdParam) ? courseIdParam[0] : courseIdParam;
-
-  const { getCourse } = useGolfCourses(accountId || '');
+  const apiClient = useApiClient();
 
   const [course, setCourse] = useState<GolfCourseWithTeesType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,18 +36,20 @@ const GolfCourseDetailPage: React.FC = () => {
       setError(null);
 
       try {
-        const result = await getCourse(courseId, controller.signal);
+        const result = await getGolfCourse({
+          client: apiClient,
+          path: { accountId, courseId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
 
         if (controller.signal.aborted) return;
 
-        if (result.success) {
-          setCourse(result.data);
-        } else {
-          setError(result.error);
-        }
-      } catch {
+        const data = unwrapApiResult(result, 'Failed to load course');
+        setCourse(data as GolfCourseWithTeesType);
+      } catch (err) {
         if (controller.signal.aborted) return;
-        setError('Failed to load course');
+        setError(err instanceof Error ? err.message : 'Failed to load course');
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -59,19 +62,25 @@ const GolfCourseDetailPage: React.FC = () => {
     return () => {
       controller.abort();
     };
-  }, [accountId, courseId, getCourse]);
+  }, [accountId, courseId, apiClient]);
 
   const handleRetry = async () => {
     if (!accountId || !courseId) return;
     setLoading(true);
     setError(null);
-    const result = await getCourse(courseId);
-    if (result.success) {
-      setCourse(result.data);
-    } else {
-      setError(result.error);
+    try {
+      const result = await getGolfCourse({
+        client: apiClient,
+        path: { accountId, courseId },
+        throwOnError: false,
+      });
+      const data = unwrapApiResult(result, 'Failed to load course');
+      setCourse(data as GolfCourseWithTeesType);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load course');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleBack = () => {

@@ -241,7 +241,7 @@ describe('PhotoSubmissionForm', () => {
 
     createAccountPhotoSubmission.mockResolvedValue({
       data: submission,
-      response: { headers } as unknown as Response,
+      response: { headers } as Response,
     });
 
     renderForm();

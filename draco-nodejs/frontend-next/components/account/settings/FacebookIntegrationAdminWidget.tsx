@@ -66,6 +66,41 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
   const authStatus = searchParams.get('facebookAuth');
   const authMessage = searchParams.get('message');
 
+  const applyStatusResponse = (body: FacebookStatusResponse) => {
+    setAppConfigured(Boolean(body.appConfigured));
+    setPageConnected(Boolean(body.pageConnected));
+    setPageName(body.pageName ?? null);
+    setPageHandle(body.pageHandle ?? '');
+    setSavedPageHandle(body.pageHandle ?? null);
+    setUserTokenPresent(Boolean(body.userTokenPresent));
+  };
+
+  const loadFacebookStatus = async (signal?: AbortSignal) => {
+    setStatusLoading(true);
+    try {
+      const response = await getAccountFacebookStatus({
+        client: apiClient,
+        path: { accountId: account.id },
+        throwOnError: false,
+        signal,
+      });
+      if (signal?.aborted) return;
+      const body = unwrapApiResult<FacebookStatusResponse>(
+        response,
+        'Unable to load Facebook status.',
+      );
+      applyStatusResponse(body);
+    } catch (err) {
+      if (signal?.aborted) return;
+      console.error('Failed to load Facebook status', err);
+      setError('Unable to load Facebook status. Please try again.');
+    } finally {
+      if (!signal?.aborted) {
+        setStatusLoading(false);
+      }
+    }
+  };
+
   useEffect(() => {
     if (!token) {
       return;
@@ -73,7 +108,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
 
     const controller = new AbortController();
 
-    const loadStatus = async () => {
+    const fetchStatus = async () => {
       setStatusLoading(true);
       try {
         const response = await getAccountFacebookStatus({
@@ -87,12 +122,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
           response,
           'Unable to load Facebook status.',
         );
-        setAppConfigured(Boolean(body.appConfigured));
-        setPageConnected(Boolean(body.pageConnected));
-        setPageName(body.pageName ?? null);
-        setPageHandle(body.pageHandle ?? '');
-        setSavedPageHandle(body.pageHandle ?? null);
-        setUserTokenPresent(Boolean(body.userTokenPresent));
+        applyStatusResponse(body);
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error('Failed to load Facebook status', err);
@@ -104,7 +134,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       }
     };
 
-    void loadStatus();
+    void fetchStatus();
 
     return () => {
       controller.abort();
@@ -129,7 +159,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
 
     const controller = new AbortController();
 
-    const loadStatus = async () => {
+    const fetchStatus = async () => {
       setStatusLoading(true);
       try {
         const response = await getAccountFacebookStatus({
@@ -143,12 +173,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
           response,
           'Unable to load Facebook status.',
         );
-        setAppConfigured(Boolean(body.appConfigured));
-        setPageConnected(Boolean(body.pageConnected));
-        setPageName(body.pageName ?? null);
-        setPageHandle(body.pageHandle ?? '');
-        setSavedPageHandle(body.pageHandle ?? null);
-        setUserTokenPresent(Boolean(body.userTokenPresent));
+        applyStatusResponse(body);
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error('Failed to load Facebook status', err);
@@ -160,7 +185,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       }
     };
 
-    void loadStatus();
+    void fetchStatus();
 
     return () => {
       controller.abort();
@@ -209,28 +234,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       setClearCredentials(false);
 
       if (token) {
-        setStatusLoading(true);
-        try {
-          const response = await getAccountFacebookStatus({
-            client: apiClient,
-            path: { accountId: account.id },
-            throwOnError: false,
-          });
-          const body = unwrapApiResult<FacebookStatusResponse>(
-            response,
-            'Unable to load Facebook status.',
-          );
-          setAppConfigured(Boolean(body.appConfigured));
-          setPageConnected(Boolean(body.pageConnected));
-          setPageName(body.pageName ?? null);
-          setPageHandle(body.pageHandle ?? '');
-          setSavedPageHandle(body.pageHandle ?? null);
-          setUserTokenPresent(Boolean(body.userTokenPresent));
-        } catch (statusErr) {
-          console.error('Failed to load Facebook status', statusErr);
-        } finally {
-          setStatusLoading(false);
-        }
+        await loadFacebookStatus();
       }
     } catch (err) {
       console.error('Failed to save Facebook settings', err);
@@ -292,28 +296,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       setSuccess('Facebook Page handle saved.');
       setSavedPageHandle(normalizedHandle);
 
-      setStatusLoading(true);
-      try {
-        const response = await getAccountFacebookStatus({
-          client: apiClient,
-          path: { accountId: account.id },
-          throwOnError: false,
-        });
-        const body = unwrapApiResult<FacebookStatusResponse>(
-          response,
-          'Unable to load Facebook status.',
-        );
-        setAppConfigured(Boolean(body.appConfigured));
-        setPageConnected(Boolean(body.pageConnected));
-        setPageName(body.pageName ?? null);
-        setPageHandle(body.pageHandle ?? '');
-        setSavedPageHandle(body.pageHandle ?? null);
-        setUserTokenPresent(Boolean(body.userTokenPresent));
-      } catch (statusErr) {
-        console.error('Failed to load Facebook status', statusErr);
-      } finally {
-        setStatusLoading(false);
-      }
+      await loadFacebookStatus();
     } catch (err) {
       console.error('Failed to save Facebook Page handle', err);
       setError('Unable to save Facebook Page handle. Confirm Facebook is connected and try again.');
@@ -343,28 +326,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       setUserTokenPresent(false);
       setSuccess('Facebook integration disconnected.');
 
-      setStatusLoading(true);
-      try {
-        const response = await getAccountFacebookStatus({
-          client: apiClient,
-          path: { accountId: account.id },
-          throwOnError: false,
-        });
-        const body = unwrapApiResult<FacebookStatusResponse>(
-          response,
-          'Unable to load Facebook status.',
-        );
-        setAppConfigured(Boolean(body.appConfigured));
-        setPageConnected(Boolean(body.pageConnected));
-        setPageName(body.pageName ?? null);
-        setPageHandle(body.pageHandle ?? '');
-        setSavedPageHandle(body.pageHandle ?? null);
-        setUserTokenPresent(Boolean(body.userTokenPresent));
-      } catch (statusErr) {
-        console.error('Failed to load Facebook status', statusErr);
-      } finally {
-        setStatusLoading(false);
-      }
+      await loadFacebookStatus();
     } catch (err) {
       console.error('Failed to disconnect Facebook', err);
       setError('Unable to disconnect Facebook.');
@@ -373,29 +335,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
 
   const handleRefreshStatus = async () => {
     if (!token) return;
-    setStatusLoading(true);
-    try {
-      const response = await getAccountFacebookStatus({
-        client: apiClient,
-        path: { accountId: account.id },
-        throwOnError: false,
-      });
-      const body = unwrapApiResult<FacebookStatusResponse>(
-        response,
-        'Unable to load Facebook status.',
-      );
-      setAppConfigured(Boolean(body.appConfigured));
-      setPageConnected(Boolean(body.pageConnected));
-      setPageName(body.pageName ?? null);
-      setPageHandle(body.pageHandle ?? '');
-      setSavedPageHandle(body.pageHandle ?? null);
-      setUserTokenPresent(Boolean(body.userTokenPresent));
-    } catch (err) {
-      console.error('Failed to load Facebook status', err);
-      setError('Unable to load Facebook status. Please try again.');
-    } finally {
-      setStatusLoading(false);
-    }
+    await loadFacebookStatus();
   };
 
   return (

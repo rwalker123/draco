@@ -63,24 +63,8 @@ export const useSurveyResponses = ({
   const selectedContactRef = useRef<ContactOption | null>(null);
 
   useEffect(() => {
-    expandedPlayerIdsRef.current = expandedPlayerIds;
-  }, [expandedPlayerIds]);
-
-  useEffect(() => {
-    playerDetailsRef.current = playerDetails;
-  }, [playerDetails]);
-
-  useEffect(() => {
-    playerDetailLoadingRef.current = playerDetailLoading;
-  }, [playerDetailLoading]);
-
-  useEffect(() => {
     viewerSelectionAppliedRef.current = false;
   }, [viewerContact?.id]);
-
-  useEffect(() => {
-    selectedContactRef.current = selectedContact;
-  }, [selectedContact]);
 
   const resetDetailState = (options?: { preserveExpanded?: boolean; preserveDrafts?: boolean }) => {
     setPlayerDetails(() => {
@@ -98,6 +82,7 @@ export const useSurveyResponses = ({
     setPendingKeys({});
     if (!options?.preserveExpanded) {
       setExpandedPlayerIds([]);
+      expandedPlayerIdsRef.current = [];
     }
   };
 
@@ -202,6 +187,7 @@ export const useSurveyResponses = ({
       const visiblePlayerIds = new Set(summaries.map((summary) => summary.player.id));
       const nextExpanded = previouslyExpanded.filter((playerId) => visiblePlayerIds.has(playerId));
       setExpandedPlayerIds(nextExpanded);
+      expandedPlayerIdsRef.current = nextExpanded;
 
       if (summaries.length === 0) {
         setAnswerDrafts({});
@@ -309,6 +295,7 @@ export const useSurveyResponses = ({
         setPendingKeys({});
         setAnswerDrafts({});
         setExpandedPlayerIds([]);
+        expandedPlayerIdsRef.current = [];
         pageRef.current = 1;
         setPage(1);
         return;
@@ -342,6 +329,7 @@ export const useSurveyResponses = ({
         return drafts;
       });
       setExpandedPlayerIds([contact.id]);
+      expandedPlayerIdsRef.current = [contact.id];
       pageRef.current = 1;
       setPage(1);
     } catch (err) {
@@ -425,8 +413,6 @@ export const useSurveyResponses = ({
         [key]: draft,
       }));
 
-      let nextDetailForSummary: PlayerSurveyDetailType | undefined;
-
       setPlayerDetails((prev) => {
         const existing = prev[survey.player.id] ?? survey;
         const fallbackCategoryName =
@@ -463,15 +449,15 @@ export const useSurveyResponses = ({
           answers: answersWithoutCurrent,
         };
 
-        nextDetailForSummary = nextDetail;
-
         return {
           ...prev,
           [survey.player.id]: nextDetail,
         };
       });
 
-      const answersCount = nextDetailForSummary?.answers?.length ?? 1;
+      const existingAnswers = survey.answers ?? [];
+      const hadExistingAnswer = existingAnswers.some((item) => item.questionId === question.id);
+      const answersCount = hadExistingAnswer ? existingAnswers.length : existingAnswers.length + 1;
 
       setPlayerSummaries((prev) => {
         let found = false;
@@ -595,10 +581,13 @@ export const useSurveyResponses = ({
   const handleAccordionToggle =
     (playerId: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
       setExpandedPlayerIds((prev) => {
-        if (isExpanded) {
-          return prev.includes(playerId) ? prev : [...prev, playerId];
-        }
-        return prev.filter((id) => id !== playerId);
+        const next = isExpanded
+          ? prev.includes(playerId)
+            ? prev
+            : [...prev, playerId]
+          : prev.filter((id) => id !== playerId);
+        expandedPlayerIdsRef.current = next;
+        return next;
       });
 
       if (isExpanded) {
@@ -660,6 +649,7 @@ export const useSurveyResponses = ({
           visiblePlayerIds.has(playerId),
         );
         setExpandedPlayerIds(nextExpanded);
+        expandedPlayerIdsRef.current = nextExpanded;
 
         if (summaries.length === 0) {
           setAnswerDrafts({});
@@ -726,7 +716,7 @@ export const useSurveyResponses = ({
       return;
     }
 
-    if (loading) {
+    if (pagination === null) {
       return;
     }
 
@@ -803,6 +793,7 @@ export const useSurveyResponses = ({
             setPendingKeys({});
             setAnswerDrafts({});
             setExpandedPlayerIds([]);
+            expandedPlayerIdsRef.current = [];
             pageRef.current = 1;
             setPage(1);
             return;
@@ -836,6 +827,7 @@ export const useSurveyResponses = ({
             return drafts;
           });
           setExpandedPlayerIds([viewerContact.id]);
+          expandedPlayerIdsRef.current = [viewerContact.id];
           pageRef.current = 1;
           setPage(1);
         } catch (err) {
@@ -870,7 +862,7 @@ export const useSurveyResponses = ({
     viewerContact,
     viewerHasFullAccess,
     disableViewerAutoSelect,
-    loading,
+    pagination,
     playerSummaries,
     selectedContact,
     accountId,

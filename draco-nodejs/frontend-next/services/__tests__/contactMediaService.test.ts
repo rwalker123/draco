@@ -42,7 +42,7 @@ describe('ContactMediaService', () => {
 
     it('throws when the data is not a Blob', async () => {
       vi.mocked(apiGetContactPhoto).mockResolvedValue({
-        data: { someField: 'not-a-blob' } as unknown as Blob,
+        data: { someField: 'not-a-blob' },
         request: {} as Request,
         response: {} as Response,
       } as never);

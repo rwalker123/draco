@@ -74,8 +74,9 @@ export function useContactFetching({
   const [currentPageContacts, setCurrentPageContacts] = useState<RecipientContact[]>([]);
   const [paginationLoading, setPaginationLoading] = useState(false);
   const [paginationError, setPaginationError] = useState<EmailRecipientError | null>(null);
-  const [selectedContactsCache] = useState<Map<string, SelectedContactCacheEntry>>(new Map());
-  const [cacheVersion, setCacheVersion] = useState(0);
+  const [selectedContactsCache, setSelectedContactsCache] = useState<
+    Map<string, SelectedContactCacheEntry>
+  >(new Map());
   const [searchContacts, setSearchContacts] = useState<RecipientContact[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -146,7 +147,7 @@ export function useContactFetching({
     );
 
     if (!result.success) {
-      if (result.error.message?.includes('AbortError')) {
+      if (abortController.signal.aborted) {
         return;
       }
 
@@ -319,28 +320,29 @@ export function useContactFetching({
   };
 
   const cacheSelectedContact = (contact: RecipientContact) => {
-    selectedContactsCache.set(contact.id, {
-      contact,
-      selectedTime: Date.now(),
+    setSelectedContactsCache((prev) => {
+      const next = new Map(prev);
+      next.set(contact.id, { contact, selectedTime: Date.now() });
+      return next;
     });
-    setCacheVersion((v) => v + 1);
   };
 
   const uncacheSelectedContact = (contactId: string) => {
-    selectedContactsCache.delete(contactId);
-    setCacheVersion((v) => v + 1);
+    setSelectedContactsCache((prev) => {
+      const next = new Map(prev);
+      next.delete(contactId);
+      return next;
+    });
   };
 
   const getSelectedContactsFromCache = (): RecipientContact[] => {
-    void cacheVersion;
     return Array.from(selectedContactsCache.values())
       .sort((a, b) => a.selectedTime - b.selectedTime)
       .map((entry) => entry.contact);
   };
 
   const clearSelectedContactsCache = () => {
-    selectedContactsCache.clear();
-    setCacheVersion((v) => v + 1);
+    setSelectedContactsCache(new Map());
   };
 
   return {

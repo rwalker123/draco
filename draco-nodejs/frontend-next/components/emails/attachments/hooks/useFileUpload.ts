@@ -194,41 +194,21 @@ export function useFileUpload({
     setIsUploading(true);
     onUploadStart?.();
 
-    const uploadQueue = [...files];
-    const activeUploads: Promise<void>[] = [];
+    const uploadQueue = files.map((file, i) => ({ file, attachment: newAttachments[i] }));
 
-    for (let i = 0; i < Math.min(maxConcurrentUploads, files.length); i++) {
-      const file = uploadQueue.shift();
-      const attachment = newAttachments[i];
-
-      if (file && attachment) {
-        const uploadPromise = uploadSingleFile(file, attachment);
-        uploadPromisesRef.current.set(attachment.id, uploadPromise);
-        activeUploads.push(uploadPromise);
-      }
-    }
-
-    const processNext = async () => {
-      if (uploadQueue.length > 0) {
-        const file = uploadQueue.shift();
-        const attachmentIndex = files.length - uploadQueue.length - 1;
-        const attachment = newAttachments[attachmentIndex];
-
-        if (file && attachment) {
-          const uploadPromise = uploadSingleFile(file, attachment);
-          uploadPromisesRef.current.set(attachment.id, uploadPromise);
+    const processWorker = async () => {
+      while (uploadQueue.length > 0) {
+        const item = uploadQueue.shift();
+        if (item) {
+          const uploadPromise = uploadSingleFile(item.file, item.attachment);
+          uploadPromisesRef.current.set(item.attachment.id, uploadPromise);
           await uploadPromise;
-          await processNext();
         }
       }
     };
 
-    await Promise.allSettled([
-      ...activeUploads,
-      ...Array(uploadQueue.length)
-        .fill(null)
-        .map(() => processNext()),
-    ]);
+    const workerCount = Math.min(maxConcurrentUploads, files.length);
+    await Promise.allSettled(Array.from({ length: workerCount }, () => processWorker()));
 
     setIsUploading(false);
     setUploadProgress(0);

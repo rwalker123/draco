@@ -214,29 +214,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     setSelectedAnnouncementPublishedAt('');
     setSelectedAnnouncementIsSpecial(false);
     userTeamsCacheRef.current = null;
-  }, [accountId]);
-
-  React.useEffect(() => {
-    hasLoadedAccountHandoutsRef.current = false;
-    hasLoadedTeamHandoutsRef.current = false;
-    setAccountHandouts([]);
-    setAccountHandoutsError(null);
-    setTeamHandoutSections([]);
-    setTeamHandoutsError(null);
-    hasLoadedAccountAnnouncementsRef.current = false;
-    hasLoadedTeamAnnouncementsRef.current = false;
-    setAccountAnnouncements([]);
-    setAccountAnnouncementsError(null);
-    setTeamAnnouncementSections([]);
-    setTeamAnnouncementsError(null);
-    setAnnouncementDetail(null);
-    setAnnouncementDetailError(null);
-    setAnnouncementDialogOpen(false);
-    setSelectedAnnouncementTitle('');
-    setSelectedAnnouncementPublishedAt('');
-    setSelectedAnnouncementIsSpecial(false);
-    userTeamsCacheRef.current = null;
-  }, [user, token]);
+  }, [accountId, user, token]);
 
   const loadAccountHandouts = async () => {
     if (!showHandouts || !accountId) {

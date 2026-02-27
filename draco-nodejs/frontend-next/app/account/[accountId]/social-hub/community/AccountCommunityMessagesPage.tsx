@@ -96,6 +96,11 @@ const AccountCommunityMessagesPage: React.FC = () => {
     };
   }, [accountId, currentSeasonId, fetchCommunityChannels]);
 
+  const currentChannel = channels.find((channel) => channel.id === selectedChannelId) ?? null;
+  const filterDiscordChannelId = currentChannel?.discordChannelId ?? null;
+  const filterTeamSeasonId =
+    currentChannel?.scope === 'teamSeason' ? (currentChannel.teamSeasonId ?? null) : null;
+
   React.useEffect(() => {
     if (!accountId || !currentSeasonId) {
       return;
@@ -111,12 +116,11 @@ const AccountCommunityMessagesPage: React.FC = () => {
           limit: PAGE_SIZE,
         };
 
-        const currentChannel = channels.find((channel) => channel.id === selectedChannelId) ?? null;
-        if (currentChannel?.discordChannelId) {
-          query.channelIds = [currentChannel.discordChannelId];
+        if (filterDiscordChannelId) {
+          query.channelIds = [filterDiscordChannelId];
         }
-        if (currentChannel?.scope === 'teamSeason' && currentChannel.teamSeasonId) {
-          query.teamSeasonId = currentChannel.teamSeasonId;
+        if (filterTeamSeasonId) {
+          query.teamSeasonId = filterTeamSeasonId;
         }
 
         const result = await fetchCommunityMessages(query, controller.signal);
@@ -135,7 +139,13 @@ const AccountCommunityMessagesPage: React.FC = () => {
     return () => {
       controller.abort();
     };
-  }, [accountId, currentSeasonId, selectedChannelId, channels, fetchCommunityMessages]);
+  }, [
+    accountId,
+    currentSeasonId,
+    filterDiscordChannelId,
+    filterTeamSeasonId,
+    fetchCommunityMessages,
+  ]);
 
   const handleOpenMessage = (permalink?: string) => {
     if (!permalink) {

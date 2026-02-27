@@ -24,8 +24,9 @@ const GolfCoursesPage: React.FC = () => {
 
   const canManage = accountId ? hasPermission('account.manage', { accountId }) : false;
 
-  const { removeCourseFromLeague, addCourseToLeague, importExternalCourse, listCourses } =
-    useGolfCourses(accountId || '');
+  const { removeCourseFromLeague, addCourseToLeague, importExternalCourse } = useGolfCourses(
+    accountId || '',
+  );
 
   const [courses, setCourses] = useState<GolfLeagueCourseType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,6 +100,21 @@ const GolfCoursesPage: React.FC = () => {
     setSearchOpen(false);
   };
 
+  const refreshCourses = async () => {
+    if (!accountId) return;
+    try {
+      const result = await listGolfLeagueCourses({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
+      });
+      const data = unwrapApiResult(result, 'Failed to refresh courses') as GolfLeagueCourseType[];
+      setCourses(data);
+    } catch {
+      // Refresh failure is non-critical; the mutation already succeeded
+    }
+  };
+
   const handleSelectCourse = async (course: {
     externalId: string;
     isCustom: boolean;
@@ -109,10 +125,7 @@ const GolfCoursesPage: React.FC = () => {
 
       if (addResult.success) {
         setSuccessMessage('Course added to league');
-        const refreshResult = await listCourses();
-        if (refreshResult.success) {
-          setCourses(refreshResult.data);
-        }
+        await refreshCourses();
         return { success: true };
       } else {
         return { success: false, error: addResult.error };
@@ -126,10 +139,7 @@ const GolfCoursesPage: React.FC = () => {
 
       if (addResult.success) {
         setSuccessMessage('Course imported and added to league');
-        const refreshResult = await listCourses();
-        if (refreshResult.success) {
-          setCourses(refreshResult.data);
-        }
+        await refreshCourses();
         return { success: true, data: result.data };
       } else {
         return { success: false, error: addResult.error };
@@ -145,18 +155,18 @@ const GolfCoursesPage: React.FC = () => {
 
   const handleDelete = async (leagueCourse: GolfLeagueCourseType) => {
     setActionLoading(true);
-    const result = await removeCourseFromLeague(leagueCourse.course.id);
+    try {
+      const result = await removeCourseFromLeague(leagueCourse.course.id);
 
-    if (result.success) {
-      setSuccessMessage('Course removed from league');
-      const refreshResult = await listCourses();
-      if (refreshResult.success) {
-        setCourses(refreshResult.data);
+      if (result.success) {
+        setSuccessMessage('Course removed from league');
+        await refreshCourses();
+      } else {
+        setError(result.error);
       }
-    } else {
-      setError(result.error);
+    } finally {
+      setActionLoading(false);
     }
-    setActionLoading(false);
   };
 
   if (!accountId) {

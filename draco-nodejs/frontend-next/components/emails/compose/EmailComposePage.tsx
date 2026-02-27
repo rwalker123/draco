@@ -15,11 +15,7 @@ import {
   LinearProgress,
 } from '@mui/material';
 // Using Box/Stack layout only; avoid Grid2 to match project conventions
-import {
-  KeyboardArrowDown as ExpandIcon,
-  CloudOff as OfflineIcon,
-  Wifi as OnlineIcon,
-} from '@mui/icons-material';
+import { KeyboardArrowDown as ExpandIcon, CloudOff as OfflineIcon } from '@mui/icons-material';
 
 import { EmailComposeProvider, useEmailCompose } from './EmailComposeProvider';
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -368,20 +364,9 @@ const EmailComposePageInternal: React.FC<
       {/* Global Error Banner */}
       {!componentState.isOnline && (
         <Alert severity="warning" icon={<OfflineIcon />} sx={{ borderRadius: 0 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" width="100%">
-            <Typography variant="body2">
-              You are currently offline. Some features may not work properly.
-            </Typography>
-            {componentState.isOnline && (
-              <Button
-                size="small"
-                startIcon={<OnlineIcon />}
-                onClick={() => window.location.reload()}
-              >
-                Reconnected - Refresh
-              </Button>
-            )}
-          </Stack>
+          <Typography variant="body2">
+            You are currently offline. Some features may not work properly.
+          </Typography>
         </Alert>
       )}
 

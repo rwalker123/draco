@@ -197,7 +197,7 @@ describe('HofNominationDialog', () => {
         zip: '',
         dateOfBirth: '',
       },
-    } as unknown as ContactType;
+    } as ContactType;
 
     vi.mocked(useAccountMembership).mockReturnValue({
       isMember: true,

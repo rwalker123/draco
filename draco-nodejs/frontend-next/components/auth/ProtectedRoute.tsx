@@ -113,11 +113,14 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     }
   }
 
+  const evaluationStatus = evaluation.status;
+  const redirectUrl = evaluation.status === 'redirect' ? evaluation.url : null;
+
   useEffect(() => {
-    if (evaluation.status === 'redirect') {
-      router.replace(evaluation.url);
+    if (redirectUrl) {
+      router.replace(redirectUrl);
     }
-  }, [evaluation, router]);
+  }, [evaluationStatus, redirectUrl, router]);
 
   if (evaluation.status === 'pending') {
     return (
