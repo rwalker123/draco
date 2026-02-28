@@ -11,6 +11,7 @@ import {
   IconButton,
   Paper,
   Fab,
+  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -46,6 +47,11 @@ type DialogState = {
   sponsor: SponsorType | null;
 };
 
+type FeedbackState = {
+  severity: 'success' | 'error';
+  message: string;
+} | null;
+
 const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
   accountId,
   seasonId,
@@ -60,8 +66,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
   });
   const [sponsors, setSponsors] = React.useState<SponsorType[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [success, setSuccess] = React.useState<string | null>(null);
+  const [feedback, setFeedback] = React.useState<FeedbackState>(null);
   const [dialogState, setDialogState] = React.useState<DialogState>({
     open: false,
     mode: 'create',
@@ -113,7 +118,6 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
   const refreshSponsors = async () => {
     try {
       setLoading(true);
-      setError(null);
       const result = await listTeamSponsors({
         client: apiClient,
         path: { accountId, seasonId, teamSeasonId },
@@ -123,7 +127,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
       setSponsors(data.sponsors ?? []);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load team sponsors';
-      setError(message);
+      setFeedback({ severity: 'error', message });
     } finally {
       setLoading(false);
     }
@@ -135,7 +139,6 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
     const loadSponsors = async () => {
       try {
         setLoading(true);
-        setError(null);
         const result = await listTeamSponsors({
           client: apiClient,
           path: { accountId, seasonId, teamSeasonId },
@@ -148,7 +151,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
       } catch (err) {
         if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load team sponsors';
-        setError(message);
+        setFeedback({ severity: 'error', message });
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -182,8 +185,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
     sponsor: SponsorType;
     message: string;
   }) => {
-    setSuccess(message);
-    setError(null);
+    setFeedback({ severity: 'success', message });
     handleDialogClose();
 
     if (dialogState.mode === 'edit') {
@@ -195,15 +197,17 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
 
   const handleDelete = async (sponsorId: string) => {
     try {
-      setSuccess(null);
-      setError(null);
       await deleteSponsor(sponsorId);
-      setSuccess('Sponsor deleted successfully');
+      setFeedback({ severity: 'success', message: 'Sponsor deleted successfully' });
       await refreshSponsors();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete sponsor';
-      setError(message);
+      setFeedback({ severity: 'error', message });
     }
+  };
+
+  const handleFeedbackClose = () => {
+    setFeedback(null);
   };
 
   return (
@@ -244,18 +248,6 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
         </Breadcrumbs>
         <Stack spacing={3} sx={{ pb: 8 }}>
           <PageSectionHeader title="Team Sponsors" variant="h5" component="h1" />
-
-          {success && (
-            <Alert severity="success" onClose={() => setSuccess(null)}>
-              {success}
-            </Alert>
-          )}
-
-          {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
 
           {loading ? (
             <Box display="flex" justifyContent="center" py={6}>
@@ -347,8 +339,21 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
         initialSponsor={dialogState.mode === 'edit' ? dialogState.sponsor : null}
         onClose={handleDialogClose}
         onSuccess={handleDialogSuccess}
-        onError={(message) => setError(message)}
+        onError={(message) => setFeedback({ severity: 'error', message })}
       />
+
+      <Snackbar
+        open={Boolean(feedback)}
+        autoHideDuration={6000}
+        onClose={handleFeedbackClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {feedback ? (
+          <Alert onClose={handleFeedbackClose} severity={feedback.severity} variant="filled">
+            {feedback.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </main>
   );
 };

@@ -122,7 +122,7 @@ const UmpiresTabContent: React.FC<UmpiresTabContentProps> = ({
                   <PersonIcon fontSize="small" color="action" />
                   <Box sx={{ minWidth: 0, flex: 1 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      {umpire.displayName}
+                      {`${umpire.firstName} ${umpire.lastName}`.trim()}
                     </Typography>
                     {hasEmail && (
                       <Typography variant="caption" color="text.secondary" noWrap>

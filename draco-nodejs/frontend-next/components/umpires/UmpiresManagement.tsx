@@ -222,8 +222,9 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
       id: umpire.contactId,
       firstName: umpire.firstName,
       lastName: umpire.lastName,
-      middleName: undefined,
-      email: umpire.email ?? undefined,
+      middleName: umpire.middleName,
+      email: umpire.email,
+      photoUrl: umpire.photoUrl,
       contactDetails: umpire.contactDetails,
     };
   };
@@ -283,7 +284,7 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? (
+                {loading && umpires.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={canManage ? 6 : 5}>
                       <Stack alignItems="center" py={3}>
@@ -313,7 +314,7 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
                           size={40}
                         />
                       </TableCell>
-                      <TableCell>{umpire.displayName}</TableCell>
+                      <TableCell>{`${umpire.firstName} ${umpire.lastName}`.trim()}</TableCell>
                       <TableCell>{umpire.email || '—'}</TableCell>
                       <TableCell>{formatPhoneNumbers(umpire)}</TableCell>
                       <TableCell>{formatAddress(umpire)}</TableCell>
@@ -322,12 +323,12 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
                           <Stack direction="row" spacing={1} justifyContent="flex-end">
                             <EditIconButton
                               tooltipTitle="Edit contact information"
-                              aria-label={`Edit contact for ${umpire.displayName}`}
+                              aria-label={`Edit contact for ${umpire.firstName} ${umpire.lastName}`}
                               onClick={() => handleOpenEditContactDialog(umpire)}
                             />
                             <DeleteIconButton
                               tooltipTitle="Delete umpire"
-                              aria-label={`Delete ${umpire.displayName}`}
+                              aria-label={`Delete ${umpire.firstName} ${umpire.lastName}`}
                               onClick={() => handleOpenDeleteDialog(umpire)}
                             />
                           </Stack>

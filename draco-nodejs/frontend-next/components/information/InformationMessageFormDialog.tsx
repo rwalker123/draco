@@ -128,12 +128,10 @@ const InformationMessageFormDialog: React.FC<InformationMessageFormDialogProps> 
       setEditorInitialValue('');
       setEditorKey((key) => key + 1);
       setScope(initialScope);
-      setSelectedTeamSeasonId(initialTeamSeasonId ?? availableTeams[0]?.teamSeasonId ?? '');
       return;
     }
 
     setScope(initialScope);
-    setSelectedTeamSeasonId(initialTeamSeasonId ?? availableTeams[0]?.teamSeasonId ?? '');
 
     if (initialMessage) {
       const bodyHtml = initialMessage.bodyHtml ?? '';
@@ -147,7 +145,11 @@ const InformationMessageFormDialog: React.FC<InformationMessageFormDialogProps> 
     }
 
     setEditorKey((key) => key + 1);
-  }, [open, initialScope, initialTeamSeasonId, availableTeams, initialMessage, setValue, reset]);
+  }, [open, initialScope, initialMessage, setValue, reset]);
+
+  React.useEffect(() => {
+    setSelectedTeamSeasonId(initialTeamSeasonId ?? availableTeams[0]?.teamSeasonId ?? '');
+  }, [initialTeamSeasonId, availableTeams]);
 
   const syncEditor = () => {
     if (!editorRef.current) {

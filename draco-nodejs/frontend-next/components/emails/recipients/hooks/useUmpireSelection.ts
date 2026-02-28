@@ -117,7 +117,7 @@ export function useUmpireSelection({
       const umpire = umpires.find((item) => item.id === id);
       selections.push({
         umpireId: id,
-        name: umpire?.displayName,
+        name: umpire ? `${umpire.firstName} ${umpire.lastName}`.trim() : undefined,
         email: umpire?.email ?? undefined,
       });
     });

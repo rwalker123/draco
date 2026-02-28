@@ -2,12 +2,7 @@
 
 import { useState } from 'react';
 import { updateAccount, updateTeamSeason } from '@draco/shared-api-client';
-import {
-  AccountSchema,
-  TeamSeasonSchema,
-  type AccountType,
-  type TeamSeasonType,
-} from '@draco/shared-schemas';
+import { type AccountType, type TeamSeasonType } from '@draco/shared-schemas';
 import { useApiClient } from './useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 
@@ -64,9 +59,7 @@ export function useYouTubeChannelAdmin(
           throwOnError: false,
         });
 
-        const account = AccountSchema.parse(
-          unwrapApiResult(result, 'Failed to update YouTube channel'),
-        );
+        const account = unwrapApiResult(result, 'Failed to update YouTube channel') as AccountType;
         return { context: 'account' as const, account };
       }
 
@@ -81,9 +74,10 @@ export function useYouTubeChannelAdmin(
         throwOnError: false,
       });
 
-      const teamSeason = TeamSeasonSchema.parse(
-        unwrapApiResult(result, 'Failed to update team YouTube channel'),
-      );
+      const teamSeason = unwrapApiResult(
+        result,
+        'Failed to update team YouTube channel',
+      ) as TeamSeasonType;
 
       return { context: 'team' as const, teamSeason };
     } catch (err) {

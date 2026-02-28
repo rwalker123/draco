@@ -35,6 +35,11 @@ import { ApiClientError } from '../../../utils/apiResult';
 import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
 import PhotoGalleryAlbumSections, { PhotoGalleryAlbumEntry } from './PhotoGalleryAlbumSections';
 
+type AlbumDialogSuccessPayload =
+  | { message: string; operation: 'create'; album: PhotoGalleryAdminAlbumType }
+  | { message: string; operation: 'update'; album: PhotoGalleryAdminAlbumType }
+  | { message: string; operation: 'delete'; albumId: string };
+
 interface PhotoGalleryAlbumManagerDialogProps {
   accountId: string;
   open: boolean;
@@ -43,7 +48,7 @@ interface PhotoGalleryAlbumManagerDialogProps {
   defaultAlbumPhotoCount: number;
   token?: string | null;
   onClose: () => void;
-  onSuccess?: (payload: { message: string }) => void;
+  onSuccess?: (payload: AlbumDialogSuccessPayload) => void;
   onError?: (message: string) => void;
 }
 
@@ -124,7 +129,7 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
 
       setLocalAlbums((current) => [...current, normalized]);
       setNewAlbumTitle('');
-      onSuccess?.({ message: 'Album created successfully' });
+      onSuccess?.({ message: 'Album created successfully', operation: 'create', album: created });
     } catch (error) {
       const message =
         error instanceof ApiClientError
@@ -186,7 +191,7 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
       );
       setEditingAlbumId(null);
       setEditingTitle('');
-      onSuccess?.({ message: 'Album updated successfully' });
+      onSuccess?.({ message: 'Album updated successfully', operation: 'update', album: updated });
     } catch (error) {
       const message =
         error instanceof ApiClientError
@@ -226,7 +231,11 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
       await deleteGalleryAlbumAdmin(accountId, pendingDelete.id, token);
       setLocalAlbums((current) => current.filter((album) => album.id !== pendingDelete.id));
       setPendingDelete(null);
-      onSuccess?.({ message: 'Album deleted successfully' });
+      onSuccess?.({
+        message: 'Album deleted successfully',
+        operation: 'delete',
+        albumId: pendingDelete.id,
+      });
     } catch (error) {
       const message =
         error instanceof ApiClientError

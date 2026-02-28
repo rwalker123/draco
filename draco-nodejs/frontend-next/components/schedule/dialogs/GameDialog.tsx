@@ -456,7 +456,7 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
                 fields: locations,
                 umpires: officials,
                 canEditSchedule,
-                isAccountAdmin: false,
+                isAccountAdmin: canEditSchedule,
                 hasOfficials,
                 getAvailableUmpires,
                 getTeamName,

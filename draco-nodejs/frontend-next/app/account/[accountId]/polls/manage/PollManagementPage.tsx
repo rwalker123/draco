@@ -9,6 +9,7 @@ import {
   Fab,
   IconButton,
   Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -29,6 +30,7 @@ import { useApiClient } from '../../../../../hooks/useApiClient';
 import { useAuth } from '../../../../../context/AuthContext';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { alpha } from '@mui/material/styles';
+import { UI_TIMEOUTS } from '../../../../../constants/timeoutConstants';
 
 interface PollManagementPageProps {
   accountId: string;
@@ -39,8 +41,10 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
   const { token } = useAuth();
   const [polls, setPolls] = useState<AccountPollType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    severity: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorPoll, setEditorPoll] = useState<AccountPollType | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -59,7 +63,6 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
 
     const loadPolls = async () => {
       setLoading(true);
-      setError(null);
 
       try {
         const result = await listAccountPolls({
@@ -76,7 +79,7 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error('Failed to load polls:', err);
-        setError('Failed to load polls.');
+        setSnackbar({ severity: 'error', message: 'Failed to load polls.' });
         setPolls([]);
       } finally {
         if (!controller.signal.aborted) {
@@ -112,13 +115,11 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
       const exists = prev.some((item) => item.id === poll.id);
       return exists ? prev.map((item) => (item.id === poll.id ? poll : item)) : [...prev, poll];
     });
-    setSuccess(message);
-    setError(null);
+    setSnackbar({ severity: 'success', message });
   };
 
   const handleEditorError = (message: string) => {
-    setError(message);
-    setSuccess(null);
+    setSnackbar({ severity: 'error', message });
   };
 
   const handleConfirmDelete = (poll: AccountPollType) => {
@@ -133,13 +134,11 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
 
   const handleDeleteSuccess = ({ message, pollId }: { message: string; pollId: string }) => {
     setPolls((prev) => prev.filter((poll) => poll.id !== pollId));
-    setSuccess(message);
-    setError(null);
+    setSnackbar({ severity: 'success', message });
   };
 
   const handleDeleteError = (message: string) => {
-    setError(message);
-    setSuccess(null);
+    setSnackbar({ severity: 'error', message });
   };
 
   if (!canManage) {
@@ -183,17 +182,6 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
           category={{ name: 'Community', href: `/account/${accountId}/admin/community` }}
           currentPage="Poll Management"
         />
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {success}
-          </Alert>
-        )}
-
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress size={40} />
@@ -332,6 +320,28 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
         onSuccess={handleDeleteSuccess}
         onError={handleDeleteError}
       />
+
+      <Snackbar
+        open={Boolean(snackbar)}
+        autoHideDuration={
+          snackbar?.severity === 'error'
+            ? UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS
+            : UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS
+        }
+        onClose={() => setSnackbar(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {snackbar ? (
+          <Alert
+            onClose={() => setSnackbar(null)}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </main>
   );
 };

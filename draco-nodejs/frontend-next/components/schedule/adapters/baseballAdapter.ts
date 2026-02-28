@@ -72,7 +72,6 @@ async function loadOfficials({
       firstName: umpire.firstName,
       lastName: umpire.lastName,
       email: umpire.email ?? '',
-      displayName: umpire.displayName,
     }));
   } catch (err) {
     if (err instanceof ApiClientError && err.status === 401) {

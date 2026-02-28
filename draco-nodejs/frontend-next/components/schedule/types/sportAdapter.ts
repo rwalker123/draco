@@ -21,7 +21,6 @@ export interface ScheduleOfficial {
   firstName: string;
   lastName: string;
   email: string;
-  displayName: string;
 }
 
 export interface LoadGamesParams {
@@ -159,6 +158,5 @@ export function mapUmpireToOfficial(umpire: Umpire): ScheduleOfficial {
     firstName: umpire.firstName,
     lastName: umpire.lastName,
     email: umpire.email,
-    displayName: umpire.displayName,
   };
 }

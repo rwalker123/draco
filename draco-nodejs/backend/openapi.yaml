@@ -3116,25 +3116,21 @@ components:
     Umpire:
       type: object
       properties:
-        id:
-          type: string
-          pattern: ^d+$
-        accountId:
-          type: string
-        contactId:
-          type: string
         firstName:
           type: string
           minLength: 1
+          maxLength: 100
         lastName:
           type: string
           minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 50
         email:
           type: string
-          nullable: true
+          maxLength: 100
           format: email
-        displayName:
-          type: string
         photoUrl:
           type: string
           format: uri
@@ -3180,13 +3176,20 @@ components:
             firstYear:
               type: number
               nullable: true
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        contactId:
+          type: string
+        accountId:
+          type: string
       required:
-        - id
-        - accountId
-        - contactId
         - firstName
         - lastName
-        - displayName
+        - id
+        - contactId
+        - accountId
     Umpires:
       type: object
       properties:
@@ -3195,25 +3198,21 @@ components:
           items:
             type: object
             properties:
-              id:
-                type: string
-                pattern: ^d+$
-              accountId:
-                type: string
-              contactId:
-                type: string
               firstName:
                 type: string
                 minLength: 1
+                maxLength: 100
               lastName:
                 type: string
                 minLength: 1
+                maxLength: 100
+              middleName:
+                type: string
+                maxLength: 50
               email:
                 type: string
-                nullable: true
+                maxLength: 100
                 format: email
-              displayName:
-                type: string
               photoUrl:
                 type: string
                 format: uri
@@ -3259,13 +3258,20 @@ components:
                   firstYear:
                     type: number
                     nullable: true
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              contactId:
+                type: string
+              accountId:
+                type: string
             required:
-              - id
-              - accountId
-              - contactId
               - firstName
               - lastName
-              - displayName
+              - id
+              - contactId
+              - accountId
         pagination:
           type: object
           properties:

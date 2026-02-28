@@ -8,6 +8,7 @@ import {
   CardContent,
   Fab,
   IconButton,
+  Snackbar,
   Stack,
   Tooltip,
   Typography,
@@ -66,6 +67,11 @@ interface ConfirmState {
   message: WelcomeMessageType | null;
 }
 
+type FeedbackState = {
+  severity: 'success' | 'error';
+  message: string;
+} | null;
+
 const sortMessages = (entries: WelcomeMessageType[]): WelcomeMessageType[] =>
   [...entries].sort((a, b) => {
     if (a.order !== b.order) {
@@ -84,8 +90,7 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
 }) => {
   const [messages, setMessages] = React.useState<WelcomeMessageType[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
+  const [feedback, setFeedback] = React.useState<FeedbackState>(null);
   const [dialogState, setDialogState] = React.useState<DialogState>({ open: false });
   const [confirmState, setConfirmState] = React.useState<ConfirmState>({
     open: false,
@@ -172,7 +177,6 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
 
   const refreshMessages = async () => {
     setLoading(true);
-    setError(null);
 
     try {
       const data = await listMessagesRef.current();
@@ -185,7 +189,7 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
       setMessages(sanitized);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load information messages';
-      setError(message);
+      setFeedback({ severity: 'error', message });
       setMessages([]);
     } finally {
       setLoading(false);
@@ -202,8 +206,7 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
   }, [operationsScopeKey]);
 
   useEffect(() => {
-    setSuccessMessage(null);
-    setError(null);
+    setFeedback(null);
     clearErrorRef.current();
   }, [operationsScopeKey]);
 
@@ -300,10 +303,10 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
 
       if (dialogState.open && dialogState.mode === 'edit' && dialogState.message) {
         await updateMessageRef.current(dialogState.message.id, payload, targetScope);
-        setSuccessMessage('Information message updated successfully.');
+        setFeedback({ severity: 'success', message: 'Information message updated successfully.' });
       } else {
         await createMessageRef.current(payload, targetScope);
-        setSuccessMessage('Information message created successfully.');
+        setFeedback({ severity: 'success', message: 'Information message created successfully.' });
       }
       setDialogState({ open: false });
       await refreshMessages();
@@ -321,21 +324,17 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
     try {
       const targetScope = resolveMessageScope(confirmState.message);
       await deleteMessageRef.current(confirmState.message.id, targetScope);
-      setSuccessMessage('Information message deleted successfully.');
+      setFeedback({ severity: 'success', message: 'Information message deleted successfully.' });
       setConfirmState({ open: false, message: null });
       await refreshMessages();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete information message';
-      setError(message);
+      setFeedback({ severity: 'error', message });
     }
   };
 
-  const handleDismissSuccess = () => {
-    setSuccessMessage(null);
-  };
-
-  const handleDismissError = () => {
-    setError(null);
+  const handleFeedbackClose = () => {
+    setFeedback(null);
     clearErrorRef.current();
   };
 
@@ -382,121 +381,128 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
   };
 
   return (
-    <WidgetShell title={managerTitle} subtitle={description} accent={accent}>
-      <Stack spacing={3}>
-        {successMessage ? (
-          <Alert severity="success" onClose={handleDismissSuccess}>
-            {successMessage}
-          </Alert>
-        ) : null}
-
-        {error ? (
-          <Alert severity="error" onClose={handleDismissError}>
-            {error}
-          </Alert>
-        ) : null}
-
-        {loading ? (
-          <Alert severity="info">Loading information messages...</Alert>
-        ) : messages.length === 0 ? (
-          <Alert severity="info">{emptyMessage}</Alert>
-        ) : (
-          <Stack spacing={2}>
-            {messages.map((message) => (
-              <Card
-                key={message.id}
-                sx={{
-                  backgroundColor: (theme) => theme.palette.background.paper,
-                  borderColor: (theme) => theme.palette.widget.border,
-                  borderRadius: 2,
-                }}
-                variant="outlined"
-              >
-                <CardContent
+    <>
+      <WidgetShell title={managerTitle} subtitle={description} accent={accent}>
+        <Stack spacing={3}>
+          {loading ? (
+            <Alert severity="info">Loading information messages...</Alert>
+          ) : messages.length === 0 ? (
+            <Alert severity="info">{emptyMessage}</Alert>
+          ) : (
+            <Stack spacing={2}>
+              {messages.map((message) => (
+                <Card
+                  key={message.id}
                   sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1.5,
+                    backgroundColor: (theme) => theme.palette.background.paper,
+                    borderColor: (theme) => theme.palette.widget.border,
+                    borderRadius: 2,
                   }}
+                  variant="outlined"
                 >
-                  <Box
-                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                  <CardContent
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1.5,
+                    }}
                   >
-                    <Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                        {message.caption}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Display order {message.order}
-                      </Typography>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                          {message.caption}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Display order {message.order}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Tooltip title="Edit">
+                          <IconButton
+                            color="primary"
+                            aria-label="Edit information message"
+                            onClick={() => handleEdit(message)}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton
+                            color="error"
+                            aria-label="Delete information message"
+                            onClick={() => handleDeletePrompt(message)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Tooltip title="Edit">
-                        <IconButton
-                          color="primary"
-                          aria-label="Edit information message"
-                          onClick={() => handleEdit(message)}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          color="error"
-                          aria-label="Delete information message"
-                          onClick={() => handleDeletePrompt(message)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </Box>
-                  <RichTextContent html={message.bodyHtml ?? ''} />
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
-        )}
-      </Stack>
+                    <RichTextContent html={message.bodyHtml ?? ''} />
+                  </CardContent>
+                </Card>
+              ))}
+            </Stack>
+          )}
+        </Stack>
 
-      <Fab
-        color="primary"
-        aria-label="Add information message"
-        onClick={handleCreate}
-        disabled={disabledCreateButton}
-        sx={{
-          position: 'fixed',
-          bottom: { xs: 24, md: 32 },
-          right: { xs: 24, md: 32 },
-          zIndex: (theme) => theme.zIndex.tooltip,
-        }}
+        <Fab
+          color="primary"
+          aria-label="Add information message"
+          onClick={handleCreate}
+          disabled={disabledCreateButton}
+          sx={{
+            position: 'fixed',
+            bottom: { xs: 24, md: 32 },
+            right: { xs: 24, md: 32 },
+            zIndex: (theme) => theme.zIndex.tooltip,
+          }}
+        >
+          <AddIcon />
+        </Fab>
+
+        <InformationMessageFormDialog
+          open={dialogState.open}
+          mode={dialogState.open ? dialogState.mode : 'create'}
+          initialMessage={dialogState.open ? (dialogState.message ?? undefined) : undefined}
+          initialScope={dialogState.open ? dialogState.scope : effectiveScope}
+          initialTeamSeasonId={resolveDialogTeamSeasonId()}
+          availableTeams={availableTeams}
+          onClose={handleDialogClose}
+          onSubmit={handleDialogSubmit}
+          loading={mutationLoading}
+          submitError={dialogError ?? mutationError ?? undefined}
+        />
+
+        <ConfirmationDialog
+          open={confirmState.open}
+          title="Delete Information Message"
+          message="Are you sure you want to delete this information message? This action cannot be undone."
+          confirmText="Delete"
+          confirmButtonColor="error"
+          onClose={handleConfirmClose}
+          onConfirm={handleDeleteConfirm}
+        />
+      </WidgetShell>
+
+      <Snackbar
+        open={Boolean(feedback)}
+        autoHideDuration={6000}
+        onClose={handleFeedbackClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <AddIcon />
-      </Fab>
-
-      <InformationMessageFormDialog
-        open={dialogState.open}
-        mode={dialogState.open ? dialogState.mode : 'create'}
-        initialMessage={dialogState.open ? (dialogState.message ?? undefined) : undefined}
-        initialScope={dialogState.open ? dialogState.scope : effectiveScope}
-        initialTeamSeasonId={resolveDialogTeamSeasonId()}
-        availableTeams={availableTeams}
-        onClose={handleDialogClose}
-        onSubmit={handleDialogSubmit}
-        loading={mutationLoading}
-        submitError={dialogError ?? mutationError ?? undefined}
-      />
-
-      <ConfirmationDialog
-        open={confirmState.open}
-        title="Delete Information Message"
-        message="Are you sure you want to delete this information message? This action cannot be undone."
-        confirmText="Delete"
-        confirmButtonColor="error"
-        onClose={handleConfirmClose}
-        onConfirm={handleDeleteConfirm}
-      />
-    </WidgetShell>
+        {feedback ? (
+          <Alert onClose={handleFeedbackClose} severity={feedback.severity} variant="filled">
+            {feedback.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
+    </>
   );
 };
 

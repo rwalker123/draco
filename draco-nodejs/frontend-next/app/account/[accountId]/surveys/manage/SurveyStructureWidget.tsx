@@ -19,7 +19,12 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Save as SaveIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
 import type { PlayerSurveyCategoryType, PlayerSurveyQuestionType } from '@draco/shared-schemas';
 import type { Client } from '@draco/shared-api-client/generated/client';
 import {
@@ -528,8 +533,14 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
     });
   };
 
+  const handleCancel = () => {
+    setName(category.categoryName);
+    setPriority(String(category.priority));
+    setIsDirty(false);
+  };
+
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
+    <Paper elevation={2} sx={{ p: 2, borderLeft: '4px solid', borderColor: 'primary.main' }}>
       <Stack spacing={2}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
           <TextField
@@ -553,25 +564,36 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
             size="small"
             sx={{ width: 120 }}
           />
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Tooltip title={savingCategory ? 'Saving category' : 'Save category'}>
-              <span>
-                <IconButton
-                  color="primary"
-                  aria-label="Save category"
-                  onClick={() => void handleSave()}
-                  disabled={savingCategory || !isDirty || !name.trim()}
-                >
-                  {savingCategory ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                </IconButton>
-              </span>
-            </Tooltip>
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            {savingCategory ? (
+              <CircularProgress size={20} sx={{ mx: 1 }} />
+            ) : isDirty ? (
+              <>
+                <Tooltip title="Save category">
+                  <span>
+                    <IconButton
+                      color="success"
+                      aria-label="Save category"
+                      onClick={() => void handleSave()}
+                      disabled={!name.trim()}
+                    >
+                      <CheckIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Tooltip title="Cancel">
+                  <IconButton color="error" aria-label="Cancel edit" onClick={handleCancel}>
+                    <CloseIcon />
+                  </IconButton>
+                </Tooltip>
+              </>
+            ) : null}
             <Tooltip title="Delete category">
               <span>
                 <IconButton
                   aria-label="Delete category"
                   onClick={onRequestDeleteCategory}
-                  disabled={deletingCategory}
+                  disabled={deletingCategory || isDirty}
                   color="error"
                 >
                   <DeleteIcon />
@@ -581,9 +603,13 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           </Stack>
         </Stack>
 
-        <Divider />
+        <Divider textAlign="left">
+          <Typography variant="overline" color="text.secondary">
+            Questions
+          </Typography>
+        </Divider>
 
-        <Stack spacing={1.5}>
+        <Stack spacing={1.5} sx={{ pl: 2 }}>
           {category.questions.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
               No questions yet. Add one below.
@@ -606,6 +632,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
           component="form"
+          sx={{ pl: 2 }}
           onSubmit={(event) => {
             event.preventDefault();
             void onAddQuestion();
@@ -681,8 +708,22 @@ const QuestionRow: React.FC<QuestionRowProps> = ({
     });
   };
 
+  const handleCancel = () => {
+    setLabel(question.question);
+    setNumberValue(String(question.questionNumber));
+    setDirty(false);
+  };
+
   return (
-    <Paper variant="outlined" sx={{ p: 1.5 }}>
+    <Box
+      sx={{
+        p: 1.5,
+        borderRadius: 1,
+        bgcolor: 'background.default',
+        border: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems="flex-start">
         <TextField
           label="Question"
@@ -705,25 +746,36 @@ const QuestionRow: React.FC<QuestionRowProps> = ({
           size="small"
           sx={{ width: 120 }}
         />
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Tooltip title={saving ? 'Saving question' : 'Save question'}>
-            <span>
-              <IconButton
-                color="primary"
-                aria-label="Save question"
-                onClick={() => void handleSave()}
-                disabled={saving || !dirty || !label.trim()}
-              >
-                {saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-              </IconButton>
-            </span>
-          </Tooltip>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          {saving ? (
+            <CircularProgress size={20} sx={{ mx: 1 }} />
+          ) : dirty ? (
+            <>
+              <Tooltip title="Save question">
+                <span>
+                  <IconButton
+                    color="success"
+                    aria-label="Save question"
+                    onClick={() => void handleSave()}
+                    disabled={!label.trim()}
+                  >
+                    <CheckIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Tooltip title="Cancel">
+                <IconButton color="error" aria-label="Cancel edit" onClick={handleCancel}>
+                  <CloseIcon />
+                </IconButton>
+              </Tooltip>
+            </>
+          ) : null}
           <Tooltip title="Delete question">
             <span>
               <IconButton
                 aria-label="Delete question"
                 onClick={onDelete}
-                disabled={deleting}
+                disabled={deleting || dirty}
                 color="error"
               >
                 <DeleteIcon />
@@ -732,7 +784,7 @@ const QuestionRow: React.FC<QuestionRowProps> = ({
           </Tooltip>
         </Stack>
       </Stack>
-    </Paper>
+    </Box>
   );
 };
 

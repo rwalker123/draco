@@ -7,6 +7,7 @@ import {
   CircularProgress,
   Container,
   FormControlLabel,
+  Snackbar,
   Stack,
   Switch,
   Tab,
@@ -21,6 +22,7 @@ import { useApiClient } from '../../../../../hooks/useApiClient';
 import WidgetShell from '@/components/ui/WidgetShell';
 import { useAccountSettings } from '@/hooks/useAccountSettings';
 import { unwrapApiResult } from '@/utils/apiResult';
+import { UI_TIMEOUTS } from '../../../../../constants/timeoutConstants';
 import SurveyStructureWidget, { sortCategories } from './SurveyStructureWidget';
 import SurveyResponsesWidget from './SurveyResponsesWidget';
 
@@ -40,19 +42,19 @@ const SurveyManagementPage: React.FC<SurveyManagementPageProps> = ({ accountId }
   const [categories, setCategories] = useState<PlayerSurveyCategoryType[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
-  const [globalError, setGlobalError] = useState<string | null>(null);
-  const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    severity: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const [activeTab, setActiveTab] = useState(0);
   const [responsesInitialized, setResponsesInitialized] = useState(false);
 
   const handleSuccess = (message: string) => {
-    setGlobalSuccess(message);
-    setGlobalError(null);
+    setSnackbar({ severity: 'success', message });
   };
 
   const handleError = (message: string) => {
-    setGlobalError(message);
-    setGlobalSuccess(null);
+    setSnackbar({ severity: 'error', message });
   };
 
   const surveySetting = accountSettings?.find(
@@ -65,8 +67,6 @@ const SurveyManagementPage: React.FC<SurveyManagementPageProps> = ({ accountId }
   ) => {
     try {
       await updateSetting('ShowPlayerSurvey', checked);
-      setGlobalError(null);
-      setGlobalSuccess(null);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unable to update player survey availability.';
@@ -150,9 +150,6 @@ const SurveyManagementPage: React.FC<SurveyManagementPageProps> = ({ accountId }
           currentPage="Player Survey Management"
         />
         <Stack spacing={2}>
-          {globalError && <Alert severity="error">{globalError}</Alert>}
-          {globalSuccess && <Alert severity="success">{globalSuccess}</Alert>}
-
           <WidgetShell
             title="Survey Availability"
             subtitle="Enable or disable player surveys for account members."
@@ -258,6 +255,28 @@ const SurveyManagementPage: React.FC<SurveyManagementPageProps> = ({ accountId }
           </Box>
         </Stack>
       </Container>
+
+      <Snackbar
+        open={Boolean(snackbar)}
+        autoHideDuration={
+          snackbar?.severity === 'error'
+            ? UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS
+            : UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS
+        }
+        onClose={() => setSnackbar(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {snackbar ? (
+          <Alert
+            onClose={() => setSnackbar(null)}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </main>
   );
 };

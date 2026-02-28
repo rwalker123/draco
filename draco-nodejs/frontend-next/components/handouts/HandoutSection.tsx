@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Alert, Box, Button, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Snackbar, Stack, Typography } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import { HandoutType } from '@draco/shared-schemas';
@@ -42,6 +42,11 @@ type ConfirmState = {
   handout: HandoutType | null;
 };
 
+type FeedbackState = {
+  severity: 'success' | 'error';
+  message: string;
+} | null;
+
 const HandoutSection: React.FC<HandoutSectionProps> = ({
   scope,
   title: sectionTitle,
@@ -65,8 +70,7 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
   const [handouts, setHandouts] = React.useState<HandoutType[]>([]);
   const [fetching, setFetching] = React.useState<boolean>(true);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
-  const [localError, setLocalError] = React.useState<string | null>(null);
+  const [feedback, setFeedback] = React.useState<FeedbackState>(null);
   const [dialogState, setDialogState] = React.useState<DialogState>({
     open: false,
     mode: 'create',
@@ -78,6 +82,12 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
   });
 
   const teamId = scope.type === 'team' ? scope.teamId : undefined;
+
+  React.useEffect(() => {
+    if (mutationError) {
+      setFeedback({ severity: 'error', message: mutationError });
+    }
+  }, [mutationError]);
 
   React.useEffect(() => {
     const controller = new AbortController();
@@ -158,8 +168,7 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
   };
 
   const handleDialogSuccess = async ({ message }: { handout: HandoutType; message: string }) => {
-    setSuccessMessage(message);
-    setLocalError(null);
+    setFeedback({ severity: 'success', message });
     handleDialogClose();
     await refreshHandouts();
   };
@@ -179,40 +188,24 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
     }
 
     try {
-      setLocalError(null);
-      setSuccessMessage(null);
       clearError();
       await deleteHandout(target.id);
-      setSuccessMessage('Handout deleted successfully');
+      setFeedback({ severity: 'success', message: 'Handout deleted successfully' });
       setConfirmState({ open: false, handout: null });
       await refreshHandouts();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete handout';
-      setLocalError(message);
+      setFeedback({ severity: 'error', message });
     }
   };
 
-  const handleAlertClose = () => {
-    setSuccessMessage(null);
-  };
-
-  const handleErrorAlertClose = () => {
-    setLocalError(null);
+  const handleFeedbackClose = () => {
+    setFeedback(null);
     clearError();
   };
 
   const content = (
     <Stack spacing={2.5}>
-      {successMessage && (
-        <Alert severity="success" onClose={handleAlertClose}>
-          {successMessage}
-        </Alert>
-      )}
-      {(localError || mutationError) && (
-        <Alert severity="error" onClose={handleErrorAlertClose}>
-          {localError || mutationError}
-        </Alert>
-      )}
       <HandoutList
         handouts={handouts}
         loading={fetching}
@@ -308,7 +301,7 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
         mode={dialogState.mode}
         initialHandout={dialogState.handout}
         onSuccess={handleDialogSuccess}
-        onError={setLocalError}
+        onError={(msg) => setFeedback({ severity: 'error', message: msg })}
       />
       <ConfirmationDialog
         open={confirmState.open}
@@ -319,6 +312,18 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
         confirmText="Delete"
         confirmButtonColor="error"
       />
+      <Snackbar
+        open={Boolean(feedback)}
+        autoHideDuration={6000}
+        onClose={handleFeedbackClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {feedback ? (
+          <Alert onClose={handleFeedbackClose} severity={feedback.severity} variant="filled">
+            {feedback.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </>
   );
 };

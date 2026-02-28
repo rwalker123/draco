@@ -82,8 +82,6 @@ export const LeagueFaqFormDialog: React.FC<LeagueFaqFormDialogProps> = ({
   const [editorKey, setEditorKey] = useState(0);
   const editorRef = useRef<RichTextEditorHandle | null>(null);
 
-  const defaultValues = buildDefaultValues(faq);
-
   const {
     control,
     handleSubmit,
@@ -91,17 +89,17 @@ export const LeagueFaqFormDialog: React.FC<LeagueFaqFormDialogProps> = ({
     formState: { errors },
   } = useForm<QuestionFormValues>({
     resolver: zodResolver(QuestionSchema),
-    defaultValues,
+    defaultValues: buildDefaultValues(faq),
   });
 
   useEffect(() => {
     if (open) {
-      reset(defaultValues);
+      reset(buildDefaultValues(faq));
       setSubmitError(null);
       setAnswerError(null);
       setEditorKey((value) => value + 1);
     }
-  }, [defaultValues, open, reset]);
+  }, [faq, open, reset]);
 
   const dialogTitle = mode === 'create' ? 'Add FAQ' : 'Edit FAQ';
   const actionLabel = mode === 'create' ? 'Create FAQ' : 'Save Changes';

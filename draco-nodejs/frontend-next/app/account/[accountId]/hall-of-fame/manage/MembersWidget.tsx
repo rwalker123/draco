@@ -15,6 +15,7 @@ import {
   ListItem,
   ListItemSecondaryAction,
   ListItemText,
+  Snackbar,
   Stack,
   Tab,
   Tabs,
@@ -81,20 +82,26 @@ function membersReducer(state: MembersState, action: MembersAction): MembersStat
         state.selectedYear && action.classes.some((cls) => cls.year === state.selectedYear)
           ? state.selectedYear
           : (action.classes[0]?.year ?? null);
+      const classesHasMembersData =
+        nextSelectedYear != null && nextSelectedYear in state.membersByYear;
       return {
         ...state,
         classes: action.classes,
         selectedYear: nextSelectedYear,
         loadingClasses: false,
+        loadingMembers: !classesHasMembersData && nextSelectedYear != null,
         error: null,
       };
     }
-    case 'setSelectedYear':
+    case 'setSelectedYear': {
+      const hasMembersData = action.year != null && action.year in state.membersByYear;
       return {
         ...state,
         selectedYear: action.year,
+        loadingMembers: !hasMembersData && action.year != null,
         error: null,
       };
+    }
     case 'setMembersForYear':
       return {
         ...state,
@@ -160,7 +167,7 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
     updateMember,
     deleteMember,
   } = useHallOfFameService(accountId);
-  const { showNotification } = useNotifications();
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const [state, dispatch] = React.useReducer(membersReducer, initialMembersState);
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
@@ -170,6 +177,26 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
 
   const selectedYear = state.selectedYear;
   const members = selectedYear ? (state.membersByYear[selectedYear] ?? []) : [];
+  const isLoadingNewContent =
+    selectedYear != null && state.loadingMembers && !(selectedYear in state.membersByYear);
+
+  const contentContainerRef = React.useRef<HTMLDivElement>(null);
+  const stableHeightRef = React.useRef<number>(0);
+
+  React.useLayoutEffect(() => {
+    if (!contentContainerRef.current) return;
+    if (isLoadingNewContent) {
+      if (stableHeightRef.current > 0) {
+        contentContainerRef.current.style.minHeight = `${stableHeightRef.current}px`;
+      }
+    } else {
+      const h = contentContainerRef.current.clientHeight;
+      if (h > 0) {
+        stableHeightRef.current = h;
+      }
+      contentContainerRef.current.style.minHeight = '';
+    }
+  });
 
   const handleError = (error: unknown, fallbackMessage: string) => {
     const message = error instanceof Error ? error.message : fallbackMessage;
@@ -177,18 +204,7 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
     dispatch({ type: 'setError', error: message });
   };
 
-  const loadClasses = async () => {
-    dispatch({ type: 'setLoadingClasses', value: true });
-    try {
-      const classes = await fetchClasses();
-      dispatch({ type: 'setClasses', classes });
-      if (classes.length === 0) {
-        dispatch({ type: 'setMembersForYear', year: 0, members: [] });
-      }
-    } catch (error) {
-      handleError(error, 'Failed to load Hall of Fame classes.');
-    }
-  };
+  const handleNotificationClose = () => hideNotification();
 
   React.useEffect(() => {
     const controller = new AbortController();
@@ -211,16 +227,6 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
       controller.abort();
     };
   }, [fetchClasses, refreshKey]);
-
-  const loadMembersForYear = async (year: number) => {
-    dispatch({ type: 'setLoadingMembers', value: true });
-    try {
-      const data = await fetchClassMembers(year);
-      dispatch({ type: 'setMembersForYear', year, members: data.members });
-    } catch (error) {
-      handleError(error, 'Failed to load Hall of Fame members.');
-    }
-  };
 
   React.useEffect(() => {
     if (selectedYear == null) return;
@@ -254,9 +260,16 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
   };
 
   const refreshMembersAndClasses = async (targetYear: number | null) => {
-    await loadClasses();
-    if (targetYear != null) {
-      await loadMembersForYear(targetYear);
+    try {
+      const classes = await fetchClasses();
+      dispatch({ type: 'setClasses', classes });
+      if (targetYear != null) {
+        const data = await fetchClassMembers(targetYear);
+        dispatch({ type: 'setMembersForYear', year: targetYear, members: data.members });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to refresh data.';
+      setActionError(message);
     }
   };
 
@@ -358,78 +371,74 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
 
       {classesLoadingIndicator}
 
-      {selectedYear != null && state.loadingMembers ? (
-        <Box display="flex" justifyContent="center" py={4}>
-          <CircularProgress size={32} />
-        </Box>
-      ) : null}
-
-      {selectedYear != null && !state.loadingMembers ? (
-        members.length > 0 ? (
-          <List disablePadding>
-            {members.map((member) => (
-              <ListItem
-                key={member.id}
-                sx={{
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  alignItems: 'flex-start',
-                  gap: 1,
-                }}
-              >
-                <ListItemText
-                  primary={
-                    <Typography component="span" variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      {member.contact.displayName}
-                    </Typography>
-                  }
-                  secondary={
-                    <Stack spacing={1}>
-                      <Typography component="span" variant="body2" color="text.secondary">
-                        Inducted: {member.yearInducted}
+      <Box ref={contentContainerRef}>
+        {selectedYear != null && !isLoadingNewContent ? (
+          members.length > 0 ? (
+            <List disablePadding>
+              {members.map((member) => (
+                <ListItem
+                  key={member.id}
+                  sx={{
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    alignItems: 'flex-start',
+                    gap: 1,
+                  }}
+                >
+                  <ListItemText
+                    primary={
+                      <Typography component="span" variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        {member.contact.displayName}
                       </Typography>
-                      {member.biographyHtml ? (
-                        <RichTextContent html={member.biographyHtml} />
-                      ) : (
+                    }
+                    secondary={
+                      <Stack spacing={1}>
                         <Typography component="span" variant="body2" color="text.secondary">
-                          No biography provided yet.
+                          Inducted: {member.yearInducted}
                         </Typography>
-                      )}
-                    </Stack>
-                  }
-                  secondaryTypographyProps={{ component: 'div' }}
-                  primaryTypographyProps={{ component: 'span' }}
-                />
-                <ListItemSecondaryAction>
-                  <Tooltip title="Edit member">
-                    <IconButton
-                      edge="end"
-                      onClick={() => setEditMember(member)}
-                      aria-label="Edit member"
-                      color="primary"
-                    >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Remove member">
-                    <IconButton
-                      edge="end"
-                      onClick={() => setDeleteMemberTarget(member)}
-                      aria-label="Delete member"
-                      sx={{ ml: 1 }}
-                      color="error"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
-        ) : (
-          <Alert severity="info">No members have been inducted for {selectedYear} yet.</Alert>
-        )
-      ) : null}
+                        {member.biographyHtml ? (
+                          <RichTextContent html={member.biographyHtml} />
+                        ) : (
+                          <Typography component="span" variant="body2" color="text.secondary">
+                            No biography provided yet.
+                          </Typography>
+                        )}
+                      </Stack>
+                    }
+                    secondaryTypographyProps={{ component: 'div' }}
+                    primaryTypographyProps={{ component: 'span' }}
+                  />
+                  <ListItemSecondaryAction>
+                    <Tooltip title="Edit member">
+                      <IconButton
+                        edge="end"
+                        onClick={() => setEditMember(member)}
+                        aria-label="Edit member"
+                        color="primary"
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Remove member">
+                      <IconButton
+                        edge="end"
+                        onClick={() => setDeleteMemberTarget(member)}
+                        aria-label="Delete member"
+                        sx={{ ml: 1 }}
+                        color="error"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Alert severity="info">No members have been inducted for {selectedYear} yet.</Alert>
+          )
+        ) : null}
+      </Box>
 
       <CreateMemberDialog
         open={createDialogOpen}
@@ -456,6 +465,17 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
           onConfirm={() => handleDeleteMember(deleteMemberTarget)}
         />
       ) : null}
+
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={handleNotificationClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleNotificationClose} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </WidgetShell>
   );
 };

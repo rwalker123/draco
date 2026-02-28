@@ -227,9 +227,12 @@ const GameFormFields: React.FC = () => {
               render={({ field }) =>
                 canEditSchedule ? (
                   <FormControl fullWidth error={!!errors.umpire1}>
-                    <InputLabel shrink>Umpire 1</InputLabel>
+                    <InputLabel id="umpire1-label" shrink>
+                      Umpire 1
+                    </InputLabel>
                     <Select
                       {...field}
+                      labelId="umpire1-label"
                       label="Umpire 1"
                       displayEmpty
                       value={field.value ?? ''}
@@ -238,7 +241,7 @@ const GameFormFields: React.FC = () => {
                           return EMPTY_LABEL;
                         }
                         const option = umpires.find((umpire) => umpire.id === selected);
-                        return option?.displayName ?? 'Unknown';
+                        return option ? `${option.firstName} ${option.lastName}`.trim() : 'Unknown';
                       }}
                     >
                       <MenuItem value="">
@@ -246,7 +249,7 @@ const GameFormFields: React.FC = () => {
                       </MenuItem>
                       {getAvailableUmpires('umpire1', field.value ?? '').map((umpire) => (
                         <MenuItem key={umpire.id} value={umpire.id}>
-                          {umpire.displayName}
+                          {`${umpire.firstName} ${umpire.lastName}`.trim()}
                         </MenuItem>
                       ))}
                     </Select>
@@ -258,7 +261,10 @@ const GameFormFields: React.FC = () => {
                     label="Umpire 1"
                     value={
                       field.value
-                        ? umpires.find((u) => u.id === field.value)?.displayName || 'Unknown'
+                        ? (() => {
+                            const u = umpires.find((u) => u.id === field.value);
+                            return u ? `${u.firstName} ${u.lastName}`.trim() : 'Unknown';
+                          })()
                         : EMPTY_LABEL
                     }
                     InputProps={getReadOnlyInputProps()}
@@ -272,9 +278,12 @@ const GameFormFields: React.FC = () => {
               render={({ field }) =>
                 canEditSchedule ? (
                   <FormControl fullWidth error={!!errors.umpire2}>
-                    <InputLabel shrink>Umpire 2</InputLabel>
+                    <InputLabel id="umpire2-label" shrink>
+                      Umpire 2
+                    </InputLabel>
                     <Select
                       {...field}
+                      labelId="umpire2-label"
                       label="Umpire 2"
                       displayEmpty
                       value={field.value ?? ''}
@@ -283,7 +292,7 @@ const GameFormFields: React.FC = () => {
                           return EMPTY_LABEL;
                         }
                         const option = umpires.find((umpire) => umpire.id === selected);
-                        return option?.displayName ?? 'Unknown';
+                        return option ? `${option.firstName} ${option.lastName}`.trim() : 'Unknown';
                       }}
                     >
                       <MenuItem value="">
@@ -291,7 +300,7 @@ const GameFormFields: React.FC = () => {
                       </MenuItem>
                       {getAvailableUmpires('umpire2', field.value ?? '').map((umpire) => (
                         <MenuItem key={umpire.id} value={umpire.id}>
-                          {umpire.displayName}
+                          {`${umpire.firstName} ${umpire.lastName}`.trim()}
                         </MenuItem>
                       ))}
                     </Select>
@@ -303,7 +312,10 @@ const GameFormFields: React.FC = () => {
                     label="Umpire 2"
                     value={
                       field.value
-                        ? umpires.find((u) => u.id === field.value)?.displayName || 'Unknown'
+                        ? (() => {
+                            const u = umpires.find((u) => u.id === field.value);
+                            return u ? `${u.firstName} ${u.lastName}`.trim() : 'Unknown';
+                          })()
                         : EMPTY_LABEL
                     }
                     InputProps={getReadOnlyInputProps()}
@@ -323,9 +335,12 @@ const GameFormFields: React.FC = () => {
               render={({ field }) =>
                 canEditSchedule ? (
                   <FormControl fullWidth error={!!errors.umpire3}>
-                    <InputLabel shrink>Umpire 3</InputLabel>
+                    <InputLabel id="umpire3-label" shrink>
+                      Umpire 3
+                    </InputLabel>
                     <Select
                       {...field}
+                      labelId="umpire3-label"
                       label="Umpire 3"
                       displayEmpty
                       value={field.value ?? ''}
@@ -334,7 +349,7 @@ const GameFormFields: React.FC = () => {
                           return EMPTY_LABEL;
                         }
                         const option = umpires.find((umpire) => umpire.id === selected);
-                        return option?.displayName ?? 'Unknown';
+                        return option ? `${option.firstName} ${option.lastName}`.trim() : 'Unknown';
                       }}
                     >
                       <MenuItem value="">
@@ -342,7 +357,7 @@ const GameFormFields: React.FC = () => {
                       </MenuItem>
                       {getAvailableUmpires('umpire3', field.value ?? '').map((umpire) => (
                         <MenuItem key={umpire.id} value={umpire.id}>
-                          {umpire.displayName}
+                          {`${umpire.firstName} ${umpire.lastName}`.trim()}
                         </MenuItem>
                       ))}
                     </Select>
@@ -354,7 +369,10 @@ const GameFormFields: React.FC = () => {
                     label="Umpire 3"
                     value={
                       field.value
-                        ? umpires.find((u) => u.id === field.value)?.displayName || 'Unknown'
+                        ? (() => {
+                            const u = umpires.find((u) => u.id === field.value);
+                            return u ? `${u.firstName} ${u.lastName}`.trim() : 'Unknown';
+                          })()
                         : EMPTY_LABEL
                     }
                     InputProps={getReadOnlyInputProps()}
@@ -368,9 +386,12 @@ const GameFormFields: React.FC = () => {
               render={({ field }) =>
                 canEditSchedule ? (
                   <FormControl fullWidth error={!!errors.umpire4}>
-                    <InputLabel shrink>Umpire 4</InputLabel>
+                    <InputLabel id="umpire4-label" shrink>
+                      Umpire 4
+                    </InputLabel>
                     <Select
                       {...field}
+                      labelId="umpire4-label"
                       label="Umpire 4"
                       displayEmpty
                       value={field.value ?? ''}
@@ -379,7 +400,7 @@ const GameFormFields: React.FC = () => {
                           return EMPTY_LABEL;
                         }
                         const option = umpires.find((umpire) => umpire.id === selected);
-                        return option?.displayName ?? 'Unknown';
+                        return option ? `${option.firstName} ${option.lastName}`.trim() : 'Unknown';
                       }}
                     >
                       <MenuItem value="">
@@ -387,7 +408,7 @@ const GameFormFields: React.FC = () => {
                       </MenuItem>
                       {getAvailableUmpires('umpire4', field.value ?? '').map((umpire) => (
                         <MenuItem key={umpire.id} value={umpire.id}>
-                          {umpire.displayName}
+                          {`${umpire.firstName} ${umpire.lastName}`.trim()}
                         </MenuItem>
                       ))}
                     </Select>
@@ -399,7 +420,10 @@ const GameFormFields: React.FC = () => {
                     label="Umpire 4"
                     value={
                       field.value
-                        ? umpires.find((u) => u.id === field.value)?.displayName || 'Unknown'
+                        ? (() => {
+                            const u = umpires.find((u) => u.id === field.value);
+                            return u ? `${u.firstName} ${u.lastName}`.trim() : 'Unknown';
+                          })()
                         : EMPTY_LABEL
                     }
                     InputProps={getReadOnlyInputProps()}

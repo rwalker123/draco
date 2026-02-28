@@ -27,7 +27,6 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  PersonAddAlt1 as PersonAddIcon,
   Visibility as VisibilityIcon,
   People as PeopleIcon,
 } from '@mui/icons-material';
@@ -391,17 +390,6 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                       color="primary"
                     >
                       <EditIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Add registration">
-                    <IconButton
-                      size="small"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleOpenDetails(workout, 'createRegistration');
-                      }}
-                    >
-                      <PersonAddIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Delete workout">

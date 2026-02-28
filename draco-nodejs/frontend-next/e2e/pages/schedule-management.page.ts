@@ -24,4 +24,12 @@ export class ScheduleManagementPage {
     await this.addGameButton.click();
     await this.createGameDialog.waitFor();
   }
+
+  umpireSelect(n: 1 | 2 | 3 | 4): Locator {
+    return this.createGameDialog.getByRole('combobox', { name: `Umpire ${n}` });
+  }
+
+  async waitForUmpireFields() {
+    await this.umpireSelect(1).waitFor({ timeout: 10_000 });
+  }
 }
