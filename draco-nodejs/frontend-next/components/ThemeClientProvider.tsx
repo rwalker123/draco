@@ -39,7 +39,7 @@ let unsubscribeExternal: (() => void) | null = null;
 let clientThemeSnapshot: ThemeName | null = null;
 
 const logThemeEvent = (...params: unknown[]) => {
-  if (typeof console !== 'undefined') {
+  if (process.env.NODE_ENV === 'development' && typeof console !== 'undefined') {
     console.info('[ThemeClientProvider]', ...params);
   }
 };

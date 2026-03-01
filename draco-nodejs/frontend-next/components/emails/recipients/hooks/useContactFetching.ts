@@ -102,6 +102,13 @@ export function useContactFetching({
   const searchAbortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    return () => {
+      fetchAbortControllerRef.current?.abort();
+      searchAbortControllerRef.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
     if (!open || !token || !accountId) return;
 
     const controller = new AbortController();

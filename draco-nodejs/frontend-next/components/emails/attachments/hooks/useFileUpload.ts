@@ -188,8 +188,7 @@ export function useFileUpload({
       lastModified: file.lastModified,
     }));
 
-    const updatedAttachments = [...attachments, ...newAttachments];
-    setAttachments(updatedAttachments);
+    setAttachmentsState((prev) => [...prev, ...newAttachments]);
 
     setIsUploading(true);
     onUploadStart?.();
@@ -224,14 +223,14 @@ export function useFileUpload({
       controller.abort();
     }
 
-    const attachmentToRemove = attachments.find((att) => att.id === id);
-    if (attachmentToRemove) {
-      cleanupAttachmentUrls(attachmentToRemove);
-    }
-
     fileInputRef.current.delete(id);
-    const updated = attachments.filter((att) => att.id !== id);
-    setAttachments(updated);
+    setAttachmentsState((prev) => {
+      const attachmentToRemove = prev.find((att) => att.id === id);
+      if (attachmentToRemove) {
+        cleanupAttachmentUrls(attachmentToRemove);
+      }
+      return prev.filter((att) => att.id !== id);
+    });
   };
 
   const retryUpload = async (id: string) => {
