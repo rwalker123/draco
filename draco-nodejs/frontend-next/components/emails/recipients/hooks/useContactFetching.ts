@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { RecipientContact } from '../../../../types/emails/recipients';
 import { EmailRecipientError, EmailRecipientErrorCode } from '../../../../types/errors';
 import { createEmailRecipientError, safeAsync } from '../../../../utils/errorHandling';
@@ -23,6 +23,7 @@ export interface UseContactFetchingProps {
   seasonId?: string;
   showNotification: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void;
   initialRowsPerPage?: number;
+  open?: boolean;
 }
 
 export interface UseContactFetchingResult {
@@ -70,6 +71,7 @@ export function useContactFetching({
   seasonId,
   showNotification,
   initialRowsPerPage = 25,
+  open = false,
 }: UseContactFetchingProps): UseContactFetchingResult {
   const [currentPageContacts, setCurrentPageContacts] = useState<RecipientContact[]>([]);
   const [paginationLoading, setPaginationLoading] = useState(false);
@@ -97,6 +99,66 @@ export function useContactFetching({
   const [lastSearchQuery, setLastSearchQuery] = useState('');
 
   const fetchAbortControllerRef = useRef<AbortController | null>(null);
+  const searchAbortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (!open || !token || !accountId) return;
+
+    const controller = new AbortController();
+
+    const loadInitialPage = async () => {
+      setPaginationLoading(true);
+      setPaginationError(null);
+
+      try {
+        const fetchResult = await emailRecipientService.fetchContacts(accountId, token, {
+          page: 1,
+          limit: initialRowsPerPage,
+          roles: true,
+          contactDetails: true,
+          seasonId: seasonId || undefined,
+        });
+
+        if (controller.signal.aborted) return;
+
+        const recipientContacts: RecipientContact[] = fetchResult.contacts.map((contact) => ({
+          ...contact,
+          displayName: contact.firstName + ' ' + contact.lastName,
+          hasValidEmail: !!contact.email,
+        }));
+
+        setCurrentPageContacts(recipientContacts);
+        setServerPaginationState({
+          hasNext: fetchResult.pagination?.hasNext || false,
+          hasPrev: false,
+          totalContacts: recipientContacts.length,
+        });
+        setCurrentPage(1);
+      } catch {
+        if (controller.signal.aborted) return;
+
+        const contactError = createEmailRecipientError(
+          EmailRecipientErrorCode.API_UNAVAILABLE,
+          'Contact service temporarily unavailable',
+          {
+            userMessage: 'Unable to load contacts. Please try again later.',
+            retryable: true,
+          },
+        );
+        setPaginationError(contactError);
+      } finally {
+        if (!controller.signal.aborted) {
+          setPaginationLoading(false);
+        }
+      }
+    };
+
+    void loadInitialPage();
+
+    return () => {
+      controller.abort();
+    };
+  }, [open, accountId, token, seasonId, initialRowsPerPage]);
 
   const fetchContactsPage = async (page: number, limit: number) => {
     if (!token || !accountId) return;
@@ -183,12 +245,23 @@ export function useContactFetching({
     limit: number = 25,
   ) => {
     if (!query.trim() || !token) {
+      if (searchAbortControllerRef.current) {
+        searchAbortControllerRef.current.abort();
+        searchAbortControllerRef.current = null;
+      }
       setSearchContacts([]);
       setHasSearched(false);
       setSearchCurrentPage(1);
       setSearchPaginationState({ hasNext: false, hasPrev: false, totalContacts: 0 });
       return;
     }
+
+    if (searchAbortControllerRef.current) {
+      searchAbortControllerRef.current.abort();
+    }
+
+    const abortController = new AbortController();
+    searchAbortControllerRef.current = abortController;
 
     try {
       const searchResult = await emailRecipientService.searchContacts(accountId, token, query, {
@@ -197,6 +270,8 @@ export function useContactFetching({
         page: page,
         limit: limit,
       });
+
+      if (abortController.signal.aborted) return;
 
       if (searchResult.success) {
         const recipientContacts: RecipientContact[] = searchResult.data.contacts.map((contact) => ({
@@ -219,11 +294,16 @@ export function useContactFetching({
         throw new Error(searchResult.error.message);
       }
     } catch (error: unknown) {
+      if (abortController.signal.aborted) return;
       console.error('Search failed:', error);
       setSearchContacts([]);
       setHasSearched(true);
       setSearchPaginationState({ hasNext: false, hasPrev: false, totalContacts: 0 });
       showNotification(error instanceof Error ? error.message : 'Search failed', 'error');
+    } finally {
+      if (searchAbortControllerRef.current === abortController) {
+        searchAbortControllerRef.current = null;
+      }
     }
   };
 

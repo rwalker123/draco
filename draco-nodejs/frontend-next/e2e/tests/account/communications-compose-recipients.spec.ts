@@ -201,6 +201,42 @@ test.describe('Communications Compose - Recipient Dialog', () => {
     ).toBe(0);
   });
 
+  test('no API endpoint loops infinitely after dialog opens', async ({ page, accountId }) => {
+    test.setTimeout(30000);
+
+    const apiCallCounts = new Map<string, number>();
+    page.on('request', (request) => {
+      const { pathname } = new URL(request.url());
+      if (pathname.startsWith('/api/')) {
+        apiCallCounts.set(pathname, (apiCallCounts.get(pathname) ?? 0) + 1);
+      }
+    });
+
+    await page.route('**/api/accounts/*/contacts*', (route) =>
+      route.fulfill({ json: mockContacts }),
+    );
+
+    await page.goto(`/account/${accountId}/communications/compose`);
+
+    const selectRecipientsButton = page.getByRole('button', { name: 'Select Recipients' });
+    await selectRecipientsButton.waitFor({ timeout: 15_000 });
+
+    apiCallCounts.clear();
+    await selectRecipientsButton.click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 10_000 });
+
+    await page.waitForTimeout(3000);
+
+    for (const [path, count] of apiCallCounts) {
+      expect(
+        count,
+        `API "${path}" called ${count} times in 3 s — likely an infinite loop`,
+      ).toBeLessThan(10);
+    }
+  });
+
   test('apply selection button works without errors', async ({ page, accountId }) => {
     test.setTimeout(60000);
 

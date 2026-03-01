@@ -36,22 +36,24 @@ export class HandoutService {
     this.client = client ?? createApiClient({ token: token ?? undefined });
   }
 
-  async listAccountHandouts(accountId: string): Promise<HandoutType[]> {
+  async listAccountHandouts(accountId: string, signal?: AbortSignal): Promise<HandoutType[]> {
     const result = await apiListAccountHandouts({
       client: this.client,
       path: { accountId },
       throwOnError: false,
+      signal,
     });
 
     const data = unwrapApiResult(result, 'Failed to load account handouts');
     return data.handouts ?? [];
   }
 
-  async listTeamHandouts(context: TeamContext): Promise<HandoutType[]> {
+  async listTeamHandouts(context: TeamContext, signal?: AbortSignal): Promise<HandoutType[]> {
     const result = await apiListTeamHandouts({
       client: this.client,
       path: { accountId: context.accountId, teamId: context.teamId },
       throwOnError: false,
+      signal,
     });
 
     const data = unwrapApiResult(result, 'Failed to load team handouts');

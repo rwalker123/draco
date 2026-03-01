@@ -119,7 +119,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     setIsHydrated(true);
   }, []);
   const isCompact = isHydrated ? compactMediaQuery : false;
-  const { user, token } = useAuth();
+  const { user, token, initialized: authInitialized } = useAuth();
   const isIndividualGolfAccount = useIsIndividualGolfAccount();
   const showHandouts = Boolean(canViewHandouts && accountId && !isIndividualGolfAccount);
   const showAnnouncements = Boolean(canViewAnnouncements && accountId && !isIndividualGolfAccount);
@@ -161,25 +161,18 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
   const [selectedAnnouncementIsSpecial, setSelectedAnnouncementIsSpecial] =
     React.useState<boolean>(false);
 
-  const hasLoadedAccountHandoutsRef = React.useRef(false);
-  const hasLoadedTeamHandoutsRef = React.useRef(false);
-  const hasLoadedAccountAnnouncementsRef = React.useRef(false);
-  const hasLoadedTeamAnnouncementsRef = React.useRef(false);
-  const userTeamsCacheRef = React.useRef<TeamSeasonType[] | null>(null);
-  const loadAccountHandoutsRef = React.useRef<() => Promise<void>>(async () => {});
-  const loadTeamHandoutsRef = React.useRef<() => Promise<void>>(async () => {});
-  const loadAccountAnnouncementsRef = React.useRef<() => Promise<void>>(async () => {});
-  const loadTeamAnnouncementsRef = React.useRef<() => Promise<void>>(async () => {});
-  const buildCompactMenuItemsRef = React.useRef<(closeMenu: () => void) => React.ReactNode[]>(
-    () => [],
-  );
+  const [hasLoadedAccountHandouts, setHasLoadedAccountHandouts] = React.useState(false);
+  const [hasLoadedTeamHandouts, setHasLoadedTeamHandouts] = React.useState(false);
+  const [hasLoadedAccountAnnouncements, setHasLoadedAccountAnnouncements] = React.useState(false);
+  const [hasLoadedTeamAnnouncements, setHasLoadedTeamAnnouncements] = React.useState(false);
+  const [accountHandoutsRetryKey, setAccountHandoutsRetryKey] = React.useState(0);
+  const [teamHandoutsRetryKey, setTeamHandoutsRetryKey] = React.useState(0);
+  const [accountAnnouncementsRetryKey, setAccountAnnouncementsRetryKey] = React.useState(0);
+  const [teamAnnouncementsRetryKey, setTeamAnnouncementsRetryKey] = React.useState(0);
 
   const [handoutAnchorEl, setHandoutAnchorEl] = React.useState<null | HTMLElement>(null);
   const [announcementAnchorEl, setAnnouncementAnchorEl] = React.useState<null | HTMLElement>(null);
   const [compactAnchorEl, setCompactAnchorEl] = React.useState<null | HTMLElement>(null);
-  const lastEmittedEmptyRef = React.useRef(true);
-  const prevCompactKeyRef = React.useRef<string>('');
-
   const { currentThemeName, setCurrentThemeName } = useThemeContext();
   const isDarkMode = currentThemeName === 'dark';
   const themeToggleLabel = isDarkMode ? 'Switch to light mode' : 'Switch to dark mode';
@@ -195,299 +188,306 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     hasRole('AccountAdmin', { accountId });
 
   React.useEffect(() => {
-    hasLoadedAccountHandoutsRef.current = false;
-    hasLoadedTeamHandoutsRef.current = false;
     setAccountHandouts([]);
     setAccountHandoutsError(null);
     setTeamHandoutSections([]);
     setTeamHandoutsError(null);
-    hasLoadedAccountAnnouncementsRef.current = false;
-    hasLoadedTeamAnnouncementsRef.current = false;
     setAccountAnnouncements([]);
     setAccountAnnouncementsError(null);
     setTeamAnnouncementSections([]);
     setTeamAnnouncementsError(null);
+    setHasLoadedAccountHandouts(false);
+    setHasLoadedTeamHandouts(false);
+    setHasLoadedAccountAnnouncements(false);
+    setHasLoadedTeamAnnouncements(false);
+    setAccountHandoutsRetryKey((k) => k + 1);
+    setTeamHandoutsRetryKey((k) => k + 1);
+    setAccountAnnouncementsRetryKey((k) => k + 1);
+    setTeamAnnouncementsRetryKey((k) => k + 1);
     setAnnouncementDetail(null);
     setAnnouncementDetailError(null);
     setAnnouncementDialogOpen(false);
     setSelectedAnnouncementTitle('');
     setSelectedAnnouncementPublishedAt('');
     setSelectedAnnouncementIsSpecial(false);
-    userTeamsCacheRef.current = null;
   }, [accountId, user, token]);
 
-  const loadAccountHandouts = async () => {
+  React.useEffect(() => {
+    if (!authInitialized) return;
     if (!showHandouts || !accountId) {
-      hasLoadedAccountHandoutsRef.current = true;
+      setHasLoadedAccountHandouts(true);
       return;
     }
 
+    const controller = new AbortController();
+    setHasLoadedAccountHandouts(false);
     setAccountHandoutsLoading(true);
     setAccountHandoutsError(null);
+    const service = new HandoutService(undefined, apiClient);
 
-    try {
-      const data = await handoutService.listAccountHandouts(accountId);
-      setAccountHandouts(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load handouts';
-      setAccountHandoutsError(message);
-    } finally {
-      setAccountHandoutsLoading(false);
-      hasLoadedAccountHandoutsRef.current = true;
-    }
-  };
+    const load = async () => {
+      try {
+        const data = await service.listAccountHandouts(accountId, controller.signal);
+        if (controller.signal.aborted) return;
+        setAccountHandouts(data);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setAccountHandoutsError(err instanceof Error ? err.message : 'Failed to load handouts');
+      } finally {
+        if (!controller.signal.aborted) {
+          setAccountHandoutsLoading(false);
+          setHasLoadedAccountHandouts(true);
+        }
+      }
+    };
 
-  const fetchUserTeams = async (): Promise<TeamSeasonType[]> => {
-    if (!accountId || !user || !token) {
-      return [];
-    }
+    void load();
+    return () => {
+      controller.abort();
+    };
+  }, [authInitialized, showHandouts, accountId, apiClient, accountHandoutsRetryKey]);
 
-    if (userTeamsCacheRef.current) {
-      return userTeamsCacheRef.current;
-    }
-
-    const result = await getAccountUserTeams({
-      client: apiClient,
-      path: { accountId },
-      throwOnError: false,
-    });
-
-    const payload = unwrapApiResult(result, 'Failed to load your teams');
-    const teams = Array.isArray(payload) ? (payload as TeamSeasonType[]) : [];
-    userTeamsCacheRef.current = teams;
-    return teams;
-  };
-
-  const loadTeamHandouts = async () => {
-    if (!showHandouts || !accountId || !user || !token) {
-      hasLoadedTeamHandoutsRef.current = true;
+  React.useEffect(() => {
+    if (!authInitialized) return;
+    if (!showHandouts || !accountId || !user) {
+      setHasLoadedTeamHandouts(true);
       return;
     }
 
+    const controller = new AbortController();
+    setHasLoadedTeamHandouts(false);
     setTeamHandoutsLoading(true);
     setTeamHandoutsError(null);
+    const service = new HandoutService(undefined, apiClient);
 
-    try {
-      const teamsArray = await fetchUserTeams();
+    const load = async () => {
+      try {
+        const teamsResult = await getAccountUserTeams({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
 
-      if (teamsArray.length === 0) {
+        const teamsPayload = unwrapApiResult(teamsResult, 'Failed to load your teams');
+        const teamsArray = Array.isArray(teamsPayload) ? (teamsPayload as TeamSeasonType[]) : [];
+
+        if (teamsArray.length === 0) {
+          setTeamHandoutSections([]);
+          return;
+        }
+
+        const errors: string[] = [];
+
+        const sections = await Promise.all(
+          teamsArray
+            .filter((team) => team?.team?.id)
+            .map(async (team) => {
+              const teamId = team.team.id;
+              const teamSeasonId = team.id;
+              const seasonIdValue = team.season?.id ?? null;
+              const teamName = team.name ?? 'Team';
+
+              try {
+                const handouts = await service.listTeamHandouts(
+                  { accountId, teamId },
+                  controller.signal,
+                );
+                return {
+                  teamId,
+                  teamSeasonId,
+                  seasonId: seasonIdValue,
+                  teamName,
+                  handouts,
+                } as TeamHandoutSection;
+              } catch (error) {
+                if (controller.signal.aborted) throw error;
+                console.error(
+                  `Failed to load handouts for team ${teamName} (${teamId}) in account ${accountId}:`,
+                  error,
+                );
+                errors.push(teamName);
+                return {
+                  teamId,
+                  teamSeasonId,
+                  seasonId: seasonIdValue,
+                  teamName,
+                  handouts: [],
+                } as TeamHandoutSection;
+              }
+            }),
+        );
+
+        if (controller.signal.aborted) return;
+        if (errors.length > 0) {
+          setTeamHandoutsError(
+            `Failed to load handouts for ${errors.join(', ')}. Please try again.`,
+          );
+        }
+        setTeamHandoutSections(sections);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setTeamHandoutsError(err instanceof Error ? err.message : 'Failed to load team handouts');
         setTeamHandoutSections([]);
-        return;
+      } finally {
+        if (!controller.signal.aborted) {
+          setTeamHandoutsLoading(false);
+          setHasLoadedTeamHandouts(true);
+        }
       }
+    };
 
-      const errors: string[] = [];
+    void load();
+    return () => {
+      controller.abort();
+    };
+  }, [authInitialized, showHandouts, accountId, user, apiClient, teamHandoutsRetryKey]);
 
-      const sections = await Promise.all(
-        teamsArray
-          .filter((team) => team?.team?.id)
-          .map(async (team) => {
-            const teamId = team.team.id;
-            const teamSeasonId = team.id;
-            const seasonIdValue = team.season?.id ?? null;
-            const teamName = team.name ?? 'Team';
-
-            try {
-              const handouts = await handoutService.listTeamHandouts({
-                accountId,
-                teamId,
-              });
-              return {
-                teamId,
-                teamSeasonId,
-                seasonId: seasonIdValue,
-                teamName,
-                handouts,
-              } as TeamHandoutSection;
-            } catch (error) {
-              console.error(
-                `Failed to load handouts for team ${teamName} (${teamId}) in account ${accountId}:`,
-                error,
-              );
-              errors.push(teamName);
-              return {
-                teamId,
-                teamSeasonId,
-                seasonId: seasonIdValue,
-                teamName,
-                handouts: [],
-              } as TeamHandoutSection;
-            }
-          }),
-      );
-
-      if (errors.length > 0) {
-        setTeamHandoutsError(`Failed to load handouts for ${errors.join(', ')}. Please try again.`);
-      }
-
-      setTeamHandoutSections(sections);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load team handouts';
-      setTeamHandoutsError(message);
-      setTeamHandoutSections([]);
-    } finally {
-      setTeamHandoutsLoading(false);
-      hasLoadedTeamHandoutsRef.current = true;
-    }
-  };
-
-  const loadAccountAnnouncements = async () => {
+  React.useEffect(() => {
+    if (!authInitialized) return;
     if (!showAnnouncements || !accountId) {
-      hasLoadedAccountAnnouncementsRef.current = true;
+      setHasLoadedAccountAnnouncements(true);
       return;
     }
 
+    const controller = new AbortController();
+    setHasLoadedAccountAnnouncements(false);
     setAccountAnnouncementsLoading(true);
     setAccountAnnouncementsError(null);
+    const service = new AnnouncementService(undefined, apiClient);
 
-    try {
-      const data = await announcementService.listAccountAnnouncementSummaries(accountId, {
-        limit: 10,
-      });
-      setAccountAnnouncements(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load account announcements';
-      setAccountAnnouncementsError(message);
-      setAccountAnnouncements([]);
-    } finally {
-      setAccountAnnouncementsLoading(false);
-      hasLoadedAccountAnnouncementsRef.current = true;
-    }
-  };
+    const load = async () => {
+      try {
+        const data = await service.listAccountAnnouncementSummaries(
+          accountId,
+          { limit: 10 },
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        setAccountAnnouncements(data);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setAccountAnnouncementsError(
+          err instanceof Error ? err.message : 'Failed to load account announcements',
+        );
+        setAccountAnnouncements([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setAccountAnnouncementsLoading(false);
+          setHasLoadedAccountAnnouncements(true);
+        }
+      }
+    };
 
-  const loadTeamAnnouncements = async () => {
-    if (!showAnnouncements || !accountId || !user || !token) {
-      hasLoadedTeamAnnouncementsRef.current = true;
+    void load();
+    return () => {
+      controller.abort();
+    };
+  }, [authInitialized, showAnnouncements, accountId, apiClient, accountAnnouncementsRetryKey]);
+
+  React.useEffect(() => {
+    if (!authInitialized) return;
+    if (!showAnnouncements || !accountId || !user) {
+      setHasLoadedTeamAnnouncements(true);
       return;
     }
 
+    const controller = new AbortController();
+    setHasLoadedTeamAnnouncements(false);
     setTeamAnnouncementsLoading(true);
     setTeamAnnouncementsError(null);
+    const service = new AnnouncementService(undefined, apiClient);
 
-    try {
-      const teamsArray = await fetchUserTeams();
+    const load = async () => {
+      try {
+        const teamsResult = await getAccountUserTeams({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
 
-      if (teamsArray.length === 0) {
-        setTeamAnnouncementSections([]);
-        return;
-      }
+        const teamsPayload = unwrapApiResult(teamsResult, 'Failed to load your teams');
+        const teamsArray = Array.isArray(teamsPayload) ? (teamsPayload as TeamSeasonType[]) : [];
 
-      const errors: string[] = [];
+        if (teamsArray.length === 0) {
+          setTeamAnnouncementSections([]);
+          return;
+        }
 
-      const sections = await Promise.all(
-        teamsArray
-          .filter((team) => team?.team?.id)
-          .map(async (team) => {
-            const teamId = team.team.id;
-            const teamSeasonId = team.id;
-            const seasonIdValue = team.season?.id ?? null;
-            const teamName = team.name ?? 'Team';
+        const errors: string[] = [];
 
-            try {
-              const announcements = await announcementService.listTeamAnnouncementSummaries(
-                {
-                  accountId,
+        const sections = await Promise.all(
+          teamsArray
+            .filter((team) => team?.team?.id)
+            .map(async (team) => {
+              const teamId = team.team.id;
+              const teamSeasonId = team.id;
+              const seasonIdValue = team.season?.id ?? null;
+              const teamName = team.name ?? 'Team';
+
+              try {
+                const announcements = await service.listTeamAnnouncementSummaries(
+                  { accountId, teamId },
+                  { limit: 10 },
+                  controller.signal,
+                );
+                return {
                   teamId,
-                },
-                { limit: 10 },
-              );
-
-              return {
-                teamId,
-                teamSeasonId,
-                seasonId: seasonIdValue,
-                teamName,
-                announcements,
-              } as TeamAnnouncementSection;
-            } catch (error) {
-              console.error(
-                `Failed to load announcements for team ${teamName} (${teamId}) in account ${accountId}:`,
-                error,
-              );
-              errors.push(teamName);
-              return {
-                teamId,
-                teamSeasonId,
-                seasonId: seasonIdValue,
-                teamName,
-                announcements: [],
-              } as TeamAnnouncementSection;
-            }
-          }),
-      );
-
-      if (errors.length > 0) {
-        setTeamAnnouncementsError(
-          `Failed to load announcements for ${errors.join(', ')}. Please try again.`,
+                  teamSeasonId,
+                  seasonId: seasonIdValue,
+                  teamName,
+                  announcements,
+                } as TeamAnnouncementSection;
+              } catch (error) {
+                if (controller.signal.aborted) throw error;
+                console.error(
+                  `Failed to load announcements for team ${teamName} (${teamId}) in account ${accountId}:`,
+                  error,
+                );
+                errors.push(teamName);
+                return {
+                  teamId,
+                  teamSeasonId,
+                  seasonId: seasonIdValue,
+                  teamName,
+                  announcements: [],
+                } as TeamAnnouncementSection;
+              }
+            }),
         );
+
+        if (controller.signal.aborted) return;
+        if (errors.length > 0) {
+          setTeamAnnouncementsError(
+            `Failed to load announcements for ${errors.join(', ')}. Please try again.`,
+          );
+        }
+        setTeamAnnouncementSections(sections);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setTeamAnnouncementsError(
+          err instanceof Error ? err.message : 'Failed to load team announcements',
+        );
+        setTeamAnnouncementSections([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setTeamAnnouncementsLoading(false);
+          setHasLoadedTeamAnnouncements(true);
+        }
       }
+    };
 
-      setTeamAnnouncementSections(sections);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load team announcements';
-      setTeamAnnouncementsError(message);
-      setTeamAnnouncementSections([]);
-    } finally {
-      setTeamAnnouncementsLoading(false);
-      hasLoadedTeamAnnouncementsRef.current = true;
-    }
-  };
-
-  loadAccountHandoutsRef.current = loadAccountHandouts;
-  loadTeamHandoutsRef.current = loadTeamHandouts;
-  loadAccountAnnouncementsRef.current = loadAccountAnnouncements;
-  loadTeamAnnouncementsRef.current = loadTeamAnnouncements;
-
-  const ensureHandoutsLoaded = () => {
-    if (!showHandouts) {
-      return;
-    }
-
-    if (!hasLoadedAccountHandoutsRef.current && !accountHandoutsLoading) {
-      void loadAccountHandoutsRef.current();
-    }
-
-    if (!hasLoadedTeamHandoutsRef.current && !teamHandoutsLoading) {
-      void loadTeamHandoutsRef.current();
-    }
-  };
-
-  const ensureAnnouncementsLoaded = () => {
-    if (!showAnnouncements) {
-      return;
-    }
-
-    if (!hasLoadedAccountAnnouncementsRef.current && !accountAnnouncementsLoading) {
-      void loadAccountAnnouncementsRef.current();
-    }
-
-    if (!hasLoadedTeamAnnouncementsRef.current && !teamAnnouncementsLoading) {
-      void loadTeamAnnouncementsRef.current();
-    }
-  };
-
-  React.useEffect(() => {
-    if (!showHandouts) return;
-    if (!hasLoadedAccountHandoutsRef.current && !accountHandoutsLoading) {
-      void loadAccountHandoutsRef.current();
-    }
-    if (!hasLoadedTeamHandoutsRef.current && !teamHandoutsLoading) {
-      void loadTeamHandoutsRef.current();
-    }
-  }, [showHandouts, accountHandoutsLoading, teamHandoutsLoading]);
-
-  React.useEffect(() => {
-    if (!showAnnouncements) return;
-    if (!hasLoadedAccountAnnouncementsRef.current && !accountAnnouncementsLoading) {
-      void loadAccountAnnouncementsRef.current();
-    }
-    if (!hasLoadedTeamAnnouncementsRef.current && !teamAnnouncementsLoading) {
-      void loadTeamAnnouncementsRef.current();
-    }
-  }, [showAnnouncements, accountAnnouncementsLoading, teamAnnouncementsLoading]);
+    void load();
+    return () => {
+      controller.abort();
+    };
+  }, [authInitialized, showAnnouncements, accountId, user, apiClient, teamAnnouncementsRetryKey]);
 
   const handleHandoutMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setHandoutAnchorEl(event.currentTarget);
-    ensureHandoutsLoaded();
   };
 
   const handleHandoutMenuClose = () => {
@@ -496,7 +496,6 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
 
   const handleAnnouncementMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnnouncementAnchorEl(event.currentTarget);
-    ensureAnnouncementsLoaded();
   };
 
   const handleAnnouncementMenuClose = () => {
@@ -505,8 +504,6 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
 
   const handleCompactMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setCompactAnchorEl(event.currentTarget);
-    ensureHandoutsLoaded();
-    ensureAnnouncementsLoaded();
   };
 
   const handleCompactMenuClose = () => {
@@ -678,8 +675,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
           dense
           onClick={() => {
             onClose();
-            hasLoadedAccountHandoutsRef.current = false;
-            void loadAccountHandouts();
+            setAccountHandoutsRetryKey((k) => k + 1);
           }}
         >
           <ListItemIcon sx={{ minWidth: 32 }}>
@@ -761,8 +757,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
           dense
           onClick={() => {
             onClose();
-            hasLoadedAccountAnnouncementsRef.current = false;
-            void loadAccountAnnouncements();
+            setAccountAnnouncementsRetryKey((k) => k + 1);
           }}
         >
           <ListItemIcon sx={{ minWidth: 32 }}>
@@ -918,9 +913,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
             dense
             onClick={() => {
               onClose();
-              userTeamsCacheRef.current = null;
-              hasLoadedTeamHandoutsRef.current = false;
-              void loadTeamHandouts();
+              setTeamHandoutsRetryKey((k) => k + 1);
             }}
           >
             <ListItemIcon sx={{ minWidth: 32 }}>
@@ -1049,9 +1042,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
             dense
             onClick={() => {
               onClose();
-              userTeamsCacheRef.current = null;
-              hasLoadedTeamAnnouncementsRef.current = false;
-              void loadTeamAnnouncements();
+              setTeamAnnouncementsRetryKey((k) => k + 1);
             }}
           >
             <ListItemIcon sx={{ minWidth: 32 }}>
@@ -1083,48 +1074,24 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     showHandouts &&
     (hasAccountHandoutItems ||
       hasTeamHandoutItems ||
-      (hasLoadedAccountHandoutsRef.current && Boolean(accountHandoutsError)) ||
-      (hasLoadedTeamHandoutsRef.current && Boolean(teamHandoutsError)));
+      (hasLoadedAccountHandouts && Boolean(accountHandoutsError)) ||
+      (hasLoadedTeamHandouts && Boolean(teamHandoutsError)));
 
   const shouldShowAnnouncementAction =
     showAnnouncements &&
     (hasAccountAnnouncementItems ||
       hasTeamAnnouncementItems ||
-      (hasLoadedAccountAnnouncementsRef.current && Boolean(accountAnnouncementsError)) ||
-      (hasLoadedTeamAnnouncementsRef.current && Boolean(teamAnnouncementsError)));
+      (hasLoadedAccountAnnouncements && Boolean(accountAnnouncementsError)) ||
+      (hasLoadedTeamAnnouncements && Boolean(teamAnnouncementsError)));
 
   const shouldShowComposeAction = canComposeEmail && Boolean(composeHref);
 
   const allQuickActionsLoaded =
-    (!showHandouts || (hasLoadedAccountHandoutsRef.current && hasLoadedTeamHandoutsRef.current)) &&
-    (!showAnnouncements ||
-      (hasLoadedAccountAnnouncementsRef.current && hasLoadedTeamAnnouncementsRef.current));
+    (!showHandouts || (hasLoadedAccountHandouts && hasLoadedTeamHandouts)) &&
+    (!showAnnouncements || (hasLoadedAccountAnnouncements && hasLoadedTeamAnnouncements));
 
   const shouldShowQuickActionsMenu =
     shouldShowAnnouncementAction || shouldShowHandoutAction || shouldShowComposeAction;
-
-  const compactItemsKey =
-    useUnifiedMenu && isCompact && allQuickActionsLoaded
-      ? JSON.stringify({
-          compose: shouldShowComposeAction ? composeHref : null,
-          dark: isDarkMode,
-          announcements: shouldShowAnnouncementAction,
-          handouts: shouldShowHandoutAction,
-          acctAnnIds: accountAnnouncements.map((a) => a.id),
-          teamAnnIds: teamAnnouncementSections.map(
-            (s) => `${s.teamId}:${s.announcements.map((a) => a.id).join(',')}`,
-          ),
-          acctHndIds: accountHandouts.map((h) => h.id),
-          teamHndIds: teamHandoutSections.map(
-            (s) => `${s.teamId}:${s.handouts.map((h) => h.id).join(',')}`,
-          ),
-          dl: downloadingHandoutId,
-          acctHndErr: accountHandoutsError,
-          teamHndErr: teamHandoutsError,
-          acctAnnErr: accountAnnouncementsError,
-          teamAnnErr: teamAnnouncementsError,
-        })
-      : '';
 
   const buildCompactMenuItems = (closeMenu: () => void): React.ReactNode[] => {
     const nodes: React.ReactNode[] = [];
@@ -1209,34 +1176,36 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     return nodes;
   };
 
-  buildCompactMenuItemsRef.current = buildCompactMenuItems;
+  const compactItemsKey = [
+    useUnifiedMenu,
+    isCompact,
+    allQuickActionsLoaded,
+    shouldShowComposeAction,
+    composeHref ?? '',
+    isDarkMode,
+    shouldShowAnnouncementAction,
+    shouldShowHandoutAction,
+    accountHandouts.map((h) => h.id).join(','),
+    teamHandoutSections
+      .map((s) => `${s.teamId}:${s.handouts.map((h) => h.id).join(',')}`)
+      .join('|'),
+    accountAnnouncements.map((a) => a.id).join(','),
+    teamAnnouncementSections
+      .map((s) => `${s.teamId}:${s.announcements.map((a) => a.id).join(',')}`)
+      .join('|'),
+  ].join('§');
+
+  const lastEmittedCompactKeyRef = React.useRef<string>('__unset__');
 
   React.useEffect(() => {
-    if (!useUnifiedMenu || !isCompact || !allQuickActionsLoaded) {
-      if (!lastEmittedEmptyRef.current) {
-        onCompactMenuItemsChange?.([]);
-        lastEmittedEmptyRef.current = true;
-      }
-      prevCompactKeyRef.current = '';
-      return;
-    }
-
-    if (compactItemsKey === prevCompactKeyRef.current) {
-      return;
-    }
-    prevCompactKeyRef.current = compactItemsKey;
-
-    const items = buildCompactMenuItemsRef.current(onUnifiedMenuClose ?? (() => {}));
+    if (lastEmittedCompactKeyRef.current === compactItemsKey) return;
+    lastEmittedCompactKeyRef.current = compactItemsKey;
+    const items =
+      useUnifiedMenu && isCompact && allQuickActionsLoaded
+        ? buildCompactMenuItems(onUnifiedMenuClose ?? (() => {}))
+        : [];
     onCompactMenuItemsChange?.(items);
-    lastEmittedEmptyRef.current = items.length === 0;
-  }, [
-    allQuickActionsLoaded,
-    compactItemsKey,
-    isCompact,
-    onCompactMenuItemsChange,
-    onUnifiedMenuClose,
-    useUnifiedMenu,
-  ]);
+  });
 
   React.useEffect(
     () => () => {
