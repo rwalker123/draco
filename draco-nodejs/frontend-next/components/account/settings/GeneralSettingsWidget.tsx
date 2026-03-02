@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Alert, Button, Stack } from '@mui/material';
 import type { AccountSettingKey, AccountSettingState } from '@draco/shared-schemas';
 import WidgetShell from '../../ui/WidgetShell';
@@ -24,13 +24,7 @@ export const GeneralSettingsWidget: React.FC<GeneralSettingsWidgetProps> = ({
   onRetry,
   onUpdate,
 }) => {
-  const settingsMap = useMemo(() => {
-    const map = new Map<AccountSettingKey, AccountSettingState>();
-    (settings ?? []).forEach((entry) => {
-      map.set(entry.definition.key, entry);
-    });
-    return map;
-  }, [settings]);
+  const settingsMap = buildSettingsMap(settings);
 
   if (error) {
     return (
@@ -89,6 +83,16 @@ const GROUP_ORDER = [
   'teamPages',
   'messageBoard',
 ] as const;
+
+function buildSettingsMap(
+  settings: AccountSettingState[] | null,
+): Map<AccountSettingKey, AccountSettingState> {
+  const map = new Map<AccountSettingKey, AccountSettingState>();
+  (settings ?? []).forEach((entry) => {
+    map.set(entry.definition.key, entry);
+  });
+  return map;
+}
 
 function groupSettings(settings: AccountSettingState[]) {
   const map = new Map<

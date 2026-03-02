@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Button,
@@ -33,10 +33,7 @@ const ContactPage: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const formResolver = useMemo(
-    () => zodResolver(ContactFormSchema) as Resolver<ContactFormValues>,
-    [],
-  );
+  const formResolver = zodResolver(ContactFormSchema) as Resolver<ContactFormValues>;
 
   const {
     register,
@@ -53,29 +50,26 @@ const ContactPage: React.FC = () => {
     },
   });
 
-  const onSubmit = useCallback(
-    async (_values: ContactFormValues) => {
-      setError(null);
-      setSuccess(false);
-      setLoading(true);
+  const onSubmit = async (_values: ContactFormValues) => {
+    setError(null);
+    setSuccess(false);
+    setLoading(true);
 
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        setSuccess(true);
-        reset();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to send message');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [reset],
-  );
+      setSuccess(true);
+      reset();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleHomeClick = useCallback(() => {
+  const handleHomeClick = () => {
     router.push('/');
-  }, [router]);
+  };
 
   return (
     <main className="min-h-screen bg-background">

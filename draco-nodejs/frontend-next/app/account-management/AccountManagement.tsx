@@ -81,15 +81,23 @@ const AccountManagement: React.FC = () => {
   const loadDataRef = React.useRef<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const loadData = async () => {
       setLoading(true);
       const errors: string[] = [];
       try {
         const [accountsResult, typesResult, affiliationsResult] = await Promise.all([
-          getManagedAccounts({ client: apiClient, throwOnError: false }),
-          getAccountTypes({ client: apiClient, throwOnError: false }),
-          getAccountAffiliations({ client: apiClient, throwOnError: false }),
+          getManagedAccounts({ client: apiClient, signal: controller.signal, throwOnError: false }),
+          getAccountTypes({ client: apiClient, signal: controller.signal, throwOnError: false }),
+          getAccountAffiliations({
+            client: apiClient,
+            signal: controller.signal,
+            throwOnError: false,
+          }),
         ]);
+
+        if (controller.signal.aborted) return;
 
         try {
           const accountsData = unwrapApiResult(accountsResult, 'Failed to load accounts') as
@@ -126,6 +134,7 @@ const AccountManagement: React.FC = () => {
           setSuccess(null);
         }
       } catch (err) {
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load account data';
         setError(message);
         setAccounts([]);
@@ -133,7 +142,9 @@ const AccountManagement: React.FC = () => {
         setAffiliations([]);
         setSuccess(null);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -142,6 +153,10 @@ const AccountManagement: React.FC = () => {
     if (token) {
       void loadData();
     }
+
+    return () => {
+      controller.abort();
+    };
   }, [token, apiClient]);
 
   const getAccountTypeName = (account: SharedAccountType) =>

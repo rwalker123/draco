@@ -14,7 +14,7 @@ import type { PhotoGalleryAlbumType, PhotoGalleryPhotoType } from '@draco/shared
 import PhotoGalleryGrid from './PhotoGalleryGrid';
 import PhotoGalleryHero from './PhotoGalleryHero';
 import PhotoGalleryLightbox from './PhotoGalleryLightbox';
-import type { TeamAlbumHierarchyGroup } from './types';
+import type { TeamAlbumHierarchyGroup, TeamAlbumHierarchyTeam } from './types';
 import TeamAlbumMenu from './TeamAlbumMenu';
 import WidgetShell from '../ui/WidgetShell';
 
@@ -138,97 +138,82 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
 }) => {
   const totalCount = totalCountOverride ?? photos.length;
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
-  const shellSx = React.useMemo(() => {
-    const extras = Array.isArray(sx) ? sx : sx ? [sx] : [];
-    return [{ mb: 2 }, ...extras] as SxProps<Theme>;
-  }, [sx]);
+  const shellSxExtras = Array.isArray(sx) ? sx : sx ? [sx] : [];
+  const shellSx = [{ mb: 2 }, ...shellSxExtras] as SxProps<Theme>;
 
-  const accountAlbums = React.useMemo(() => albums.filter((album) => !album.teamId), [albums]);
-  const accountAlbumKeys = React.useMemo(() => {
-    const keys = new Set<string>();
-    accountAlbums.forEach((album) => {
-      keys.add(album.id ?? 'null');
-    });
-    return keys;
-  }, [accountAlbums]);
+  const accountAlbums = albums.filter((album) => !album.teamId);
+  const accountAlbumKeys = new Set<string>(accountAlbums.map((album) => album.id ?? 'null'));
   const accountTabValue =
     accountAlbumKeys.has(selectedAlbumKey) || selectedAlbumKey === 'all' ? selectedAlbumKey : false;
   const hasTeamAlbumHierarchy = teamAlbumHierarchy.length > 0;
-  const selectedTeamEntry = (() => {
-    if (!selectedAlbumKey || !hasTeamAlbumHierarchy) {
-      return null;
-    }
 
-    for (const league of teamAlbumHierarchy) {
+  let selectedTeamEntry: {
+    leagueName: string;
+    divisionName: string;
+    team: TeamAlbumHierarchyTeam;
+  } | null = null;
+  if (selectedAlbumKey && hasTeamAlbumHierarchy) {
+    outer: for (const league of teamAlbumHierarchy) {
       for (const division of league.divisions) {
         const found = division.teams.find((team) => team.albumId === selectedAlbumKey);
         if (found) {
-          return { leagueName: league.leagueName, divisionName: division.name, team: found };
+          selectedTeamEntry = {
+            leagueName: league.leagueName,
+            divisionName: division.name,
+            team: found,
+          };
+          break outer;
         }
       }
-
       const unassigned = league.unassignedTeams.find((team) => team.albumId === selectedAlbumKey);
       if (unassigned) {
-        return { leagueName: league.leagueName, divisionName: 'Unassigned', team: unassigned };
+        selectedTeamEntry = {
+          leagueName: league.leagueName,
+          divisionName: 'Unassigned',
+          team: unassigned,
+        };
+        break;
       }
     }
+  }
 
-    return null;
-  })();
+  const handleOpenLightbox = (index: number) => {
+    if (index >= 0 && index < photos.length) {
+      setLightboxIndex(index);
+    }
+  };
 
-  const handleOpenLightbox = React.useCallback(
-    (index: number) => {
-      if (index >= 0 && index < photos.length) {
-        setLightboxIndex(index);
-      }
-    },
-    [photos.length, setLightboxIndex],
-  );
-
-  const handleCloseLightbox = React.useCallback(() => {
+  const handleCloseLightbox = () => {
     setLightboxIndex(null);
-  }, [setLightboxIndex]);
+  };
 
-  const handleNextLightbox = React.useCallback(() => {
+  const handleNextLightbox = () => {
     setLightboxIndex((current) => {
       if (current === null || photos.length === 0) {
         return current;
       }
       return (current + 1) % photos.length;
     });
-  }, [photos.length, setLightboxIndex]);
+  };
 
-  const handlePrevLightbox = React.useCallback(() => {
+  const handlePrevLightbox = () => {
     setLightboxIndex((current) => {
       if (current === null || photos.length === 0) {
         return current;
       }
       return (current - 1 + photos.length) % photos.length;
     });
-  }, [photos.length, setLightboxIndex]);
+  };
 
-  const handleAlbumSelection = React.useCallback(
-    (albumId: string) => {
-      onAlbumChange?.(albumId);
-    },
-    [onAlbumChange],
-  );
+  const handleAlbumSelection = (albumId: string) => {
+    onAlbumChange?.(albumId);
+  };
 
   const heroPhotos = photos.slice(0, Math.min(10, photos.length));
   const gridPhotos = photos;
   const lightboxPhoto = lightboxIndex !== null ? (photos[lightboxIndex] ?? null) : null;
 
-  const shouldRender = React.useMemo(() => {
-    if (loading) {
-      return true;
-    }
-
-    if (error) {
-      return true;
-    }
-
-    return photos.length > 0;
-  }, [error, loading, photos.length]);
+  const shouldRender = loading || !!error || photos.length > 0;
 
   if (!shouldRender) {
     return null;

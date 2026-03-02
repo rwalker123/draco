@@ -417,5 +417,4 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
   );
 };
 
-// Memoize to prevent unnecessary re-renders while keeping it simple
-export default React.memo(StreamPaginationControl);
+export default StreamPaginationControl;

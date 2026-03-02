@@ -626,7 +626,6 @@ export const useScheduleData = ({
     firstName: off.firstName,
     lastName: off.lastName,
     email: off.email,
-    displayName: off.displayName,
   }));
 
   return {

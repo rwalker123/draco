@@ -378,7 +378,7 @@ export const createGamesLoader = (
   currentSeasonId: string,
   teamId?: string,
 ) => {
-  return async (startDate: Date, endDate: Date): Promise<Game[]> => {
+  return async (startDate: Date, endDate: Date, signal?: AbortSignal): Promise<Game[]> => {
     const result = await listSeasonGames({
       client,
       path: { accountId, seasonId: currentSeasonId },
@@ -388,6 +388,7 @@ export const createGamesLoader = (
         teamId,
         sortOrder: 'asc',
       },
+      signal,
       throwOnError: false,
     });
 

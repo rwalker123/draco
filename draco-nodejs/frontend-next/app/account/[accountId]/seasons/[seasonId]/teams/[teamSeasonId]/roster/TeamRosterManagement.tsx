@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Container,
@@ -61,6 +61,32 @@ import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { downloadBlob } from '@/utils/downloadUtils';
 import { getContactDisplayName } from '../../../../../../../../utils/contactUtils';
+
+interface PlayerAvatarProps {
+  member: RosterMemberType;
+  onEdit: () => void;
+  onPhotoDelete: (contactId: string) => Promise<void>;
+}
+
+const PlayerAvatarInline: React.FC<PlayerAvatarProps> = ({ member, onEdit, onPhotoDelete }) => {
+  const user = {
+    id: member.player.contact.id,
+    firstName: member.player.contact.firstName,
+    lastName: member.player.contact.lastName,
+    photoUrl: member.player.contact.photoUrl,
+  };
+
+  return (
+    <UserAvatar
+      user={user}
+      size={32}
+      onClick={onEdit}
+      showHoverEffects={true}
+      enablePhotoActions={true}
+      onPhotoDelete={onPhotoDelete}
+    />
+  );
+};
 
 interface TeamRosterManagementProps {
   accountId: string;
@@ -158,13 +184,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const trackIdentificationEnabled = getSettingValue('TrackIdentification');
   const showIdentificationStatus = getSettingValue('ShowIdentification');
   const showContactInfoOnRoster = getSettingValue('ShowUserInfoOnRosterPage');
-  const canViewSensitiveRosterDetails = useMemo(
-    () =>
-      hasRole('Administrator') ||
-      hasRoleInAccount('AccountAdmin', accountId) ||
-      hasRoleInTeam('TeamAdmin', teamSeasonId),
-    [accountId, teamSeasonId, hasRole, hasRoleInAccount, hasRoleInTeam],
-  );
+  const canViewSensitiveRosterDetails =
+    hasRole('Administrator') ||
+    hasRoleInAccount('AccountAdmin', accountId) ||
+    hasRoleInTeam('TeamAdmin', teamSeasonId);
   const canShowRosterContactInfo = canViewSensitiveRosterDetails && showContactInfoOnRoster;
 
   // Use scroll position hook
@@ -532,44 +555,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     return deleteContactPhotoRef.current(contactId);
   };
 
-  // Memoized player avatar component to prevent unnecessary re-renders
-  const PlayerAvatar = useMemo(() => {
-    const PlayerAvatarComponent = React.memo<{
-      member: RosterMemberType;
-      onEdit: () => void;
-      onPhotoDelete: (contactId: string) => Promise<void>;
-    }>(({ member, onEdit, onPhotoDelete }) => {
-      const user = useMemo(
-        () => ({
-          id: member.player.contact.id,
-          firstName: member.player.contact.firstName,
-          lastName: member.player.contact.lastName,
-          photoUrl: member.player.contact.photoUrl,
-        }),
-        [
-          member.player.contact.id,
-          member.player.contact.firstName,
-          member.player.contact.lastName,
-          member.player.contact.photoUrl,
-        ],
-      );
-
-      return (
-        <UserAvatar
-          user={user}
-          size={32}
-          onClick={onEdit}
-          showHoverEffects={true}
-          enablePhotoActions={true}
-          onPhotoDelete={onPhotoDelete}
-        />
-      );
-    });
-    // Set display name for debugging
-    PlayerAvatarComponent.displayName = 'PlayerAvatarComponent';
-    return PlayerAvatarComponent;
-  }, []);
-
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -786,7 +771,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                     <TableCell>{member.playerNumber || '-'}</TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <PlayerAvatar
+                        <PlayerAvatarInline
                           member={member}
                           onEdit={handleEditDialog(member)}
                           onPhotoDelete={handlePhotoDelete}
@@ -916,7 +901,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                       <TableCell>{member.playerNumber || '-'}</TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <PlayerAvatar
+                          <PlayerAvatarInline
                             member={member}
                             onEdit={handleEditDialog(member)}
                             onPhotoDelete={handlePhotoDelete}

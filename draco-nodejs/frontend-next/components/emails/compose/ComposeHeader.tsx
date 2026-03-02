@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import {
   Box,
   TextField,
@@ -59,21 +59,15 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
   const { state, actions } = useEmailCompose();
   const { user } = useAuth();
 
-  // Real-time validation for contextual error display
-  const validation = useMemo(() => validateComposeData(state, state.config), [state]);
+  const validation = validateComposeData(state, state.config);
 
-  // Handle subject change
-  const handleSubjectChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      actions.setSubject(event.target.value);
-    },
-    [actions],
-  );
+  const handleSubjectChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    actions.setSubject(event.target.value);
+  };
 
-  // Clear schedule
-  const handleClearSchedule = useCallback(() => {
+  const handleClearSchedule = () => {
     actions.clearSchedule();
-  }, [actions]);
+  };
 
   // Get validation errors for header fields
   const subjectError = validation.errors.find((e) => e.field === 'subject');
@@ -291,5 +285,4 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
   );
 };
 
-export const ComposeHeader = React.memo(ComposeHeaderComponent);
-ComposeHeader.displayName = 'ComposeHeader';
+export const ComposeHeader = ComposeHeaderComponent;

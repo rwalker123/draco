@@ -74,8 +74,11 @@ export default function VerifyWorkoutRegistration({
   const formId = 'verify-registration-form';
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const verify = async () => {
       if (!accessCode) {
+        if (controller.signal.aborted) return;
         setState({
           loading: false,
           error: 'Access code is required. Please use the link from your email.',
@@ -88,6 +91,7 @@ export default function VerifyWorkoutRegistration({
 
       const validation = validateAccessCode(accessCode);
       if (!validation.isValid || !validation.sanitizedValue) {
+        if (controller.signal.aborted) return;
         setState({
           loading: false,
           error: validation.error || 'Invalid access code.',
@@ -104,7 +108,10 @@ export default function VerifyWorkoutRegistration({
           workoutId,
           registrationId,
           validation.sanitizedValue,
+          controller.signal,
         );
+
+        if (controller.signal.aborted) return;
 
         localStorage.setItem(
           'workoutRegistrationVerification',
@@ -125,6 +132,7 @@ export default function VerifyWorkoutRegistration({
           success: true,
         });
       } catch (error) {
+        if (controller.signal.aborted) return;
         const status = error instanceof ApiClientError ? error.status : undefined;
         const message =
           status === 404
@@ -143,6 +151,10 @@ export default function VerifyWorkoutRegistration({
     };
 
     verify();
+
+    return () => {
+      controller.abort();
+    };
   }, [accessCode, accountId, registrationId, workoutId]);
 
   const handleUpdate = async (data: UpsertWorkoutRegistrationType) => {

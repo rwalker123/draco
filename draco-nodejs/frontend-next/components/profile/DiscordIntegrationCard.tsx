@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -45,34 +45,42 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
   const isLinked = Boolean(status?.linked);
   const disableActions = !accountId || action !== null;
 
-  const loadStatus = useCallback(async () => {
+  useEffect(() => {
     if (!accountId) {
       setStatus(null);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    const controller = new AbortController();
 
-    try {
-      const payload = await getLinkStatus(accountId);
-      setStatus(payload);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Something went wrong while loading Discord status.';
-      setError(message);
-      setStatus(null);
-    } finally {
-      setLoading(false);
-    }
+    const loadStatus = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const payload = await getLinkStatus(accountId, controller.signal);
+        if (controller.signal.aborted) return;
+        setStatus(payload);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message =
+          err instanceof Error ? err.message : 'Something went wrong while loading Discord status.';
+        setError(message);
+        setStatus(null);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
+    void loadStatus();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, getLinkStatus]);
 
-  useEffect(() => {
-    void loadStatus();
-  }, [loadStatus]);
-
-  const handleConnect = useCallback(async () => {
+  const handleConnect = async () => {
     if (!accountId) {
       return;
     }
@@ -90,9 +98,9 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
     } finally {
       setAction(null);
     }
-  }, [accountId, startLink]);
+  };
 
-  const handleUnlink = useCallback(async () => {
+  const handleUnlink = async () => {
     if (!accountId) {
       return;
     }
@@ -109,24 +117,33 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
     } finally {
       setAction(null);
     }
-  }, [accountId, unlinkDiscord]);
+  };
 
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = async () => {
+    if (!accountId) {
+      return;
+    }
+
     setAction('refresh');
+    setError(null);
+
     try {
-      await loadStatus();
+      const payload = await getLinkStatus(accountId);
+      setStatus(payload);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Something went wrong while loading Discord status.';
+      setError(message);
     } finally {
       setAction(null);
     }
-  }, [loadStatus]);
+  };
 
-  const displayName = useMemo(() => {
-    if (!status?.username) {
-      return null;
-    }
-
-    return status.discriminator ? `${status.username}#${status.discriminator}` : status.username;
-  }, [status]);
+  const displayName = status?.username
+    ? status.discriminator
+      ? `${status.username}#${status.discriminator}`
+      : status.username
+    : null;
 
   if (!accountId) {
     return (

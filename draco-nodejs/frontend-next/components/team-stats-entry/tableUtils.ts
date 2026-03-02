@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 
 export type SortDirection = 'asc' | 'desc';
 
@@ -37,31 +37,37 @@ export const compareValues = (a: unknown, b: unknown): number => {
 export const toggleDirection = (direction: SortDirection | undefined): SortDirection =>
   direction === 'asc' ? 'desc' : 'asc';
 
+const computeSortedRows = <T, K>(
+  rows: readonly T[] | null | undefined,
+  sortConfig: SortConfig<K> | null,
+  getValue: (row: T, key: K) => unknown,
+): T[] => {
+  if (!rows) {
+    return [] as T[];
+  }
+
+  if (!sortConfig) {
+    return [...rows];
+  }
+
+  const directionMultiplier = sortConfig.direction === 'asc' ? 1 : -1;
+
+  return [...rows].sort((a, b) => {
+    const aValue = getValue(a, sortConfig.key);
+    const bValue = getValue(b, sortConfig.key);
+    return compareValues(aValue, bValue) * directionMultiplier;
+  });
+};
+
 export const useSortableRows = <T, K>(
   rows: readonly T[] | null | undefined,
   getValue: (row: T, key: K) => unknown,
 ) => {
   const [sortConfig, setSortConfig] = useState<SortConfig<K> | null>(null);
 
-  const sortedRows = useMemo(() => {
-    if (!rows) {
-      return [] as T[];
-    }
+  const sortedRows = computeSortedRows(rows, sortConfig, getValue);
 
-    if (!sortConfig) {
-      return [...rows];
-    }
-
-    const directionMultiplier = sortConfig.direction === 'asc' ? 1 : -1;
-
-    return [...rows].sort((a, b) => {
-      const aValue = getValue(a, sortConfig.key);
-      const bValue = getValue(b, sortConfig.key);
-      return compareValues(aValue, bValue) * directionMultiplier;
-    });
-  }, [rows, sortConfig, getValue]);
-
-  const handleSort = useCallback((key: K) => {
+  const handleSort = (key: K) => {
     setSortConfig((previous) => {
       if (previous?.key === key) {
         return { key, direction: toggleDirection(previous.direction) };
@@ -69,7 +75,7 @@ export const useSortableRows = <T, K>(
 
       return { key, direction: 'asc' };
     });
-  }, []);
+  };
 
   return { sortedRows, sortConfig, handleSort } as const;
 };

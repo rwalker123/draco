@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Direction = 'next' | 'prev';
 
@@ -49,49 +49,40 @@ const useCarousel = (options: CarouselOptions): UseCarouselResult => {
     }
   }, [currentIndex]);
 
-  const goTo = useCallback(
-    (direction: Direction) => {
-      setCurrentIndex((prev) => {
-        const delta = direction === 'next' ? visibleItems : -visibleItems;
-        const rawIndex = prev + delta;
+  const goTo = (direction: Direction) => {
+    setCurrentIndex((prev) => {
+      const delta = direction === 'next' ? visibleItems : -visibleItems;
+      const rawIndex = prev + delta;
 
-        if (loop) {
-          if (rawIndex < 0) {
-            return (total + rawIndex) % total;
-          }
-          return rawIndex % total;
+      if (loop) {
+        if (rawIndex < 0) {
+          return (total + rawIndex) % total;
         }
+        return rawIndex % total;
+      }
 
-        const maxIndex = Math.max(total - visibleItems, 0);
-        return clamp(rawIndex, 0, maxIndex);
-      });
-    },
-    [loop, total, visibleItems],
-  );
+      const maxIndex = Math.max(total - visibleItems, 0);
+      return clamp(rawIndex, 0, maxIndex);
+    });
+  };
 
-  const handleNext = useCallback(() => {
+  const handleNext = () => {
     if (!total) return;
     goTo('next');
-  }, [goTo, total]);
+  };
 
-  const handlePrev = useCallback(() => {
+  const handlePrev = () => {
     if (!total) return;
     goTo('prev');
-  }, [goTo, total]);
+  };
 
-  const canGoPrev = useMemo(() => {
-    if (loop || !total) return true;
-    return currentIndex > 0;
-  }, [currentIndex, loop, total]);
+  const canGoPrev = loop || !total ? true : currentIndex > 0;
 
-  const canGoNext = useMemo(() => {
-    if (loop || !total) return true;
-    return currentIndex < Math.max(total - visibleItems, 0);
-  }, [currentIndex, loop, total, visibleItems]);
+  const canGoNext = loop || !total ? true : currentIndex < Math.max(total - visibleItems, 0);
 
-  const registerNode = useCallback((element: HTMLElement | null) => {
+  const registerNode = (element: HTMLElement | null) => {
     containerRef.current = element;
-  }, []);
+  };
 
   return {
     currentIndex,

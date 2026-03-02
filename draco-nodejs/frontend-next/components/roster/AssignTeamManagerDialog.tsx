@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -44,17 +44,14 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
     }
   }, [open]);
 
-  const eligiblePlayers = useMemo(() => {
-    return availablePlayers.filter(
-      (member) => !existingManagers.some((m) => m.contact.id === member.player.contact.id),
-    );
-  }, [availablePlayers, existingManagers]);
+  const eligiblePlayers = availablePlayers.filter(
+    (member) => !existingManagers.some((m) => m.contact.id === member.player.contact.id),
+  );
 
-  const selectedPlayer = useMemo(() => {
-    return eligiblePlayers.find((member) => member.player.contact.id === selectedContactId) || null;
-  }, [eligiblePlayers, selectedContactId]);
+  const selectedPlayer =
+    eligiblePlayers.find((member) => member.player.contact.id === selectedContactId) || null;
 
-  const handleAssign = useCallback(async () => {
+  const handleAssign = async () => {
     if (!selectedContactId || !selectedPlayer) return;
 
     setLoading(true);
@@ -72,7 +69,7 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [selectedContactId, selectedPlayer, addManager, onSuccess]);
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>

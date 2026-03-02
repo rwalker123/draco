@@ -31,4 +31,27 @@ test.describe('Schedule Management', () => {
     await cancelButton.click();
     await expect(managementPage.createGameDialog).not.toBeVisible();
   });
+
+  test.describe('umpire fields', () => {
+    test.beforeEach(async () => {
+      await managementPage.openCreateGameDialog();
+      await managementPage.waitForUmpireFields();
+    });
+
+    test('add game dialog shows all four umpire selects', async () => {
+      await expect(managementPage.umpireSelect(1)).toBeVisible();
+      await expect(managementPage.umpireSelect(2)).toBeVisible();
+      await expect(managementPage.umpireSelect(3)).toBeVisible();
+      await expect(managementPage.umpireSelect(4)).toBeVisible();
+    });
+
+    test('each umpire select contains at least one umpire option', async () => {
+      await managementPage.umpireSelect(1).click();
+      const listbox = managementPage.page.getByRole('listbox');
+      await listbox.waitFor();
+      const options = listbox.getByRole('option');
+      await expect(options.first()).toBeVisible();
+      await managementPage.page.keyboard.press('Escape');
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   TextField,
   Box,
@@ -56,43 +56,38 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    async (query: string) => {
-      if (!query.trim() || !accountId || !token) {
-        setSearchResults([]);
-        setIsOpen(false);
-        return;
-      }
+  const debouncedSearch = async (query: string) => {
+    if (!query.trim() || !accountId || !token) {
+      setSearchResults([]);
+      setIsOpen(false);
+      return;
+    }
 
-      setIsSearching(true);
-      setIsOpen(true);
+    setIsSearching(true);
+    setIsOpen(true);
 
-      try {
-        const userService = createUserManagementService(token);
-        const results = await userService.searchUsers(accountId, query, undefined, undefined);
+    try {
+      const userService = createUserManagementService(token);
+      const results = await userService.searchUsers(accountId, query, undefined, undefined);
 
-        // Transform users to contacts format for consistency
-        const contacts: SearchContact[] = results.users.map((user) => ({
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email || undefined,
-          userId: user.userId || undefined,
-          displayName: `${user.firstName} ${user.lastName}`,
-          searchText: `${user.firstName} ${user.lastName} ${user.email ?? ''}`.trim(),
-        }));
+      const contacts: SearchContact[] = results.users.map((user) => ({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email || undefined,
+        userId: user.userId || undefined,
+        displayName: `${user.firstName} ${user.lastName}`,
+        searchText: `${user.firstName} ${user.lastName} ${user.email ?? ''}`.trim(),
+      }));
 
-        setSearchResults(contacts);
-      } catch (error) {
-        console.error('Error searching contacts:', error);
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    [token, accountId],
-  );
+      setSearchResults(contacts);
+    } catch (error) {
+      console.error('Error searching contacts:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   // Handle input change with debouncing
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,10 +163,10 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
     }
   }, [value, initialContact]);
 
-  // Fetch initial contact information if value is provided
   useEffect(() => {
-    // Only fetch if we have a valid UUID-like contact ID (not empty, not a number like "3")
     if (value && value.trim() !== '' && value.length > 10 && !initialContact) {
+      const controller = new AbortController();
+
       const fetchInitialContact = async () => {
         try {
           if (!token || !accountId) {
@@ -179,7 +174,9 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
           }
 
           const userService = createUserManagementService(token);
-          const contact = await userService.getContact(accountId, value);
+          const contact = await userService.getContact(accountId, value, controller.signal);
+
+          if (controller.signal.aborted) return;
 
           const normalizedContact: SearchContact = {
             id: contact.id,
@@ -195,11 +192,16 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
           setInputValue(normalizedContact.displayName || normalizedContact.searchText || '');
           setSelectedContact(normalizedContact);
         } catch (error) {
+          if (controller.signal.aborted) return;
           console.error('Error fetching initial contact:', error);
         }
       };
 
-      fetchInitialContact();
+      void fetchInitialContact();
+
+      return () => {
+        controller.abort();
+      };
     }
   }, [value, token, initialContact, accountId]);
 

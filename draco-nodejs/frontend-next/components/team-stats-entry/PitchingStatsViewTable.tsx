@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import { Alert, Box } from '@mui/material';
 import type { GamePitchingStatLineType, GamePitchingStatsType } from '@draco/shared-schemas';
 
@@ -25,89 +25,76 @@ type PitchingTableRow = StatsRowBase & {
 const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, totals }) => {
   const hasStats = Boolean(stats && stats.stats.length > 0);
 
-  const getValue = useCallback(
-    (row: GamePitchingStatLineType, field: PitchingViewField) =>
-      row[field as keyof GamePitchingStatLineType],
-    [],
-  );
+  const getValue = (row: GamePitchingStatLineType, field: PitchingViewField) =>
+    row[field as keyof GamePitchingStatLineType];
 
   const { sortedRows, sortConfig, handleSort } = useSortableRows(stats?.stats ?? [], getValue);
 
-  const tableRows = useMemo<PitchingTableRow[]>(() => {
-    const rows = sortedRows.map((stat) => {
-      const values: Partial<Record<PitchingViewField, StatValue>> = {};
-      pitchingViewFieldOrder.forEach((field) => {
-        if (field === 'playerNumber') {
-          const numberValue = stat.playerNumber;
-          values[field] = numberValue === null || numberValue === undefined ? null : numberValue;
-        } else if (field === 'playerName') {
-          values[field] = stat.playerName ?? null;
-        } else {
-          values[field] =
-            (stat as Record<string, number | string | null | undefined>)[field] ?? null;
-        }
-      });
-
-      const resolvedPlayerName = values.playerName;
-      const resolvedPlayerNumber = values.playerNumber;
-
-      const row: PitchingTableRow = {
-        ...(values as Record<string, StatValue>),
-        id: stat.statId,
-        playerName:
-          typeof resolvedPlayerName === 'string' ? resolvedPlayerName : (stat.playerName ?? null),
-        playerNumber:
-          typeof resolvedPlayerNumber === 'number' || typeof resolvedPlayerNumber === 'string'
-            ? resolvedPlayerNumber
-            : null,
-        ip: stat.ip ?? null,
-        ip2: stat.ip2 ?? null,
-        playerId: stat.playerId ?? null,
-        contactId: stat.contactId ?? null,
-      };
-
-      return row;
+  const tableRows: PitchingTableRow[] = sortedRows.map((stat) => {
+    const values: Partial<Record<PitchingViewField, StatValue>> = {};
+    pitchingViewFieldOrder.forEach((field) => {
+      if (field === 'playerNumber') {
+        const numberValue = stat.playerNumber;
+        values[field] = numberValue === null || numberValue === undefined ? null : numberValue;
+      } else if (field === 'playerName') {
+        values[field] = stat.playerName ?? null;
+      } else {
+        values[field] = (stat as Record<string, number | string | null | undefined>)[field] ?? null;
+      }
     });
 
-    if (totals) {
-      const totalsValues: Partial<Record<PitchingViewField, StatValue>> = {};
-      pitchingViewFieldOrder.forEach((field) => {
-        if (field === 'playerNumber') {
-          totalsValues[field] = null;
-        } else if (field === 'playerName') {
-          totalsValues[field] = 'Totals';
-        } else {
-          totalsValues[field] =
-            (totals as Record<string, number | string | null | undefined>)[field] ?? null;
-        }
-      });
+    const resolvedPlayerName = values.playerName;
+    const resolvedPlayerNumber = values.playerNumber;
 
-      const totalsRow: PitchingTableRow = {
-        ...(totalsValues as Record<string, StatValue>),
-        id: 'totals',
-        playerName: 'Totals',
-        isTotals: true,
-        ip: Number(totals.ip ?? 0),
-        ip2: Number(totals.ip2 ?? 0),
-        playerId: null,
-        contactId: null,
-      };
+    return {
+      ...(values as Record<string, StatValue>),
+      id: stat.statId,
+      playerName:
+        typeof resolvedPlayerName === 'string' ? resolvedPlayerName : (stat.playerName ?? null),
+      playerNumber:
+        typeof resolvedPlayerNumber === 'number' || typeof resolvedPlayerNumber === 'string'
+          ? resolvedPlayerNumber
+          : null,
+      ip: stat.ip ?? null,
+      ip2: stat.ip2 ?? null,
+      playerId: stat.playerId ?? null,
+      contactId: stat.contactId ?? null,
+    };
+  });
 
-      rows.push(totalsRow);
-    }
+  if (totals) {
+    const totalsValues: Partial<Record<PitchingViewField, StatValue>> = {};
+    pitchingViewFieldOrder.forEach((field) => {
+      if (field === 'playerNumber') {
+        totalsValues[field] = null;
+      } else if (field === 'playerName') {
+        totalsValues[field] = 'Totals';
+      } else {
+        totalsValues[field] =
+          (totals as Record<string, number | string | null | undefined>)[field] ?? null;
+      }
+    });
 
-    return rows;
-  }, [sortedRows, totals]);
+    const totalsRow: PitchingTableRow = {
+      ...(totalsValues as Record<string, StatValue>),
+      id: 'totals',
+      playerName: 'Totals',
+      isTotals: true,
+      ip: Number(totals.ip ?? 0),
+      ip2: Number(totals.ip2 ?? 0),
+      playerId: null,
+      contactId: null,
+    };
+
+    tableRows.push(totalsRow);
+  }
 
   const sortField = sortConfig?.key as keyof PitchingTableRow | undefined;
   const sortOrder = sortConfig?.direction ?? 'asc';
 
-  const handleTableSort = useCallback(
-    (field: keyof PitchingTableRow) => {
-      handleSort(field as PitchingViewField);
-    },
-    [handleSort],
-  );
+  const handleTableSort = (field: keyof PitchingTableRow) => {
+    handleSort(field as PitchingViewField);
+  };
 
   return (
     <Box>

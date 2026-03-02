@@ -1,4 +1,3 @@
-import { useMemo, useCallback } from 'react';
 import { Box, Button, CircularProgress, Alert, Typography } from '@mui/material';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
@@ -27,44 +26,33 @@ export default function EmailCompose() {
     refresh: refreshRecipients,
   } = useEmailRecipients(accountId as string, currentSeason?.id);
 
-  const initialData = useMemo(() => {
-    const templateId = searchParams.get('template');
-    const subject = searchParams.get('subject');
-    const body = searchParams.get('body');
+  const templateId = searchParams.get('template');
+  const subject = searchParams.get('subject');
+  const body = searchParams.get('body');
 
-    if (!subject && !body && !templateId) {
-      return undefined;
-    }
+  const initialData =
+    subject || body || templateId
+      ? ({
+          subject: subject ?? '',
+          body: body ?? '',
+          templateId: templateId ?? undefined,
+        } satisfies Partial<EmailComposeRequest>)
+      : undefined;
 
-    return {
-      subject: subject ?? '',
-      body: body ?? '',
-      templateId: templateId ?? undefined,
-    } satisfies Partial<EmailComposeRequest>;
-  }, [searchParams]);
-
-  // Combined loading and error states
   const loading = seasonLoading || recipientsLoading;
   const error = seasonError || recipientsError;
 
-  // Handle back navigation
-  const handleBack = useCallback(() => {
+  const handleBack = () => {
     router.push(`/account/${accountId}/communications`);
-  }, [router, accountId]);
+  };
 
-  // Handle send completion
-  const handleSendComplete = useCallback(
-    (emailId: string) => {
-      // Navigate back to communications page or show success message
-      router.push(`/account/${accountId}/communications?sent=${emailId}`);
-    },
-    [router, accountId],
-  );
+  const handleSendComplete = (emailId: string) => {
+    router.push(`/account/${accountId}/communications?sent=${emailId}`);
+  };
 
-  // Handle cancel
-  const handleCancel = useCallback(() => {
+  const handleCancel = () => {
     router.push(`/account/${accountId}/communications`);
-  }, [router, accountId]);
+  };
 
   // Show loading state
   if (loading) {

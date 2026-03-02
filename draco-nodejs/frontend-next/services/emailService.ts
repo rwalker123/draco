@@ -346,10 +346,11 @@ export class EmailService {
     return mapTemplate(data);
   }
 
-  async listTemplates(accountId: string): Promise<EmailTemplate[]> {
+  async listTemplates(accountId: string, signal?: AbortSignal): Promise<EmailTemplate[]> {
     const result = await apiListEmailTemplates({
       client: this.client,
       path: { accountId },
+      signal,
       throwOnError: false,
     });
 
@@ -357,10 +358,15 @@ export class EmailService {
     return data.templates.map(mapTemplate);
   }
 
-  async getTemplate(accountId: string, templateId: string): Promise<EmailTemplate> {
+  async getTemplate(
+    accountId: string,
+    templateId: string,
+    signal?: AbortSignal,
+  ): Promise<EmailTemplate> {
     const result = await apiGetEmailTemplate({
       client: this.client,
       path: { accountId, templateId },
+      signal,
       throwOnError: false,
     });
 

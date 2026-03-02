@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   AccountSettingKey,
   AccountSettingState,
@@ -39,34 +39,48 @@ export function AccountSettingsGroup({
   updatingKey,
   onUpdate,
 }: AccountSettingsGroupProps) {
-  const sortedSettings = useMemo(
-    () =>
-      [...settings].sort(
-        (a, b) =>
-          a.definition.sortOrder - b.definition.sortOrder ||
-          a.definition.key.localeCompare(b.definition.key),
-      ),
-    [settings],
-  );
-
   return (
     <Paper variant="outlined" sx={{ p: 3, bgcolor: 'background.paper' }}>
       <PageSectionHeader title={title} component="h3" gutterBottom />
 
       <Stack spacing={2.5}>
-        {sortedSettings.map((setting) => (
-          <AccountSettingRow
-            key={setting.definition.key}
-            setting={setting}
-            settingsMap={settingsMap}
-            canManage={canManage}
-            isUpdating={updatingKey === setting.definition.key}
-            onUpdate={onUpdate}
-          />
-        ))}
+        {[...settings]
+          .sort(
+            (a, b) =>
+              a.definition.sortOrder - b.definition.sortOrder ||
+              a.definition.key.localeCompare(b.definition.key),
+          )
+          .map((setting) => (
+            <AccountSettingRow
+              key={setting.definition.key}
+              setting={setting}
+              settingsMap={settingsMap}
+              canManage={canManage}
+              isUpdating={updatingKey === setting.definition.key}
+              onUpdate={onUpdate}
+            />
+          ))}
       </Stack>
     </Paper>
   );
+}
+
+function getUnmetDependencies(
+  definition: AccountSettingState['definition'],
+  settingsMap: Map<AccountSettingKey, AccountSettingState>,
+): AccountSettingState['definition']['requires'] {
+  if (!definition.requires?.length) {
+    return [];
+  }
+
+  return definition.requires.filter((dependency) => {
+    const requiredSetting = settingsMap.get(dependency.key);
+    if (!requiredSetting) {
+      return true;
+    }
+    const requiredValue = requiredSetting.effectiveValue ?? requiredSetting.value;
+    return requiredValue !== dependency.value;
+  });
 }
 
 interface AccountSettingRowProps {
@@ -87,21 +101,7 @@ function AccountSettingRow({
   const { definition, value, isDefault, isLocked, lockedReason } = setting;
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const unmetDependencies = useMemo(() => {
-    if (!definition.requires?.length) {
-      return [];
-    }
-
-    return definition.requires.filter((dependency) => {
-      const requiredSetting = settingsMap.get(dependency.key);
-      if (!requiredSetting) {
-        return true;
-      }
-      const requiredValue = requiredSetting.effectiveValue ?? requiredSetting.value;
-      return requiredValue !== dependency.value;
-    });
-  }, [definition.requires, settingsMap]);
-
+  const unmetDependencies = getUnmetDependencies(definition, settingsMap) ?? [];
   const dependenciesSatisfied = unmetDependencies.length === 0;
   const disabled = !canManage || isLocked || !dependenciesSatisfied;
 

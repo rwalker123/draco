@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Stack,
@@ -52,7 +52,7 @@ const WorkoutsTabContent: React.FC<WorkoutsTabContentProps> = ({
   const [rootExpanded, setRootExpanded] = useState(true);
   const [collapsedWorkouts, setCollapsedWorkouts] = useState<Set<string>>(new Set());
 
-  const toggleExpand = useCallback((workoutId: string) => {
+  const toggleExpand = (workoutId: string) => {
     setCollapsedWorkouts((prev) => {
       const next = new Set(prev);
       if (next.has(workoutId)) {
@@ -62,15 +62,12 @@ const WorkoutsTabContent: React.FC<WorkoutsTabContentProps> = ({
       }
       return next;
     });
-  }, []);
+  };
 
-  const selectedCount = useMemo(() => {
-    let total = 0;
-    selectedWorkoutIds.forEach((ids) => {
-      total += ids.size;
-    });
-    return total;
-  }, [selectedWorkoutIds]);
+  const selectedCount = Array.from(selectedWorkoutIds.values()).reduce(
+    (total, ids) => total + ids.size,
+    0,
+  );
 
   const allSelected = totalRegistrants > 0 && selectedCount === totalRegistrants;
   const indeterminate = selectedCount > 0 && selectedCount < totalRegistrants;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -61,14 +61,19 @@ function BaseballLiveWatchDialogContent({
   const [noSession, setNoSession] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchInitialState = async () => {
       setLoadingInitialState(true);
       try {
         const result = await getBaseballLiveScoringState({
           client: apiClient,
           path: { accountId, gameId },
+          signal: controller.signal,
           throwOnError: false,
         });
+
+        if (controller.signal.aborted) return;
 
         if (result.error || !result.data) {
           setNoSession(true);
@@ -76,15 +81,19 @@ function BaseballLiveWatchDialogContent({
           connect(gameId, 'watcher');
         }
       } catch {
+        if (controller.signal.aborted) return;
         setNoSession(true);
       } finally {
-        setLoadingInitialState(false);
+        if (!controller.signal.aborted) {
+          setLoadingInitialState(false);
+        }
       }
     };
 
-    fetchInitialState();
+    void fetchInitialState();
 
     return () => {
+      controller.abort();
       disconnect();
     };
   }, [gameId, accountId, apiClient, connect, disconnect]);
@@ -93,29 +102,17 @@ function BaseballLiveWatchDialogContent({
   const isSessionFinalized = sessionState?.status === 'finalized';
   const isSessionStopped = sessionState?.status === 'stopped';
 
-  const { inningsToShow, getScoreForInning } = useMemo(() => {
-    if (!sessionState?.scores.length) {
-      return {
-        inningsToShow: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-        getScoreForInning: () => undefined,
-      };
-    }
+  const getScoreForInning = (inning: number, isHomeTeam: boolean): number | undefined => {
+    const score = sessionState?.scores.find(
+      (s) => s.inningNumber === inning && s.isHomeTeam === isHomeTeam,
+    );
+    return score?.runs;
+  };
 
-    const maxInning = Math.max(...sessionState.scores.map((s) => s.inningNumber), 9);
-    const innings = Array.from({ length: maxInning }, (_, i) => i + 1);
-
-    const getScore = (inning: number, isHomeTeam: boolean): number | undefined => {
-      const score = sessionState.scores.find(
-        (s) => s.inningNumber === inning && s.isHomeTeam === isHomeTeam,
-      );
-      return score?.runs;
-    };
-
-    return {
-      inningsToShow: innings,
-      getScoreForInning: getScore,
-    };
-  }, [sessionState]);
+  const inningsMaxInning = sessionState?.scores.length
+    ? Math.max(...sessionState.scores.map((s) => s.inningNumber), 9)
+    : 9;
+  const inningsToShow = Array.from({ length: inningsMaxInning }, (_, i) => i + 1);
 
   return (
     <>

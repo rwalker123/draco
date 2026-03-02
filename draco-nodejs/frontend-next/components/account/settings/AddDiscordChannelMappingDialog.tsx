@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -66,11 +66,6 @@ const AddDiscordChannelMappingDialog: React.FC<AddDiscordChannelMappingDialogPro
   const { createChannelMapping } = useAccountDiscordAdmin();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const channelMappingResolver = useMemo(
-    () => zodResolver(DiscordChannelMappingCreateSchema) as Resolver<ChannelMappingFormValues>,
-    [],
-  );
-
   const {
     control,
     register,
@@ -79,15 +74,15 @@ const AddDiscordChannelMappingDialog: React.FC<AddDiscordChannelMappingDialogPro
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<ChannelMappingFormValues>({
-    resolver: channelMappingResolver,
+    resolver: zodResolver(DiscordChannelMappingCreateSchema) as Resolver<ChannelMappingFormValues>,
     defaultValues,
     mode: 'onSubmit',
   });
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     reset(defaultValues);
     setSubmitError(null);
-  }, [reset]);
+  };
 
   const fieldErrors = errors as Partial<Record<string, { message?: string }>>;
 
@@ -110,28 +105,25 @@ const AddDiscordChannelMappingDialog: React.FC<AddDiscordChannelMappingDialogPro
     setValue('channelType', selected?.type ?? undefined);
   }, [availableChannels, selectedChannelId, selectedMode, setValue]);
 
-  const handleModeChange = useCallback(
-    (nextMode: ChannelMappingFormValues['mode']) => {
-      setValue('mode', nextMode);
-      setSubmitError(null);
-      if (nextMode === 'autoCreate') {
-        setValue('discordChannelId', '');
-        setValue('discordChannelName', '');
-        setValue('channelType', undefined);
-      } else {
-        setValue('newChannelName', '');
-        setValue('newChannelType', 'text');
-      }
-    },
-    [setValue],
-  );
+  const handleModeChange = (nextMode: ChannelMappingFormValues['mode']) => {
+    setValue('mode', nextMode);
+    setSubmitError(null);
+    if (nextMode === 'autoCreate') {
+      setValue('discordChannelId', '');
+      setValue('discordChannelName', '');
+      setValue('channelType', undefined);
+    } else {
+      setValue('newChannelName', '');
+      setValue('newChannelType', 'text');
+    }
+  };
 
-  const handleDialogClose = useCallback(() => {
+  const handleDialogClose = () => {
     if (!isSubmitting) {
       resetForm();
       onClose();
     }
-  }, [isSubmitting, onClose, resetForm]);
+  };
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
@@ -146,11 +138,6 @@ const AddDiscordChannelMappingDialog: React.FC<AddDiscordChannelMappingDialogPro
       setSubmitError(message);
     }
   });
-
-  const sortedChannels = useMemo(
-    () => [...availableChannels].sort((a, b) => a.name.localeCompare(b.name)),
-    [availableChannels],
-  );
 
   return (
     <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
@@ -197,12 +184,14 @@ const AddDiscordChannelMappingDialog: React.FC<AddDiscordChannelMappingDialogPro
                     'Select a text or announcement channel.'
                   }
                 >
-                  {sortedChannels.map((channel) => (
-                    <MenuItem key={channel.id} value={channel.id}>
-                      {channel.name}
-                      {channel.type ? ` (${channel.type})` : ''}
-                    </MenuItem>
-                  ))}
+                  {[...availableChannels]
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((channel) => (
+                      <MenuItem key={channel.id} value={channel.id}>
+                        {channel.name}
+                        {channel.type ? ` (${channel.type})` : ''}
+                      </MenuItem>
+                    ))}
                 </TextField>
               )}
             />

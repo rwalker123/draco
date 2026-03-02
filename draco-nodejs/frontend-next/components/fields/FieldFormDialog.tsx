@@ -24,6 +24,7 @@ import type { FieldType, UpsertFieldType } from '@draco/shared-schemas';
 import { UpsertFieldSchema } from '@draco/shared-schemas';
 import type { FieldLocationMapProps } from './FieldLocationMap';
 import { useFieldService, type FieldService } from '../../hooks/useFieldService';
+import { formatPhoneInput } from '@/utils/phoneNumber';
 
 interface FieldFormDialogProps {
   accountId: string;
@@ -208,6 +209,10 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
     }
   };
 
+  const handleRainoutNumberChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setValue('rainoutNumber', formatPhoneInput(event.target.value), { shouldValidate: true });
+  };
+
   const handleMapLocationChange = (lat: number, lng: number) => {
     setValue('latitude', lat.toFixed(6));
     setValue('longitude', lng.toFixed(6));
@@ -380,8 +385,10 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 label="Rainout Number"
                 fullWidth
                 {...register('rainoutNumber')}
+                onChange={handleRainoutNumberChange}
                 error={Boolean(errors.rainoutNumber)}
                 helperText={errors.rainoutNumber?.message}
+                slotProps={{ htmlInput: { maxLength: 14 } }}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
@@ -391,6 +398,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 {...register('latitude')}
                 error={Boolean(errors.latitude)}
                 helperText={errors.latitude?.message}
+                slotProps={{ inputLabel: { shrink: !!latitudeValue } }}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
@@ -400,6 +408,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 {...register('longitude')}
                 error={Boolean(errors.longitude)}
                 helperText={errors.longitude?.message}
+                slotProps={{ inputLabel: { shrink: !!longitudeValue } }}
               />
             </Grid>
           </Grid>

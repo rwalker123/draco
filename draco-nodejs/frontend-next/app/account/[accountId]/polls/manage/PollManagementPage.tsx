@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -9,6 +9,7 @@ import {
   Fab,
   IconButton,
   Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -29,6 +30,7 @@ import { useApiClient } from '../../../../../hooks/useApiClient';
 import { useAuth } from '../../../../../context/AuthContext';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { alpha } from '@mui/material/styles';
+import { UI_TIMEOUTS } from '../../../../../constants/timeoutConstants';
 
 interface PollManagementPageProps {
   accountId: string;
@@ -39,103 +41,105 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
   const { token } = useAuth();
   const [polls, setPolls] = useState<AccountPollType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    severity: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorPoll, setEditorPoll] = useState<AccountPollType | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletePoll, setDeletePoll] = useState<AccountPollType | null>(null);
 
-  const canManage = useMemo(() => Boolean(token), [token]);
+  const canManage = Boolean(token);
 
-  const loadPolls = useCallback(async () => {
+  useEffect(() => {
     if (!canManage) {
       setPolls([]);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    const controller = new AbortController();
 
-    try {
-      const result = await listAccountPolls({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
+    const loadPolls = async () => {
+      setLoading(true);
 
-      const polls = unwrapApiResult(result, 'Failed to load poll list');
+      try {
+        const result = await listAccountPolls({
+          client: apiClient,
+          path: { accountId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
 
-      setPolls(polls ?? []);
-    } catch (err) {
-      console.error('Failed to load polls:', err);
-      setError('Failed to load polls.');
-      setPolls([]);
-    } finally {
-      setLoading(false);
-    }
+        if (controller.signal.aborted) return;
+
+        const loaded = unwrapApiResult(result, 'Failed to load poll list');
+        setPolls(loaded ?? []);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load polls:', err);
+        setSnackbar({ severity: 'error', message: 'Failed to load polls.' });
+        setPolls([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadPolls();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, apiClient, canManage]);
 
-  useEffect(() => {
-    void loadPolls();
-  }, [loadPolls]);
-
-  const handleOpenCreate = useCallback(() => {
+  const handleOpenCreate = () => {
     setEditorPoll(null);
     setEditorOpen(true);
-  }, []);
+  };
 
-  const handleOpenEdit = useCallback((poll: AccountPollType) => {
+  const handleOpenEdit = (poll: AccountPollType) => {
     setEditorPoll(poll);
     setEditorOpen(true);
-  }, []);
+  };
 
-  const handleCloseEditor = useCallback(() => {
+  const handleCloseEditor = () => {
     setEditorOpen(false);
     setEditorPoll(null);
-  }, []);
+  };
 
-  const handleEditorSuccess = useCallback(
-    ({ message, poll }: { message: string; poll: AccountPollType }) => {
-      setPolls((prev) => {
-        const exists = prev.some((item) => item.id === poll.id);
-        return exists ? prev.map((item) => (item.id === poll.id ? poll : item)) : [...prev, poll];
-      });
-      setSuccess(message);
-      setError(null);
-    },
-    [],
-  );
+  const handleEditorSuccess = ({ message, poll }: { message: string; poll: AccountPollType }) => {
+    setPolls((prev) => {
+      const exists = prev.some((item) => item.id === poll.id);
+      return exists ? prev.map((item) => (item.id === poll.id ? poll : item)) : [...prev, poll];
+    });
+    setSnackbar({ severity: 'success', message });
+  };
 
-  const handleEditorError = useCallback((message: string) => {
-    setError(message);
-    setSuccess(null);
-  }, []);
+  const handleEditorError = (message: string) => {
+    setSnackbar({ severity: 'error', message });
+  };
 
-  const handleConfirmDelete = useCallback((poll: AccountPollType) => {
+  const handleConfirmDelete = (poll: AccountPollType) => {
     setDeletePoll(poll);
     setDeleteOpen(true);
-  }, []);
+  };
 
-  const handleCloseDelete = useCallback(() => {
+  const handleCloseDelete = () => {
     setDeleteOpen(false);
     setDeletePoll(null);
-  }, []);
+  };
 
-  const handleDeleteSuccess = useCallback(
-    ({ message, pollId }: { message: string; pollId: string }) => {
-      setPolls((prev) => prev.filter((poll) => poll.id !== pollId));
-      setSuccess(message);
-      setError(null);
-    },
-    [],
-  );
+  const handleDeleteSuccess = ({ message, pollId }: { message: string; pollId: string }) => {
+    setPolls((prev) => prev.filter((poll) => poll.id !== pollId));
+    setSnackbar({ severity: 'success', message });
+  };
 
-  const handleDeleteError = useCallback((message: string) => {
-    setError(message);
-    setSuccess(null);
-  }, []);
+  const handleDeleteError = (message: string) => {
+    setSnackbar({ severity: 'error', message });
+  };
 
   if (!canManage) {
     return (
@@ -178,17 +182,6 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
           category={{ name: 'Community', href: `/account/${accountId}/admin/community` }}
           currentPage="Poll Management"
         />
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {success}
-          </Alert>
-        )}
-
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress size={40} />
@@ -327,6 +320,28 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
         onSuccess={handleDeleteSuccess}
         onError={handleDeleteError}
       />
+
+      <Snackbar
+        open={Boolean(snackbar)}
+        autoHideDuration={
+          snackbar?.severity === 'error'
+            ? UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS
+            : UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS
+        }
+        onClose={() => setSnackbar(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {snackbar ? (
+          <Alert
+            onClose={() => setSnackbar(null)}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </main>
   );
 };

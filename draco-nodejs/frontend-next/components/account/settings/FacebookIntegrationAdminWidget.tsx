@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -31,6 +31,15 @@ interface FacebookIntegrationAdminWidgetProps {
   onAccountUpdate?: (account: AccountType) => void;
 }
 
+type FacebookStatusResponse = {
+  appConfigured: boolean;
+  pageConnected: boolean;
+  pageId?: string | null;
+  pageName?: string | null;
+  pageHandle?: string | null;
+  userTokenPresent?: boolean;
+};
+
 export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWidgetProps> = ({
   account,
   onAccountUpdate,
@@ -53,127 +62,189 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
   const [appConfigured, setAppConfigured] = useState(false);
   const [userTokenPresent, setUserTokenPresent] = useState(false);
   const pageHandleDirty = pageHandle.trim() !== (savedPageHandle ?? '');
-  type FacebookStatusResponse = {
-    appConfigured: boolean;
-    pageConnected: boolean;
-    pageId?: string | null;
-    pageName?: string | null;
-    pageHandle?: string | null;
-    userTokenPresent?: boolean;
-  };
 
   const authStatus = searchParams.get('facebookAuth');
   const authMessage = searchParams.get('message');
 
-  const loadStatus = useCallback(async () => {
-    if (!token) {
-      return;
-    }
+  const applyStatusResponse = (body: FacebookStatusResponse) => {
+    setAppConfigured(Boolean(body.appConfigured));
+    setPageConnected(Boolean(body.pageConnected));
+    setPageName(body.pageName ?? null);
+    setPageHandle(body.pageHandle ?? '');
+    setSavedPageHandle(body.pageHandle ?? null);
+    setUserTokenPresent(Boolean(body.userTokenPresent));
+  };
+
+  const loadFacebookStatus = async (signal?: AbortSignal) => {
+    setStatusLoading(true);
     try {
-      setStatusLoading(true);
       const response = await getAccountFacebookStatus({
         client: apiClient,
         path: { accountId: account.id },
         throwOnError: false,
+        signal,
       });
+      if (signal?.aborted) return;
       const body = unwrapApiResult<FacebookStatusResponse>(
         response,
         'Unable to load Facebook status.',
       );
-      setAppConfigured(Boolean(body.appConfigured));
-      setPageConnected(Boolean(body.pageConnected));
-      setPageName(body.pageName ?? null);
-      setPageHandle(body.pageHandle ?? '');
-      setSavedPageHandle(body.pageHandle ?? null);
-      setUserTokenPresent(Boolean(body.userTokenPresent));
+      applyStatusResponse(body);
     } catch (err) {
+      if (signal?.aborted) return;
       console.error('Failed to load Facebook status', err);
       setError('Unable to load Facebook status. Please try again.');
     } finally {
-      setStatusLoading(false);
+      if (!signal?.aborted) {
+        setStatusLoading(false);
+      }
     }
+  };
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchStatus = async () => {
+      setStatusLoading(true);
+      try {
+        const response = await getAccountFacebookStatus({
+          client: apiClient,
+          path: { accountId: account.id },
+          throwOnError: false,
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        const body = unwrapApiResult<FacebookStatusResponse>(
+          response,
+          'Unable to load Facebook status.',
+        );
+        applyStatusResponse(body);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load Facebook status', err);
+        setError('Unable to load Facebook status. Please try again.');
+      } finally {
+        if (!controller.signal.aborted) {
+          setStatusLoading(false);
+        }
+      }
+    };
+
+    void fetchStatus();
+
+    return () => {
+      controller.abort();
+    };
   }, [account.id, apiClient, token]);
 
   useEffect(() => {
-    void loadStatus();
-  }, [loadStatus]);
+    if (!authStatus) return;
 
-  useEffect(() => {
-    if (authStatus === 'success') {
-      setSuccess(
-        authMessage || 'Facebook authorization completed. Enter your Page handle to finish setup.',
-      );
-      void loadStatus();
-    } else if (authStatus === 'error') {
+    if (authStatus === 'error') {
       setError(authMessage || 'Facebook authorization failed.');
+      return;
     }
-  }, [authMessage, authStatus, loadStatus]);
 
-  const hasPendingChanges = useMemo(
-    () =>
-      facebookAppId.trim().length > 0 || facebookAppSecret.trim().length > 0 || clearCredentials,
-    [clearCredentials, facebookAppId, facebookAppSecret],
-  );
+    if (authStatus !== 'success') return;
 
-  const handleSubmit = useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      setError(null);
-      setSuccess(null);
+    setSuccess(
+      authMessage || 'Facebook authorization completed. Enter your Page handle to finish setup.',
+    );
 
-      if (!hasPendingChanges) {
-        setError('Update at least one field before saving.');
-        return;
-      }
+    if (!token) return;
 
-      setSaving(true);
+    const controller = new AbortController();
 
+    const fetchStatus = async () => {
+      setStatusLoading(true);
       try {
-        const normalizedAppId = facebookAppId.trim();
-        const normalizedAppSecret = facebookAppSecret.trim();
-
-        const payload = {
-          appId: normalizedAppId || undefined,
-          appSecret: normalizedAppSecret || undefined,
-          clearCredentials,
-        };
-
-        const result = await upsertAccountFacebookCredentials({
+        const response = await getAccountFacebookStatus({
           client: apiClient,
           path: { accountId: account.id },
-          body: payload,
           throwOnError: false,
+          signal: controller.signal,
         });
-        assertNoApiError(result, 'Unable to save Facebook settings');
-        onAccountUpdate?.(account);
-
-        setSuccess('Facebook settings saved. Secrets are encrypted and never shown here.');
-        setFacebookAppId('');
-        setFacebookAppSecret('');
-        setClearCredentials(false);
-        void loadStatus();
+        if (controller.signal.aborted) return;
+        const body = unwrapApiResult<FacebookStatusResponse>(
+          response,
+          'Unable to load Facebook status.',
+        );
+        applyStatusResponse(body);
       } catch (err) {
-        console.error('Failed to save Facebook settings', err);
-        setError('Unable to save Facebook settings. Please try again.');
+        if (controller.signal.aborted) return;
+        console.error('Failed to load Facebook status', err);
+        setError('Unable to load Facebook status. Please try again.');
       } finally {
-        setSaving(false);
+        if (!controller.signal.aborted) {
+          setStatusLoading(false);
+        }
       }
-    },
-    [
-      account,
-      apiClient,
-      clearCredentials,
-      facebookAppId,
-      facebookAppSecret,
-      hasPendingChanges,
-      loadStatus,
-      onAccountUpdate,
-    ],
-  );
+    };
+
+    void fetchStatus();
+
+    return () => {
+      controller.abort();
+    };
+  }, [account.id, apiClient, authMessage, authStatus, token]);
+
+  const hasPendingChanges =
+    facebookAppId.trim().length > 0 || facebookAppSecret.trim().length > 0 || clearCredentials;
 
   const submitDisabled = saving || !hasPendingChanges;
 
-  const handleConnect = useCallback(async () => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (!hasPendingChanges) {
+      setError('Update at least one field before saving.');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const normalizedAppId = facebookAppId.trim();
+      const normalizedAppSecret = facebookAppSecret.trim();
+
+      const payload = {
+        appId: normalizedAppId || undefined,
+        appSecret: normalizedAppSecret || undefined,
+        clearCredentials,
+      };
+
+      const result = await upsertAccountFacebookCredentials({
+        client: apiClient,
+        path: { accountId: account.id },
+        body: payload,
+        throwOnError: false,
+      });
+      assertNoApiError(result, 'Unable to save Facebook settings');
+      onAccountUpdate?.(account);
+
+      setSuccess('Facebook settings saved. Secrets are encrypted and never shown here.');
+      setFacebookAppId('');
+      setFacebookAppSecret('');
+      setClearCredentials(false);
+
+      if (token) {
+        await loadFacebookStatus();
+      }
+    } catch (err) {
+      console.error('Failed to save Facebook settings', err);
+      setError('Unable to save Facebook settings. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleConnect = async () => {
     if (!token) {
       setError('You must be signed in to connect Facebook.');
       return;
@@ -199,9 +270,9 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       console.error('Failed to start Facebook authorization', err);
       setError('Unable to start Facebook authorization. Check app credentials and try again.');
     }
-  }, [account.id, apiClient, token]);
+  };
 
-  const handleSavePageHandle = useCallback(async () => {
+  const handleSavePageHandle = async () => {
     if (!token) {
       setError('You must be signed in to connect Facebook.');
       return;
@@ -224,16 +295,17 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       assertNoApiError(result, 'Unable to save Facebook Page handle.');
       setSuccess('Facebook Page handle saved.');
       setSavedPageHandle(normalizedHandle);
-      await loadStatus();
+
+      await loadFacebookStatus();
     } catch (err) {
       console.error('Failed to save Facebook Page handle', err);
       setError('Unable to save Facebook Page handle. Confirm Facebook is connected and try again.');
     } finally {
       setSavingPageHandle(false);
     }
-  }, [account.id, apiClient, loadStatus, pageHandle, token]);
+  };
 
-  const handleDisconnect = useCallback(async () => {
+  const handleDisconnect = async () => {
     if (!token) {
       setError('You must be signed in to disconnect Facebook.');
       return;
@@ -253,12 +325,18 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       setSavedPageHandle(null);
       setUserTokenPresent(false);
       setSuccess('Facebook integration disconnected.');
-      void loadStatus();
+
+      await loadFacebookStatus();
     } catch (err) {
       console.error('Failed to disconnect Facebook', err);
       setError('Unable to disconnect Facebook.');
     }
-  }, [account.id, apiClient, loadStatus, token]);
+  };
+
+  const handleRefreshStatus = async () => {
+    if (!token) return;
+    await loadFacebookStatus();
+  };
 
   return (
     <>
@@ -403,7 +481,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
                 >
                   Connect Facebook
                 </Button>
-                <Button variant="text" onClick={loadStatus} disabled={statusLoading}>
+                <Button variant="text" onClick={handleRefreshStatus} disabled={statusLoading}>
                   Refresh status
                 </Button>
               </Box>

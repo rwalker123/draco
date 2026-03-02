@@ -267,9 +267,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const resolvedTeamId = teamData?.teamId ?? teamSeason?.team?.id ?? null;
   const showInformationWidget = Boolean(accountId && teamSeasonId);
 
-  const teamAnnouncementIds = ((): string[] => {
-    return teamData?.teamId ? [teamData.teamId] : [];
-  })();
+  const teamAnnouncementIds = teamData?.teamId ? [teamData.teamId] : [];
 
   const {
     submissions: teamPendingSubmissions,
@@ -669,7 +667,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               </Box>
             ) : null}
 
-            {teamData?.teamId ? (
+            {teamData?.teamId && token ? (
               <SpecialAnnouncementsWidget
                 accountId={accountId}
                 teamIds={teamAnnouncementIds}

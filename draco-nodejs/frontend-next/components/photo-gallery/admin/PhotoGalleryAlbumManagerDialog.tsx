@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -35,6 +35,11 @@ import { ApiClientError } from '../../../utils/apiResult';
 import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
 import PhotoGalleryAlbumSections, { PhotoGalleryAlbumEntry } from './PhotoGalleryAlbumSections';
 
+type AlbumDialogSuccessPayload =
+  | { message: string; operation: 'create'; album: PhotoGalleryAdminAlbumType }
+  | { message: string; operation: 'update'; album: PhotoGalleryAdminAlbumType }
+  | { message: string; operation: 'delete'; albumId: string };
+
 interface PhotoGalleryAlbumManagerDialogProps {
   accountId: string;
   open: boolean;
@@ -43,7 +48,7 @@ interface PhotoGalleryAlbumManagerDialogProps {
   defaultAlbumPhotoCount: number;
   token?: string | null;
   onClose: () => void;
-  onSuccess?: (payload: { message: string }) => void;
+  onSuccess?: (payload: AlbumDialogSuccessPayload) => void;
   onError?: (message: string) => void;
 }
 
@@ -98,7 +103,7 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     }
   }, [open, albums, albumPhotoCounts, defaultAlbumPhotoCount]);
 
-  const handleCreate = useCallback(async () => {
+  const handleCreate = async () => {
     const title = newAlbumTitle.trim();
     if (!title) {
       setOperationMessage('Album title is required');
@@ -124,7 +129,7 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
 
       setLocalAlbums((current) => [...current, normalized]);
       setNewAlbumTitle('');
-      onSuccess?.({ message: 'Album created successfully' });
+      onSuccess?.({ message: 'Album created successfully', operation: 'create', album: created });
     } catch (error) {
       const message =
         error instanceof ApiClientError
@@ -137,9 +142,9 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     } finally {
       setSubmitting(false);
     }
-  }, [accountId, newAlbumTitle, onError, onSuccess, token]);
+  };
 
-  const handleStartEdit = useCallback((album: EditableAlbum) => {
+  const handleStartEdit = (album: EditableAlbum) => {
     if (album.isDefault) {
       setOperationMessage('The default album cannot be renamed.');
       return;
@@ -148,14 +153,14 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     setEditingAlbumId(album.id);
     setEditingTitle(album.title);
     setOperationMessage(null);
-  }, []);
+  };
 
-  const handleCancelEdit = useCallback(() => {
+  const handleCancelEdit = () => {
     setEditingAlbumId(null);
     setEditingTitle('');
-  }, []);
+  };
 
-  const handleSaveEdit = useCallback(async () => {
+  const handleSaveEdit = async () => {
     if (!editingAlbumId) {
       return;
     }
@@ -186,7 +191,7 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
       );
       setEditingAlbumId(null);
       setEditingTitle('');
-      onSuccess?.({ message: 'Album updated successfully' });
+      onSuccess?.({ message: 'Album updated successfully', operation: 'update', album: updated });
     } catch (error) {
       const message =
         error instanceof ApiClientError
@@ -199,9 +204,9 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     } finally {
       setSubmitting(false);
     }
-  }, [accountId, editingAlbumId, editingTitle, onError, onSuccess, token]);
+  };
 
-  const handleConfirmDelete = useCallback((album: EditableAlbum) => {
+  const handleConfirmDelete = (album: EditableAlbum) => {
     if (album.isDefault) {
       setOperationMessage('The default album cannot be deleted.');
       return;
@@ -212,9 +217,9 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
       return;
     }
     setPendingDelete(album);
-  }, []);
+  };
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     if (!pendingDelete) {
       return;
     }
@@ -226,7 +231,11 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
       await deleteGalleryAlbumAdmin(accountId, pendingDelete.id, token);
       setLocalAlbums((current) => current.filter((album) => album.id !== pendingDelete.id));
       setPendingDelete(null);
-      onSuccess?.({ message: 'Album deleted successfully' });
+      onSuccess?.({
+        message: 'Album deleted successfully',
+        operation: 'delete',
+        albumId: pendingDelete.id,
+      });
     } catch (error) {
       const message =
         error instanceof ApiClientError
@@ -239,14 +248,14 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     } finally {
       setSubmitting(false);
     }
-  }, [accountId, onError, onSuccess, pendingDelete, token]);
+  };
 
-  const handleCloseDeleteDialog = useCallback(() => {
+  const handleCloseDeleteDialog = () => {
     if (submitting) {
       return;
     }
     setPendingDelete(null);
-  }, [submitting]);
+  };
 
   return (
     <>

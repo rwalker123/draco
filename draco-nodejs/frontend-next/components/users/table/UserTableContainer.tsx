@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, memo } from 'react';
+import React, { useState } from 'react';
 import { Paper, Box, Typography } from '@mui/material';
 import { UserSelectionProvider } from './context/UserSelectionProvider';
 import { useEnhancedUsers, usePermissionBasedSelection } from './hooks/useUserSelection';
@@ -111,90 +111,64 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
     onSelectionChange,
   );
 
-  // Merge view configuration with defaults
-  const finalViewConfig = useMemo(
-    () => ({
-      ...DEFAULT_VIEW_CONFIG,
-      ...viewConfig,
-    }),
-    [viewConfig],
-  );
+  const finalViewConfig = {
+    ...DEFAULT_VIEW_CONFIG,
+    ...viewConfig,
+  };
 
-  // Bulk actions with defaults
-  const allBulkActions = useMemo(() => {
-    const defaultActions = DEFAULT_BULK_ACTIONS.map((action) => ({
+  const allBulkActions = [
+    ...DEFAULT_BULK_ACTIONS.map((action) => ({
       ...action,
       handler: async (users: EnhancedUser[]) => {
         if (action.id === 'assign-role' && users.length > 0) {
-          // Use the first user for role assignment dialog
           await onAssignRole(users[0]);
         }
       },
-    }));
+    })),
+    ...customActions,
+  ];
 
-    return [...defaultActions, ...customActions];
-  }, [customActions, onAssignRole]);
+  const handleSearchChange = (term: string) => {
+    if (externalOnSearchChange) {
+      externalOnSearchChange(term);
+    }
+  };
 
-  // Stable event handlers - external search only
-  const handleSearchChange = useCallback(
-    (term: string) => {
-      if (externalOnSearchChange) {
-        externalOnSearchChange(term);
-      }
-    },
-    [externalOnSearchChange],
-  );
-
-  const handleSearchSubmit = useCallback(() => {
+  const handleSearchSubmit = () => {
     if (externalOnSearch) {
       externalOnSearch();
     }
-  }, [externalOnSearch]);
+  };
 
-  const handleSearchClear = useCallback(() => {
+  const handleSearchClear = () => {
     if (externalOnClearSearch) {
       externalOnClearSearch();
     }
-  }, [externalOnClearSearch]);
+  };
 
-  const handleSortChange = useCallback(
-    (field: string, direction: SortDirection) => {
-      // Forward to external sort handler - no local sorting
-      onSortChange?.(field, direction);
-    },
-    [onSortChange],
-  );
+  const handleSortChange = (field: string, direction: SortDirection) => {
+    onSortChange?.(field, direction);
+  };
 
-  const handleViewModeChange = useCallback(
-    (mode: ViewMode) => {
-      setCurrentViewMode(mode);
-      onViewModeChange?.(mode);
-    },
-    [onViewModeChange],
-  );
+  const handleViewModeChange = (mode: ViewMode) => {
+    setCurrentViewMode(mode);
+    onViewModeChange?.(mode);
+  };
 
-  const handleBulkAction = useCallback(
-    async (action: UserTableAction, users: EnhancedUser[]) => {
-      if (onBulkAction) {
-        await onBulkAction(action, users);
-      } else {
-        await action.handler(users);
-      }
-    },
-    [onBulkAction],
-  );
+  const handleBulkAction = async (action: UserTableAction, users: EnhancedUser[]) => {
+    if (onBulkAction) {
+      await onBulkAction(action, users);
+    } else {
+      await action.handler(users);
+    }
+  };
 
-  // Stable wrapper for pagination control to match expected signature
-  const handleRowsPerPageChange = useCallback(
-    (newRowsPerPage: number) => {
-      // Create a mock event to match the expected signature
-      const mockEvent = {
-        target: { value: newRowsPerPage.toString() },
-      } as React.ChangeEvent<HTMLInputElement>;
-      _onRowsPerPageChange(mockEvent);
-    },
-    [_onRowsPerPageChange],
-  );
+  const handleRowsPerPageChange = (newRowsPerPage: number) => {
+    const mockEvent = {
+      target: { value: newRowsPerPage.toString() },
+    } as React.ChangeEvent<HTMLInputElement>;
+    _onRowsPerPageChange(mockEvent);
+  };
 
   // Initial loading state only - show full loading screen for very first load
   if (loading && isInitialLoad) {
@@ -338,60 +312,4 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   );
 };
 
-// Custom comparison function to prevent re-renders when only user data changes
-const areEqual = (prevProps: UserTableContainerProps, nextProps: UserTableContainerProps) => {
-  // Always re-render if users array changes (this is expected for data updates)
-  if (prevProps.users !== nextProps.users) {
-    return false;
-  }
-
-  // Always re-render if loading state changes
-  if (
-    prevProps.loading !== nextProps.loading ||
-    prevProps.isInitialLoad !== nextProps.isInitialLoad
-  ) {
-    return false;
-  }
-
-  // Always re-render if pagination state changes
-  if (
-    prevProps.page !== nextProps.page ||
-    prevProps.hasNext !== nextProps.hasNext ||
-    prevProps.hasPrev !== nextProps.hasPrev ||
-    prevProps.rowsPerPage !== nextProps.rowsPerPage
-  ) {
-    return false;
-  }
-
-  // Always re-render if search state changes
-  if (
-    prevProps.searchTerm !== nextProps.searchTerm ||
-    prevProps.searchLoading !== nextProps.searchLoading
-  ) {
-    return false;
-  }
-
-  // Always re-render if filter state changes
-  if (
-    prevProps.filter !== nextProps.filter ||
-    prevProps.hasActiveFilter !== nextProps.hasActiveFilter
-  ) {
-    return false;
-  }
-
-  // For all other props, do a shallow comparison
-  const keysToCompare = [
-    'canManageUsers',
-    'viewMode',
-    'selectionMode',
-    'enableAdvancedFilters',
-    'title',
-    'subtitle',
-    'showTitle',
-    'accountId',
-  ] as const;
-
-  return keysToCompare.every((key) => prevProps[key] === nextProps[key]);
-};
-
-export default memo(UserTableContainer, areEqual);
+export default UserTableContainer;

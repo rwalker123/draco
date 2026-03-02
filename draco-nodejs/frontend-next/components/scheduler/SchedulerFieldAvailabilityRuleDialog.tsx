@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -75,9 +75,9 @@ interface SchedulerFieldAvailabilityRuleDialogProps {
 export const SchedulerFieldAvailabilityRuleDialog: React.FC<
   SchedulerFieldAvailabilityRuleDialogProps
 > = ({ open, mode, seasonId, fields, initialRule, onClose, onSubmit, loading }) => {
-  const initialSelectedDays = useMemo(() => {
-    return initialRule ? maskToSelectedBits(initialRule.daysOfWeekMask) : new Set<number>([0]);
-  }, [initialRule]);
+  const initialSelectedDays = initialRule
+    ? maskToSelectedBits(initialRule.daysOfWeekMask)
+    : new Set<number>([0]);
 
   const [fieldId, setFieldId] = useState(initialRule?.fieldId ?? fields[0]?.id ?? '');
   const [startDate, setStartDate] = useState(initialRule?.startDate ?? '');

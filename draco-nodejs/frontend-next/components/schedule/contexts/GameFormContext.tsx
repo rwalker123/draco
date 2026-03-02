@@ -11,7 +11,6 @@ interface OfficialEntity {
   id: string;
   firstName: string;
   lastName: string;
-  displayName: string;
 }
 
 interface GameFormContextValue {

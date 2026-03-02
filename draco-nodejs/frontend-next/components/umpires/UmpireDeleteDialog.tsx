@@ -71,7 +71,7 @@ export const UmpireDeleteDialog: React.FC<UmpireDeleteDialogProps> = ({
     <ConfirmDeleteDialog
       open={open}
       title="Delete Umpire"
-      message={`Are you sure you want to delete ${umpire?.displayName ?? 'this umpire'}?`}
+      message={`Are you sure you want to delete ${umpire ? `${umpire.firstName} ${umpire.lastName}`.trim() : 'this umpire'}?`}
       content={
         <>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>

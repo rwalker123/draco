@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -194,12 +194,12 @@ const IndividualGolfSignupDialogContent: React.FC<ContentProps> = ({ onClose, on
     }
   };
 
-  const handleCaptchaChange = useCallback((token: string | null) => {
-    setCaptchaToken(token);
-    if (token) {
+  const handleCaptchaChange = (captchaTokenValue: string | null) => {
+    setCaptchaToken(captchaTokenValue);
+    if (captchaTokenValue) {
       setCaptchaError(null);
     }
-  }, []);
+  };
 
   if (isAuthenticated) {
     return (

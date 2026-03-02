@@ -300,6 +300,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     token,
     seasonId,
     showNotification,
+    open,
   });
 
   const {
@@ -308,7 +309,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     paginationError,
     searchContacts,
     setSearchContacts,
-    fetchContactsPage,
     handleSearch,
     getContactDetails,
     hasContacts,
@@ -466,13 +466,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     }
   }, [open, initialIndividualContactDetails, cacheSelectedContact]);
 
-  // Load initial page when dialog opens
-  useEffect(() => {
-    if (open && token && accountId) {
-      fetchContactsPage(1, rowsPerPage);
-    }
-  }, [open, token, accountId, rowsPerPage, fetchContactsPage]);
-
   // Check if seasonId is available when dialog opens
   useEffect(() => {
     if (open && !seasonId) {
@@ -529,11 +522,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   });
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
-
-  // TODO: Remove this callback when legacy state is fully removed
-  // const handleRecipientSelectionChange = useCallback((newState: RecipientSelectionState) => {
-  //   console.log('handleRecipientSelectionChange:', newState);
-  // }, []);
 
   // Unified group actions
   const unifiedActions = {

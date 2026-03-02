@@ -57,12 +57,14 @@ export class AnnouncementService {
   async listAccountAnnouncementSummaries(
     accountId: string,
     options?: AnnouncementSummaryOptions,
+    signal?: AbortSignal,
   ): Promise<AnnouncementSummaryType[]> {
     const result = await apiListAccountAnnouncementSummaries({
       client: this.client,
       path: { accountId },
       query: options,
       throwOnError: false,
+      signal,
     });
 
     const payload = unwrapApiResult<AnnouncementSummaryListType>(
@@ -141,12 +143,14 @@ export class AnnouncementService {
   async listTeamAnnouncementSummaries(
     context: TeamContext,
     options?: AnnouncementSummaryOptions,
+    signal?: AbortSignal,
   ): Promise<AnnouncementSummaryType[]> {
     const result = await apiListTeamAnnouncementSummaries({
       client: this.client,
       path: { accountId: context.accountId, teamId: context.teamId },
       query: options,
       throwOnError: false,
+      signal,
     });
 
     const payload = unwrapApiResult<AnnouncementSummaryListType>(

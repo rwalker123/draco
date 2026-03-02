@@ -32,16 +32,16 @@ export function useSponsorOperations(scope: SponsorScope) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const listSponsors = async (): Promise<SponsorType[]> => {
+  const listSponsors = async (signal?: AbortSignal): Promise<SponsorType[]> => {
     if (type === 'account') {
-      return service.listAccountSponsors(accountId);
+      return service.listAccountSponsors(accountId, signal);
     }
 
     if (!seasonId || !teamSeasonId) {
       throw new Error('Team scope identifiers are missing');
     }
 
-    return service.listTeamSponsors(accountId, seasonId, teamSeasonId);
+    return service.listTeamSponsors(accountId, seasonId, teamSeasonId, signal);
   };
 
   const createSponsor = async (input: SponsorFormValues): Promise<SponsorType> => {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -40,7 +40,7 @@ const ConfirmDiscordDisconnectDialog: React.FC<ConfirmDiscordDisconnectDialogPro
     }
   }, [open]);
 
-  const handleDisconnect = useCallback(async () => {
+  const handleDisconnect = async () => {
     if (!accountId) {
       return;
     }
@@ -57,7 +57,7 @@ const ConfirmDiscordDisconnectDialog: React.FC<ConfirmDiscordDisconnectDialogPro
     } finally {
       setSubmitting(false);
     }
-  }, [accountId, disconnectGuild, onClose, onDisconnected]);
+  };
 
   if (!accountId) {
     return null;

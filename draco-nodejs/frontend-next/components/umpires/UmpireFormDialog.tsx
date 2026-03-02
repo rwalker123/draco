@@ -95,6 +95,8 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
       clearTimeout(searchTimeoutRef.current);
     }
 
+    const controller = new AbortController();
+
     const runSearch = async () => {
       const trimmed = searchInput.trim();
 
@@ -115,16 +117,21 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
             limit: 10,
             sortOrder: 'asc',
           },
+          signal: controller.signal,
           throwOnError: false,
         });
 
+        if (controller.signal.aborted) return;
         const data = unwrapApiResult(result, 'Failed to search contacts') as PagedContactType;
         setContactOptions(data.contacts ?? []);
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.warn('Failed to search contacts:', error);
         setContactOptions([]);
       } finally {
-        setSearching(false);
+        if (!controller.signal.aborted) {
+          setSearching(false);
+        }
       }
     };
 
@@ -136,6 +143,7 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
+      controller.abort();
     };
   }, [open, searchInput, accountId, apiClient]);
 

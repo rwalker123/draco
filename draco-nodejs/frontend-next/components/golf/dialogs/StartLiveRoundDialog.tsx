@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -63,35 +63,46 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadCourseTees = useCallback(
-    async (courseId: string, courseName?: string) => {
+  useEffect(() => {
+    if (!open || selectedCourseId || !homeCourse) return;
+
+    const controller = new AbortController();
+
+    const loadHomeCourse = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const result = await getCourse(courseId);
+        const result = await getCourse(homeCourse.id, controller.signal);
+
+        if (controller.signal.aborted) return;
+
         if (result.success && result.data.tees) {
           setTees(result.data.tees);
-          setSelectedCourseId(courseId);
-          setSelectedCourseName(courseName ?? result.data.name);
+          setSelectedCourseId(homeCourse.id);
+          setSelectedCourseName(homeCourse.name ?? result.data.name);
           if (result.data.tees.length > 0) {
             setSelectedTeeId(result.data.tees[0].id);
           }
         } else if (!result.success) {
           setError(result.error);
         }
+      } catch {
+        if (controller.signal.aborted) return;
+        setError('Failed to load course');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-    },
-    [getCourse],
-  );
+    };
 
-  useEffect(() => {
-    if (open && !selectedCourseId && homeCourse) {
-      loadCourseTees(homeCourse.id, homeCourse.name);
-    }
-  }, [open, homeCourse, selectedCourseId, loadCourseTees]);
+    void loadHomeCourse();
+
+    return () => {
+      controller.abort();
+    };
+  }, [open, homeCourse, selectedCourseId, getCourse]);
 
   useEffect(() => {
     if (!open) {
@@ -106,33 +117,30 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
     }
   }, [open]);
 
-  const handleCourseSearchSelect = useCallback(
-    async (courseId: string): Promise<{ success: boolean; error?: string }> => {
-      setLoading(true);
-      try {
-        const result = await getCourse(courseId);
-        if (result.success) {
-          setTees(result.data.tees ?? []);
-          setSelectedCourseId(courseId);
-          setSelectedCourseName(result.data.name);
-          if (result.data.tees && result.data.tees.length > 0) {
-            setSelectedTeeId(result.data.tees[0].id);
-          }
-          return { success: true };
+  const handleCourseSearchSelect = async (
+    courseId: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    setLoading(true);
+    try {
+      const result = await getCourse(courseId);
+      if (result.success) {
+        setTees(result.data.tees ?? []);
+        setSelectedCourseId(courseId);
+        setSelectedCourseName(result.data.name);
+        if (result.data.tees && result.data.tees.length > 0) {
+          setSelectedTeeId(result.data.tees[0].id);
         }
-        return { success: false, error: result.error };
-      } finally {
-        setLoading(false);
+        return { success: true };
       }
-    },
-    [getCourse],
-  );
+      return { success: false, error: result.error };
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const canStart = useMemo(() => {
-    return selectedCourseId && selectedTeeId && datePlayed;
-  }, [selectedCourseId, selectedTeeId, datePlayed]);
+  const canStart = selectedCourseId && selectedTeeId && datePlayed;
 
-  const handleStart = useCallback(async () => {
+  const handleStart = async () => {
     if (!selectedCourseId || !selectedTeeId) return;
 
     setError(null);
@@ -147,17 +155,14 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
     if (!success) {
       setError('Failed to start live scoring session');
     }
-  }, [selectedCourseId, selectedTeeId, datePlayed, startingHole, numberOfHoles, onStart]);
+  };
 
   const todayString = new Date().toISOString().split('T')[0];
 
-  const startingHoleOptions = useMemo(() => {
-    const options = [];
-    for (let i = 1; i <= numberOfHoles; i++) {
-      options.push(i);
-    }
-    return options;
-  }, [numberOfHoles]);
+  const startingHoleOptions: number[] = [];
+  for (let i = 1; i <= numberOfHoles; i++) {
+    startingHoleOptions.push(i);
+  }
 
   return (
     <>

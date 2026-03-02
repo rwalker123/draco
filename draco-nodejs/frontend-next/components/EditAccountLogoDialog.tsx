@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { z } from 'zod';
 import {
   Dialog,
@@ -64,7 +64,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
   onSuccess,
   onError,
 }) => {
-  const normalizedAccountId = useMemo(() => accountId?.trim() || null, [accountId]);
+  const normalizedAccountId = accountId?.trim() || null;
   const logoOps = useAccountLogoOperations(normalizedAccountId);
 
   const contentKey = `${accountId}-${accountLogoUrl ?? 'none'}`;

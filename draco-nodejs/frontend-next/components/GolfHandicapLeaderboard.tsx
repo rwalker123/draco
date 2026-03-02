@@ -50,9 +50,11 @@ export default function GolfHandicapLeaderboard({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadHandicaps = async () => {
-      if (!seasonId || seasonId === '0') return;
+    if (!seasonId || seasonId === '0') return;
 
+    const controller = new AbortController();
+
+    const loadHandicaps = async () => {
       setLoading(true);
       setError(null);
 
@@ -61,7 +63,10 @@ export default function GolfHandicapLeaderboard({
           client: apiClient,
           throwOnError: false,
           path: { accountId, seasonId },
+          signal: controller.signal,
         });
+
+        if (controller.signal.aborted) return;
 
         const standings = unwrapApiResult<GolfLeagueStandings>(
           standingsResult,
@@ -78,6 +83,7 @@ export default function GolfHandicapLeaderboard({
             client: apiClient,
             throwOnError: false,
             path: { accountId, flightId: flight.flightId },
+            signal: controller.signal,
           });
 
           const handicapData = unwrapApiResult<LeagueHandicaps>(
@@ -93,8 +99,12 @@ export default function GolfHandicapLeaderboard({
         });
 
         const allHandicaps = await Promise.all(handicapPromises);
+
+        if (controller.signal.aborted) return;
+
         setFlightHandicaps(allHandicaps);
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error('Error loading golf handicaps:', err);
         if (err instanceof ApiClientError && err.status === 401) {
           setError('Please log in to view handicap data.');
@@ -103,11 +113,17 @@ export default function GolfHandicapLeaderboard({
         }
         setFlightHandicaps([]);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     loadHandicaps();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, apiClient, seasonId]);
 
   const formatHandicap = (handicapIndex: number | null): string => {

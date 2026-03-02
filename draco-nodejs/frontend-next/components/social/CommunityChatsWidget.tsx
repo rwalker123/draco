@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { Alert, Box, Button, Stack, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { Forum, OpenInNew } from '@mui/icons-material';
 import NextLink from 'next/link';
@@ -75,19 +75,12 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
     channelStore.getSnapshot,
   );
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
-  const effectiveChannelId = useMemo(() => {
-    if (!selectedChannelId) {
-      return null;
-    }
-
-    return channelState.channels.some((channel) => channel.id === selectedChannelId)
+  const effectiveChannelId =
+    selectedChannelId && channelState.channels.some((channel) => channel.id === selectedChannelId)
       ? selectedChannelId
       : null;
-  }, [channelState.channels, selectedChannelId]);
-
-  const selectedChannel = useMemo(
-    () => channelState.channels.find((channel) => channel.id === effectiveChannelId),
-    [channelState.channels, effectiveChannelId],
+  const selectedChannel = channelState.channels.find(
+    (channel) => channel.id === effectiveChannelId,
   );
   const selectedDiscordChannelId = selectedChannel?.discordChannelId;
   const contextMissing = !accountId || !seasonId;
@@ -99,98 +92,93 @@ const CommunityChatsWidget: React.FC<CommunityChatsWidgetProps> = ({
     !channelState.error &&
     !communityState.error;
 
-  const loadCommunityMessages = useCallback(
-    async (signal: { cancelled: boolean }) => {
-      if (contextMissing) {
-        communityStore.setSnapshot({ items: [], loading: false, error: null });
-        return;
-      }
+  useEffect(() => {
+    if (contextMissing) {
+      communityStore.setSnapshot({ items: [], loading: false, error: null });
+      return;
+    }
 
-      communityStore.setSnapshot((prev) => ({ ...prev, loading: true, error: null }));
+    const controller = new AbortController();
+    communityStore.setSnapshot((prev) => ({ ...prev, loading: true, error: null }));
 
+    const loadCommunityMessages = async () => {
       try {
         const channelIds = selectedDiscordChannelId ? [selectedDiscordChannelId] : undefined;
-        const items = await fetchCommunityMessages({
-          limit: maxMessages,
-          channelIds,
-          ...(teamSeasonId ? { teamSeasonId } : {}),
-        });
-        if (!signal.cancelled) {
-          communityStore.setSnapshot({ items, loading: false, error: null });
-        }
+        const items = await fetchCommunityMessages(
+          {
+            limit: maxMessages,
+            channelIds,
+            ...(teamSeasonId ? { teamSeasonId } : {}),
+          },
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        communityStore.setSnapshot({ items, loading: false, error: null });
       } catch (error) {
-        if (!signal.cancelled) {
-          console.error('[CommunityChatsWidget] message load failed', error);
-          communityStore.setSnapshot({
-            items: [],
-            loading: false,
-            error: error instanceof Error ? error.message : 'Unable to load community discussions.',
-          });
-        }
+        if (controller.signal.aborted) return;
+        console.error('[CommunityChatsWidget] message load failed', error);
+        communityStore.setSnapshot({
+          items: [],
+          loading: false,
+          error: error instanceof Error ? error.message : 'Unable to load community discussions.',
+        });
       }
-    },
-    [
-      communityStore,
-      contextMissing,
-      fetchCommunityMessages,
-      maxMessages,
-      selectedDiscordChannelId,
-      teamSeasonId,
-    ],
-  );
+    };
 
-  const loadCommunityChannels = useCallback(
-    async (signal: { cancelled: boolean }) => {
-      if (contextMissing) {
-        channelStore.setSnapshot({ channels: [], loading: false, error: null });
-        return;
-      }
+    void loadCommunityMessages();
+    return () => {
+      controller.abort();
+    };
+  }, [
+    communityStore,
+    contextMissing,
+    fetchCommunityMessages,
+    maxMessages,
+    selectedDiscordChannelId,
+    teamSeasonId,
+  ]);
 
-      channelStore.setSnapshot((prev) => ({ ...prev, loading: true, error: null }));
+  useEffect(() => {
+    if (contextMissing) {
+      channelStore.setSnapshot({ channels: [], loading: false, error: null });
+      return;
+    }
 
+    const controller = new AbortController();
+    channelStore.setSnapshot((prev) => ({ ...prev, loading: true, error: null }));
+
+    const loadCommunityChannels = async () => {
       try {
-        const channels = await fetchCommunityChannels(teamSeasonId ? { teamSeasonId } : undefined);
-        if (signal.cancelled) {
-          return;
-        }
+        const channels = await fetchCommunityChannels(
+          teamSeasonId ? { teamSeasonId } : undefined,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
         channelStore.setSnapshot({ channels, loading: false, error: null });
       } catch (error) {
-        if (!signal.cancelled) {
-          console.error('[CommunityChatsWidget] channel load failed', error);
-          channelStore.setSnapshot({
-            channels: [],
-            loading: false,
-            error: error instanceof Error ? error.message : 'Unable to load community channels.',
-          });
-        }
+        if (controller.signal.aborted) return;
+        console.error('[CommunityChatsWidget] channel load failed', error);
+        channelStore.setSnapshot({
+          channels: [],
+          loading: false,
+          error: error instanceof Error ? error.message : 'Unable to load community channels.',
+        });
       }
-    },
-    [channelStore, contextMissing, fetchCommunityChannels, teamSeasonId],
-  );
-
-  useEffect(() => {
-    const signal = { cancelled: false };
-    void loadCommunityMessages(signal);
-    return () => {
-      signal.cancelled = true;
     };
-  }, [loadCommunityMessages]);
 
-  useEffect(() => {
-    const signal = { cancelled: false };
-    void loadCommunityChannels(signal);
+    void loadCommunityChannels();
     return () => {
-      signal.cancelled = true;
+      controller.abort();
     };
-  }, [loadCommunityChannels]);
+  }, [channelStore, contextMissing, fetchCommunityChannels, teamSeasonId]);
 
-  const handleOpenDiscord = useCallback(() => {
+  const handleOpenDiscord = () => {
     const targetUrl =
       selectedChannel?.url ?? channelState.channels.find((channel) => channel.url)?.url;
     if (targetUrl && typeof window !== 'undefined') {
       window.open(targetUrl, '_blank', 'noopener');
     }
-  }, [channelState.channels, selectedChannel?.url]);
+  };
 
   const shouldHide = !contextMissing && loadsComplete && !hasContent;
   if (shouldHide) {

@@ -103,6 +103,8 @@ const TeamForumWidget: React.FC<TeamForumWidgetProps> = ({
       return;
     }
 
+    const controller = new AbortController();
+
     const loadData = async () => {
       if (!teamSeasonId) {
         setChannel(null);
@@ -114,7 +116,11 @@ const TeamForumWidget: React.FC<TeamForumWidgetProps> = ({
       setError(null);
 
       try {
-        const [channels] = await Promise.all([fetchCommunityChannels({ teamSeasonId })]);
+        const [channels] = await Promise.all([
+          fetchCommunityChannels({ teamSeasonId }, controller.signal),
+        ]);
+
+        if (controller.signal.aborted) return;
         const forumChannel = channels[0] ?? null;
         setChannel(forumChannel ?? null);
 
@@ -123,22 +129,31 @@ const TeamForumWidget: React.FC<TeamForumWidgetProps> = ({
           return;
         }
 
-        const fetchedMessages = await fetchCommunityMessages({
-          teamSeasonId,
-          limit: 5,
-        });
+        const fetchedMessages = await fetchCommunityMessages(
+          { teamSeasonId, limit: 5 },
+          controller.signal,
+        );
+
+        if (controller.signal.aborted) return;
         setMessages(fetchedMessages);
       } catch (err) {
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Unable to load team forum.';
         setError(message);
         setChannel(null);
         setMessages([]);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     void loadData();
+
+    return () => {
+      controller.abort();
+    };
   }, [membershipLoading, fetchCommunityChannels, fetchCommunityMessages, teamSeasonId]);
 
   const handleOpenDiscord = () => {

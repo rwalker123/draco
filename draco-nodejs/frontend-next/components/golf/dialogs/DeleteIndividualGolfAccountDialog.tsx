@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Alert,
   Box,
@@ -48,14 +48,14 @@ const DeleteIndividualGolfAccountDialog: React.FC<DeleteIndividualGolfAccountDia
     }
   }, [open]);
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     if (isDeleting) {
       return;
     }
     onClose();
-  }, [isDeleting, onClose]);
+  };
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     setIsDeleting(true);
     setError(null);
 
@@ -80,7 +80,7 @@ const DeleteIndividualGolfAccountDialog: React.FC<DeleteIndividualGolfAccountDia
     } finally {
       setIsDeleting(false);
     }
-  }, [accountId, deleteAccount, deleteUserChecked, onClose, onSuccess, onError]);
+  };
 
   const content = (
     <Stack spacing={2}>

@@ -63,9 +63,11 @@ export default function Standings({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadStandings = async () => {
-      if (!seasonId || seasonId === '0') return;
+    if (!seasonId || seasonId === '0') return;
 
+    const controller = new AbortController();
+
+    const loadStandings = async () => {
       setLoading(true);
       setError(null);
 
@@ -75,21 +77,31 @@ export default function Standings({
           throwOnError: false,
           path: { accountId, seasonId },
           query: { grouped: true },
+          signal: controller.signal,
         });
+
+        if (controller.signal.aborted) return;
 
         const data = unwrapApiResult<SeasonStandingsResponse>(result, 'Failed to load standings');
 
         setGroupedStandings((data as StandingsLeagueType[]) ?? []);
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error('Error loading standings:', error);
         setError('Failed to load standings');
         setGroupedStandings(null);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     loadStandings();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, apiClient, seasonId]);
 
   const sortTeams = (teams: StandingsTeamType[]): StandingsTeamType[] => {

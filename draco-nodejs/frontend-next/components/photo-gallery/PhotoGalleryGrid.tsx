@@ -1,9 +1,27 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Box, LinearProgress, Skeleton, Typography, IconButton } from '@mui/material';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import type { PhotoGalleryPhotoType } from '@draco/shared-schemas';
 import PhotoGalleryCard from './PhotoGalleryCard';
+
+function syncScrollAffordances(
+  container: HTMLDivElement | null,
+  setLeft: (v: boolean) => void,
+  setRight: (v: boolean) => void,
+) {
+  if (!container) {
+    setLeft(false);
+    setRight(false);
+    return;
+  }
+
+  const { scrollLeft, clientWidth, scrollWidth } = container;
+  const tolerance = 8;
+
+  setLeft(scrollLeft > tolerance);
+  setRight(scrollLeft + clientWidth < scrollWidth - tolerance);
+}
 
 interface PhotoGalleryGridProps {
   photos: PhotoGalleryPhotoType[];
@@ -25,49 +43,32 @@ const PhotoGalleryGrid: React.FC<PhotoGalleryGridProps> = ({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const updateScrollAffordances = useCallback(() => {
+  const handleScrollThumbnails = (direction: 'backward' | 'forward') => {
     const container = scrollContainerRef.current;
 
     if (!container) {
-      setCanScrollLeft(false);
-      setCanScrollRight(false);
       return;
     }
 
-    const { scrollLeft, clientWidth, scrollWidth } = container;
-    const tolerance = 8;
+    const scrollAmount = container.clientWidth * 0.85;
+    const delta = direction === 'forward' ? scrollAmount : -scrollAmount;
 
-    setCanScrollLeft(scrollLeft > tolerance);
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - tolerance);
-  }, []);
+    container.scrollBy({ left: delta, behavior: 'smooth' });
 
-  const handleScrollThumbnails = useCallback(
-    (direction: 'backward' | 'forward') => {
-      const container = scrollContainerRef.current;
-
-      if (!container) {
-        return;
-      }
-
-      const scrollAmount = container.clientWidth * 0.85;
-      const delta = direction === 'forward' ? scrollAmount : -scrollAmount;
-
-      container.scrollBy({ left: delta, behavior: 'smooth' });
-
-      window.requestAnimationFrame(updateScrollAffordances);
-    },
-    [updateScrollAffordances],
-  );
+    window.requestAnimationFrame(() =>
+      syncScrollAffordances(scrollContainerRef.current, setCanScrollLeft, setCanScrollRight),
+    );
+  };
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      updateScrollAffordances();
+      syncScrollAffordances(scrollContainerRef.current, setCanScrollLeft, setCanScrollRight);
     });
 
     return () => {
       window.cancelAnimationFrame(frame);
     };
-  }, [photos.length, updateScrollAffordances]);
+  }, [photos.length]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -76,17 +77,21 @@ const PhotoGalleryGrid: React.FC<PhotoGalleryGridProps> = ({
     }
 
     const handleScroll = () => {
-      updateScrollAffordances();
+      syncScrollAffordances(container, setCanScrollLeft, setCanScrollRight);
+    };
+
+    const handleResize = () => {
+      syncScrollAffordances(scrollContainerRef.current, setCanScrollLeft, setCanScrollRight);
     };
 
     container.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', updateScrollAffordances);
+    window.addEventListener('resize', handleResize);
 
     return () => {
       container.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', updateScrollAffordances);
+      window.removeEventListener('resize', handleResize);
     };
-  }, [updateScrollAffordances]);
+  }, []);
 
   if (!loading && photos.length === 0) {
     return (

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -21,6 +21,7 @@ import {
   ListItemText,
   Divider,
   Stack,
+  Snackbar,
 } from '@mui/material';
 import { useAuth } from '../../../context/AuthContext';
 import type {
@@ -66,8 +67,10 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
   const [registrations, setRegistrations] = useState<WorkoutRegistrationType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [managerFilter, setManagerFilter] = useState<boolean | null>(null);
-  const [dialogError, setDialogError] = useState<string | null>(null);
-  const [dialogSuccess, setDialogSuccess] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    severity: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const [registrationDialogOpen, setRegistrationDialogOpen] = useState(false);
   const [registrationSaving, setRegistrationSaving] = useState(false);
   const [editingRegistration, setEditingRegistration] = useState<WorkoutRegistrationType | null>(
@@ -83,54 +86,65 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
 
   const workoutId = workout?.id ?? null;
 
-  const applySuccessMessage = useCallback(
-    (message: string) => {
-      setDialogSuccess(message);
-      onSuccess?.(message);
-    },
-    [onSuccess],
-  );
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
 
-  const applyErrorMessage = useCallback(
-    (message: string) => {
-      setDialogError(message);
-      onError?.(message);
-    },
-    [onError],
-  );
+  const applySuccessMessage = (message: string) => {
+    setSnackbar({ severity: 'success', message });
+    onSuccess?.(message);
+  };
 
-  const loadRegistrations = useCallback(async () => {
-    if (!workoutId) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setDialogError(null);
-      const data = await listWorkoutRegistrations(accountId, workoutId, token || undefined);
-      setRegistrations(data);
-    } catch (error) {
-      console.error('Error loading workout registrations:', error);
-      applyErrorMessage('Failed to load registrations');
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, workoutId, token, applyErrorMessage]);
+  const applyErrorMessage = (message: string) => {
+    setSnackbar({ severity: 'error', message });
+    onError?.(message);
+  };
 
   useEffect(() => {
     if (!open) {
       setRegistrations([]);
       setSearchTerm('');
       setManagerFilter(null);
-      setDialogError(null);
-      setDialogSuccess(null);
+      setSnackbar(null);
       setPendingInitialAction(null);
       return;
     }
 
+    if (!workoutId) {
+      return;
+    }
+
     setPendingInitialAction(initialAction ?? null);
+
+    const controller = new AbortController();
+
+    const loadRegistrations = async () => {
+      try {
+        setLoading(true);
+        setSnackbar(null);
+        const data = await listWorkoutRegistrations(
+          accountId,
+          workoutId,
+          token || undefined,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        setRegistrations(data);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error('Error loading workout registrations:', error);
+        setSnackbar({ severity: 'error', message: 'Failed to load registrations' });
+        onErrorRef.current?.('Failed to load registrations');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
     void loadRegistrations();
-  }, [open, initialAction, loadRegistrations]);
+
+    return () => {
+      controller.abort();
+    };
+  }, [open, accountId, workoutId, token, initialAction]);
 
   useEffect(() => {
     if (open && pendingInitialAction === 'createRegistration') {
@@ -140,125 +154,88 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
     }
   }, [open, pendingInitialAction]);
 
-  useEffect(() => {
-    if (dialogSuccess) {
-      const timeout = window.setTimeout(
-        () => setDialogSuccess(null),
-        UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS,
-      );
-      return () => window.clearTimeout(timeout);
-    }
-    return undefined;
-  }, [dialogSuccess]);
+  const filteredRegistrations = registrations.filter((registration) => {
+    const matchesSearch =
+      !searchTerm ||
+      registration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      registration.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      registration.positions?.toLowerCase().includes(searchTerm.toLowerCase());
 
-  useEffect(() => {
-    if (dialogError) {
-      const timeout = window.setTimeout(
-        () => setDialogError(null),
-        UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS,
-      );
-      return () => window.clearTimeout(timeout);
-    }
-    return undefined;
-  }, [dialogError]);
+    const matchesManager = managerFilter === null || registration.isManager === managerFilter;
 
-  const filteredRegistrations = useMemo(() => {
-    return registrations.filter((registration) => {
-      const matchesSearch =
-        !searchTerm ||
-        registration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        registration.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        registration.positions?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch && matchesManager;
+  });
 
-      const matchesManager = managerFilter === null || registration.isManager === managerFilter;
-
-      return matchesSearch && matchesManager;
-    });
-  }, [registrations, searchTerm, managerFilter]);
-
-  const handleCreateRegistration = useCallback(() => {
+  const handleCreateRegistration = () => {
     setEditingRegistration(null);
     setRegistrationDialogOpen(true);
-  }, []);
+  };
 
-  const handleEditRegistration = useCallback((registration: WorkoutRegistrationType) => {
+  const handleEditRegistration = (registration: WorkoutRegistrationType) => {
     setEditingRegistration(registration);
     setRegistrationDialogOpen(true);
-  }, []);
+  };
 
-  const handleCloseRegistrationDialog = useCallback(() => {
+  const handleCloseRegistrationDialog = () => {
     setRegistrationDialogOpen(false);
     setEditingRegistration(null);
-  }, []);
+  };
 
-  const handleSaveRegistration = useCallback(
-    async (data: UpsertWorkoutRegistrationType) => {
-      if (!workoutId) {
-        return;
-      }
+  const handleSaveRegistration = async (data: UpsertWorkoutRegistrationType) => {
+    if (!workoutId) {
+      return;
+    }
 
-      try {
-        setRegistrationSaving(true);
-        setDialogError(null);
+    try {
+      setRegistrationSaving(true);
+      setSnackbar(null);
 
-        if (editingRegistration) {
-          const updatedRegistration = await updateWorkoutRegistration(
-            accountId,
-            workoutId,
-            editingRegistration.id,
-            data,
-            token || undefined,
-          );
-
-          setRegistrations((prev) =>
-            prev.map((registration) =>
-              registration.id === updatedRegistration.id ? updatedRegistration : registration,
-            ),
-          );
-          applySuccessMessage('Registration updated successfully');
-        } else {
-          const newRegistration = await createWorkoutRegistration(
-            accountId,
-            workoutId,
-            data,
-            token || undefined,
-          );
-
-          setRegistrations((prev) => [...prev, newRegistration]);
-          applySuccessMessage('Registration created successfully');
-        }
-
-        onRegistrationsChange?.({
+      if (editingRegistration) {
+        const updatedRegistration = await updateWorkoutRegistration(
+          accountId,
           workoutId,
-          registrationCount: editingRegistration ? registrations.length : registrations.length + 1,
-        });
-        handleCloseRegistrationDialog();
-      } catch (error) {
-        console.error('Error saving registration:', error);
-        applyErrorMessage('Failed to save registration');
-      } finally {
-        setRegistrationSaving(false);
-      }
-    },
-    [
-      accountId,
-      workoutId,
-      token,
-      editingRegistration,
-      registrations.length,
-      applySuccessMessage,
-      applyErrorMessage,
-      onRegistrationsChange,
-      handleCloseRegistrationDialog,
-    ],
-  );
+          editingRegistration.id,
+          data,
+          token || undefined,
+        );
 
-  const handleDeleteRegistration = useCallback((registration: WorkoutRegistrationType) => {
+        setRegistrations((prev) =>
+          prev.map((registration) =>
+            registration.id === updatedRegistration.id ? updatedRegistration : registration,
+          ),
+        );
+        applySuccessMessage('Registration updated successfully');
+      } else {
+        const newRegistration = await createWorkoutRegistration(
+          accountId,
+          workoutId,
+          data,
+          token || undefined,
+        );
+
+        setRegistrations((prev) => [...prev, newRegistration]);
+        applySuccessMessage('Registration created successfully');
+      }
+
+      onRegistrationsChange?.({
+        workoutId,
+        registrationCount: editingRegistration ? registrations.length : registrations.length + 1,
+      });
+      handleCloseRegistrationDialog();
+    } catch (error) {
+      console.error('Error saving registration:', error);
+      applyErrorMessage('Failed to save registration');
+    } finally {
+      setRegistrationSaving(false);
+    }
+  };
+
+  const handleDeleteRegistration = (registration: WorkoutRegistrationType) => {
     setRegistrationToDelete(registration);
     setDeleteDialogOpen(true);
-  }, []);
+  };
 
-  const confirmDeleteRegistration = useCallback(async () => {
+  const confirmDeleteRegistration = async () => {
     if (!workoutId || !registrationToDelete) {
       return;
     }
@@ -285,21 +262,12 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
       setDeleteDialogOpen(false);
       setRegistrationToDelete(null);
     }
-  }, [
-    accountId,
-    workoutId,
-    registrationToDelete,
-    token,
-    applySuccessMessage,
-    applyErrorMessage,
-    onRegistrationsChange,
-    registrations.length,
-  ]);
+  };
 
-  const handleCloseDeleteDialog = useCallback(() => {
+  const handleCloseDeleteDialog = () => {
     setDeleteDialogOpen(false);
     setRegistrationToDelete(null);
-  }, []);
+  };
 
   const renderRegistrationList = () => {
     if (loading) {
@@ -385,17 +353,6 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
       <DialogTitle>{workout?.workoutDesc ?? 'Workout Details'}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={3}>
-          {dialogError ? (
-            <Alert severity="error" onClose={() => setDialogError(null)}>
-              {dialogError}
-            </Alert>
-          ) : null}
-          {dialogSuccess ? (
-            <Alert severity="success" onClose={() => setDialogSuccess(null)}>
-              {dialogSuccess}
-            </Alert>
-          ) : null}
-
           {workout ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Typography variant="body2" color="text.secondary">
@@ -461,6 +418,28 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
+
+      <Snackbar
+        open={Boolean(snackbar)}
+        autoHideDuration={
+          snackbar?.severity === 'error'
+            ? UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS
+            : UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS
+        }
+        onClose={() => setSnackbar(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {snackbar ? (
+          <Alert
+            onClose={() => setSnackbar(null)}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
 
       <ConfirmDeleteDialog
         open={deleteDialogOpen}

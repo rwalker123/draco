@@ -2,29 +2,14 @@ import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { PaginationWithTotalSchema } from './paging.js';
 import { bigintToStringSchema } from './standardSchema.js';
-import { ContactDetailsSchema } from './contact.js';
+import { BaseContactSchema } from './contact.js';
 
 extendZodWithOpenApi(z);
 
-const UmpireNameSchema = z.string().trim().min(1);
-
-export const UmpireSchema = z.object({
-  id: z.bigint().transform((val) => val.toString()),
-  accountId: z.string(),
+export const UmpireSchema = BaseContactSchema.omit({ id: true, userId: true }).extend({
+  id: bigintToStringSchema,
   contactId: z.string(),
-  firstName: UmpireNameSchema,
-  lastName: UmpireNameSchema,
-  email: z.string().email().nullish(),
-  displayName: z.string(),
-  photoUrl: z.string().url().optional(),
-  contactDetails: ContactDetailsSchema.optional(),
-});
-
-const UmpireCoreSchema = UmpireSchema.omit({ id: true, accountId: true });
-
-export const UmpireUpsertSchema = UmpireCoreSchema.extend({
-  id: UmpireSchema.shape.id.optional(),
-  accountId: UmpireSchema.shape.accountId.optional(),
+  accountId: z.string(),
 });
 
 export const CreateUmpireSchema = z.object({
@@ -37,6 +22,5 @@ export const UmpiresSchema = z.object({
 });
 
 export type UmpireType = z.infer<typeof UmpireSchema>;
-export type UmpireUpsertType = z.infer<typeof UmpireUpsertSchema>;
 export type CreateUmpireType = z.infer<typeof CreateUmpireSchema>;
 export type UmpiresType = z.infer<typeof UmpiresSchema>;

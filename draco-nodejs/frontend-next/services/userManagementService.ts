@@ -396,10 +396,15 @@ export class UserManagementService {
     });
   }
 
-  async getContact(accountId: string, contactId: string): Promise<ContactType> {
+  async getContact(
+    accountId: string,
+    contactId: string,
+    signal?: AbortSignal,
+  ): Promise<ContactType> {
     const result = await apiGetContact({
       client: this.client,
       path: { accountId, contactId },
+      signal,
       throwOnError: false,
     });
 

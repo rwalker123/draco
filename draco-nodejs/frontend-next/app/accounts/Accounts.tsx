@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { Box, Container, Paper, Button, Typography } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
@@ -46,36 +46,33 @@ const Accounts: FC = () => {
     }
   }, [accountId, router]);
 
-  const handleSearch = useCallback(
-    async (term: string) => {
-      const trimmedTerm = term.trim();
-      if (!trimmedTerm) {
-        setSearchState({ status: 'idle', results: [] });
-        return;
+  const handleSearch = async (term: string) => {
+    const trimmedTerm = term.trim();
+    if (!trimmedTerm) {
+      setSearchState({ status: 'idle', results: [] });
+      return;
+    }
+
+    setSearchState({ status: 'searching', results: [] });
+    try {
+      const result = await searchAccountsOperation({ query: trimmedTerm });
+
+      if (result.success) {
+        setSearchState({ status: 'success', results: result.data });
+      } else {
+        setSearchState({ status: 'error', results: [], error: result.error });
       }
+    } catch (error) {
+      console.error('Account search failed:', error);
+      setSearchState({
+        status: 'error',
+        results: [],
+        error: error instanceof Error ? error.message : 'Account search failed',
+      });
+    }
+  };
 
-      setSearchState({ status: 'searching', results: [] });
-      try {
-        const result = await searchAccountsOperation({ query: trimmedTerm });
-
-        if (result.success) {
-          setSearchState({ status: 'success', results: result.data });
-        } else {
-          setSearchState({ status: 'error', results: [], error: result.error });
-        }
-      } catch (error) {
-        console.error('Account search failed:', error);
-        setSearchState({
-          status: 'error',
-          results: [],
-          error: error instanceof Error ? error.message : 'Account search failed',
-        });
-      }
-    },
-    [searchAccountsOperation],
-  );
-
-  const handleSearchTermChange = useCallback((term: string) => {
+  const handleSearchTermChange = (term: string) => {
     setSearchTerm(term);
 
     if (!term.trim()) {
@@ -87,56 +84,45 @@ const Accounts: FC = () => {
         return { status: 'idle', results: [] };
       });
     }
-  }, []);
+  };
 
-  const handleCreateAccount = useCallback(() => {
+  const handleCreateAccount = () => {
     if (!user) {
       setCtaState('signupPrompt');
       return;
     }
 
     setCtaState('createAccount');
-  }, [user]);
+  };
 
-  const handleCloseCreateDialog = useCallback(() => {
+  const handleCloseCreateDialog = () => {
     setCtaState('idle');
-  }, []);
+  };
 
-  const handleCreateDialogSuccess = useCallback(
-    (_result: { account: SharedAccountType; message: string }) => {
-      setCtaState('idle');
-      router.push('/account-management');
-    },
-    [router],
-  );
+  const handleCreateDialogSuccess = (_result: { account: SharedAccountType; message: string }) => {
+    setCtaState('idle');
+    router.push('/account-management');
+  };
 
-  const handleSignup = useCallback(() => {
+  const handleSignup = () => {
     setCtaState('idle');
     router.push('/signup');
-  }, [router]);
+  };
 
-  // handleContact commented out - see TODO for FinalCtaSection below
-  // const handleContact = useCallback(() => {
-  //   router.push('/contact');
-  // }, [router]);
-
-  const scrollToSearch = useCallback(() => {
+  const scrollToSearch = () => {
     document.getElementById('organization-search')?.scrollIntoView({
       behavior: 'smooth',
     });
-  }, []);
+  };
 
-  const handleGolfGetStarted = useCallback(() => {
+  const handleGolfGetStarted = () => {
     setGolfSignupOpen(true);
-  }, []);
+  };
 
-  const handleGolfSignupSuccess = useCallback(
-    (result: { token?: string; accountId: string }) => {
-      setGolfSignupOpen(false);
-      router.push(`/account/${result.accountId}/home`);
-    },
-    [router],
-  );
+  const handleGolfSignupSuccess = (result: { token?: string; accountId: string }) => {
+    setGolfSignupOpen(false);
+    router.push(`/account/${result.accountId}/home`);
+  };
 
   return (
     <Box component="main" className="min-h-screen bg-background">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   EmailAttachment,
   AttachmentConfig,
@@ -30,7 +30,6 @@ export interface UseFileUploadReturn {
   setAttachments: (attachments: EmailAttachment[]) => void;
 }
 
-// Helper function to validate files
 const validateFiles = async (
   files: File[],
   existingAttachments: EmailAttachment[],
@@ -38,13 +37,11 @@ const validateFiles = async (
 ): Promise<{ isValid: boolean; errors: string[] }> => {
   const errors: string[] = [];
 
-  // Check file count
   const totalFiles = existingAttachments.length + files.length;
   if (config.maxFiles && totalFiles > config.maxFiles) {
     errors.push(`Too many files. Maximum ${config.maxFiles} files allowed.`);
   }
 
-  // Check individual file sizes and types
   files.forEach((file) => {
     if (config.maxFileSize && file.size > config.maxFileSize) {
       errors.push(
@@ -66,7 +63,6 @@ const validateFiles = async (
     }
   });
 
-  // Add security validation
   const { securityRisks } = await validateFilesSecure(files, config.allowedTypes || []);
 
   return {
@@ -88,35 +84,29 @@ export function useFileUpload({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
 
-  // Keep track of upload promises and cancellation
   const uploadPromisesRef = useRef<Map<string, Promise<void>>>(new Map());
   const uploadControllersRef = useRef<Map<string, AbortController>>(new Map());
   const fileInputRef = useRef<Map<string, File>>(new Map());
 
-  // Track created object URLs for cleanup
   const objectUrlsRef = useRef<Set<string>>(new Set());
 
-  // Store callback ref to avoid infinite loops
   const onAttachmentsChangeRef = useRef(onAttachmentsChange);
 
-  // Update ref when callback changes
   useEffect(() => {
     onAttachmentsChangeRef.current = onAttachmentsChange;
   }, [onAttachmentsChange]);
 
-  const setAttachments = useCallback((newAttachments: EmailAttachment[]) => {
+  const setAttachments = (newAttachments: EmailAttachment[]) => {
     setAttachmentsState(newAttachments);
-  }, []);
+  };
 
-  // Update individual attachment
-  const updateAttachment = useCallback((id: string, updates: Partial<EmailAttachment>) => {
+  const updateAttachment = (id: string, updates: Partial<EmailAttachment>) => {
     setAttachmentsState((prev) =>
       prev.map((att) => (att.id === id ? { ...att, ...updates } : att)),
     );
-  }, []);
+  };
 
-  // Helper function to cleanup URLs for a specific attachment
-  const cleanupAttachmentUrls = useCallback((attachment: EmailAttachment) => {
+  const cleanupAttachmentUrls = (attachment: EmailAttachment) => {
     if (attachment.url && objectUrlsRef.current.has(attachment.url)) {
       URL.revokeObjectURL(attachment.url);
       objectUrlsRef.current.delete(attachment.url);
@@ -125,215 +115,153 @@ export function useFileUpload({
       URL.revokeObjectURL(attachment.previewUrl);
       objectUrlsRef.current.delete(attachment.previewUrl);
     }
-  }, []);
+  };
 
-  // Effect to notify parent of attachment changes
   useEffect(() => {
     onAttachmentsChangeRef.current?.(attachments);
   }, [attachments]);
 
-  // Upload single file with progress tracking
-  const uploadSingleFile = useCallback(
-    async (file: File, attachment: EmailAttachment): Promise<void> => {
-      const controller = new AbortController();
-      uploadControllersRef.current.set(attachment.id, controller);
+  const uploadSingleFile = async (file: File, attachment: EmailAttachment): Promise<void> => {
+    const controller = new AbortController();
+    uploadControllersRef.current.set(attachment.id, controller);
 
-      try {
-        updateAttachment(attachment.id, { status: 'uploading', uploadProgress: 0, file });
+    try {
+      updateAttachment(attachment.id, { status: 'uploading', uploadProgress: 0, file });
 
-        // Create preview URL for images
-        let previewUrl: string | undefined;
-        if (file.type.startsWith('image/')) {
-          previewUrl = URL.createObjectURL(file);
-          if (objectUrlsRef.current) {
-            objectUrlsRef.current.add(previewUrl);
-          }
-        }
-
-        // Simulate brief progress for UX (actual upload happens during compose)
-        if (!controller.signal.aborted) {
-          updateAttachment(attachment.id, { uploadProgress: 50 });
-        }
-
-        // Short delay for visual feedback
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        if (!controller.signal.aborted) {
-          updateAttachment(attachment.id, {
-            status: 'uploaded',
-            uploadProgress: 100,
-            previewUrl,
-            error: undefined,
-          });
-        }
-      } catch (error) {
-        if (!controller.signal.aborted) {
-          const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-          updateAttachment(attachment.id, {
-            status: 'error',
-            error: errorMessage,
-            uploadProgress: undefined,
-          });
-
-          setErrors((prev) => [...prev, `Failed to upload ${file.name}: ${errorMessage}`]);
-          onError?.(error instanceof Error ? error : new Error(errorMessage));
-        }
-      } finally {
-        uploadControllersRef.current.delete(attachment.id);
-        uploadPromisesRef.current.delete(attachment.id);
-      }
-    },
-    [updateAttachment, onError],
-  );
-
-  // Add multiple files with validation
-  const addFiles = useCallback(
-    async (files: File[]) => {
-      if (files.length === 0) return;
-
-      // Clear previous errors
-      setErrors([]);
-
-      // Validate files
-      const validation = await validateFiles(files, attachments, config);
-      if (!validation.isValid) {
-        setErrors(validation.errors);
-        return;
-      }
-
-      // Create attachment objects
-      const newAttachments: EmailAttachment[] = files.map((file) => ({
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        status: 'pending',
-        lastModified: file.lastModified,
-      }));
-
-      // Add to state immediately
-      const updatedAttachments = [...attachments, ...newAttachments];
-      setAttachments(updatedAttachments);
-
-      setIsUploading(true);
-      onUploadStart?.();
-
-      // Upload files with concurrency control
-      const uploadQueue = [...files];
-      const activeUploads: Promise<void>[] = [];
-
-      for (let i = 0; i < Math.min(maxConcurrentUploads, files.length); i++) {
-        const file = uploadQueue.shift();
-        const attachment = newAttachments[i];
-
-        if (file && attachment) {
-          const uploadPromise = uploadSingleFile(file, attachment);
-          uploadPromisesRef.current.set(attachment.id, uploadPromise);
-          activeUploads.push(uploadPromise);
+      let previewUrl: string | undefined;
+      if (file.type.startsWith('image/')) {
+        previewUrl = URL.createObjectURL(file);
+        if (objectUrlsRef.current) {
+          objectUrlsRef.current.add(previewUrl);
         }
       }
 
-      // Process remaining files as uploads complete
-      const processNext = async () => {
-        if (uploadQueue.length > 0) {
-          const file = uploadQueue.shift();
-          const attachmentIndex = files.length - uploadQueue.length - 1;
-          const attachment = newAttachments[attachmentIndex];
-
-          if (file && attachment) {
-            const uploadPromise = uploadSingleFile(file, attachment);
-            uploadPromisesRef.current.set(attachment.id, uploadPromise);
-            await uploadPromise;
-            await processNext();
-          }
-        }
-      };
-
-      // Wait for initial uploads and process remaining
-      await Promise.allSettled([
-        ...activeUploads,
-        ...Array(uploadQueue.length)
-          .fill(null)
-          .map(() => processNext()),
-      ]);
-
-      setIsUploading(false);
-      setUploadProgress(0);
-      onUploadComplete?.();
-    },
-    [
-      attachments,
-      config,
-      maxConcurrentUploads,
-      setAttachments,
-      uploadSingleFile,
-      onUploadStart,
-      onUploadComplete,
-    ],
-  );
-
-  // Remove attachment
-  const removeAttachment = useCallback(
-    (id: string) => {
-      // Cancel upload if in progress
-      const controller = uploadControllersRef.current.get(id);
-      if (controller) {
-        controller.abort();
+      if (!controller.signal.aborted) {
+        updateAttachment(attachment.id, { uploadProgress: 50 });
       }
 
-      // Find and cleanup URLs for the attachment being removed
-      const attachmentToRemove = attachments.find((att) => att.id === id);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      if (!controller.signal.aborted) {
+        updateAttachment(attachment.id, {
+          status: 'uploaded',
+          uploadProgress: 100,
+          previewUrl,
+          error: undefined,
+        });
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+        updateAttachment(attachment.id, {
+          status: 'error',
+          error: errorMessage,
+          uploadProgress: undefined,
+        });
+
+        setErrors((prev) => [...prev, `Failed to upload ${file.name}: ${errorMessage}`]);
+        onError?.(error instanceof Error ? error : new Error(errorMessage));
+      }
+    } finally {
+      uploadControllersRef.current.delete(attachment.id);
+      uploadPromisesRef.current.delete(attachment.id);
+    }
+  };
+
+  const addFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    setErrors([]);
+
+    const validation = await validateFiles(files, attachments, config);
+    if (!validation.isValid) {
+      setErrors(validation.errors);
+      return;
+    }
+
+    const newAttachments: EmailAttachment[] = files.map((file) => ({
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      status: 'pending',
+      lastModified: file.lastModified,
+    }));
+
+    setAttachmentsState((prev) => [...prev, ...newAttachments]);
+
+    setIsUploading(true);
+    onUploadStart?.();
+
+    const uploadQueue = files.map((file, i) => {
+      fileInputRef.current.set(newAttachments[i].id, file);
+      return { file, attachment: newAttachments[i] };
+    });
+
+    const processWorker = async () => {
+      while (uploadQueue.length > 0) {
+        const item = uploadQueue.shift();
+        if (item) {
+          const uploadPromise = uploadSingleFile(item.file, item.attachment);
+          uploadPromisesRef.current.set(item.attachment.id, uploadPromise);
+          await uploadPromise;
+        }
+      }
+    };
+
+    const workerCount = Math.min(maxConcurrentUploads, files.length);
+    await Promise.allSettled(Array.from({ length: workerCount }, () => processWorker()));
+
+    setIsUploading(false);
+    setUploadProgress(0);
+    onUploadComplete?.();
+  };
+
+  const removeAttachment = (id: string) => {
+    const controller = uploadControllersRef.current.get(id);
+    if (controller) {
+      controller.abort();
+    }
+
+    fileInputRef.current.delete(id);
+    setAttachmentsState((prev) => {
+      const attachmentToRemove = prev.find((att) => att.id === id);
       if (attachmentToRemove) {
         cleanupAttachmentUrls(attachmentToRemove);
       }
+      return prev.filter((att) => att.id !== id);
+    });
+  };
 
-      const updated = attachments.filter((att) => att.id !== id);
-      setAttachments(updated);
-    },
-    [attachments, setAttachments, cleanupAttachmentUrls],
-  );
+  const retryUpload = async (id: string) => {
+    const attachment = attachments.find((att) => att.id === id);
+    const file = fileInputRef.current.get(id);
 
-  // Retry failed upload
-  const retryUpload = useCallback(
-    async (id: string) => {
-      const attachment = attachments.find((att) => att.id === id);
-      const file = fileInputRef.current.get(id);
+    if (!attachment || !file || attachment.status !== 'error') {
+      return;
+    }
 
-      if (!attachment || !file || attachment.status !== 'error') {
-        return;
-      }
+    updateAttachment(id, { status: 'pending', error: undefined });
 
-      // Clear the error and retry
-      updateAttachment(id, { status: 'pending', error: undefined });
+    setIsUploading(true);
+    await uploadSingleFile(file, attachment);
+    setIsUploading(false);
+  };
 
-      setIsUploading(true);
-      await uploadSingleFile(file, attachment);
-      setIsUploading(false);
-    },
-    [attachments, updateAttachment, uploadSingleFile],
-  );
+  const cancelUpload = (id: string) => {
+    const controller = uploadControllersRef.current.get(id);
+    if (controller) {
+      controller.abort();
+      updateAttachment(id, { status: 'error', error: 'Upload cancelled' });
+    }
+  };
 
-  // Cancel upload
-  const cancelUpload = useCallback(
-    (id: string) => {
-      const controller = uploadControllersRef.current.get(id);
-      if (controller) {
-        controller.abort();
-        updateAttachment(id, { status: 'error', error: 'Upload cancelled' });
-      }
-    },
-    [updateAttachment],
-  );
-
-  // Clear all attachments
-  const clearAll = useCallback(() => {
-    // Cancel all active uploads
+  const clearAll = () => {
     uploadControllersRef.current.forEach((controller) => controller.abort());
     uploadControllersRef.current.clear();
     uploadPromisesRef.current.clear();
     fileInputRef.current.clear();
 
-    // Cleanup all attachment URLs
     attachments.forEach((attachment) => {
       cleanupAttachmentUrls(attachment);
     });
@@ -342,13 +270,11 @@ export function useFileUpload({
     setErrors([]);
     setIsUploading(false);
     setUploadProgress(0);
-  }, [setAttachments, attachments, cleanupAttachmentUrls]);
+  };
 
-  // Cleanup all object URLs on unmount
   useEffect(() => {
     const objectUrls = objectUrlsRef.current;
     return () => {
-      // Cleanup all tracked URLs on unmount
       objectUrls.forEach((url) => {
         URL.revokeObjectURL(url);
       });

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Box,
@@ -111,20 +111,14 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
   const { accountId, contextName, onSubmitted } = props;
   const teamId = props.variant === 'team' ? props.teamId : null;
   const accountAlbumOptions = props.variant === 'account' ? props.albumOptions : undefined;
-  const albumOptions = useMemo(
-    () => buildDefaultAlbumOptions(accountAlbumOptions),
-    [accountAlbumOptions],
-  );
+  const albumOptions = buildDefaultAlbumOptions(accountAlbumOptions);
 
   const { submitPhoto, submitting, error, clearError } = usePhotoSubmission({
     accountId,
     teamId,
   });
 
-  const defaultAlbumId = useMemo(
-    () => getDefaultAlbumId(albumOptions, props.variant),
-    [albumOptions, props.variant],
-  );
+  const defaultAlbumId = getDefaultAlbumId(albumOptions, props.variant);
 
   const {
     handleSubmit,

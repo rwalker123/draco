@@ -112,7 +112,6 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
   const [albums, setAlbums] = useState<PhotoGalleryAdminAlbumType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
 
   const [photoDialogState, setPhotoDialogState] = useState<{
     open: boolean;
@@ -357,7 +356,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     return () => {
       controller.abort();
     };
-  }, [accountId, token, refreshKey]);
+  }, [accountId, token]);
 
   const handleOpenCreateDialog = () => {
     setPhotoDialogState({ open: true, mode: 'create', photo: null });
@@ -419,9 +418,23 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     setAlbumDialogOpen(false);
   };
 
-  const handleAlbumDialogSuccess = (payload: { message: string }) => {
+  const handleAlbumDialogSuccess = (payload: {
+    message: string;
+    operation: 'create' | 'update' | 'delete';
+    album?: PhotoGalleryAdminAlbumType;
+    albumId?: string;
+  }) => {
     setFeedback({ severity: 'success', message: payload.message });
-    setRefreshKey((k) => k + 1);
+
+    if (payload.operation === 'create' && payload.album) {
+      setAlbums((previous) => [...previous, payload.album!]);
+    } else if (payload.operation === 'update' && payload.album) {
+      setAlbums((previous) =>
+        previous.map((album) => (album.id === payload.album!.id ? payload.album! : album)),
+      );
+    } else if (payload.operation === 'delete' && payload.albumId) {
+      setAlbums((previous) => previous.filter((album) => album.id !== payload.albumId));
+    }
   };
 
   const handleAlbumDialogError = (message: string) => {

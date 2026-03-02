@@ -21,25 +21,34 @@ export default function StandingsPage({ accountId, seasonId }: StandingsPageProp
 
   // Fetch season name
   useEffect(() => {
-    async function fetchSeasonName() {
-      if (!accountId || !seasonId) return;
+    if (!accountId || !seasonId) return;
 
+    const controller = new AbortController();
+
+    async function fetchSeasonName() {
       try {
         const result = await listSeasonLeagueSeasons({
           client: apiClient,
           path: { accountId, seasonId },
+          signal: controller.signal,
           throwOnError: false,
         });
 
+        if (controller.signal.aborted) return;
         const data = unwrapApiResult(result, 'Failed to load season information');
         const mapped = mapLeagueSetup(data);
         setSeasonName(mapped.season?.name || '');
       } catch {
+        if (controller.signal.aborted) return;
         setSeasonName('');
       }
     }
 
     fetchSeasonName();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, seasonId, apiClient]);
 
   if (!seasonId || seasonId === '0') {

@@ -32,42 +32,35 @@ const TeamAlbumMenu: React.FC<TeamAlbumMenuProps> = ({
 }) => {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
 
-  const handleOpen = React.useCallback((event: React.MouseEvent<HTMLElement>) => {
+  const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-  }, []);
+  };
 
-  const handleClose = React.useCallback(() => {
+  const handleClose = () => {
     setAnchorEl(null);
-  }, []);
+  };
 
-  const handleSelect = React.useCallback(
-    (albumId: string) => {
-      onSelect(albumId);
-      handleClose();
-    },
-    [handleClose, onSelect],
-  );
+  const handleSelect = (albumId: string) => {
+    onSelect(albumId);
+    handleClose();
+  };
 
   const buttonText = selectedTeam
     ? `${selectedTeam.teamName} (${selectedTeam.photoCount})`
     : buttonLabel;
   const hasSelection = Boolean(selectedTeam);
 
-  const leaguesWithTeams = React.useMemo(
-    () =>
-      teamAlbumHierarchy
-        .map((league) => ({
-          ...league,
-          divisions: league.divisions
-            .map((division) => ({
-              ...division,
-              teams: division.teams.filter((team) => team.albumId !== ''),
-            }))
-            .filter((division) => division.teams.length > 0),
+  const leaguesWithTeams = teamAlbumHierarchy
+    .map((league) => ({
+      ...league,
+      divisions: league.divisions
+        .map((division) => ({
+          ...division,
+          teams: division.teams.filter((team) => team.albumId !== ''),
         }))
-        .filter((league) => league.divisions.length > 0),
-    [teamAlbumHierarchy],
-  );
+        .filter((division) => division.teams.length > 0),
+    }))
+    .filter((league) => league.divisions.length > 0);
 
   if (leaguesWithTeams.length === 0 && additionalOptions.length === 0) {
     return null;

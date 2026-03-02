@@ -31,14 +31,14 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
     }
   }, [open]);
 
-  const handleClose = React.useCallback(() => {
+  const handleClose = () => {
     if (isDeleting) {
       return;
     }
     onClose();
-  }, [isDeleting, onClose]);
+  };
 
-  const handleDelete = React.useCallback(async () => {
+  const handleDelete = async () => {
     if (!account) {
       setError('Account details are missing. Please close and try again.');
       return;
@@ -69,7 +69,7 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
     } finally {
       setIsDeleting(false);
     }
-  }, [account, deleteAccountOperation, onClose, onSuccess, onError]);
+  };
 
   const accountName = account?.name ?? 'this account';
 

@@ -1,5 +1,5 @@
 'use client';
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -71,30 +71,30 @@ export const RegistrationForm: React.FC<Props> = (props) => {
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const [credentialsError, setCredentialsError] = useState<string | null>(null);
 
-  const resetCaptcha = useCallback(() => {
+  const resetCaptcha = () => {
     if (!requiresCaptcha) {
       return;
     }
     setCaptchaToken(null);
     setCaptchaResetKey((key) => key + 1);
     setCaptchaError(null);
-  }, [requiresCaptcha]);
+  };
 
-  const handleModeChange = useCallback(
-    (_: React.SyntheticEvent, newMode: 'newUser' | 'existingUser' | null) => {
-      if (!newMode || newMode === mode) {
-        return;
-      }
-      setMode(newMode);
-      if (newMode === 'newUser') {
-        resetCaptcha();
-      } else {
-        setCaptchaToken(null);
-        setCaptchaError(null);
-      }
-    },
-    [mode, resetCaptcha],
-  );
+  const handleModeChange = (
+    _: React.SyntheticEvent,
+    newMode: 'newUser' | 'existingUser' | null,
+  ) => {
+    if (!newMode || newMode === mode) {
+      return;
+    }
+    setMode(newMode);
+    if (newMode === 'newUser') {
+      resetCaptcha();
+    } else {
+      setCaptchaToken(null);
+      setCaptchaError(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

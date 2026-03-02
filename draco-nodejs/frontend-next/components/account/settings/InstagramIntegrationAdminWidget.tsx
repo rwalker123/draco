@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -62,111 +62,81 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
 
   const [clearCredentials, setClearCredentials] = useState(false);
 
-  const hasPendingChanges = useMemo(() => {
-    const normalizedHandle = (account.socials?.instagramHandle ?? '').trim();
-    return (
-      instagramUserId.trim().length > 0 ||
-      instagramUsername.trim() !== normalizedHandle ||
-      clearCredentials ||
-      syncToGallery !== Boolean(syncToGallerySetting?.effectiveValue ?? syncToGallerySetting?.value)
-    );
-  }, [
-    account.socials?.instagramHandle,
-    clearCredentials,
-    instagramUserId,
-    instagramUsername,
-    syncToGallery,
-    syncToGallerySetting?.effectiveValue,
-    syncToGallerySetting?.value,
-  ]);
+  const normalizedHandle = (account.socials?.instagramHandle ?? '').trim();
+  const hasPendingChanges =
+    instagramUserId.trim().length > 0 ||
+    instagramUsername.trim() !== normalizedHandle ||
+    clearCredentials ||
+    syncToGallery !== Boolean(syncToGallerySetting?.effectiveValue ?? syncToGallerySetting?.value);
 
-  const handleSubmit = useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      setError(null);
-      setSuccess(null);
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
 
-      if (!hasPendingChanges) {
-        setError('Update at least one field before saving.');
+    if (!hasPendingChanges) {
+      setError('Update at least one field before saving.');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const payload: AccountInstagramSettingsType = {};
+      const normalizedUserId = instagramUserId.trim();
+      const normalizedUsername = instagramUsername.trim();
+      const currentHandle = (account.socials?.instagramHandle ?? '').trim();
+
+      if (clearCredentials && !normalizedUserId) {
+        setError('Instagram Business User ID is required to clear tokens.');
+        setSaving(false);
         return;
       }
 
-      setSaving(true);
-
-      try {
-        const payload: AccountInstagramSettingsType = {};
-        const normalizedUserId = instagramUserId.trim();
-        const normalizedUsername = instagramUsername.trim();
-        const currentHandle = (account.socials?.instagramHandle ?? '').trim();
-
-        if (clearCredentials && !normalizedUserId) {
-          setError('Instagram Business User ID is required to clear tokens.');
-          setSaving(false);
-          return;
-        }
-
-        if (normalizedUserId) {
-          payload.instagramUserId = normalizedUserId;
-        }
-
-        if (normalizedUsername !== currentHandle) {
-          payload.instagramUsername = normalizedUsername;
-        }
-
-        if (clearCredentials) {
-          payload.instagramAppId = '';
-          payload.instagramAppSecret = '';
-        }
-
-        if (Object.keys(payload).length > 0) {
-          const result = await updateAccountInstagramSettings({
-            client: apiClient,
-            path: { accountId: account.id },
-            body: payload,
-            throwOnError: false,
-          });
-          const updated = unwrapApiResult(
-            result,
-            'Unable to save Instagram settings',
-          ) as AccountType;
-          onAccountUpdate?.(updated);
-        }
-
-        if (
-          syncToGallery !==
-          Boolean(syncToGallerySetting?.effectiveValue ?? syncToGallerySetting?.value)
-        ) {
-          if (!onUpdateSyncToGallery) {
-            throw new Error('Sync to gallery setting handler is not available.');
-          }
-          await onUpdateSyncToGallery(syncToGallery);
-        }
-
-        setSuccess('Instagram settings saved.');
-        setInstagramUserId('');
-        setClearCredentials(false);
-      } catch (err) {
-        console.error('Failed to save Instagram settings', err);
-        setError('Unable to save Instagram settings. Please try again.');
-      } finally {
-        setSaving(false);
+      if (normalizedUserId) {
+        payload.instagramUserId = normalizedUserId;
       }
-    },
-    [
-      account.id,
-      account.socials?.instagramHandle,
-      apiClient,
-      hasPendingChanges,
-      instagramUserId,
-      instagramUsername,
-      onAccountUpdate,
-      onUpdateSyncToGallery,
-      syncToGallery,
-      clearCredentials,
-      syncToGallerySetting?.effectiveValue,
-      syncToGallerySetting?.value,
-    ],
-  );
+
+      if (normalizedUsername !== currentHandle) {
+        payload.instagramUsername = normalizedUsername;
+      }
+
+      if (clearCredentials) {
+        payload.instagramAppId = '';
+        payload.instagramAppSecret = '';
+      }
+
+      if (Object.keys(payload).length > 0) {
+        const result = await updateAccountInstagramSettings({
+          client: apiClient,
+          path: { accountId: account.id },
+          body: payload,
+          throwOnError: false,
+        });
+        const updated = unwrapApiResult(result, 'Unable to save Instagram settings') as AccountType;
+        onAccountUpdate?.(updated);
+      }
+
+      if (
+        syncToGallery !==
+        Boolean(syncToGallerySetting?.effectiveValue ?? syncToGallerySetting?.value)
+      ) {
+        if (!onUpdateSyncToGallery) {
+          throw new Error('Sync to gallery setting handler is not available.');
+        }
+        await onUpdateSyncToGallery(syncToGallery);
+      }
+
+      setSuccess('Instagram settings saved.');
+      setInstagramUserId('');
+      setClearCredentials(false);
+    } catch (err) {
+      console.error('Failed to save Instagram settings', err);
+      setError('Unable to save Instagram settings. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <WidgetShell

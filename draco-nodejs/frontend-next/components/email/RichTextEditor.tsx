@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -90,6 +90,127 @@ interface RichTextEditorProps {
   minHeight?: number;
 }
 
+function normalizeColor(value: string | undefined): string {
+  if (!value) return '';
+  const trimmed = value.trim();
+  const hexMatch = trimmed.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hexMatch) {
+    return trimmed.toLowerCase();
+  }
+  const rgbMatch = trimmed.match(/^rgba?\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})(?:,\s*[\d.]+)?\)$/i);
+  if (rgbMatch) {
+    const [r, g, b] = rgbMatch
+      .slice(1, 4)
+      .map((n) => Math.max(0, Math.min(255, Number.parseInt(n, 10))));
+    const toHex = (n: number) => n.toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  const named = trimmed.toLowerCase();
+  const allowedNamed = new Set([
+    'black',
+    'white',
+    'red',
+    'blue',
+    'green',
+    'orange',
+    'gray',
+    'grey',
+  ]);
+  if (allowedNamed.has(named)) {
+    return named;
+  }
+  return '';
+}
+
+function normalizeFontValue(value: string): string {
+  if (!value) return '';
+  const trimmed = value.trim();
+  return trimmed.replace(/^['"]+|['"]+$/g, '');
+}
+
+function parseStyleMap(styleString: string): Record<string, string> {
+  const entries = styleString
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const [key, ...rest] = part.split(':');
+      if (!key || rest.length === 0) return null;
+      return [key.trim().toLowerCase(), rest.join(':').trim()] as const;
+    })
+    .filter(Boolean) as [string, string][];
+  return Object.fromEntries(entries);
+}
+
+type ToolbarSetters = {
+  setIsBold: (v: boolean) => void;
+  setIsItalic: (v: boolean) => void;
+  setIsUnderline: (v: boolean) => void;
+  setBlockType: (v: 'paragraph' | 'h1' | 'h2' | 'h3' | 'quote' | 'code') => void;
+  setElementFormat: (v: 'left' | 'center' | 'right' | 'justify') => void;
+  setFontFamily: (v: string) => void;
+  setFontSize: (v: string) => void;
+  setFontColor: (v: string) => void;
+  setBgColor: (v: string) => void;
+};
+
+function updateToolbar(setters: ToolbarSetters): void {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection)) {
+    setters.setIsBold(selection.hasFormat('bold'));
+    setters.setIsItalic(selection.hasFormat('italic'));
+    setters.setIsUnderline(selection.hasFormat('underline'));
+
+    const anchorNode = selection.anchor.getNode();
+    const element =
+      anchorNode.getKey() === 'root' ? anchorNode : anchorNode.getTopLevelElementOrThrow();
+
+    if ($isHeadingNode(element)) {
+      const tag = element.getTag();
+      if (tag === 'h1' || tag === 'h2' || tag === 'h3') {
+        setters.setBlockType(tag);
+      } else {
+        setters.setBlockType('paragraph');
+      }
+    } else {
+      const type = element.getType();
+      if (type === 'quote') {
+        setters.setBlockType('quote');
+      } else if (type === 'code') {
+        setters.setBlockType('code');
+      } else {
+        setters.setBlockType('paragraph');
+      }
+    }
+
+    const format =
+      $isElementNode(element) && typeof element.getFormatType === 'function'
+        ? element.getFormatType()
+        : null;
+    if (format === 'left' || format === 'center' || format === 'right' || format === 'justify') {
+      setters.setElementFormat(format);
+    } else if (format === 'start') {
+      setters.setElementFormat('left');
+    } else if (format === 'end') {
+      setters.setElementFormat('right');
+    } else {
+      setters.setElementFormat('left');
+    }
+
+    let styleString = '';
+    const nodes = selection.getNodes();
+    const textNode = nodes.find((node) => $isTextNode(node));
+    if (textNode && $isTextNode(textNode)) {
+      styleString = textNode.getStyle();
+    }
+    const styleMap = parseStyleMap(styleString);
+    setters.setFontFamily(normalizeFontValue(styleMap['font-family']) || 'default');
+    setters.setFontSize(styleMap['font-size'] || 'default');
+    setters.setFontColor(normalizeColor(styleMap.color) || 'default');
+    setters.setBgColor(normalizeColor(styleMap['background-color']) || 'default');
+  }
+}
+
 // Toolbar component for format controls
 function ToolbarPlugin({
   disabled = false,
@@ -134,150 +255,53 @@ function ToolbarPlugin({
   const [bgColor, setBgColor] = React.useState('default');
   const [isCompactToolbar, setIsCompactToolbar] = React.useState<boolean>(false);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
-  const normalizeColor = useCallback((value: string | undefined): string => {
-    if (!value) return '';
-    const trimmed = value.trim();
-    const hexMatch = trimmed.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
-    if (hexMatch) {
-      return trimmed.toLowerCase();
-    }
-    const rgbMatch = trimmed.match(
-      /^rgba?\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})(?:,\s*[\d.]+)?\)$/i,
-    );
-    if (rgbMatch) {
-      const [r, g, b] = rgbMatch
-        .slice(1, 4)
-        .map((n) => Math.max(0, Math.min(255, Number.parseInt(n, 10))));
-      const toHex = (n: number) => n.toString(16).padStart(2, '0');
-      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-    }
-    // Whitelist a handful of safe named colors if needed
-    const named = trimmed.toLowerCase();
-    const allowedNamed = new Set([
-      'black',
-      'white',
-      'red',
-      'blue',
-      'green',
-      'orange',
-      'gray',
-      'grey',
-    ]);
-    if (allowedNamed.has(named)) {
-      return named;
-    }
-    return '';
-  }, []);
-  const fontColors = React.useMemo(
-    () => [
-      { label: 'Black', value: '#000000' },
-      { label: 'Blue', value: '#1a73e8' },
-      { label: 'Red', value: '#d93025' },
-      { label: 'Green', value: '#188038' },
-      { label: 'Orange', value: '#f9ab00' },
-      { label: 'Gray', value: '#5f6368' },
-    ],
-    [],
-  );
-  const bgColors = React.useMemo(
-    () => [
-      { label: 'Light Yellow', value: '#fff3cd' },
-      { label: 'Light Blue', value: '#e8f0fe' },
-      { label: 'Light Red', value: '#fce8e6' },
-      { label: 'Light Green', value: '#e6f4ea' },
-      { label: 'Light Gray', value: '#f6f6f6' },
-    ],
-    [],
-  );
-
-  const normalizeFontValue = React.useCallback((value: string): string => {
-    if (!value) return '';
-    const trimmed = value.trim();
-    // Strip matching leading/trailing quotes
-    return trimmed.replace(/^['"]+|['"]+$/g, '');
-  }, []);
-
-  const parseStyleMap = useCallback((styleString: string) => {
-    const entries = styleString
-      .split(';')
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .map((part) => {
-        const [key, ...rest] = part.split(':');
-        if (!key || rest.length === 0) return null;
-        return [key.trim().toLowerCase(), rest.join(':').trim()] as const;
-      })
-      .filter(Boolean) as [string, string][];
-    return Object.fromEntries(entries);
-  }, []);
-
-  const updateToolbar = useCallback(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      setIsBold(selection.hasFormat('bold'));
-      setIsItalic(selection.hasFormat('italic'));
-      setIsUnderline(selection.hasFormat('underline'));
-
-      const anchorNode = selection.anchor.getNode();
-      const element =
-        anchorNode.getKey() === 'root' ? anchorNode : anchorNode.getTopLevelElementOrThrow();
-
-      if ($isHeadingNode(element)) {
-        const tag = element.getTag();
-        if (tag === 'h1' || tag === 'h2' || tag === 'h3') {
-          setBlockType(tag);
-        } else {
-          setBlockType('paragraph');
-        }
-      } else {
-        const type = element.getType();
-        if (type === 'quote') {
-          setBlockType('quote');
-        } else if (type === 'code') {
-          setBlockType('code');
-        } else {
-          setBlockType('paragraph');
-        }
-      }
-
-      const format =
-        $isElementNode(element) && typeof element.getFormatType === 'function'
-          ? element.getFormatType()
-          : null;
-      if (format === 'left' || format === 'center' || format === 'right' || format === 'justify') {
-        setElementFormat(format);
-      } else if (format === 'start') {
-        setElementFormat('left');
-      } else if (format === 'end') {
-        setElementFormat('right');
-      } else {
-        setElementFormat('left');
-      }
-
-      let styleString = '';
-      const nodes = selection.getNodes();
-      const textNode = nodes.find((node) => $isTextNode(node));
-      if (textNode && $isTextNode(textNode)) {
-        styleString = textNode.getStyle();
-      }
-      const styleMap = parseStyleMap(styleString);
-      setFontFamily(normalizeFontValue(styleMap['font-family']) || 'default');
-      setFontSize(styleMap['font-size'] || 'default');
-      setFontColor(normalizeColor(styleMap.color) || 'default');
-      setBgColor(normalizeColor(styleMap['background-color']) || 'default');
-    }
-  }, [normalizeColor, normalizeFontValue, parseStyleMap]);
+  const fontColors = [
+    { label: 'Black', value: '#000000' },
+    { label: 'Blue', value: '#1a73e8' },
+    { label: 'Red', value: '#d93025' },
+    { label: 'Green', value: '#188038' },
+    { label: 'Orange', value: '#f9ab00' },
+    { label: 'Gray', value: '#5f6368' },
+  ];
+  const bgColors = [
+    { label: 'Light Yellow', value: '#fff3cd' },
+    { label: 'Light Blue', value: '#e8f0fe' },
+    { label: 'Light Red', value: '#fce8e6' },
+    { label: 'Light Green', value: '#e6f4ea' },
+    { label: 'Light Gray', value: '#f6f6f6' },
+  ];
 
   useEffect(() => {
     return editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
       () => {
-        updateToolbar();
+        updateToolbar({
+          setIsBold,
+          setIsItalic,
+          setIsUnderline,
+          setBlockType,
+          setElementFormat,
+          setFontFamily,
+          setFontSize,
+          setFontColor,
+          setBgColor,
+        });
         return false;
       },
       1,
     );
-  }, [editor, updateToolbar]);
+  }, [
+    editor,
+    setIsBold,
+    setIsItalic,
+    setIsUnderline,
+    setBlockType,
+    setElementFormat,
+    setFontFamily,
+    setFontSize,
+    setFontColor,
+    setBgColor,
+  ]);
 
   useEffect(() => {
     if (!toolbarRef.current) return;
@@ -1219,35 +1243,32 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
    * @param styleStack Accumulated styles from ancestor elements
    * @param segments Output list of { style, length } for each text run
    */
-  const collectStyleSegments = useCallback(
-    (
-      node: Node,
-      styleStack: string[],
-      segments: Array<{ style: string; length: number }>,
-    ): void => {
-      const traverse = (current: Node, carry: string[]): void => {
-        if (current.nodeType === Node.TEXT_NODE) {
-          const textContent = current.textContent ?? '';
-          const style = carry.filter(Boolean).join('; ');
-          if (textContent.length > 0) {
-            segments.push({ style, length: textContent.length });
-          }
-          return;
+  const collectStyleSegments = (
+    node: Node,
+    styleStack: string[],
+    segments: Array<{ style: string; length: number }>,
+  ): void => {
+    const traverse = (current: Node, carry: string[]): void => {
+      if (current.nodeType === Node.TEXT_NODE) {
+        const textContent = current.textContent ?? '';
+        const style = carry.filter(Boolean).join('; ');
+        if (textContent.length > 0) {
+          segments.push({ style, length: textContent.length });
         }
+        return;
+      }
 
-        if (current.nodeType === Node.ELEMENT_NODE) {
-          const element = current as HTMLElement;
-          const styleAttr = element.getAttribute('style') ?? '';
-          const filteredStyle = filterAllowedInlineStyles(styleAttr);
-          const nextInherited = filteredStyle ? [...carry, filteredStyle] : carry;
-          element.childNodes.forEach((child) => traverse(child, nextInherited));
-        }
-      };
+      if (current.nodeType === Node.ELEMENT_NODE) {
+        const element = current as HTMLElement;
+        const styleAttr = element.getAttribute('style') ?? '';
+        const filteredStyle = filterAllowedInlineStyles(styleAttr);
+        const nextInherited = filteredStyle ? [...carry, filteredStyle] : carry;
+        element.childNodes.forEach((child) => traverse(child, nextInherited));
+      }
+    };
 
-      traverse(node, styleStack);
-    },
-    [], // filterAllowedInlineStyles is a module import and stable
-  );
+    traverse(node, styleStack);
+  };
 
   useEffect(() => {
     if (!initialHtml || initialHtml.trim() === '') return;
@@ -1307,7 +1328,7 @@ function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
         }
       }
     });
-  }, [collectStyleSegments, editor, initialHtml]);
+  }, [editor, initialHtml]);
 
   return null;
 }
@@ -1398,66 +1419,54 @@ const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEditorProp
     // Ref to access the editor instance
     const editorRef = useRef<LexicalEditor | null>(null);
 
-    // Function to get current content (called only when needed)
-    const getCurrentContent = useCallback(() => {
+    const getCurrentContent = () => {
       if (editorRef.current) {
         return editorRef.current.getEditorState().read(() => {
           return $generateHtmlFromNodes(editorRef.current!);
         });
       }
       return '';
-    }, []);
+    };
 
-    const getSanitizedContent = useCallback(() => {
+    const getSanitizedContent = () => {
       return sanitizeRichContent(getCurrentContent());
-    }, [getCurrentContent]);
+    };
 
-    // Function to get plain text content (for content detection without HTML markup)
-    const getTextContent = useCallback(() => {
+    const getTextContent = () => {
       if (editorRef.current) {
         return editorRef.current.getEditorState().read(() => {
           return $getRoot().getTextContent();
         });
       }
       return '';
-    }, []);
+    };
 
-    // Function to insert text at current cursor position
-    const insertText = useCallback(
-      (text: string) => {
-        if (editorRef.current && !disabled) {
-          editorRef.current.update(() => {
-            const selection = $getSelection();
-            if ($isRangeSelection(selection)) {
+    const insertText = (text: string) => {
+      if (editorRef.current && !disabled) {
+        editorRef.current.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            const textNode = $createTextNode(text);
+            selection.insertNodes([textNode]);
+          } else {
+            const root = $getRoot();
+            const lastChild = root.getLastChild();
+            if (lastChild) {
+              lastChild.selectEnd();
               const textNode = $createTextNode(text);
-              selection.insertNodes([textNode]);
-            } else {
-              // If no selection, insert at the end
-              const root = $getRoot();
-              const lastChild = root.getLastChild();
-              if (lastChild) {
-                lastChild.selectEnd();
-                const textNode = $createTextNode(text);
-                $insertNodes([textNode]);
-              }
+              $insertNodes([textNode]);
             }
-          });
-        }
-      },
-      [disabled],
-    );
+          }
+        });
+      }
+    };
 
-    // Expose getCurrentContent, getTextContent, and insertText methods to parent via ref
-    React.useImperativeHandle(
-      ref,
-      () => ({
-        getCurrentContent,
-        getSanitizedContent,
-        getTextContent,
-        insertText,
-      }),
-      [getCurrentContent, getSanitizedContent, getTextContent, insertText],
-    );
+    React.useImperativeHandle(ref, () => ({
+      getCurrentContent,
+      getSanitizedContent,
+      getTextContent,
+      insertText,
+    }));
 
     // Content changes are now handled by ContentChangePlugin using registerTextContentListener
     // This avoids cursor jumping while providing real-time content updates

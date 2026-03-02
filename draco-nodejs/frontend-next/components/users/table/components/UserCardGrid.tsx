@@ -129,12 +129,4 @@ const UserCardGrid: React.FC<UserCardGridProps> = ({
   );
 };
 
-// Memoize to prevent unnecessary re-renders during pagination
-export default React.memo(UserCardGrid, (prevProps, nextProps) => {
-  // Only re-render if users array or critical props change
-  return (
-    prevProps.users === nextProps.users &&
-    prevProps.cardSize === nextProps.cardSize &&
-    prevProps.canManageUsers === nextProps.canManageUsers
-  );
-});
+export default UserCardGrid;

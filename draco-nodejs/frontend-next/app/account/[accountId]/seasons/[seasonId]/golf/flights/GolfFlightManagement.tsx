@@ -20,6 +20,7 @@ import {
   Card,
   CardContent,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -353,9 +354,15 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           p: 1.5,
           borderBottom: '1px solid',
           borderColor: hasPlayerCountMismatch ? 'warning.main' : 'divider',
-          bgcolor: hasPlayerCountMismatch ? 'warning.lighter' : 'transparent',
+          bgcolor: hasPlayerCountMismatch
+            ? (theme) => alpha(theme.palette.warning.main, 0.15)
+            : 'transparent',
           '&:last-child': { borderBottom: 'none' },
-          '&:hover': { bgcolor: hasPlayerCountMismatch ? 'warning.light' : 'action.hover' },
+          '&:hover': {
+            bgcolor: hasPlayerCountMismatch
+              ? (theme) => alpha(theme.palette.warning.main, 0.25)
+              : 'action.hover',
+          },
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

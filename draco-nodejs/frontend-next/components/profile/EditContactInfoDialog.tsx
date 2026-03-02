@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -76,6 +76,34 @@ const EMPTY_DETAILS = {
   dateOfBirth: '',
 };
 
+const editContactFormResolver = zodResolver(
+  EditContactFormSchema,
+) as Resolver<EditContactFormValues>;
+
+function buildInitialValues(contact: BaseContactType | null): EditContactFormValues {
+  if (!contact) {
+    return {
+      email: undefined,
+      contactDetails: { ...EMPTY_FORM_CONTACT_DETAILS },
+    };
+  }
+
+  const details = contact.contactDetails ?? EMPTY_DETAILS;
+
+  return {
+    email: contact.email ?? undefined,
+    contactDetails: {
+      phone1: details.phone1 ?? '',
+      phone2: details.phone2 ?? '',
+      phone3: details.phone3 ?? '',
+      streetAddress: details.streetAddress ?? '',
+      city: details.city ?? '',
+      state: details.state ?? '',
+      zip: details.zip ?? '',
+    },
+  };
+}
+
 const EditContactInfoDialog: React.FC<EditContactInfoDialogProps> = ({
   open,
   contact,
@@ -85,33 +113,6 @@ const EditContactInfoDialog: React.FC<EditContactInfoDialogProps> = ({
 }) => {
   const apiClient = useApiClient();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const initialValues = useMemo<EditContactFormValues>(() => {
-    if (!contact) {
-      return {
-        email: undefined,
-        contactDetails: { ...EMPTY_FORM_CONTACT_DETAILS },
-      };
-    }
-
-    const details = contact.contactDetails ?? EMPTY_DETAILS;
-
-    return {
-      email: contact.email ?? undefined,
-      contactDetails: {
-        phone1: details.phone1 ?? '',
-        phone2: details.phone2 ?? '',
-        phone3: details.phone3 ?? '',
-        streetAddress: details.streetAddress ?? '',
-        city: details.city ?? '',
-        state: details.state ?? '',
-        zip: details.zip ?? '',
-      },
-    };
-  }, [contact]);
-  const formResolver = useMemo(
-    () => zodResolver(EditContactFormSchema) as Resolver<EditContactFormValues>,
-    [],
-  );
   const {
     register,
     handleSubmit,
@@ -119,14 +120,14 @@ const EditContactInfoDialog: React.FC<EditContactInfoDialogProps> = ({
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<EditContactFormValues>({
-    resolver: formResolver,
-    defaultValues: initialValues,
+    resolver: editContactFormResolver,
+    defaultValues: buildInitialValues(contact),
   });
 
   useEffect(() => {
-    reset(initialValues);
+    reset(buildInitialValues(contact));
     setSubmitError(null);
-  }, [open, initialValues, reset]);
+  }, [open, contact, reset]);
 
   const handleClose = () => {
     if (!isSubmitting) {

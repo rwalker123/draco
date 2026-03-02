@@ -84,52 +84,52 @@ const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
     defaultValues,
   });
 
-  const buildPayload = React.useCallback(
-    (values: EditAccountFormValues, existingAccount?: SharedAccountType | null) => {
-      const accountType = accountTypes.find((type) => type.id === values.accountTypeId);
-      const affiliation = affiliations.find((item) => item.id === values.affiliationId);
+  const buildPayload = (
+    values: EditAccountFormValues,
+    existingAccount?: SharedAccountType | null,
+  ) => {
+    const accountType = accountTypes.find((type) => type.id === values.accountTypeId);
+    const affiliation = affiliations.find((item) => item.id === values.affiliationId);
 
-      const configuration: NonNullable<CreateAccountType['configuration']> = {};
+    const configuration: NonNullable<CreateAccountType['configuration']> = {};
 
-      if (accountType) {
-        configuration.accountType = {
-          id: accountType.id,
-          name: accountType.name,
-        };
-      }
-
-      if (affiliation) {
-        configuration.affiliation = {
-          id: affiliation.id,
-          name: affiliation.name,
-          url: affiliation.url ?? undefined,
-        };
-      }
-
-      configuration.timeZone = values.timezoneId;
-      configuration.firstYear = values.firstYear;
-
-      const payload: Partial<CreateAccountType> = {
-        name: values.name.trim(),
-        accountLogoUrl: existingAccount?.accountLogoUrl ?? '',
+    if (accountType) {
+      configuration.accountType = {
+        id: accountType.id,
+        name: accountType.name,
       };
+    }
 
-      if (Object.keys(configuration).length > 0) {
-        payload.configuration = configuration;
-      }
+    if (affiliation) {
+      configuration.affiliation = {
+        id: affiliation.id,
+        name: affiliation.name,
+        url: affiliation.url ?? undefined,
+      };
+    }
 
-      if (existingAccount?.socials) {
-        payload.socials = existingAccount.socials;
-      }
+    configuration.timeZone = values.timezoneId;
+    configuration.firstYear = values.firstYear;
 
-      if (existingAccount?.urls?.length) {
-        payload.urls = existingAccount.urls.map((url) => ({ id: url.id, url: url.url }));
-      }
+    const payload: Partial<CreateAccountType> = {
+      name: values.name.trim(),
+      accountLogoUrl: existingAccount?.accountLogoUrl ?? '',
+    };
 
-      return payload;
-    },
-    [accountTypes, affiliations],
-  );
+    if (Object.keys(configuration).length > 0) {
+      payload.configuration = configuration;
+    }
+
+    if (existingAccount?.socials) {
+      payload.socials = existingAccount.socials;
+    }
+
+    if (existingAccount?.urls?.length) {
+      payload.urls = existingAccount.urls.map((url) => ({ id: url.id, url: url.url }));
+    }
+
+    return payload;
+  };
 
   React.useEffect(() => {
     if (open && account) {

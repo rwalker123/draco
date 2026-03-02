@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import NextLink from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Box, Breadcrumbs, Container, Link as MuiLink, Typography } from '@mui/material';
@@ -17,22 +16,12 @@ export default function PlayerStatisticsClientWrapper() {
   const playerId = rawPlayerId ?? '';
 
   const searchParams = useSearchParams();
-  const returnDestination = useMemo(() => {
-    const target = searchParams?.get('returnTo') ?? null;
-    if (!target || !target.startsWith('/')) {
-      return null;
-    }
-    return target;
-  }, [searchParams]);
+  const returnTarget = searchParams?.get('returnTo') ?? null;
+  const returnDestination = returnTarget && returnTarget.startsWith('/') ? returnTarget : null;
 
-  const breadcrumbLabel = useMemo(() => {
-    if (!returnDestination) {
-      return null;
-    }
-    const label = searchParams?.get('returnLabel') ?? '';
-    const trimmed = label.trim();
-    return trimmed.length > 0 ? trimmed : 'Back';
-  }, [returnDestination, searchParams]);
+  const breadcrumbLabel = returnDestination
+    ? (searchParams?.get('returnLabel') ?? '').trim() || 'Back'
+    : null;
 
   const { playerStats, playerLoading, playerError } = usePlayerCareerStatistics({
     accountId,

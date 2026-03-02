@@ -58,18 +58,26 @@ function IndividualLiveWatchDialogContent({
   useEffect(() => {
     if (!sessionState?.courseId) return;
 
+    const controller = new AbortController();
+
     const fetchCourseData = async () => {
       const result = await getGolfCourse({
         client: apiClient,
         path: { accountId, courseId: sessionState.courseId },
+        signal: controller.signal,
         throwOnError: false,
       });
+      if (controller.signal.aborted) return;
       if (result.data) {
         setCourseData(result.data);
       }
     };
 
     fetchCourseData();
+
+    return () => {
+      controller.abort();
+    };
   }, [sessionState?.courseId, apiClient, accountId]);
 
   const isSessionActive = sessionState?.status === 'active';

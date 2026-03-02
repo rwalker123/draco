@@ -1,7 +1,7 @@
 'use client';
 
 // TODO: Replace the plain text/textarea input with a WYSIWYG editor (e.g., react-quill, TinyMCE, Slate) for game recaps once React 19 support is available.
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -97,55 +97,40 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
     }
   }, [initialRecap, open]);
 
-  const formattedGameDate = useMemo(() => {
-    if (!gameDate) {
-      return null;
-    }
+  const formattedGameDate = gameDate
+    ? Number.isNaN(new Date(gameDate).getTime())
+      ? gameDate
+      : new Date(gameDate).toLocaleDateString(undefined, {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+        })
+    : null;
 
-    const date = new Date(gameDate);
-    if (!Number.isNaN(date.getTime())) {
-      return date.toLocaleDateString(undefined, {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      });
-    }
+  const scoreboardLine =
+    homeScore !== undefined && visitorScore !== undefined && homeTeamName && visitorTeamName
+      ? `${visitorTeamName} ${visitorScore} at ${homeTeamName} ${homeScore}`
+      : null;
 
-    return gameDate;
-  }, [gameDate]);
-
-  const scoreboardLine = useMemo(() => {
-    if (
-      homeScore === undefined ||
-      visitorScore === undefined ||
-      !homeTeamName ||
-      !visitorTeamName
-    ) {
-      return null;
-    }
-
-    return `${visitorTeamName} ${visitorScore} at ${homeTeamName} ${homeScore}`;
-  }, [homeScore, homeTeamName, visitorScore, visitorTeamName]);
-
-  const handleEditorChange = useCallback((html: string) => {
+  const handleEditorChange = (html: string) => {
     if (process.env.NODE_ENV !== 'production') {
       console.debug('[RecapEditor] onChange raw HTML:', html);
     }
     setEditorContent(html);
     setPlainTextContent(extractPlainText(html));
     setIsDirty(true);
-  }, []);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     if (isSubmitting || isSaving) {
       return;
     }
 
     setSubmitError(null);
     onClose();
-  }, [isSubmitting, isSaving, onClose]);
+  };
 
-  const onSubmit = useCallback(async () => {
+  const onSubmit = async () => {
     if (readOnly) {
       return;
     }
@@ -167,7 +152,6 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
       return;
     }
 
-    // Validate against schema to ensure parity with backend expectations
     try {
       UpsertGameRecapSchema.parse({ recap: sanitizedContent });
     } catch (error) {
@@ -191,7 +175,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
       setSubmitError(result.error);
       onError?.(result.error);
     }
-  }, [editorContent, loading, onClose, onError, onSuccess, readOnly, saveRecap]);
+  };
 
   return (
     <Dialog

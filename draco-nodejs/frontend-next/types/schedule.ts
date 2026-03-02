@@ -78,7 +78,6 @@ export interface Umpire {
   firstName: string;
   lastName: string;
   email: string;
-  displayName: string;
 }
 
 export interface League {

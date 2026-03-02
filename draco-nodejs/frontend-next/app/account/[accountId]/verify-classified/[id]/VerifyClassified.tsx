@@ -52,9 +52,11 @@ const VerifyClassified: React.FC<VerifyClassifiedProps> = ({ accountId, classifi
   });
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const verifyAccess = async () => {
-      // Validate required parameters
       if (!accessCode) {
+        if (controller.signal.aborted) return;
         setState({
           loading: false,
           success: false,
@@ -64,9 +66,9 @@ const VerifyClassified: React.FC<VerifyClassifiedProps> = ({ accountId, classifi
         return;
       }
 
-      // Validate access code format
       const validation = validateAccessCode(accessCode);
       if (!validation.isValid) {
+        if (controller.signal.aborted) return;
         setState({
           loading: false,
           success: false,
@@ -81,14 +83,16 @@ const VerifyClassified: React.FC<VerifyClassifiedProps> = ({ accountId, classifi
           throw new Error('Invalid access code');
         }
 
-        // Make API request to verify access
         const client = createApiClient();
         const result = await verifyTeamsWantedAccess({
           client,
           path: { accountId, classifiedId },
           body: { accessCode: validation.sanitizedValue },
+          signal: controller.signal,
           throwOnError: false,
         });
+
+        if (controller.signal.aborted) return;
 
         const classified = unwrapApiResult(result, 'Verification failed');
         setState({
@@ -98,7 +102,6 @@ const VerifyClassified: React.FC<VerifyClassifiedProps> = ({ accountId, classifi
           classifiedData: classified,
         });
 
-        // Store verification success and access code for secure redirect
         const verificationData = {
           accountId,
           accessCode: validation.sanitizedValue,
@@ -107,27 +110,33 @@ const VerifyClassified: React.FC<VerifyClassifiedProps> = ({ accountId, classifi
         };
         localStorage.setItem('teamsWantedVerification', JSON.stringify(verificationData));
 
-        // Redirect to Teams Wanted tab without exposing classified ID
         setTimeout(() => {
+          if (controller.signal.aborted) return;
           router.push(`/account/${accountId}/player-classifieds?tab=teams-wanted`);
         }, 3000);
-      } catch (error) {
-        const status = error instanceof ApiClientError ? error.status : undefined;
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const status = err instanceof ApiClientError ? err.status : undefined;
+        let message = err instanceof Error ? err.message : 'Verification failed';
         if (status === 400) {
-          error = new Error('Invalid access code');
+          message = 'Invalid access code';
         } else if (status === 404) {
-          error = new Error('Classified not found');
+          message = 'Classified not found';
         }
         setState({
           loading: false,
           success: false,
-          error: error instanceof Error ? error.message : 'Verification failed',
+          error: message,
           classifiedData: null,
         });
       }
     };
 
     verifyAccess();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, classifiedId, accessCode, router]);
 
   const handleRetry = () => {

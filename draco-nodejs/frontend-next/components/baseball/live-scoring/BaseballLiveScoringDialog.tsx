@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -245,24 +245,18 @@ function BaseballLiveScoringDialogContent({
     });
   }, [onInningAdvanced]);
 
-  const getScoreForInning = useCallback(
-    (inning: number, isHomeTeam: boolean): number | undefined => {
-      const score = sessionState?.scores.find(
-        (s) => s.inningNumber === inning && s.isHomeTeam === isHomeTeam,
-      );
-      return score?.runs;
-    },
-    [sessionState?.scores],
-  );
+  const getScoreForInning = (inning: number, isHomeTeam: boolean): number | undefined => {
+    const score = sessionState?.scores.find(
+      (s) => s.inningNumber === inning && s.isHomeTeam === isHomeTeam,
+    );
+    return score?.runs;
+  };
 
-  // Generate key for InningScoreEntry to reset form when inning or scores change
-  const scoreEntryKey = useMemo(() => {
-    const homeScore = getScoreForInning(effectiveInning, true);
-    const visitorScore = getScoreForInning(effectiveInning, false);
-    return `${effectiveInning}-${homeScore ?? 'null'}-${visitorScore ?? 'null'}`;
-  }, [effectiveInning, getScoreForInning]);
+  const homeScoreForEntry = getScoreForInning(effectiveInning, true);
+  const visitorScoreForEntry = getScoreForInning(effectiveInning, false);
+  const scoreEntryKey = `${effectiveInning}-${homeScoreForEntry ?? 'null'}-${visitorScoreForEntry ?? 'null'}`;
 
-  const handleStartSession = useCallback(async () => {
+  const handleStartSession = async () => {
     setStartingSession(true);
     const result = await startSession(gameId);
     if (result) {
@@ -270,7 +264,7 @@ function BaseballLiveScoringDialogContent({
     } else {
       setStartingSession(false);
     }
-  }, [gameId, startSession, connect]);
+  };
 
   const handleAdvanceInning = async (direction: 'prev' | 'next') => {
     const newInning = direction === 'next' ? effectiveInning + 1 : effectiveInning - 1;

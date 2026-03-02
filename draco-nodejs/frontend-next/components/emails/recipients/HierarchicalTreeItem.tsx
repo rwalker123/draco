@@ -158,4 +158,4 @@ const HierarchicalTreeItem: React.FC<TreeItemProps> = ({
   );
 };
 
-export default React.memo(HierarchicalTreeItem);
+export default HierarchicalTreeItem;

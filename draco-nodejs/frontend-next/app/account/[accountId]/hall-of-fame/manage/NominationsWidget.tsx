@@ -15,6 +15,7 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   Pagination,
+  Snackbar,
   Stack,
   TextField,
   Tooltip,
@@ -72,13 +73,13 @@ const NominationsWidget: React.FC<NominationsWidgetProps> = ({
     inductNomination,
     listEligibleContacts,
   } = useHallOfFameService(accountId);
-  const { showNotification } = useNotifications();
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const [nominations, setNominations] = React.useState<HofNominationType[]>([]);
   const [total, setTotal] = React.useState(0);
   const [page, setPage] = React.useState(1);
-  const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [hasLoaded, setHasLoaded] = React.useState(false);
 
   const [detailsNomination, setDetailsNomination] = React.useState<HofNominationType | null>(null);
   const [editNominationTarget, setEditNominationTarget] = React.useState<HofNominationType | null>(
@@ -89,8 +90,7 @@ const NominationsWidget: React.FC<NominationsWidgetProps> = ({
   const [inductNominationTarget, setInductNominationTarget] =
     React.useState<HofNominationType | null>(null);
 
-  const loadNominations = async (pageNumber: number) => {
-    setLoading(true);
+  const silentRefreshNominations = async (pageNumber: number) => {
     setError(null);
     try {
       const response: HofNominationListType = await listNominations({
@@ -99,19 +99,16 @@ const NominationsWidget: React.FC<NominationsWidgetProps> = ({
       });
       setNominations(response.nominations);
       setTotal(response.total ?? response.nominations.length);
+      setHasLoaded(true);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load nominations.';
       setError(message);
-      setNominations([]);
-    } finally {
-      setLoading(false);
     }
   };
 
   React.useEffect(() => {
     const controller = new AbortController();
     const load = async () => {
-      setLoading(true);
       setError(null);
       try {
         const response: HofNominationListType = await listNominations(
@@ -121,15 +118,12 @@ const NominationsWidget: React.FC<NominationsWidgetProps> = ({
         if (controller.signal.aborted) return;
         setNominations(response.nominations);
         setTotal(response.total ?? response.nominations.length);
+        setHasLoaded(true);
       } catch (err) {
         if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load nominations.';
         setError(message);
         setNominations([]);
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
       }
     };
     void load();
@@ -152,7 +146,7 @@ const NominationsWidget: React.FC<NominationsWidgetProps> = ({
       if (nextPage !== page) {
         setPage(nextPage);
       } else {
-        await loadNominations(nextPage);
+        await silentRefreshNominations(nextPage);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete nomination.';
@@ -184,7 +178,7 @@ const NominationsWidget: React.FC<NominationsWidgetProps> = ({
       if (nextPage !== page) {
         setPage(nextPage);
       } else {
-        await loadNominations(nextPage);
+        await silentRefreshNominations(nextPage);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to induct nomination.';
@@ -205,13 +199,7 @@ const NominationsWidget: React.FC<NominationsWidgetProps> = ({
         </Alert>
       ) : null}
 
-      {loading ? (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Loading nominations…
-        </Alert>
-      ) : null}
-
-      {!loading && nominations.length === 0 ? (
+      {hasLoaded && nominations.length === 0 ? (
         <Alert severity="info">No nominations have been submitted yet.</Alert>
       ) : null}
 
@@ -335,6 +323,21 @@ const NominationsWidget: React.FC<NominationsWidgetProps> = ({
           listEligibleContacts={listEligibleContacts}
         />
       ) : null}
+
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={() => hideNotification()}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => hideNotification()}
+          severity={notification?.severity}
+          variant="filled"
+        >
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </WidgetShell>
   );
 };

@@ -7,9 +7,11 @@ export type AdminAnalyticsSummary = GetAdminAnalyticsSummaryResponse;
 
 export const fetchAdminAnalyticsSummary = async (
   client: Client,
+  signal?: AbortSignal,
 ): Promise<AdminAnalyticsSummary> => {
   const result = await getAdminAnalyticsSummary({
     client,
+    signal,
     throwOnError: false,
   });
 

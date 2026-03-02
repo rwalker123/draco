@@ -15,7 +15,6 @@ interface OfficialEntity {
   id: string;
   firstName: string;
   lastName: string;
-  displayName: string;
 }
 
 interface SeasonSchedulerAdapterProps {
@@ -57,7 +56,7 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
 
   const schedulerUmpires = umpires.map((umpire) => ({
     id: umpire.id,
-    name: umpire.displayName || `${umpire.firstName} ${umpire.lastName}`.trim() || 'Umpire',
+    name: `${umpire.firstName} ${umpire.lastName}`.trim() || 'Umpire',
   }));
 
   const schedulerLeagues = leagues.map((league) => ({ id: league.id, name: league.name }));

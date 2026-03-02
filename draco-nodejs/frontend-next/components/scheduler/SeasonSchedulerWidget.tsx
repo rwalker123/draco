@@ -427,17 +427,17 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     const controller = new AbortController();
 
     const doLoadRules = async () => {
-      const nextRules = await listFieldAvailabilityRulesRef.current();
+      const nextRules = await listFieldAvailabilityRulesRef.current(controller.signal);
       if (!controller.signal.aborted) setRules(nextRules);
     };
 
     const doLoadExclusions = async () => {
-      const nextExclusions = await listFieldExclusionDatesRef.current();
+      const nextExclusions = await listFieldExclusionDatesRef.current(controller.signal);
       if (!controller.signal.aborted) setExclusions(nextExclusions);
     };
 
     const doLoadSeasonWindow = async () => {
-      const config = await getSeasonWindowConfigRef.current();
+      const config = await getSeasonWindowConfigRef.current(controller.signal);
       if (controller.signal.aborted) return;
       setSeasonWindowConfig(config);
       if (config) {
@@ -467,17 +467,17 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     };
 
     const doLoadSeasonExclusions = async () => {
-      const next = await listSeasonExclusionsRef.current();
+      const next = await listSeasonExclusionsRef.current(controller.signal);
       if (!controller.signal.aborted) setSeasonExclusions(next);
     };
 
     const doLoadTeamExclusions = async () => {
-      const next = await listTeamExclusionsRef.current();
+      const next = await listTeamExclusionsRef.current(controller.signal);
       if (!controller.signal.aborted) setTeamExclusions(next);
     };
 
     const doLoadUmpireExclusions = async () => {
-      const next = await listUmpireExclusionsRef.current();
+      const next = await listUmpireExclusionsRef.current(controller.signal);
       if (!controller.signal.aborted) setUmpireExclusions(next);
     };
 

@@ -112,7 +112,7 @@ sequenceDiagram
 ### Full Dialog Component Structure
 
 ```typescript
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -142,18 +142,15 @@ export const EditContactDialog: React.FC<EditContactDialogProps> = ({
   contact,
   loading: externalLoading,
 }) => {
-  // Internal state management
   const [firstName, setFirstName] = useState(contact?.firstName || '');
   const [lastName, setLastName] = useState(contact?.lastName || '');
   const [email, setEmail] = useState(contact?.email || '');
   const [localError, setLocalError] = useState<string | null>(null);
 
-  // Service hook for API operations
   const { updateContact, loading: updateLoading } = useContactOperations();
 
   const isLoading = externalLoading || updateLoading;
 
-  // Reset form when dialog opens with new contact
   React.useEffect(() => {
     if (open && contact) {
       setFirstName(contact.firstName);
@@ -163,8 +160,7 @@ export const EditContactDialog: React.FC<EditContactDialogProps> = ({
     }
   }, [open, contact]);
 
-  // Handle form submission
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     setLocalError(null);
 
     if (!contact) {
@@ -194,15 +190,14 @@ export const EditContactDialog: React.FC<EditContactDialogProps> = ({
       setLocalError(errorMsg);
       onError?.(errorMsg);
     }
-  }, [firstName, lastName, email, contact, updateContact, onSuccess, onError, onClose]);
+  };
 
-  // Handle dialog close
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     if (!isLoading) {
       setLocalError(null);
       onClose();
     }
-  }, [isLoading, onClose]);
+  };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -267,7 +262,7 @@ export const EditContactDialog: React.FC<EditContactDialogProps> = ({
 ### Parent Component Integration
 
 ```typescript
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { EditContactDialog } from './EditContactDialog';
 import { ContactType } from '@draco/shared-schemas';
 
@@ -278,19 +273,16 @@ export const UserManagement: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Open dialog for editing
-  const handleEditClick = useCallback((contact: ContactType) => {
+  const handleEditClick = (contact: ContactType) => {
     setSelectedContact(contact);
     setDialogOpen(true);
     setSuccess(null);
     setError(null);
-  }, []);
+  };
 
-  // Handle successful edit
-  const handleEditSuccess = useCallback((result: { message: string; data: ContactType }) => {
+  const handleEditSuccess = (result: { message: string; data: ContactType }) => {
     setSuccess(result.message);
 
-    // Update contact in local state with real API data
     setContacts(prevContacts =>
       prevContacts.map(c =>
         c.id === result.data.id ? result.data : c
@@ -299,12 +291,11 @@ export const UserManagement: React.FC = () => {
 
     setDialogOpen(false);
     setSelectedContact(null);
-  }, []);
+  };
 
-  // Handle edit error
-  const handleEditError = useCallback((errorMessage: string) => {
+  const handleEditError = (errorMessage: string) => {
     setError(errorMessage);
-  }, []);
+  };
 
   return (
     <>
@@ -341,7 +332,7 @@ export const UserManagement: React.FC = () => {
 ### Complete Service Hook Pattern
 
 ```typescript
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useCurrentSeason } from '@/hooks/useCurrentSeason';
 import { createContactService } from '@/services/contactService';
@@ -360,7 +351,7 @@ export function useContactOperations(accountId: string) {
   const { currentSeasonId } = useCurrentSeason(accountId);
   const service = token ? createContactService(token) : null;
 
-  const createContact = useCallback(async (
+  const createContact = async (
     contactData: CreateContactType
   ): Promise<ContactOperationResult> => {
     if (!service) {
@@ -384,9 +375,9 @@ export function useContactOperations(accountId: string) {
     } finally {
       setLoading(false);
     }
-  }, [service, accountId]);
+  };
 
-  const updateContact = useCallback(async (
+  const updateContact = async (
     contactId: string,
     updates: UpdateContactType
   ): Promise<ContactOperationResult> => {
@@ -411,9 +402,9 @@ export function useContactOperations(accountId: string) {
     } finally {
       setLoading(false);
     }
-  }, [service, accountId]);
+  };
 
-  const deleteContact = useCallback(async (
+  const deleteContact = async (
     contactId: string
   ): Promise<ContactOperationResult> => {
     if (!service) {
@@ -436,7 +427,7 @@ export function useContactOperations(accountId: string) {
     } finally {
       setLoading(false);
     }
-  }, [service, accountId]);
+  };
 
   return {
     createContact,
@@ -547,7 +538,7 @@ const contact = await services.contacts.getById(accountId, contactId);
 
 ```typescript
 // In Dialog Component
-const handleAssign = useCallback(async () => {
+const handleAssign = async () => {
   setLocalError(null);
 
   if (!selectedRole || !contactId) {
@@ -562,7 +553,6 @@ const handleAssign = useCallback(async () => {
     teamId: selectedTeamId || undefined,
   });
 
-  // Only proceed on real API success
   if (result.success && result.assignedRole) {
     onSuccess?.({
       message: result.message || 'Role assigned successfully',
@@ -574,16 +564,15 @@ const handleAssign = useCallback(async () => {
     setLocalError(errorMsg);
     onError?.(errorMsg);
   }
-}, [selectedRole, contactId, selectedLeagueId, selectedTeamId, accountId, assignRole, onSuccess, onError, onClose]);
+};
 
 // In Parent Component
-const handleAssignRoleSuccess = useCallback((result: { message: string; assignedRole: RoleWithContactType }) => {
+const handleAssignRoleSuccess = (result: { message: string; assignedRole: RoleWithContactType }) => {
   setSuccess(result.message);
 
-  // Update state only after receiving real API data
   handleRoleAssigned(result.assignedRole);
   dialogs.assignRoleDialog.close();
-}, [setSuccess, handleRoleAssigned, dialogs.assignRoleDialog]);
+};
 ```
 
 ---
@@ -607,7 +596,7 @@ const handleAssignRoleSuccess = useCallback((result: { message: string; assigned
 3. **Build Component**
    - Implement UI with Material-UI components
    - Manage internal state with `useState`
-   - Use `useCallback` for event handlers
+   - Define event handlers as plain functions (React Compiler optimizes automatically)
    - Add loading spinners and error displays
 
 4. **Add Dialog Support**

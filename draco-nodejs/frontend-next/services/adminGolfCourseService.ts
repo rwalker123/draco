@@ -13,10 +13,6 @@ export interface AdminGolfCoursesListResponse {
   pagination: PaginationWithTotalType;
 }
 
-export interface AdminGolfCourseCountResponse {
-  count: number;
-}
-
 export interface FetchAdminGolfCoursesOptions {
   page?: number;
   limit?: number;
@@ -26,6 +22,7 @@ export interface FetchAdminGolfCoursesOptions {
 export const fetchAdminGolfCourses = async (
   client: Client,
   options: FetchAdminGolfCoursesOptions = {},
+  signal?: AbortSignal,
 ): Promise<AdminGolfCoursesListResponse> => {
   const { page = 1, limit = 20, search } = options;
 
@@ -41,31 +38,21 @@ export const fetchAdminGolfCourses = async (
   const result = await client.get({
     url: `/api/admin/golf/courses?${queryParams.toString()}`,
     security: [{ scheme: 'bearer', type: 'http' }],
+    signal,
   });
 
   return unwrapApiResult(result, 'Failed to fetch golf courses') as AdminGolfCoursesListResponse;
 };
 
-export const fetchAdminGolfCourseCount = async (client: Client): Promise<number> => {
-  const result = await client.get({
-    url: '/api/admin/golf/courses/count',
-    security: [{ scheme: 'bearer', type: 'http' }],
-  });
-
-  const data = unwrapApiResult(
-    result,
-    'Failed to fetch golf course count',
-  ) as AdminGolfCourseCountResponse;
-  return data.count;
-};
-
 export const fetchAdminGolfCourse = async (
   client: Client,
   courseId: string,
+  signal?: AbortSignal,
 ): Promise<GolfCourseWithTeesType> => {
   const result = await client.get({
     url: `/api/admin/golf/courses/${courseId}`,
     security: [{ scheme: 'bearer', type: 'http' }],
+    signal,
   });
 
   return unwrapApiResult(result, 'Failed to fetch golf course') as GolfCourseWithTeesType;

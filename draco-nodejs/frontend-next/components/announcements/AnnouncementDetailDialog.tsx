@@ -46,10 +46,7 @@ const AnnouncementDetailDialog: React.FC<AnnouncementDetailDialogProps> = ({
   const formattedDate =
     publishedAtValue && publishedAtValue.length > 0 ? formatDateTime(publishedAtValue) : null;
   const specialFlag = announcement?.isSpecial ?? isSpecial ?? false;
-  const bodyContent = React.useMemo(
-    () => sanitizeRichContent(announcement?.body ?? ''),
-    [announcement?.body],
-  );
+  const bodyContent = sanitizeRichContent(announcement?.body ?? '');
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">

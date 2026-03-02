@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -88,41 +88,55 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const emailService = useMemo(() => createEmailService(token, apiClient), [token, apiClient]);
+  const emailService = createEmailService(token, apiClient);
 
-  // Load template data for edit mode
   useEffect(() => {
+    if (mode !== 'edit' || !templateId || !accountId || !token) return;
+
+    const controller = new AbortController();
+    const service = createEmailService(token, apiClient);
+
     const loadTemplate = async () => {
-      if (mode === 'edit' && templateId && accountId && token) {
-        try {
-          setTemplateLoading(true);
-          setError(null);
-          const templateData = await emailService.getTemplate(accountId as string, templateId);
+      try {
+        setTemplateLoading(true);
+        setError(null);
+        const templateData = await service.getTemplate(
+          accountId as string,
+          templateId,
+          controller.signal,
+        );
 
-          // Add validation to ensure we have template data
-          if (!templateData) {
-            throw new Error('Template data not found');
-          }
+        if (controller.signal.aborted) return;
 
-          setTemplate(templateData);
-          setFormData({
-            name: templateData.name || '',
-            description: templateData.description || '',
-            subjectTemplate: templateData.subjectTemplate || '',
-            bodyTemplate: templateData.bodyTemplate || '',
-          });
-        } catch (err) {
-          console.error('Failed to load template:', err);
-          const errorMessage = err instanceof Error ? err.message : 'Failed to load template';
-          setError(`${errorMessage}. Please try again or contact support if the problem persists.`);
-        } finally {
+        if (!templateData) {
+          throw new Error('Template data not found');
+        }
+
+        setTemplate(templateData);
+        setFormData({
+          name: templateData.name || '',
+          description: templateData.description || '',
+          subjectTemplate: templateData.subjectTemplate || '',
+          bodyTemplate: templateData.bodyTemplate || '',
+        });
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load template:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load template';
+        setError(`${errorMessage}. Please try again or contact support if the problem persists.`);
+      } finally {
+        if (!controller.signal.aborted) {
           setTemplateLoading(false);
         }
       }
     };
 
-    loadTemplate();
-  }, [mode, templateId, accountId, token, emailService]);
+    void loadTemplate();
+
+    return () => {
+      controller.abort();
+    };
+  }, [mode, templateId, accountId, token, apiClient]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     // Sync content from rich text editor before switching tabs
@@ -208,8 +222,7 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
     }
   };
 
-  const validateForm = useCallback(() => {
-    // Sync content from editor before validation as a safety net
+  const validateForm = () => {
     let currentBodyContent = formData.bodyTemplate;
     if (editorRef.current) {
       const editorContent = editorRef.current.getSanitizedContent();
@@ -234,16 +247,15 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]);
+  };
 
-  const handleSave = useCallback(async () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      // Get current content directly from editor to avoid race condition with async state updates
       const currentBodyContent = editorRef.current?.getSanitizedContent() || formData.bodyTemplate;
 
       const templateData = {
@@ -262,7 +274,6 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
         await emailService.updateTemplate(accountId as string, templateId, templateData);
       }
 
-      // Navigate back to templates list
       router.push(`/account/${accountId}/communications/templates`);
     } catch (err) {
       console.error(`Failed to ${mode} template:`, err);
@@ -271,7 +282,7 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
     } finally {
       setLoading(false);
     }
-  }, [formData, accountId, emailService, router, validateForm, mode, templateId]);
+  };
 
   const handleCancel = () => {
     router.push(`/account/${accountId}/communications/templates`);

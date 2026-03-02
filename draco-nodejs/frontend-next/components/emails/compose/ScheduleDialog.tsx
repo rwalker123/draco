@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -99,10 +99,7 @@ const ScheduleDialogContent: React.FC<ScheduleDialogContentProps> = ({
   composeState,
   composeActions,
 }) => {
-  const validation = useMemo(
-    () => validateComposeData(composeState, composeState.config),
-    [composeState],
-  );
+  const validation = validateComposeData(composeState, composeState.config);
 
   const [scheduleOption, setScheduleOption] = useState<ScheduleOption>('custom');
   const [customDate, setCustomDate] = useState<Date | null>(() => {
@@ -114,55 +111,46 @@ const ScheduleDialogContent: React.FC<ScheduleDialogContentProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [customDateBounds] = useState(createCustomDateBounds);
 
-  // Quick schedule options
-  const getQuickScheduleDate = useCallback((option: ScheduleOption): Date => {
+  const getQuickScheduleDate = (option: ScheduleOption): Date => {
     return computeQuickScheduleDate(option);
-  }, []);
+  };
 
-  // Handle schedule option change
-  const handleScheduleOptionChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const newOption = event.target.value as ScheduleOption;
-      setScheduleOption(newOption);
-      setError(null);
+  const handleScheduleOptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newOption = event.target.value as ScheduleOption;
+    setScheduleOption(newOption);
+    setError(null);
 
-      if (newOption !== 'custom') {
-        setCustomDate(getQuickScheduleDate(newOption));
-      }
-    },
-    [getQuickScheduleDate],
-  );
+    if (newOption !== 'custom') {
+      setCustomDate(getQuickScheduleDate(newOption));
+    }
+  };
 
-  // Handle custom date change
-  const handleCustomDateChange = useCallback((newDate: Date | null) => {
+  const handleCustomDateChange = (newDate: Date | null) => {
     setCustomDate(newDate);
     setError(null);
-  }, []);
+  };
 
-  // Validate selected date
-  const validateScheduleDate = useCallback((date: Date | null): string | null => {
+  const validateScheduleDate = (date: Date | null): string | null => {
     if (!date) {
       return 'Please select a valid date and time';
     }
 
     const now = new Date();
-    const minScheduleTime = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes from now
+    const minScheduleTime = new Date(now.getTime() + 5 * 60 * 1000);
 
     if (date <= minScheduleTime) {
       return 'Scheduled time must be at least 5 minutes from now';
     }
 
-    // Don't allow scheduling more than 1 year in advance
     const maxScheduleTime = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
     if (date > maxScheduleTime) {
       return 'Cannot schedule more than 1 year in advance';
     }
 
     return null;
-  }, []);
+  };
 
-  // Handle confirm scheduling
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = () => {
     const selectedDate =
       scheduleOption === 'custom' ? customDate : getQuickScheduleDate(scheduleOption);
     const validationError = validateScheduleDate(selectedDate);
@@ -181,26 +169,16 @@ const ScheduleDialogContent: React.FC<ScheduleDialogContentProps> = ({
 
       onClose();
     }
-  }, [
-    scheduleOption,
-    customDate,
-    getQuickScheduleDate,
-    validateScheduleDate,
-    composeActions,
-    onSchedule,
-    onClose,
-  ]);
+  };
 
-  // Handle cancel scheduling
-  const handleCancel = useCallback(() => {
+  const handleCancel = () => {
     onClose();
-  }, [onClose]);
+  };
 
-  // Handle remove scheduling
-  const handleRemoveSchedule = useCallback(() => {
+  const handleRemoveSchedule = () => {
     composeActions.clearSchedule();
     onClose();
-  }, [composeActions, onClose]);
+  };
 
   // Format date for display
   const formatDate = (date: Date) => {

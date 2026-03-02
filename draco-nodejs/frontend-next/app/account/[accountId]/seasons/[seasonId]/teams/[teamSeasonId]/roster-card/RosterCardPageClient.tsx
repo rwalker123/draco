@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -42,7 +42,7 @@ const RosterCardPageClient: React.FC<RosterCardPageClientProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchRosterCard = useCallback(async () => {
+  const fetchRosterCard = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -60,31 +60,55 @@ const RosterCardPageClient: React.FC<RosterCardPageClientProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [accountId, apiClient, seasonId, teamSeasonId]);
+  };
 
   useEffect(() => {
-    void fetchRosterCard();
-  }, [fetchRosterCard]);
+    const controller = new AbortController();
 
-  const heading = useMemo(() => {
-    if (!data) {
-      return '';
-    }
-    const teamName = data.teamSeason?.name ?? 'Team';
-    const leagueName = data.teamSeason?.leagueName;
-    return leagueName ? `${leagueName} ${teamName}` : teamName;
-  }, [data]);
+    const loadRosterCard = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await getTeamRosterCard({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+        if (controller.signal.aborted) return;
+        const payload = unwrapApiResult(result, 'Unable to load roster card.');
+        setData(payload);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Unable to load roster card.';
+        setError(message);
+        setData(null);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const rosterPlayers = useMemo(() => data?.players ?? [], [data?.players]);
-  const rosterTitle = useMemo(() => {
-    if (!data?.teamSeason) {
-      return 'Roster';
-    }
-    const parts = [data.teamSeason.leagueName, data.teamSeason.name].filter(
-      (value): value is string => Boolean(value && value.trim().length > 0),
-    );
-    return parts.length > 0 ? parts.join(' ') : 'Roster';
-  }, [data?.teamSeason]);
+    void loadRosterCard();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient, seasonId, teamSeasonId]);
+
+  const heading = data
+    ? data.teamSeason?.leagueName
+      ? `${data.teamSeason.leagueName} ${data.teamSeason?.name ?? 'Team'}`
+      : (data.teamSeason?.name ?? 'Team')
+    : '';
+
+  const rosterPlayers = data?.players ?? [];
+  const rosterTitle = data?.teamSeason
+    ? [data.teamSeason.leagueName, data.teamSeason.name]
+        .filter((value): value is string => Boolean(value && value.trim().length > 0))
+        .join(' ') || 'Roster'
+    : 'Roster';
 
   if (loading) {
     return (

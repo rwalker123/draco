@@ -32,8 +32,7 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
   refreshTrigger,
 }) => {
   const apiClient = useApiClient();
-  const loadTodayGames = async () => {
-    // Calculate date range for today
+  const loadTodayGames = async (signal?: AbortSignal) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -41,7 +40,7 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const gamesLoader = createGamesLoader(apiClient, accountId, currentSeasonId, teamId);
-    return await gamesLoader(today, tomorrow);
+    return await gamesLoader(today, tomorrow, signal);
   };
 
   const renderWrapper = (

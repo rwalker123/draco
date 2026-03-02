@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -40,17 +40,17 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
 
   const teamService = useGolfTeams(accountId);
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     setTeamName('');
     setError(null);
-  }, []);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     resetForm();
     onClose();
-  }, [resetForm, onClose]);
+  };
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     if (!teamName.trim() || !flightId) return;
 
     setLoading(true);
@@ -77,7 +77,7 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [teamName, flightId, flightName, teamService, onSuccess, onError, handleClose]);
+  };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

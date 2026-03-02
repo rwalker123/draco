@@ -15,16 +15,15 @@ const mockResizeObserver = class {
   unobserve() {}
 };
 
-(globalThis as unknown as { ResizeObserver: typeof mockResizeObserver }).ResizeObserver =
-  mockResizeObserver;
+vi.stubGlobal('ResizeObserver', mockResizeObserver);
 
 const noop = () => {};
 const asyncNoop = async () => {};
 
 const emptyPlayers: TeamStatsPlayerSummaryType[] = [];
 
-const nullBatting = null as unknown as GameBattingStatsType | null;
-const nullPitching = null as unknown as GamePitchingStatsType | null;
+const nullBatting = null as GameBattingStatsType | null;
+const nullPitching = null as GamePitchingStatsType | null;
 
 const sampleBattingStats: GameBattingStatsType = {
   gameId: '1',

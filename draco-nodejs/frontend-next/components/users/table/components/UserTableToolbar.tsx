@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, memo } from 'react';
+import React, { useState } from 'react';
 import {
   Toolbar,
   Box,
@@ -351,23 +351,4 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
   );
 };
 
-const areToolbarPropsEqual = (
-  prevProps: UserTableToolbarProps,
-  nextProps: UserTableToolbarProps,
-) => {
-  return (
-    prevProps.searchTerm === nextProps.searchTerm &&
-    prevProps.loading === nextProps.loading &&
-    prevProps.canManageUsers === nextProps.canManageUsers &&
-    prevProps.onlyWithRoles === nextProps.onlyWithRoles &&
-    prevProps.selectedUsers.length === nextProps.selectedUsers.length &&
-    prevProps.userCount === nextProps.userCount &&
-    prevProps.onSearchChange === nextProps.onSearchChange &&
-    prevProps.onSearchSubmit === nextProps.onSearchSubmit &&
-    prevProps.onSearchClear === nextProps.onSearchClear &&
-    prevProps.hasActiveFilter === nextProps.hasActiveFilter &&
-    prevProps.filter === nextProps.filter
-  );
-};
-
-export default memo(UserTableToolbar, areToolbarPropsEqual);
+export default UserTableToolbar;

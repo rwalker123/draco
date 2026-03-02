@@ -21,7 +21,7 @@ test.describe('Golf League Player Profile', () => {
 
   test('displays league match scores with course name and score', async ({ page }) => {
     await expect(page.getByText("Sheperd's Hollow Golf Club")).toBeVisible();
-    await expect(page.getByText('42')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '42', level: 5 })).toBeVisible();
   });
 
   test('displays stats cards', async ({ page }) => {

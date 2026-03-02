@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -72,179 +72,151 @@ const SurveyPlayerResponsesManager: React.FC<SurveyPlayerResponsesManagerProps> 
     onError,
   });
 
-  const totalPages = useMemo(() => {
-    if (!pagination) {
-      return 1;
+  const totalPages = pagination ? Math.max(1, Math.ceil(pagination.total / pagination.limit)) : 1;
+
+  const summaryItems = playerSummaries.map((summary) => {
+    const playerId = summary.player.id;
+    const detail = playerDetails[playerId];
+    const detailIsLoading = playerDetailLoading[playerId];
+    const detailError = playerDetailErrors[playerId];
+    const isExpanded = expandedPlayerIds.includes(playerId);
+
+    if (detail && detail.answers.length === 0) {
+      return null;
     }
-    return Math.max(1, Math.ceil(pagination.total / pagination.limit));
-  }, [pagination]);
 
-  const summaryItems = useMemo(
-    () =>
-      playerSummaries.map((summary) => {
-        const playerId = summary.player.id;
-        const detail = playerDetails[playerId];
-        const detailIsLoading = playerDetailLoading[playerId];
-        const detailError = playerDetailErrors[playerId];
-        const isExpanded = expandedPlayerIds.includes(playerId);
+    return (
+      <Accordion
+        key={playerId}
+        disableGutters
+        expanded={isExpanded}
+        onChange={handleAccordionToggle(playerId)}
+      >
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Stack spacing={0.5}>
+            <Typography sx={{ fontWeight: 600 }}>
+              {summary.player.firstName} {summary.player.lastName}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {summary.hasResponses
+                ? `${summary.answeredQuestionCount} ${
+                    summary.answeredQuestionCount === 1 ? 'response' : 'responses'
+                  }`
+                : 'No responses yet'}
+            </Typography>
+          </Stack>
+        </AccordionSummary>
+        <AccordionDetails>
+          {detailIsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : detailError ? (
+            <Alert severity="error">{detailError}</Alert>
+          ) : !detail ? (
+            <Typography variant="body2" color="text.secondary">
+              Expand to load the player survey.
+            </Typography>
+          ) : detail.answers.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              This player has not submitted survey answers yet.
+            </Typography>
+          ) : categories.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No survey structure defined yet.
+            </Typography>
+          ) : (
+            <Stack spacing={2}>
+              {categories.map((category) => {
+                const answersByQuestion = new Map(
+                  detail.answers.map((answer) => [answer.questionId, answer]),
+                );
 
-        if (detail && detail.answers.length === 0) {
-          return null;
-        }
+                return (
+                  <Box key={`${playerId}-${category.id}`}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      {category.categoryName}
+                    </Typography>
+                    {category.questions.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary">
+                        No questions in this category.
+                      </Typography>
+                    ) : (
+                      <Stack spacing={1.5} sx={{ mt: 1 }}>
+                        {category.questions.map((question) => {
+                          const key = getAnswerKey(playerId, question.id);
+                          const draftValue = answerDrafts[key] ?? '';
+                          const answer = answersByQuestion.get(question.id);
+                          const isPending = Boolean(pendingKeys[key]);
 
-        return (
-          <Accordion
-            key={playerId}
-            disableGutters
-            expanded={isExpanded}
-            onChange={handleAccordionToggle(playerId)}
-          >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Stack spacing={0.5}>
-                <Typography sx={{ fontWeight: 600 }}>
-                  {summary.player.firstName} {summary.player.lastName}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {summary.hasResponses
-                    ? `${summary.answeredQuestionCount} ${
-                        summary.answeredQuestionCount === 1 ? 'response' : 'responses'
-                      }`
-                    : 'No responses yet'}
-                </Typography>
-              </Stack>
-            </AccordionSummary>
-            <AccordionDetails>
-              {detailIsLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                  <CircularProgress size={24} />
-                </Box>
-              ) : detailError ? (
-                <Alert severity="error">{detailError}</Alert>
-              ) : !detail ? (
-                <Typography variant="body2" color="text.secondary">
-                  Expand to load the player survey.
-                </Typography>
-              ) : detail.answers.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  This player has not submitted survey answers yet.
-                </Typography>
-              ) : categories.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No survey structure defined yet.
-                </Typography>
-              ) : (
-                <Stack spacing={2}>
-                  {categories.map((category) => {
-                    const answersByQuestion = new Map(
-                      detail.answers.map((answer) => [answer.questionId, answer]),
-                    );
-
-                    return (
-                      <Box key={`${playerId}-${category.id}`}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                          {category.categoryName}
-                        </Typography>
-                        {category.questions.length === 0 ? (
-                          <Typography variant="body2" color="text.secondary">
-                            No questions in this category.
-                          </Typography>
-                        ) : (
-                          <Stack spacing={1.5} sx={{ mt: 1 }}>
-                            {category.questions.map((question) => {
-                              const key = getAnswerKey(playerId, question.id);
-                              const draftValue = answerDrafts[key] ?? '';
-                              const answer = answersByQuestion.get(question.id);
-                              const isPending = Boolean(pendingKeys[key]);
-
-                              return (
-                                <Paper
-                                  key={question.id}
-                                  variant="outlined"
-                                  sx={{ p: 1.5, borderColor: answer ? 'primary.main' : undefined }}
-                                >
-                                  <Stack spacing={1}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                      {question.question}
-                                    </Typography>
-                                    <TextField
-                                      label="Answer"
-                                      value={draftValue}
-                                      onChange={(event) =>
-                                        handleDraftChange(key, event.target.value)
-                                      }
-                                      multiline
-                                      minRows={2}
-                                      size="small"
-                                      disabled={isPending}
-                                    />
-                                    <Stack direction="row" spacing={1}>
-                                      <Tooltip title={isPending ? 'Saving answer' : 'Save answer'}>
-                                        <span>
-                                          <IconButton
-                                            color="primary"
-                                            aria-label="Save answer"
-                                            onClick={() => void handleSaveAnswer(detail, question)}
-                                            disabled={isPending || !draftValue.trim()}
-                                          >
-                                            {isPending ? (
-                                              <CircularProgress size={20} color="inherit" />
-                                            ) : (
-                                              <SaveIcon />
-                                            )}
-                                          </IconButton>
-                                        </span>
-                                      </Tooltip>
-                                      <Tooltip
-                                        title={isPending ? 'Clearing answer' : 'Clear answer'}
+                          return (
+                            <Paper
+                              key={question.id}
+                              variant="outlined"
+                              sx={{ p: 1.5, borderColor: answer ? 'primary.main' : undefined }}
+                            >
+                              <Stack spacing={1}>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                  {question.question}
+                                </Typography>
+                                <TextField
+                                  label="Answer"
+                                  value={draftValue}
+                                  onChange={(event) => handleDraftChange(key, event.target.value)}
+                                  multiline
+                                  minRows={2}
+                                  size="small"
+                                  disabled={isPending}
+                                />
+                                <Stack direction="row" spacing={1}>
+                                  <Tooltip title={isPending ? 'Saving answer' : 'Save answer'}>
+                                    <span>
+                                      <IconButton
+                                        color="primary"
+                                        aria-label="Save answer"
+                                        onClick={() => void handleSaveAnswer(detail, question)}
+                                        disabled={isPending || !draftValue.trim()}
                                       >
-                                        <span>
-                                          <IconButton
-                                            color="error"
-                                            aria-label="Clear answer"
-                                            onClick={() =>
-                                              void handleDeleteAnswer(detail, question)
-                                            }
-                                            disabled={isPending || !answer}
-                                          >
-                                            {isPending ? (
-                                              <CircularProgress size={20} color="inherit" />
-                                            ) : (
-                                              <DeleteIcon />
-                                            )}
-                                          </IconButton>
-                                        </span>
-                                      </Tooltip>
-                                    </Stack>
-                                  </Stack>
-                                </Paper>
-                              );
-                            })}
-                          </Stack>
-                        )}
-                      </Box>
-                    );
-                  })}
-                </Stack>
-              )}
-            </AccordionDetails>
-          </Accordion>
-        );
-      }),
-    [
-      answerDrafts,
-      categories,
-      expandedPlayerIds,
-      handleAccordionToggle,
-      handleDeleteAnswer,
-      handleDraftChange,
-      handleSaveAnswer,
-      pendingKeys,
-      playerDetailErrors,
-      playerDetailLoading,
-      playerDetails,
-      playerSummaries,
-    ],
-  );
+                                        {isPending ? (
+                                          <CircularProgress size={20} color="inherit" />
+                                        ) : (
+                                          <SaveIcon />
+                                        )}
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                  <Tooltip title={isPending ? 'Clearing answer' : 'Clear answer'}>
+                                    <span>
+                                      <IconButton
+                                        color="error"
+                                        aria-label="Clear answer"
+                                        onClick={() => void handleDeleteAnswer(detail, question)}
+                                        disabled={isPending || !answer}
+                                      >
+                                        {isPending ? (
+                                          <CircularProgress size={20} color="inherit" />
+                                        ) : (
+                                          <DeleteIcon />
+                                        )}
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                </Stack>
+                              </Stack>
+                            </Paper>
+                          );
+                        })}
+                      </Stack>
+                    )}
+                  </Box>
+                );
+              })}
+            </Stack>
+          )}
+        </AccordionDetails>
+      </Accordion>
+    );
+  });
 
   return (
     <Paper sx={{ p: 3 }}>

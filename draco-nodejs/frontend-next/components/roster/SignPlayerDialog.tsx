@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -116,17 +116,13 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
     },
   });
 
-  const defaultFormValues = useMemo(() => getDefaultFormValues(), []);
+  const defaultFormValues = getDefaultFormValues();
 
-  const formResolver = useMemo(
-    () =>
-      zodResolver(SignRosterMemberSchema) as Resolver<
-        SignRosterMemberType,
-        Record<string, never>,
-        SignRosterMemberType
-      >,
-    [],
-  );
+  const formResolver = zodResolver(SignRosterMemberSchema) as Resolver<
+    SignRosterMemberType,
+    Record<string, never>,
+    SignRosterMemberType
+  >;
 
   const {
     control,

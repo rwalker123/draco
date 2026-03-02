@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Box, Button, FormControlLabel, Stack, Switch, TextField } from '@mui/material';
 import { updateAccountBlueskySettings } from '@draco/shared-api-client';
 import type { AccountBlueskySettingsType, AccountType } from '@draco/shared-schemas';
@@ -30,75 +30,60 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
     setHandle(account.socials?.blueskyHandle ?? '');
   }, [account.socials?.blueskyHandle]);
 
-  const hasPendingChanges = useMemo(() => {
-    return (
-      handle.trim() !== (account.socials?.blueskyHandle ?? '').trim() ||
-      appPassword.trim().length > 0 ||
-      clearPassword
-    );
-  }, [account.socials?.blueskyHandle, appPassword, clearPassword, handle]);
+  const hasPendingChanges =
+    handle.trim() !== (account.socials?.blueskyHandle ?? '').trim() ||
+    appPassword.trim().length > 0 ||
+    clearPassword;
 
-  const handleSubmit = useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      setError(null);
-      setSuccess(null);
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
 
-      if (!hasPendingChanges) {
-        setError('Update at least one field before saving.');
-        return;
+    if (!hasPendingChanges) {
+      setError('Update at least one field before saving.');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const payload: AccountBlueskySettingsType = {};
+      const normalizedHandle = handle.trim();
+      const normalizedPassword = appPassword.trim();
+
+      if (normalizedHandle !== (account.socials?.blueskyHandle ?? '').trim()) {
+        payload.blueskyHandle = normalizedHandle;
       }
 
-      setSaving(true);
-
-      try {
-        const payload: AccountBlueskySettingsType = {};
-        const normalizedHandle = handle.trim();
-        const normalizedPassword = appPassword.trim();
-
-        if (normalizedHandle !== (account.socials?.blueskyHandle ?? '').trim()) {
-          payload.blueskyHandle = normalizedHandle;
-        }
-
-        if (clearPassword) {
-          payload.blueskyAppPassword = '';
-        } else if (normalizedPassword) {
-          payload.blueskyAppPassword = normalizedPassword;
-        }
-
-        if (Object.keys(payload).length > 0) {
-          const result = await updateAccountBlueskySettings({
-            client: apiClient,
-            path: { accountId: account.id },
-            body: payload,
-            throwOnError: false,
-          });
-
-          const updated = unwrapApiResult(result, 'Unable to save Bluesky settings') as AccountType;
-          onAccountUpdate?.(updated);
-        }
-
-        setSuccess('Bluesky settings saved. App passwords are encrypted and never shown here.');
-        setAppPassword('');
-        setClearPassword(false);
-      } catch (err) {
-        console.error('Failed to save Bluesky settings', err);
-        setError('Unable to save Bluesky settings. Please try again.');
-      } finally {
-        setSaving(false);
+      if (clearPassword) {
+        payload.blueskyAppPassword = '';
+      } else if (normalizedPassword) {
+        payload.blueskyAppPassword = normalizedPassword;
       }
-    },
-    [
-      account.id,
-      account.socials?.blueskyHandle,
-      apiClient,
-      appPassword,
-      clearPassword,
-      handle,
-      hasPendingChanges,
-      onAccountUpdate,
-    ],
-  );
+
+      if (Object.keys(payload).length > 0) {
+        const result = await updateAccountBlueskySettings({
+          client: apiClient,
+          path: { accountId: account.id },
+          body: payload,
+          throwOnError: false,
+        });
+
+        const updated = unwrapApiResult(result, 'Unable to save Bluesky settings') as AccountType;
+        onAccountUpdate?.(updated);
+      }
+
+      setSuccess('Bluesky settings saved. App passwords are encrypted and never shown here.');
+      setAppPassword('');
+      setClearPassword(false);
+    } catch (err) {
+      console.error('Failed to save Bluesky settings', err);
+      setError('Unable to save Bluesky settings. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <WidgetShell

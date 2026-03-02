@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, use } from 'react';
+import React, { useState, use } from 'react';
 import {
   Box,
   Typography,
@@ -24,25 +24,38 @@ const DEFAULT_FALLBACK_SOURCES: WorkoutSourcesType = {
   options: ['Website', 'Friend', 'Social Media', 'Other'],
 };
 
+type InitialLoadResult = { data: WorkoutSourcesType; error: string | null };
+
+const initialLoadCache = new Map<string | null, Promise<InitialLoadResult>>();
+
+const getInitialLoadPromise = (accountId: string | null): Promise<InitialLoadResult> => {
+  const cached = initialLoadCache.get(accountId);
+  if (cached) return cached;
+
+  const promise = accountId
+    ? getSources(accountId)
+        .then((data) => ({ data: data ?? EMPTY_SOURCES, error: null as string | null }))
+        .catch((err) => {
+          console.error('Error fetching sources:', err);
+          return {
+            data: DEFAULT_FALLBACK_SOURCES,
+            error: 'Failed to load sources' as string | null,
+          };
+        })
+    : Promise.resolve({ data: EMPTY_SOURCES, error: 'Account not found' as string | null });
+
+  initialLoadCache.set(accountId, promise);
+  return promise;
+};
+
 export const WorkoutSourcesForm: React.FC = () => {
   const params = useParams();
   const accountParam = params.accountId;
   const resolvedAccountId = Array.isArray(accountParam) ? accountParam[0] : accountParam;
 
-  const initialLoadPromise = useMemo(() => {
-    if (!resolvedAccountId) {
-      return Promise.resolve({ data: EMPTY_SOURCES, error: 'Account not found' as string | null });
-    }
-
-    return getSources(resolvedAccountId)
-      .then((data) => ({ data: data ?? EMPTY_SOURCES, error: null as string | null }))
-      .catch((err) => {
-        console.error('Error fetching sources:', err);
-        return { data: DEFAULT_FALLBACK_SOURCES, error: 'Failed to load sources' as string | null };
-      });
-  }, [resolvedAccountId]);
-
-  const { data: initialSources, error: initialLoadError } = use(initialLoadPromise);
+  const { data: initialSources, error: initialLoadError } = use(
+    getInitialLoadPromise(resolvedAccountId ?? null),
+  );
 
   const [error, setError] = useState<string | null>(initialLoadError);
   const [newOption, setNewOption] = useState('');
@@ -74,7 +87,6 @@ export const WorkoutSourcesForm: React.FC = () => {
         setTimeout(() => setSuccess(false), 3000);
       } catch (err) {
         setError('Failed to save new option');
-        // Revert on failure
         setSources(previousSources);
         console.error('Error saving new option:', err);
       }
@@ -99,7 +111,6 @@ export const WorkoutSourcesForm: React.FC = () => {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       setError('Failed to remove option');
-      // Revert on failure
       setSources(previousSources);
       console.error('Error removing option:', err);
     }
@@ -112,7 +123,6 @@ export const WorkoutSourcesForm: React.FC = () => {
     router.push(`/account/${resolvedAccountId}/workouts`);
   };
 
-  // Ensure sources.options is always an array
   const options = sources?.options || [];
 
   return (
@@ -126,7 +136,6 @@ export const WorkoutSourcesForm: React.FC = () => {
       </AccountPageHeader>
 
       <Container maxWidth="md" sx={{ py: 4 }}>
-        {/* Breadcrumb Navigation */}
         <Breadcrumbs sx={{ mb: 3 }}>
           <Link
             component="button"
@@ -161,7 +170,6 @@ export const WorkoutSourcesForm: React.FC = () => {
         )}
 
         <Paper sx={{ p: 4 }}>
-          {/* Add New Option */}
           <Box sx={{ mb: 4 }}>
             <Typography variant="h6" gutterBottom>
               Add New Option
@@ -186,7 +194,6 @@ export const WorkoutSourcesForm: React.FC = () => {
             </Box>
           </Box>
 
-          {/* Current Options */}
           <Box>
             <Typography variant="h6" gutterBottom>
               Current Options ({options.length})

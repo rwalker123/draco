@@ -122,22 +122,16 @@ const InformationMessageFormDialog: React.FC<InformationMessageFormDialogProps> 
     defaultValue: defaultValues.caption,
   });
 
-  const resetForm = React.useCallback(() => {
-    reset(defaultValues);
-    setEditorInitialValue('');
-    setEditorKey((key) => key + 1);
-  }, [reset]);
-
   React.useEffect(() => {
     if (!open) {
-      resetForm();
+      reset(defaultValues);
+      setEditorInitialValue('');
+      setEditorKey((key) => key + 1);
       setScope(initialScope);
-      setSelectedTeamSeasonId(initialTeamSeasonId ?? availableTeams[0]?.teamSeasonId ?? '');
       return;
     }
 
     setScope(initialScope);
-    setSelectedTeamSeasonId(initialTeamSeasonId ?? availableTeams[0]?.teamSeasonId ?? '');
 
     if (initialMessage) {
       const bodyHtml = initialMessage.bodyHtml ?? '';
@@ -146,21 +140,18 @@ const InformationMessageFormDialog: React.FC<InformationMessageFormDialogProps> 
       setValue('bodyHtml', bodyHtml, { shouldDirty: false });
       setEditorInitialValue(bodyHtml);
     } else {
-      resetForm();
+      reset(defaultValues);
+      setEditorInitialValue('');
     }
 
     setEditorKey((key) => key + 1);
-  }, [
-    open,
-    initialScope,
-    initialTeamSeasonId,
-    availableTeams,
-    initialMessage,
-    setValue,
-    resetForm,
-  ]);
+  }, [open, initialScope, initialMessage, setValue, reset]);
 
-  const syncEditor = React.useCallback(() => {
+  React.useEffect(() => {
+    setSelectedTeamSeasonId(initialTeamSeasonId ?? availableTeams[0]?.teamSeasonId ?? '');
+  }, [initialTeamSeasonId, availableTeams]);
+
+  const syncEditor = () => {
     if (!editorRef.current) {
       return;
     }
@@ -170,7 +161,7 @@ const InformationMessageFormDialog: React.FC<InformationMessageFormDialogProps> 
       shouldTouch: true,
       shouldValidate: true,
     });
-  }, [setValue]);
+  };
 
   const handleFormSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     syncEditor();

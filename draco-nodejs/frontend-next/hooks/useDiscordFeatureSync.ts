@@ -15,7 +15,9 @@ export const useDiscordFeatureSync = () => {
   const fetchStatus = (
     accountId: string,
     feature: DiscordFeatureSyncFeatureType,
-  ): Promise<DiscordFeatureSyncStatusType> => service.getFeatureSyncStatus(accountId, feature);
+    signal?: AbortSignal,
+  ): Promise<DiscordFeatureSyncStatusType> =>
+    service.getFeatureSyncStatus(accountId, feature, signal);
 
   const updateStatus = (
     accountId: string,

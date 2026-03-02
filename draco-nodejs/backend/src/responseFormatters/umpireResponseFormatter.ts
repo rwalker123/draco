@@ -20,16 +20,14 @@ export class UmpireResponseFormatter {
   }
 
   static formatUmpire(umpire: dbLeagueUmpireWithContact): UmpireType {
-    const email = umpire.contacts.email ?? null;
-
     return {
       id: umpire.id.toString(),
       accountId: umpire.accountid.toString(),
       contactId: umpire.contactid.toString(),
       firstName: umpire.contacts.firstname,
       lastName: umpire.contacts.lastname,
-      email,
-      displayName: `${umpire.contacts.firstname} ${umpire.contacts.lastname}`.trim(),
+      middleName: umpire.contacts.middlename ?? undefined,
+      email: umpire.contacts.email ?? undefined,
       photoUrl: getContactPhotoUrl(umpire.accountid.toString(), umpire.contacts.id.toString()),
       contactDetails: {
         phone1: umpire.contacts.phone1 ?? '',

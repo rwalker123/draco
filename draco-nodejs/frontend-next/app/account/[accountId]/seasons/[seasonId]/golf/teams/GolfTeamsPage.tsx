@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -31,12 +31,16 @@ import type {
   CreateGolfTeamType,
   SeasonType,
 } from '@draco/shared-schemas';
-import { getAccountSeason } from '@draco/shared-api-client';
+import {
+  getAccountSeason,
+  listGolfFlights,
+  listGolfTeams,
+  listGolfTeamsForFlight,
+} from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
 import GolfTeamList from '../../../../../../../components/golf/teams/GolfTeamList';
 import GolfTeamForm from '../../../../../../../components/golf/teams/GolfTeamForm';
 import { useGolfTeams } from '../../../../../../../hooks/useGolfTeams';
-import { useGolfFlights } from '../../../../../../../hooks/useGolfFlights';
 import { useGolfLeagueSetup } from '../../../../../../../hooks/useGolfLeagueSetup';
 import { useRole } from '../../../../../../../context/RoleContext';
 import { useApiClient } from '../../../../../../../hooks/useApiClient';
@@ -54,18 +58,13 @@ const GolfTeamsPage: React.FC = () => {
 
   const canManage = accountId ? hasPermission('account.manage', { accountId }) : false;
 
-  const { listTeams, listTeamsForFlight, createTeam, updateTeam, deleteTeam } = useGolfTeams(
-    accountId || '',
-  );
-
-  const { listFlights } = useGolfFlights(accountId || '');
+  const { createTeam, updateTeam, deleteTeam } = useGolfTeams(accountId || '');
 
   const [season, setSeason] = useState<SeasonType | null>(null);
   const [flights, setFlights] = useState<GolfFlightWithTeamCountType[]>([]);
   const [selectedFlightId, setSelectedFlightId] = useState<string>('all');
   const [teams, setTeams] = useState<GolfTeamType[]>([]);
 
-  // In the new model, a flight IS a league season, so we use selectedFlightId for setup
   const { setup: leagueSetup } = useGolfLeagueSetup(
     accountId,
     seasonId,
@@ -97,167 +96,202 @@ const GolfTeamsPage: React.FC = () => {
 
   const seasonName = season?.name ?? 'Season';
 
-  const handleBack = useCallback(() => {
-    router.push(`/account/${accountId}/seasons/${seasonId}/golf/flights`);
-  }, [accountId, seasonId, router]);
-
-  const loadSeason = useCallback(async () => {
+  useEffect(() => {
     if (!accountId || !seasonId) return;
 
-    try {
-      const result = await getAccountSeason({
-        client: apiClient,
-        path: { accountId, seasonId },
-        throwOnError: false,
-      });
+    const controller = new AbortController();
 
-      const seasonData = unwrapApiResult(result, 'Failed to load season');
-      setSeason(seasonData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load season');
-    }
+    const loadSeason = async () => {
+      try {
+        const result = await getAccountSeason({
+          client: apiClient,
+          path: { accountId, seasonId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+        const seasonData = unwrapApiResult(result, 'Failed to load season');
+        setSeason(seasonData);
+      } catch (err: unknown) {
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : 'Failed to load season');
+      }
+    };
+
+    void loadSeason();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, seasonId, apiClient]);
 
-  const loadFlights = useCallback(async () => {
-    if (!seasonId) return;
+  useEffect(() => {
+    if (!accountId || !seasonId) return;
 
-    try {
-      const result = await listFlights(seasonId);
-      if (result.success) {
-        setFlights(result.data);
-      } else {
-        setError(result.error);
+    const controller = new AbortController();
+
+    const loadFlightsAndTeams = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const flightsResult = await listGolfFlights({
+          client: apiClient,
+          path: { accountId, seasonId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+        const flightsData = unwrapApiResult(flightsResult, 'Failed to load flights');
+        setFlights(flightsData as GolfFlightWithTeamCountType[]);
+
+        let teamsResult;
+        if (selectedFlightId && selectedFlightId !== 'all') {
+          teamsResult = await listGolfTeamsForFlight({
+            client: apiClient,
+            path: { accountId, flightId: selectedFlightId },
+            signal: controller.signal,
+            throwOnError: false,
+          });
+        } else {
+          teamsResult = await listGolfTeams({
+            client: apiClient,
+            path: { accountId, seasonId },
+            signal: controller.signal,
+            throwOnError: false,
+          });
+        }
+
+        if (controller.signal.aborted) return;
+        const teamsData = unwrapApiResult(teamsResult, 'Failed to load teams');
+        setTeams(teamsData as GolfTeamType[]);
+      } catch (err: unknown) {
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load flights');
-    }
-  }, [seasonId, listFlights]);
+    };
 
-  const loadTeams = useCallback(async () => {
-    if (!seasonId) return;
+    void loadFlightsAndTeams();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, seasonId, selectedFlightId, apiClient]);
+
+  const reloadTeams = async () => {
+    if (!accountId || !seasonId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      let result;
+      let teamsResult;
       if (selectedFlightId && selectedFlightId !== 'all') {
-        result = await listTeamsForFlight(selectedFlightId);
+        teamsResult = await listGolfTeamsForFlight({
+          client: apiClient,
+          path: { accountId, flightId: selectedFlightId },
+          throwOnError: false,
+        });
       } else {
-        result = await listTeams(seasonId);
+        teamsResult = await listGolfTeams({
+          client: apiClient,
+          path: { accountId, seasonId },
+          throwOnError: false,
+        });
       }
 
-      if (result.success) {
-        setTeams(result.data);
-      } else {
-        setError(result.error);
-      }
+      const teamsData = unwrapApiResult(teamsResult, 'Failed to load teams');
+      setTeams(teamsData as GolfTeamType[]);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load teams');
     } finally {
       setLoading(false);
     }
-  }, [seasonId, selectedFlightId, listTeams, listTeamsForFlight]);
+  };
 
-  useEffect(() => {
-    if (accountId && seasonId) {
-      loadSeason();
-    }
-  }, [accountId, seasonId, loadSeason]);
+  const handleBack = () => {
+    router.push(`/account/${accountId}/seasons/${seasonId}/golf/flights`);
+  };
 
-  useEffect(() => {
-    if (seasonId) {
-      loadFlights();
-      loadTeams();
-    }
-  }, [seasonId, loadFlights, loadTeams]);
-
-  useEffect(() => {
-    if (seasonId) {
-      loadTeams();
-    }
-  }, [selectedFlightId, loadTeams, seasonId]);
-
-  const handleFlightChange = useCallback((newFlightId: string) => {
+  const handleFlightChange = (newFlightId: string) => {
     setSelectedFlightId(newFlightId);
-  }, []);
+  };
 
-  const handleOpenCreate = useCallback(() => {
+  const handleOpenCreate = () => {
     setFormMode('create');
     setEditingTeam(null);
     setFormOpen(true);
-  }, []);
+  };
 
-  const handleEdit = useCallback((team: GolfTeamType) => {
+  const handleEdit = (team: GolfTeamType) => {
     setEditingTeam(team);
     setFormMode('edit');
     setFormOpen(true);
-  }, []);
+  };
 
-  const handleView = useCallback(
-    (team: GolfTeamType) => {
-      router.push(`/account/${accountId}/seasons/${seasonId}/golf/teams/${team.id}`);
-    },
-    [accountId, seasonId, router],
-  );
+  const handleView = (team: GolfTeamType) => {
+    router.push(`/account/${accountId}/seasons/${seasonId}/golf/teams/${team.id}`);
+  };
 
-  const handleDelete = useCallback(
-    async (team: GolfTeamType) => {
-      if (!seasonId) return;
+  const handleDelete = async (team: GolfTeamType) => {
+    if (!seasonId) return;
 
-      const result = await deleteTeam(seasonId, team.id);
+    const result = await deleteTeam(seasonId, team.id);
 
-      if (result.success) {
-        setSuccessMessage('Team deleted successfully');
-        await loadTeams();
-      } else {
-        setError(result.error);
-      }
-    },
-    [seasonId, deleteTeam, loadTeams],
-  );
+    if (result.success) {
+      setSuccessMessage('Team deleted successfully');
+      await reloadTeams();
+    } else {
+      setError(result.error);
+    }
+  };
 
-  const handleFormSubmit = useCallback(
-    async (data: CreateGolfTeamType) => {
-      if (!selectedFlightId || selectedFlightId === 'all') {
-        throw new Error('Please select a flight to create the team in');
-      }
-      if (!seasonId) {
-        throw new Error('Season ID is required');
-      }
+  const handleFormSubmit = async (data: CreateGolfTeamType) => {
+    if (!selectedFlightId || selectedFlightId === 'all') {
+      throw new Error('Please select a flight to create the team in');
+    }
+    if (!seasonId) {
+      throw new Error('Season ID is required');
+    }
 
-      setFormLoading(true);
-      try {
-        if (formMode === 'create') {
-          const result = await createTeam(selectedFlightId, data);
+    setFormLoading(true);
+    try {
+      if (formMode === 'create') {
+        const result = await createTeam(selectedFlightId, data);
 
-          if (result.success) {
-            setSuccessMessage('Team created successfully');
-            setFormOpen(false);
-            await loadTeams();
-          } else {
-            throw new Error(result.error);
-          }
-        } else if (editingTeam) {
-          const result = await updateTeam(seasonId, editingTeam.id, data);
-
-          if (result.success) {
-            setSuccessMessage('Team updated successfully');
-            setFormOpen(false);
-            await loadTeams();
-          } else {
-            throw new Error(result.error);
-          }
+        if (result.success) {
+          setSuccessMessage('Team created successfully');
+          setFormOpen(false);
+          await reloadTeams();
+        } else {
+          throw new Error(result.error);
         }
-      } finally {
-        setFormLoading(false);
-      }
-    },
-    [formMode, editingTeam, selectedFlightId, seasonId, createTeam, updateTeam, loadTeams],
-  );
+      } else if (editingTeam) {
+        const result = await updateTeam(seasonId, editingTeam.id, data);
 
-  const handleFormCancel = useCallback(() => {
+        if (result.success) {
+          setSuccessMessage('Team updated successfully');
+          setFormOpen(false);
+          await reloadTeams();
+        } else {
+          throw new Error(result.error);
+        }
+      }
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleFormCancel = () => {
     setFormOpen(false);
     setEditingTeam(null);
-  }, []);
+  };
 
   if (!accountId || !seasonId) {
     return (
@@ -354,7 +388,7 @@ const GolfTeamsPage: React.FC = () => {
             flights={flights}
             loading={formLoading}
             error={error}
-            onRetry={loadTeams}
+            onRetry={reloadTeams}
             onView={handleView}
             onEdit={canManage ? handleEdit : undefined}
             onDelete={canManage ? handleDelete : undefined}

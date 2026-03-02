@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Badge,
@@ -27,7 +27,6 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  PersonAddAlt1 as PersonAddIcon,
   Visibility as VisibilityIcon,
   People as PeopleIcon,
 } from '@mui/icons-material';
@@ -62,6 +61,43 @@ const formatWorkoutDate = (dateString: string) => {
   });
 };
 
+const getFieldDetailsFromWorkout = (
+  workout: WorkoutSummaryType,
+  fields: Record<string, FieldDetails>,
+): FieldDetails | null => {
+  const fieldId = workout.field?.id ?? null;
+  if (fieldId && fields[fieldId]) {
+    return fields[fieldId];
+  }
+
+  if (workout.field) {
+    return {
+      id: workout.field.id ?? null,
+      name: workout.field.name ?? null,
+      shortName: workout.field.shortName ?? null,
+      address: workout.field.address ?? null,
+      city: workout.field.city ?? null,
+      state: workout.field.state ?? null,
+      zip: workout.field.zip ?? null,
+      rainoutNumber: workout.field.rainoutNumber ?? null,
+      comment: workout.field.comment ?? null,
+      directions: workout.field.directions ?? null,
+      latitude: workout.field.latitude ?? null,
+      longitude: workout.field.longitude ?? null,
+    };
+  }
+
+  return null;
+};
+
+const getFieldNameFromWorkout = (
+  workout: WorkoutSummaryType,
+  fields: Record<string, FieldDetails>,
+): string => {
+  const details = getFieldDetailsFromWorkout(workout, fields);
+  return details?.name ?? details?.shortName ?? 'TBD';
+};
+
 export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordionProps> = ({
   accountId,
   onCreateWorkout,
@@ -90,187 +126,150 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
   }>({ open: false, fieldId: null, fallbackField: null });
   const [fields, setFields] = useState<Record<string, FieldDetails>>({});
 
-  const showSuccessMessage = useCallback((message: string) => {
+  const showSuccessMessage = (message: string) => {
     setSuccessMessage(message);
     window.setTimeout(() => setSuccessMessage(null), UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS);
-  }, []);
+  };
 
-  const showErrorMessage = useCallback((message: string) => {
+  const showErrorMessage = (message: string) => {
     setOperationError(message);
     window.setTimeout(() => setOperationError(null), UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS);
-  }, []);
-
-  const fetchWorkouts = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await listWorkouts(accountId, true, token || undefined);
-      const sorted = [...data].sort(
-        (a, b) => new Date(b.workoutDate).getTime() - new Date(a.workoutDate).getTime(),
-      );
-      setWorkouts(sorted);
-    } catch (err) {
-      console.error('Error fetching workouts:', err);
-      setError('Failed to load workouts');
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, token]);
+  };
 
   useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchWorkouts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await listWorkouts(accountId, true, token || undefined, undefined, {
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        const sorted = [...data].sort(
+          (a, b) => new Date(b.workoutDate).getTime() - new Date(a.workoutDate).getTime(),
+        );
+        setWorkouts(sorted);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Error fetching workouts:', err);
+        setError('Failed to load workouts');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
     void fetchWorkouts();
-  }, [fetchWorkouts, refreshKey]);
 
-  const fetchFields = useCallback(async () => {
-    try {
-      const result = await listAccountFields({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, token, refreshKey]);
 
-      const data = unwrapApiResult(result, 'Failed to load fields');
-      const mapped: Record<string, FieldDetails> = {};
+  useEffect(() => {
+    const controller = new AbortController();
 
-      data.fields.forEach((field) => {
-        if (!field.id) {
-          return;
-        }
+    const fetchFields = async () => {
+      try {
+        const result = await listAccountFields({
+          client: apiClient,
+          path: { accountId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
 
-        mapped[field.id] = {
-          id: field.id,
-          name: field.name ?? field.shortName ?? null,
-          shortName: field.shortName ?? null,
-          address: field.address ?? null,
-          city: field.city ?? null,
-          state: field.state ?? null,
-          zip: field.zip ?? null,
-          rainoutNumber: field.rainoutNumber ?? null,
-          comment: field.comment ?? null,
-          directions: field.directions ?? null,
-          latitude: (field.latitude as string | number | null | undefined) ?? null,
-          longitude: (field.longitude as string | number | null | undefined) ?? null,
-        };
-      });
+        if (controller.signal.aborted) return;
 
-      setFields(mapped);
-    } catch (err) {
-      console.error('Error fetching fields:', err);
-    }
+        const data = unwrapApiResult(result, 'Failed to load fields');
+        const mapped: Record<string, FieldDetails> = {};
+
+        data.fields.forEach((field) => {
+          if (!field.id) {
+            return;
+          }
+
+          mapped[field.id] = {
+            id: field.id,
+            name: field.name ?? field.shortName ?? null,
+            shortName: field.shortName ?? null,
+            address: field.address ?? null,
+            city: field.city ?? null,
+            state: field.state ?? null,
+            zip: field.zip ?? null,
+            rainoutNumber: field.rainoutNumber ?? null,
+            comment: field.comment ?? null,
+            directions: field.directions ?? null,
+            latitude: (field.latitude as string | number | null | undefined) ?? null,
+            longitude: (field.longitude as string | number | null | undefined) ?? null,
+          };
+        });
+
+        setFields(mapped);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Error fetching fields:', err);
+      }
+    };
+
+    void fetchFields();
+
+    return () => {
+      controller.abort();
+    };
   }, [accountId, apiClient]);
 
-  useEffect(() => {
-    void fetchFields();
-  }, [fetchFields]);
+  const handleOpenDetails = (
+    workout: WorkoutSummaryType,
+    initialAction: 'createRegistration' | null = null,
+  ) => {
+    setDetailsDialogState({ open: true, workout, initialAction });
+  };
 
-  const handleOpenDetails = useCallback(
-    (workout: WorkoutSummaryType, initialAction: 'createRegistration' | null = null) => {
-      setDetailsDialogState({ open: true, workout, initialAction });
-    },
-    [],
-  );
-
-  const handleCloseDetails = useCallback(() => {
+  const handleCloseDetails = () => {
     setDetailsDialogState({ open: false, workout: null, initialAction: null });
-  }, []);
+  };
 
-  const handleRegistrationsChange = useCallback(
-    ({ workoutId, registrationCount }: { workoutId: string; registrationCount: number }) => {
-      setWorkouts((prev) =>
-        prev.map((workout) =>
-          workout.id === workoutId ? { ...workout, registrationCount } : workout,
-        ),
-      );
-      setDetailsDialogState((prev) => {
-        if (!prev.workout || prev.workout.id !== workoutId) {
-          return prev;
-        }
-
-        return {
-          ...prev,
-          workout: { ...prev.workout, registrationCount },
-        };
-      });
-    },
-    [],
-  );
-
-  const handlePreviewAction = useCallback(
-    (workout: WorkoutSummaryType) => onPreviewWorkout(workout.id),
-    [onPreviewWorkout],
-  );
-
-  const handleEditAction = useCallback(
-    (workout: WorkoutSummaryType) => onEditWorkout(workout.id),
-    [onEditWorkout],
-  );
-
-  const handleAddRegistrationAction = useCallback(
-    (workout: WorkoutSummaryType) => handleOpenDetails(workout, 'createRegistration'),
-    [handleOpenDetails],
-  );
-
-  const handleDeleteAction = useCallback((workout: WorkoutSummaryType) => {
-    setWorkoutToDelete(workout);
-    setDeleteDialogOpen(true);
-  }, []);
-
-  const getFieldDetails = useCallback(
-    (workout: WorkoutSummaryType): FieldDetails | null => {
-      const fieldId = workout.field?.id ?? null;
-      if (fieldId && fields[fieldId]) {
-        return fields[fieldId];
+  const handleRegistrationsChange = ({
+    workoutId,
+    registrationCount,
+  }: {
+    workoutId: string;
+    registrationCount: number;
+  }) => {
+    setWorkouts((prev) =>
+      prev.map((workout) =>
+        workout.id === workoutId ? { ...workout, registrationCount } : workout,
+      ),
+    );
+    setDetailsDialogState((prev) => {
+      if (!prev.workout || prev.workout.id !== workoutId) {
+        return prev;
       }
 
-      if (workout.field) {
-        return {
-          id: workout.field.id ?? null,
-          name: workout.field.name ?? null,
-          shortName: workout.field.shortName ?? null,
-          address: workout.field.address ?? null,
-          city: workout.field.city ?? null,
-          state: workout.field.state ?? null,
-          zip: workout.field.zip ?? null,
-          rainoutNumber: workout.field.rainoutNumber ?? null,
-          comment: workout.field.comment ?? null,
-          directions: workout.field.directions ?? null,
-          latitude: workout.field.latitude ?? null,
-          longitude: workout.field.longitude ?? null,
-        };
-      }
+      return {
+        ...prev,
+        workout: { ...prev.workout, registrationCount },
+      };
+    });
+  };
 
-      return null;
-    },
-    [fields],
-  );
+  const handleFieldDialogOpen = (workout: WorkoutSummaryType) => {
+    const fieldId = workout.field?.id ?? null;
+    const fallbackField = getFieldDetailsFromWorkout(workout, fields);
 
-  const getFieldName = useCallback(
-    (workout: WorkoutSummaryType) => {
-      const details = getFieldDetails(workout);
-      return details?.name ?? details?.shortName ?? 'TBD';
-    },
-    [getFieldDetails],
-  );
+    if (!fieldId && !fallbackField) {
+      return;
+    }
 
-  const handleFieldDialogOpen = useCallback(
-    (workout: WorkoutSummaryType) => {
-      const fieldId = workout.field?.id ?? null;
-      const fallbackField = getFieldDetails(workout);
+    setFieldDialogState({ open: true, fieldId, fallbackField });
+  };
 
-      if (!fieldId && !fallbackField) {
-        return;
-      }
-
-      setFieldDialogState({ open: true, fieldId, fallbackField });
-    },
-    [getFieldDetails],
-  );
-
-  const handleFieldDialogClose = useCallback(() => {
+  const handleFieldDialogClose = () => {
     setFieldDialogState({ open: false, fieldId: null, fallbackField: null });
-  }, []);
+  };
 
-  const confirmDelete = useCallback(async () => {
+  const confirmDelete = async () => {
     if (!workoutToDelete) {
       return;
     }
@@ -286,9 +285,9 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
       setDeleteDialogOpen(false);
       setWorkoutToDelete(null);
     }
-  }, [accountId, workoutToDelete, token, showSuccessMessage, showErrorMessage]);
+  };
 
-  const renderTableContent = useMemo(() => {
+  const renderTableContent = () => {
     if (loading) {
       return (
         <Box sx={{ py: 4, textAlign: 'center' }}>
@@ -340,7 +339,7 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                   {formatWorkoutDate(workout.workoutDate)}
                 </TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                  {workout.field?.id || getFieldDetails(workout) ? (
+                  {workout.field?.id || getFieldDetailsFromWorkout(workout, fields) ? (
                     <ButtonBase
                       onClick={() => handleFieldDialogOpen(workout)}
                       sx={{
@@ -354,7 +353,7 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                         '&:hover': { backgroundColor: 'action.hover' },
                       }}
                     >
-                      {getFieldName(workout)}
+                      {getFieldNameFromWorkout(workout, fields)}
                     </ButtonBase>
                   ) : (
                     <Chip label="TBD" size="small" variant="outlined" color="secondary" />
@@ -375,7 +374,7 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                       size="small"
                       onClick={(event) => {
                         event.stopPropagation();
-                        handlePreviewAction(workout);
+                        onPreviewWorkout(workout.id);
                       }}
                     >
                       <VisibilityIcon fontSize="small" />
@@ -386,22 +385,11 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                       size="small"
                       onClick={(event) => {
                         event.stopPropagation();
-                        handleEditAction(workout);
+                        onEditWorkout(workout.id);
                       }}
                       color="primary"
                     >
                       <EditIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Add registration">
-                    <IconButton
-                      size="small"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleAddRegistrationAction(workout);
-                      }}
-                    >
-                      <PersonAddIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Delete workout">
@@ -410,7 +398,8 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                       color="error"
                       onClick={(event) => {
                         event.stopPropagation();
-                        handleDeleteAction(workout);
+                        setWorkoutToDelete(workout);
+                        setDeleteDialogOpen(true);
                       }}
                     >
                       <DeleteIcon fontSize="small" />
@@ -423,19 +412,7 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
         </Table>
       </TableContainer>
     );
-  }, [
-    loading,
-    workouts,
-    onCreateWorkout,
-    handlePreviewAction,
-    handleEditAction,
-    handleAddRegistrationAction,
-    handleDeleteAction,
-    handleOpenDetails,
-    handleFieldDialogOpen,
-    getFieldDetails,
-    getFieldName,
-  ]);
+  };
 
   return (
     <Container maxWidth="xl">
@@ -457,7 +434,7 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
         </Alert>
       ) : null}
 
-      {renderTableContent}
+      {renderTableContent()}
 
       <ConfirmationDialog
         open={deleteDialogOpen}

@@ -359,5 +359,4 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
   );
 };
 
-export const SelectedRecipientsPreview = React.memo(SelectedRecipientsPreviewComponent);
-SelectedRecipientsPreview.displayName = 'SelectedRecipientsPreview';
+export const SelectedRecipientsPreview = SelectedRecipientsPreviewComponent;

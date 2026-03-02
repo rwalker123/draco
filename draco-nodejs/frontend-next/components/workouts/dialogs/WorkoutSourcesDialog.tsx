@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -44,24 +44,7 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [pendingOption, setPendingOption] = useState<string | null>(null);
 
-  const options = useMemo(() => sources.options ?? [], [sources.options]);
-
-  const fetchSources = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const data = await getSources(accountId, token ?? undefined);
-      setSources(data ?? { options: [] });
-    } catch (err) {
-      console.error('Error fetching workout sources:', err);
-      setError('Failed to load sources');
-      setSources({ options: FALLBACK_OPTIONS });
-      onError?.('Failed to load workout sources');
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, token, onError]);
+  const options = sources.options ?? [];
 
   useEffect(() => {
     if (!open) {
@@ -71,10 +54,36 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
     setNewOption('');
     setError(null);
     setSuccessMessage(null);
-    void fetchSources();
-  }, [open, fetchSources]);
 
-  const handleAddOption = useCallback(async () => {
+    const controller = new AbortController();
+
+    const fetchSources = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await getSources(accountId, token ?? undefined, controller.signal);
+        if (controller.signal.aborted) return;
+        setSources(data ?? { options: [] });
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Error fetching workout sources:', err);
+        setError('Failed to load sources');
+        setSources({ options: FALLBACK_OPTIONS });
+        onError?.('Failed to load workout sources');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
+    void fetchSources();
+
+    return () => {
+      controller.abort();
+    };
+  }, [open, accountId, token, onError]);
+
+  const handleAddOption = async () => {
     const trimmed = newOption.trim();
 
     if (!trimmed || trimmed.length > 25 || options.includes(trimmed)) {
@@ -99,42 +108,35 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
       setError(message);
       onError?.(message);
     }
-  }, [accountId, newOption, onError, onSuccess, options, token]);
+  };
 
-  const handleRemoveOption = useCallback(
-    async (option: string) => {
-      const updated: WorkoutSourcesType = {
-        options: options.filter((value) => value !== option),
-      };
+  const handleRemoveOption = async (option: string) => {
+    const updated: WorkoutSourcesType = {
+      options: options.filter((value) => value !== option),
+    };
 
-      setSources(updated);
+    setSources(updated);
 
-      try {
-        await putSources(accountId, updated, token ?? undefined);
-        setSuccessMessage('Where heard options updated');
-        onSuccess?.('Where heard options updated');
-      } catch (err) {
-        console.error('Error removing workout source option:', err);
-        setSources({ options });
-        const message = 'Failed to remove option';
-        setError(message);
-        onError?.(message);
-      }
-    },
-    [accountId, onError, onSuccess, options, token],
-  );
+    try {
+      await putSources(accountId, updated, token ?? undefined);
+      setSuccessMessage('Where heard options updated');
+      onSuccess?.('Where heard options updated');
+    } catch (err) {
+      console.error('Error removing workout source option:', err);
+      setSources({ options });
+      const message = 'Failed to remove option';
+      setError(message);
+      onError?.(message);
+    }
+  };
 
-  const resetDialogState = useCallback(() => {
+  const handleClose = () => {
     setNewOption('');
     setError(null);
     setSuccessMessage(null);
     setPendingOption(null);
-  }, []);
-
-  const handleClose = useCallback(() => {
-    resetDialogState();
     onClose();
-  }, [onClose, resetDialogState]);
+  };
 
   return (
     <>

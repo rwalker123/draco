@@ -14,12 +14,9 @@ export const SocialMediaWidget: React.FC<SocialMediaWidgetProps> = ({
   account,
   onAccountUpdate,
 }) => {
-  const handleAccountUpdated = React.useCallback(
-    (updated: AccountType) => {
-      onAccountUpdate?.(updated);
-    },
-    [onAccountUpdate],
-  );
+  const handleAccountUpdated = (updated: AccountType) => {
+    onAccountUpdate?.(updated);
+  };
 
   return (
     <Stack spacing={3}>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -19,7 +19,12 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Save as SaveIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
 import type { PlayerSurveyCategoryType, PlayerSurveyQuestionType } from '@draco/shared-schemas';
 import type { Client } from '@draco/shared-api-client/generated/client';
 import {
@@ -97,7 +102,7 @@ const SurveyCategoryManager: React.FC<SurveyCategoryManagerProps> = ({
     setQuestionDrafts(drafts);
   }, [categories]);
 
-  const handleCreateCategory = useCallback(async () => {
+  const handleCreateCategory = async () => {
     const trimmedName = newCategoryName.trim();
     const priorityValue = newCategoryPriority.trim();
     const parsedPriority = priorityValue ? Number(priorityValue) : categories.length + 1;
@@ -145,214 +150,196 @@ const SurveyCategoryManager: React.FC<SurveyCategoryManagerProps> = ({
     } finally {
       setCreatingCategory(false);
     }
-  }, [
-    accountId,
-    apiClient,
-    categories.length,
-    newCategoryName,
-    newCategoryPriority,
-    onCategoriesChange,
-    onError,
-    onSuccess,
-  ]);
+  };
 
-  const handleSaveCategory = useCallback(
-    async (categoryId: string, updates: { categoryName?: string; priority?: number }) => {
-      setCategorySavingIds((prev) => ({ ...prev, [categoryId]: true }));
+  const handleSaveCategory = async (
+    categoryId: string,
+    updates: { categoryName?: string; priority?: number },
+  ) => {
+    setCategorySavingIds((prev) => ({ ...prev, [categoryId]: true }));
 
-      try {
-        const response = await updatePlayerSurveyCategory({
-          client: apiClient,
-          path: { accountId, categoryId },
-          body: updates,
-          throwOnError: false,
-        });
+    try {
+      const response = await updatePlayerSurveyCategory({
+        client: apiClient,
+        path: { accountId, categoryId },
+        body: updates,
+        throwOnError: false,
+      });
 
-        const updated = unwrapApiResult(response, 'Failed to update category');
-        if (!updated) {
-          throw new Error('Failed to update category');
-        }
-
-        const normalized = {
-          ...updated,
-          questions: updated.questions ?? [],
-        };
-
-        onCategoriesChange((prev) =>
-          prev.map((category) => (category.id === categoryId ? normalized : category)),
-        );
-        onSuccess('Category updated.');
-      } catch (err) {
-        console.error('Failed to update category', err);
-        onError('Failed to update category.');
-      } finally {
-        setCategorySavingIds((prev) => ({ ...prev, [categoryId]: false }));
-      }
-    },
-    [accountId, apiClient, onCategoriesChange, onError, onSuccess],
-  );
-
-  const handleDeleteCategory = useCallback(
-    async (categoryId: string) => {
-      setCategoryDeletingId(categoryId);
-
-      try {
-        await deletePlayerSurveyCategory({
-          client: apiClient,
-          path: { accountId, categoryId },
-        });
-
-        onCategoriesChange((prev) => prev.filter((category) => category.id !== categoryId));
-        onSuccess('Category deleted.');
-      } catch (err) {
-        console.error('Failed to delete category', err);
-        onError('Failed to delete category.');
-      } finally {
-        setCategoryDeletingId(null);
-        setCategoryToDelete(null);
-      }
-    },
-    [accountId, apiClient, onCategoriesChange, onError, onSuccess],
-  );
-
-  const handleCreateQuestion = useCallback(
-    async (categoryId: string) => {
-      const draft = questionDrafts[categoryId] ?? { question: '', questionNumber: '' };
-      const trimmedQuestion = draft.question.trim();
-      const questionNumberValue = draft.questionNumber.trim();
-      const parsedNumber = questionNumberValue ? Number(questionNumberValue) : undefined;
-
-      if (!trimmedQuestion) {
-        onError('Question text is required.');
-        return;
+      const updated = unwrapApiResult(response, 'Failed to update category');
+      if (!updated) {
+        throw new Error('Failed to update category');
       }
 
-      if (parsedNumber !== undefined && Number.isNaN(parsedNumber)) {
-        onError('Question number must be a valid number.');
-        return;
+      const normalized = {
+        ...updated,
+        questions: updated.questions ?? [],
+      };
+
+      onCategoriesChange((prev) =>
+        prev.map((category) => (category.id === categoryId ? normalized : category)),
+      );
+      onSuccess('Category updated.');
+    } catch (err) {
+      console.error('Failed to update category', err);
+      onError('Failed to update category.');
+    } finally {
+      setCategorySavingIds((prev) => ({ ...prev, [categoryId]: false }));
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    setCategoryDeletingId(categoryId);
+
+    try {
+      await deletePlayerSurveyCategory({
+        client: apiClient,
+        path: { accountId, categoryId },
+      });
+
+      onCategoriesChange((prev) => prev.filter((category) => category.id !== categoryId));
+      onSuccess('Category deleted.');
+    } catch (err) {
+      console.error('Failed to delete category', err);
+      onError('Failed to delete category.');
+    } finally {
+      setCategoryDeletingId(null);
+      setCategoryToDelete(null);
+    }
+  };
+
+  const handleCreateQuestion = async (categoryId: string) => {
+    const draft = questionDrafts[categoryId] ?? { question: '', questionNumber: '' };
+    const trimmedQuestion = draft.question.trim();
+    const questionNumberValue = draft.questionNumber.trim();
+    const parsedNumber = questionNumberValue ? Number(questionNumberValue) : undefined;
+
+    if (!trimmedQuestion) {
+      onError('Question text is required.');
+      return;
+    }
+
+    if (parsedNumber !== undefined && Number.isNaN(parsedNumber)) {
+      onError('Question number must be a valid number.');
+      return;
+    }
+
+    setQuestionAddingCategoryId(categoryId);
+
+    try {
+      const response = await createPlayerSurveyQuestion({
+        client: apiClient,
+        path: { accountId, categoryId },
+        body: {
+          categoryId,
+          question: trimmedQuestion,
+          questionNumber:
+            parsedNumber ??
+            (categories.find((c) => c.id === categoryId)?.questions ?? []).length + 1,
+        },
+        throwOnError: false,
+      });
+
+      const created = unwrapApiResult(response, 'Failed to create question');
+      if (!created) {
+        throw new Error('Failed to create question');
       }
 
-      setQuestionAddingCategoryId(categoryId);
+      onCategoriesChange((prev) =>
+        prev.map((category) =>
+          category.id === categoryId
+            ? {
+                ...category,
+                questions: sortQuestions([...(category.questions ?? []), created]),
+              }
+            : category,
+        ),
+      );
+      setQuestionDrafts((prev) => ({
+        ...prev,
+        [categoryId]: { question: '', questionNumber: '' },
+      }));
+      onSuccess('Question created.');
+    } catch (err) {
+      console.error('Failed to create question', err);
+      onError('Failed to create question.');
+    } finally {
+      setQuestionAddingCategoryId(null);
+    }
+  };
 
-      try {
-        const response = await createPlayerSurveyQuestion({
-          client: apiClient,
-          path: { accountId, categoryId },
-          body: {
-            categoryId,
-            question: trimmedQuestion,
-            questionNumber:
-              parsedNumber ??
-              (categories.find((c) => c.id === categoryId)?.questions ?? []).length + 1,
-          },
-          throwOnError: false,
-        });
+  const handleUpdateQuestion = async (
+    questionId: string,
+    updates: { question?: string; questionNumber?: number },
+  ) => {
+    setQuestionSavingIds((prev) => ({ ...prev, [questionId]: true }));
 
-        const created = unwrapApiResult(response, 'Failed to create question');
-        if (!created) {
-          throw new Error('Failed to create question');
-        }
+    try {
+      const response = await updatePlayerSurveyQuestion({
+        client: apiClient,
+        path: { accountId, questionId },
+        body: updates,
+        throwOnError: false,
+      });
 
-        onCategoriesChange((prev) =>
-          prev.map((category) =>
-            category.id === categoryId
-              ? {
-                  ...category,
-                  questions: sortQuestions([...(category.questions ?? []), created]),
-                }
-              : category,
-          ),
-        );
-        setQuestionDrafts((prev) => ({
-          ...prev,
-          [categoryId]: { question: '', questionNumber: '' },
-        }));
-        onSuccess('Question created.');
-      } catch (err) {
-        console.error('Failed to create question', err);
-        onError('Failed to create question.');
-      } finally {
-        setQuestionAddingCategoryId(null);
+      const updated = unwrapApiResult(response, 'Failed to update question');
+      if (!updated) {
+        throw new Error('Failed to update question');
       }
-    },
-    [accountId, apiClient, categories, questionDrafts, onCategoriesChange, onError, onSuccess],
-  );
 
-  const handleUpdateQuestion = useCallback(
-    async (questionId: string, updates: { question?: string; questionNumber?: number }) => {
-      setQuestionSavingIds((prev) => ({ ...prev, [questionId]: true }));
-
-      try {
-        const response = await updatePlayerSurveyQuestion({
-          client: apiClient,
-          path: { accountId, questionId },
-          body: updates,
-          throwOnError: false,
-        });
-
-        const updated = unwrapApiResult(response, 'Failed to update question');
-        if (!updated) {
-          throw new Error('Failed to update question');
-        }
-
-        onCategoriesChange((prev) =>
-          prev.map((category) =>
-            category.id === updated.categoryId
-              ? {
-                  ...category,
-                  questions: sortQuestions(
-                    (category.questions ?? []).map((question) =>
-                      question.id === updated.id ? updated : question,
-                    ),
+      onCategoriesChange((prev) =>
+        prev.map((category) =>
+          category.id === updated.categoryId
+            ? {
+                ...category,
+                questions: sortQuestions(
+                  (category.questions ?? []).map((question) =>
+                    question.id === updated.id ? updated : question,
                   ),
-                }
-              : category,
-          ),
-        );
-        onSuccess('Question updated.');
-      } catch (err) {
-        console.error('Failed to update question', err);
-        onError('Failed to update question.');
-      } finally {
-        setQuestionSavingIds((prev) => ({ ...prev, [questionId]: false }));
-      }
-    },
-    [accountId, apiClient, onCategoriesChange, onError, onSuccess],
-  );
+                ),
+              }
+            : category,
+        ),
+      );
+      onSuccess('Question updated.');
+    } catch (err) {
+      console.error('Failed to update question', err);
+      onError('Failed to update question.');
+    } finally {
+      setQuestionSavingIds((prev) => ({ ...prev, [questionId]: false }));
+    }
+  };
 
-  const handleDeleteQuestion = useCallback(
-    async (categoryId: string, questionId: string) => {
-      setQuestionDeletingId(questionId);
+  const handleDeleteQuestion = async (categoryId: string, questionId: string) => {
+    setQuestionDeletingId(questionId);
 
-      try {
-        await deletePlayerSurveyQuestion({
-          client: apiClient,
-          path: { accountId, questionId },
-        });
+    try {
+      await deletePlayerSurveyQuestion({
+        client: apiClient,
+        path: { accountId, questionId },
+      });
 
-        onCategoriesChange((prev) =>
-          prev.map((category) =>
-            category.id === categoryId
-              ? {
-                  ...category,
-                  questions: (category.questions ?? []).filter(
-                    (question) => question.id !== questionId,
-                  ),
-                }
-              : category,
-          ),
-        );
-        onSuccess('Question deleted.');
-      } catch (err) {
-        console.error('Failed to delete question', err);
-        onError('Failed to delete question.');
-      } finally {
-        setQuestionDeletingId(null);
-        setQuestionToDelete(null);
-      }
-    },
-    [accountId, apiClient, onCategoriesChange, onError, onSuccess],
-  );
+      onCategoriesChange((prev) =>
+        prev.map((category) =>
+          category.id === categoryId
+            ? {
+                ...category,
+                questions: (category.questions ?? []).filter(
+                  (question) => question.id !== questionId,
+                ),
+              }
+            : category,
+        ),
+      );
+      onSuccess('Question deleted.');
+    } catch (err) {
+      console.error('Failed to delete question', err);
+      onError('Failed to delete question.');
+    } finally {
+      setQuestionDeletingId(null);
+      setQuestionToDelete(null);
+    }
+  };
 
   return (
     <Paper sx={{ p: 3 }}>
@@ -527,7 +514,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   const [priority, setPriority] = useState<string>(String(category.priority));
   const [isDirty, setIsDirty] = useState(false);
 
-  const handleSave = useCallback(() => {
+  const handleSave = () => {
     const trimmedName = name.trim();
     const parsedPriority = Number(priority);
 
@@ -544,10 +531,16 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
       categoryName: trimmedName,
       priority: parsedPriority,
     });
-  }, [category.id, name, priority, onSaveCategory]);
+  };
+
+  const handleCancel = () => {
+    setName(category.categoryName);
+    setPriority(String(category.priority));
+    setIsDirty(false);
+  };
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
+    <Paper elevation={2} sx={{ p: 2, borderLeft: '4px solid', borderColor: 'primary.main' }}>
       <Stack spacing={2}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
           <TextField
@@ -571,25 +564,36 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
             size="small"
             sx={{ width: 120 }}
           />
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Tooltip title={savingCategory ? 'Saving category' : 'Save category'}>
-              <span>
-                <IconButton
-                  color="primary"
-                  aria-label="Save category"
-                  onClick={() => void handleSave()}
-                  disabled={savingCategory || !isDirty || !name.trim()}
-                >
-                  {savingCategory ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                </IconButton>
-              </span>
-            </Tooltip>
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            {savingCategory ? (
+              <CircularProgress size={20} sx={{ mx: 1 }} />
+            ) : isDirty ? (
+              <>
+                <Tooltip title="Save category">
+                  <span>
+                    <IconButton
+                      color="success"
+                      aria-label="Save category"
+                      onClick={() => void handleSave()}
+                      disabled={!name.trim()}
+                    >
+                      <CheckIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Tooltip title="Cancel">
+                  <IconButton color="error" aria-label="Cancel edit" onClick={handleCancel}>
+                    <CloseIcon />
+                  </IconButton>
+                </Tooltip>
+              </>
+            ) : null}
             <Tooltip title="Delete category">
               <span>
                 <IconButton
                   aria-label="Delete category"
                   onClick={onRequestDeleteCategory}
-                  disabled={deletingCategory}
+                  disabled={deletingCategory || isDirty}
                   color="error"
                 >
                   <DeleteIcon />
@@ -599,9 +603,13 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           </Stack>
         </Stack>
 
-        <Divider />
+        <Divider textAlign="left">
+          <Typography variant="overline" color="text.secondary">
+            Questions
+          </Typography>
+        </Divider>
 
-        <Stack spacing={1.5}>
+        <Stack spacing={1.5} sx={{ pl: 2 }}>
           {category.questions.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
               No questions yet. Add one below.
@@ -624,6 +632,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
           component="form"
+          sx={{ pl: 2 }}
           onSubmit={(event) => {
             event.preventDefault();
             void onAddQuestion();
@@ -684,7 +693,7 @@ const QuestionRow: React.FC<QuestionRowProps> = ({
   const [numberValue, setNumberValue] = useState<string>(String(question.questionNumber));
   const [dirty, setDirty] = useState(false);
 
-  const handleSave = useCallback(() => {
+  const handleSave = () => {
     const trimmed = label.trim();
     const parsedNumber = Number(numberValue);
 
@@ -697,10 +706,24 @@ const QuestionRow: React.FC<QuestionRowProps> = ({
       question: trimmed,
       questionNumber: parsedNumber,
     });
-  }, [label, numberValue, onSave, question.id]);
+  };
+
+  const handleCancel = () => {
+    setLabel(question.question);
+    setNumberValue(String(question.questionNumber));
+    setDirty(false);
+  };
 
   return (
-    <Paper variant="outlined" sx={{ p: 1.5 }}>
+    <Box
+      sx={{
+        p: 1.5,
+        borderRadius: 1,
+        bgcolor: 'background.default',
+        border: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems="flex-start">
         <TextField
           label="Question"
@@ -723,25 +746,36 @@ const QuestionRow: React.FC<QuestionRowProps> = ({
           size="small"
           sx={{ width: 120 }}
         />
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Tooltip title={saving ? 'Saving question' : 'Save question'}>
-            <span>
-              <IconButton
-                color="primary"
-                aria-label="Save question"
-                onClick={() => void handleSave()}
-                disabled={saving || !dirty || !label.trim()}
-              >
-                {saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-              </IconButton>
-            </span>
-          </Tooltip>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          {saving ? (
+            <CircularProgress size={20} sx={{ mx: 1 }} />
+          ) : dirty ? (
+            <>
+              <Tooltip title="Save question">
+                <span>
+                  <IconButton
+                    color="success"
+                    aria-label="Save question"
+                    onClick={() => void handleSave()}
+                    disabled={!label.trim()}
+                  >
+                    <CheckIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Tooltip title="Cancel">
+                <IconButton color="error" aria-label="Cancel edit" onClick={handleCancel}>
+                  <CloseIcon />
+                </IconButton>
+              </Tooltip>
+            </>
+          ) : null}
           <Tooltip title="Delete question">
             <span>
               <IconButton
                 aria-label="Delete question"
                 onClick={onDelete}
-                disabled={deleting}
+                disabled={deleting || dirty}
                 color="error"
               >
                 <DeleteIcon />
@@ -750,7 +784,7 @@ const QuestionRow: React.FC<QuestionRowProps> = ({
           </Tooltip>
         </Stack>
       </Stack>
-    </Paper>
+    </Box>
   );
 };
 

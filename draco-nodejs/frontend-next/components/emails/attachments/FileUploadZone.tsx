@@ -1,10 +1,24 @@
 'use client';
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Box, Typography, Button, Stack, alpha, useTheme } from '@mui/material';
 import { CloudUpload as UploadIcon, AttachFile as AttachIcon } from '@mui/icons-material';
 
 import { AttachmentConfig } from '../../../types/emails/attachments';
+
+function formatAcceptedTypes(accept: string[]): string {
+  if (!accept || accept.length === 0) return 'All file types';
+
+  const extensions = accept
+    .filter((type) => type.startsWith('.'))
+    .map((ext) => ext.toUpperCase())
+    .slice(0, 3);
+
+  if (extensions.length === 0) return 'All file types';
+  if (extensions.length <= 3) return extensions.join(', ');
+
+  return `${extensions.slice(0, 2).join(', ')} and ${accept.length - 2} more`;
+}
 
 export interface FileUploadZoneProps {
   onFilesSelected: (files: File[]) => void;
@@ -45,83 +59,54 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
   const disabledSurfaceColor = alpha(theme.palette.text.primary, 0.04);
   const disabledBorderColor = alpha(theme.palette.text.primary, 0.12);
 
-  // Handle file input change
-  const handleFileInputChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(event.target.files || []);
-      if (files.length > 0) {
-        onFilesSelected(files);
-      }
-      // Reset input to allow selecting the same file again
-      if (event.target) {
-        event.target.value = '';
-      }
-    },
-    [onFilesSelected],
-  );
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+      onFilesSelected(files);
+    }
+    if (event.target) {
+      event.target.value = '';
+    }
+  };
 
-  // Handle drag events
-  const handleDragOver = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (!disabled) {
-        setIsDragOver(true);
-      }
-    },
-    [disabled],
-  );
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!disabled) {
+      setIsDragOver(true);
+    }
+  };
 
-  const handleDragLeave = useCallback((event: React.DragEvent) => {
+  const handleDragLeave = (event: React.DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
     setIsDragOver(false);
-  }, []);
+  };
 
-  const handleDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsDragOver(false);
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragOver(false);
 
-      if (disabled) return;
+    if (disabled) return;
 
-      const files = Array.from(event.dataTransfer.files);
-      if (files.length > 0) {
-        onFilesSelected(files);
-      }
-    },
-    [disabled, onFilesSelected],
-  );
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length > 0) {
+      onFilesSelected(files);
+    }
+  };
 
-  // Handle click to open file dialog
-  const handleClick = useCallback(() => {
+  const handleClick = () => {
     if (!disabled && fileInputRef.current) {
       fileInputRef.current.click();
     }
-  }, [disabled]);
+  };
 
-  // Format accepted file types for display
-  const acceptedTypesText = React.useMemo(() => {
-    if (!accept || accept.length === 0) return 'All file types';
+  const acceptedTypesText = formatAcceptedTypes(accept);
 
-    const extensions = accept
-      .filter((type) => type.startsWith('.'))
-      .map((ext) => ext.toUpperCase())
-      .slice(0, 3);
-
-    if (extensions.length === 0) return 'All file types';
-    if (extensions.length <= 3) return extensions.join(', ');
-
-    return `${extensions.slice(0, 2).join(', ')} and ${accept.length - 2} more`;
-  }, [accept]);
-
-  // Format max file size for display
-  const maxSizeText = React.useMemo(() => {
-    if (!config.maxFileSize) return 'No size limit';
-    const sizeInMB = config.maxFileSize / (1024 * 1024);
-    return `${sizeInMB}MB max per file`;
-  }, [config.maxFileSize]);
+  const maxSizeText = config.maxFileSize
+    ? `${config.maxFileSize / (1024 * 1024)}MB max per file`
+    : 'No size limit';
 
   return (
     <Box className={className}>

@@ -122,14 +122,17 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
     >
       <Table size="small">
         <TableHead>
-          <TableRow sx={{ bgcolor: 'grey.100' }}>
+          <TableRow sx={{ bgcolor: 'action.hover' }}>
             <TableCell sx={{ fontWeight: 600, minWidth: 80 }}>{label}</TableCell>
             {holeRange.map((hole) => (
               <TableCell key={hole.hole} align="center" sx={{ fontWeight: 600, minWidth: 40 }}>
                 {hole.hole}
               </TableCell>
             ))}
-            <TableCell align="center" sx={{ fontWeight: 600, minWidth: 50, bgcolor: 'grey.200' }}>
+            <TableCell
+              align="center"
+              sx={{ fontWeight: 600, minWidth: 50, bgcolor: 'action.selected' }}
+            >
               Out
             </TableCell>
           </TableRow>
@@ -151,30 +154,30 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
                   {hole.distances[tee.id] || '-'}
                 </TableCell>
               ))}
-              <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'grey.50' }}>
+              <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'action.hover' }}>
                 {calculateDistanceTotals(holeRange, tee.id)}
               </TableCell>
             </TableRow>
           ))}
-          <TableRow sx={{ bgcolor: 'grey.50' }}>
+          <TableRow sx={{ bgcolor: 'action.hover' }}>
             <TableCell sx={{ fontWeight: 600 }}>Par (Men)</TableCell>
             {holeRange.map((hole) => (
               <TableCell key={hole.hole} align="center" sx={{ p: editMode ? 0.5 : undefined }}>
                 {renderEditableCell(hole.mensPar, `mensPar.${hole.hole - 1}`, 3, 6)}
               </TableCell>
             ))}
-            <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>
+            <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'action.selected' }}>
               {calculateTotals(holeRange, 'mensPar')}
             </TableCell>
           </TableRow>
-          <TableRow sx={{ bgcolor: 'grey.50' }}>
+          <TableRow sx={{ bgcolor: 'action.hover' }}>
             <TableCell sx={{ fontWeight: 600 }}>Par (Women)</TableCell>
             {holeRange.map((hole) => (
               <TableCell key={hole.hole} align="center" sx={{ p: editMode ? 0.5 : undefined }}>
                 {renderEditableCell(hole.womansPar, `womansPar.${hole.hole - 1}`, 3, 6)}
               </TableCell>
             ))}
-            <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>
+            <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'action.selected' }}>
               {calculateTotals(holeRange, 'womansPar')}
             </TableCell>
           </TableRow>
@@ -320,7 +323,7 @@ const CourseScorecard: React.FC<CourseScorecardProps> = ({
           >
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ bgcolor: 'grey.100' }}>
+                <TableRow sx={{ bgcolor: 'action.hover' }}>
                   {(onEditTee || onDeleteTee) && <TableCell sx={{ fontWeight: 600, width: 80 }} />}
                   <TableCell sx={{ fontWeight: 600 }}>Tee</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 600 }}>

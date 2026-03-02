@@ -59,83 +59,100 @@ const AccountCommunityMessagesPage: React.FC = () => {
     void fetchCurrentSeason();
   }, [accountId, fetchCurrentSeason]);
 
-  const selectedChannel = React.useMemo(
-    () => channels.find((channel) => channel.id === selectedChannelId) ?? null,
-    [channels, selectedChannelId],
-  );
-
-  const loadChannels = React.useCallback(async () => {
+  React.useEffect(() => {
     if (!accountId || !currentSeasonId) {
       return;
     }
 
+    const controller = new AbortController();
     setChannelLoading(true);
-    try {
-      const channelList = await fetchCommunityChannels();
-      setChannels(channelList);
-      setSelectedChannelId((previous) => {
-        if (previous === CHANNEL_FILTER_ALL) {
-          return previous;
-        }
-        return channelList.some((channel) => channel.id === previous)
-          ? previous
-          : CHANNEL_FILTER_ALL;
-      });
-    } catch (err) {
-      console.error('[CommunityMessages] Failed to load channels', err);
-      setChannels([]);
-      setSelectedChannelId(CHANNEL_FILTER_ALL);
-    } finally {
-      setChannelLoading(false);
-    }
+
+    const loadChannels = async () => {
+      try {
+        const channelList = await fetchCommunityChannels(undefined, controller.signal);
+        if (controller.signal.aborted) return;
+        setChannels(channelList);
+        setSelectedChannelId((previous) => {
+          if (previous === CHANNEL_FILTER_ALL) {
+            return previous;
+          }
+          return channelList.some((channel) => channel.id === previous)
+            ? previous
+            : CHANNEL_FILTER_ALL;
+        });
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('[CommunityMessages] Failed to load channels', err);
+        setChannels([]);
+        setSelectedChannelId(CHANNEL_FILTER_ALL);
+      } finally {
+        if (!controller.signal.aborted) setChannelLoading(false);
+      }
+    };
+
+    void loadChannels();
+    return () => {
+      controller.abort();
+    };
   }, [accountId, currentSeasonId, fetchCommunityChannels]);
 
-  const loadMessages = React.useCallback(async () => {
+  const currentChannel = channels.find((channel) => channel.id === selectedChannelId) ?? null;
+  const filterDiscordChannelId = currentChannel?.discordChannelId ?? null;
+  const filterTeamSeasonId =
+    currentChannel?.scope === 'teamSeason' ? (currentChannel.teamSeasonId ?? null) : null;
+
+  React.useEffect(() => {
     if (!accountId || !currentSeasonId) {
       return;
     }
+
+    const controller = new AbortController();
     setLoading(true);
     setError(null);
-    try {
-      const query: Partial<Parameters<typeof fetchCommunityMessages>[0]> = {
-        limit: PAGE_SIZE,
-      };
 
-      if (selectedChannel?.discordChannelId) {
-        query.channelIds = [selectedChannel.discordChannelId];
+    const loadMessages = async () => {
+      try {
+        const query: Partial<Parameters<typeof fetchCommunityMessages>[0]> = {
+          limit: PAGE_SIZE,
+        };
+
+        if (filterDiscordChannelId) {
+          query.channelIds = [filterDiscordChannelId];
+        }
+        if (filterTeamSeasonId) {
+          query.teamSeasonId = filterTeamSeasonId;
+        }
+
+        const result = await fetchCommunityMessages(query, controller.signal);
+        if (controller.signal.aborted) return;
+        setMessages(result);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Unable to load community messages.';
+        setError(message);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
-      if (selectedChannel?.scope === 'teamSeason' && selectedChannel.teamSeasonId) {
-        query.teamSeasonId = selectedChannel.teamSeasonId;
-      }
+    };
 
-      const result = await fetchCommunityMessages(query);
-      setMessages(result);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to load community messages.';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, currentSeasonId, fetchCommunityMessages, selectedChannel]);
+    void loadMessages();
+    return () => {
+      controller.abort();
+    };
+  }, [
+    accountId,
+    currentSeasonId,
+    filterDiscordChannelId,
+    filterTeamSeasonId,
+    fetchCommunityMessages,
+  ]);
 
-  React.useEffect(() => {
-    if (currentSeasonId) {
-      void loadChannels();
-    }
-  }, [currentSeasonId, loadChannels]);
-
-  React.useEffect(() => {
-    if (currentSeasonId) {
-      void loadMessages();
-    }
-  }, [currentSeasonId, selectedChannelId, loadMessages]);
-
-  const handleOpenMessage = React.useCallback((permalink?: string) => {
+  const handleOpenMessage = (permalink?: string) => {
     if (!permalink) {
       return;
     }
     window.open(permalink, '_blank', 'noopener,noreferrer');
-  }, []);
+  };
 
   if (!accountId) {
     return null;
