@@ -1,6 +1,7 @@
 // SendGrid Email Provider
 // Follows LSP - implements IEmailProvider interface
 
+import crypto from 'node:crypto';
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import {
@@ -80,14 +81,14 @@ export class SendGridProvider implements IEmailProvider {
   /**
    * Process SendGrid webhook events
    */
-  async processWebhookEvents(events: SendGridWebhookEvent[]): Promise<WebhookProcessingResult> {
+  async processWebhookEvents(events: unknown[]): Promise<WebhookProcessingResult> {
     const result: WebhookProcessingResult = {
       processed: 0,
       errors: [],
       contactBounces: [],
     };
 
-    for (const event of events) {
+    for (const event of events as SendGridWebhookEvent[]) {
       try {
         await this.processWebhookEvent(event, result.contactBounces);
         result.processed++;
@@ -309,12 +310,22 @@ export class SendGridProvider implements IEmailProvider {
    * Verify SendGrid webhook signature (for security)
    * This would be used in the webhook endpoint to verify the request came from SendGrid
    */
-  static verifyWebhookSignature(_payload: string, _signature: string, _publicKey: string): boolean {
-    // This would implement SendGrid's webhook signature verification
-    // For now, return true (in production, implement proper verification)
-    console.warn(
-      'SendGrid webhook signature verification not implemented - accepting all requests',
-    );
-    return true;
+  static verifyWebhookSignature(
+    payload: string,
+    signature: string,
+    timestamp: string,
+    publicKey: string,
+  ): boolean {
+    if (!publicKey) {
+      return false;
+    }
+    try {
+      const timestampedPayload = `${timestamp}\r\n${payload}\r\n`;
+      const verify = crypto.createVerify('SHA256');
+      verify.update(timestampedPayload);
+      return verify.verify(publicKey, signature, 'base64');
+    } catch {
+      return false;
+    }
   }
 }

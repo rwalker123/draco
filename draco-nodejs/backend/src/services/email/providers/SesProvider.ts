@@ -10,6 +10,7 @@ import type {
   EmailOptions,
   EmailResult,
   IEmailProvider,
+  WebhookProcessingResult,
 } from '../../../interfaces/emailInterfaces.js';
 import { htmlToPlainText } from '../../../utils/emailContent.js';
 
@@ -98,6 +99,10 @@ export class SesProvider implements IEmailProvider {
       console.error('SES connection test failed:', error);
       return false;
     }
+  }
+
+  async processWebhookEvents(_events: unknown[]): Promise<WebhookProcessingResult> {
+    return { processed: 0, errors: [], contactBounces: [] };
   }
 
   private resolveCredentialsFromEnv(

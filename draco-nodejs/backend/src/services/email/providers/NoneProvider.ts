@@ -7,6 +7,7 @@ import {
   EmailResult,
   EmailSettings,
   IEmailProvider,
+  WebhookProcessingResult,
 } from '../../../interfaces/emailInterfaces.js';
 
 export class NoneProvider implements IEmailProvider {
@@ -39,5 +40,9 @@ export class NoneProvider implements IEmailProvider {
 
   async testConnection(): Promise<boolean> {
     return true;
+  }
+
+  async processWebhookEvents(_events: unknown[]): Promise<WebhookProcessingResult> {
+    return { processed: 0, errors: [], contactBounces: [] };
   }
 }

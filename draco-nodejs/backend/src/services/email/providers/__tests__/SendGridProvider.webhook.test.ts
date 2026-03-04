@@ -1,3 +1,4 @@
+import { generateKeyPairSync, createSign } from 'node:crypto';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SendGridProvider } from '../SendGridProvider.js';
 import { SendGridWebhookEvent } from '../../../../interfaces/emailInterfaces.js';
@@ -419,26 +420,56 @@ describe('SendGridProvider - Webhook Processing', () => {
   });
 
   describe('webhook signature verification', () => {
-    it('should have placeholder verification that returns true', () => {
-      const result = SendGridProvider.verifyWebhookSignature(
-        'test-payload',
-        'test-signature',
-        'test-key',
-      );
+    const { privateKey, publicKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+    const publicKeyPem = publicKey.export({ type: 'spki', format: 'pem' }) as string;
 
-      expect(result).toBe(true);
+    function makeSignature(payload: string, timestamp: string): string {
+      const sign = createSign('SHA256');
+      sign.update(`${timestamp}\r\n${payload}\r\n`);
+      return sign.sign(privateKey, 'base64');
+    }
+
+    it('returns true for a valid ECDSA signature', () => {
+      const payload = 'test-payload';
+      const timestamp = '1700000000';
+      const signature = makeSignature(payload, timestamp);
+
+      expect(
+        SendGridProvider.verifyWebhookSignature(payload, signature, timestamp, publicKeyPem),
+      ).toBe(true);
     });
 
-    it('should log warning about unimplemented verification', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    it('returns false for a tampered payload', () => {
+      const timestamp = '1700000000';
+      const signature = makeSignature('original-payload', timestamp);
 
-      SendGridProvider.verifyWebhookSignature('payload', 'sig', 'key');
+      expect(
+        SendGridProvider.verifyWebhookSignature(
+          'tampered-payload',
+          signature,
+          timestamp,
+          publicKeyPem,
+        ),
+      ).toBe(false);
+    });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'SendGrid webhook signature verification not implemented - accepting all requests',
-      );
+    it('returns false for a tampered timestamp', () => {
+      const payload = 'test-payload';
+      const signature = makeSignature(payload, '1700000000');
 
-      consoleSpy.mockRestore();
+      expect(
+        SendGridProvider.verifyWebhookSignature(payload, signature, '9999999999', publicKeyPem),
+      ).toBe(false);
+    });
+
+    it('returns false when publicKey is empty', () => {
+      expect(SendGridProvider.verifyWebhookSignature('payload', 'sig', '12345', '')).toBe(false);
+    });
+
+    it('returns false for a malformed signature', () => {
+      expect(
+        SendGridProvider.verifyWebhookSignature('payload', 'not-base64!!!', '12345', publicKeyPem),
+      ).toBe(false);
     });
   });
 

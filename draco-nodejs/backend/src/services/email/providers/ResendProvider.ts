@@ -97,14 +97,14 @@ export class ResendProvider implements IEmailProvider {
     }
   }
 
-  async processWebhookEvents(events: ResendWebhookEvent[]): Promise<WebhookProcessingResult> {
+  async processWebhookEvents(events: unknown[]): Promise<WebhookProcessingResult> {
     const result: WebhookProcessingResult = {
       processed: 0,
       errors: [],
       contactBounces: [],
     };
 
-    for (const event of events) {
+    for (const event of events as ResendWebhookEvent[]) {
       try {
         await this.processWebhookEvent(event, result.contactBounces);
         result.processed++;

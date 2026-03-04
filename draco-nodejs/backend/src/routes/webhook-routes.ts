@@ -5,7 +5,6 @@ import type { Request, Response } from 'express';
 import { Router } from 'express';
 import { SendGridProvider } from '../services/email/providers/SendGridProvider.js';
 import { ResendProvider } from '../services/email/providers/ResendProvider.js';
-import { SendGridWebhookEvent, ResendWebhookEvent } from '../interfaces/emailInterfaces.js';
 import { EmailProviderFactory } from '../services/email/EmailProviderFactory.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -27,20 +26,30 @@ const emailService = ServiceFactory.getEmailService();
 router.post(
   '/sendgrid',
   asyncHandler(async (req: Request, res: Response) => {
-    const signature = req.get('X-Twilio-Email-Event-Webhook-Signature');
-    const timestamp = req.get('X-Twilio-Email-Event-Webhook-Timestamp');
+    if (process.env.NODE_ENV === 'production') {
+      const publicKey = process.env.SENDGRID_WEBHOOK_PUBLIC_KEY;
+      if (!publicKey) {
+        throw new InternalServerError('SendGrid webhook public key not configured');
+      }
 
-    if (process.env.NODE_ENV === 'production' && signature && timestamp) {
+      const signature = req.get('X-Twilio-Email-Event-Webhook-Signature');
+      const timestamp = req.get('X-Twilio-Email-Event-Webhook-Timestamp');
+      if (!signature || !timestamp) {
+        throw new AuthenticationError('Missing webhook signature headers');
+      }
+
       const payload = JSON.stringify(req.body);
-      const publicKey = process.env.SENDGRID_WEBHOOK_PUBLIC_KEY || '';
-
-      if (!SendGridProvider.verifyWebhookSignature(payload, signature, publicKey)) {
-        console.warn('Invalid SendGrid webhook signature');
+      if (!SendGridProvider.verifyWebhookSignature(payload, signature, timestamp, publicKey)) {
         throw new AuthenticationError('Invalid webhook signature');
       }
     }
 
-    const events: SendGridWebhookEvent[] = Array.isArray(req.body) ? req.body : [req.body];
+    const settings = EmailConfigFactory.getEmailSettings();
+    if (settings.provider !== 'sendgrid') {
+      throw new InternalServerError('SendGrid webhook provider mismatch');
+    }
+
+    const events: unknown[] = Array.isArray(req.body) ? req.body : [req.body];
 
     if (events.length === 0) {
       console.warn('Empty SendGrid webhook payload received');
@@ -50,12 +59,6 @@ router.post(
     console.log(`📨 Received ${events.length} SendGrid webhook events`);
 
     const provider = await EmailProviderFactory.getProvider();
-
-    if (!(provider instanceof SendGridProvider)) {
-      console.error('SendGrid webhook received but current provider is not SendGrid');
-      throw new InternalServerError('SendGrid webhook provider mismatch');
-    }
-
     const result = await provider.processWebhookEvents(events);
 
     console.log(`✅ Processed ${result.processed}/${events.length} SendGrid webhook events`);
@@ -86,9 +89,12 @@ router.post(
 router.post(
   '/resend',
   asyncHandler(async (req: Request, res: Response) => {
-    const secret = process.env.RESEND_WEBHOOK_SECRET;
+    if (process.env.NODE_ENV === 'production') {
+      const secret = process.env.RESEND_WEBHOOK_SECRET;
+      if (!secret) {
+        throw new InternalServerError('Resend webhook secret not configured');
+      }
 
-    if (process.env.NODE_ENV === 'production' && secret) {
       const payload = JSON.stringify(req.body);
       const headers = {
         'svix-id': req.get('svix-id') ?? undefined,
@@ -97,12 +103,16 @@ router.post(
       };
 
       if (!ResendProvider.verifyWebhookSignature(payload, headers, secret)) {
-        console.warn('Invalid Resend webhook signature');
         throw new AuthenticationError('Invalid webhook signature');
       }
     }
 
-    const events: ResendWebhookEvent[] = Array.isArray(req.body) ? req.body : [req.body];
+    const settings = EmailConfigFactory.getEmailSettings();
+    if (settings.provider !== 'resend') {
+      throw new InternalServerError('Resend webhook provider mismatch');
+    }
+
+    const events: unknown[] = Array.isArray(req.body) ? req.body : [req.body];
 
     if (events.length === 0) {
       console.warn('Empty Resend webhook payload received');
@@ -112,12 +122,6 @@ router.post(
     console.log(`📨 Received ${events.length} Resend webhook events`);
 
     const provider = await EmailProviderFactory.getProvider();
-
-    if (!(provider instanceof ResendProvider)) {
-      console.error('Resend webhook received but current provider is not Resend');
-      throw new InternalServerError('Resend webhook provider mismatch');
-    }
-
     const result = await provider.processWebhookEvents(events);
 
     console.log(`✅ Processed ${result.processed}/${events.length} Resend webhook events`);

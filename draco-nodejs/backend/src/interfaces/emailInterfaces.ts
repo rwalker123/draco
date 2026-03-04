@@ -5,6 +5,7 @@
 export interface IEmailProvider {
   sendEmail(options: EmailOptions): Promise<EmailResult>;
   testConnection(): Promise<boolean>;
+  processWebhookEvents(events: unknown[]): Promise<WebhookProcessingResult>;
 }
 
 // Email tag for tracking/categorization
