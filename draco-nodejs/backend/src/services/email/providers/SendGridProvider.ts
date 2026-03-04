@@ -4,6 +4,7 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import {
+  ContactBounceInfo,
   IEmailProvider,
   EmailOptions,
   EmailResult,
@@ -80,11 +81,12 @@ export class SendGridProvider implements IEmailProvider {
     const result: WebhookProcessingResult = {
       processed: 0,
       errors: [],
+      contactBounces: [],
     };
 
     for (const event of events) {
       try {
-        await this.processWebhookEvent(event);
+        await this.processWebhookEvent(event, result.contactBounces);
         result.processed++;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -99,8 +101,10 @@ export class SendGridProvider implements IEmailProvider {
   /**
    * Process a single SendGrid webhook event
    */
-  private async processWebhookEvent(event: SendGridWebhookEvent): Promise<void> {
-    // Find the email recipient by email address and message ID
+  private async processWebhookEvent(
+    event: SendGridWebhookEvent,
+    contactBounces: ContactBounceInfo[],
+  ): Promise<void> {
     const recipient = await this.findRecipientByEvent(event);
 
     if (!recipient) {
@@ -108,19 +112,18 @@ export class SendGridProvider implements IEmailProvider {
       return;
     }
 
-    // Map SendGrid events to our email status
     const statusMapping = {
       delivered: 'delivered',
       bounce: 'bounced',
-      dropped: 'bounced', // Treat dropped as bounced
+      dropped: 'bounced',
       open: 'opened',
       click: 'clicked',
-      processed: 'sent', // Email was processed by SendGrid
-      deferred: 'pending', // Temporary failure, still trying
+      processed: 'sent',
+      deferred: 'pending',
       spam_report: 'bounced',
-      unsubscribe: 'bounced', // Treat as bounced to prevent further sends
+      unsubscribe: 'bounced',
       group_unsubscribe: 'bounced',
-      group_resubscribe: 'sent', // Back to sent status
+      group_resubscribe: 'sent',
     };
 
     const newStatus = statusMapping[event.event];
@@ -129,11 +132,40 @@ export class SendGridProvider implements IEmailProvider {
       return;
     }
 
-    // Update recipient status and add event record
     await this.updateRecipientFromEvent(recipient.id, event, newStatus);
-
-    // Update email aggregate statistics
     await this.updateEmailStatistics(recipient.email_id, event.event);
+
+    if (
+      (event.event === 'bounce' || event.event === 'spam_report' || event.event === 'dropped') &&
+      recipient.contact_id !== null
+    ) {
+      const contact = await prisma.contacts.findUnique({
+        where: { id: recipient.contact_id },
+        select: { email_bounced_at: true },
+      });
+
+      if (contact && contact.email_bounced_at === null) {
+        await prisma.contacts.update({
+          where: { id: recipient.contact_id },
+          data: { email_bounced_at: new Date() },
+        });
+
+        const senderContact = recipient.email?.sender_contact ?? null;
+        const senderName = senderContact
+          ? `${senderContact.firstname} ${senderContact.lastname}`.trim()
+          : null;
+
+        contactBounces.push({
+          contactId: recipient.contact_id,
+          emailAddress: recipient.email_address,
+          contactName: recipient.contact_name ?? null,
+          senderEmail: senderContact?.email ?? null,
+          senderName,
+          bounceReason: event.reason || event.response || `SendGrid ${event.event}`,
+          emailSubject: recipient.email?.subject ?? '',
+        });
+      }
+    }
   }
 
   /**
@@ -151,7 +183,22 @@ export class SendGridProvider implements IEmailProvider {
         },
       },
       orderBy: {
-        sent_at: 'desc', // Get the most recent one
+        sent_at: 'desc',
+      },
+      include: {
+        email: {
+          select: {
+            account_id: true,
+            subject: true,
+            sender_contact: {
+              select: {
+                email: true,
+                firstname: true,
+                lastname: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -226,7 +273,11 @@ export class SendGridProvider implements IEmailProvider {
    * Update email aggregate statistics
    */
   private async updateEmailStatistics(emailId: bigint, eventType: string): Promise<void> {
-    // Only update stats for specific events that affect totals
+    if (eventType === 'delivered') {
+      await this.recalculateSuccessfulDeliveries(emailId);
+      return;
+    }
+
     if (!['bounce', 'open', 'click'].includes(eventType)) {
       return;
     }
@@ -250,6 +301,19 @@ export class SendGridProvider implements IEmailProvider {
         },
       });
     }
+  }
+
+  private async recalculateSuccessfulDeliveries(emailId: bigint): Promise<void> {
+    const count = await prisma.email_recipients.count({
+      where: {
+        email_id: emailId,
+        status: { in: ['sent', 'delivered', 'opened', 'clicked'] },
+      },
+    });
+    await prisma.emails.update({
+      where: { id: emailId },
+      data: { successful_deliveries: count },
+    });
   }
 
   /**

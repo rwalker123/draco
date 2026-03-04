@@ -84,7 +84,8 @@ export class PrismaEmailRepository implements IEmailRepository {
         email_address: recipient.email_address,
         contact_name: recipient.contact_name,
         recipient_type: recipient.recipient_type,
-        status: 'pending',
+        status: recipient.status ?? 'pending',
+        error_message: recipient.error_message ?? null,
       })),
     });
   }
@@ -154,6 +155,7 @@ export class PrismaEmailRepository implements IEmailRepository {
           failed_deliveries: true,
           open_count: true,
           click_count: true,
+          skipped_count: true,
           sender_contact_name: true,
           reply_to_email: true,
           created_by: {
@@ -305,6 +307,70 @@ export class PrismaEmailRepository implements IEmailRepository {
         middlename: true,
         creatoraccountid: true,
         userid: true,
+      },
+    });
+  }
+
+  async findBouncedContactIds(contactIds: bigint[]): Promise<bigint[]> {
+    if (contactIds.length === 0) {
+      return [];
+    }
+
+    const results = await this.prisma.contacts.findMany({
+      where: {
+        id: { in: contactIds },
+        email_bounced_at: { not: null },
+      },
+      select: { id: true },
+    });
+
+    return results.map((c) => c.id);
+  }
+
+  async getBouncedContactsForAccount(
+    accountId: bigint,
+  ): Promise<
+    {
+      id: bigint;
+      firstname: string;
+      lastname: string;
+      email: string | null;
+      email_bounced_at: Date;
+    }[]
+  > {
+    const results = await this.prisma.contacts.findMany({
+      where: {
+        creatoraccountid: accountId,
+        email_bounced_at: { not: null },
+      },
+      select: {
+        id: true,
+        firstname: true,
+        lastname: true,
+        email: true,
+        email_bounced_at: true,
+      },
+      orderBy: { email_bounced_at: 'desc' },
+    });
+
+    return results.filter(
+      (c): c is typeof c & { email_bounced_at: Date } => c.email_bounced_at !== null,
+    );
+  }
+
+  async clearContactEmailBounce(
+    accountId: bigint,
+    contactId: bigint,
+    newEmail?: string,
+  ): Promise<void> {
+    await this.prisma.contacts.updateMany({
+      where: {
+        id: contactId,
+        creatoraccountid: accountId,
+      },
+      data: {
+        email_bounced_at: null,
+        ...(newEmail !== undefined ? { email: newEmail } : {}),
       },
     });
   }

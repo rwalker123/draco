@@ -34,6 +34,7 @@ export class EmailResponseFormatter {
       bounceCount: email.bounce_count ? Number(email.bounce_count) : undefined,
       openCount: Number(email.open_count ?? 0),
       clickCount: Number(email.click_count ?? 0),
+      skippedCount: Number(email.skipped_count ?? 0),
       createdBy: email.created_by?.username ?? null,
       template: email.template
         ? {
@@ -74,6 +75,7 @@ export class EmailResponseFormatter {
       failedDeliveries: Number(email.failed_deliveries ?? 0),
       openCount: Number(email.open_count ?? 0),
       clickCount: Number(email.click_count ?? 0),
+      skippedCount: Number(email.skipped_count ?? 0),
       createdBy: email.created_by?.username ?? null,
       templateName: email.template?.name ?? null,
     };

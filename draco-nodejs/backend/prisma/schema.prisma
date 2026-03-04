@@ -570,6 +570,7 @@ model contacts {
   dateofbirth                                                                  DateTime                   @db.Date
   isfemale                                                                     Boolean?                   @default(false)
   email                                                                        String?                    @db.VarChar(50)
+  email_bounced_at                                                             DateTime?
   contactroles                                                                 contactroles[]
   accounts                                                                     accounts                   @relation(fields: [creatoraccountid], references: [id], onDelete: NoAction, onUpdate: NoAction)
   email_recipients                                                             email_recipients[]
@@ -1799,6 +1800,7 @@ model emails {
   bounce_count          Int                 @default(0)
   open_count            Int                 @default(0)
   click_count           Int                 @default(0)
+  skipped_count         Int                 @default(0)
   attachments           email_attachments[]
   recipients            email_recipients[]
   accounts              accounts            @relation(fields: [account_id], references: [id], onDelete: Cascade)

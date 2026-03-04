@@ -10,11 +10,16 @@ const hoisted = vi.hoisted(() => ({
       findFirst: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
+      count: vi.fn(),
     },
     email_events: {
       create: vi.fn(),
     },
     emails: {
+      update: vi.fn(),
+    },
+    contacts: {
+      findUnique: vi.fn(),
       update: vi.fn(),
     },
   },
@@ -82,6 +87,7 @@ describe('SendGridProvider - Webhook Processing', () => {
 
       hoisted.mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
       hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_recipients.count.mockResolvedValue(3);
       hoisted.mockPrisma.email_events.create.mockResolvedValue({});
       hoisted.mockPrisma.emails.update.mockResolvedValue({});
 
@@ -156,6 +162,8 @@ describe('SendGridProvider - Webhook Processing', () => {
       hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
       hoisted.mockPrisma.email_events.create.mockResolvedValue({});
       hoisted.mockPrisma.emails.update.mockResolvedValue({});
+      hoisted.mockPrisma.contacts.findUnique.mockResolvedValue({ email_bounced_at: null });
+      hoisted.mockPrisma.contacts.update.mockResolvedValue({});
     });
 
     it('should process delivered event correctly', async () => {
@@ -167,6 +175,8 @@ describe('SendGridProvider - Webhook Processing', () => {
         sg_message_id: 'msg1',
       };
 
+      hoisted.mockPrisma.email_recipients.count.mockResolvedValue(5);
+
       await provider.processWebhookEvents([event]);
 
       expect(mockPrisma.email_recipients.update).toHaveBeenCalledWith({
@@ -175,6 +185,18 @@ describe('SendGridProvider - Webhook Processing', () => {
           status: 'delivered',
           delivered_at: new Date(1640995200 * 1000),
         },
+      });
+
+      expect(mockPrisma.email_recipients.count).toHaveBeenCalledWith({
+        where: {
+          email_id: BigInt(100),
+          status: { in: ['sent', 'delivered', 'opened', 'clicked'] },
+        },
+      });
+
+      expect(mockPrisma.emails.update).toHaveBeenCalledWith({
+        where: { id: BigInt(100) },
+        data: { successful_deliveries: 5 },
       });
     });
 
@@ -390,6 +412,17 @@ describe('SendGridProvider - Webhook Processing', () => {
         },
         orderBy: {
           sent_at: 'desc',
+        },
+        include: {
+          email: {
+            select: {
+              account_id: true,
+              subject: true,
+              sender_contact: {
+                select: { email: true, firstname: true, lastname: true },
+              },
+            },
+          },
         },
       });
     });

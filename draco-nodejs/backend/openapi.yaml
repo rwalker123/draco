@@ -2686,6 +2686,8 @@ components:
           type: number
         clickCount:
           type: number
+        skippedCount:
+          type: number
         createdBy:
           type: string
           nullable: true
@@ -2784,6 +2786,7 @@ components:
         - failedDeliveries
         - openCount
         - clickCount
+        - skippedCount
         - createdBy
         - template
         - recipients
@@ -2819,6 +2822,8 @@ components:
                 type: number
               clickCount:
                 type: number
+              skippedCount:
+                type: number
               createdBy:
                 type: string
                 nullable: true
@@ -2835,6 +2840,7 @@ components:
               - failedDeliveries
               - openCount
               - clickCount
+              - skippedCount
               - createdBy
               - templateName
         pagination:
@@ -31920,6 +31926,136 @@ paths:
                 $ref: "#/components/schemas/AuthorizationError"
         "404":
           description: Attachment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/contacts/bounced:
+    get:
+      summary: List bounced contacts
+      description: Returns contacts whose email addresses have bounced and are being
+        suppressed.
+      operationId: getBouncedContacts
+      tags:
+        - Emails
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: List of contacts with bounced email addresses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contacts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        firstName:
+                          type: string
+                        lastName:
+                          type: string
+                        email:
+                          type: string
+                          nullable: true
+                        emailBouncedAt:
+                          type: string
+                      required:
+                        - id
+                        - firstName
+                        - lastName
+                        - email
+                        - emailBouncedAt
+                  total:
+                    type: number
+                required:
+                  - contacts
+                  - total
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/contacts/{contactId}/email-bounce:
+    delete:
+      summary: Clear contact email bounce
+      description: Clears the bounced email flag for a contact, optionally updating
+        their email address.
+      operationId: clearContactEmailBounce
+      tags:
+        - Emails
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newEmail:
+                  type: string
+                  format: email
+      responses:
+        "204":
+          description: Bounce cleared successfully
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Contact not found
           content:
             application/json:
               schema:

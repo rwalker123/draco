@@ -1421,6 +1421,7 @@ export type dbEmailSummary = Prisma.emailsGetPayload<{
     failed_deliveries: true;
     open_count: true;
     click_count: true;
+    skipped_count: true;
     sender_contact_name: true;
     reply_to_email: true;
     created_by: {
@@ -1976,6 +1977,8 @@ export type dbCreateEmailRecipientInput = {
   email_address: string;
   contact_name: string;
   recipient_type: string;
+  status?: string;
+  error_message?: string;
 };
 
 export type dbEmailUpdateData = {
@@ -1987,6 +1990,7 @@ export type dbEmailUpdateData = {
   bounce_count?: number;
   open_count?: number;
   click_count?: number;
+  skipped_count?: number;
   sender_contact_id?: bigint | null;
   sender_contact_name?: string | null;
   reply_to_email?: string | null;

@@ -95,7 +95,8 @@ export type EmailRecipientStatus =
   | 'bounced'
   | 'failed'
   | 'opened'
-  | 'clicked';
+  | 'clicked'
+  | 'skipped';
 
 // Email analytics interfaces
 export interface EmailAnalytics {
@@ -188,9 +189,20 @@ export interface ResendWebhookEvent {
   };
 }
 
+export interface ContactBounceInfo {
+  contactId: bigint;
+  emailAddress: string;
+  contactName: string | null;
+  senderEmail: string | null;
+  senderName: string | null;
+  bounceReason: string;
+  emailSubject: string;
+}
+
 export interface WebhookProcessingResult {
   processed: number;
   errors: string[];
+  contactBounces: ContactBounceInfo[];
 }
 
 export interface RecipientUpdateData {

@@ -8,6 +8,7 @@ const hoisted = vi.hoisted(() => {
     email_recipients: {
       findMany: vi.fn(),
       update: vi.fn(),
+      count: vi.fn(),
     },
     email_events: {
       create: vi.fn(),
@@ -92,6 +93,7 @@ describe('ResendProvider - Webhook Processing', () => {
 
     hoisted.mockPrisma.email_recipients.findMany.mockResolvedValue([mockRecipient]);
     hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+    hoisted.mockPrisma.email_recipients.count.mockResolvedValue(4);
     hoisted.mockPrisma.email_events.create.mockResolvedValue({});
     hoisted.mockPrisma.emails.update.mockResolvedValue({});
 
@@ -101,6 +103,16 @@ describe('ResendProvider - Webhook Processing', () => {
     expect(result.errors).toHaveLength(0);
     expect(hoisted.mockPrisma.email_recipients.update).toHaveBeenCalledTimes(1);
     expect(hoisted.mockPrisma.email_events.create).toHaveBeenCalledTimes(1);
+    expect(hoisted.mockPrisma.email_recipients.count).toHaveBeenCalledWith({
+      where: {
+        email_id: BigInt(10),
+        status: { in: ['sent', 'delivered', 'opened', 'clicked'] },
+      },
+    });
+    expect(hoisted.mockPrisma.emails.update).toHaveBeenCalledWith({
+      where: { id: BigInt(10) },
+      data: { successful_deliveries: 4 },
+    });
   });
 
   it('skips processing when no recipients are found', async () => {

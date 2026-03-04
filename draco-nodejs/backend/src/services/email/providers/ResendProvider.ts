@@ -6,6 +6,7 @@ import path from 'node:path';
 import { Resend } from 'resend';
 import { Webhook } from 'svix';
 import {
+  ContactBounceInfo,
   EmailOptions,
   EmailResult,
   IEmailProvider,
@@ -97,11 +98,12 @@ export class ResendProvider implements IEmailProvider {
     const result: WebhookProcessingResult = {
       processed: 0,
       errors: [],
+      contactBounces: [],
     };
 
     for (const event of events) {
       try {
-        await this.processWebhookEvent(event);
+        await this.processWebhookEvent(event, result.contactBounces);
         result.processed++;
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown Resend webhook error';
@@ -113,7 +115,10 @@ export class ResendProvider implements IEmailProvider {
     return result;
   }
 
-  private async processWebhookEvent(event: ResendWebhookEvent): Promise<void> {
+  private async processWebhookEvent(
+    event: ResendWebhookEvent,
+    contactBounces: ContactBounceInfo[],
+  ): Promise<void> {
     const eventType = this.resolveEventType(event);
     if (!eventType) {
       console.warn('Resend webhook received with unknown event type', event);
@@ -143,6 +148,39 @@ export class ResendProvider implements IEmailProvider {
       recipientRecords.map(async (recipient) => {
         await this.updateRecipientFromEvent(recipient.id, event, newStatus, eventTimestamp);
         await this.updateEmailStatistics(recipient.email_id, eventType);
+
+        if (
+          (eventType === 'email.bounced' || eventType === 'email.complained') &&
+          recipient.contact_id !== null
+        ) {
+          const contact = await prisma.contacts.findUnique({
+            where: { id: recipient.contact_id },
+            select: { email_bounced_at: true },
+          });
+
+          if (contact && contact.email_bounced_at === null) {
+            await prisma.contacts.update({
+              where: { id: recipient.contact_id },
+              data: { email_bounced_at: new Date() },
+            });
+
+            const senderContact = recipient.email?.sender_contact ?? null;
+            const senderName = senderContact
+              ? `${senderContact.firstname} ${senderContact.lastname}`.trim()
+              : null;
+
+            contactBounces.push({
+              contactId: recipient.contact_id,
+              emailAddress: recipient.email_address,
+              contactName: recipient.contact_name ?? null,
+              senderEmail: senderContact?.email ?? null,
+              senderName,
+              bounceReason:
+                event.data?.bounce?.message || event.data?.reason || `Resend ${eventType}`,
+              emailSubject: recipient.email?.subject ?? '',
+            });
+          }
+        }
       }),
     );
   }
@@ -166,6 +204,21 @@ export class ResendProvider implements IEmailProvider {
       },
       orderBy: {
         sent_at: 'desc',
+      },
+      include: {
+        email: {
+          select: {
+            account_id: true,
+            subject: true,
+            sender_contact: {
+              select: {
+                email: true,
+                firstname: true,
+                lastname: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -217,7 +270,11 @@ export class ResendProvider implements IEmailProvider {
   }
 
   private async updateEmailStatistics(emailId: bigint, eventType: string): Promise<void> {
-    // Only update stats for certain event types
+    if (eventType === 'email.delivered') {
+      await this.recalculateSuccessfulDeliveries(emailId);
+      return;
+    }
+
     if (!['email.bounced', 'email.opened', 'email.clicked'].includes(eventType)) {
       return;
     }
@@ -242,6 +299,19 @@ export class ResendProvider implements IEmailProvider {
           increment: 1,
         },
       },
+    });
+  }
+
+  private async recalculateSuccessfulDeliveries(emailId: bigint): Promise<void> {
+    const count = await prisma.email_recipients.count({
+      where: {
+        email_id: emailId,
+        status: { in: ['sent', 'delivered', 'opened', 'clicked'] },
+      },
+    });
+    await prisma.emails.update({
+      where: { id: emailId },
+      data: { successful_deliveries: count },
     });
   }
 

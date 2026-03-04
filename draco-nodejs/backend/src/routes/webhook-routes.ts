@@ -15,8 +15,10 @@ import {
   ValidationError,
 } from '../utils/customErrors.js';
 import { EmailConfigFactory } from '../config/email.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 
 const router = Router();
+const emailService = ServiceFactory.getEmailService();
 
 /**
  * POST /api/webhooks/sendgrid
@@ -60,6 +62,10 @@ router.post(
 
     if (result.errors.length > 0) {
       console.warn('SendGrid webhook processing errors:', result.errors);
+    }
+
+    if (result.contactBounces.length > 0) {
+      await emailService.sendBounceNotifications(result.contactBounces);
     }
 
     res.status(200).json({
@@ -116,6 +122,10 @@ router.post(
 
     if (result.errors.length > 0) {
       console.warn('Resend webhook processing errors:', result.errors);
+    }
+
+    if (result.contactBounces.length > 0) {
+      await emailService.sendBounceNotifications(result.contactBounces);
     }
 
     res.status(200).json({

@@ -152,6 +152,7 @@ export const EmailDetailSchema = z.object({
   bounceCount: z.number().optional(),
   openCount: z.number(),
   clickCount: z.number(),
+  skippedCount: z.number(),
   createdBy: z.string().nullable(),
   template: z
     .object({
@@ -174,6 +175,7 @@ export const EmailListItemSchema = z.object({
   failedDeliveries: z.number(),
   openCount: z.number(),
   clickCount: z.number(),
+  skippedCount: z.number(),
   createdBy: z.string().nullable(),
   templateName: z.string().nullable(),
 });

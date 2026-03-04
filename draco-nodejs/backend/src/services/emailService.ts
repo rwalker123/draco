@@ -8,6 +8,7 @@ import {
   EmailSettings,
   ServerEmailAttachment,
   GroupContactType,
+  ContactBounceInfo,
 } from '../interfaces/emailInterfaces.js';
 import { EmailProviderFactory } from './email/EmailProviderFactory.js';
 import { EmailConfigFactory } from '../config/email.js';
@@ -380,6 +381,66 @@ export class EmailService {
     }
   }
 
+  async sendBounceNotifications(bounces: ContactBounceInfo[]): Promise<void> {
+    if (bounces.length === 0) {
+      return;
+    }
+
+    try {
+      const settings = EmailConfigFactory.getEmailSettings();
+      const provider = await this.getProvider();
+
+      const bySender = new Map<string, ContactBounceInfo[]>();
+      for (const bounce of bounces) {
+        if (!bounce.senderEmail || !this.hasValidEmail(bounce.senderEmail)) {
+          continue;
+        }
+        const existing = bySender.get(bounce.senderEmail) ?? [];
+        existing.push(bounce);
+        bySender.set(bounce.senderEmail, existing);
+      }
+
+      for (const [senderEmail, senderBounces] of bySender) {
+        const count = senderBounces.length;
+        const subject =
+          count === 1
+            ? `Email delivery failed — 1 contact has an unreachable address`
+            : `Email delivery failed — ${count} contacts have unreachable addresses`;
+
+        const rows = senderBounces
+          .map(
+            (b) =>
+              `<tr><td style="padding:4px 8px">${b.contactName ?? 'Unknown'}</td>` +
+              `<td style="padding:4px 8px">${b.emailAddress}</td>` +
+              `<td style="padding:4px 8px">${b.bounceReason}</td></tr>`,
+          )
+          .join('');
+
+        const html =
+          `<p>The following contact email address(es) could not be delivered and have been marked as undeliverable. ` +
+          `They will be skipped in future email campaigns until their address is updated.</p>` +
+          `<table border="1" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:16px 0">` +
+          `<thead><tr>` +
+          `<th style="padding:4px 8px;text-align:left">Contact</th>` +
+          `<th style="padding:4px 8px;text-align:left">Email</th>` +
+          `<th style="padding:4px 8px;text-align:left">Reason</th>` +
+          `</tr></thead><tbody>${rows}</tbody></table>` +
+          `<p>To resume sending to these contacts, update their email address in your account's Communications page.</p>`;
+
+        await provider.sendEmail({
+          to: senderEmail,
+          subject,
+          html,
+          from: settings.fromEmail,
+          fromName: settings.fromName,
+          replyTo: settings.replyTo,
+        });
+      }
+    } catch (error) {
+      console.error('Error sending bounce notification emails:', error);
+    }
+  }
+
   async sendAccountWelcomeEmail(options: {
     toEmail: string;
     accountId: string;
@@ -615,31 +676,46 @@ export class EmailService {
         throw new Error(`Email record not found: ${emailId}`);
       }
 
-      // Resolve recipients
-      const recipients = await this.resolveRecipients(
+      const { active: recipients, skipped: skippedRecipients } = await this.resolveRecipients(
         email.account_id,
         request.seasonId ? BigInt(request.seasonId) : null,
         request.recipients,
       );
 
       if (recipients.length === 0) {
-        throw new Error('No valid recipients found');
+        const skipMsg =
+          skippedRecipients.length > 0
+            ? `No recipients to send to: ${skippedRecipients.length} contact(s) were skipped due to previously bounced email addresses`
+            : 'No valid recipients found';
+        throw new Error(skipMsg);
       }
 
       const { settings: senderSettings, senderContactId } = this.buildSenderSettingsForEmail(email);
 
-      const recipientPayload: dbCreateEmailRecipientInput[] = recipients.map((recipient) => ({
-        email_id: emailId,
-        contact_id: recipient.contactId,
-        email_address: recipient.emailAddress,
-        contact_name: recipient.contactName,
-        recipient_type: recipient.recipientType,
-      }));
+      const recipientPayload: dbCreateEmailRecipientInput[] = [
+        ...recipients.map((recipient) => ({
+          email_id: emailId,
+          contact_id: recipient.contactId,
+          email_address: recipient.emailAddress,
+          contact_name: recipient.contactName,
+          recipient_type: recipient.recipientType,
+        })),
+        ...skippedRecipients.map((recipient) => ({
+          email_id: emailId,
+          contact_id: recipient.contactId,
+          email_address: recipient.emailAddress,
+          contact_name: recipient.contactName,
+          recipient_type: recipient.recipientType,
+          status: 'skipped',
+          error_message: 'Email address previously bounced',
+        })),
+      ];
 
       await this.emailRepository.createEmailRecipients(recipientPayload);
 
       await this.emailRepository.updateEmail(emailId, {
         total_recipients: recipients.length,
+        skipped_count: skippedRecipients.length,
         ...(queueImmediately ? { status: 'sending' } : {}),
       });
 
@@ -1523,12 +1599,11 @@ export class EmailService {
    * Check if all batches for an email are completed and update status
    */
   private async checkAndUpdateEmailStatus(emailId: bigint): Promise<void> {
-    // Check if there are any pending jobs for this email
     const pendingJobs = Array.from(this.jobQueue.entries()).filter(
       ([jobId, job]) => job.emailId === emailId && !this.processingQueue.has(jobId),
     );
     if (pendingJobs.length > 0) {
-      return; // Still have pending batches
+      return;
     }
 
     const statusCounts = await this.emailRepository.getRecipientStatusCounts(emailId);
@@ -1542,10 +1617,10 @@ export class EmailService {
     );
 
     const totalRecipients = Object.values(stats).reduce((sum, count) => sum + count, 0);
-    const successfulDeliveries = stats.sent || 0;
-    const failedDeliveries = stats.failed || 0;
+    const successfulDeliveries =
+      (stats.sent || 0) + (stats.delivered || 0) + (stats.opened || 0) + (stats.clicked || 0);
+    const failedDeliveries = (stats.failed || 0) + (stats.bounced || 0);
 
-    // Determine final email status
     let finalStatus: 'sent' | 'failed' | 'partial' = 'sent';
     if (successfulDeliveries === 0) {
       finalStatus = 'failed';
@@ -1553,7 +1628,6 @@ export class EmailService {
       finalStatus = 'partial';
     }
 
-    // Update email record
     await this.emailRepository.updateEmail(emailId, {
       status: finalStatus,
       sent_at: new Date(),
@@ -1607,7 +1681,7 @@ export class EmailService {
     accountId: bigint,
     seasonId: bigint | null,
     selection: EmailRecipientGroupsType,
-  ): Promise<ResolvedRecipient[]> {
+  ): Promise<{ active: ResolvedRecipient[]; skipped: ResolvedRecipient[] }> {
     const recipients: ResolvedRecipient[] = [];
     const seasonSelection = selection.seasonSelection;
     const useManagersOnly = seasonSelection?.managersOnly === true;
@@ -1873,12 +1947,27 @@ export class EmailService {
 
     const uniqueRecipients = Array.from(uniqueMap.values());
 
-    // Log summary
+    const contactIds = uniqueRecipients.filter((r) => r.contactId != null).map((r) => r.contactId!);
+
+    const bouncedIds = await this.emailRepository.findBouncedContactIds(contactIds);
+    const bouncedSet = new Set(bouncedIds.map((id) => id.toString()));
+
+    const active: ResolvedRecipient[] = [];
+    const skipped: ResolvedRecipient[] = [];
+
+    for (const recipient of uniqueRecipients) {
+      if (recipient.contactId && bouncedSet.has(recipient.contactId.toString())) {
+        skipped.push(recipient);
+      } else {
+        active.push(recipient);
+      }
+    }
+
     console.log(
-      `Resolved ${uniqueRecipients.length} unique recipients (from ${recipients.length} total)`,
+      `Resolved ${active.length} active recipients, ${skipped.length} skipped (bounced) out of ${uniqueRecipients.length} unique`,
     );
 
-    return uniqueRecipients;
+    return { active, skipped };
   }
 
   private hasValidEmail(email: string | null): boolean {
@@ -2459,6 +2548,40 @@ This is an automated message from ezRecSports.com. Please do not reply to this e
   /**
    * Test email configuration
    */
+  async getBouncedContacts(
+    accountId: bigint,
+  ): Promise<
+    {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string | null;
+      emailBouncedAt: string;
+    }[]
+  > {
+    const contacts = await this.emailRepository.getBouncedContactsForAccount(accountId);
+
+    return contacts.map((c) => ({
+      id: c.id.toString(),
+      firstName: c.firstname,
+      lastName: c.lastname,
+      email: c.email,
+      emailBouncedAt: c.email_bounced_at.toISOString(),
+    }));
+  }
+
+  async clearContactEmailBounce(
+    accountId: bigint,
+    contactId: bigint,
+    newEmail?: string,
+  ): Promise<void> {
+    if (newEmail !== undefined && !this.hasValidEmail(newEmail)) {
+      throw new ValidationError('New email address is not valid');
+    }
+
+    await this.emailRepository.clearContactEmailBounce(accountId, contactId, newEmail);
+  }
+
   async testConnection(): Promise<boolean> {
     try {
       const provider = await this.getProvider();

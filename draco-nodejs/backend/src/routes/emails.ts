@@ -18,6 +18,7 @@ import { PaginationHelper } from '../utils/pagination.js';
 import {
   extractAccountParams,
   extractBigIntParams,
+  extractContactParams,
   getStringParam,
 } from '../utils/paramExtraction.js';
 
@@ -413,6 +414,38 @@ router.delete(
     await attachmentService.deleteAttachment(accountId.toString(), emailId, attachmentId);
 
     res.json(true);
+  }),
+);
+
+router.get(
+  '/accounts/:accountId/contacts/bounced',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+
+    const contacts = await emailService.getBouncedContacts(accountId);
+
+    res.json({ contacts, total: contacts.length });
+  }),
+);
+
+router.delete(
+  '/accounts/:accountId/contacts/:contactId/email-bounce',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, contactId } = extractContactParams(req.params);
+    const newEmail: string | undefined =
+      typeof req.body?.newEmail === 'string' && req.body.newEmail.trim().length > 0
+        ? req.body.newEmail.trim()
+        : undefined;
+
+    await emailService.clearContactEmailBounce(accountId, contactId, newEmail);
+
+    res.status(204).send();
   }),
 );
 

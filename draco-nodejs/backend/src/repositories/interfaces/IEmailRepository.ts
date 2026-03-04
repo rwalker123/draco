@@ -37,5 +37,18 @@ export interface IEmailRepository {
   updateRecipientsStatus(emailId: bigint, data: dbEmailRecipientBulkUpdateData): Promise<void>;
   getRecipientStatusCounts(emailId: bigint): Promise<dbRecipientStatusCount[]>;
   findContactsByIds(accountId: bigint, contactIds: bigint[]): Promise<dbBaseContact[]>;
+  findBouncedContactIds(contactIds: bigint[]): Promise<bigint[]>;
+  getBouncedContactsForAccount(
+    accountId: bigint,
+  ): Promise<
+    {
+      id: bigint;
+      firstname: string;
+      lastname: string;
+      email: string | null;
+      email_bounced_at: Date;
+    }[]
+  >;
+  clearContactEmailBounce(accountId: bigint, contactId: bigint, newEmail?: string): Promise<void>;
   deleteEmail(emailId: bigint, accountId: bigint): Promise<void>;
 }

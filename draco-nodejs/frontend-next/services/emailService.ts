@@ -153,6 +153,7 @@ const mapEmailDetail = (accountId: string, detail: EmailDetailType): EmailRecord
   bounceCount: detail.bounceCount ?? 0,
   openCount: detail.openCount,
   clickCount: detail.clickCount,
+  skippedCount: detail.skippedCount,
   recipients: detail.recipients?.map(mapRecipient) ?? [],
   attachments: detail.attachments?.map(mapAttachment) ?? [],
 });
@@ -175,6 +176,7 @@ const mapEmailSummary = (accountId: string, summary: EmailListItemType): EmailRe
   bounceCount: 0,
   openCount: summary.openCount,
   clickCount: summary.clickCount,
+  skippedCount: summary.skippedCount,
 });
 
 const mapListResponse = (accountId: string, data: EmailListPagedType): EmailListResponse => ({
