@@ -14,15 +14,18 @@ import {
 } from '../../../interfaces/emailInterfaces.js';
 import { EmailConfig, EmailSettings } from '../../../config/email.js';
 import prisma from '../../../lib/prisma.js';
+import { IEmailRepository } from '../../../repositories/interfaces/IEmailRepository.js';
 
 export class SendGridProvider implements IEmailProvider {
   private transporter: Transporter;
   private config: EmailConfig;
   private settings: EmailSettings;
+  private emailRepository: IEmailRepository;
 
-  constructor(config: EmailConfig, settings: EmailSettings) {
+  constructor(config: EmailConfig, settings: EmailSettings, emailRepository: IEmailRepository) {
     this.config = config;
     this.settings = settings;
+    this.emailRepository = emailRepository;
     this.transporter = nodemailer.createTransport(config);
   }
 
@@ -139,17 +142,9 @@ export class SendGridProvider implements IEmailProvider {
       (event.event === 'bounce' || event.event === 'spam_report' || event.event === 'dropped') &&
       recipient.contact_id !== null
     ) {
-      const contact = await prisma.contacts.findUnique({
-        where: { id: recipient.contact_id },
-        select: { email_bounced_at: true },
-      });
+      const marked = await this.emailRepository.markContactBounced(recipient.contact_id);
 
-      if (contact && contact.email_bounced_at === null) {
-        await prisma.contacts.update({
-          where: { id: recipient.contact_id },
-          data: { email_bounced_at: new Date() },
-        });
-
+      if (marked) {
         const senderContact = recipient.email?.sender_contact ?? null;
         const senderName = senderContact
           ? `${senderContact.firstname} ${senderContact.lastname}`.trim()
@@ -304,15 +299,9 @@ export class SendGridProvider implements IEmailProvider {
   }
 
   private async recalculateSuccessfulDeliveries(emailId: bigint): Promise<void> {
-    const count = await prisma.email_recipients.count({
-      where: {
-        email_id: emailId,
-        status: { in: ['sent', 'delivered', 'opened', 'clicked'] },
-      },
-    });
     await prisma.emails.update({
       where: { id: emailId },
-      data: { successful_deliveries: count },
+      data: { successful_deliveries: { increment: 1 } },
     });
   }
 

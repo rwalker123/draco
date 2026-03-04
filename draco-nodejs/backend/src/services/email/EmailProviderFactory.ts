@@ -8,6 +8,7 @@ import { EtherealProvider } from './providers/EtherealProvider.js';
 import { SesProvider } from './providers/SesProvider.js';
 import { ResendProvider } from './providers/ResendProvider.js';
 import { NoneProvider } from './providers/NoneProvider.js';
+import { RepositoryFactory } from '../../repositories/repositoryFactory.js';
 
 export class EmailProviderFactory {
   private static instance: IEmailProvider | null = null;
@@ -35,13 +36,21 @@ export class EmailProviderFactory {
 
     switch (emailSettings.provider) {
       case 'sendgrid':
-        return new SendGridProvider(emailConfig, emailSettings);
+        return new SendGridProvider(
+          emailConfig,
+          emailSettings,
+          RepositoryFactory.getEmailRepository(),
+        );
 
       case 'ses':
         return new SesProvider(emailConfig, emailSettings);
 
       case 'resend':
-        return new ResendProvider(emailConfig, emailSettings);
+        return new ResendProvider(
+          emailConfig,
+          emailSettings,
+          RepositoryFactory.getEmailRepository(),
+        );
 
       case 'none':
         return new NoneProvider(emailConfig, emailSettings);

@@ -410,9 +410,9 @@ export class EmailService {
         const rows = senderBounces
           .map(
             (b) =>
-              `<tr><td style="padding:4px 8px">${b.contactName ?? 'Unknown'}</td>` +
-              `<td style="padding:4px 8px">${b.emailAddress}</td>` +
-              `<td style="padding:4px 8px">${b.bounceReason}</td></tr>`,
+              `<tr><td style="padding:4px 8px">${validator.escape(b.contactName ?? 'Unknown')}</td>` +
+              `<td style="padding:4px 8px">${validator.escape(b.emailAddress)}</td>` +
+              `<td style="padding:4px 8px">${validator.escape(b.bounceReason)}</td></tr>`,
           )
           .join('');
 
@@ -2548,9 +2548,7 @@ This is an automated message from ezRecSports.com. Please do not reply to this e
   /**
    * Test email configuration
    */
-  async getBouncedContacts(
-    accountId: bigint,
-  ): Promise<
+  async getBouncedContacts(accountId: bigint): Promise<
     {
       id: string;
       firstName: string;

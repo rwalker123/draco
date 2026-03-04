@@ -18,10 +18,6 @@ const hoisted = vi.hoisted(() => ({
     emails: {
       update: vi.fn(),
     },
-    contacts: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
   },
 }));
 
@@ -36,6 +32,10 @@ vi.mock('nodemailer', () => ({
 }));
 
 const mockPrisma = hoisted.mockPrisma as any;
+
+const mockEmailRepository = {
+  markContactBounced: vi.fn().mockResolvedValue(true),
+};
 
 describe('SendGridProvider - Webhook Processing', () => {
   let provider: SendGridProvider;
@@ -56,7 +56,8 @@ describe('SendGridProvider - Webhook Processing', () => {
       fromName: 'Test',
     };
 
-    provider = new SendGridProvider(mockConfig, testSettings);
+    mockEmailRepository.markContactBounced.mockResolvedValue(true);
+    provider = new SendGridProvider(mockConfig, testSettings, mockEmailRepository as any);
   });
 
   describe('processWebhookEvents', () => {
@@ -162,8 +163,6 @@ describe('SendGridProvider - Webhook Processing', () => {
       hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
       hoisted.mockPrisma.email_events.create.mockResolvedValue({});
       hoisted.mockPrisma.emails.update.mockResolvedValue({});
-      hoisted.mockPrisma.contacts.findUnique.mockResolvedValue({ email_bounced_at: null });
-      hoisted.mockPrisma.contacts.update.mockResolvedValue({});
     });
 
     it('should process delivered event correctly', async () => {
@@ -175,8 +174,6 @@ describe('SendGridProvider - Webhook Processing', () => {
         sg_message_id: 'msg1',
       };
 
-      hoisted.mockPrisma.email_recipients.count.mockResolvedValue(5);
-
       await provider.processWebhookEvents([event]);
 
       expect(mockPrisma.email_recipients.update).toHaveBeenCalledWith({
@@ -187,16 +184,9 @@ describe('SendGridProvider - Webhook Processing', () => {
         },
       });
 
-      expect(mockPrisma.email_recipients.count).toHaveBeenCalledWith({
-        where: {
-          email_id: BigInt(100),
-          status: { in: ['sent', 'delivered', 'opened', 'clicked'] },
-        },
-      });
-
       expect(mockPrisma.emails.update).toHaveBeenCalledWith({
         where: { id: BigInt(100) },
-        data: { successful_deliveries: 5 },
+        data: { successful_deliveries: { increment: 1 } },
       });
     });
 
@@ -449,6 +439,113 @@ describe('SendGridProvider - Webhook Processing', () => {
       );
 
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('contact bounce marking', () => {
+    it('pushes to contactBounces when markContactBounced returns true', async () => {
+      const mockRecipient = {
+        id: BigInt(1),
+        email_id: BigInt(100),
+        email_address: 'contact@example.com',
+        contact_id: BigInt(200),
+        contact_name: 'Test Contact',
+        email: {
+          subject: 'Test Subject',
+          sender_contact: {
+            email: 'sender@example.com',
+            firstname: 'Test',
+            lastname: 'Sender',
+          },
+        },
+      };
+
+      hoisted.mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
+      hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_events.create.mockResolvedValue({});
+      hoisted.mockPrisma.emails.update.mockResolvedValue({});
+      mockEmailRepository.markContactBounced.mockResolvedValue(true);
+
+      const event: SendGridWebhookEvent = {
+        email: 'contact@example.com',
+        timestamp: 1640995200,
+        event: 'bounce',
+        sg_event_id: 'b1',
+        sg_message_id: 'msg1',
+        reason: 'Mailbox does not exist',
+      };
+
+      const result = await provider.processWebhookEvents([event]);
+
+      expect(mockEmailRepository.markContactBounced).toHaveBeenCalledWith(BigInt(200));
+      expect(result.contactBounces).toHaveLength(1);
+      expect(result.contactBounces[0]).toMatchObject({
+        contactId: BigInt(200),
+        emailAddress: 'contact@example.com',
+        senderEmail: 'sender@example.com',
+        bounceReason: 'Mailbox does not exist',
+        emailSubject: 'Test Subject',
+      });
+    });
+
+    it('does not push to contactBounces when markContactBounced returns false', async () => {
+      const mockRecipient = {
+        id: BigInt(1),
+        email_id: BigInt(100),
+        email_address: 'contact@example.com',
+        contact_id: BigInt(200),
+        contact_name: 'Test Contact',
+        email: { subject: 'Test Subject', sender_contact: null },
+      };
+
+      hoisted.mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
+      hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_events.create.mockResolvedValue({});
+      hoisted.mockPrisma.emails.update.mockResolvedValue({});
+      mockEmailRepository.markContactBounced.mockResolvedValue(false);
+
+      const event: SendGridWebhookEvent = {
+        email: 'contact@example.com',
+        timestamp: 1640995200,
+        event: 'bounce',
+        sg_event_id: 'b2',
+        sg_message_id: 'msg2',
+        reason: 'Mailbox does not exist',
+      };
+
+      const result = await provider.processWebhookEvents([event]);
+
+      expect(mockEmailRepository.markContactBounced).toHaveBeenCalledWith(BigInt(200));
+      expect(result.contactBounces).toHaveLength(0);
+    });
+
+    it('does not call markContactBounced when contact_id is null', async () => {
+      const mockRecipient = {
+        id: BigInt(1),
+        email_id: BigInt(100),
+        email_address: 'contact@example.com',
+        contact_id: null,
+        email: { subject: 'Test Subject', sender_contact: null },
+      };
+
+      hoisted.mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
+      hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_events.create.mockResolvedValue({});
+      hoisted.mockPrisma.emails.update.mockResolvedValue({});
+
+      const event: SendGridWebhookEvent = {
+        email: 'contact@example.com',
+        timestamp: 1640995200,
+        event: 'bounce',
+        sg_event_id: 'b3',
+        sg_message_id: 'msg3',
+        reason: 'Mailbox does not exist',
+      };
+
+      const result = await provider.processWebhookEvents([event]);
+
+      expect(mockEmailRepository.markContactBounced).not.toHaveBeenCalled();
+      expect(result.contactBounces).toHaveLength(0);
     });
   });
 

@@ -48,11 +48,16 @@ vi.mock('svix', () => ({
   Webhook: hoisted.MockWebhook,
 }));
 
+const mockEmailRepository = {
+  markContactBounced: vi.fn().mockResolvedValue(true),
+};
+
 describe('ResendProvider - Webhook Processing', () => {
   let provider: ResendProvider;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockEmailRepository.markContactBounced.mockResolvedValue(true);
 
     const testSettings: EmailSettings = {
       provider: 'resend',
@@ -67,6 +72,7 @@ describe('ResendProvider - Webhook Processing', () => {
         resendApiKey: 'resend_mock_api_key_for_tests_only', // pragma: allowlist secret
       },
       testSettings,
+      mockEmailRepository as any,
     );
   });
 
@@ -93,7 +99,6 @@ describe('ResendProvider - Webhook Processing', () => {
 
     hoisted.mockPrisma.email_recipients.findMany.mockResolvedValue([mockRecipient]);
     hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
-    hoisted.mockPrisma.email_recipients.count.mockResolvedValue(4);
     hoisted.mockPrisma.email_events.create.mockResolvedValue({});
     hoisted.mockPrisma.emails.update.mockResolvedValue({});
 
@@ -103,15 +108,9 @@ describe('ResendProvider - Webhook Processing', () => {
     expect(result.errors).toHaveLength(0);
     expect(hoisted.mockPrisma.email_recipients.update).toHaveBeenCalledTimes(1);
     expect(hoisted.mockPrisma.email_events.create).toHaveBeenCalledTimes(1);
-    expect(hoisted.mockPrisma.email_recipients.count).toHaveBeenCalledWith({
-      where: {
-        email_id: BigInt(10),
-        status: { in: ['sent', 'delivered', 'opened', 'clicked'] },
-      },
-    });
     expect(hoisted.mockPrisma.emails.update).toHaveBeenCalledWith({
       where: { id: BigInt(10) },
-      data: { successful_deliveries: 4 },
+      data: { successful_deliveries: { increment: 1 } },
     });
   });
 
@@ -137,6 +136,132 @@ describe('ResendProvider - Webhook Processing', () => {
     expect(result.processed).toBe(1);
     expect(result.errors).toHaveLength(0);
     expect(hoisted.mockPrisma.email_recipients.update).not.toHaveBeenCalled();
+  });
+
+  describe('contact bounce marking', () => {
+    const bounceRecipient = {
+      id: BigInt(1),
+      email_id: BigInt(10),
+      email_address: 'contact@example.com',
+      contact_id: BigInt(200),
+      contact_name: 'Test Contact',
+      email: {
+        subject: 'Test Subject',
+        sender_contact: {
+          email: 'sender@example.com',
+          firstname: 'Test',
+          lastname: 'Sender',
+        },
+      },
+    };
+
+    it('pushes to contactBounces for email.bounced when markContactBounced returns true', async () => {
+      hoisted.mockPrisma.email_recipients.findMany.mockResolvedValue([bounceRecipient]);
+      hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_events.create.mockResolvedValue({});
+      hoisted.mockPrisma.emails.update.mockResolvedValue({});
+      mockEmailRepository.markContactBounced.mockResolvedValue(true);
+
+      const event: ResendWebhookEvent = {
+        type: 'email.bounced',
+        created_at: '2024-01-01T00:00:00.000Z',
+        data: {
+          to: ['contact@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test Subject',
+          email_id: 'eid1',
+          created_at: '2024-01-01T00:00:00.000Z',
+          bounce: { message: 'Mailbox full' },
+        },
+      };
+
+      const result = await provider.processWebhookEvents([event]);
+
+      expect(mockEmailRepository.markContactBounced).toHaveBeenCalledWith(BigInt(200));
+      expect(result.contactBounces).toHaveLength(1);
+      expect(result.contactBounces[0]).toMatchObject({
+        contactId: BigInt(200),
+        emailAddress: 'contact@example.com',
+        senderEmail: 'sender@example.com',
+        bounceReason: 'Mailbox full',
+        emailSubject: 'Test Subject',
+      });
+    });
+
+    it('pushes to contactBounces for email.complained when markContactBounced returns true', async () => {
+      hoisted.mockPrisma.email_recipients.findMany.mockResolvedValue([bounceRecipient]);
+      hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_events.create.mockResolvedValue({});
+      hoisted.mockPrisma.emails.update.mockResolvedValue({});
+      mockEmailRepository.markContactBounced.mockResolvedValue(true);
+
+      const event: ResendWebhookEvent = {
+        type: 'email.complained',
+        created_at: '2024-01-01T00:00:00.000Z',
+        data: {
+          to: ['contact@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test Subject',
+          email_id: 'eid2',
+          created_at: '2024-01-01T00:00:00.000Z',
+        },
+      };
+
+      const result = await provider.processWebhookEvents([event]);
+
+      expect(mockEmailRepository.markContactBounced).toHaveBeenCalledWith(BigInt(200));
+      expect(result.contactBounces).toHaveLength(1);
+    });
+
+    it('does not push to contactBounces when markContactBounced returns false', async () => {
+      hoisted.mockPrisma.email_recipients.findMany.mockResolvedValue([bounceRecipient]);
+      hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_events.create.mockResolvedValue({});
+      hoisted.mockPrisma.emails.update.mockResolvedValue({});
+      mockEmailRepository.markContactBounced.mockResolvedValue(false);
+
+      const event: ResendWebhookEvent = {
+        type: 'email.bounced',
+        created_at: '2024-01-01T00:00:00.000Z',
+        data: {
+          to: ['contact@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test Subject',
+          email_id: 'eid3',
+          created_at: '2024-01-01T00:00:00.000Z',
+        },
+      };
+
+      const result = await provider.processWebhookEvents([event]);
+
+      expect(mockEmailRepository.markContactBounced).toHaveBeenCalledWith(BigInt(200));
+      expect(result.contactBounces).toHaveLength(0);
+    });
+
+    it('does not call markContactBounced when contact_id is null', async () => {
+      const recipientWithoutContact = { ...bounceRecipient, contact_id: null };
+      hoisted.mockPrisma.email_recipients.findMany.mockResolvedValue([recipientWithoutContact]);
+      hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_events.create.mockResolvedValue({});
+      hoisted.mockPrisma.emails.update.mockResolvedValue({});
+
+      const event: ResendWebhookEvent = {
+        type: 'email.bounced',
+        created_at: '2024-01-01T00:00:00.000Z',
+        data: {
+          to: ['contact@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test Subject',
+          email_id: 'eid4',
+          created_at: '2024-01-01T00:00:00.000Z',
+        },
+      };
+
+      const result = await provider.processWebhookEvents([event]);
+
+      expect(mockEmailRepository.markContactBounced).not.toHaveBeenCalled();
+      expect(result.contactBounces).toHaveLength(0);
+    });
   });
 
   it('collects errors when updates fail', async () => {

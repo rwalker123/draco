@@ -1,5 +1,6 @@
 import {
   dbBaseContact,
+  dbBouncedContact,
   dbEmail,
   dbEmailDetails,
   dbEmailRecipient,
@@ -38,17 +39,8 @@ export interface IEmailRepository {
   getRecipientStatusCounts(emailId: bigint): Promise<dbRecipientStatusCount[]>;
   findContactsByIds(accountId: bigint, contactIds: bigint[]): Promise<dbBaseContact[]>;
   findBouncedContactIds(contactIds: bigint[]): Promise<bigint[]>;
-  getBouncedContactsForAccount(
-    accountId: bigint,
-  ): Promise<
-    {
-      id: bigint;
-      firstname: string;
-      lastname: string;
-      email: string | null;
-      email_bounced_at: Date;
-    }[]
-  >;
+  getBouncedContactsForAccount(accountId: bigint): Promise<dbBouncedContact[]>;
+  markContactBounced(contactId: bigint): Promise<boolean>;
   clearContactEmailBounce(accountId: bigint, contactId: bigint, newEmail?: string): Promise<void>;
   deleteEmail(emailId: bigint, accountId: bigint): Promise<void>;
 }

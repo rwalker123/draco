@@ -2069,6 +2069,14 @@ export type dbCreateEmailAttachmentInput = {
   storage_path: string;
 };
 
+export type dbBouncedContact = {
+  id: bigint;
+  firstname: string;
+  lastname: string;
+  email: string | null;
+  email_bounced_at: Date;
+};
+
 export type dbPhotoGalleryAlbum = Prisma.photogalleryalbumGetPayload<{
   select: {
     id: true;

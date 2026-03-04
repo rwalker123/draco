@@ -64,16 +64,18 @@ router.post(
       console.warn('SendGrid webhook processing errors:', result.errors);
     }
 
-    if (result.contactBounces.length > 0) {
-      await emailService.sendBounceNotifications(result.contactBounces);
-    }
-
     res.status(200).json({
       message: 'Webhook processed successfully',
       processed: result.processed,
       total: events.length,
       errors: result.errors.length,
     });
+
+    if (result.contactBounces.length > 0) {
+      emailService.sendBounceNotifications(result.contactBounces).catch((err) => {
+        console.error('Failed to send SendGrid bounce notifications:', err);
+      });
+    }
   }),
 );
 
@@ -124,16 +126,18 @@ router.post(
       console.warn('Resend webhook processing errors:', result.errors);
     }
 
-    if (result.contactBounces.length > 0) {
-      await emailService.sendBounceNotifications(result.contactBounces);
-    }
-
     res.status(200).json({
       message: 'Webhook processed successfully',
       processed: result.processed,
       total: events.length,
       errors: result.errors.length,
     });
+
+    if (result.contactBounces.length > 0) {
+      emailService.sendBounceNotifications(result.contactBounces).catch((err) => {
+        console.error('Failed to send Resend bounce notifications:', err);
+      });
+    }
   }),
 );
 

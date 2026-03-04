@@ -18,6 +18,7 @@ import {
 import { EmailConfig, EmailSettings } from '../../../config/email.js';
 import prisma from '../../../lib/prisma.js';
 import type { Prisma } from '#prisma/client';
+import { IEmailRepository } from '../../../repositories/interfaces/IEmailRepository.js';
 
 type ResendAttachment = {
   filename: string;
@@ -29,14 +30,16 @@ export class ResendProvider implements IEmailProvider {
   private client: Resend;
   private config: EmailConfig;
   private settings: EmailSettings;
+  private emailRepository: IEmailRepository;
 
-  constructor(config: EmailConfig, settings: EmailSettings) {
+  constructor(config: EmailConfig, settings: EmailSettings, emailRepository: IEmailRepository) {
     if (!config.resendApiKey) {
       throw new Error('Missing Resend API key in email configuration');
     }
 
     this.config = config;
     this.settings = settings;
+    this.emailRepository = emailRepository;
     this.client = new Resend(config.resendApiKey);
   }
 
@@ -153,17 +156,9 @@ export class ResendProvider implements IEmailProvider {
           (eventType === 'email.bounced' || eventType === 'email.complained') &&
           recipient.contact_id !== null
         ) {
-          const contact = await prisma.contacts.findUnique({
-            where: { id: recipient.contact_id },
-            select: { email_bounced_at: true },
-          });
+          const marked = await this.emailRepository.markContactBounced(recipient.contact_id);
 
-          if (contact && contact.email_bounced_at === null) {
-            await prisma.contacts.update({
-              where: { id: recipient.contact_id },
-              data: { email_bounced_at: new Date() },
-            });
-
+          if (marked) {
             const senderContact = recipient.email?.sender_contact ?? null;
             const senderName = senderContact
               ? `${senderContact.firstname} ${senderContact.lastname}`.trim()
@@ -303,15 +298,9 @@ export class ResendProvider implements IEmailProvider {
   }
 
   private async recalculateSuccessfulDeliveries(emailId: bigint): Promise<void> {
-    const count = await prisma.email_recipients.count({
-      where: {
-        email_id: emailId,
-        status: { in: ['sent', 'delivered', 'opened', 'clicked'] },
-      },
-    });
     await prisma.emails.update({
       where: { id: emailId },
-      data: { successful_deliveries: count },
+      data: { successful_deliveries: { increment: 1 } },
     });
   }
 

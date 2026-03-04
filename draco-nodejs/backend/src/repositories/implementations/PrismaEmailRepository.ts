@@ -1,4 +1,5 @@
 import { Prisma, PrismaClient } from '#prisma/client';
+import { NotFoundError } from '../../utils/customErrors.js';
 import { IEmailRepository } from '../interfaces/IEmailRepository.js';
 import {
   dbBaseContact,
@@ -327,9 +328,7 @@ export class PrismaEmailRepository implements IEmailRepository {
     return results.map((c) => c.id);
   }
 
-  async getBouncedContactsForAccount(
-    accountId: bigint,
-  ): Promise<
+  async getBouncedContactsForAccount(accountId: bigint): Promise<
     {
       id: bigint;
       firstname: string;
@@ -358,12 +357,20 @@ export class PrismaEmailRepository implements IEmailRepository {
     );
   }
 
+  async markContactBounced(contactId: bigint): Promise<boolean> {
+    const { count } = await this.prisma.contacts.updateMany({
+      where: { id: contactId, email_bounced_at: null },
+      data: { email_bounced_at: new Date() },
+    });
+    return count > 0;
+  }
+
   async clearContactEmailBounce(
     accountId: bigint,
     contactId: bigint,
     newEmail?: string,
   ): Promise<void> {
-    await this.prisma.contacts.updateMany({
+    const { count } = await this.prisma.contacts.updateMany({
       where: {
         id: contactId,
         creatoraccountid: accountId,
@@ -373,6 +380,10 @@ export class PrismaEmailRepository implements IEmailRepository {
         ...(newEmail !== undefined ? { email: newEmail } : {}),
       },
     });
+
+    if (count === 0) {
+      throw new NotFoundError('Contact not found');
+    }
   }
 
   async deleteEmail(emailId: bigint, accountId: bigint): Promise<void> {
