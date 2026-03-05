@@ -29,14 +29,7 @@ import { useApiClient } from '../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../utils/apiResult';
 import { formatDateTime } from '../../../utils/dateUtils';
 import ClearBounceDialog from './ClearBounceDialog';
-
-interface BouncedContact {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  emailBouncedAt: string;
-}
+import type { BouncedContact } from '../../../types/emails/bounced-contact';
 
 interface BouncedContactsPanelProps {
   accountId: string;

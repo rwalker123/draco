@@ -1616,7 +1616,8 @@ export class EmailService {
       {} as Record<string, number>,
     );
 
-    const totalRecipients = Object.values(stats).reduce((sum, count) => sum + count, 0);
+    const skipped = stats.skipped || 0;
+    const totalRecipients = Object.values(stats).reduce((sum, count) => sum + count, 0) - skipped;
     const successfulDeliveries =
       (stats.sent || 0) + (stats.delivered || 0) + (stats.opened || 0) + (stats.clicked || 0);
     const failedDeliveries = (stats.failed || 0) + (stats.bounced || 0);

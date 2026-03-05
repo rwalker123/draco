@@ -14,14 +14,7 @@ import {
 import { clearContactEmailBounce } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { assertNoApiError } from '../../../utils/apiResult';
-
-interface BouncedContact {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  emailBouncedAt: string;
-}
+import type { BouncedContact } from '../../../types/emails/bounced-contact';
 
 interface ClearBounceDialogProps {
   open: boolean;

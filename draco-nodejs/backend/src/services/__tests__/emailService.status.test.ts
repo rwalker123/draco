@@ -58,6 +58,29 @@ describe('EmailService email status updates', () => {
     );
   });
 
+  it('excludes skipped recipients from the totalRecipients denominator', async () => {
+    const { service, emailRepository } = buildService();
+
+    const emailId = BigInt(42);
+    emailRepository.getRecipientStatusCounts.mockResolvedValue([
+      { status: 'sent', count: 3 },
+      { status: 'skipped', count: 2 },
+    ]);
+
+    await (
+      service as unknown as { checkAndUpdateEmailStatus(id: bigint): Promise<void> }
+    ).checkAndUpdateEmailStatus(emailId);
+
+    expect(emailRepository.updateEmail).toHaveBeenCalledWith(
+      emailId,
+      expect.objectContaining({
+        status: 'sent',
+        successful_deliveries: 3,
+        failed_deliveries: 0,
+      }),
+    );
+  });
+
   it('waits for other pending batches before marking an email complete', async () => {
     const { service, emailRepository } = buildService();
 
