@@ -187,11 +187,13 @@ export class ResendProvider implements IEmailProvider {
     }
 
     const emailIdTag = event.data?.tags?.email_id;
+    const emailId =
+      typeof emailIdTag === 'string' && /^[0-9]+$/.test(emailIdTag) ? BigInt(emailIdTag) : null;
 
-    if (emailIdTag) {
+    if (emailId !== null) {
       return await prisma.email_recipients.findMany({
         where: {
-          email_id: BigInt(emailIdTag),
+          email_id: emailId,
           email_address: { in: toAddresses },
         },
         include: {
