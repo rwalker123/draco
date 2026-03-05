@@ -186,6 +186,34 @@ export class ResendProvider implements IEmailProvider {
       return [];
     }
 
+    const emailIdTag = event.data?.tags?.email_id;
+    const emailId =
+      typeof emailIdTag === 'string' && /^[0-9]+$/.test(emailIdTag) ? BigInt(emailIdTag) : null;
+
+    if (emailId !== null) {
+      return await prisma.email_recipients.findMany({
+        where: {
+          email_id: emailId,
+          email_address: { in: toAddresses },
+        },
+        include: {
+          email: {
+            select: {
+              account_id: true,
+              subject: true,
+              sender_contact: {
+                select: {
+                  email: true,
+                  firstname: true,
+                  lastname: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     return await prisma.email_recipients.findMany({
