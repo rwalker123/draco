@@ -28,14 +28,16 @@ const hoisted = vi.hoisted(() => {
     };
   }
 
+  const mockWebhookVerify = vi.fn();
   class MockWebhook {
-    verify = vi.fn();
+    verify = mockWebhookVerify;
   }
 
   return {
     mockPrisma,
     MockResend,
     MockWebhook,
+    mockWebhookVerify,
   };
 });
 
@@ -292,5 +294,33 @@ describe('ResendProvider - Webhook Processing', () => {
 
     expect(result.processed).toBe(0);
     expect(result.errors).toHaveLength(1);
+  });
+});
+
+describe('ResendProvider.verifyWebhookSignature', () => {
+  const validHeaders = {
+    'svix-id': 'msg_123',
+    'svix-timestamp': '1700000000',
+    'svix-signature': 'v1,abc123',
+  };
+
+  it('returns false when secret is empty', () => {
+    expect(ResendProvider.verifyWebhookSignature('payload', validHeaders, '')).toBe(false);
+  });
+
+  it('returns true when Webhook.verify does not throw', () => {
+    hoisted.mockWebhookVerify.mockReturnValue(undefined);
+    expect(ResendProvider.verifyWebhookSignature('payload', validHeaders, 'whsec_testsecret')).toBe(
+      true,
+    );
+  });
+
+  it('returns false when Webhook.verify throws', () => {
+    hoisted.mockWebhookVerify.mockImplementation(() => {
+      throw new Error('invalid signature');
+    });
+    expect(ResendProvider.verifyWebhookSignature('payload', validHeaders, 'whsec_testsecret')).toBe(
+      false,
+    );
   });
 });

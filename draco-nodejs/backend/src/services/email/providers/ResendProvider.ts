@@ -314,8 +314,7 @@ export class ResendProvider implements IEmailProvider {
     secret: string,
   ): boolean {
     if (!secret) {
-      console.warn('Resend webhook secret not configured, skipping signature verification');
-      return true;
+      return false;
     }
 
     try {
