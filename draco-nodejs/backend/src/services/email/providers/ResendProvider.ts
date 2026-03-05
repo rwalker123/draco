@@ -298,10 +298,7 @@ export class ResendProvider implements IEmailProvider {
   }
 
   private async recalculateSuccessfulDeliveries(emailId: bigint): Promise<void> {
-    await prisma.emails.update({
-      where: { id: emailId },
-      data: { successful_deliveries: { increment: 1 } },
-    });
+    await this.emailRepository.incrementSuccessfulDeliveries(emailId);
   }
 
   static verifyWebhookSignature(

@@ -32007,7 +32007,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/contacts/{contactId}/email-bounce:
-    delete:
+    patch:
       summary: Clear contact email bounce
       description: Clears the bounced email flag for a contact, optionally updating
         their email address.

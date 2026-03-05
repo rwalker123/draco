@@ -431,7 +431,7 @@ router.get(
   }),
 );
 
-router.delete(
+router.patch(
   '/accounts/:accountId/contacts/:contactId/email-bounce',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),

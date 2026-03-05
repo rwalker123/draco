@@ -21,6 +21,7 @@ export interface IEmailRepository {
   findEmailWithAccount(emailId: bigint): Promise<dbEmailWithAccount | null>;
   createEmailRecipients(recipients: dbCreateEmailRecipientInput[]): Promise<void>;
   updateEmail(emailId: bigint, data: dbEmailUpdateData): Promise<void>;
+  incrementSuccessfulDeliveries(emailId: bigint): Promise<void>;
   getEmailDetails(accountId: bigint, emailId: bigint): Promise<dbEmailDetails | null>;
   listAccountEmails(
     accountId: bigint,

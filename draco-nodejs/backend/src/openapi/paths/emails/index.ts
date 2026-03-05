@@ -1309,11 +1309,11 @@ export const registerEmailsEndpoints = ({ registry, schemaRefs, z }: RegisterCon
   });
 
   /**
-   * DELETE /api/accounts/:accountId/contacts/:contactId/email-bounce
+   * PATCH /api/accounts/:accountId/contacts/:contactId/email-bounce
    * Clear bounced state for a contact
    */
   registry.registerPath({
-    method: 'delete',
+    method: 'patch',
     path: '/api/accounts/{accountId}/contacts/{contactId}/email-bounce',
     summary: 'Clear contact email bounce',
     description:

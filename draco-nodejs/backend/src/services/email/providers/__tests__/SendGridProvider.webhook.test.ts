@@ -36,6 +36,7 @@ const mockPrisma = hoisted.mockPrisma as any;
 
 const mockEmailRepository = {
   markContactBounced: vi.fn().mockResolvedValue(true),
+  incrementSuccessfulDeliveries: vi.fn().mockResolvedValue(undefined),
 };
 
 describe('SendGridProvider - Webhook Processing', () => {
@@ -185,10 +186,7 @@ describe('SendGridProvider - Webhook Processing', () => {
         },
       });
 
-      expect(mockPrisma.emails.update).toHaveBeenCalledWith({
-        where: { id: BigInt(100) },
-        data: { successful_deliveries: { increment: 1 } },
-      });
+      expect(mockEmailRepository.incrementSuccessfulDeliveries).toHaveBeenCalledWith(BigInt(100));
     });
 
     it('should process bounce event correctly', async () => {

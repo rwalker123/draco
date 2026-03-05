@@ -52,6 +52,7 @@ vi.mock('svix', () => ({
 
 const mockEmailRepository = {
   markContactBounced: vi.fn().mockResolvedValue(true),
+  incrementSuccessfulDeliveries: vi.fn().mockResolvedValue(undefined),
 };
 
 describe('ResendProvider - Webhook Processing', () => {
@@ -110,10 +111,7 @@ describe('ResendProvider - Webhook Processing', () => {
     expect(result.errors).toHaveLength(0);
     expect(hoisted.mockPrisma.email_recipients.update).toHaveBeenCalledTimes(1);
     expect(hoisted.mockPrisma.email_events.create).toHaveBeenCalledTimes(1);
-    expect(hoisted.mockPrisma.emails.update).toHaveBeenCalledWith({
-      where: { id: BigInt(10) },
-      data: { successful_deliveries: { increment: 1 } },
-    });
+    expect(mockEmailRepository.incrementSuccessfulDeliveries).toHaveBeenCalledWith(BigInt(10));
   });
 
   it('skips processing when no recipients are found', async () => {

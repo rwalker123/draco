@@ -102,6 +102,13 @@ export class PrismaEmailRepository implements IEmailRepository {
     });
   }
 
+  async incrementSuccessfulDeliveries(emailId: bigint): Promise<void> {
+    await this.prisma.emails.update({
+      where: { id: emailId },
+      data: { successful_deliveries: { increment: 1 } },
+    });
+  }
+
   async getEmailDetails(accountId: bigint, emailId: bigint): Promise<dbEmailDetails | null> {
     return this.prisma.emails.findFirst({
       where: {
