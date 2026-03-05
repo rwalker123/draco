@@ -53,6 +53,8 @@ vi.mock('svix', () => ({
 const mockEmailRepository = {
   markContactBounced: vi.fn().mockResolvedValue(true),
   incrementSuccessfulDeliveries: vi.fn().mockResolvedValue(undefined),
+  getRecipientStatusCounts: vi.fn().mockResolvedValue([{ status: 'delivered', count: 1 }]),
+  updateEmail: vi.fn().mockResolvedValue(undefined),
 };
 
 describe('ResendProvider - Webhook Processing', () => {
@@ -61,6 +63,10 @@ describe('ResendProvider - Webhook Processing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockEmailRepository.markContactBounced.mockResolvedValue(true);
+    mockEmailRepository.getRecipientStatusCounts.mockResolvedValue([
+      { status: 'delivered', count: 1 },
+    ]);
+    mockEmailRepository.updateEmail.mockResolvedValue(undefined);
 
     const testSettings: EmailSettings = {
       provider: 'resend',
@@ -111,7 +117,10 @@ describe('ResendProvider - Webhook Processing', () => {
     expect(result.errors).toHaveLength(0);
     expect(hoisted.mockPrisma.email_recipients.update).toHaveBeenCalledTimes(1);
     expect(hoisted.mockPrisma.email_events.create).toHaveBeenCalledTimes(1);
-    expect(mockEmailRepository.incrementSuccessfulDeliveries).toHaveBeenCalledWith(BigInt(10));
+    expect(mockEmailRepository.getRecipientStatusCounts).toHaveBeenCalledWith(BigInt(10));
+    expect(mockEmailRepository.updateEmail).toHaveBeenCalledWith(BigInt(10), {
+      successful_deliveries: 1,
+    });
   });
 
   it('skips processing when no recipients are found', async () => {
