@@ -326,7 +326,19 @@ export class ResendProvider implements IEmailProvider {
   }
 
   private async recalculateSuccessfulDeliveries(emailId: bigint): Promise<void> {
-    await this.emailRepository.incrementSuccessfulDeliveries(emailId);
+    const statusCounts = await this.emailRepository.getRecipientStatusCounts(emailId);
+    const stats = statusCounts.reduce(
+      (acc, stat) => {
+        acc[stat.status] = stat.count;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    const successfulDeliveries =
+      (stats.delivered || 0) + (stats.opened || 0) + (stats.clicked || 0);
+    await this.emailRepository.updateEmail(emailId, {
+      successful_deliveries: successfulDeliveries,
+    });
   }
 
   static verifyWebhookSignature(
