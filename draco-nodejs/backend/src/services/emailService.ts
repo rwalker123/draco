@@ -1202,7 +1202,10 @@ export class EmailService {
           fromName: job.settings.fromName,
           replyTo: job.settings.replyTo,
           attachments: job.attachments,
-          tags: [{ name: 'tracked', value: 'true' }],
+          tags: [
+            { name: 'tracked', value: 'true' },
+            { name: 'email_id', value: job.emailId.toString() },
+          ],
         };
 
         const result = await provider.sendEmail(emailOptions);
