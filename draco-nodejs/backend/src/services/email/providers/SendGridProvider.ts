@@ -1,9 +1,11 @@
 // SendGrid Email Provider
 // Follows LSP - implements IEmailProvider interface
 
+import crypto from 'node:crypto';
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import {
+  ContactBounceInfo,
   IEmailProvider,
   EmailOptions,
   EmailResult,
@@ -13,15 +15,18 @@ import {
 } from '../../../interfaces/emailInterfaces.js';
 import { EmailConfig, EmailSettings } from '../../../config/email.js';
 import prisma from '../../../lib/prisma.js';
+import { IEmailRepository } from '../../../repositories/interfaces/IEmailRepository.js';
 
 export class SendGridProvider implements IEmailProvider {
   private transporter: Transporter;
   private config: EmailConfig;
   private settings: EmailSettings;
+  private emailRepository: IEmailRepository;
 
-  constructor(config: EmailConfig, settings: EmailSettings) {
+  constructor(config: EmailConfig, settings: EmailSettings, emailRepository: IEmailRepository) {
     this.config = config;
     this.settings = settings;
+    this.emailRepository = emailRepository;
     this.transporter = nodemailer.createTransport(config);
   }
 
@@ -76,15 +81,16 @@ export class SendGridProvider implements IEmailProvider {
   /**
    * Process SendGrid webhook events
    */
-  async processWebhookEvents(events: SendGridWebhookEvent[]): Promise<WebhookProcessingResult> {
+  async processWebhookEvents(events: unknown[]): Promise<WebhookProcessingResult> {
     const result: WebhookProcessingResult = {
       processed: 0,
       errors: [],
+      contactBounces: [],
     };
 
-    for (const event of events) {
+    for (const event of events as SendGridWebhookEvent[]) {
       try {
-        await this.processWebhookEvent(event);
+        await this.processWebhookEvent(event, result.contactBounces);
         result.processed++;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -99,8 +105,10 @@ export class SendGridProvider implements IEmailProvider {
   /**
    * Process a single SendGrid webhook event
    */
-  private async processWebhookEvent(event: SendGridWebhookEvent): Promise<void> {
-    // Find the email recipient by email address and message ID
+  private async processWebhookEvent(
+    event: SendGridWebhookEvent,
+    contactBounces: ContactBounceInfo[],
+  ): Promise<void> {
     const recipient = await this.findRecipientByEvent(event);
 
     if (!recipient) {
@@ -108,19 +116,18 @@ export class SendGridProvider implements IEmailProvider {
       return;
     }
 
-    // Map SendGrid events to our email status
     const statusMapping = {
       delivered: 'delivered',
       bounce: 'bounced',
-      dropped: 'bounced', // Treat dropped as bounced
+      dropped: 'bounced',
       open: 'opened',
       click: 'clicked',
-      processed: 'sent', // Email was processed by SendGrid
-      deferred: 'pending', // Temporary failure, still trying
+      processed: 'sent',
+      deferred: 'pending',
       spam_report: 'bounced',
-      unsubscribe: 'bounced', // Treat as bounced to prevent further sends
+      unsubscribe: 'bounced',
       group_unsubscribe: 'bounced',
-      group_resubscribe: 'sent', // Back to sent status
+      group_resubscribe: 'sent',
     };
 
     const newStatus = statusMapping[event.event];
@@ -129,11 +136,32 @@ export class SendGridProvider implements IEmailProvider {
       return;
     }
 
-    // Update recipient status and add event record
     await this.updateRecipientFromEvent(recipient.id, event, newStatus);
-
-    // Update email aggregate statistics
     await this.updateEmailStatistics(recipient.email_id, event.event);
+
+    if (
+      (event.event === 'bounce' || event.event === 'spam_report' || event.event === 'dropped') &&
+      recipient.contact_id !== null
+    ) {
+      const marked = await this.emailRepository.markContactBounced(recipient.contact_id);
+
+      if (marked) {
+        const senderContact = recipient.email?.sender_contact ?? null;
+        const senderName = senderContact
+          ? `${senderContact.firstname} ${senderContact.lastname}`.trim()
+          : null;
+
+        contactBounces.push({
+          contactId: recipient.contact_id,
+          emailAddress: recipient.email_address,
+          contactName: recipient.contact_name ?? null,
+          senderEmail: senderContact?.email ?? null,
+          senderName,
+          bounceReason: event.reason || event.response || `SendGrid ${event.event}`,
+          emailSubject: recipient.email?.subject ?? '',
+        });
+      }
+    }
   }
 
   /**
@@ -151,7 +179,22 @@ export class SendGridProvider implements IEmailProvider {
         },
       },
       orderBy: {
-        sent_at: 'desc', // Get the most recent one
+        sent_at: 'desc',
+      },
+      include: {
+        email: {
+          select: {
+            account_id: true,
+            subject: true,
+            sender_contact: {
+              select: {
+                email: true,
+                firstname: true,
+                lastname: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -226,7 +269,11 @@ export class SendGridProvider implements IEmailProvider {
    * Update email aggregate statistics
    */
   private async updateEmailStatistics(emailId: bigint, eventType: string): Promise<void> {
-    // Only update stats for specific events that affect totals
+    if (eventType === 'delivered') {
+      await this.recalculateSuccessfulDeliveries(emailId);
+      return;
+    }
+
     if (!['bounce', 'open', 'click'].includes(eventType)) {
       return;
     }
@@ -252,16 +299,30 @@ export class SendGridProvider implements IEmailProvider {
     }
   }
 
+  private async recalculateSuccessfulDeliveries(emailId: bigint): Promise<void> {
+    await this.emailRepository.incrementSuccessfulDeliveries(emailId);
+  }
+
   /**
    * Verify SendGrid webhook signature (for security)
    * This would be used in the webhook endpoint to verify the request came from SendGrid
    */
-  static verifyWebhookSignature(_payload: string, _signature: string, _publicKey: string): boolean {
-    // This would implement SendGrid's webhook signature verification
-    // For now, return true (in production, implement proper verification)
-    console.warn(
-      'SendGrid webhook signature verification not implemented - accepting all requests',
-    );
-    return true;
+  static verifyWebhookSignature(
+    payload: string,
+    signature: string,
+    timestamp: string,
+    publicKey: string,
+  ): boolean {
+    if (!publicKey) {
+      return false;
+    }
+    try {
+      const timestampedPayload = `${timestamp}\r\n${payload}\r\n`;
+      const verify = crypto.createVerify('SHA256');
+      verify.update(timestampedPayload);
+      return verify.verify(publicKey, signature, 'base64');
+    } catch {
+      return false;
+    }
   }
 }

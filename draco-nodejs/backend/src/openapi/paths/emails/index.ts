@@ -1239,6 +1239,160 @@ export const registerEmailsEndpoints = ({ registry, schemaRefs, z }: RegisterCon
   });
 
   /**
+   * GET /api/accounts/:accountId/contacts/bounced
+   * List contacts with bounced email addresses
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/contacts/bounced',
+    summary: 'List bounced contacts',
+    description: 'Returns contacts whose email addresses have bounced and are being suppressed.',
+    operationId: 'getBouncedContacts',
+    tags: ['Emails'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'List of contacts with bounced email addresses',
+        content: {
+          'application/json': {
+            schema: z.object({
+              contacts: z.array(
+                z.object({
+                  id: z.string(),
+                  firstName: z.string(),
+                  lastName: z.string(),
+                  email: z.string().nullable(),
+                  emailBouncedAt: z.string(),
+                }),
+              ),
+              total: z.number(),
+            }),
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Unexpected server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * PATCH /api/accounts/:accountId/contacts/:contactId/email-bounce
+   * Clear bounced state for a contact
+   */
+  registry.registerPath({
+    method: 'patch',
+    path: '/api/accounts/{accountId}/contacts/{contactId}/email-bounce',
+    summary: 'Clear contact email bounce',
+    description:
+      'Clears the bounced email flag for a contact, optionally updating their email address.',
+    operationId: 'clearContactEmailBounce',
+    tags: ['Emails'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'contactId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        required: false,
+        content: {
+          'application/json': {
+            schema: z.object({
+              newEmail: z.string().email().optional(),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      204: {
+        description: 'Bounce cleared successfully',
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Contact not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Unexpected server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
    * DELETE /api/accounts/:accountId/emails/:emailId/attachments/:attachmentId
    * Delete an email attachment
    */

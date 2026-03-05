@@ -34,6 +34,7 @@ export const RECIPIENT_STATUS_LABELS: Record<EmailRecipientStatus, string> = {
   failed: 'Failed',
   opened: 'Opened',
   clicked: 'Clicked',
+  skipped: 'Skipped (Bounced)',
 };
 
 export const RECIPIENT_STATUS_COLORS: Record<
@@ -47,6 +48,7 @@ export const RECIPIENT_STATUS_COLORS: Record<
   failed: 'error',
   opened: 'secondary',
   clicked: 'primary',
+  skipped: 'warning',
 };
 
 export const formatRate = (value: number): string => `${value.toFixed(1)}%`;

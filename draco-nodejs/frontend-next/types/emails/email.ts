@@ -77,6 +77,7 @@ export interface EmailRecord {
   bounceCount: number;
   openCount: number;
   clickCount: number;
+  skippedCount: number;
   recipients?: EmailRecipient[];
   attachments?: AttachmentDetails[];
 }
@@ -106,7 +107,8 @@ export type EmailRecipientStatus =
   | 'bounced'
   | 'failed'
   | 'opened'
-  | 'clicked';
+  | 'clicked'
+  | 'skipped';
 
 export interface EmailListResponse {
   emails: EmailRecord[];

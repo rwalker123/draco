@@ -126,7 +126,7 @@ export default function Communications() {
           </Box>
         )}
 
-        <EmailHistoryPanel accountId={accountIdStr} />
+        <EmailHistoryPanel accountId={accountIdStr} showBouncedAddresses={canManage} />
       </Container>
 
       {accountIdStr && (

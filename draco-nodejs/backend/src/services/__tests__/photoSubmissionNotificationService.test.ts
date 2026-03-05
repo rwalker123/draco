@@ -37,6 +37,7 @@ describe('PhotoSubmissionNotificationService', () => {
   const providerMock = {
     sendEmail: sendEmailMock,
     testConnection: vi.fn(),
+    processWebhookEvents: vi.fn(),
   };
 
   const getProvider = vi.fn(async () => providerMock);

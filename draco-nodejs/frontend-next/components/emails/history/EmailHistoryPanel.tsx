@@ -29,6 +29,7 @@ import {
 } from '@mui/material';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import {
+  Block as BlockIcon,
   Delete as DeleteIcon,
   ErrorOutline as ErrorOutlineIcon,
   History as HistoryIcon,
@@ -38,6 +39,7 @@ import {
   TaskAlt as TaskAltIcon,
   VisibilityOutlined as ViewDetailsIcon,
 } from '@mui/icons-material';
+import BouncedContactsPanel from '../bounced/BouncedContactsPanel';
 import { useAuth } from '../../../context/AuthContext';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { listAccountEmails } from '@draco/shared-api-client';
@@ -64,9 +66,14 @@ const STATUS_FILTER_OPTIONS: Array<{ label: string; value: StatusFilter }> = [
 interface EmailHistoryPanelProps {
   accountId: string;
   showHeader?: boolean;
+  showBouncedAddresses?: boolean;
 }
 
-const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHeader = true }) => {
+const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({
+  accountId,
+  showHeader = true,
+  showBouncedAddresses = false,
+}) => {
   const { token } = useAuth();
   const apiClient = useApiClient();
 
@@ -85,6 +92,7 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
   const [selectedEmail, setSelectedEmail] = useState<EmailRecord | null>(null);
   const [emailPendingDelete, setEmailPendingDelete] = useState<EmailRecord | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [bouncedCount, setBouncedCount] = useState(0);
 
   useEffect(() => {
     if (!accountId || !token) return;
@@ -130,6 +138,7 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
           bounceCount: 0,
           openCount: email.openCount,
           clickCount: email.clickCount,
+          skippedCount: email.skippedCount,
         }));
 
         const paginationWithTotalPages = {
@@ -303,7 +312,20 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
           helper={`${queueSummary.scheduled} scheduled • ${queueSummary.sending} sending • ${queueSummary.failed} failed`}
           color="warning"
         />
+        {showBouncedAddresses && bouncedCount > 0 && (
+          <MetricCard
+            icon={<BlockIcon fontSize="small" />}
+            label="Blocked addresses"
+            value={`${bouncedCount}`}
+            helper="Will be skipped in future sends"
+            color="error"
+          />
+        )}
       </Stack>
+
+      {showBouncedAddresses && (
+        <BouncedContactsPanel accountId={accountId} onCountLoaded={setBouncedCount} />
+      )}
 
       <Card variant="outlined">
         <CardContent>
@@ -413,6 +435,7 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
                     <TableCell align="right">Recipients</TableCell>
                     <TableCell align="right">Delivered</TableCell>
                     <TableCell align="right">Failed</TableCell>
+                    <TableCell align="right">Skipped</TableCell>
                     <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -444,6 +467,9 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
                       <TableCell align="right">{email.totalRecipients}</TableCell>
                       <TableCell align="right">{email.successfulDeliveries}</TableCell>
                       <TableCell align="right">{email.failedDeliveries}</TableCell>
+                      <TableCell align="right">
+                        {email.skippedCount > 0 ? email.skippedCount : '—'}
+                      </TableCell>
                       <TableCell align="right">
                         <Stack direction="row" justifyContent="flex-end" spacing={1}>
                           <Tooltip title="View details">

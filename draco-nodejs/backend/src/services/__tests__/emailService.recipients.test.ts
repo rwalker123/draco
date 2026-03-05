@@ -22,20 +22,26 @@ describe('EmailService recipient resolution for team managers', () => {
       listManagers: vi.fn(),
     };
 
+    const emailRepository = {
+      findBouncedContactIds: vi.fn().mockResolvedValue([]),
+    };
+
     Object.assign(
       service as unknown as {
         rosterService: typeof rosterService;
         teamService: typeof teamService;
         teamManagerService: typeof teamManagerService;
+        emailRepository: typeof emailRepository;
       },
       {
         rosterService,
         teamService,
         teamManagerService,
+        emailRepository,
       },
     );
 
-    return { service, rosterService, teamService, teamManagerService };
+    return { service, rosterService, teamService, teamManagerService, emailRepository };
   };
 
   it('returns only team managers when teamManagers is true', async () => {
@@ -65,27 +71,34 @@ describe('EmailService recipient resolution for team managers', () => {
       },
     ]);
 
-    const recipients = await (
+    const result = await (
       service as unknown as {
         resolveRecipients(
           accountId: bigint,
           seasonId: bigint,
           selection: { seasonSelection: { leagues: string[]; managersOnly: boolean } },
-        ): Promise<
-          Array<{
+        ): Promise<{
+          active: Array<{
             contactId: bigint;
             emailAddress: string;
             contactName: string;
             recipientType: string;
-          }>
-        >;
+          }>;
+          skipped: Array<{
+            contactId: bigint;
+            emailAddress: string;
+            contactName: string;
+            recipientType: string;
+          }>;
+        }>;
       }
     ).resolveRecipients(BigInt(1), BigInt(65), {
       seasonSelection: { leagues: ['264'], managersOnly: true },
     });
 
-    expect(recipients).toHaveLength(2);
-    expect(recipients.every((r) => r.recipientType === 'teamManager')).toBe(true);
+    expect(result.active).toHaveLength(2);
+    expect(result.skipped).toHaveLength(0);
+    expect(result.active.every((r) => r.recipientType === 'teamManager')).toBe(true);
     expect(rosterService.getTeamRosterMembers).not.toHaveBeenCalled();
   });
 
@@ -108,25 +121,32 @@ describe('EmailService recipient resolution for team managers', () => {
       ],
     });
 
-    const recipients = await (
+    const result = await (
       service as unknown as {
         resolveRecipients(
           accountId: bigint,
           seasonId: bigint,
           selection: { seasonSelection: { leagues: string[] } },
-        ): Promise<
-          Array<{
+        ): Promise<{
+          active: Array<{
             contactId: bigint;
             emailAddress: string;
             contactName: string;
             recipientType: string;
-          }>
-        >;
+          }>;
+          skipped: Array<{
+            contactId: bigint;
+            emailAddress: string;
+            contactName: string;
+            recipientType: string;
+          }>;
+        }>;
       }
     ).resolveRecipients(BigInt(1), BigInt(65), { seasonSelection: { leagues: ['265'] } });
 
-    expect(recipients).toHaveLength(1);
-    expect(recipients[0].recipientType).toBe('league');
+    expect(result.active).toHaveLength(1);
+    expect(result.skipped).toHaveLength(0);
+    expect(result.active[0].recipientType).toBe('league');
     expect(teamManagerService.listManagers).not.toHaveBeenCalled();
   });
 });

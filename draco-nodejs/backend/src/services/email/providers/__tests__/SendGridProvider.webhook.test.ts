@@ -1,3 +1,4 @@
+import { generateKeyPairSync, createSign } from 'node:crypto';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SendGridProvider } from '../SendGridProvider.js';
 import { SendGridWebhookEvent } from '../../../../interfaces/emailInterfaces.js';
@@ -10,6 +11,7 @@ const hoisted = vi.hoisted(() => ({
       findFirst: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
+      count: vi.fn(),
     },
     email_events: {
       create: vi.fn(),
@@ -32,6 +34,11 @@ vi.mock('nodemailer', () => ({
 
 const mockPrisma = hoisted.mockPrisma as any;
 
+const mockEmailRepository = {
+  markContactBounced: vi.fn().mockResolvedValue(true),
+  incrementSuccessfulDeliveries: vi.fn().mockResolvedValue(undefined),
+};
+
 describe('SendGridProvider - Webhook Processing', () => {
   let provider: SendGridProvider;
 
@@ -51,7 +58,8 @@ describe('SendGridProvider - Webhook Processing', () => {
       fromName: 'Test',
     };
 
-    provider = new SendGridProvider(mockConfig, testSettings);
+    mockEmailRepository.markContactBounced.mockResolvedValue(true);
+    provider = new SendGridProvider(mockConfig, testSettings, mockEmailRepository as any);
   });
 
   describe('processWebhookEvents', () => {
@@ -82,6 +90,7 @@ describe('SendGridProvider - Webhook Processing', () => {
 
       hoisted.mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
       hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_recipients.count.mockResolvedValue(3);
       hoisted.mockPrisma.email_events.create.mockResolvedValue({});
       hoisted.mockPrisma.emails.update.mockResolvedValue({});
 
@@ -176,6 +185,8 @@ describe('SendGridProvider - Webhook Processing', () => {
           delivered_at: new Date(1640995200 * 1000),
         },
       });
+
+      expect(mockEmailRepository.incrementSuccessfulDeliveries).toHaveBeenCalledWith(BigInt(100));
     });
 
     it('should process bounce event correctly', async () => {
@@ -391,31 +402,179 @@ describe('SendGridProvider - Webhook Processing', () => {
         orderBy: {
           sent_at: 'desc',
         },
+        include: {
+          email: {
+            select: {
+              account_id: true,
+              subject: true,
+              sender_contact: {
+                select: { email: true, firstname: true, lastname: true },
+              },
+            },
+          },
+        },
       });
     });
   });
 
   describe('webhook signature verification', () => {
-    it('should have placeholder verification that returns true', () => {
-      const result = SendGridProvider.verifyWebhookSignature(
-        'test-payload',
-        'test-signature',
-        'test-key',
-      );
+    const { privateKey, publicKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+    const publicKeyPem = publicKey.export({ type: 'spki', format: 'pem' }) as string;
 
-      expect(result).toBe(true);
+    function makeSignature(payload: string, timestamp: string): string {
+      const sign = createSign('SHA256');
+      sign.update(`${timestamp}\r\n${payload}\r\n`);
+      return sign.sign(privateKey, 'base64');
+    }
+
+    it('returns true for a valid ECDSA signature', () => {
+      const payload = 'test-payload';
+      const timestamp = '1700000000';
+      const signature = makeSignature(payload, timestamp);
+
+      expect(
+        SendGridProvider.verifyWebhookSignature(payload, signature, timestamp, publicKeyPem),
+      ).toBe(true);
     });
 
-    it('should log warning about unimplemented verification', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    it('returns false for a tampered payload', () => {
+      const timestamp = '1700000000';
+      const signature = makeSignature('original-payload', timestamp);
 
-      SendGridProvider.verifyWebhookSignature('payload', 'sig', 'key');
+      expect(
+        SendGridProvider.verifyWebhookSignature(
+          'tampered-payload',
+          signature,
+          timestamp,
+          publicKeyPem,
+        ),
+      ).toBe(false);
+    });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'SendGrid webhook signature verification not implemented - accepting all requests',
-      );
+    it('returns false for a tampered timestamp', () => {
+      const payload = 'test-payload';
+      const signature = makeSignature(payload, '1700000000');
 
-      consoleSpy.mockRestore();
+      expect(
+        SendGridProvider.verifyWebhookSignature(payload, signature, '9999999999', publicKeyPem),
+      ).toBe(false);
+    });
+
+    it('returns false when publicKey is empty', () => {
+      expect(SendGridProvider.verifyWebhookSignature('payload', 'sig', '12345', '')).toBe(false);
+    });
+
+    it('returns false for a malformed signature', () => {
+      expect(
+        SendGridProvider.verifyWebhookSignature('payload', 'not-base64!!!', '12345', publicKeyPem),
+      ).toBe(false);
+    });
+  });
+
+  describe('contact bounce marking', () => {
+    it('pushes to contactBounces when markContactBounced returns true', async () => {
+      const mockRecipient = {
+        id: BigInt(1),
+        email_id: BigInt(100),
+        email_address: 'contact@example.com',
+        contact_id: BigInt(200),
+        contact_name: 'Test Contact',
+        email: {
+          subject: 'Test Subject',
+          sender_contact: {
+            email: 'sender@example.com',
+            firstname: 'Test',
+            lastname: 'Sender',
+          },
+        },
+      };
+
+      hoisted.mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
+      hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_events.create.mockResolvedValue({});
+      hoisted.mockPrisma.emails.update.mockResolvedValue({});
+      mockEmailRepository.markContactBounced.mockResolvedValue(true);
+
+      const event: SendGridWebhookEvent = {
+        email: 'contact@example.com',
+        timestamp: 1640995200,
+        event: 'bounce',
+        sg_event_id: 'b1',
+        sg_message_id: 'msg1',
+        reason: 'Mailbox does not exist',
+      };
+
+      const result = await provider.processWebhookEvents([event]);
+
+      expect(mockEmailRepository.markContactBounced).toHaveBeenCalledWith(BigInt(200));
+      expect(result.contactBounces).toHaveLength(1);
+      expect(result.contactBounces[0]).toMatchObject({
+        contactId: BigInt(200),
+        emailAddress: 'contact@example.com',
+        senderEmail: 'sender@example.com',
+        bounceReason: 'Mailbox does not exist',
+        emailSubject: 'Test Subject',
+      });
+    });
+
+    it('does not push to contactBounces when markContactBounced returns false', async () => {
+      const mockRecipient = {
+        id: BigInt(1),
+        email_id: BigInt(100),
+        email_address: 'contact@example.com',
+        contact_id: BigInt(200),
+        contact_name: 'Test Contact',
+        email: { subject: 'Test Subject', sender_contact: null },
+      };
+
+      hoisted.mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
+      hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_events.create.mockResolvedValue({});
+      hoisted.mockPrisma.emails.update.mockResolvedValue({});
+      mockEmailRepository.markContactBounced.mockResolvedValue(false);
+
+      const event: SendGridWebhookEvent = {
+        email: 'contact@example.com',
+        timestamp: 1640995200,
+        event: 'bounce',
+        sg_event_id: 'b2',
+        sg_message_id: 'msg2',
+        reason: 'Mailbox does not exist',
+      };
+
+      const result = await provider.processWebhookEvents([event]);
+
+      expect(mockEmailRepository.markContactBounced).toHaveBeenCalledWith(BigInt(200));
+      expect(result.contactBounces).toHaveLength(0);
+    });
+
+    it('does not call markContactBounced when contact_id is null', async () => {
+      const mockRecipient = {
+        id: BigInt(1),
+        email_id: BigInt(100),
+        email_address: 'contact@example.com',
+        contact_id: null,
+        email: { subject: 'Test Subject', sender_contact: null },
+      };
+
+      hoisted.mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
+      hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_events.create.mockResolvedValue({});
+      hoisted.mockPrisma.emails.update.mockResolvedValue({});
+
+      const event: SendGridWebhookEvent = {
+        email: 'contact@example.com',
+        timestamp: 1640995200,
+        event: 'bounce',
+        sg_event_id: 'b3',
+        sg_message_id: 'msg3',
+        reason: 'Mailbox does not exist',
+      };
+
+      const result = await provider.processWebhookEvents([event]);
+
+      expect(mockEmailRepository.markContactBounced).not.toHaveBeenCalled();
+      expect(result.contactBounces).toHaveLength(0);
     });
   });
 

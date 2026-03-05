@@ -6,6 +6,7 @@ import path from 'node:path';
 import { Resend } from 'resend';
 import { Webhook } from 'svix';
 import {
+  ContactBounceInfo,
   EmailOptions,
   EmailResult,
   IEmailProvider,
@@ -17,6 +18,7 @@ import {
 import { EmailConfig, EmailSettings } from '../../../config/email.js';
 import prisma from '../../../lib/prisma.js';
 import type { Prisma } from '#prisma/client';
+import { IEmailRepository } from '../../../repositories/interfaces/IEmailRepository.js';
 
 type ResendAttachment = {
   filename: string;
@@ -28,14 +30,16 @@ export class ResendProvider implements IEmailProvider {
   private client: Resend;
   private config: EmailConfig;
   private settings: EmailSettings;
+  private emailRepository: IEmailRepository;
 
-  constructor(config: EmailConfig, settings: EmailSettings) {
+  constructor(config: EmailConfig, settings: EmailSettings, emailRepository: IEmailRepository) {
     if (!config.resendApiKey) {
       throw new Error('Missing Resend API key in email configuration');
     }
 
     this.config = config;
     this.settings = settings;
+    this.emailRepository = emailRepository;
     this.client = new Resend(config.resendApiKey);
   }
 
@@ -93,15 +97,16 @@ export class ResendProvider implements IEmailProvider {
     }
   }
 
-  async processWebhookEvents(events: ResendWebhookEvent[]): Promise<WebhookProcessingResult> {
+  async processWebhookEvents(events: unknown[]): Promise<WebhookProcessingResult> {
     const result: WebhookProcessingResult = {
       processed: 0,
       errors: [],
+      contactBounces: [],
     };
 
-    for (const event of events) {
+    for (const event of events as ResendWebhookEvent[]) {
       try {
-        await this.processWebhookEvent(event);
+        await this.processWebhookEvent(event, result.contactBounces);
         result.processed++;
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown Resend webhook error';
@@ -113,7 +118,10 @@ export class ResendProvider implements IEmailProvider {
     return result;
   }
 
-  private async processWebhookEvent(event: ResendWebhookEvent): Promise<void> {
+  private async processWebhookEvent(
+    event: ResendWebhookEvent,
+    contactBounces: ContactBounceInfo[],
+  ): Promise<void> {
     const eventType = this.resolveEventType(event);
     if (!eventType) {
       console.warn('Resend webhook received with unknown event type', event);
@@ -143,6 +151,31 @@ export class ResendProvider implements IEmailProvider {
       recipientRecords.map(async (recipient) => {
         await this.updateRecipientFromEvent(recipient.id, event, newStatus, eventTimestamp);
         await this.updateEmailStatistics(recipient.email_id, eventType);
+
+        if (
+          (eventType === 'email.bounced' || eventType === 'email.complained') &&
+          recipient.contact_id !== null
+        ) {
+          const marked = await this.emailRepository.markContactBounced(recipient.contact_id);
+
+          if (marked) {
+            const senderContact = recipient.email?.sender_contact ?? null;
+            const senderName = senderContact
+              ? `${senderContact.firstname} ${senderContact.lastname}`.trim()
+              : null;
+
+            contactBounces.push({
+              contactId: recipient.contact_id,
+              emailAddress: recipient.email_address,
+              contactName: recipient.contact_name ?? null,
+              senderEmail: senderContact?.email ?? null,
+              senderName,
+              bounceReason:
+                event.data?.bounce?.message || event.data?.reason || `Resend ${eventType}`,
+              emailSubject: recipient.email?.subject ?? '',
+            });
+          }
+        }
       }),
     );
   }
@@ -166,6 +199,21 @@ export class ResendProvider implements IEmailProvider {
       },
       orderBy: {
         sent_at: 'desc',
+      },
+      include: {
+        email: {
+          select: {
+            account_id: true,
+            subject: true,
+            sender_contact: {
+              select: {
+                email: true,
+                firstname: true,
+                lastname: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -217,7 +265,11 @@ export class ResendProvider implements IEmailProvider {
   }
 
   private async updateEmailStatistics(emailId: bigint, eventType: string): Promise<void> {
-    // Only update stats for certain event types
+    if (eventType === 'email.delivered') {
+      await this.recalculateSuccessfulDeliveries(emailId);
+      return;
+    }
+
     if (!['email.bounced', 'email.opened', 'email.clicked'].includes(eventType)) {
       return;
     }
@@ -245,6 +297,10 @@ export class ResendProvider implements IEmailProvider {
     });
   }
 
+  private async recalculateSuccessfulDeliveries(emailId: bigint): Promise<void> {
+    await this.emailRepository.incrementSuccessfulDeliveries(emailId);
+  }
+
   static verifyWebhookSignature(
     payload: string,
     headers: {
@@ -255,8 +311,7 @@ export class ResendProvider implements IEmailProvider {
     secret: string,
   ): boolean {
     if (!secret) {
-      console.warn('Resend webhook secret not configured, skipping signature verification');
-      return true;
+      return false;
     }
 
     try {

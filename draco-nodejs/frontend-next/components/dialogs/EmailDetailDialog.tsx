@@ -25,6 +25,7 @@ import {
 } from '@mui/material';
 import {
   AttachFile as AttachFileIcon,
+  Block as BlockIcon,
   Close as CloseIcon,
   People as PeopleIcon,
   TaskAlt as TaskAltIcon,
@@ -163,12 +164,14 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
         totalRecipients: 0,
         successfulDeliveries: 0,
         failedDeliveries: 0,
+        skippedCount: 0,
         deliverability: 0,
       }
     : {
         totalRecipients: source.totalRecipients,
         successfulDeliveries: source.successfulDeliveries,
         failedDeliveries: source.failedDeliveries,
+        skippedCount: source.skippedCount ?? 0,
         deliverability:
           source.totalRecipients > 0
             ? (source.successfulDeliveries / source.totalRecipients) * 100
@@ -227,6 +230,15 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
               helper="Successful deliveries"
               color="success"
             />
+            {detailAnalytics.skippedCount > 0 && (
+              <MetricCard
+                icon={<BlockIcon fontSize="small" />}
+                label="Skipped"
+                value={`${detailAnalytics.skippedCount}`}
+                helper="Previously bounced address"
+                color="warning"
+              />
+            )}
           </Stack>
 
           {bodyPreview && (
