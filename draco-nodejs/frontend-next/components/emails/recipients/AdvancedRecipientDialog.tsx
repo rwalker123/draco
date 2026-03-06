@@ -574,8 +574,12 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     return individualsGroups.reduce((sum, group) => sum + group.totalCount, 0);
   })();
 
-  // Get cached selected contacts for "Show Selected Only" mode
-  const selectedContactsFromCache = getSelectedContactsFromCache();
+  const selectedIndividualIds = selectedGroups.get('individuals')?.[0]?.ids ?? new Set<string>();
+  const cachedContacts = getSelectedContactsFromCache();
+  const selectedContactsFromCache =
+    cachedContacts.length > 0
+      ? cachedContacts
+      : currentPageContacts.filter((c) => selectedIndividualIds.has(c.id));
 
   // Determine overall loading state - include pagination loading
   const isGeneralLoading =

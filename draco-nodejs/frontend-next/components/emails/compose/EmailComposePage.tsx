@@ -273,10 +273,13 @@ const EmailComposePageInternal: React.FC<
 
   const handleRecipientSelectionChange = (
     recipientState: RecipientSelectionState,
-    _selectedContacts?: RecipientContact[],
+    selectedContacts?: RecipientContact[],
   ) => {
     try {
-      actions.updateRecipientState(recipientState);
+      const individualContactDetails = new Map<string, RecipientContact>(
+        (selectedContacts ?? []).map((c) => [c.id, c]),
+      );
+      actions.updateRecipientState({ ...recipientState, individualContactDetails });
 
       actions.updateSelectedGroups(
         recipientState.selectedGroups || new Map(),
