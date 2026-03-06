@@ -132,6 +132,13 @@ interface ErrorState {
 
 type TabValue = 'contacts' | 'season' | 'workouts' | 'teamsWanted' | 'umpires';
 
+export function buildSelectedIndividualIds(
+  selectedGroups: Map<GroupType, ContactGroup[]>,
+): Set<string> {
+  const individualsGroups = selectedGroups.get('individuals') ?? [];
+  return new Set<string>(individualsGroups.flatMap((g) => Array.from(g.ids)));
+}
+
 /**
  * Wrapper component that provides the ManagerStateProvider context
  */
@@ -574,12 +581,14 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     return individualsGroups.reduce((sum, group) => sum + group.totalCount, 0);
   })();
 
-  const selectedIndividualIds = selectedGroups.get('individuals')?.[0]?.ids ?? new Set<string>();
+  const selectedIndividualIds = buildSelectedIndividualIds(selectedGroups);
   const cachedContacts = getSelectedContactsFromCache();
   const selectedContactsFromCache =
     cachedContacts.length > 0
       ? cachedContacts
-      : currentPageContacts.filter((c) => selectedIndividualIds.has(c.id));
+      : // Fallback: contacts on the current page that match selected IDs.
+        // Contacts on other pages appear after the next Apply (which then stores individualContactDetails).
+        currentPageContacts.filter((c) => selectedIndividualIds.has(c.id));
 
   // Determine overall loading state - include pagination loading
   const isGeneralLoading =

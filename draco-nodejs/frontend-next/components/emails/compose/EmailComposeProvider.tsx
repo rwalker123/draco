@@ -129,8 +129,11 @@ const calculateTotalRecipients = (
   );
 };
 
+export type { ComposeAction };
+export { createInitialState };
+
 // Reducer function
-function composeReducer(state: EmailComposeState, action: ComposeAction): EmailComposeState {
+export function composeReducer(state: EmailComposeState, action: ComposeAction): EmailComposeState {
   switch (action.type) {
     case 'SET_SUBJECT':
       return {
