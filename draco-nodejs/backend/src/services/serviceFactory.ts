@@ -95,10 +95,10 @@ import { GolfFlightService } from './golfFlightService.js';
 import { GolfTeamService } from './golfTeamService.js';
 import { GolfRosterService } from './golfRosterService.js';
 import { GolfMatchService } from './golfMatchService.js';
-import { GolfScoreService } from './golfScoreService.js';
+import { GolfLeagueScoreService } from './golfLeagueScoreService.js';
 import { GolfHandicapService } from './golfHandicapService.js';
 import { GolfStandingsService } from './golfStandingsService.js';
-import { GolfIndividualScoringService } from './golfIndividualScoringService.js';
+import { GolfLeagueMatchScoringService } from './golfLeagueMatchScoringService.js';
 import { GolfStatsService } from './golfStatsService.js';
 import { ExternalCourseSearchService } from './externalCourseSearchService.js';
 import { CsvExportService } from './csvExportService.js';
@@ -193,10 +193,10 @@ export class ServiceFactory {
   private static golfTeamService: GolfTeamService;
   private static golfRosterService: GolfRosterService;
   private static golfMatchService: GolfMatchService;
-  private static golfScoreService: GolfScoreService;
+  private static golfLeagueScoreService: GolfLeagueScoreService;
   private static golfHandicapService: GolfHandicapService;
   private static golfStandingsService: GolfStandingsService;
-  private static golfIndividualScoringService: GolfIndividualScoringService;
+  private static golfLeagueMatchScoringService: GolfLeagueMatchScoringService;
   private static golfStatsService: GolfStatsService;
   private static externalCourseSearchService: ExternalCourseSearchService;
   private static csvExportService: CsvExportService;
@@ -987,11 +987,11 @@ export class ServiceFactory {
     return this.golfMatchService;
   }
 
-  static getGolfScoreService(): GolfScoreService {
-    if (!this.golfScoreService) {
-      this.golfScoreService = new GolfScoreService();
+  static getGolfLeagueScoreService(): GolfLeagueScoreService {
+    if (!this.golfLeagueScoreService) {
+      this.golfLeagueScoreService = new GolfLeagueScoreService();
     }
-    return this.golfScoreService;
+    return this.golfLeagueScoreService;
   }
 
   static getGolfHandicapService(): GolfHandicapService {
@@ -1008,11 +1008,11 @@ export class ServiceFactory {
     return this.golfStandingsService;
   }
 
-  static getGolfIndividualScoringService(): GolfIndividualScoringService {
-    if (!this.golfIndividualScoringService) {
-      this.golfIndividualScoringService = new GolfIndividualScoringService();
+  static getGolfLeagueMatchScoringService(): GolfLeagueMatchScoringService {
+    if (!this.golfLeagueMatchScoringService) {
+      this.golfLeagueMatchScoringService = new GolfLeagueMatchScoringService();
     }
-    return this.golfIndividualScoringService;
+    return this.golfLeagueMatchScoringService;
   }
 
   static getGolfStatsService(): GolfStatsService {

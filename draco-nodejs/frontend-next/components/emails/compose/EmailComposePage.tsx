@@ -273,17 +273,13 @@ const EmailComposePageInternal: React.FC<
 
   const handleRecipientSelectionChange = (
     recipientState: RecipientSelectionState,
-    _selectedContacts?: RecipientContact[],
+    selectedContacts?: RecipientContact[],
   ) => {
     try {
-      actions.updateRecipientState(recipientState);
-
-      actions.updateSelectedGroups(
-        recipientState.selectedGroups || new Map(),
-        recipientState.selectedWorkoutRecipients,
-        recipientState.selectedTeamsWantedRecipients,
-        recipientState.selectedUmpireRecipients,
+      const individualContactDetails = new Map<string, RecipientContact>(
+        (selectedContacts ?? []).map((c) => [c.id, c]),
       );
+      actions.updateRecipientState({ ...recipientState, individualContactDetails });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update recipients';
       setComponentState((prev) => ({

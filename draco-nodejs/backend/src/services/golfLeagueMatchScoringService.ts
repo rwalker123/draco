@@ -53,7 +53,7 @@ export interface ScoringConfig {
   useHandicapScoring: boolean;
 }
 
-export class GolfIndividualScoringService {
+export class GolfLeagueMatchScoringService {
   private readonly matchRepository: IGolfMatchRepository;
   private readonly leagueRepository: IGolfLeagueRepository;
   private readonly courseRepository: IGolfCourseRepository;

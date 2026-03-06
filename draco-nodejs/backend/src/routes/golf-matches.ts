@@ -12,7 +12,7 @@ import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js
 
 const router = Router({ mergeParams: true });
 const golfMatchService = ServiceFactory.getGolfMatchService();
-const golfScoreService = ServiceFactory.getGolfScoreService();
+const golfLeagueScoreService = ServiceFactory.getGolfLeagueScoreService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
 router.get(
@@ -117,7 +117,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { matchId } = extractBigIntParams(req.params, 'matchId');
     const resultsData = SubmitMatchResultsSchema.parse(req.body);
-    const match = await golfScoreService.submitMatchResults(matchId, resultsData);
+    const match = await golfLeagueScoreService.submitMatchResults(matchId, resultsData);
     res.status(201).json(match);
   }),
 );

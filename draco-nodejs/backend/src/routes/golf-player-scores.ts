@@ -5,7 +5,7 @@ import { extractBigIntParams } from '../utils/paramExtraction.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = Router({ mergeParams: true });
-const golfScoreService = ServiceFactory.getGolfScoreService();
+const golfLeagueScoreService = ServiceFactory.getGolfLeagueScoreService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
 router.get(
@@ -14,7 +14,7 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { contactId } = extractBigIntParams(req.params, 'contactId');
-    const scores = await golfScoreService.getPlayerSeasonScores(contactId);
+    const scores = await golfLeagueScoreService.getPlayerSeasonScores(contactId);
     res.json(scores);
   }),
 );

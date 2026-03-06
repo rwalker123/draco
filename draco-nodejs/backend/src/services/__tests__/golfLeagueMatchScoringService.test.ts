@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { GolfIndividualScoringService } from '../golfIndividualScoringService.js';
+import { GolfLeagueMatchScoringService } from '../golfLeagueMatchScoringService.js';
 import type { IGolfMatchRepository } from '../../repositories/interfaces/IGolfMatchRepository.js';
 import type { IGolfLeagueRepository } from '../../repositories/interfaces/IGolfLeagueRepository.js';
 import type { IGolfCourseRepository } from '../../repositories/interfaces/IGolfCourseRepository.js';
@@ -25,8 +25,8 @@ const createMockCourse = (): Record<string, number> => {
   return result;
 };
 
-describe('GolfIndividualScoringService', () => {
-  let service: GolfIndividualScoringService;
+describe('GolfLeagueMatchScoringService', () => {
+  let service: GolfLeagueMatchScoringService;
   let mockMatchRepository: Partial<IGolfMatchRepository>;
   let mockLeagueRepository: Partial<IGolfLeagueRepository>;
   let mockCourseRepository: Partial<IGolfCourseRepository>;
@@ -46,7 +46,7 @@ describe('GolfIndividualScoringService', () => {
       findById: vi.fn(),
     };
 
-    service = new GolfIndividualScoringService(
+    service = new GolfLeagueMatchScoringService(
       mockMatchRepository as IGolfMatchRepository,
       mockLeagueRepository as IGolfLeagueRepository,
       mockCourseRepository as IGolfCourseRepository,

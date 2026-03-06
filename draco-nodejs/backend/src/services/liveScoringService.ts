@@ -25,7 +25,7 @@ import { NotFoundError, ValidationError, AuthorizationError } from '../utils/cus
 import { GolfMatchStatus } from '../utils/golfConstants.js';
 import { LIVE_SESSION_STATUS, LIVE_SESSION_STATUS_MAP } from '../constants/liveSessionConstants.js';
 import { getHolePars, getHoleHandicapIndexes } from '../utils/whsCalculator.js';
-import type { PlayerScoreData } from './golfIndividualScoringService.js';
+import type { PlayerScoreData } from './golfLeagueMatchScoringService.js';
 
 interface LiveSessionCourseData {
   coursePars: number[];
@@ -314,8 +314,8 @@ export class LiveScoringService {
     // - Setting match status to COMPLETED
     // - Calculating handicap indexes (time-based, using match date)
     // - Calculating and storing match points
-    const golfScoreService = ServiceFactory.getGolfScoreService();
-    await golfScoreService.submitMatchResults(matchId, payload);
+    const golfLeagueScoreService = ServiceFactory.getGolfLeagueScoreService();
+    await golfLeagueScoreService.submitMatchResults(matchId, payload);
 
     // Mark live session as finalized
     await this.liveScoringRepository.updateStatus(session.id, LIVE_SESSION_STATUS.FINALIZED);
@@ -698,7 +698,7 @@ export class LiveScoringService {
     scoresByGolfer: Map<bigint, LiveHoleScoreWithDetails[]>,
     courseData: LiveSessionCourseData,
   ): { team1: number; team2: number } {
-    const scoringService = ServiceFactory.getGolfIndividualScoringService();
+    const scoringService = ServiceFactory.getGolfLeagueMatchScoringService();
     const holesPerMatch = courseData.holesPerMatch;
 
     const team1Scores = this.buildTeamScoreData(scoresByGolfer, courseData, 1);
@@ -793,7 +793,7 @@ export class LiveScoringService {
     const holesPerMatch = courseData.holesPerMatch;
 
     // Calculate stroke distribution for handicap adjustment
-    const scoringService = ServiceFactory.getGolfIndividualScoringService();
+    const scoringService = ServiceFactory.getGolfLeagueMatchScoringService();
     const { team1Strokes, team2Strokes } = courseData.scoringConfig.useHandicapScoring
       ? scoringService.calculateStrokeDistribution(
           team1Scores.courseHandicap,
