@@ -11,6 +11,7 @@ import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { GolfMatchResponseFormatter } from '../responseFormatters/golfMatchResponseFormatter.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { GolfMatchStatus } from '../utils/golfConstants.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 export class GolfMatchService {
   private readonly matchRepository: IGolfMatchRepository;
@@ -231,6 +232,11 @@ export class GolfMatchService {
 
     if (Object.keys(updateData).length > 0) {
       await this.matchRepository.update(matchId, updateData);
+    }
+
+    if (data.matchStatus === GolfMatchStatus.COMPLETED) {
+      const scoringService = ServiceFactory.getGolfLeagueMatchScoringService();
+      await scoringService.calculateAndStoreMatchPoints(matchId);
     }
 
     const updatedMatch = await this.matchRepository.findById(matchId);

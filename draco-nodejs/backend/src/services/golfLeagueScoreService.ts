@@ -31,7 +31,7 @@ import {
 } from '../utils/whsCalculator.js';
 import { ServiceFactory } from './serviceFactory.js';
 
-export class GolfScoreService {
+export class GolfLeagueScoreService {
   private readonly scoreRepository: IGolfScoreRepository;
   private readonly matchRepository: IGolfMatchRepository;
   private readonly rosterRepository: IGolfRosterRepository;
@@ -340,16 +340,8 @@ export class GolfScoreService {
       );
     }
 
-    const team1DbScores = await this.scoreRepository.findByTeamAndMatch(matchId, match.team1);
-    const team2DbScores = await this.scoreRepository.findByTeamAndMatch(matchId, match.team2);
-    const hasScoresFromBothTeams = team1DbScores.length > 0 && team2DbScores.length > 0;
-    const hasAbsentPairings =
-      bothTeamsSubmitted && (team1DbScores.length > 0 || team2DbScores.length > 0);
-
-    if (hasScoresFromBothTeams || hasAbsentPairings) {
-      await this.matchRepository.updateStatus(matchId, GolfMatchStatus.COMPLETED);
-
-      const scoringService = ServiceFactory.getGolfIndividualScoringService();
+    if (match.matchstatus === GolfMatchStatus.COMPLETED) {
+      const scoringService = ServiceFactory.getGolfLeagueMatchScoringService();
       await scoringService.calculateAndStoreMatchPoints(matchId);
     }
 

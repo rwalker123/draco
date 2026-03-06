@@ -14,7 +14,7 @@ const serviceFactoryMock = vi.hoisted(() => {
   };
   return {
     getGolfHandicapService: vi.fn(() => handicapService),
-    getGolfIndividualScoringService: vi.fn(() => ({
+    getGolfLeagueMatchScoringService: vi.fn(() => ({
       calculateAndStoreMatchPoints: vi.fn().mockResolvedValue(undefined),
     })),
   };
@@ -56,7 +56,7 @@ vi.mock('../../responseFormatters/golfScoreResponseFormatter.js', () => ({
   GolfScoreResponseFormatter: formatterMock,
 }));
 
-import { GolfScoreService } from '../golfScoreService.js';
+import { GolfLeagueScoreService } from '../golfLeagueScoreService.js';
 import type { IGolfScoreRepository } from '../../repositories/interfaces/IGolfScoreRepository.js';
 import type { IGolfMatchRepository } from '../../repositories/interfaces/IGolfMatchRepository.js';
 import type { IGolfRosterRepository } from '../../repositories/interfaces/IGolfRosterRepository.js';
@@ -66,8 +66,8 @@ import type { IGolfTeeRepository } from '../../repositories/interfaces/IGolfTeeR
 import { NotFoundError, ValidationError } from '../../utils/customErrors.js';
 import { GolfMatchStatus, FullTeamAbsentMode } from '../../utils/golfConstants.js';
 
-describe('GolfScoreService', () => {
-  let service: GolfScoreService;
+describe('GolfLeagueScoreService', () => {
+  let service: GolfLeagueScoreService;
   let mockScoreRepository: Partial<IGolfScoreRepository>;
   let mockMatchRepository: Partial<IGolfMatchRepository>;
   let mockRosterRepository: Partial<IGolfRosterRepository>;
@@ -279,7 +279,7 @@ describe('GolfScoreService', () => {
       findById: vi.fn().mockResolvedValue(null),
     };
 
-    service = new GolfScoreService(
+    service = new GolfLeagueScoreService(
       mockScoreRepository as IGolfScoreRepository,
       mockMatchRepository as IGolfMatchRepository,
       mockRosterRepository as IGolfRosterRepository,

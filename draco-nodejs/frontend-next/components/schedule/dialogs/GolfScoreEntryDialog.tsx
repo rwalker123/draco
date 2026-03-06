@@ -374,6 +374,13 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
   const handleSave = async () => {
     if (!selectedGame) return;
 
+    if (matchStatus === GameStatus.Completed && !allPlayersAccountedFor) {
+      setError(
+        'Match cannot be marked Complete until all players have scores entered or are marked absent.',
+      );
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
@@ -441,18 +448,13 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     }
   };
 
-  const team1HasScores = Object.values(team1Scores).some((s) => !s.isAbsent && s.totalScore > 0);
-  const team2HasScores = Object.values(team2Scores).some((s) => !s.isAbsent && s.totalScore > 0);
-  const hasAbsentPlayers =
-    Object.values(team1Scores).some((s) => s.isAbsent) ||
-    Object.values(team2Scores).some((s) => s.isAbsent);
-  const hasScoresToSubmit = team1HasScores || team2HasScores;
-  const hasDataToSubmit = hasScoresToSubmit || hasAbsentPlayers;
-
-  const canSave =
-    selectedGame?.fieldId &&
-    selectedTeeId &&
-    (matchStatus !== GameStatus.Completed || hasDataToSubmit);
+  const allTeam1AccountedFor =
+    Object.keys(team1Scores).length > 0 &&
+    Object.values(team1Scores).every((s) => s.isAbsent || s.totalScore > 0);
+  const allTeam2AccountedFor =
+    Object.keys(team2Scores).length > 0 &&
+    Object.values(team2Scores).every((s) => s.isAbsent || s.totalScore > 0);
+  const allPlayersAccountedFor = allTeam1AccountedFor && allTeam2AccountedFor;
 
   const courseHandicapMap: Record<string, number | null> = {};
   for (const score of existingScoresData) {
@@ -543,7 +545,11 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
                   label="Match Status"
                 >
                   {MATCH_STATUS_OPTIONS.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
+                    <MenuItem
+                      key={option.value}
+                      value={option.value}
+                      disabled={option.value === GameStatus.Completed && !allPlayersAccountedFor}
+                    >
                       {option.label}
                     </MenuItem>
                   ))}
@@ -661,7 +667,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={saving || loading || !canSave}
+          disabled={saving || loading}
           startIcon={saving ? <CircularProgress size={16} /> : undefined}
         >
           {saving ? 'Saving...' : 'Save Scores'}
