@@ -115,6 +115,8 @@ export async function createGolfTestData(
     ],
   });
 
+  await api.updateMatchStatus(accountId, match.id, 1);
+
   return {
     accountId,
     seasonId: season.id,
