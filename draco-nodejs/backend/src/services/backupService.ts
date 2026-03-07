@@ -8,6 +8,7 @@ import {
   DeleteObjectCommand,
   ListObjectsV2Command,
 } from '@aws-sdk/client-s3';
+import type { IBackupService } from '../interfaces/backupInterfaces.js';
 
 const ENTRY_PATTERN = /^(\d+)\.\d{4}-\d{2}-\d{2}$/;
 
@@ -45,8 +46,9 @@ export function computeKeepSet(backupNumbers: number[]): Set<number> {
   return keepSet;
 }
 
-export class BackupService {
+export class BackupService implements IBackupService {
   private backupInterval: NodeJS.Timeout | null = null;
+  private startupTimeout: NodeJS.Timeout | null = null;
   private readonly backupHour = 3;
   private readonly DAY_MS = 24 * 60 * 60 * 1000;
   private _s3Client: S3Client | null = null;
@@ -80,11 +82,9 @@ export class BackupService {
       return;
     }
 
-    if (this.backupInterval) {
+    if (this.backupInterval || this.startupTimeout) {
       this.stop();
     }
-
-    this.backupInterval = setInterval(() => {}, 1000);
 
     const now = new Date();
     const nextBackup = new Date();
@@ -95,15 +95,12 @@ export class BackupService {
 
     const initialDelay = nextBackup.getTime() - now.getTime();
 
-    setTimeout(() => {
-      if (this.backupInterval) {
-        clearInterval(this.backupInterval);
-      }
+    const runBackup = () => {
+      this.performBackup().catch(console.error);
+    };
 
-      const runBackup = () => {
-        this.performBackup().catch(console.error);
-      };
-
+    this.startupTimeout = setTimeout(() => {
+      this.startupTimeout = null;
       runBackup();
       this.backupInterval = setInterval(runBackup, this.DAY_MS);
     }, initialDelay);
@@ -114,6 +111,10 @@ export class BackupService {
   }
 
   public stop(): void {
+    if (this.startupTimeout) {
+      clearTimeout(this.startupTimeout);
+      this.startupTimeout = null;
+    }
     if (this.backupInterval) {
       clearInterval(this.backupInterval);
       this.backupInterval = null;
@@ -201,12 +202,11 @@ export class BackupService {
       await this.runProcess('pg_dump', ['--format=custom', `--file=${tmpPath}`, databaseUrl]);
       console.log(`💾 Database dump created: ${tmpPath}`);
 
-      const fileBuffer = await fs.promises.readFile(tmpPath);
       await this.s3Client.send(
         new PutObjectCommand({
           Bucket: backupBucket,
           Key: `${entryPrefix}/db.dump`,
-          Body: fileBuffer,
+          Body: fs.createReadStream(tmpPath),
           ContentType: 'application/octet-stream',
         }),
       );
@@ -284,7 +284,7 @@ export class BackupService {
       const toDrop = [...entryMap.entries()].filter(([num]) => !keepSet.has(num));
 
       for (const [, entry] of toDrop) {
-        fs.rmSync(path.join(localDir, entry), { recursive: true });
+        await fs.promises.rm(path.join(localDir, entry), { recursive: true });
       }
 
       if (toDrop.length > 0) {

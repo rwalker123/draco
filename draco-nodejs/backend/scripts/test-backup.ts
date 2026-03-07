@@ -1,5 +1,5 @@
 import '../src/config/loadEnv.js';
-import { BackupService } from '../src/services/backupService.js';
+import { ServiceFactory } from '../src/services/serviceFactory.js';
 
-const service = new BackupService();
+const service = ServiceFactory.getBackupService();
 await service.performBackup();
