@@ -76,6 +76,10 @@ import { createFrontendBaseUrlMiddleware } from './middleware/frontendBaseUrlMid
 const cleanupService = ServiceFactory.getCleanupService();
 cleanupService.start();
 
+// Start backup service
+const backupService = ServiceFactory.getBackupService();
+backupService.start();
+
 if (socialIngestionConfig.enabled) {
   const socialIngestionService = ServiceFactory.getSocialIngestionService();
   socialIngestionService.start();

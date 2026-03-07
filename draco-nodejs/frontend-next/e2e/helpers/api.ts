@@ -14,6 +14,7 @@ import {
   createGolfMatch,
   deleteGolfMatch,
   submitGolfMatchResults,
+  updateGolfMatchStatus,
   getCurrentSeason,
   deleteContact,
 } from '@draco/shared-api-client';
@@ -226,6 +227,15 @@ export class ApiHelper {
     });
     if (error || !result) throw new Error(`submitMatchResults failed: ${JSON.stringify(error)}`);
     return result;
+  }
+
+  async updateMatchStatus(accountId: string, matchId: string, status: number): Promise<void> {
+    const { error } = await updateGolfMatchStatus({
+      client: this.client,
+      path: { accountId, matchId },
+      body: { status },
+    });
+    if (error) throw new Error(`updateMatchStatus failed: ${JSON.stringify(error)}`);
   }
 
   async fetchCurrentSeason(accountId: string): Promise<CurrentSeasonResponse> {
