@@ -2,6 +2,7 @@ import { RoleService } from './roleService.js';
 import { TeamService } from './teamService.js';
 import { PlayerClassifiedService } from './player-classified/playerClassifiedService.js';
 import { CleanupService } from './cleanupService.js';
+import { BackupService } from './backup-service.js';
 import { RouteProtection } from '../middleware/routeProtection.js';
 import { RosterService } from './rosterService.js';
 import { ContactService } from './contactService.js';
@@ -119,6 +120,7 @@ export class ServiceFactory {
   private static playerClassifiedEmailService: PlayerClassifiedEmailService;
   private static accessService: PlayerClassifiedAccessService;
   private static cleanupService: ICleanupService;
+  private static backupService: BackupService;
   private static routeProtection: RouteProtection;
   private static rosterService: RosterService;
   private static contactService: ContactService;
@@ -601,6 +603,14 @@ export class ServiceFactory {
     }
 
     return this.youtubeIntegrationService;
+  }
+
+  static getBackupService(): BackupService {
+    if (!this.backupService) {
+      this.backupService = new BackupService();
+    }
+
+    return this.backupService;
   }
 
   static getTwitterIntegrationService(): TwitterIntegrationService {
