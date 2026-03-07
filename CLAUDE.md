@@ -30,7 +30,8 @@ Always execute scripts from the repository root. Use `npm run dev` for the full 
 TypeScript, ES modules, two-space indentation, and trailing commas are standard. ESLint and Prettier run through Husky, so lint before pushing with `npm run lint --workspaces` and rely on the staged formatter. Prefer `camelCase` for variables and functions, `PascalCase` for React components, services, and types, and `SCREAMING_SNAKE_CASE` for constants. Match filenames to their primary export.
 
 ### File Naming
-- Use `kebab-case` for all files (e.g., `auth-service.ts`, `user-management.tsx`)
+- Use `camelCase` for all files (e.g., `authService.ts`, `userManagement.tsx`)
+- Exception: Route files use `kebab-case` (e.g., `player-classifieds.ts`, `golf-flights.ts`)
 - Exception: React components may use `PascalCase` when the filename matches the component name exactly
 
 ### Code Comments

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeKeepSet, parseEntryNumber } from '../backup-service.js';
+import { computeKeepSet, parseEntryNumber } from '../backupService.js';
 
 function range(start: number, end: number): number[] {
   const result: number[] = [];

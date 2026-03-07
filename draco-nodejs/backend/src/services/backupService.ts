@@ -49,17 +49,27 @@ export class BackupService {
   private backupInterval: NodeJS.Timeout | null = null;
   private readonly backupHour = 3;
   private readonly DAY_MS = 24 * 60 * 60 * 1000;
-  private readonly s3Client: S3Client;
+  private _s3Client: S3Client | null = null;
 
-  constructor() {
-    this.s3Client = new S3Client({
-      region: 'auto',
-      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID ?? '',
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? '',
-      },
-    });
+  private get s3Client(): S3Client {
+    if (!this._s3Client) {
+      const accountId = process.env.R2_ACCOUNT_ID;
+      const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+      const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+
+      if (!accountId || !accessKeyId || !secretAccessKey) {
+        throw new Error(
+          'R2 credentials are not configured. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY.',
+        );
+      }
+
+      this._s3Client = new S3Client({
+        region: 'auto',
+        endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+        credentials: { accessKeyId, secretAccessKey },
+      });
+    }
+    return this._s3Client;
   }
 
   public start(): void {
@@ -187,22 +197,24 @@ export class BackupService {
 
     const tmpPath = `/tmp/draco-db-${entryPrefix}.dump`;
 
-    await this.runProcess('pg_dump', ['--format=custom', `--file=${tmpPath}`, databaseUrl]);
+    try {
+      await this.runProcess('pg_dump', ['--format=custom', `--file=${tmpPath}`, databaseUrl]);
+      console.log(`💾 Database dump created: ${tmpPath}`);
 
-    console.log(`💾 Database dump created: ${tmpPath}`);
+      const fileBuffer = await fs.promises.readFile(tmpPath);
+      await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: backupBucket,
+          Key: `${entryPrefix}/db.dump`,
+          Body: fileBuffer,
+          ContentType: 'application/octet-stream',
+        }),
+      );
 
-    const fileBuffer = await fs.promises.readFile(tmpPath);
-    await this.s3Client.send(
-      new PutObjectCommand({
-        Bucket: backupBucket,
-        Key: `${entryPrefix}/db.dump`,
-        Body: fileBuffer,
-        ContentType: 'application/octet-stream',
-      }),
-    );
-
-    await fs.promises.unlink(tmpPath);
-    console.log(`💾 Database backup uploaded: ${entryPrefix}/db.dump`);
+      console.log(`💾 Database backup uploaded: ${entryPrefix}/db.dump`);
+    } finally {
+      await fs.promises.unlink(tmpPath).catch(() => {});
+    }
   }
 
   private async backupUploads(entryPrefix: string): Promise<void> {

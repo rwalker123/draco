@@ -2,7 +2,7 @@ import { RoleService } from './roleService.js';
 import { TeamService } from './teamService.js';
 import { PlayerClassifiedService } from './player-classified/playerClassifiedService.js';
 import { CleanupService } from './cleanupService.js';
-import { BackupService } from './backup-service.js';
+import { BackupService } from './backupService.js';
 import { RouteProtection } from '../middleware/routeProtection.js';
 import { RosterService } from './rosterService.js';
 import { ContactService } from './contactService.js';
