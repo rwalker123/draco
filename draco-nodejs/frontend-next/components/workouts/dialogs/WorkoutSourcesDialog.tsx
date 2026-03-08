@@ -9,12 +9,14 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Snackbar,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import { useAuth } from '../../../context/AuthContext';
 import { getSources, putSources } from '../../../services/workoutService';
+import { useNotifications } from '../../../hooks/useNotifications';
 import type { WorkoutSourcesType } from '@draco/shared-schemas';
 import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
 import { DeleteIconButton } from '../../common/ActionIconButtons';
@@ -37,11 +39,10 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
   onError,
 }) => {
   const { token } = useAuth();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [sources, setSources] = useState<WorkoutSourcesType>({ options: [] });
   const [loading, setLoading] = useState(false);
   const [newOption, setNewOption] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [pendingOption, setPendingOption] = useState<string | null>(null);
 
   const options = sources.options ?? [];
@@ -52,15 +53,14 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
     }
 
     setNewOption('');
-    setError(null);
-    setSuccessMessage(null);
+    hideNotification();
 
     const controller = new AbortController();
 
     const fetchSources = async () => {
       try {
         setLoading(true);
-        setError(null);
+        hideNotification();
 
         const data = await getSources(accountId, token ?? undefined, controller.signal);
         if (controller.signal.aborted) return;
@@ -68,7 +68,7 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error('Error fetching workout sources:', err);
-        setError('Failed to load sources');
+        showNotification('Failed to load sources', 'error');
         setSources({ options: FALLBACK_OPTIONS });
         onError?.('Failed to load workout sources');
       } finally {
@@ -81,7 +81,7 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
     return () => {
       controller.abort();
     };
-  }, [open, accountId, token, onError]);
+  }, [open, accountId, token, onError, hideNotification, showNotification]);
 
   const handleAddOption = async () => {
     const trimmed = newOption.trim();
@@ -99,13 +99,13 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
 
     try {
       await putSources(accountId, updated, token ?? undefined);
-      setSuccessMessage('Where heard options updated');
+      showNotification('Where heard options updated', 'success');
       onSuccess?.('Where heard options updated');
     } catch (err) {
       console.error('Error saving workout source option:', err);
       setSources({ options });
       const message = 'Failed to save new option';
-      setError(message);
+      showNotification(message, 'error');
       onError?.(message);
     }
   };
@@ -119,21 +119,20 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
 
     try {
       await putSources(accountId, updated, token ?? undefined);
-      setSuccessMessage('Where heard options updated');
+      showNotification('Where heard options updated', 'success');
       onSuccess?.('Where heard options updated');
     } catch (err) {
       console.error('Error removing workout source option:', err);
       setSources({ options });
       const message = 'Failed to remove option';
-      setError(message);
+      showNotification(message, 'error');
       onError?.(message);
     }
   };
 
   const handleClose = () => {
     setNewOption('');
-    setError(null);
-    setSuccessMessage(null);
+    hideNotification();
     setPendingOption(null);
     onClose();
   };
@@ -144,17 +143,6 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
         <DialogTitle>Manage Where Heard Options</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={3}>
-            {error ? (
-              <Alert severity="error" onClose={() => setError(null)}>
-                {error}
-              </Alert>
-            ) : null}
-            {successMessage ? (
-              <Alert severity="success" onClose={() => setSuccessMessage(null)}>
-                {successMessage}
-              </Alert>
-            ) : null}
-
             <Box>
               <Typography variant="subtitle1" gutterBottom>
                 Add New Option
@@ -220,6 +208,16 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
             Close
           </Button>
         </DialogActions>
+        <Snackbar
+          open={!!notification}
+          autoHideDuration={6000}
+          onClose={hideNotification}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+            {notification?.message}
+          </Alert>
+        </Snackbar>
       </Dialog>
       <ConfirmDeleteDialog
         open={Boolean(pendingOption)}

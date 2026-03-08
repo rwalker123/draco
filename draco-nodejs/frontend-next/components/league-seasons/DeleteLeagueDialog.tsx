@@ -11,6 +11,7 @@ import {
   CircularProgress,
   Typography,
   Box,
+  Snackbar,
 } from '@mui/material';
 import {
   removeLeagueFromSeason as apiRemoveLeagueFromSeason,
@@ -19,6 +20,7 @@ import {
 import type { LeagueSeasonWithDivisionTeamsAndUnassignedType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface DeleteLeagueDialogProps {
   open: boolean;
@@ -40,11 +42,11 @@ const DeleteLeagueDialog: React.FC<DeleteLeagueDialogProps> = ({
   onError,
 }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleClose = () => {
-    setError(null);
+    hideNotification();
     onClose();
   };
 
@@ -52,7 +54,7 @@ const DeleteLeagueDialog: React.FC<DeleteLeagueDialogProps> = ({
     if (!leagueSeason) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const removeResult = await apiRemoveLeagueFromSeason({
@@ -77,7 +79,7 @@ const DeleteLeagueDialog: React.FC<DeleteLeagueDialogProps> = ({
       handleClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to remove league';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -88,11 +90,6 @@ const DeleteLeagueDialog: React.FC<DeleteLeagueDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Remove League from Season</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         <Typography variant="body1" sx={{ mb: 2 }}>
           Are you sure you want to remove the league{' '}
           <strong>{`'${leagueSeason?.league.name}'`}</strong> from this season?
@@ -124,6 +121,16 @@ const DeleteLeagueDialog: React.FC<DeleteLeagueDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Remove League'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

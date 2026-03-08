@@ -8,11 +8,13 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Snackbar,
   TextField,
   Typography,
 } from '@mui/material';
 import { clearContactEmailBounce } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
+import { useNotifications } from '../../../hooks/useNotifications';
 import { assertNoApiError } from '../../../utils/apiResult';
 import type { BouncedContact } from '../../../types/emails/bounced-contact';
 
@@ -32,13 +34,13 @@ const ClearBounceDialog: React.FC<ClearBounceDialogProps> = ({
   onCleared,
 }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [newEmail, setNewEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleClose = () => {
     setNewEmail('');
-    setError(null);
+    hideNotification();
     onClose();
   };
 
@@ -47,7 +49,7 @@ const ClearBounceDialog: React.FC<ClearBounceDialogProps> = ({
 
     try {
       setSubmitting(true);
-      setError(null);
+      hideNotification();
 
       const result = await clearContactEmailBounce({
         client: apiClient,
@@ -61,7 +63,7 @@ const ClearBounceDialog: React.FC<ClearBounceDialogProps> = ({
       setNewEmail('');
       onCleared();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to clear bounce');
+      showNotification(err instanceof Error ? err.message : 'Failed to clear bounce', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -102,12 +104,6 @@ const ClearBounceDialog: React.FC<ClearBounceDialogProps> = ({
             Without a new email address, this contact will continue to be skipped in future sends.
           </Alert>
         )}
-
-        {error && (
-          <Alert severity="error" sx={{ mt: 2 }}>
-            {error}
-          </Alert>
-        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={submitting}>
@@ -117,6 +113,16 @@ const ClearBounceDialog: React.FC<ClearBounceDialogProps> = ({
           {hasNoNewEmail ? 'Clear Flag Only' : 'Clear & Update Email'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

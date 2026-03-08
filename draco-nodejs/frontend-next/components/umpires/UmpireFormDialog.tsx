@@ -10,6 +10,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Snackbar,
   TextField,
 } from '@mui/material';
 import { Controller, useForm, type Resolver } from 'react-hook-form';
@@ -23,6 +24,7 @@ import type {
 } from '@draco/shared-schemas';
 import { CreateUmpireSchema } from '@draco/shared-schemas';
 import { useApiClient } from '../../hooks/useApiClient';
+import { useNotifications } from '../../hooks/useNotifications';
 import { useUmpireService } from '../../hooks/useUmpireService';
 import { unwrapApiResult } from '../../utils/apiResult';
 
@@ -54,7 +56,7 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
   const [selectedContact, setSelectedContact] = useState<BaseContactType | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [searching, setSearching] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const formResolver = zodResolver(CreateUmpireSchema) as Resolver<
@@ -83,8 +85,8 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
     setSelectedContact(null);
     setContactOptions([]);
     setSearchInput('');
-    setSubmitError(null);
-  }, [open, reset]);
+    hideNotification();
+  }, [open, reset, hideNotification]);
 
   useEffect(() => {
     if (!open) {
@@ -156,7 +158,7 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
   };
 
   const onSubmit = handleSubmit(async (values) => {
-    setSubmitError(null);
+    hideNotification();
 
     try {
       const result = await createUmpire(values);
@@ -167,11 +169,11 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
         return;
       }
 
-      setSubmitError(result.error);
+      showNotification(result.error, 'error');
       onError?.(result.error);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create umpire';
-      setSubmitError(message);
+      showNotification(message, 'error');
       onError?.(message);
     }
   });
@@ -180,11 +182,6 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Add Umpire</DialogTitle>
       <DialogContent>
-        {submitError ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {submitError}
-          </Alert>
-        ) : null}
         <Controller
           control={control}
           name="contactId"
@@ -235,6 +232,16 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
           {isSubmitting ? 'Saving…' : 'Add Umpire'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

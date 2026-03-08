@@ -10,11 +10,13 @@ import {
   Stack,
   TextField,
   Typography,
+  Snackbar,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateGolfTeamSchema } from '@draco/shared-schemas';
 import type { GolfTeamType, CreateGolfTeamType } from '@draco/shared-schemas';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface GolfTeamFormProps {
   team?: GolfTeamType;
@@ -31,7 +33,7 @@ const GolfTeamForm: React.FC<GolfTeamFormProps> = ({
   submitLabel,
   disabled = false,
 }) => {
-  const [error, setError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isEditMode = !!team;
@@ -62,12 +64,12 @@ const GolfTeamForm: React.FC<GolfTeamFormProps> = ({
   }, [team, reset]);
 
   const handleFormSubmit = async (data: CreateGolfTeamType) => {
-    setError(null);
+    hideNotification();
     setIsSubmitting(true);
     try {
       await onSubmit(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save team');
+      showNotification(err instanceof Error ? err.message : 'Failed to save team', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -76,12 +78,6 @@ const GolfTeamForm: React.FC<GolfTeamFormProps> = ({
   return (
     <Box component="form" onSubmit={handleSubmit(handleFormSubmit)} noValidate>
       <Stack spacing={3}>
-        {error && (
-          <Alert severity="error" onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-
         <Box>
           <Typography variant="h6" gutterBottom>
             Team Information
@@ -124,6 +120,16 @@ const GolfTeamForm: React.FC<GolfTeamFormProps> = ({
           </Button>
         </Stack>
       </Stack>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

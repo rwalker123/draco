@@ -20,11 +20,13 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   TextField,
+  Snackbar,
 } from '@mui/material';
 import { Close as CloseIcon, GolfCourse as GolfCourseIcon } from '@mui/icons-material';
 import type { GolfCourseSlimType, GolfCourseTeeType } from '@draco/shared-schemas';
 import { useGolfCourses } from '../../../hooks/useGolfCourses';
 import { CourseSearchDialog } from './CourseSearchDialog';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 export interface StartLiveRoundDialogProps {
   open: boolean;
@@ -61,7 +63,7 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
 
   const [courseSearchOpen, setCourseSearchOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   useEffect(() => {
     if (!open || selectedCourseId || !homeCourse) return;
@@ -70,7 +72,7 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
 
     const loadHomeCourse = async () => {
       setLoading(true);
-      setError(null);
+      hideNotification();
 
       try {
         const result = await getCourse(homeCourse.id, controller.signal);
@@ -85,11 +87,11 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
             setSelectedTeeId(result.data.tees[0].id);
           }
         } else if (!result.success) {
-          setError(result.error);
+          showNotification(result.error, 'error');
         }
       } catch {
         if (controller.signal.aborted) return;
-        setError('Failed to load course');
+        showNotification('Failed to load course', 'error');
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -102,7 +104,7 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
     return () => {
       controller.abort();
     };
-  }, [open, homeCourse, selectedCourseId, getCourse]);
+  }, [open, homeCourse, selectedCourseId, getCourse, hideNotification, showNotification]);
 
   useEffect(() => {
     if (!open) {
@@ -113,9 +115,9 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
       setDatePlayed(new Date().toISOString().split('T')[0]);
       setNumberOfHoles(18);
       setStartingHole(1);
-      setError(null);
+      hideNotification();
     }
-  }, [open]);
+  }, [open, hideNotification]);
 
   const handleCourseSearchSelect = async (
     courseId: string,
@@ -143,7 +145,7 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
   const handleStart = async () => {
     if (!selectedCourseId || !selectedTeeId) return;
 
-    setError(null);
+    hideNotification();
     const success = await onStart({
       courseId: selectedCourseId,
       teeId: selectedTeeId,
@@ -153,7 +155,7 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
     });
 
     if (!success) {
-      setError('Failed to start live scoring session');
+      showNotification('Failed to start live scoring session', 'error');
     }
   };
 
@@ -195,12 +197,6 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
             </Box>
           ) : (
             <Stack spacing={3} sx={{ mt: 1 }}>
-              {error && (
-                <Alert severity="error" onClose={() => setError(null)}>
-                  {error}
-                </Alert>
-              )}
-
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
                   Course
@@ -322,6 +318,16 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
             {isStarting ? 'Starting...' : 'Start Live Round'}
           </Button>
         </DialogActions>
+        <Snackbar
+          open={!!notification}
+          autoHideDuration={6000}
+          onClose={hideNotification}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+            {notification?.message}
+          </Alert>
+        </Snackbar>
       </Dialog>
 
       <CourseSearchDialog

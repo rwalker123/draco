@@ -11,10 +11,12 @@ import {
   TextField,
   Autocomplete,
   CircularProgress,
+  Snackbar,
 } from '@mui/material';
 import { SupervisorAccount as ManagerIcon } from '@mui/icons-material';
 import { RosterMemberType, TeamManagerType } from '@draco/shared-schemas';
 import { getContactDisplayName } from '../../utils/contactUtils';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface AssignTeamManagerDialogProps {
   open: boolean;
@@ -35,12 +37,11 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
 }) => {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   useEffect(() => {
     if (open) {
       setSelectedContactId(null);
-      setError(null);
     }
   }, [open]);
 
@@ -55,7 +56,7 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
     if (!selectedContactId || !selectedPlayer) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       await addManager(selectedContactId);
@@ -65,7 +66,7 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
         managerId: selectedContactId,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to assign manager');
+      showNotification(err instanceof Error ? err.message : 'Failed to assign manager', 'error');
     } finally {
       setLoading(false);
     }
@@ -75,11 +76,6 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Assign Team Manager</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         <Autocomplete
           options={eligiblePlayers}
           getOptionLabel={(option) => getContactDisplayName(option.player.contact)}
@@ -109,6 +105,16 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
           Assign
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

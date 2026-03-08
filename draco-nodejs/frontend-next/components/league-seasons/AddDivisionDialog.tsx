@@ -13,6 +13,7 @@ import {
   Typography,
   Box,
   Autocomplete,
+  Snackbar,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { addDivisionToLeagueSeason as apiAddDivisionToLeagueSeason } from '@draco/shared-api-client';
@@ -24,6 +25,7 @@ import type {
 } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
+import { useNotifications } from '../../hooks/useNotifications';
 import PageSectionHeader from '../common/PageSectionHeader';
 
 export interface AddDivisionResult {
@@ -53,19 +55,19 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
   onError,
 }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [createMode, setCreateMode] = useState(false);
   const [selectedDivision, setSelectedDivision] = useState<DivisionType | null>(null);
   const [newDivisionName, setNewDivisionName] = useState('');
   const [priority, setPriority] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const resetForm = () => {
     setCreateMode(false);
     setSelectedDivision(null);
     setNewDivisionName('');
     setPriority(0);
-    setError(null);
+    hideNotification();
   };
 
   const handleClose = () => {
@@ -77,7 +79,7 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
     if (!leagueSeason || !selectedDivision) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const result = await apiAddDivisionToLeagueSeason({
@@ -113,7 +115,7 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
       handleClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to add division';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -124,7 +126,7 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
     if (!leagueSeason || !newDivisionName.trim()) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const result = await apiAddDivisionToLeagueSeason({
@@ -160,7 +162,7 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
       handleClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create division';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -171,11 +173,6 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Add Division to League</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         <Typography variant="body2" sx={{ mb: 2 }}>
           Adding division to: <strong>{leagueSeason?.league.name}</strong>
         </Typography>
@@ -190,7 +187,7 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
                 onClick={() => {
                   setCreateMode(true);
                   setNewDivisionName('');
-                  setError(null);
+                  hideNotification();
                 }}
                 startIcon={<AddIcon />}
                 disabled={loading}
@@ -240,7 +237,7 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
                 onClick={() => {
                   setCreateMode(false);
                   setSelectedDivision(null);
-                  setError(null);
+                  hideNotification();
                 }}
                 disabled={loading}
               >
@@ -300,6 +297,16 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
           </Button>
         )}
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

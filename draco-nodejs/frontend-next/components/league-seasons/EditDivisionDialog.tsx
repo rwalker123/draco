@@ -11,11 +11,13 @@ import {
   Alert,
   CircularProgress,
   Typography,
+  Snackbar,
 } from '@mui/material';
 import { updateLeagueSeasonDivision as apiUpdateLeagueSeasonDivision } from '@draco/shared-api-client';
 import type { DivisionSeasonType, LeagueSeasonType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
+import { useNotifications } from '../../hooks/useNotifications';
 
 export interface EditDivisionResult {
   leagueSeasonId: string;
@@ -51,10 +53,10 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
   onError,
 }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [divisionName, setDivisionName] = useState('');
   const [priority, setPriority] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [conflict, setConflict] = useState<ConflictInfo | null>(null);
 
   useEffect(() => {
@@ -67,7 +69,7 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
   const resetForm = () => {
     setDivisionName('');
     setPriority(0);
-    setError(null);
+    hideNotification();
     setConflict(null);
   };
 
@@ -80,7 +82,7 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
     if (!divisionSeason || !leagueSeason || !divisionName.trim()) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const result = await apiUpdateLeagueSeasonDivision({
@@ -121,11 +123,11 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
         );
         handleClose();
       } else {
-        setError('Failed to update division');
+        showNotification('Failed to update division', 'error');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update division';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -149,11 +151,6 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit Division</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         {conflict && (
           <Alert severity="warning" sx={{ mb: 2 }}>
             <Typography variant="body2" sx={{ mb: 1 }}>
@@ -223,6 +220,16 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
           </>
         )}
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

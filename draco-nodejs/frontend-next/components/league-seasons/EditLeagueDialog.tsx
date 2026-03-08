@@ -10,11 +10,13 @@ import {
   Button,
   Alert,
   CircularProgress,
+  Snackbar,
 } from '@mui/material';
 import { updateLeague as apiUpdateLeague } from '@draco/shared-api-client';
 import type { LeagueSeasonWithDivisionTeamsAndUnassignedType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface EditLeagueDialogProps {
   open: boolean;
@@ -34,9 +36,9 @@ const EditLeagueDialog: React.FC<EditLeagueDialogProps> = ({
   onError,
 }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [leagueName, setLeagueName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (leagueSeason) {
@@ -46,7 +48,7 @@ const EditLeagueDialog: React.FC<EditLeagueDialogProps> = ({
 
   const resetForm = () => {
     setLeagueName('');
-    setError(null);
+    hideNotification();
   };
 
   const handleClose = () => {
@@ -58,7 +60,7 @@ const EditLeagueDialog: React.FC<EditLeagueDialogProps> = ({
     if (!leagueSeason || !leagueName.trim()) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const result = await apiUpdateLeague({
@@ -74,11 +76,11 @@ const EditLeagueDialog: React.FC<EditLeagueDialogProps> = ({
         onSuccess(leagueSeason.id, leagueName.trim(), 'League updated successfully');
         handleClose();
       } else {
-        setError('Failed to update league');
+        showNotification('Failed to update league', 'error');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update league';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -89,11 +91,6 @@ const EditLeagueDialog: React.FC<EditLeagueDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit League</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         <TextField
           autoFocus
           margin="dense"
@@ -114,6 +111,16 @@ const EditLeagueDialog: React.FC<EditLeagueDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Update League'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

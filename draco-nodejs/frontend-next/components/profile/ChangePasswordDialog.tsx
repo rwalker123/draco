@@ -10,12 +10,14 @@ import {
   DialogTitle,
   Stack,
   TextField,
+  Snackbar,
 } from '@mui/material';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { changePassword } from '@draco/shared-api-client';
 import { useApiClient } from '@/hooks/useApiClient';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface ChangePasswordDialogProps {
   open: boolean;
@@ -42,7 +44,7 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   onSuccess,
 }) => {
   const apiClient = useApiClient();
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -64,13 +66,13 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
       return;
     }
     reset();
-    setSubmitError(null);
+    hideNotification();
     onClose();
   };
 
   const onSubmit = async (data: ChangePasswordFormValues) => {
     setIsSubmitting(true);
-    setSubmitError(null);
+    hideNotification();
 
     try {
       const result = await changePassword({
@@ -84,7 +86,7 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
 
       if (result.error) {
         const errorMessage = result.error.message ?? 'Failed to change password. Please try again.';
-        setSubmitError(errorMessage);
+        showNotification(errorMessage, 'error');
         return;
       }
 
@@ -97,7 +99,7 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
-      setSubmitError(message);
+      showNotification(message, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -109,11 +111,6 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
         <DialogTitle>Change Password</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            {submitError && (
-              <Alert severity="error" onClose={() => setSubmitError(null)}>
-                {submitError}
-              </Alert>
-            )}
             <TextField
               {...register('currentPassword')}
               label="Current Password"
@@ -155,6 +152,16 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
           </Button>
         </DialogActions>
       </form>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

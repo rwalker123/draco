@@ -10,6 +10,7 @@ import {
   Button,
   Alert,
   Box,
+  Snackbar,
   FormControl,
   InputLabel,
   Select,
@@ -35,6 +36,7 @@ import { useApiClient } from '../../hooks/useApiClient';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { usePlayersWantedClassifieds } from '../../hooks/useClassifiedsService';
 import { useClassifiedsConfig } from '../../hooks/useClassifiedsConfig';
+import { useNotifications } from '../../hooks/useNotifications';
 
 // Use shared validation constants
 const VALIDATION_CONSTANTS = PLAYER_CLASSIFIED_VALIDATION.PLAYERS_WANTED;
@@ -110,7 +112,6 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     createPlayersWanted,
     updatePlayersWanted,
     loading: operationLoading,
-    error: serviceError,
     resetError,
   } = usePlayersWantedClassifieds(accountId);
   const { config: classifiedsConfig } = useClassifiedsConfig(accountId);
@@ -121,15 +122,9 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
   const [errors, setErrors] = useState<
     Partial<Record<keyof UpsertPlayersWantedClassifiedType, string>>
   >({});
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [teamOptions, setTeamOptions] = useState<string[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(false);
-
-  useEffect(() => {
-    if (serviceError) {
-      setSubmitError(serviceError);
-    }
-  }, [serviceError]);
 
   useEffect(() => {
     setFormData(initialData ?? EMPTY_FORM);
@@ -213,7 +208,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setSubmitError(null);
+    hideNotification();
     resetError();
 
     if (!validateForm()) {
@@ -222,14 +217,14 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
 
     if (!isAuthenticated || !token) {
       const message = 'You must be signed in to perform this action.';
-      setSubmitError(message);
+      showNotification(message, 'error');
       return;
     }
 
     const payload = buildPayload();
     if (editMode && !payload.id) {
       const message = 'Missing classified identifier for update.';
-      setSubmitError(message);
+      showNotification(message, 'error');
       return;
     }
 
@@ -252,13 +247,13 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     }
 
     const message = result.error ?? `Failed to ${editMode ? 'update' : 'create'} Players Wanted ad`;
-    setSubmitError(message);
+    showNotification(message, 'error');
   };
 
   const handleClose = () => {
     setFormData(initialData ?? EMPTY_FORM);
     setErrors({});
-    setSubmitError(null);
+    hideNotification();
     resetError();
     onClose();
   };
@@ -327,12 +322,6 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
             {!isAuthenticated && (
               <Alert severity="warning">
                 You must be signed in and a member of this account to post Players Wanted ads.
-              </Alert>
-            )}
-
-            {submitError && (
-              <Alert severity="error" onClose={() => setSubmitError(null)}>
-                {submitError}
               </Alert>
             )}
 
@@ -478,6 +467,16 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
           </Button>
         </DialogActions>
       </form>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

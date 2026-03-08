@@ -10,11 +10,13 @@ import {
   Alert,
   CircularProgress,
   Typography,
+  Snackbar,
 } from '@mui/material';
 import { removeLeagueSeasonTeamDivision as apiRemoveLeagueSeasonTeamDivision } from '@draco/shared-api-client';
 import type { TeamSeasonType, LeagueSeasonWithDivisionTeamsType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
+import { useNotifications } from '../../hooks/useNotifications';
 
 export interface RemoveTeamFromDivisionResult {
   leagueSeasonId: string;
@@ -42,11 +44,11 @@ const RemoveTeamFromDivisionDialog: React.FC<RemoveTeamFromDivisionDialogProps> 
   onSuccess,
 }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleClose = () => {
-    setError(null);
+    hideNotification();
     onClose();
   };
 
@@ -58,12 +60,12 @@ const RemoveTeamFromDivisionDialog: React.FC<RemoveTeamFromDivisionDialogProps> 
     );
 
     if (!divisionSeason) {
-      setError('Could not find the division for this team');
+      showNotification('Could not find the division for this team', 'error');
       return;
     }
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const result = await apiRemoveLeagueSeasonTeamDivision({
@@ -92,7 +94,7 @@ const RemoveTeamFromDivisionDialog: React.FC<RemoveTeamFromDivisionDialogProps> 
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to remove team from division';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
@@ -106,11 +108,6 @@ const RemoveTeamFromDivisionDialog: React.FC<RemoveTeamFromDivisionDialogProps> 
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Remove Team from Division</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         <Typography variant="body1" sx={{ mb: 2 }}>
           Are you sure you want to remove <strong>{teamSeason?.name}</strong> from{' '}
           <strong>{divisionName}</strong>?
@@ -128,6 +125,16 @@ const RemoveTeamFromDivisionDialog: React.FC<RemoveTeamFromDivisionDialogProps> 
           {loading ? <CircularProgress size={20} /> : 'Remove from Division'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

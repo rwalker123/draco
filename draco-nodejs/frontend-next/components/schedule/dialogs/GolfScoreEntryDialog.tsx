@@ -15,6 +15,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Snackbar,
   Switch,
   Typography,
   useMediaQuery,
@@ -41,6 +42,7 @@ import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { GameStatus } from '@/types/schedule';
 import { useGolfLeagueSetup } from '@/hooks/useGolfLeagueSetup';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 const MATCH_STATUS_OPTIONS = [
   { value: 0, label: 'Scheduled' },
@@ -108,7 +110,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const [team1Roster, setTeam1Roster] = useState<GolfRosterEntryType[]>([]);
   const [team2Roster, setTeam2Roster] = useState<GolfRosterEntryType[]>([]);
@@ -140,11 +142,11 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
 
     const loadData = async () => {
       setLoading(true);
-      setError(null);
+      hideNotification();
 
       try {
         if (!seasonId) {
-          setError('Season ID is required');
+          showNotification('Season ID is required', 'error');
           return;
         }
         const [roster1Result, roster2Result, subsResult, scoresResult] = await Promise.all([
@@ -157,19 +159,19 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
         if (controller.signal.aborted) return;
 
         if (!roster1Result.success) {
-          setError(roster1Result.error);
+          showNotification(roster1Result.error, 'error');
           return;
         }
         if (!roster2Result.success) {
-          setError(roster2Result.error);
+          showNotification(roster2Result.error, 'error');
           return;
         }
         if (!subsResult.success) {
-          setError(subsResult.error);
+          showNotification(subsResult.error, 'error');
           return;
         }
         if (!scoresResult.success) {
-          setError(scoresResult.error);
+          showNotification(scoresResult.error, 'error');
           return;
         }
 
@@ -250,7 +252,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
         );
       } catch (err) {
         if (controller.signal.aborted) return;
-        setError(err instanceof Error ? err.message : 'Failed to load data');
+        showNotification(err instanceof Error ? err.message : 'Failed to load data', 'error');
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -272,6 +274,8 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     scoreService,
     courseService,
     teamSize,
+    hideNotification,
+    showNotification,
   ]);
 
   useEffect(() => {
@@ -285,12 +289,12 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
       setMatchStatus(0);
       setSelectedTeeId('');
       setShowHoleByHole(false);
-      setError(null);
+      hideNotification();
       setCourseHandicapData(null);
       setExistingScoresData([]);
       setCourseParData(null);
     }
-  }, [open]);
+  }, [open, hideNotification]);
 
   const useHandicapScoring = leagueSetup?.useHandicapScoring ?? false;
 
@@ -375,14 +379,15 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     if (!selectedGame) return;
 
     if (matchStatus === GameStatus.Completed && !allPlayersAccountedFor) {
-      setError(
+      showNotification(
         'Match cannot be marked Complete until all players have scores entered or are marked absent.',
+        'error',
       );
       return;
     }
 
     setSaving(true);
-    setError(null);
+    hideNotification();
 
     try {
       const team1PlayerScores = buildPlayerScores(team1Scores, selectedGame.homeTeamId);
@@ -441,7 +446,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save scores';
-      setError(message);
+      showNotification(message, 'error');
       onError?.(message);
     } finally {
       setSaving(false);
@@ -520,12 +525,6 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
           </Box>
         ) : (
           <>
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-                {error}
-              </Alert>
-            )}
-
             <Box
               sx={{
                 display: 'flex',
@@ -673,6 +672,16 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
           {saving ? 'Saving...' : 'Save Scores'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

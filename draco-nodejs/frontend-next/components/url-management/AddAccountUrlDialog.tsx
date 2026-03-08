@@ -14,6 +14,7 @@ import {
   Select,
   Stack,
   TextField,
+  Snackbar,
 } from '@mui/material';
 import { AccountUrlCreateResult, useAccountUrlsService } from '../../hooks/useAccountUrlsService';
 import {
@@ -21,6 +22,7 @@ import {
   buildAccountUrlPreview,
   validateAccountUrlInput,
 } from './accountUrlValidation';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface AddAccountUrlDialogProps {
   accountId: string;
@@ -37,10 +39,10 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { createUrl, loading, error, clearError } = useAccountUrlsService(accountId);
+  const { createUrl, loading, clearError } = useAccountUrlsService(accountId);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [protocol, setProtocol] = React.useState<AccountUrlProtocol>('https://');
   const [domain, setDomain] = React.useState('');
-  const [validationError, setValidationError] = React.useState<string | null>(null);
 
   const clearErrorRef = React.useRef(clearError);
   React.useEffect(() => {
@@ -52,13 +54,15 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
   const resetState = () => {
     setProtocol('https://');
     setDomain('');
-    setValidationError(null);
+    hideNotification();
     clearErrorRef.current();
   };
 
   React.useEffect(() => {
     if (!open) {
-      resetState();
+      setProtocol('https://');
+      setDomain('');
+      clearErrorRef.current();
     }
   }, [open]);
 
@@ -71,7 +75,7 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
     const validationResult = validateAccountUrlInput(protocol, domain);
 
     if (!validationResult.success) {
-      setValidationError(validationResult.error);
+      showNotification(validationResult.error, 'error');
       return;
     }
 
@@ -81,7 +85,7 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
       handleClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to add URL';
-      setValidationError(message);
+      showNotification(message, 'error');
     }
   };
 
@@ -90,17 +94,6 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
       <DialogTitle sx={{ color: 'text.primary' }}>Add URL for {accountName}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
-          {(validationError || error) && (
-            <Alert
-              severity="error"
-              onClose={() => {
-                setValidationError(null);
-                clearError();
-              }}
-            >
-              {validationError ?? error}
-            </Alert>
-          )}
           <FormControl fullWidth>
             <InputLabel>Protocol</InputLabel>
             <Select
@@ -118,12 +111,8 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
             value={domain}
             onChange={(event) => {
               setDomain(event.target.value);
-              if (validationError) {
-                setValidationError(null);
-              }
-              if (error) {
-                clearError();
-              }
+              hideNotification();
+              clearError();
             }}
             placeholder="example.com or subdomain.example.com"
             helperText="Enter the domain name only (e.g., example.com, www.example.com)"
@@ -142,6 +131,16 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
           Add URL
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };
