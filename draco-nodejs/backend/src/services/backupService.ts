@@ -84,7 +84,7 @@ export function getNextBackupTime(now: Date, hour: number, tz: string): Date {
   const target = localTimeToUtc(today.year, today.month, today.day, hour, tz);
   if (target > now) return target;
 
-  const tomorrowRef = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const tomorrowRef = new Date(target.getTime() + 24 * 60 * 60 * 1000);
   const tomorrow = getParts(tomorrowRef);
   return localTimeToUtc(tomorrow.year, tomorrow.month, tomorrow.day, hour, tz);
 }

@@ -203,6 +203,18 @@ describe('getNextBackupTime', () => {
     expect(result.toISOString()).toBe('2026-03-08T07:00:00.000Z');
   });
 
+  it('schedules next day when called near midnight (not day after)', () => {
+    const now = new Date('2026-01-16T04:17:00Z');
+    const result = getNextBackupTime(now, 3, tz);
+    expect(result.toISOString()).toBe('2026-01-16T08:00:00.000Z');
+  });
+
+  it('schedules next day near midnight on DST spring-forward eve', () => {
+    const now = new Date('2026-03-08T04:17:00Z');
+    const result = getNextBackupTime(now, 3, tz);
+    expect(result.toISOString()).toBe('2026-03-08T07:00:00.000Z');
+  });
+
   it('result is always in the future', () => {
     const testDates = [
       '2026-01-01T00:00:00Z',
