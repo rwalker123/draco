@@ -12,6 +12,7 @@ import {
   Typography,
   Box,
   TextField,
+  Snackbar,
 } from '@mui/material';
 import {
   deleteSeasonTeam as apiDeleteSeasonTeam,
@@ -23,6 +24,7 @@ import type {
 } from '@draco/shared-schemas';
 import { unwrapApiResult, assertNoApiError } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface DeleteTeamDialogProps {
   open: boolean;
@@ -46,14 +48,14 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
   onError,
 }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [confirmationText, setConfirmationText] = useState('');
 
   const isConfirmed = confirmationText.toLowerCase() === 'yes';
 
   const handleClose = () => {
-    setError(null);
+    hideNotification();
     setConfirmationText('');
     onClose();
   };
@@ -62,7 +64,7 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
     if (!teamSeason || !leagueSeason) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const deleteSeasonTeamResult = await apiDeleteSeasonTeam({
@@ -116,7 +118,7 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
       handleClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to remove team from season';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -127,11 +129,6 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Remove Team from Season</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         <Typography variant="body1" sx={{ mb: 2 }}>
           Are you sure you want to remove the team <strong>{teamSeason?.name}</strong> from this
           season?
@@ -169,6 +166,16 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Remove Team'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

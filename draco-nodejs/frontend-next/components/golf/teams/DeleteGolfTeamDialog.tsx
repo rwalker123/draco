@@ -10,9 +10,11 @@ import {
   Alert,
   CircularProgress,
   Typography,
+  Snackbar,
 } from '@mui/material';
 import type { GolfTeamType } from '@draco/shared-schemas';
 import { useGolfTeams } from '../../../hooks/useGolfTeams';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface DeleteGolfTeamDialogProps {
   open: boolean;
@@ -34,12 +36,12 @@ const DeleteGolfTeamDialog: React.FC<DeleteGolfTeamDialogProps> = ({
   onError,
 }) => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const teamService = useGolfTeams(accountId);
 
   const handleClose = () => {
-    setError(null);
+    hideNotification();
     onClose();
   };
 
@@ -47,7 +49,7 @@ const DeleteGolfTeamDialog: React.FC<DeleteGolfTeamDialogProps> = ({
     if (!team || !seasonId) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const result = await teamService.deleteTeam(seasonId, team.id);
@@ -56,12 +58,12 @@ const DeleteGolfTeamDialog: React.FC<DeleteGolfTeamDialogProps> = ({
         onSuccess(team.id, `Team "${team.name}" deleted successfully`);
         handleClose();
       } else {
-        setError(result.error);
+        showNotification(result.error, 'error');
         onError?.(result.error);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete team';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -72,11 +74,6 @@ const DeleteGolfTeamDialog: React.FC<DeleteGolfTeamDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Delete Team</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         <Typography variant="body1" gutterBottom>
           Are you sure you want to delete the team <strong>&quot;{team?.name}&quot;</strong>?
         </Typography>
@@ -93,6 +90,16 @@ const DeleteGolfTeamDialog: React.FC<DeleteGolfTeamDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Delete Team'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

@@ -11,6 +11,7 @@ import {
   Alert,
   CircularProgress,
   Typography,
+  Snackbar,
 } from '@mui/material';
 import {
   createLeagueSeasonTeam as apiCreateLeagueSeasonTeam,
@@ -19,6 +20,7 @@ import {
 import type { LeagueSeasonType, DivisionSeasonType, TeamSeasonType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
+import { useNotifications } from '../../hooks/useNotifications';
 
 export interface CreateTeamResult {
   teamSeason: TeamSeasonType;
@@ -48,13 +50,13 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
   onError,
 }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [teamName, setTeamName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const resetForm = () => {
     setTeamName('');
-    setError(null);
+    hideNotification();
   };
 
   const handleClose = () => {
@@ -66,7 +68,7 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
     if (!leagueSeason || !teamName.trim()) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const createResult = await apiCreateLeagueSeasonTeam({
@@ -123,7 +125,7 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
       handleClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create team';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -134,11 +136,6 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Create New Team</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         <Typography variant="body2" sx={{ mb: 2 }}>
           Creating team for league: <strong>{leagueSeason?.league.name}</strong>
           {division && (
@@ -173,6 +170,16 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Create Team'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

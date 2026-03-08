@@ -16,6 +16,7 @@ import {
   Switch,
   TextField,
   Typography,
+  Snackbar,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Controller, useForm, type Resolver } from 'react-hook-form';
@@ -25,6 +26,7 @@ import { UpsertFieldSchema } from '@draco/shared-schemas';
 import type { FieldLocationMapProps } from './FieldLocationMap';
 import { useFieldService, type FieldService } from '../../hooks/useFieldService';
 import { formatPhoneInput } from '@/utils/phoneNumber';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface FieldFormDialogProps {
   accountId: string;
@@ -100,7 +102,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
 }) => {
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
   const [geocodeLoading, setGeocodeLoading] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const { createField, updateField } = useFieldService(accountId);
 
   const {
@@ -142,7 +144,6 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
           }
         : DEFAULT_VALUES;
       reset(values);
-      setSubmitError(null);
       setGeocodeError(null);
     }
   }, [open, field, reset]);
@@ -220,12 +221,12 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
   };
 
   const onSubmit = handleSubmit(async (values) => {
-    setSubmitError(null);
+    hideNotification();
 
     try {
       if (mode === 'edit' && !field?.id) {
         const missingMessage = 'Field information is missing';
-        setSubmitError(missingMessage);
+        showNotification(missingMessage, 'error');
         onError?.(missingMessage);
         return;
       }
@@ -244,12 +245,12 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
         onClose();
       } else {
         const errorMessage = action.error;
-        setSubmitError(errorMessage);
+        showNotification(errorMessage, 'error');
         onError?.(errorMessage);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save field';
-      setSubmitError(message);
+      showNotification(message, 'error');
       onError?.(message);
     }
   });
@@ -265,7 +266,6 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={3}>
-          {submitError ? <Alert severity="error">{submitError}</Alert> : null}
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
@@ -447,6 +447,16 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
           {mode === 'create' ? 'Create Field' : 'Save Changes'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

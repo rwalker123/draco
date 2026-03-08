@@ -11,9 +11,11 @@ import {
   Alert,
   CircularProgress,
   Typography,
+  Snackbar,
 } from '@mui/material';
 import type { GolfTeamType } from '@draco/shared-schemas';
 import { useGolfTeams } from '../../../hooks/useGolfTeams';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface CreateGolfTeamDialogProps {
   open: boolean;
@@ -36,13 +38,13 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
 }) => {
   const [teamName, setTeamName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const teamService = useGolfTeams(accountId);
 
   const resetForm = () => {
     setTeamName('');
-    setError(null);
+    hideNotification();
   };
 
   const handleClose = () => {
@@ -54,7 +56,7 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
     if (!teamName.trim() || !flightId) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const createResult = await teamService.createTeam(flightId, {
@@ -62,7 +64,7 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
       });
 
       if (!createResult.success) {
-        setError(createResult.error);
+        showNotification(createResult.error, 'error');
         onError?.(createResult.error);
         return;
       }
@@ -72,7 +74,7 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
       handleClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create team';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -83,11 +85,6 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Create New Team</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         {flightName && (
           <Typography variant="body2" sx={{ mb: 2 }}>
             Creating team for flight: <strong>{flightName}</strong>
@@ -114,6 +111,16 @@ const CreateGolfTeamDialog: React.FC<CreateGolfTeamDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Create Team'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

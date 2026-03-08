@@ -16,6 +16,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Snackbar,
   Stack,
   Switch,
   TextField,
@@ -34,6 +35,7 @@ import { useApiClient } from '../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../utils/apiResult';
 import RichTextEditor, { type RichTextEditorHandle } from '../../email/RichTextEditor';
 import { createWorkout, getWorkout, updateWorkout } from '../../../services/workoutService';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface WorkoutFormDialogProps {
   accountId: string;
@@ -100,7 +102,7 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
   const apiClient = useApiClient();
   const [fields, setFields] = useState<FieldOption[]>([]);
   const [initialLoading, setInitialLoading] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [editorKey, setEditorKey] = useState(0);
 
   const {
@@ -130,7 +132,7 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
   useEffect(() => {
     if (!open) {
       reset(getDefaultValues());
-      setSubmitError(null);
+      hideNotification();
       return;
     }
 
@@ -138,7 +140,7 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
 
     const initializeDialog = async () => {
       setInitialLoading(true);
-      setSubmitError(null);
+      hideNotification();
 
       try {
         const fieldsResult = await listAccountFields({
@@ -185,7 +187,7 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
       } catch (error) {
         if (controller.signal.aborted) return;
         const message = error instanceof Error ? error.message : 'Failed to load workout data';
-        setSubmitError(message);
+        showNotification(message, 'error');
         onError?.(message);
       } finally {
         if (!controller.signal.aborted) setInitialLoading(false);
@@ -197,7 +199,18 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
     return () => {
       controller.abort();
     };
-  }, [open, accountId, apiClient, mode, workoutId, token, reset, onError]);
+  }, [
+    open,
+    accountId,
+    apiClient,
+    mode,
+    workoutId,
+    token,
+    reset,
+    onError,
+    hideNotification,
+    showNotification,
+  ]);
 
   const handleClose = () => {
     if (isSubmitting) {
@@ -221,13 +234,13 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
   const submitHandler = handleSubmit(async (values) => {
     if (mode === 'edit' && !workoutId) {
       const message = 'Workout identifier is missing';
-      setSubmitError(message);
+      showNotification(message, 'error');
       onError?.(message);
       return;
     }
 
     try {
-      setSubmitError(null);
+      hideNotification();
 
       const trimmedComments = (values.comments ?? '').trim();
       const payload: UpsertWorkoutType = {
@@ -257,7 +270,7 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
       onClose();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save workout';
-      setSubmitError(message);
+      showNotification(message, 'error');
       onError?.(message);
     }
   });
@@ -272,12 +285,6 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
       <DialogTitle>{dialogTitle}</DialogTitle>
       <Box component="form" onSubmit={handleFormSubmit} noValidate>
         <DialogContent dividers>
-          {submitError ? (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {submitError}
-            </Alert>
-          ) : null}
-
           {initialLoading ? (
             <Box
               sx={{
@@ -416,6 +423,16 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
           </Button>
         </DialogActions>
       </Box>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

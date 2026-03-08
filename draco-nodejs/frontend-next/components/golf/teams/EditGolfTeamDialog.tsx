@@ -10,9 +10,11 @@ import {
   Button,
   Alert,
   CircularProgress,
+  Snackbar,
 } from '@mui/material';
 import type { GolfTeamType, GolfTeamWithPlayerCountType } from '@draco/shared-schemas';
 import { useGolfTeams } from '../../../hooks/useGolfTeams';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface EditGolfTeamDialogProps {
   open: boolean;
@@ -35,7 +37,7 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
 }) => {
   const [teamName, setTeamName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const teamService = useGolfTeams(accountId);
 
@@ -47,7 +49,7 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
 
   const resetForm = () => {
     setTeamName(team?.name ?? '');
-    setError(null);
+    hideNotification();
   };
 
   const handleClose = () => {
@@ -59,7 +61,7 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
     if (!teamName.trim() || !team || !seasonId) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const result = await teamService.updateTeam(seasonId, team.id, {
@@ -67,7 +69,7 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
       });
 
       if (!result.success) {
-        setError(result.error);
+        showNotification(result.error, 'error');
         onError?.(result.error);
         return;
       }
@@ -76,7 +78,7 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
       handleClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update team';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -89,11 +91,6 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit Team</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         <TextField
           autoFocus
           margin="dense"
@@ -123,6 +120,16 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Save'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

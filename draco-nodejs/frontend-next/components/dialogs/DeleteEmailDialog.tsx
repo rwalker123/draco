@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Alert, CircularProgress } from '@mui/material';
+import { Alert, CircularProgress, Snackbar } from '@mui/material';
 import { deleteAccountEmail } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
+import { useNotifications } from '../../hooks/useNotifications';
 import type { EmailRecord } from '../../types/emails/email';
 import { assertNoApiError } from '../../utils/apiResult';
 import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
@@ -26,15 +27,15 @@ const DeleteEmailDialog: React.FC<DeleteEmailDialogProps> = ({
   onError,
 }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
-      setError(null);
+      hideNotification();
       setLoading(false);
     }
-  }, [open]);
+  }, [open, hideNotification]);
 
   const handleDelete = async () => {
     if (!email) {
@@ -43,7 +44,7 @@ const DeleteEmailDialog: React.FC<DeleteEmailDialogProps> = ({
 
     try {
       setLoading(true);
-      setError(null);
+      hideNotification();
       const result = await deleteAccountEmail({
         client: apiClient,
         path: { accountId, emailId: email.id },
@@ -56,7 +57,7 @@ const DeleteEmailDialog: React.FC<DeleteEmailDialogProps> = ({
     } catch (err) {
       console.error('Failed to delete email:', err);
       const message = 'Unable to delete email. Please try again.';
-      setError(message);
+      showNotification(message, 'error');
       onError?.(message);
     } finally {
       setLoading(false);
@@ -71,29 +72,34 @@ const DeleteEmailDialog: React.FC<DeleteEmailDialogProps> = ({
   };
 
   return (
-    <ConfirmDeleteDialog
-      open={open && Boolean(email)}
-      title="Delete Email"
-      message={`Are you sure you want to delete "${email?.subject ?? 'this email'}"? This action cannot be undone.`}
-      content={
-        error ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        ) : null
-      }
-      onClose={handleCancel}
-      onConfirm={handleDelete}
-      confirmLabel={loading ? 'Deleting...' : 'Delete'}
-      confirmButtonProps={{
-        color: 'error',
-        variant: 'contained',
-        disabled: loading || !email,
-        startIcon: loading ? <CircularProgress size={18} color="inherit" /> : undefined,
-      }}
-      cancelButtonProps={{ disabled: loading }}
-      dialogProps={{ maxWidth: 'xs', fullWidth: true }}
-    />
+    <>
+      <ConfirmDeleteDialog
+        open={open && Boolean(email)}
+        title="Delete Email"
+        message={`Are you sure you want to delete "${email?.subject ?? 'this email'}"? This action cannot be undone.`}
+        onClose={handleCancel}
+        onConfirm={handleDelete}
+        confirmLabel={loading ? 'Deleting...' : 'Delete'}
+        confirmButtonProps={{
+          color: 'error',
+          variant: 'contained',
+          disabled: loading || !email,
+          startIcon: loading ? <CircularProgress size={18} color="inherit" /> : undefined,
+        }}
+        cancelButtonProps={{ disabled: loading }}
+        dialogProps={{ maxWidth: 'xs', fullWidth: true }}
+      />
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 

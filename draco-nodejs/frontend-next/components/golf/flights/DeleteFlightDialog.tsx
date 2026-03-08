@@ -10,9 +10,11 @@ import {
   Alert,
   CircularProgress,
   Typography,
+  Snackbar,
 } from '@mui/material';
 import type { GolfFlightWithTeamCountType } from '@draco/shared-schemas';
 import { useGolfFlights } from '../../../hooks/useGolfFlights';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface DeleteFlightDialogProps {
   open: boolean;
@@ -32,12 +34,12 @@ const DeleteFlightDialog: React.FC<DeleteFlightDialogProps> = ({
   onError,
 }) => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const flightService = useGolfFlights(accountId);
 
   const handleClose = () => {
-    setError(null);
+    hideNotification();
     onClose();
   };
 
@@ -45,7 +47,7 @@ const DeleteFlightDialog: React.FC<DeleteFlightDialogProps> = ({
     if (!flight) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const result = await flightService.deleteFlight(flight.id);
@@ -54,12 +56,12 @@ const DeleteFlightDialog: React.FC<DeleteFlightDialogProps> = ({
         onSuccess(flight.id, `Flight "${flight.name}" deleted successfully`);
         handleClose();
       } else {
-        setError(result.error);
+        showNotification(result.error, 'error');
         onError?.(result.error);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete flight';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -72,11 +74,6 @@ const DeleteFlightDialog: React.FC<DeleteFlightDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Delete Flight</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         <Typography variant="body1" gutterBottom>
           Are you sure you want to delete the flight <strong>&quot;{flight?.name}&quot;</strong>?
         </Typography>
@@ -95,6 +92,16 @@ const DeleteFlightDialog: React.FC<DeleteFlightDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Delete Flight'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

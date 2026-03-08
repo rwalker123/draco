@@ -19,6 +19,7 @@ import {
   FormHelperText,
   Switch,
   FormControlLabel,
+  Snackbar,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -35,6 +36,7 @@ import { useTeamsWantedClassifieds } from '../../hooks/useClassifiedsService';
 import { useClassifiedsConfig } from '../../hooks/useClassifiedsConfig';
 import { useAccountMembership } from '../../hooks/useAccountMembership';
 import TurnstileChallenge from '../security/TurnstileChallenge';
+import { useNotifications } from '../../hooks/useNotifications';
 
 const parseDateOnly = (value: string | null | undefined): Date | undefined => {
   if (!value) {
@@ -222,7 +224,6 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     createTeamsWanted,
     updateTeamsWanted,
     loading: operationLoading,
-    error: serviceError,
     resetError,
   } = useTeamsWantedClassifieds(accountId);
 
@@ -367,8 +368,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     defaultValues: formDefaults,
   });
 
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const displayedSubmitError = submitError ?? serviceError ?? null;
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const experienceValue = useWatch({ control, name: 'experience' }) ?? '';
 
@@ -385,7 +385,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   }, [open, formDefaults, reset, clearErrors, isDirty]);
 
   const onSubmit = submitForm(async (values) => {
-    setSubmitError(null);
+    hideNotification();
     resetError();
 
     if (captchaRequired && !captchaToken) {
@@ -396,7 +396,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
     if (editMode && !updateClassifiedId) {
       const message = 'Missing classified identifier for update.';
-      setSubmitError(message);
+      showNotification(message, 'error');
       return;
     }
 
@@ -438,7 +438,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     }
 
     const message = result.error ?? `Failed to ${editMode ? 'update' : 'create'} Teams Wanted ad`;
-    setSubmitError(message);
+    showNotification(message, 'error');
 
     if (captchaRequired) {
       setCaptchaToken(null);
@@ -449,7 +449,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   const handleClose = () => {
     reset(formDefaults);
     clearErrors();
-    setSubmitError(null);
+    hideNotification();
     resetError();
     setCaptchaToken(null);
     setCaptchaError(null);
@@ -465,13 +465,6 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
       <form onSubmit={onSubmit} noValidate>
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <DialogContent>
-            {/* Error Alert */}
-            {displayedSubmitError && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError(null)}>
-                {displayedSubmitError}
-              </Alert>
-            )}
-
             {/* Name Field */}
             <Controller
               name="name"
@@ -729,6 +722,16 @@ Examples:
           </Button>
         </DialogActions>
       </form>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

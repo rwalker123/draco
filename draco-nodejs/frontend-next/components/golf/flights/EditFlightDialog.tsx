@@ -10,9 +10,11 @@ import {
   Button,
   Alert,
   CircularProgress,
+  Snackbar,
 } from '@mui/material';
 import type { GolfFlightType, GolfFlightWithTeamCountType } from '@draco/shared-schemas';
 import { useGolfFlights } from '../../../hooks/useGolfFlights';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface EditFlightDialogProps {
   open: boolean;
@@ -33,7 +35,7 @@ const EditFlightDialog: React.FC<EditFlightDialogProps> = ({
 }) => {
   const [flightName, setFlightName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const flightService = useGolfFlights(accountId);
 
@@ -45,7 +47,7 @@ const EditFlightDialog: React.FC<EditFlightDialogProps> = ({
 
   const resetForm = () => {
     setFlightName(flight?.name || '');
-    setError(null);
+    hideNotification();
   };
 
   const handleClose = () => {
@@ -57,7 +59,7 @@ const EditFlightDialog: React.FC<EditFlightDialogProps> = ({
     if (!flight || !flightName.trim()) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const result = await flightService.updateFlight(flight.id, {
@@ -68,12 +70,12 @@ const EditFlightDialog: React.FC<EditFlightDialogProps> = ({
         onSuccess(result.data, `Flight renamed to "${result.data.name}"`);
         handleClose();
       } else {
-        setError(result.error);
+        showNotification(result.error, 'error');
         onError?.(result.error);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update flight';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -86,11 +88,6 @@ const EditFlightDialog: React.FC<EditFlightDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit Flight</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         <TextField
           autoFocus
           margin="dense"
@@ -115,6 +112,16 @@ const EditFlightDialog: React.FC<EditFlightDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Save Changes'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

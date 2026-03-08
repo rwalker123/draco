@@ -16,6 +16,7 @@ import {
   FormControl,
   FormLabel,
   Box,
+  Snackbar,
 } from '@mui/material';
 import {
   AccountRegistrationService,
@@ -24,6 +25,7 @@ import {
 } from '../../services/accountRegistrationService';
 import { useAuth } from '../../context/AuthContext';
 import TurnstileChallenge from '../security/TurnstileChallenge';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface Props {
   open: boolean;
@@ -55,7 +57,7 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
 
   // UI state
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const requireCaptcha = !user && Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
@@ -70,7 +72,7 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
     setLastName('');
     setStreetAddress('');
     setDateOfBirth('');
-    setError(null);
+    hideNotification();
     setCaptchaToken(null);
     setCaptchaResetKey((key) => key + 1);
     setCaptchaError(null);
@@ -107,7 +109,7 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
     }
 
     setLoading(true);
-    setError(null);
+    hideNotification();
     const usedCaptcha = !user && requireCaptcha && mode === 'newUser';
 
     try {
@@ -166,12 +168,11 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
       }
     } catch (err: unknown) {
       console.error('Registration error:', err);
-      // Extract specific error message from backend if available
       const errorMessage =
         err instanceof Error
           ? err.message
           : 'Registration failed. Please check your information and try again.';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
     } finally {
       setLoading(false);
       if (usedCaptcha) {
@@ -186,12 +187,6 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
       <DialogTitle>{user ? 'Join Organization' : 'Register to this organization'}</DialogTitle>
 
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
         {/* Show tabs only for unauthenticated users */}
         {!user && (
           <Tabs value={mode} onChange={(_, v) => setMode(v)} sx={{ mb: 2 }}>
@@ -356,6 +351,16 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
           {loading ? 'Submitting...' : 'Continue'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogTitle,
   Typography,
+  Snackbar,
 } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import type { BaseContactType, ContactType } from '@draco/shared-schemas';
@@ -17,6 +18,7 @@ import { getContactDisplayName } from '@/utils/contactUtils';
 import { useContactPhotoUpload } from '@/hooks/useContactPhotoUpload';
 import Alert from '@mui/material/Alert';
 import { getPhotoSize } from '@/config/contacts';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface ContactPhotoUploadDialogProps {
   open: boolean;
@@ -41,8 +43,8 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
   const photoSize = getPhotoSize();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [localError, setLocalError] = useState<string | null>(null);
-  const { uploadContactPhoto, loading, error, clearError } = useContactPhotoUpload(accountId);
+  const { notification, showNotification, hideNotification } = useNotifications();
+  const { uploadContactPhoto, loading, clearError } = useContactPhotoUpload(accountId);
 
   useEffect(() => {
     return () => {
@@ -62,8 +64,20 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
     }
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
-    setLocalError(null);
+    hideNotification();
     clearError();
+  };
+
+  const handleDialogClose = () => {
+    if (loading) return;
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    hideNotification();
+    clearError();
+    onClose();
   };
 
   const handlePhotoUpdated = (updatedContact: ContactType) => {
@@ -73,23 +87,12 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
     onClose();
   };
 
-  const handleCancel = () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    setLocalError(null);
-    clearError();
-    onClose();
-  };
-
   const handleSave = async () => {
     if (!contact) {
       return;
     }
     if (!selectedFile) {
-      setLocalError('Please select a photo to upload.');
+      showNotification('Please select a photo to upload.', 'error');
       return;
     }
 
@@ -99,7 +102,7 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
       return;
     }
     const failure = result.error || 'Failed to update contact photo';
-    setLocalError(failure);
+    showNotification(failure, 'error');
     onError?.(failure);
   };
 
@@ -108,7 +111,7 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={handleDialogClose} maxWidth="xs" fullWidth>
       <DialogTitle>Update Player Photo</DialogTitle>
       <DialogContent>
         <Typography variant="subtitle1" sx={{ mb: 2 }}>
@@ -154,17 +157,12 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
             </Typography>
           </Box>
         ) : null}
-        {localError || error ? (
-          <Alert severity="error" sx={{ mb: 1 }}>
-            {localError || error}
-          </Alert>
-        ) : null}
         <Typography variant="caption" color="text.secondary">
           Recommended size: {photoSize}x{photoSize} pixels. Max file size: 10MB.
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCancel} disabled={loading}>
+        <Button onClick={handleDialogClose} disabled={loading}>
           Cancel
         </Button>
         <Button
@@ -175,6 +173,16 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
           {loading ? 'Saving...' : 'Save Changes'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

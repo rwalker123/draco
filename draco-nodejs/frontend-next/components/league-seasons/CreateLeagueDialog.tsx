@@ -11,6 +11,7 @@ import {
   Alert,
   CircularProgress,
   Typography,
+  Snackbar,
 } from '@mui/material';
 import {
   createLeague as apiCreateLeague,
@@ -19,6 +20,7 @@ import {
 import type { LeagueSeasonWithDivisionTeamsAndUnassignedType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface CreateLeagueDialogProps {
   open: boolean;
@@ -41,13 +43,13 @@ const CreateLeagueDialog: React.FC<CreateLeagueDialogProps> = ({
   onError,
 }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [leagueName, setLeagueName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const resetForm = () => {
     setLeagueName('');
-    setError(null);
+    hideNotification();
   };
 
   const handleClose = () => {
@@ -59,7 +61,7 @@ const CreateLeagueDialog: React.FC<CreateLeagueDialogProps> = ({
     if (!leagueName.trim()) return;
 
     setLoading(true);
-    setError(null);
+    hideNotification();
 
     try {
       const createResult = await apiCreateLeague({
@@ -94,7 +96,7 @@ const CreateLeagueDialog: React.FC<CreateLeagueDialogProps> = ({
       handleClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create league';
-      setError(errorMessage);
+      showNotification(errorMessage, 'error');
       onError?.(errorMessage);
     } finally {
       setLoading(false);
@@ -105,11 +107,6 @@ const CreateLeagueDialog: React.FC<CreateLeagueDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Create New League</DialogTitle>
       <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
         <Typography variant="body2" sx={{ mb: 2 }}>
           Create a new league and add it to this season.
         </Typography>
@@ -133,6 +130,16 @@ const CreateLeagueDialog: React.FC<CreateLeagueDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Create League'}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

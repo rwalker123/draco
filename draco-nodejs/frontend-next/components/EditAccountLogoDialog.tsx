@@ -12,6 +12,7 @@ import {
   Typography,
   Box,
   CircularProgress,
+  Snackbar,
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
@@ -25,6 +26,7 @@ import {
   AccountLogoOperationSuccess,
   useAccountLogoOperations,
 } from '../hooks/useAccountLogoOperations';
+import { useNotifications } from '../hooks/useNotifications';
 
 const LOGO_WIDTH = 512;
 const LOGO_HEIGHT = 125;
@@ -102,16 +104,14 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
   onError,
   operations,
 }) => {
-  const { uploadLogo, deleteLogo, uploading, deleting, error, clearError } = operations;
+  const { uploadLogo, deleteLogo, uploading, deleting, clearError } = operations;
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(
     accountLogoUrl ? addCacheBuster(accountLogoUrl) : null,
   );
-  const [validationError, setValidationError] = useState<string | null>(null);
   const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-
-  const combinedError = validationError ?? error;
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -123,12 +123,12 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
 
     if (!validationResult.success) {
       const message = validationResult.error.issues[0]?.message ?? 'Invalid logo file.';
-      setValidationError(message);
+      showNotification(message, 'error');
       return;
     }
 
     setLogoFile(file);
-    setValidationError(null);
+    hideNotification();
     clearError();
     setLogoPreviewError(false);
     const reader = new FileReader();
@@ -144,7 +144,7 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
     if (!validationResult.success) {
       const message =
         validationResult.error.issues[0]?.message ?? 'Please select a logo to upload.';
-      setValidationError(message);
+      showNotification(message, 'error');
       return;
     }
     clearError();
@@ -185,17 +185,6 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
       <DialogTitle>Edit Account Logo</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
-          {combinedError && (
-            <Alert
-              severity="error"
-              onClose={() => {
-                setValidationError(null);
-                clearError();
-              }}
-            >
-              {combinedError}
-            </Alert>
-          )}
           <Box>
             <Typography variant="subtitle1" sx={{ mb: 1 }}>
               Account Logo
@@ -283,6 +272,16 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
         }}
         cancelButtonProps={{ disabled: deleting }}
       />
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };
