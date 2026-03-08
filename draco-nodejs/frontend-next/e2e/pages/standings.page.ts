@@ -7,7 +7,7 @@ export class StandingsPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.heading = page.getByRole('heading', { name: 'Standings' });
+    this.heading = page.locator('h4', { hasText: 'Standings' });
     this.standingsTable = page.getByRole('table');
   }
 
