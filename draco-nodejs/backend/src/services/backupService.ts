@@ -46,11 +46,53 @@ export function computeKeepSet(backupNumbers: number[]): Set<number> {
   return keepSet;
 }
 
+export function getTimezoneOffsetMs(tz: string, utcDate: Date): number {
+  const utcStr = utcDate.toLocaleString('en-US', { timeZone: 'UTC' });
+  const tzStr = utcDate.toLocaleString('en-US', { timeZone: tz });
+  return new Date(tzStr).getTime() - new Date(utcStr).getTime();
+}
+
+export function localTimeToUtc(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  tz: string,
+): Date {
+  const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00:00Z`;
+  const naive = new Date(dateStr);
+  const approxOffset = getTimezoneOffsetMs(tz, naive);
+  const approxUtc = new Date(naive.getTime() - approxOffset);
+  const refinedOffset = getTimezoneOffsetMs(tz, approxUtc);
+  return new Date(naive.getTime() - refinedOffset);
+}
+
+export function getNextBackupTime(now: Date, hour: number, tz: string): Date {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  const getParts = (d: Date) => {
+    const m = Object.fromEntries(formatter.formatToParts(d).map((p) => [p.type, p.value]));
+    return { year: Number(m.year), month: Number(m.month), day: Number(m.day) };
+  };
+
+  const today = getParts(now);
+  const target = localTimeToUtc(today.year, today.month, today.day, hour, tz);
+  if (target > now) return target;
+
+  const tomorrowRef = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const tomorrow = getParts(tomorrowRef);
+  return localTimeToUtc(tomorrow.year, tomorrow.month, tomorrow.day, hour, tz);
+}
+
 export class BackupService implements IBackupService {
-  private backupInterval: NodeJS.Timeout | null = null;
-  private startupTimeout: NodeJS.Timeout | null = null;
+  private scheduledTimeout: NodeJS.Timeout | null = null;
   private readonly backupHour = 3;
-  private readonly DAY_MS = 24 * 60 * 60 * 1000;
+  private readonly backupTimezone = process.env.BACKUP_TIMEZONE || 'America/New_York';
   private _s3Client: S3Client | null = null;
 
   private get s3Client(): S3Client {
@@ -82,42 +124,30 @@ export class BackupService implements IBackupService {
       return;
     }
 
-    if (this.backupInterval || this.startupTimeout) {
+    if (this.scheduledTimeout) {
       this.stop();
     }
 
+    this.scheduleNextBackup();
+  }
+
+  private scheduleNextBackup(): void {
     const now = new Date();
-    const nextBackup = new Date();
-    nextBackup.setHours(this.backupHour, 0, 0, 0);
-    if (nextBackup <= now) {
-      nextBackup.setDate(nextBackup.getDate() + 1);
-    }
+    const nextBackup = getNextBackupTime(now, this.backupHour, this.backupTimezone);
+    const delay = nextBackup.getTime() - now.getTime();
 
-    const initialDelay = nextBackup.getTime() - now.getTime();
-
-    const runBackup = () => {
+    this.scheduledTimeout = setTimeout(() => {
       this.performBackup().catch(console.error);
-    };
+      this.scheduleNextBackup();
+    }, delay);
 
-    this.startupTimeout = setTimeout(() => {
-      this.startupTimeout = null;
-      runBackup();
-      this.backupInterval = setInterval(runBackup, this.DAY_MS);
-    }, initialDelay);
-
-    console.log(
-      `💾 Backup service started. First backup scheduled for ${nextBackup.toISOString()}`,
-    );
+    console.log(`💾 Backup scheduled for ${nextBackup.toISOString()}`);
   }
 
   public stop(): void {
-    if (this.startupTimeout) {
-      clearTimeout(this.startupTimeout);
-      this.startupTimeout = null;
-    }
-    if (this.backupInterval) {
-      clearInterval(this.backupInterval);
-      this.backupInterval = null;
+    if (this.scheduledTimeout) {
+      clearTimeout(this.scheduledTimeout);
+      this.scheduledTimeout = null;
     }
     console.log('💾 Backup service stopped');
   }
