@@ -65,6 +65,7 @@ export const UmpireDeleteDialog: React.FC<UmpireDeleteDialogProps> = ({
     if (loading) {
       return;
     }
+    hideNotification();
     onClose();
   };
 

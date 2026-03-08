@@ -39,11 +39,17 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const { notification, showNotification, hideNotification } = useNotifications();
 
+  const handleClose = () => {
+    hideNotification();
+    onClose();
+  };
+
   useEffect(() => {
     if (open) {
       setSelectedContactId(null);
+      hideNotification();
     }
-  }, [open]);
+  }, [open, hideNotification]);
 
   const eligiblePlayers = availablePlayers.filter(
     (member) => !existingManagers.some((m) => m.contact.id === member.player.contact.id),
@@ -73,7 +79,7 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Assign Team Manager</DialogTitle>
       <DialogContent>
         <Autocomplete
@@ -93,7 +99,7 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
+        <Button onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
         <Button

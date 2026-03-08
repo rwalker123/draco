@@ -68,14 +68,8 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
     clearError();
   };
 
-  const handlePhotoUpdated = (updatedContact: ContactType) => {
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    onPhotoUpdated?.(updatedContact);
-    onClose();
-  };
-
-  const handleCancel = () => {
+  const handleDialogClose = () => {
+    if (loading) return;
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -83,6 +77,13 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
     setPreviewUrl(null);
     hideNotification();
     clearError();
+    onClose();
+  };
+
+  const handlePhotoUpdated = (updatedContact: ContactType) => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    onPhotoUpdated?.(updatedContact);
     onClose();
   };
 
@@ -110,7 +111,7 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={handleDialogClose} maxWidth="xs" fullWidth>
       <DialogTitle>Update Player Photo</DialogTitle>
       <DialogContent>
         <Typography variant="subtitle1" sx={{ mb: 2 }}>
@@ -161,7 +162,7 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCancel} disabled={loading}>
+        <Button onClick={handleDialogClose} disabled={loading}>
           Cancel
         </Button>
         <Button

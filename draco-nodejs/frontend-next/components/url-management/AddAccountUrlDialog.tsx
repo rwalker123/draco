@@ -62,9 +62,10 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
     if (!open) {
       setProtocol('https://');
       setDomain('');
+      hideNotification();
       clearErrorRef.current();
     }
-  }, [open]);
+  }, [open, hideNotification]);
 
   const handleClose = () => {
     onClose();
