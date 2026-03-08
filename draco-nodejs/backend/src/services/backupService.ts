@@ -90,11 +90,9 @@ export function getNextBackupTime(now: Date, hour: number, tz: string): Date {
 }
 
 export class BackupService implements IBackupService {
-  private backupInterval: NodeJS.Timeout | null = null;
-  private startupTimeout: NodeJS.Timeout | null = null;
+  private scheduledTimeout: NodeJS.Timeout | null = null;
   private readonly backupHour = 3;
   private readonly backupTimezone = process.env.BACKUP_TIMEZONE || 'America/New_York';
-  private readonly DAY_MS = 24 * 60 * 60 * 1000;
   private _s3Client: S3Client | null = null;
 
   private get s3Client(): S3Client {
@@ -126,37 +124,30 @@ export class BackupService implements IBackupService {
       return;
     }
 
-    if (this.backupInterval || this.startupTimeout) {
+    if (this.scheduledTimeout) {
       this.stop();
     }
 
+    this.scheduleNextBackup();
+  }
+
+  private scheduleNextBackup(): void {
     const now = new Date();
     const nextBackup = getNextBackupTime(now, this.backupHour, this.backupTimezone);
-    const initialDelay = nextBackup.getTime() - now.getTime();
+    const delay = nextBackup.getTime() - now.getTime();
 
-    const runBackup = () => {
+    this.scheduledTimeout = setTimeout(() => {
       this.performBackup().catch(console.error);
-    };
+      this.scheduleNextBackup();
+    }, delay);
 
-    this.startupTimeout = setTimeout(() => {
-      this.startupTimeout = null;
-      runBackup();
-      this.backupInterval = setInterval(runBackup, this.DAY_MS);
-    }, initialDelay);
-
-    console.log(
-      `💾 Backup service started. First backup scheduled for ${nextBackup.toISOString()}`,
-    );
+    console.log(`💾 Backup scheduled for ${nextBackup.toISOString()}`);
   }
 
   public stop(): void {
-    if (this.startupTimeout) {
-      clearTimeout(this.startupTimeout);
-      this.startupTimeout = null;
-    }
-    if (this.backupInterval) {
-      clearInterval(this.backupInterval);
-      this.backupInterval = null;
+    if (this.scheduledTimeout) {
+      clearTimeout(this.scheduledTimeout);
+      this.scheduledTimeout = null;
     }
     console.log('💾 Backup service stopped');
   }
