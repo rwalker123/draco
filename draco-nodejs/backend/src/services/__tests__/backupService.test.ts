@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { computeKeepSet, parseEntryNumber } from '../backupService.js';
+import {
+  computeKeepSet,
+  parseEntryNumber,
+  getTimezoneOffsetMs,
+  localTimeToUtc,
+  getNextBackupTime,
+} from '../backupService.js';
 
 function range(start: number, end: number): number[] {
   const result: number[] = [];
@@ -102,5 +108,113 @@ describe('computeKeepSet', () => {
     const keepSet = computeKeepSet(store);
     const stableStore = store.filter((n) => keepSet.has(n));
     expect(stableStore).toEqual(store);
+  });
+});
+
+describe('getTimezoneOffsetMs', () => {
+  it('returns a negative offset for America/New_York (west of UTC)', () => {
+    const date = new Date('2026-01-15T12:00:00Z');
+    const offset = getTimezoneOffsetMs('America/New_York', date);
+    expect(offset).toBe(-5 * 60 * 60 * 1000);
+  });
+
+  it('returns EDT offset during summer', () => {
+    const date = new Date('2026-07-15T12:00:00Z');
+    const offset = getTimezoneOffsetMs('America/New_York', date);
+    expect(offset).toBe(-4 * 60 * 60 * 1000);
+  });
+
+  it('returns zero for UTC', () => {
+    const date = new Date('2026-06-15T12:00:00Z');
+    const offset = getTimezoneOffsetMs('UTC', date);
+    expect(offset).toBe(0);
+  });
+});
+
+describe('localTimeToUtc', () => {
+  it('converts 3AM EST to 8AM UTC in winter', () => {
+    const result = localTimeToUtc(2026, 1, 15, 3, 'America/New_York');
+    expect(result.toISOString()).toBe('2026-01-15T08:00:00.000Z');
+  });
+
+  it('converts 3AM EDT to 7AM UTC in summer', () => {
+    const result = localTimeToUtc(2026, 7, 15, 3, 'America/New_York');
+    expect(result.toISOString()).toBe('2026-07-15T07:00:00.000Z');
+  });
+
+  it('handles DST spring-forward correctly (March 8, 2026)', () => {
+    const result = localTimeToUtc(2026, 3, 8, 3, 'America/New_York');
+    expect(result.toISOString()).toBe('2026-03-08T07:00:00.000Z');
+  });
+
+  it('handles DST fall-back correctly (Nov 1, 2026)', () => {
+    const result = localTimeToUtc(2026, 11, 1, 3, 'America/New_York');
+    expect(result.toISOString()).toBe('2026-11-01T08:00:00.000Z');
+  });
+
+  it('handles month boundary (Jan 31 -> next day uses Feb 1)', () => {
+    const result = localTimeToUtc(2026, 2, 1, 3, 'America/New_York');
+    expect(result.toISOString()).toBe('2026-02-01T08:00:00.000Z');
+  });
+});
+
+describe('getNextBackupTime', () => {
+  const tz = 'America/New_York';
+
+  it('returns today 3AM ET when now is before 3AM ET', () => {
+    const now = new Date('2026-01-15T06:00:00Z');
+    const result = getNextBackupTime(now, 3, tz);
+    expect(result.toISOString()).toBe('2026-01-15T08:00:00.000Z');
+  });
+
+  it('returns tomorrow 3AM ET when now is after 3AM ET', () => {
+    const now = new Date('2026-01-15T10:00:00Z');
+    const result = getNextBackupTime(now, 3, tz);
+    expect(result.toISOString()).toBe('2026-01-16T08:00:00.000Z');
+  });
+
+  it('returns tomorrow when now is exactly 3AM ET', () => {
+    const now = new Date('2026-01-15T08:00:00.000Z');
+    const result = getNextBackupTime(now, 3, tz);
+    expect(result.toISOString()).toBe('2026-01-16T08:00:00.000Z');
+  });
+
+  it('handles month boundary (March 31 after 3AM → April 1)', () => {
+    const now = new Date('2026-03-31T10:00:00Z');
+    const result = getNextBackupTime(now, 3, tz);
+    expect(result.toISOString()).toBe('2026-04-01T07:00:00.000Z');
+  });
+
+  it('handles year boundary (Dec 31 after 3AM → Jan 1)', () => {
+    const now = new Date('2026-12-31T10:00:00Z');
+    const result = getNextBackupTime(now, 3, tz);
+    expect(result.toISOString()).toBe('2027-01-01T08:00:00.000Z');
+  });
+
+  it('handles DST spring-forward day', () => {
+    const now = new Date('2026-03-08T06:00:00Z');
+    const result = getNextBackupTime(now, 3, tz);
+    expect(result.toISOString()).toBe('2026-03-08T07:00:00.000Z');
+  });
+
+  it('shifts from EST to EDT across spring-forward', () => {
+    const now = new Date('2026-03-07T09:00:00Z');
+    const result = getNextBackupTime(now, 3, tz);
+    expect(result.toISOString()).toBe('2026-03-08T07:00:00.000Z');
+  });
+
+  it('result is always in the future', () => {
+    const testDates = [
+      '2026-01-01T00:00:00Z',
+      '2026-03-08T07:00:00Z',
+      '2026-06-15T23:59:59Z',
+      '2026-11-01T06:30:00Z',
+      '2026-12-31T23:59:59Z',
+    ];
+    for (const iso of testDates) {
+      const now = new Date(iso);
+      const result = getNextBackupTime(now, 3, tz);
+      expect(result.getTime()).toBeGreaterThan(now.getTime());
+    }
   });
 });
