@@ -64,7 +64,10 @@
     "mobile:lint": "npm run lint -w @draco/mobile",
     "mobile:test": "npm run test -w @draco/mobile",
     "mobile:type-check": "npm run type-check -w @draco/mobile",
-    "mobile:format": "npm run format -w @draco/mobile"
+    "mobile:format": "npm run format -w @draco/mobile",
+    "docker:dev": "concurrently \"docker compose --profile docker-dev up --build backend-docker\" \"npm run dev -w @draco/frontend-next\"",
+    "docker:backend:build": "docker build -f draco-nodejs/backend/Dockerfile -t draco-backend .",
+    "docker:backend:test": "docker compose --profile test up --build backend-test"
   },
   "overrides": {
     "react-native": "0.81.4",
@@ -87,7 +90,6 @@
     ]
   },
   "dependencies": {
-    "expo-network": "~8.0.7",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   }

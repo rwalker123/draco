@@ -1,11 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   computeKeepSet,
   parseEntryNumber,
   getTimezoneOffsetMs,
   localTimeToUtc,
   getNextBackupTime,
+  BackupService,
 } from '../backupService.js';
+import { EventEmitter } from 'node:events';
+import { Readable } from 'node:stream';
+import fs from 'node:fs';
+
+const mockSpawn = vi.fn();
+vi.mock('node:child_process', () => ({
+  spawn: (...args: unknown[]) => mockSpawn(...args),
+}));
 
 function range(start: number, end: number): number[] {
   const result: number[] = [];
@@ -228,5 +237,158 @@ describe('getNextBackupTime', () => {
       const result = getNextBackupTime(now, 3, tz);
       expect(result.getTime()).toBeGreaterThan(now.getTime());
     }
+  });
+});
+
+function createMockChildProcess(exitCode: number, stderrData?: string) {
+  const proc = new EventEmitter();
+  const stderr = new Readable({ read() {} });
+  Object.assign(proc, { stderr, stdout: new Readable({ read() {} }), stdin: null });
+
+  process.nextTick(() => {
+    if (stderrData) {
+      stderr.push(Buffer.from(stderrData));
+      stderr.push(null);
+    }
+    proc.emit('close', exitCode);
+  });
+
+  return proc;
+}
+
+function createEnoentProcess() {
+  const proc = new EventEmitter();
+  Object.assign(proc, {
+    stderr: new Readable({ read() {} }),
+    stdout: new Readable({ read() {} }),
+    stdin: null,
+  });
+
+  process.nextTick(() => {
+    const err = new Error('spawn pg_dump ENOENT') as NodeJS.ErrnoException;
+    err.code = 'ENOENT';
+    proc.emit('error', err);
+  });
+
+  return proc;
+}
+
+function mockS3Client(service: BackupService, sendMock: ReturnType<typeof vi.fn>) {
+  Object.defineProperty(service, '_s3Client', {
+    value: { send: sendMock },
+    writable: true,
+  });
+}
+
+describe('BackupService.performBackup (local mode)', () => {
+  let service: BackupService;
+  let tmpDir: string;
+  const originalEnv = { ...process.env };
+
+  beforeEach(async () => {
+    tmpDir = await fs.promises.mkdtemp('/tmp/backup-test-');
+    process.env.BACKUP_LOCAL_DIR = tmpDir;
+    delete process.env.R2_BACKUP_BUCKET;
+    service = new BackupService();
+  });
+
+  afterEach(async () => {
+    process.env = { ...originalEnv };
+    await fs.promises.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('creates backup entry in local directory', async () => {
+    await service.performBackup();
+
+    const entries = await fs.promises.readdir(tmpDir);
+    expect(entries.length).toBe(1);
+    expect(entries[0]).toMatch(/^1\.\d{4}-\d{2}-\d{2}$/);
+
+    const entryDir = `${tmpDir}/${entries[0]}`;
+    const files = await fs.promises.readdir(entryDir);
+    expect(files).toContain('db.dump');
+    expect(files).toContain('uploads-skipped.txt');
+  });
+
+  it('increments sequence number for subsequent backups', async () => {
+    await service.performBackup();
+    await service.performBackup();
+
+    const entries = await fs.promises.readdir(tmpDir);
+    const numbers = entries.map((e) => parseInt(e.split('.')[0], 10)).sort((a, b) => a - b);
+    expect(numbers).toEqual([1, 2]);
+  });
+});
+
+describe('BackupService.performBackup (S3 mode with pg_dump)', () => {
+  let service: BackupService;
+  const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    mockSpawn.mockReset();
+    process.env.R2_BACKUP_BUCKET = 'test-bucket';
+    process.env.R2_ACCOUNT_ID = 'test-account';
+    process.env.R2_ACCESS_KEY_ID = 'test-key';
+    process.env.R2_SECRET_ACCESS_KEY = 'test-secret'; // pragma: allowlist secret
+    process.env.DATABASE_URL = 'postgresql://test@localhost:5432/testdb';
+    delete process.env.BACKUP_LOCAL_DIR;
+    service = new BackupService();
+  });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+    vi.restoreAllMocks();
+  });
+
+  it('invokes pg_dump with correct arguments', async () => {
+    vi.spyOn(fs, 'createReadStream').mockReturnValue(
+      new Readable({
+        read() {
+          this.push(null);
+        },
+      }) as fs.ReadStream,
+    );
+    mockSpawn.mockReturnValue(createMockChildProcess(0));
+    mockS3Client(service, vi.fn().mockResolvedValue({}));
+
+    await service.performBackup();
+
+    expect(mockSpawn).toHaveBeenCalledWith('pg_dump', [
+      '--format=custom',
+      expect.stringMatching(/^--file=\/tmp\/draco-db-/),
+      'postgresql://test@localhost:5432/testdb',
+    ]);
+  });
+
+  it('reports ENOENT error when pg_dump is not found', async () => {
+    mockSpawn.mockReturnValue(createEnoentProcess());
+    mockS3Client(service, vi.fn().mockResolvedValue({ CommonPrefixes: [] }));
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await service.performBackup();
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Backup failed'),
+      expect.objectContaining({
+        error: expect.stringContaining('Failed to start pg_dump'),
+      }),
+    );
+  });
+
+  it('reports error when pg_dump exits with non-zero code', async () => {
+    mockSpawn.mockReturnValue(createMockChildProcess(1, 'connection refused'));
+    mockS3Client(service, vi.fn().mockResolvedValue({ CommonPrefixes: [] }));
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await service.performBackup();
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Backup failed'),
+      expect.objectContaining({
+        error: expect.stringContaining('exited with code 1'),
+      }),
+    );
   });
 });

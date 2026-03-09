@@ -1,0 +1,16 @@
+node_modules
+.git
+.env
+.env.*
+*.md
+*.tsbuildinfo
+coverage
+.turbo
+localstack-data
+.vscode
+.idea
+.DS_Store
+draco-nodejs/frontend-next
+draco-mobile/android
+draco-mobile/ios
+dbMigration
