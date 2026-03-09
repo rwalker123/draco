@@ -91,6 +91,7 @@ Thumbs.db
 
 # Database backups
 draco-nodejs/backend/db_dump.bak
+draco-nodejs/backend/DOCKER_ENV_REFERENCE.md
 draco-nodejs/shared/shared-api-client/generated/
 migration-progress.json
 **/temp-migration/

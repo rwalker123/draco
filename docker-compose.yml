@@ -16,4 +16,40 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
       interval: 10s
       timeout: 5s
-      retries: 5 
+      retries: 5
+
+  backend-docker:
+    profiles: ["docker-dev"]
+    build:
+      context: .
+      dockerfile: draco-nodejs/backend/Dockerfile
+    ports:
+      - "3001:3001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./draco-nodejs/backend/certs:/app/certs:ro
+      - ./draco-nodejs/backend/uploads:/app/uploads
+    env_file:
+      - draco-nodejs/backend/.env
+    environment:
+      - PORT=3001
+    entrypoint: ["/bin/sh", "-c", "export DATABASE_URL=$$(echo $$DATABASE_URL | sed 's/localhost/host.docker.internal/g; s/127\\.0\\.0\\.1/host.docker.internal/g') && exec node draco-nodejs/backend/dist/src/server.js"]
+
+  backend-test:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: draco-nodejs/backend/Dockerfile
+    ports:
+      - "3001:3001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - draco-nodejs/backend/.env
+    environment:
+      - NODE_ENV=production
+    entrypoint: ["/bin/sh", "-c", "export DATABASE_URL=$$(echo $$DATABASE_URL | sed 's/localhost/host.docker.internal/g; s/127\\.0\\.0\\.1/host.docker.internal/g') && exec node draco-nodejs/backend/dist/src/server.js"]
+    depends_on:
+      localstack:
+        condition: service_healthy

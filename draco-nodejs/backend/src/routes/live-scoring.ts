@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { getSSEManager } from '../services/sseManager.js';
@@ -95,7 +95,7 @@ router.get(
 
     res.flushHeaders();
 
-    const clientId = uuidv4();
+    const clientId = randomUUID();
     const sseManager = getSSEManager();
 
     sseManager.addClient(clientId, res, userId, matchId, role);
