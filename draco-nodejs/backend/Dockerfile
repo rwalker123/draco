@@ -55,7 +55,7 @@ COPY --from=builder /app/draco-nodejs/backend/package.json ./draco-nodejs/backen
 COPY --from=builder /app/draco-nodejs/backend/prisma.config.ts ./draco-nodejs/backend/prisma.config.ts
 COPY --from=builder /app/draco-nodejs/shared/shared-schemas/dist ./draco-nodejs/shared/shared-schemas/dist
 COPY --from=builder /app/draco-nodejs/stoplight-assets ./draco-nodejs/stoplight-assets
-COPY --from=builder /app/draco-nodejs/backend/openapi.yaml ./openapi.yaml
+COPY --from=builder /app/draco-nodejs/backend/openapi.yaml ./draco-nodejs/backend/openapi.yaml
 RUN chown -R node:node /app
 USER node
 ENV NODE_ENV=production
