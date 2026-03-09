@@ -52,6 +52,7 @@ COPY --from=builder /app/draco-nodejs/backend/dist ./draco-nodejs/backend/dist
 COPY --from=builder /app/draco-nodejs/backend/src/generated ./draco-nodejs/backend/src/generated
 COPY --from=builder /app/draco-nodejs/backend/prisma ./draco-nodejs/backend/prisma
 COPY --from=builder /app/draco-nodejs/backend/package.json ./draco-nodejs/backend/package.json
+COPY --from=builder /app/draco-nodejs/backend/prisma.config.ts ./draco-nodejs/backend/prisma.config.ts
 COPY --from=builder /app/draco-nodejs/shared/shared-schemas/dist ./draco-nodejs/shared/shared-schemas/dist
 COPY --from=builder /app/draco-nodejs/stoplight-assets ./draco-nodejs/stoplight-assets
 COPY --from=builder /app/draco-nodejs/backend/openapi.yaml ./openapi.yaml
