@@ -8,8 +8,10 @@ import {
   BackupService,
 } from '../backupService.js';
 import { EventEmitter } from 'node:events';
-import { Readable } from 'node:stream';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { Readable } from 'node:stream';
 
 const mockSpawn = vi.fn();
 vi.mock('node:child_process', () => ({
@@ -286,7 +288,7 @@ describe('BackupService.performBackup (local mode)', () => {
   const originalEnv = { ...process.env };
 
   beforeEach(async () => {
-    tmpDir = await fs.promises.mkdtemp('/tmp/backup-test-');
+    tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'backup-test-'));
     process.env.BACKUP_LOCAL_DIR = tmpDir;
     delete process.env.R2_BACKUP_BUCKET;
     service = new BackupService();
@@ -326,6 +328,7 @@ describe('BackupService.performBackup (S3 mode with pg_dump)', () => {
 
   beforeEach(() => {
     mockSpawn.mockReset();
+    process.env.R2_BUCKET = 'test-source-bucket';
     process.env.R2_BACKUP_BUCKET = 'test-bucket';
     process.env.R2_ACCOUNT_ID = 'test-account';
     process.env.R2_ACCESS_KEY_ID = 'test-key';
