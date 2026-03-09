@@ -11,6 +11,5 @@ localstack-data
 .idea
 .DS_Store
 draco-nodejs/frontend-next
-draco-mobile/android
-draco-mobile/ios
+draco-mobile
 dbMigration

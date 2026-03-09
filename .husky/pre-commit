@@ -19,10 +19,12 @@ fi
 # Run detect-secrets on staged files (without baseline to avoid updates)
 STAGED_FILES=$(git diff --cached --name-only | grep -v '.secrets.baseline' | grep -v 'package.json' | tr '\n' ' ')
 if [ -n "$STAGED_FILES" ]; then
-  DETECT_SECRETS_HOOK=$(command -v detect-secrets-hook 2>/dev/null || true)
+  DETECT_SECRETS_HOOK=$(PATH="$HOME/Library/Python/3.9/bin:$HOME/.local/bin:$PATH" command -v detect-secrets-hook 2>/dev/null || true)
   if [ -z "$DETECT_SECRETS_HOOK" ]; then
-    echo "⚠️  detect-secrets-hook not found in PATH, skipping secret scan"
+    echo "❌ detect-secrets-hook not found in PATH. Commit blocked."
+    echo ""
     echo "💡 Install with: pip install detect-secrets"
+    exit 1
   else
     echo "🔒 Running detect-secrets pre-commit scan on staged files..."
     $DETECT_SECRETS_HOOK --baseline .secrets.baseline $STAGED_FILES

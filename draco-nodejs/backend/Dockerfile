@@ -59,4 +59,6 @@ COPY --from=builder /app/draco-nodejs/stoplight-assets ./draco-nodejs/stoplight-
 COPY --from=builder /app/draco-nodejs/backend/openapi.yaml ./openapi.yaml
 ENV NODE_ENV=production
 EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "fetch('http://localhost:3001/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"
 CMD ["node", "draco-nodejs/backend/dist/src/server.js"]
