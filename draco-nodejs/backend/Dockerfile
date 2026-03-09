@@ -29,7 +29,8 @@ COPY draco-nodejs/backend/package.json draco-nodejs/backend/
 COPY draco-nodejs/shared/shared-schemas/package.json draco-nodejs/shared/shared-schemas/
 COPY draco-nodejs/shared/shared-api-client/package.json draco-nodejs/shared/shared-api-client/
 COPY draco-nodejs/stoplight-assets/package.json draco-nodejs/stoplight-assets/
-RUN npm ci -w @draco/backend -w @draco/shared-schemas -w @draco/shared-api-client -w @draco/stoplight-assets --include-workspace-root --omit=dev --ignore-scripts
+ENV HUSKY=0
+RUN npm ci -w @draco/backend -w @draco/shared-schemas -w @draco/shared-api-client -w @draco/stoplight-assets --include-workspace-root --omit=dev
 
 # Stage 4 – Runtime
 FROM node:24-bookworm-slim AS runner
