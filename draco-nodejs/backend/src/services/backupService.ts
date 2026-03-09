@@ -93,7 +93,7 @@ export class BackupService implements IBackupService {
   private scheduledTimeout: NodeJS.Timeout | null = null;
   private readonly backupHour = 3;
   private readonly backupTimezone = process.env.BACKUP_TIMEZONE || 'America/New_York';
-  private _s3Client: S3Client | null = null;
+  protected _s3Client: S3Client | null = null;
 
   private get s3Client(): S3Client {
     if (!this._s3Client) {

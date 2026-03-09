@@ -7,6 +7,7 @@ import {
   getNextBackupTime,
   BackupService,
 } from '../backupService.js';
+import { S3Client } from '@aws-sdk/client-s3';
 import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
 import fs from 'node:fs';
@@ -273,11 +274,14 @@ function createEnoentProcess() {
   return proc;
 }
 
-function mockS3Client(service: BackupService, sendMock: ReturnType<typeof vi.fn>) {
-  Object.defineProperty(service, '_s3Client', {
-    value: { send: sendMock },
-    writable: true,
-  });
+class TestableBackupService extends BackupService {
+  setS3Client(sendMock: ReturnType<typeof vi.fn>) {
+    this._s3Client = { send: sendMock } as unknown as S3Client;
+  }
+}
+
+function mockS3Client(service: TestableBackupService, sendMock: ReturnType<typeof vi.fn>) {
+  service.setS3Client(sendMock);
 }
 
 describe('BackupService.performBackup (local mode)', () => {
@@ -321,7 +325,7 @@ describe('BackupService.performBackup (local mode)', () => {
 });
 
 describe('BackupService.performBackup (S3 mode with pg_dump)', () => {
-  let service: BackupService;
+  let service: TestableBackupService;
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
@@ -332,7 +336,7 @@ describe('BackupService.performBackup (S3 mode with pg_dump)', () => {
     process.env.R2_SECRET_ACCESS_KEY = 'test-secret'; // pragma: allowlist secret
     process.env.DATABASE_URL = 'postgresql://test@localhost:5432/testdb';
     delete process.env.BACKUP_LOCAL_DIR;
-    service = new BackupService();
+    service = new TestableBackupService();
   });
 
   afterEach(() => {

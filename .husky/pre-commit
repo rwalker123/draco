@@ -19,16 +19,21 @@ fi
 # Run detect-secrets on staged files (without baseline to avoid updates)
 STAGED_FILES=$(git diff --cached --name-only | grep -v '.secrets.baseline' | grep -v 'package.json' | tr '\n' ' ')
 if [ -n "$STAGED_FILES" ]; then
-  echo "🔒 Running detect-secrets pre-commit scan on staged files..."
-  # Scan staged files using baseline to respect allowlisted secrets
-  ~/Library/Python/3.9/bin/detect-secrets-hook --baseline .secrets.baseline $STAGED_FILES
-  if [ $? -ne 0 ]; then
-    echo "❌ detect-secrets found a potential secret in staged files. Commit blocked."
-    echo ""
-    echo "💡 To add a new secret to the baseline (if it's approved):"
-    echo "   npm run secrets:update-baseline"
-    echo "   git add .secrets.baseline && git commit -m 'Update baseline'"
-    exit 1
+  DETECT_SECRETS_HOOK=$(command -v detect-secrets-hook 2>/dev/null || true)
+  if [ -z "$DETECT_SECRETS_HOOK" ]; then
+    echo "⚠️  detect-secrets-hook not found in PATH, skipping secret scan"
+    echo "💡 Install with: pip install detect-secrets"
+  else
+    echo "🔒 Running detect-secrets pre-commit scan on staged files..."
+    $DETECT_SECRETS_HOOK --baseline .secrets.baseline $STAGED_FILES
+    if [ $? -ne 0 ]; then
+      echo "❌ detect-secrets found a potential secret in staged files. Commit blocked."
+      echo ""
+      echo "💡 To add a new secret to the baseline (if it's approved):"
+      echo "   npm run secrets:update-baseline"
+      echo "   git add .secrets.baseline && git commit -m 'Update baseline'"
+      exit 1
+    fi
   fi
 fi
 

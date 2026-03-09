@@ -43,10 +43,13 @@ services:
       dockerfile: draco-nodejs/backend/Dockerfile
     ports:
       - "3001:3001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - draco-nodejs/backend/.env
     environment:
       - NODE_ENV=production
+    entrypoint: ["/bin/sh", "-c", "export DATABASE_URL=$$(echo $$DATABASE_URL | sed 's/localhost/host.docker.internal/g; s/127\\.0\\.0\\.1/host.docker.internal/g') && exec node draco-nodejs/backend/dist/src/server.js"]
     depends_on:
       localstack:
         condition: service_healthy
