@@ -47,12 +47,10 @@ RUN apt-get update \
 WORKDIR /app
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/draco-nodejs/shared ./draco-nodejs/shared
-COPY --from=prod-deps /app/draco-nodejs/stoplight-assets ./draco-nodejs/stoplight-assets
 COPY --from=prod-deps /app/package.json ./
 COPY --from=builder /app/draco-nodejs/backend/dist ./draco-nodejs/backend/dist
 COPY --from=builder /app/draco-nodejs/backend/src/generated ./draco-nodejs/backend/src/generated
 COPY --from=builder /app/draco-nodejs/backend/prisma ./draco-nodejs/backend/prisma
-COPY --from=builder /app/draco-nodejs/backend/prisma.config.ts ./draco-nodejs/backend/prisma.config.ts
 COPY --from=builder /app/draco-nodejs/backend/package.json ./draco-nodejs/backend/package.json
 COPY --from=builder /app/draco-nodejs/shared/shared-schemas/dist ./draco-nodejs/shared/shared-schemas/dist
 COPY --from=builder /app/draco-nodejs/stoplight-assets ./draco-nodejs/stoplight-assets
