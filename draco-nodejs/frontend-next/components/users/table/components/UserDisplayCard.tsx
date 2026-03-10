@@ -136,13 +136,10 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
                 handleAssignRole();
               }}
               sx={{
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
                 color: 'text.secondary',
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 1)',
                   color: 'primary.main',
                 },
-                transition: 'all 0.2s ease-in-out',
               }}
             >
               <Badge
@@ -186,13 +183,6 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
                 onEditContact(user);
               }
             }}
-            sx={{
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 1)',
-              },
-              transition: 'all 0.2s ease-in-out',
-            }}
           />
 
           {onDeleteContact && (
@@ -202,13 +192,6 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
               onClick={(e) => {
                 e.stopPropagation();
                 onDeleteContact(user);
-              }}
-              sx={{
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 1)',
-                },
-                transition: 'all 0.2s ease-in-out',
               }}
             />
           )}
