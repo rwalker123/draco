@@ -84,9 +84,11 @@ export const BlueskyPostSettingsWidget: React.FC<BlueskyPostSettingsWidgetProps>
           onClose={hideNotification}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-            {notification?.message}
-          </Alert>
+          {notification ? (
+            <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
+              {notification.message}
+            </Alert>
+          ) : undefined}
         </Snackbar>
         <FormControlLabel
           control={

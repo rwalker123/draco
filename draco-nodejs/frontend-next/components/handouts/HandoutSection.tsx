@@ -80,12 +80,6 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
   const teamId = scope.type === 'team' ? scope.teamId : undefined;
 
   React.useEffect(() => {
-    if (mutationError) {
-      showNotification(mutationError, 'error');
-    }
-  }, [mutationError, showNotification]);
-
-  React.useEffect(() => {
     const controller = new AbortController();
 
     const loadHandouts = async () => {
@@ -314,9 +308,11 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
         onClose={handleHideNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleHideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
+        {notification ? (
+          <Alert onClose={handleHideNotification} severity={notification.severity} variant="filled">
+            {notification.message}
+          </Alert>
+        ) : undefined}
       </Snackbar>
     </>
   );

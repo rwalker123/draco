@@ -41,6 +41,7 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
   const [authorizing, setAuthorizing] = useState(false);
   const [clearCredentials, setClearCredentials] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [authDismissed, setAuthDismissed] = useState(false);
   const { notification, showNotification, hideNotification } = useNotifications();
   const formDisabled = saving;
   const searchParams = useSearchParams();
@@ -52,16 +53,16 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
     setHandle(account.socials?.twitterAccountName ?? '');
   }, [account.socials?.twitterAccountName]);
 
-  useEffect(() => {
-    if (authStatus === 'success') {
-      showNotification('Twitter authorization completed successfully.', 'success');
-    } else if (authStatus === 'error') {
-      const msg = authMessage
-        ? `Twitter authorization failed: ${decodeURIComponent(authMessage)}. Please verify client credentials and try again.`
-        : 'Twitter authorization failed. Please verify client credentials and try again.';
-      showNotification(msg, 'error');
-    }
-  }, [authStatus, authMessage, showNotification]);
+  const authAlertSeverity =
+    authStatus === 'success' ? 'success' : authStatus === 'error' ? 'error' : null;
+  const authAlertMessage =
+    authStatus === 'success'
+      ? 'Twitter authorization completed successfully.'
+      : authStatus === 'error'
+        ? authMessage
+          ? `Twitter authorization failed: ${decodeURIComponent(authMessage)}. Please verify client credentials and try again.`
+          : 'Twitter authorization failed. Please verify client credentials and try again.'
+        : null;
 
   const normalizedCurrentHandle = (account.socials?.twitterAccountName ?? '').trim();
   const hasPendingChanges =
@@ -180,6 +181,12 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
             you don&apos;t have an app yet, create one there first.
           </Alert>
 
+          {!authDismissed && authAlertSeverity && authAlertMessage && (
+            <Alert severity={authAlertSeverity} onClose={() => setAuthDismissed(true)}>
+              {authAlertMessage}
+            </Alert>
+          )}
+
           <Box>
             <Typography variant="h6" gutterBottom>
               Ingestion (read-only)
@@ -292,9 +299,11 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
           onClose={hideNotification}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-            {notification?.message}
-          </Alert>
+          {notification ? (
+            <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
+              {notification.message}
+            </Alert>
+          ) : undefined}
         </Snackbar>
       </form>
     </WidgetShell>

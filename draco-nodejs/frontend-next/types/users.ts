@@ -187,7 +187,6 @@ export interface UseUserManagementReturn {
   roles: Role[];
   loading: boolean;
   isInitialLoad: boolean;
-  feedback: FeedbackState;
   page: number;
   rowsPerPage: number;
   hasNext: boolean;
@@ -233,7 +232,6 @@ export interface UseUserManagementReturn {
   closeDeleteContactDialog: () => void;
   setSelectedUser: (user: ContactType | null) => void;
   setSearchTerm: (term: string) => void;
-  setFeedback: (feedback: FeedbackState) => void;
   loadContextData: () => Promise<void>;
   getRoleDisplayName: (
     roleOrRoleId:

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Alert, Box, Container, Typography, Fab, Snackbar } from '@mui/material';
 import { useUserManagement } from '../../../../hooks/useUserManagement';
 import { useUserDialogs } from '../../../../hooks/useUserDialogs';
@@ -45,7 +45,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     roles,
     loading,
     isInitialLoad,
-    feedback,
     page,
     rowsPerPage,
     hasNext,
@@ -91,13 +90,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     handleClearFilter,
 
     handleSortChange,
-  } = useUserManagement(accountId);
-
-  useEffect(() => {
-    if (feedback) {
-      showNotification(feedback.message, feedback.severity);
-    }
-  }, [feedback, showNotification]);
+  } = useUserManagement(accountId, { onFeedback: showNotification });
 
   const canManageUsers = true;
 
@@ -421,9 +414,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onClose={hideNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
+        {notification ? (
+          <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
+            {notification.message}
+          </Alert>
+        ) : undefined}
       </Snackbar>
     </main>
   );

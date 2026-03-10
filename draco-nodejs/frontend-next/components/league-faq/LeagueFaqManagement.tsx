@@ -205,9 +205,11 @@ export const LeagueFaqManagement: React.FC<LeagueFaqManagementProps> = ({ accoun
         onClose={hideNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
+        {notification ? (
+          <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
+            {notification.message}
+          </Alert>
+        ) : undefined}
       </Snackbar>
     </main>
   );
