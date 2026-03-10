@@ -9,6 +9,7 @@ import { WorkoutRegistrationsAccordion } from './WorkoutRegistrationsAccordion';
 import { WorkoutFormDialog } from './dialogs/WorkoutFormDialog';
 import { WorkoutPreviewDialog } from './dialogs/WorkoutPreviewDialog';
 import { WorkoutSourcesDialog } from './dialogs/WorkoutSourcesDialog';
+import { useNotifications } from '@/hooks/useNotifications';
 import type { WorkoutType } from '@draco/shared-schemas';
 
 interface WorkoutsManagementProps {
@@ -20,10 +21,7 @@ export const WorkoutsManagement: React.FC<WorkoutsManagementProps> = ({ accountI
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [activeWorkoutId, setActiveWorkoutId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [feedback, setFeedback] = useState<{
-    severity: 'success' | 'error';
-    message: string;
-  } | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [previewState, setPreviewState] = useState<{ open: boolean; workoutId: string | null }>({
     open: false,
     workoutId: null,
@@ -59,11 +57,11 @@ export const WorkoutsManagement: React.FC<WorkoutsManagementProps> = ({ accountI
     setFormOpen(false);
     setActiveWorkoutId(null);
     setRefreshKey((value) => value + 1);
-    setFeedback({ severity: 'success', message: result.message });
+    showNotification(result.message, 'success');
   };
 
   const handleDialogError = (message: string) => {
-    setFeedback({ severity: 'error', message });
+    showNotification(message, 'error');
   };
 
   const handlePreviewWorkout = (workoutId: string) => {
@@ -72,10 +70,6 @@ export const WorkoutsManagement: React.FC<WorkoutsManagementProps> = ({ accountI
 
   const handleClosePreview = () => {
     setPreviewState({ open: false, workoutId: null });
-  };
-
-  const handleFeedbackClose = () => {
-    setFeedback(null);
   };
 
   return (
@@ -150,26 +144,19 @@ export const WorkoutsManagement: React.FC<WorkoutsManagementProps> = ({ accountI
         accountId={accountId}
         open={sourcesDialogOpen}
         onClose={handleCloseSourcesDialog}
-        onSuccess={(message) => setFeedback({ severity: 'success', message })}
-        onError={(message) => setFeedback({ severity: 'error', message })}
+        onSuccess={(message) => showNotification(message, 'success')}
+        onError={(message) => showNotification(message, 'error')}
       />
 
       <Snackbar
-        open={Boolean(feedback)}
+        open={!!notification}
         autoHideDuration={6000}
-        onClose={handleFeedbackClose}
+        onClose={hideNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        {feedback ? (
-          <Alert
-            onClose={handleFeedbackClose}
-            severity={feedback.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {feedback.message}
-          </Alert>
-        ) : undefined}
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
       </Snackbar>
     </main>
   );

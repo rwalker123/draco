@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Alert, Box, Container, Typography, Fab, Snackbar } from '@mui/material';
 import { useUserManagement } from '../../../../hooks/useUserManagement';
 import { useUserDialogs } from '../../../../hooks/useUserDialogs';
+import { useNotifications } from '../../../../hooks/useNotifications';
 import {
   UserTableEnhanced,
   AssignRoleDialog,
@@ -33,15 +34,13 @@ interface UserManagementProps {
 }
 
 const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
-  // Use API client for export functionality
   const apiClient = useApiClient();
 
-  // Use the new dialog hooks
   const dialogs = useUserDialogs();
 
-  // Use custom hook for all state and logic
+  const { notification, showNotification, hideNotification } = useNotifications();
+
   const {
-    // State
     users,
     roles,
     loading,
@@ -57,24 +56,19 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     onlyWithRoles,
     currentSeasonId,
 
-    // Context data states
     leagues,
     teams,
     leagueSeasons,
     contextDataLoading,
 
-    // Automatic role holders states
     accountOwner,
     teamManagers,
 
-    // Advanced filter state
     filter,
     hasActiveFilter,
 
-    // Sort state
     sort,
 
-    // Actions
     handleSearch,
     handleClearSearch,
     handleFilterToggle,
@@ -82,7 +76,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     handlePrevPage,
     handleRowsPerPageChange,
     setSearchTerm,
-    setFeedback,
     getRoleDisplayName,
     handleRoleAssigned,
     handleRoleRemoved,
@@ -93,19 +86,21 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     handleContactDeleted,
     loadContextData,
 
-    // Advanced filter actions
     handleFilterChange,
     handleApplyFilter,
     handleClearFilter,
 
-    // Sort actions
     handleSortChange,
   } = useUserManagement(accountId);
 
-  // Check if user can manage users (this is handled in the hook)
-  const canManageUsers = true; // The hook handles permission checking
+  useEffect(() => {
+    if (feedback) {
+      showNotification(feedback.message, feedback.severity);
+    }
+  }, [feedback, showNotification]);
 
-  // Wrapper function for photo deletion with confirmation
+  const canManageUsers = true;
+
   const handleDeleteContactPhotoWithConfirm = async (contactId: string) => {
     dialogs.photoDeleteConfirmDialog.open(contactId);
   };
@@ -125,18 +120,16 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     dialogs.autoRegisterConflictDialog.open(data);
   };
 
-  // Async wrapper functions to match the interface expectations
   const handleAssignRoleWrapper = async (user: ContactType) => {
     dialogs.assignRoleDialog.open(user);
     await loadContextData();
   };
 
-  // Handle success events from the self-contained dialogs
   const handleAssignRoleSuccess = (result: {
     message: string;
     assignedRole: RoleWithContactType;
   }) => {
-    setFeedback({ severity: 'success', message: result.message });
+    showNotification(result.message, 'success');
     handleRoleAssigned(result.assignedRole);
     dialogs.assignRoleDialog.close();
   };
@@ -145,7 +138,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     message: string;
     removedRole: { contactId: string; roleId: string; id: string };
   }) => {
-    setFeedback({ severity: 'success', message: result.message });
+    showNotification(result.message, 'success');
     handleRoleRemoved(result.removedRole.contactId, result.removedRole.id);
     dialogs.removeRoleDialog.close();
   };
@@ -157,7 +150,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     status?: 'success' | 'warning';
   }) => {
     const message = result.status === 'warning' ? `⚠️ ${result.message}` : result.message;
-    setFeedback({ severity: 'success', message });
+    showNotification(message, 'success');
     handleContactUpdated(result.contact, result.isCreate);
     if (result.isCreate) {
       dialogs.createContactDialog.close();
@@ -167,13 +160,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
   };
 
   const handlePhotoDeleteSuccess = (result: { message: string; contactId: string }) => {
-    setFeedback({ severity: 'success', message: result.message });
+    showNotification(result.message, 'success');
     handlePhotoDeleted(result.contactId);
     dialogs.photoDeleteConfirmDialog.close();
   };
 
   const handleRevokeRegistrationSuccess = (result: { message: string; contactId: string }) => {
-    setFeedback({ severity: 'success', message: result.message });
+    showNotification(result.message, 'success');
     handleRegistrationRevoked(result.contactId);
     dialogs.revokeConfirmDialog.close();
   };
@@ -184,7 +177,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     userId: string;
   }) => {
     if (result.message) {
-      setFeedback({ severity: 'success', message: result.message });
+      showNotification(result.message, 'success');
     }
     handleRegistrationLinked(result.contactId, result.userId);
     dialogs.autoRegisterDialog.close();
@@ -201,7 +194,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         ? `${result.message} (${result.dependenciesDeleted} related records deleted)`
         : result.message;
 
-    setFeedback({ severity: 'success', message: finalMessage });
+    showNotification(finalMessage, 'success');
     handleContactDeleted(result.contactId);
     dialogs.deleteContactDialog.close();
   };
@@ -224,10 +217,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
 
   const handleAddUserWrapper = async () => {
     dialogs.createContactDialog.open();
-  };
-
-  const handleFeedbackClose = () => {
-    setFeedback(null);
   };
 
   const handleExportUsers = async () => {
@@ -253,10 +242,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
       const blob = unwrapApiResult(result, 'Failed to export users') as Blob;
       downloadBlob(blob, 'users.csv');
     } catch (err) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to export users',
-      });
+      showNotification(err instanceof Error ? err.message : 'Failed to export users', 'error');
     }
   };
 
@@ -306,16 +292,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
           onPrevPage={handlePrevPage}
           onRowsPerPageChange={handleRowsPerPageChange}
           getRoleDisplayName={getRoleDisplayName}
-          // Enhanced features
           enableViewSwitching={true}
           enableAdvancedFilters={true}
           initialViewMode="table"
-          onModernFeaturesChange={(_enabled) => {
-            // Modern features notification
-          }}
-          // Enhanced props
+          onModernFeaturesChange={(_enabled) => {}}
           accountId={accountId}
-          // Search props
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           onSearch={handleSearch}
@@ -325,21 +306,16 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
           onDeleteContactPhoto={handleDeleteContactPhotoWithConfirm}
           onRevokeRegistration={handleRevokeWithConfirm}
           onAutoRegister={handleAutoRegisterWrapper}
-          // Filter props
           onlyWithRoles={onlyWithRoles}
           onOnlyWithRolesChange={handleFilterToggle}
-          // Export functionality
           onExport={handleExportUsers}
-          // Advanced filter props
           filter={filter}
           onFilterChange={handleFilterChange}
           onApplyFilter={handleApplyFilter}
           onClearFilter={handleClearFilter}
           hasActiveFilter={hasActiveFilter}
-          // Sort props
           sort={sort}
           onAdvancedSortChange={handleSortChange}
-          // Disable the title header above the search bar
           title={null}
         />
       </Container>
@@ -350,10 +326,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onSuccess={handleAssignRoleSuccess}
         roles={roles}
         accountId={accountId}
-        // Pre-population props
         preselectedUser={dialogs.assignRoleDialog.data || null}
         isUserReadonly={!!dialogs.assignRoleDialog.data}
-        // Context data props
         leagues={leagues}
         teams={teams}
         leagueSeasons={leagueSeasons}
@@ -394,7 +368,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         accountId={accountId}
       />
 
-      {/* Photo deletion dialog */}
       <PhotoDeleteDialog
         open={dialogs.photoDeleteConfirmDialog.isOpen}
         contactId={dialogs.photoDeleteConfirmDialog.data || null}
@@ -403,7 +376,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         accountId={accountId}
       />
 
-      {/* Revoke registration dialog */}
       <RevokeRegistrationDialog
         open={dialogs.revokeConfirmDialog.isOpen}
         contactId={dialogs.revokeConfirmDialog.data || null}
@@ -444,21 +416,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
       )}
 
       <Snackbar
-        open={Boolean(feedback)}
+        open={!!notification}
         autoHideDuration={6000}
-        onClose={handleFeedbackClose}
+        onClose={hideNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        {feedback ? (
-          <Alert
-            onClose={handleFeedbackClose}
-            severity={feedback.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {feedback.message}
-          </Alert>
-        ) : undefined}
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
       </Snackbar>
     </main>
   );

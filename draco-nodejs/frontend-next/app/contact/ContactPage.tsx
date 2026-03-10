@@ -8,6 +8,7 @@ import {
   Container,
   IconButton,
   Paper,
+  Snackbar,
   Stack,
   TextField,
   Typography,
@@ -17,6 +18,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const ContactFormSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
@@ -30,8 +32,7 @@ type ContactFormValues = z.infer<typeof ContactFormSchema>;
 const ContactPage: React.FC = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const formResolver = zodResolver(ContactFormSchema) as Resolver<ContactFormValues>;
 
@@ -51,17 +52,16 @@ const ContactPage: React.FC = () => {
   });
 
   const onSubmit = async (_values: ContactFormValues) => {
-    setError(null);
-    setSuccess(false);
+    hideNotification();
     setLoading(true);
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      setSuccess(true);
+      showNotification("Thank you for your message! We'll get back to you soon.", 'success');
       reset();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message');
+      showNotification(err instanceof Error ? err.message : 'Failed to send message', 'error');
     } finally {
       setLoading(false);
     }
@@ -92,14 +92,6 @@ const ContactPage: React.FC = () => {
               <Typography variant="body1" color="text.secondary">
                 Have questions? We&apos;d love to hear from you.
               </Typography>
-
-              {success && (
-                <Alert severity="success">
-                  Thank you for your message! We&apos;ll get back to you soon.
-                </Alert>
-              )}
-
-              {error && <Alert severity="error">{error}</Alert>}
 
               <form onSubmit={handleSubmit(onSubmit)}>
                 <Stack spacing={2}>
@@ -156,6 +148,16 @@ const ContactPage: React.FC = () => {
           </Paper>
         </Stack>
       </Container>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </main>
   );
 };

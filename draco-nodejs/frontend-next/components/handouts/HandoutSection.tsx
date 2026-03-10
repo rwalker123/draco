@@ -15,6 +15,7 @@ import ConfirmationDialog from '../common/ConfirmationDialog';
 import { HandoutScope, useHandoutOperations } from '../../hooks/useHandoutOperations';
 import { useApiClient } from '../../hooks/useApiClient';
 import { unwrapApiResult } from '../../utils/apiResult';
+import { useNotifications } from '../../hooks/useNotifications';
 import NextLink from 'next/link';
 import WidgetShell from '../ui/WidgetShell';
 
@@ -42,11 +43,6 @@ type ConfirmState = {
   handout: HandoutType | null;
 };
 
-type FeedbackState = {
-  severity: 'success' | 'error';
-  message: string;
-} | null;
-
 const HandoutSection: React.FC<HandoutSectionProps> = ({
   scope,
   title: sectionTitle,
@@ -67,10 +63,10 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
     clearError,
   } = useHandoutOperations(scope);
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [handouts, setHandouts] = React.useState<HandoutType[]>([]);
   const [fetching, setFetching] = React.useState<boolean>(true);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
-  const [feedback, setFeedback] = React.useState<FeedbackState>(null);
   const [dialogState, setDialogState] = React.useState<DialogState>({
     open: false,
     mode: 'create',
@@ -85,9 +81,9 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
 
   React.useEffect(() => {
     if (mutationError) {
-      setFeedback({ severity: 'error', message: mutationError });
+      showNotification(mutationError, 'error');
     }
-  }, [mutationError]);
+  }, [mutationError, showNotification]);
 
   React.useEffect(() => {
     const controller = new AbortController();
@@ -168,7 +164,7 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
   };
 
   const handleDialogSuccess = async ({ message }: { handout: HandoutType; message: string }) => {
-    setFeedback({ severity: 'success', message });
+    showNotification(message, 'success');
     handleDialogClose();
     await refreshHandouts();
   };
@@ -190,17 +186,17 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
     try {
       clearError();
       await deleteHandout(target.id);
-      setFeedback({ severity: 'success', message: 'Handout deleted successfully' });
+      showNotification('Handout deleted successfully', 'success');
       setConfirmState({ open: false, handout: null });
       await refreshHandouts();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete handout';
-      setFeedback({ severity: 'error', message });
+      showNotification(message, 'error');
     }
   };
 
-  const handleFeedbackClose = () => {
-    setFeedback(null);
+  const handleHideNotification = () => {
+    hideNotification();
     clearError();
   };
 
@@ -301,7 +297,7 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
         mode={dialogState.mode}
         initialHandout={dialogState.handout}
         onSuccess={handleDialogSuccess}
-        onError={(msg) => setFeedback({ severity: 'error', message: msg })}
+        onError={(msg) => showNotification(msg, 'error')}
       />
       <ConfirmationDialog
         open={confirmState.open}
@@ -313,16 +309,14 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
         confirmButtonColor="error"
       />
       <Snackbar
-        open={Boolean(feedback)}
+        open={!!notification}
         autoHideDuration={6000}
-        onClose={handleFeedbackClose}
+        onClose={handleHideNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        {feedback ? (
-          <Alert onClose={handleFeedbackClose} severity={feedback.severity} variant="filled">
-            {feedback.message}
-          </Alert>
-        ) : undefined}
+        <Alert onClose={handleHideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
       </Snackbar>
     </>
   );

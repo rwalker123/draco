@@ -7,6 +7,7 @@ import {
   Button,
   Chip,
   FormControlLabel,
+  Snackbar,
   Stack,
   Switch,
   TextField,
@@ -20,6 +21,7 @@ import type { AccountTwitterSettingsType, AccountType } from '@draco/shared-sche
 import WidgetShell from '../../ui/WidgetShell';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
+import { useNotifications } from '../../../hooks/useNotifications';
 import { useSearchParams } from 'next/navigation';
 
 interface TwitterIntegrationAdminWidgetProps {
@@ -39,8 +41,7 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
   const [authorizing, setAuthorizing] = useState(false);
   const [clearCredentials, setClearCredentials] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const formDisabled = saving;
   const searchParams = useSearchParams();
   const authStatus = searchParams.get('twitterAuth');
@@ -50,6 +51,17 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
   useEffect(() => {
     setHandle(account.socials?.twitterAccountName ?? '');
   }, [account.socials?.twitterAccountName]);
+
+  useEffect(() => {
+    if (authStatus === 'success') {
+      showNotification('Twitter authorization completed successfully.', 'success');
+    } else if (authStatus === 'error') {
+      const msg = authMessage
+        ? `Twitter authorization failed: ${decodeURIComponent(authMessage)}. Please verify client credentials and try again.`
+        : 'Twitter authorization failed. Please verify client credentials and try again.';
+      showNotification(msg, 'error');
+    }
+  }, [authStatus, authMessage, showNotification]);
 
   const normalizedCurrentHandle = (account.socials?.twitterAccountName ?? '').trim();
   const hasPendingChanges =
@@ -61,11 +73,10 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
-    setSuccess(null);
+    hideNotification();
 
     if (!hasPendingChanges) {
-      setError('Update at least one field before saving.');
+      showNotification('Update at least one field before saving.', 'error');
       return;
     }
 
@@ -110,22 +121,24 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
         onAccountUpdate?.(updated);
       }
 
-      setSuccess('Twitter settings saved. Secrets are encrypted and never shown here.');
+      showNotification(
+        'Twitter settings saved. Secrets are encrypted and never shown here.',
+        'success',
+      );
       setClientId('');
       setClientSecret('');
       setIngestionBearerToken('');
       setClearCredentials(false);
     } catch (err) {
       console.error('Failed to save Twitter settings', err);
-      setError('Unable to save Twitter settings. Please try again.');
+      showNotification('Unable to save Twitter settings. Please try again.', 'error');
     } finally {
       setSaving(false);
     }
   };
 
   const startOAuthFlow = async () => {
-    setError(null);
-    setSuccess(null);
+    hideNotification();
     setAuthorizing(true);
     try {
       const returnUrl = `${window.location.origin}/account/${account.id}/social-media`;
@@ -145,7 +158,7 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
       window.location.href = data.authorizationUrl;
     } catch (err) {
       console.error('Failed to start Twitter OAuth flow', err);
-      setError('Unable to start Twitter authorization. Please try again.');
+      showNotification('Unable to start Twitter authorization. Please try again.', 'error');
     } finally {
       setAuthorizing(false);
     }
@@ -166,19 +179,6 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
             <strong> Developer Portal → Projects & Apps → Your App → Keys and tokens</strong>. If
             you don&apos;t have an app yet, create one there first.
           </Alert>
-
-          {error && <Alert severity="error">{error}</Alert>}
-          {success && <Alert severity="success">{success}</Alert>}
-          {authStatus === 'success' && (
-            <Alert severity="success">Twitter authorization completed successfully.</Alert>
-          )}
-          {authStatus === 'error' && (
-            <Alert severity="error">
-              Twitter authorization failed
-              {authMessage ? `: ${decodeURIComponent(authMessage)}` : ''}. Please verify client
-              credentials and try again.
-            </Alert>
-          )}
 
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -286,6 +286,16 @@ export const TwitterIntegrationAdminWidget: React.FC<TwitterIntegrationAdminWidg
             </Button>
           </Box>
         </Stack>
+        <Snackbar
+          open={!!notification}
+          autoHideDuration={6000}
+          onClose={hideNotification}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+            {notification?.message}
+          </Alert>
+        </Snackbar>
       </form>
     </WidgetShell>
   );

@@ -9,6 +9,7 @@ import AccountPageHeader from '../AccountPageHeader';
 import { AdminBreadcrumbs } from '../admin';
 import { useLeagueFaqService } from '../../hooks/useLeagueFaqService';
 import { useApiClient } from '../../hooks/useApiClient';
+import { useNotifications } from '../../hooks/useNotifications';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { LeagueFaqFormDialog } from './dialogs/LeagueFaqFormDialog';
 import { DeleteLeagueFaqDialog } from './dialogs/DeleteLeagueFaqDialog';
@@ -17,11 +18,6 @@ import { LeagueFaqList } from './LeagueFaqList';
 interface LeagueFaqManagementProps {
   accountId: string;
 }
-
-type FeedbackState = {
-  severity: 'success' | 'error';
-  message: string;
-} | null;
 
 type FormMode = 'create' | 'edit';
 
@@ -33,6 +29,7 @@ const sortFaqs = (items: LeagueFaqType[]): LeagueFaqType[] =>
 export const LeagueFaqManagement: React.FC<LeagueFaqManagementProps> = ({ accountId }) => {
   const { createFaq, updateFaq, deleteFaq } = useLeagueFaqService(accountId);
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const [faqs, setFaqs] = useState<LeagueFaqType[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -44,8 +41,6 @@ export const LeagueFaqManagement: React.FC<LeagueFaqManagementProps> = ({ accoun
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [faqPendingDeletion, setFaqPendingDeletion] = useState<LeagueFaqType | null>(null);
-
-  const [feedback, setFeedback] = useState<FeedbackState>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -114,7 +109,7 @@ export const LeagueFaqManagement: React.FC<LeagueFaqManagementProps> = ({ accoun
 
   const handleCreateSuccess = (result: { faq: LeagueFaqType; message: string }) => {
     setFaqs((current) => sortFaqs([...current, result.faq]));
-    setFeedback({ severity: 'success', message: result.message });
+    showNotification(result.message, 'success');
     closeForm();
   };
 
@@ -122,22 +117,18 @@ export const LeagueFaqManagement: React.FC<LeagueFaqManagementProps> = ({ accoun
     setFaqs((current) =>
       sortFaqs(current.map((item) => (item.id === result.faq.id ? result.faq : item))),
     );
-    setFeedback({ severity: 'success', message: result.message });
+    showNotification(result.message, 'success');
     closeForm();
   };
 
   const handleDeleteSuccess = (result: { faqId: string; message: string }) => {
     setFaqs((current) => current.filter((item) => item.id !== result.faqId));
-    setFeedback({ severity: 'success', message: result.message });
+    showNotification(result.message, 'success');
     closeDeleteDialog();
   };
 
   const handleError = (message: string) => {
-    setFeedback({ severity: 'error', message });
-  };
-
-  const handleFeedbackClose = () => {
-    setFeedback(null);
+    showNotification(message, 'error');
   };
 
   return (
@@ -209,16 +200,14 @@ export const LeagueFaqManagement: React.FC<LeagueFaqManagementProps> = ({ accoun
       />
 
       <Snackbar
-        open={Boolean(feedback)}
+        open={!!notification}
         autoHideDuration={6000}
-        onClose={handleFeedbackClose}
+        onClose={hideNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        {feedback ? (
-          <Alert onClose={handleFeedbackClose} severity={feedback.severity} variant="filled">
-            {feedback.message}
-          </Alert>
-        ) : undefined}
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
       </Snackbar>
     </main>
   );

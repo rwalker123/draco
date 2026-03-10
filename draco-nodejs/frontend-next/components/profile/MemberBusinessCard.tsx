@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, Button, Divider, Skeleton, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Divider, Skeleton, Snackbar, Stack, Typography } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { listMemberBusinesses } from '@draco/shared-api-client';
 import type { MemberBusinessType } from '@draco/shared-schemas';
 import { useApiClient } from '@/hooks/useApiClient';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MemberBusinessFormDialog, {
@@ -45,11 +46,11 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
   const apiClient = useApiClient();
   const { user, token } = useAuth();
 
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [memberBusinesses, setMemberBusinesses] = useState<MemberBusinessType[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<DialogMode>('create');
   const [selectedBusiness, setSelectedBusiness] = useState<MemberBusinessType | null>(null);
@@ -61,7 +62,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
   useEffect(() => {
     if (!accountId || !token || !contactId) {
       setMemberBusinesses([]);
-      setError(null);
+      setLoadError(null);
       setInfoMessage(null);
       return;
     }
@@ -70,7 +71,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
 
     const load = async () => {
       setLoading(true);
-      setError(null);
+      setLoadError(null);
       setInfoMessage(null);
 
       try {
@@ -95,7 +96,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
 
           const message = result.error.message ?? 'Unable to load member businesses right now.';
           setMemberBusinesses([]);
-          setError(message);
+          setLoadError(message);
           return;
         }
 
@@ -104,7 +105,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error('Failed to load member businesses', err);
-        setError('Unable to load member businesses right now.');
+        setLoadError('Unable to load member businesses right now.');
         setMemberBusinesses([]);
       } finally {
         if (!controller.signal.aborted) {
@@ -119,15 +120,6 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
       controller.abort();
     };
   }, [accountId, apiClient, contactId, token, refreshKey]);
-
-  useEffect(() => {
-    if (!success) {
-      return undefined;
-    }
-
-    const timeout = setTimeout(() => setSuccess(null), 3000);
-    return () => clearTimeout(timeout);
-  }, [success]);
 
   const handleOpenCreate = () => {
     setFormMode('create');
@@ -152,20 +144,18 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
   };
 
   const handleFormSuccess = (result: MemberBusinessDialogResult) => {
-    setSuccess(result.message);
-    setError(null);
+    showNotification(result.message, 'success');
     setInfoMessage(null);
     handleCloseForm();
     setRefreshKey((k) => k + 1);
   };
 
   const handleFormError = (message: string) => {
-    setError(message);
+    showNotification(message, 'error');
   };
 
   const handleDeleteSuccess = (result: MemberBusinessDeleteResult) => {
-    setSuccess(result.message);
-    setError(null);
+    showNotification(result.message, 'success');
     setInfoMessage(null);
     handleCloseDelete();
     setRefreshKey((k) => k + 1);
@@ -199,9 +189,8 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
   return (
     <WidgetShell accent="info" title="Member Business" actions={actionsContent} sx={widgetShellSx}>
       <Stack spacing={2.5}>
-        {error && <Alert severity="error">{error}</Alert>}
+        {loadError && <Alert severity="error">{loadError}</Alert>}
         {infoMessage && <Alert severity="info">{infoMessage}</Alert>}
-        {success && <Alert severity="success">{success}</Alert>}
         {contactId ? (
           loading ? (
             <Stack alignItems="center" spacing={1}>
@@ -290,6 +279,17 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
           </Stack>
         )}
       </Stack>
+
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+          {notification?.message}
+        </Alert>
+      </Snackbar>
 
       <MemberBusinessFormDialog
         open={formOpen}

@@ -1,11 +1,21 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, Button, FormControlLabel, Stack, Switch, TextField } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  FormControlLabel,
+  Snackbar,
+  Stack,
+  Switch,
+  TextField,
+} from '@mui/material';
 import { updateAccountBlueskySettings } from '@draco/shared-api-client';
 import type { AccountBlueskySettingsType, AccountType } from '@draco/shared-schemas';
 import WidgetShell from '../../ui/WidgetShell';
 import { useApiClient } from '@/hooks/useApiClient';
+import { useNotifications } from '../../../hooks/useNotifications';
 import { unwrapApiResult } from '@/utils/apiResult';
 
 interface BlueskyIntegrationAdminWidgetProps {
@@ -22,8 +32,7 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
   const [appPassword, setAppPassword] = useState('');
   const [clearPassword, setClearPassword] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const formDisabled = saving;
 
   useEffect(() => {
@@ -37,11 +46,10 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
-    setSuccess(null);
+    hideNotification();
 
     if (!hasPendingChanges) {
-      setError('Update at least one field before saving.');
+      showNotification('Update at least one field before saving.', 'error');
       return;
     }
 
@@ -74,12 +82,15 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
         onAccountUpdate?.(updated);
       }
 
-      setSuccess('Bluesky settings saved. App passwords are encrypted and never shown here.');
+      showNotification(
+        'Bluesky settings saved. App passwords are encrypted and never shown here.',
+        'success',
+      );
       setAppPassword('');
       setClearPassword(false);
     } catch (err) {
       console.error('Failed to save Bluesky settings', err);
-      setError('Unable to save Bluesky settings. Please try again.');
+      showNotification('Unable to save Bluesky settings. Please try again.', 'error');
     } finally {
       setSaving(false);
     }
@@ -98,9 +109,6 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
             Enter new values to update them or use the toggle below to clear the stored app
             password.
           </Alert>
-
-          {error && <Alert severity="error">{error}</Alert>}
-          {success && <Alert severity="success">{success}</Alert>}
 
           <TextField
             label="Bluesky handle"
@@ -138,6 +146,16 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
             </Button>
           </Box>
         </Stack>
+        <Snackbar
+          open={!!notification}
+          autoHideDuration={6000}
+          onClose={hideNotification}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
+            {notification?.message}
+          </Alert>
+        </Snackbar>
       </form>
     </WidgetShell>
   );
